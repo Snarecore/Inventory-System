@@ -1,17 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import { Link } from 'react-router-dom'
 import { Container } from '@/components/common'
-import {
-  HiOutlineChevronLeft,
-  HiOutlineChevronRight,
-  HiOutlineArrowNarrowRight,
-  HiOutlinePlay,
-  HiOutlineUsers,
-  HiOutlineShieldCheck,
-  HiOutlineStar,
-  HiOutlineSupport,
-  HiOutlineCheckCircle,
-} from 'react-icons/hi'
+import { HiOutlineChevronLeft, HiOutlineChevronRight, HiOutlineArrowNarrowRight, HiOutlinePlay, HiOutlineUsers, HiOutlineShieldCheck, HiOutlineStar, HiOutlineSupport, HiOutlineCheckCircle } from 'react-icons/hi'
 
 // Banner images placeholder references
 import bannerOne from '@/assets/bannerOne.webp'
