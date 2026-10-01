@@ -106,14 +106,14 @@ export const Navbar: React.FC = () => {
             <Link
               to="/login"
               onClick={() => setMobileMenuOpen(false)}
-              className="w-full text-center rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-colors"
+              className="w-full text-center rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-colors"
             >
-              ক্লায়েন্ট লগইন
+              লগইন
             </Link>
             <Link
               to="/download"
               onClick={() => setMobileMenuOpen(false)}
-              className="w-full text-center rounded-xl bg-[#154674] hover:bg-[#0f365c] px-4 py-2.5 text-sm font-semibold text-white transition-colors"
+              className="w-full text-center rounded-lg bg-[#154674] hover:bg-[#0f365c] px-4 py-2.5 text-sm font-semibold text-white transition-colors"
             >
               ফ্রি ডাউনলোড
             </Link>
