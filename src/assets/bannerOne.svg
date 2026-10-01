@@ -1,0 +1,139 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 560" width="100%" height="100%">
+  <defs>
+    <!-- Soft Natural Shadow -->
+    <filter id="naturalShadow" x="-10%" y="-10%" width="125%" height="125%">
+      <feDropShadow dx="0" dy="12" stdDeviation="16" flood-color="#0f172a" flood-opacity="0.10"/>
+    </filter>
+    <filter id="phoneShadow" x="-15%" y="-15%" width="135%" height="135%">
+      <feDropShadow dx="4" dy="16" stdDeviation="20" flood-color="#0f172a" flood-opacity="0.16"/>
+    </filter>
+    <linearGradient id="chartFill" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#009fe3" stop-opacity="0.25"/>
+      <stop offset="100%" stop-color="#009fe3" stop-opacity="0.0"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Laptop Mockup -->
+  <g filter="url(#naturalShadow)">
+    <!-- Screen Outer Frame -->
+    <rect x="40" y="30" width="600" height="390" rx="14" fill="#0f172a"/>
+    <!-- Screen Inner Display -->
+    <rect x="48" y="38" width="584" height="374" rx="6" fill="#f8fafc"/>
+
+    <!-- App Topbar -->
+    <rect x="48" y="38" width="584" height="44" fill="#ffffff"/>
+    <line x1="48" y1="82" x2="632" y2="82" stroke="#e2e8f0" stroke-width="1"/>
+    
+    <!-- Window controls -->
+    <circle cx="68" cy="60" r="4.5" fill="#f87171"/>
+    <circle cx="82" cy="60" r="4.5" fill="#fbbf24"/>
+    <circle cx="96" cy="60" r="4.5" fill="#34d399"/>
+
+    <!-- App Logo / Title in Topbar -->
+    <text x="120" y="64" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="13" font-weight="700" fill="#154674">ক্যাশ বই</text>
+    <rect x="175" y="49" width="60" height="22" rx="4" fill="#e0f2fe"/>
+    <text x="183" y="64" font-family="sans-serif" font-size="10" font-weight="600" fill="#0284c7">ড্যাশবোর্ড</text>
+
+    <!-- Topbar Profile -->
+    <circle cx="605" cy="60" r="12" fill="#e2e8f0"/>
+    <text x="599" y="64" font-family="sans-serif" font-size="10" font-weight="bold" fill="#475569">CB</text>
+
+    <!-- Sidebar -->
+    <rect x="48" y="82" width="110" height="330" fill="#ffffff"/>
+    <line x1="158" y1="82" x2="158" y2="412" stroke="#e2e8f0" stroke-width="1"/>
+    
+    <!-- Sidebar Menu Items -->
+    <rect x="58" y="100" width="90" height="28" rx="6" fill="#e0f2fe"/>
+    <text x="70" y="118" font-family="sans-serif" font-size="11" font-weight="bold" fill="#0284c7">📊 ওভারভিউ</text>
+    <text x="70" y="150" font-family="sans-serif" font-size="11" font-weight="500" fill="#64748b">💰 ক্যাশ খাতা</text>
+    <text x="70" y="180" font-family="sans-serif" font-size="11" font-weight="500" fill="#64748b">📒 বাকি খাতা</text>
+    <text x="70" y="210" font-family="sans-serif" font-size="11" font-weight="500" fill="#64748b">👥 কাস্টমার</text>
+    <text x="70" y="240" font-family="sans-serif" font-size="11" font-weight="500" fill="#64748b">📈 রিপোর্ট</text>
+
+    <!-- Dashboard Main Area -->
+    <g transform="translate(175, 96)">
+      <!-- Greeting & Total Balance -->
+      <text x="0" y="20" font-family="sans-serif" font-size="13" font-weight="600" fill="#64748b">আজকের ব্যবসার অবস্থা</text>
+      <text x="0" y="48" font-family="sans-serif" font-size="24" font-weight="800" fill="#0f172a">৳ ১,২৬,৪৫০</text>
+      <rect x="135" y="32" width="70" height="20" rx="10" fill="#dcfce7"/>
+      <text x="145" y="46" font-family="sans-serif" font-size="10" font-weight="700" fill="#15803d">+১২.৫% বৃদ্ধি</text>
+
+      <!-- Stat Cards Row -->
+      <rect x="0" y="65" width="102" height="54" rx="8" fill="#ffffff" stroke="#e2e8f0"/>
+      <text x="10" y="83" font-family="sans-serif" font-size="10" fill="#64748b">নগদ জমা</text>
+      <text x="10" y="104" font-family="sans-serif" font-size="13" font-weight="bold" fill="#0284c7">৳ ৭২,০০০</text>
+
+      <rect x="110" y="65" width="102" height="54" rx="8" fill="#ffffff" stroke="#e2e8f0"/>
+      <text x="120" y="83" font-family="sans-serif" font-size="10" fill="#64748b">মোট খরচ</text>
+      <text x="120" y="104" font-family="sans-serif" font-size="13" font-weight="bold" fill="#e11d48">৳ ১৮,৫০০</text>
+
+      <rect x="220" y="65" width="102" height="54" rx="8" fill="#ffffff" stroke="#e2e8f0"/>
+      <text x="230" y="83" font-family="sans-serif" font-size="10" fill="#64748b">বাকি আদায়</text>
+      <text x="230" y="104" font-family="sans-serif" font-size="13" font-weight="bold" fill="#16a34a">৳ ২৫,০০০</text>
+
+      <rect x="330" y="65" width="112" height="54" rx="8" fill="#ffffff" stroke="#e2e8f0"/>
+      <text x="340" y="83" font-family="sans-serif" font-size="10" fill="#64748b">মোট গ্রাহক</text>
+      <text x="340" y="104" font-family="sans-serif" font-size="13" font-weight="bold" fill="#475569">৩৮০ জন</text>
+
+      <!-- Chart Container -->
+      <rect x="0" y="130" width="442" height="175" rx="8" fill="#ffffff" stroke="#e2e8f0"/>
+      <text x="14" y="152" font-family="sans-serif" font-size="12" font-weight="700" fill="#1e293b">মাসিক লেনদেন অ্যানালিটিক্স</text>
+      
+      <!-- Area Chart Curve -->
+      <path d="M 20 275 Q 80 230 140 250 T 240 190 T 340 210 T 425 165 L 425 290 L 20 290 Z" fill="url(#chartFill)"/>
+      <path d="M 20 275 Q 80 230 140 250 T 240 190 T 340 210 T 425 165" fill="none" stroke="#009fe3" stroke-width="2.5"/>
+      <circle cx="425" cy="165" r="4" fill="#009fe3"/>
+    </g>
+
+    <!-- Laptop Bottom Base -->
+    <path d="M 15 420 L 665 420 L 635 435 L 45 435 Z" fill="#cbd5e1"/>
+    <rect x="290" y="420" width="100" height="5" rx="2.5" fill="#94a3b8"/>
+  </g>
+
+  <!-- Mobile Phone Mockup Overlay -->
+  <g filter="url(#phoneShadow)" transform="translate(585, 90)">
+    <!-- Phone Bezel -->
+    <rect x="0" y="0" width="225" height="440" rx="34" fill="#0f172a" stroke="#334155" stroke-width="3"/>
+    <!-- Screen -->
+    <rect x="8" y="8" width="209" height="424" rx="28" fill="#ffffff"/>
+    <!-- Dynamic Island / Speaker Notch -->
+    <rect x="75" y="15" width="75" height="16" rx="8" fill="#0f172a"/>
+
+    <!-- App Header in Mobile -->
+    <rect x="8" y="38" width="209" height="50" fill="#154674"/>
+    <text x="24" y="68" font-family="sans-serif" font-size="13" font-weight="bold" fill="#ffffff">ক্যাশ বই মোবাইল</text>
+
+    <!-- Mobile Body Content -->
+    <g transform="translate(18, 100)">
+      <!-- Main Balance Card -->
+      <rect x="0" y="0" width="189" height="70" rx="10" fill="#f0f9ff" stroke="#bae6fd"/>
+      <text x="12" y="24" font-family="sans-serif" font-size="10" fill="#0369a1">বর্তমান ক্যাশ ব্যালেন্স</text>
+      <text x="12" y="52" font-family="sans-serif" font-size="20" font-weight="800" fill="#0c4a6e">৳ ১,২৬,৪৫০</text>
+
+      <!-- Quick Action Buttons -->
+      <rect x="0" y="80" width="90" height="34" rx="8" fill="#009fe3"/>
+      <text x="16" y="102" font-family="sans-serif" font-size="11" font-weight="bold" fill="#ffffff">+ জমা করুন</text>
+
+      <rect x="99" y="80" width="90" height="34" rx="8" fill="#f1f5f9"/>
+      <text x="115" y="102" font-family="sans-serif" font-size="11" font-weight="bold" fill="#334155">- খরচ এন্ট্রি</text>
+
+      <!-- Recent Transactions List -->
+      <text x="0" y="135" font-family="sans-serif" font-size="11" font-weight="bold" fill="#1e293b">সাম্প্রতিক লেনদেন</text>
+
+      <rect x="0" y="145" width="189" height="38" rx="6" fill="#ffffff" stroke="#f1f5f9"/>
+      <text x="10" y="168" font-family="sans-serif" font-size="10" font-weight="600" fill="#334155">বিক্রয় রশিদ #১০৮</text>
+      <text x="135" y="168" font-family="sans-serif" font-size="11" font-weight="bold" fill="#16a34a">+ ৳ ৪,৫০০</text>
+
+      <rect x="0" y="190" width="189" height="38" rx="6" fill="#ffffff" stroke="#f1f5f9"/>
+      <text x="10" y="213" font-family="sans-serif" font-size="10" font-weight="600" fill="#334155">দোকান ভাড়া</text>
+      <text x="135" y="213" font-family="sans-serif" font-size="11" font-weight="bold" fill="#e11d48">- ৳ ৮,০০০</text>
+    </g>
+
+    <!-- Bottom Nav -->
+    <rect x="8" y="385" width="209" height="47" rx="0" fill="#f8fafc"/>
+    <line x1="8" y1="385" x2="217" y2="385" stroke="#e2e8f0" stroke-width="1"/>
+    <circle cx="50" cy="408" r="8" fill="#009fe3"/>
+    <circle cx="112" cy="408" r="8" fill="#cbd5e1"/>
+    <circle cx="174" cy="408" r="8" fill="#cbd5e1"/>
+  </g>
+</svg>

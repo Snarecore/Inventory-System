@@ -1,0 +1,60 @@
+@import "tailwindcss";
+
+/* ==========================================================================
+   GLOBAL COLOR CONFIGURATION (গ্লোবাল কালার কনফিগারেশন)
+   --------------------------------------------------------------------------
+   Change colors here to instantly change the theme throughout the whole site!
+   এখানে কালার কোড পরিবর্তন করলেই পুরো ওয়েবসাইটের কালার অটোমেটিক পরিবর্তন হয়ে যাবে।
+   ========================================================================== */
+@theme {
+  /* Brand / Primary Color (ক্যাশ বই ব্র্যান্ড কালার) */
+  --color-primary: #154674;
+  --color-primary-hover: #0f365c;
+  --color-primary-light: #f0f7fd;
+  --color-primary-dark: #0a2540;
+  --color-primary-muted: #e8f4fc;
+
+  /* Accent Color (স্কাই ব্লু) */
+  --color-accent: #009fe3;
+  --color-accent-hover: #0085be;
+  --color-accent-light: #ecfeff;
+
+  /* Gradient Colors for Banners / Logos / Hero */
+  --color-brand-from: #154674;
+  --color-brand-to: #009fe3;
+}
+
+@layer base {
+  :root {
+    color-scheme: light;
+  }
+
+  body {
+    @apply m-0 min-h-screen bg-white text-slate-800 antialiased selection:bg-primary selection:text-white;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  }
+}
+
+/* Container Structure Class */
+.site-container {
+  @apply max-w-screen-sm sm:max-w-screen-sm md:max-w-screen-md lg:max-w-screen-lg xl:max-w-screen-xl 2xl:max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8;
+}
+
+/* Custom smooth scrolling */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Custom animations */
+@keyframes spinSlow {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-spin-slow {
+  animation: spinSlow 12s linear infinite;
+}
