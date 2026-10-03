@@ -3,6 +3,7 @@ import { RiArrowDropRightLine, RiArrowDropDownLine } from "react-icons/ri";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { menu } from "@/navigation/sidebar";
 import { MotionDiv } from "@/utils/framer.motion";
+import logoImg from "@/assets/logo.jpeg";
 
 type SidebarProps = {
   sidebarClick: boolean;
@@ -58,41 +59,34 @@ const Sidebar = ({ sidebarClick }: SidebarProps) => {
 
   return (
     <div
-      className={`hidden lg:block min-h-screen bg-white shadow-md p-2 transition-all ease-in duration-300 border-r border-gray-200 relative ${
+      className={`hidden lg:flex flex-col h-screen bg-white shadow-md transition-all ease-in duration-300 border-r border-gray-200 relative shrink-0 ${
         sidebarClick ? "w-24" : "w-63"
-      } `}
+      }`}
     >
-      <MotionDiv>
-        {sidebarClick ? (
-          <Link to={"/admin"}>
-            <div className="pt-2 flex justify-center">
-              <span className="text-sm font-black tracking-wider text-[var(--color-primary)] bg-[var(--color-primary-light)] px-2.5 py-1.5 rounded-lg">
-                CB
-              </span>
-            </div>
-          </Link>
-        ) : (
-          <Link to={"/admin"}>
-            <div className="flex items-center gap-2 pl-3 pt-2">
-              <span className="text-xl font-bold tracking-tight text-[var(--color-primary)]">
-                Cash Boi Admin
-              </span>
-            </div>
-          </Link>
-        )}
-      </MotionDiv>
+      <div className={`h-16 flex items-center border-b border-gray-200 px-4 shrink-0 ${sidebarClick ? "justify-center px-2" : "justify-start"}`}>
+        <Link to={"/admin"} className="flex items-center">
+          {sidebarClick ? (
+            <img
+              src={logoImg}
+              alt="Cash Boi"
+              className="h-8 w-8 object-contain rounded-md"
+            />
+          ) : (
+            <img
+              src={logoImg}
+              alt="Cash Boi"
+              className="h-8 w-auto max-w-[170px] object-contain"
+            />
+          )}
+        </Link>
+      </div>
 
-      <MotionDiv>
-        <div
-          className={`p-2 mt-3 max-h-[90vh] fixed ${
-            sidebarClick ? "w-28" : "w-61"
-          } overflow-hidden border-t border-gray-200 hover:overflow-y-auto custom-scrollbar`}
-        >
-          {menu.map((section) => (
-            <div key={section.sectionName} className={`p-2 ${sidebarClick ? "mb-0" : "mb-2"}`}>
-              <p className={`text-xs text-[#092c4c] font-bold ${sidebarClick ? "mb-0" : "mb-2"}`}>
-                {sidebarClick ? "" : section.sectionName}
-              </p>
+      <div className="flex-1 p-2 overflow-y-auto custom-scrollbar">
+        {menu.map((section) => (
+          <div key={section.sectionName} className={`p-2 ${sidebarClick ? "mb-0" : "mb-2"}`}>
+            <p className={`text-xs text-[#092c4c] font-bold ${sidebarClick ? "mb-0" : "mb-2"}`}>
+              {sidebarClick ? "" : section.sectionName}
+            </p>
 
               {section.items.map((item) => {
                 const isParentActive = item.subItems?.some(
@@ -232,7 +226,6 @@ const Sidebar = ({ sidebarClick }: SidebarProps) => {
             </div>
           ))}
         </div>
-      </MotionDiv>
     </div>
   );
 };

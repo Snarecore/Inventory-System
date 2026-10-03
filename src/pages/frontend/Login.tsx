@@ -49,7 +49,7 @@ export const Login: React.FC = () => {
     const validation = PhoneStepSchema.safeParse({ phone: cleanNumber, rememberMe })
 
     if (!validation.success) {
-      const firstError = validation.error.errors[0]?.message || 'সঠিক মোবাইল নম্বর দিন'
+      const firstError = validation.error.errors[0]?.message || 'Please enter a valid mobile number'
       showErrorToast(firstError)
       return
     }
@@ -65,8 +65,8 @@ export const Login: React.FC = () => {
       ) {
         const errorMsg =
           (res as any).msg === 'Phone number is available'
-            ? 'এই মোবাইল নম্বরে কোনো অ্যাকাউন্ট পাওয়া যায়নি।'
-            : (res as any).msg || (res as any).message || 'অ্যাকাউন্ট যাচাই ব্যর্থ হয়েছে।'
+            ? 'Account not found for this mobile number.'
+            : (res as any).msg || (res as any).message || 'Account verification failed.'
         showErrorToast(errorMsg)
         return
       }
@@ -79,7 +79,7 @@ export const Login: React.FC = () => {
         pinInputRefs[0]?.current?.focus()
       }, 50)
     } catch (err: any) {
-      showErrorToast(err?.message || 'অ্যাকাউন্ট যাচাই করতে সমস্যা হয়েছে।')
+      showErrorToast(err?.message || 'Failed to verify account.')
     } finally {
       setIsCheckingUser(false)
     }
@@ -168,7 +168,7 @@ export const Login: React.FC = () => {
   const submitLogin = async (pinCode: string) => {
     const pinValidation = PinStepSchema.safeParse({ pin: pinCode })
     if (!pinValidation.success) {
-      const pinErr = pinValidation.error.errors[0]?.message || '৪ ডিজিটের পিন দিন'
+      const pinErr = pinValidation.error.errors[0]?.message || 'Please enter 4-digit PIN'
       showErrorToast(pinErr)
       return
     }
@@ -180,13 +180,13 @@ export const Login: React.FC = () => {
       if (userData && userData.pin) {
         if (userData.pin === pinCode) {
           saveLoginSession(userData, rememberMe)
-          showSuccessToast('লগইন সফল হয়েছে! ড্যাশবোর্ডে নেওয়া হচ্ছে...')
+          showSuccessToast('Login successful!')
           setTimeout(() => {
             navigate(redirectUrl, { replace: true })
           }, 600)
           return
         } else {
-          showErrorToast('ভুল পিন দিয়েছেন! সঠিক পিন দিন।')
+          showErrorToast('Invalid PIN. Please try again.')
           setPin(Array(PIN_LENGTH).fill(''))
           setFocusedIndex(0)
           setTimeout(() => {
@@ -206,13 +206,13 @@ export const Login: React.FC = () => {
         const userRes = checkRes as LoginSuccessResponse
         if (userRes.pin === pinCode) {
           saveLoginSession(userRes, rememberMe)
-          showSuccessToast('লগইন সফল হয়েছে! ড্যাশবোর্ডে নেওয়া হচ্ছে...')
+          showSuccessToast('Login successful!')
           setTimeout(() => {
             navigate(redirectUrl, { replace: true })
           }, 600)
           return
         } else {
-          showErrorToast('ভুল পিন দিয়েছেন! সঠিক পিন দিন।')
+          showErrorToast('Invalid PIN. Please try again.')
           setPin(Array(PIN_LENGTH).fill(''))
           setFocusedIndex(0)
           setTimeout(() => {
@@ -241,8 +241,8 @@ export const Login: React.FC = () => {
         const rawMsg = (response as any).msg || (response as any).message
         const errorMsg =
           rawMsg === 'Invalid password'
-            ? 'ভুল পিন দিয়েছেন! সঠিক পিন দিন।'
-            : rawMsg || 'লগইন ব্যর্থ হয়েছে। নম্বর এবং পিন যাচাই করুন।'
+            ? 'Invalid PIN. Please try again.'
+            : rawMsg || 'Login failed. Please check credentials.'
         showErrorToast(errorMsg)
         setPin(Array(PIN_LENGTH).fill(''))
         setFocusedIndex(0)
@@ -253,12 +253,12 @@ export const Login: React.FC = () => {
       }
 
       saveLoginSession(response as LoginSuccessResponse, rememberMe)
-      showSuccessToast('লগইন সফল হয়েছে! ড্যাশবোর্ডে নেওয়া হচ্ছে...')
+      showSuccessToast('Login successful!')
       setTimeout(() => {
         navigate(redirectUrl, { replace: true })
       }, 600)
     } catch (err: any) {
-      showErrorToast(err?.message || 'লগইন করতে সমস্যা হয়েছে।')
+      showErrorToast(err?.message || 'Failed to login. Please try again.')
       setPin(Array(PIN_LENGTH).fill(''))
       setFocusedIndex(0)
       setTimeout(() => {

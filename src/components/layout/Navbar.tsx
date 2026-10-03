@@ -54,6 +54,8 @@ export const Navbar: React.FC = () => {
           {/* Button 1: ক্লায়েন্ট লগইন */}
           <Link
             to="/login"
+            target="_blank"
+            rel="noopener noreferrer"
             className="inline-flex items-center justify-center rounded-xl border border-slate-200/90 bg-white px-4 py-2 lg:py-2.5 text-sm font-semibold text-slate-700 hover:border-[#154674] hover:text-[#154674] transition-all duration-200 shadow-xs cursor-pointer"
           >
             লগইন
@@ -105,6 +107,8 @@ export const Navbar: React.FC = () => {
           <div className="flex flex-col gap-2.5 pt-2 border-t border-slate-100">
             <Link
               to="/login"
+              target="_blank"
+              rel="noopener noreferrer"
               onClick={() => setMobileMenuOpen(false)}
               className="w-full text-center rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-colors"
             >

@@ -42,7 +42,7 @@ export default function NewAgentsHorizontalBar() {
         {
           label: "Agents",
           data: agentValues,
-          backgroundColor: "#E04F16",
+          backgroundColor: "#009fe3",
           borderRadius: 10,
           barThickness: 14,
         },

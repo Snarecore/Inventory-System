@@ -43,10 +43,10 @@ const DATA_2022 = [40, 20, 350, 350, 100, 150, 55, 50, 30, 330, 360, 20];
 const DATA_2021 = [30, 15, 280, 220, 90, 120, 40, 35, 25, 200, 240, 18];
 
 export default function NewAgentsBar({
-  title = "New added agent",
+  title = "New added customer",
   data2022 = DATA_2022,
   data2021 = DATA_2021,
-  barColor = "#E04F16",
+  barColor = "#009fe3",
   cardBg = "#ffffff",
 }) {
   const [year, setYear] = useState(2022);

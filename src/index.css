@@ -88,13 +88,18 @@ html {
   height: 5px;
 }
 
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 6px;
+}
+
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
+  background: var(--primary-color);
   border-radius: 6px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: var(--primary-color);
+  background: var(--primary-color-hover);
 }
 
 .dropdownScrollbar::-webkit-scrollbar {

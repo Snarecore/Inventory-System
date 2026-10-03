@@ -39,13 +39,13 @@ const SalesPurchaseChart = ({ monthlySalesCommissionData }: SalesPurchaseChartPr
       {
         label: 'Total Sales',
         data: monthlySales,
-        backgroundColor: '#E04F16',
+        backgroundColor: '#009fe3',
         stack: 'stack1',
       },
       {
         label: 'Total Commission',
         data: monthlyCommissions,
-        backgroundColor: '#F9C1A4',
+        backgroundColor: '#bfe7f7',
         borderRadius: 8,
         stack: 'stack1',
       },
@@ -54,10 +54,11 @@ const SalesPurchaseChart = ({ monthlySalesCommissionData }: SalesPurchaseChartPr
 
   const options = {
     responsive: true,
+    maintainAspectRatio: false,
     layout: {
       padding: {
-        top: 10,
-        bottom: 10,
+        top: 6,
+        bottom: 6,
         left: 0,
         right: 0,
       },
@@ -94,7 +95,7 @@ const SalesPurchaseChart = ({ monthlySalesCommissionData }: SalesPurchaseChartPr
         ticks: {
           color: '#6B7280',
           font: {
-            size: 12,
+            size: 11,
           },
         },
       },
@@ -105,7 +106,7 @@ const SalesPurchaseChart = ({ monthlySalesCommissionData }: SalesPurchaseChartPr
           callback: (value: any) => `$${value}`,
           color: '#6B7280',
           font: {
-            size: 12,
+            size: 11,
           },
         },
         grid: {
@@ -120,37 +121,37 @@ const SalesPurchaseChart = ({ monthlySalesCommissionData }: SalesPurchaseChartPr
   const totalCommissions = monthlyCommissions.reduce((acc, val) => acc + val, 0);
 
   return (
-    <div className="w-full mx-auto bg-white p-6 rounded-2xl shadow-md">
-      <div className="flex items-center justify-between mb-4">
-        <p className="text-2xl font-bold flex items-center gap-3">
-          <span className="bg-[var(--color-primary-light)] text-[var(--color-primary)] p-2 rounded-full">
-            <FiBarChart2 size={22} />
+    <div className="w-full mx-auto bg-white p-5 rounded-2xl shadow-sm">
+      <div className="flex items-center justify-between mb-3">
+        <p className="text-xl font-bold flex items-center gap-2.5">
+          <span className="bg-[#e6f4fe] text-[#009fe3] p-1.5 rounded-full">
+            <FiBarChart2 size={18} />
           </span>
           Sales vs Commissions
         </p>
       </div>
 
-      <div className="border-b border-gray-300 mb-8"></div>
+      <div className="border-b border-gray-200 mb-4"></div>
 
-      <div className="flex gap-6 mb-8">
-        <div className="text-md border border-gray-300 rounded-md p-2 w-50">
+      <div className="flex gap-4 mb-4">
+        <div className="text-sm border border-gray-200 rounded-lg p-2 w-44">
           <div className="flex items-center gap-2">
-            <span className="w-2.5 h-2.5 rounded-full bg-[var(--color-primary)]"></span>
-            <span>Total Sales</span>
+            <span className="w-2 h-2 rounded-full bg-[#009fe3]"></span>
+            <span className="text-xs text-gray-600">Total Sales</span>
           </div>
-          <p className="font-bold text-xl ml-4">${totalSales.toLocaleString()}</p>
+          <p className="font-bold text-lg ml-4">${totalSales.toLocaleString()}</p>
         </div>
 
-        <div className="text-md border border-gray-300 rounded-md p-2 w-50">
+        <div className="text-sm border border-gray-200 rounded-lg p-2 w-44">
           <div className="flex items-center gap-2">
-            <span className="w-2.5 h-2.5 rounded-full bg-[#f9c1a4]"></span>
-            <span>Total Commissions</span>
+            <span className="w-2 h-2 rounded-full bg-[#bfe7f7]"></span>
+            <span className="text-xs text-gray-600">Total Commissions</span>
           </div>
-          <p className="font-bold text-xl ml-4">${totalCommissions.toLocaleString()}</p>
+          <p className="font-bold text-lg ml-4">${totalCommissions.toLocaleString()}</p>
         </div>
       </div>
 
-      <div className="relative w-full h-full">
+      <div className="relative w-full h-[220px]">
         <Bar data={data} options={options} />
       </div>
     </div>

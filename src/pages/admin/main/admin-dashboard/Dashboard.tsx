@@ -62,7 +62,7 @@ const AdminDashboard = () => {
           </MotionDiv>
           <MotionDiv>
             <DashboardOverView
-              bgColor="bg-[#00cfe8]"
+              bgColor="bg-[#009fe3]"
               title={dashboardData?.totalOrders?.toString() || "0"}
               subTitle="Total Orders"
             >
@@ -99,15 +99,17 @@ const AdminDashboard = () => {
             />
           </div>
 
-          <div className="bg-white px-8 py-6 rounded-xl shadow-sm col-span-4">
-            <div className="flex items-center gap-3 mb-4">
-              <span className="bg-[var(--color-primary-light)] text-[var(--color-primary)] p-2 rounded-full">
-                <FiGrid size={20} />
-              </span>
-              <p className="text-2xl font-bold">Top Categories</p>
-            </div>
+          <div className="bg-white p-5 rounded-2xl shadow-sm col-span-4 flex flex-col justify-between">
+            <div>
+              <div className="flex items-center gap-2.5 mb-3">
+                <span className="bg-[#e6f4fe] text-[#009fe3] p-1.5 rounded-full">
+                  <FiGrid size={18} />
+                </span>
+                <p className="text-xl font-bold">Top Categories</p>
+              </div>
 
-            <div className="border-b border-gray-300 mb-8"></div>
+              <div className="border-b border-gray-200 mb-4"></div>
+            </div>
 
             <DoughnutChart
               totalProducts={staticDashboardData?.totalProducts}

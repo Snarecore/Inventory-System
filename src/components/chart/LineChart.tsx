@@ -32,7 +32,7 @@ const hoverLine = {
 
     ctx.save();
     ctx.setLineDash([4, 6]);
-    ctx.strokeStyle = "#E04F16"; // violet-600-ish
+    ctx.strokeStyle = "#009fe3";
     ctx.beginPath();
     ctx.moveTo(x, y); // Start from the point
     ctx.lineTo(x, chartArea.bottom); // End at the bottom
@@ -62,8 +62,8 @@ export default function MonthlyReportsLine({
   title = "Customer Reports by Month",
   values = VALUES,
   label = "Insurance",
-  lineColor = "#E04F16",
-  pointBorder = "#E04F16",
+  lineColor = "#009fe3",
+  pointBorder = "#009fe3",
 }) {
   const chartRef = useRef(null);
 
@@ -89,10 +89,10 @@ export default function MonthlyReportsLine({
           backgroundColor: (ctx) => {
             const chart = ctx.chart;
             const { ctx: c, chartArea } = chart;
-            if (!chartArea) return "rgba(224,79,22,0.15)";
+            if (!chartArea) return "rgba(0,159,227,0.15)";
             const grad = c.createLinearGradient(0, chartArea.bottom, 0, chartArea.top);
-            grad.addColorStop(0, "rgba(224,79,22,0.08)");
-            grad.addColorStop(1, "rgba(224,79,22,0.28)");
+            grad.addColorStop(0, "rgba(0,159,227,0.05)");
+            grad.addColorStop(1, "rgba(0,159,227,0.25)");
             return grad;
           },
 
@@ -151,7 +151,7 @@ export default function MonthlyReportsLine({
   return (
     <div className="w-full rounded-2xl bg-white p-4 shadow-sm">
       <div className="flex items-center gap-3 mb-4">
-        <span className="bg-[var(--color-primary-light)] text-[var(--color-primary)] p-2 rounded-full">
+        <span className="bg-[#e6f4fe] text-[#009fe3] p-2 rounded-full">
           <FiGrid size={20} />
         </span>
         <p className="text-2xl font-bold">{title}</p>

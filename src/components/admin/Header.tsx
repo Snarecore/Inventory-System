@@ -11,6 +11,7 @@ import { FaCog, FaSignOutAlt, FaUserCircle } from "react-icons/fa";
 import { getUserInfo, getStoredUser, removeStoredUser } from "@/utils/auth-storage";
 import { showSuccessToast } from "@/utils/toast-utils";
 import { useQueryClient } from "@tanstack/react-query";
+import logoImg from "@/assets/logo.jpeg";
 
 const MenuItem = ({
     icon,
@@ -80,7 +81,7 @@ const Header = ({ sidebarClick }: { sidebarClick: boolean }) => {
         queryClient.clear();
         setShowUserDropdown(false);
         setShowMenuDropdown(false);
-        showSuccessToast("লগআউট সফল হয়েছে");
+        showSuccessToast("Logged out successfully");
         navigate("/login", { replace: true });
     };
 
@@ -105,10 +106,12 @@ const Header = ({ sidebarClick }: { sidebarClick: boolean }) => {
                 )}
 
                 <div className="flex items-center gap-3 pl-3">
-                    <Link to={"/admin"}>
-                        <span className="text-lg font-bold tracking-tight text-[var(--color-primary)]">
-                            Cash Boi Admin
-                        </span>
+                    <Link to={"/admin"} className="flex items-center">
+                        <img
+                            src={logoImg}
+                            alt="Cash Boi"
+                            className="h-8 w-auto max-w-[150px] object-contain"
+                        />
                     </Link>
                 </div>
 
@@ -285,7 +288,7 @@ const Header = ({ sidebarClick }: { sidebarClick: boolean }) => {
                 <div className="" onClick={() => {}}></div>
             )}
 
-            <div className="flex justify-end items-center px-4 lg:py-1.5 bg-white border-b border-gray-200">
+            <div className="flex justify-end items-center px-4 h-16 bg-white border-b border-gray-200">
                 <div className="flex gap-4 items-center">
                     <div
                         ref={userImageRef}
@@ -308,7 +311,7 @@ const Header = ({ sidebarClick }: { sidebarClick: boolean }) => {
                         ref={dropdownRef}
                         aria-hidden={!showUserDropdown}
                         className={[
-                            "absolute top-[66px] right-4 bg-white shadow-xl rounded-xl border border-gray-100 p-2",
+                            "absolute top-16 right-4 bg-white shadow-xl rounded-xl border border-gray-100 p-2",
                             "origin-top-right transition-all duration-300 ease-out transform",
                             showUserDropdown
                                 ? "opacity-100 translate-y-0 scale-100"
