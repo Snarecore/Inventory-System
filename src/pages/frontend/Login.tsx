@@ -278,8 +278,8 @@ export const Login: React.FC = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#eaf3f9] via-[#dcebf5] to-[#cfe2f0] flex items-center justify-center p-3 sm:p-6 lg:p-10 font-sans antialiased text-slate-800">
       
-      {/* Outer Card Container (Reduced height and compact sleek layout) */}
-      <div className="relative w-full max-w-[860px] bg-white rounded-3xl sm:rounded-[32px] shadow-[0_25px_60px_-10px_rgba(0,119,182,0.22),0_0_0_1px_rgba(255,255,255,0.9)] overflow-hidden flex flex-col md:flex-row min-h-0 sm:min-h-[450px]">
+      {/* Outer Card Container (Reduced height and compact sleek layout with reduced rounded corners) */}
+      <div className="relative w-full max-w-[860px] bg-white rounded-xl sm:rounded-2xl shadow-[0_25px_60px_-10px_rgba(0,119,182,0.22),0_0_0_1px_rgba(255,255,255,0.9)] overflow-hidden flex flex-col md:flex-row min-h-0 sm:min-h-[450px]">
         
         {/* ================= LEFT HERO PANEL (Vibrant Brand Blue Gradient) ================= */}
         <div className="relative w-full md:w-[46%] bg-gradient-to-br from-[#063566] via-[#085a9c] to-[#009fe3] text-white p-6 sm:p-7 md:p-8 flex flex-col justify-center items-center text-center overflow-hidden">
@@ -321,19 +321,19 @@ export const Login: React.FC = () => {
             {/* Feature Points */}
             <div className="space-y-2.5 pt-0.5">
               <div className="flex items-center gap-2 text-xs text-white font-medium">
-                <span className="flex-shrink-0 w-4 h-4 rounded-full bg-white/20 border border-white text-black flex items-center justify-center text-[10px] font-bold shadow-xs">
+                <span className="shrink-0 w-4 h-4 rounded-full bg-amber-400/20 border border-amber-400 text-amber-400 flex items-center justify-center text-[10px] font-bold shadow-xs">
                   ✓
                 </span>
                 <span className="text-white">Real-time financial tracking</span>
               </div>
               <div className="flex items-center gap-2 text-xs text-white font-medium">
-                <span className="flex-shrink-0 w-4 h-4 rounded-full bg-white/20 border border-white text-black flex items-center justify-center text-[10px] font-bold shadow-xs">
+                <span className="shrink-0 w-4 h-4 rounded-full bg-amber-400/20 border border-amber-400 text-amber-400 flex items-center justify-center text-[10px] font-bold shadow-xs">
                   ✓
                 </span>
                 <span className="text-white">Secure business data</span>
               </div>
               <div className="flex items-center gap-2 text-xs text-white font-medium">
-                <span className="flex-shrink-0 w-4 h-4 rounded-full bg-white/20 border border-white text-black flex items-center justify-center text-[10px] font-bold shadow-xs">
+                <span className="shrink-0 w-4 h-4 rounded-full bg-amber-400/20 border border-amber-400 text-amber-400 flex items-center justify-center text-[10px] font-bold shadow-xs">
                   ✓
                 </span>
                 <span className="text-white">Instant reporting & analytics</span>
@@ -352,7 +352,7 @@ export const Login: React.FC = () => {
               <h1 className="text-xl sm:text-2xl font-semibold text-[#085a9c] tracking-tight">
                 Login to Account
               </h1>
-              <p className="text-xs text-slate-500 mt-1 font-normal">
+              <p className="text-xs text-black mt-1 font-normal">
                 {step === 1
                   ? 'Enter your mobile number to continue'
                   : 'Enter your 4-digit PIN code to proceed'}
@@ -397,7 +397,7 @@ export const Login: React.FC = () => {
                     >
                       {rememberMe && <HiOutlineCheck className="w-3 h-3 text-white stroke-[3]" />}
                     </div>
-                    <span className="text-xs text-slate-600 font-medium">
+                    <span className="text-xs text-black font-medium">
                       Remember me
                     </span>
                   </label>
@@ -425,7 +425,7 @@ export const Login: React.FC = () => {
               <form onSubmit={handleLoginSubmit} className="space-y-4 max-w-sm mx-auto">
                 {/* 4 Digit PIN Input Boxes */}
                 <div className="pt-0.5">
-                  <label className="block text-center text-xs font-bold uppercase tracking-wider text-slate-500 mb-2.5">
+                  <label className="block text-center text-xs font-bold uppercase tracking-wider text-black mb-2.5">
                     ENTER 4-DIGIT PIN
                   </label>
                   <div className="flex justify-center gap-2.5 sm:gap-3">
