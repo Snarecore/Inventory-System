@@ -83,6 +83,7 @@ export function useLoginMutation(options?: UseLoginOptions) {
       if (
         (response as any).error ||
         String(response.status).toLowerCase() === "error" ||
+        !("token" in response) ||
         !response.token
       ) {
         const rawMsg = (response as any).msg || (response as any).message;

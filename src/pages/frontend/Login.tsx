@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { HiOutlineUser, HiOutlineArrowLeft, HiOutlineCheck } from 'react-icons/hi'
+import { HiOutlineUser, HiOutlineArrowLeft, HiOutlineCheck, HiOutlineShieldCheck } from 'react-icons/hi'
 import { RiDeleteBack2Line } from 'react-icons/ri'
 import logoImg from '@/assets/logo.jpeg'
 import { PhoneStepSchema, PinStepSchema } from '@/features/auth/login/login.schema'
@@ -236,6 +236,7 @@ export const Login: React.FC = () => {
       if (
         (response as any).error ||
         String(response.status).toLowerCase() === 'error' ||
+        !('token' in response) ||
         !response.token
       ) {
         const rawMsg = (response as any).msg || (response as any).message
@@ -275,222 +276,248 @@ export const Login: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-[#f9fafb] flex items-center justify-center p-4 sm:p-6 font-sans antialiased text-slate-800">
-      {/* Centered Auth Card */}
-      <div className="w-full max-w-[400px] bg-white rounded-3xl border border-slate-100 shadow-[0_10px_35px_-10px_rgba(0,0,0,0.06)] px-7 py-8 sm:px-8 sm:py-9 flex flex-col items-center">
-        {/* Brand Logo */}
-        <div className="mb-4 select-none">
-          <img
-            src={logoImg}
-            alt="ক্যাশ বই"
-            className="h-11 sm:h-12 w-auto object-contain mx-auto"
-          />
+    <div className="min-h-screen bg-gradient-to-br from-[#eaf3f9] via-[#dcebf5] to-[#cfe2f0] flex items-center justify-center p-3 sm:p-6 lg:p-10 font-sans antialiased text-slate-800">
+      
+      {/* Outer Card Container (Reduced height and compact sleek layout) */}
+      <div className="relative w-full max-w-[860px] bg-white rounded-3xl sm:rounded-[32px] shadow-[0_25px_60px_-10px_rgba(0,119,182,0.22),0_0_0_1px_rgba(255,255,255,0.9)] overflow-hidden flex flex-col md:flex-row min-h-0 sm:min-h-[450px]">
+        
+        {/* ================= LEFT HERO PANEL (Vibrant Brand Blue Gradient) ================= */}
+        <div className="relative w-full md:w-[46%] bg-gradient-to-br from-[#063566] via-[#085a9c] to-[#009fe3] text-white p-6 sm:p-7 md:p-8 flex flex-col justify-center items-center text-center overflow-hidden">
+          
+          {/* Luminous Glow Overlays */}
+          <div className="absolute -top-14 -left-14 w-52 h-52 rounded-full bg-white/15 blur-2xl pointer-events-none" />
+          <div className="absolute -bottom-20 -right-20 w-64 h-64 rounded-full bg-[#00d2ff]/25 blur-3xl pointer-events-none" />
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-80 h-80 rounded-full bg-white/5 blur-3xl pointer-events-none" />
+
+          {/* Organic Curved Wave Divider for MD+ */}
+          <div className="hidden md:block absolute -right-[1px] top-0 bottom-0 w-20 pointer-events-none overflow-hidden h-full z-10">
+            <svg
+              className="h-full w-full text-white fill-current"
+              viewBox="0 0 100 100"
+              preserveAspectRatio="none"
+            >
+              <path d="M0,0 C65,22 65,78 0,100 L100,100 L100,0 Z" />
+            </svg>
+          </div>
+
+          {/* Left Panel Content Container */}
+          <div className="z-10 my-auto w-full max-w-[340px] pr-5 sm:pr-7 md:pr-9 flex flex-col justify-center">
+            {/* Top: Logo (Centered) */}
+            <div className="flex items-center justify-center mb-5">
+              <div className="h-12 sm:h-13 px-4 sm:px-5 rounded-xl sm:rounded-2xl bg-white shadow-[0_10px_25px_rgba(0,0,0,0.25)] ring-4 ring-white/40 flex items-center justify-center">
+                <img
+                  src={logoImg}
+                  alt="Cash Boi Logo"
+                  className="h-8 sm:h-9 w-auto object-contain"
+                />
+              </div>
+            </div>
+
+            {/* Description (Full white) */}
+            <p className="text-xs text-white leading-relaxed font-normal mb-4 text-left">
+              Manage your business finances efficiently. Access invoices, sales, expenses, and comprehensive insights from one unified dashboard.
+            </p>
+
+            {/* Feature Points */}
+            <div className="space-y-2.5 pt-0.5">
+              <div className="flex items-center gap-2 text-xs text-white font-medium">
+                <span className="flex-shrink-0 w-4 h-4 rounded-full bg-white/20 border border-white text-black flex items-center justify-center text-[10px] font-bold shadow-xs">
+                  ✓
+                </span>
+                <span className="text-white">Real-time financial tracking</span>
+              </div>
+              <div className="flex items-center gap-2 text-xs text-white font-medium">
+                <span className="flex-shrink-0 w-4 h-4 rounded-full bg-white/20 border border-white text-black flex items-center justify-center text-[10px] font-bold shadow-xs">
+                  ✓
+                </span>
+                <span className="text-white">Secure business data</span>
+              </div>
+              <div className="flex items-center gap-2 text-xs text-white font-medium">
+                <span className="flex-shrink-0 w-4 h-4 rounded-full bg-white/20 border border-white text-black flex items-center justify-center text-[10px] font-bold shadow-xs">
+                  ✓
+                </span>
+                <span className="text-white">Instant reporting & analytics</span>
+              </div>
+            </div>
+          </div>
+
         </div>
 
-        {/* Step Indicator */}
-        <div className="flex items-center gap-2 mb-4">
-          <div
-            className={`w-2.5 h-2.5 rounded-full transition-colors ${
-              step === 1 ? 'bg-[#1d4ed8]' : 'bg-[#93c5fd]'
-            }`}
-          />
-          <div
-            className={`w-8 h-[2px] transition-colors ${
-              step === 1 ? 'bg-slate-200' : 'bg-[#93c5fd]'
-            }`}
-          />
-          <div
-            className={`w-2.5 h-2.5 rounded-full transition-colors ${
-              step === 2 ? 'bg-[#1d4ed8]' : 'bg-slate-200'
-            }`}
-          />
-        </div>
-
-        {/* STEP 1: ENTER MOBILE NUMBER */}
-        {step === 1 && (
-          <div className="w-full">
-            {/* Heading */}
-            <div className="text-center mb-6">
-              <h1 className="text-[21px] sm:text-[22px] font-bold text-slate-900 tracking-tight">
+        {/* ================= RIGHT FORM PANEL (Compact Y-Axis Spacing) ================= */}
+        <div className="relative w-full md:w-[54%] bg-white p-6 sm:p-7 md:p-8 flex flex-col justify-center">
+          
+          <div className="relative z-10 my-auto">
+            {/* Header (Reduced bottom margin) */}
+            <div className="text-center mb-5 sm:mb-6">
+              <h1 className="text-xl sm:text-2xl font-semibold text-[#085a9c] tracking-tight">
                 Login to Account
               </h1>
-              <p className="text-[13px] text-slate-500 mt-1 font-normal">
-                Enter your mobile number to continue
+              <p className="text-xs text-slate-500 mt-1 font-normal">
+                {step === 1
+                  ? 'Enter your mobile number to continue'
+                  : 'Enter your 4-digit PIN code to proceed'}
               </p>
             </div>
 
-            <form onSubmit={handleContinue} className="space-y-4">
-              {/* Input Field */}
-              <div>
-                <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-700 mb-1.5">
-                  MOBILE NUMBER <span className="text-rose-500">*</span>
-                </label>
-                <div className="relative flex items-center">
-                  <div className="absolute left-3.5 flex items-center pointer-events-none text-slate-400">
-                    <HiOutlineUser className="w-[18px] h-[18px]" />
-                  </div>
-                  <input
-                    type="tel"
-                    value={identifier}
-                    onChange={(e) => setIdentifier(e.target.value)}
-                    placeholder="01317020309"
-                    disabled={isCheckingUser}
-                    className="w-full rounded-xl border border-slate-200 bg-white pl-10 pr-3.5 py-2.5 sm:py-3 text-[14px] text-slate-900 placeholder:text-slate-400 focus:border-[#2563eb] focus:outline-none focus:ring-2 focus:ring-[#2563eb]/15 transition-all font-normal disabled:opacity-60"
-                    autoFocus
-                  />
-                </div>
-              </div>
-
-              {/* Remember Me */}
-              <div className="flex items-center pt-0.5">
-                <label className="flex items-center gap-2 cursor-pointer select-none">
-                  <input
-                    type="checkbox"
-                    checked={rememberMe}
-                    onChange={(e) => setRememberMe(e.target.checked)}
-                    className="sr-only"
-                  />
-                  <div
-                    className={`w-4 h-4 rounded flex items-center justify-center border transition-colors ${
-                      rememberMe
-                        ? 'bg-[#1d4ed8] border-[#1d4ed8]'
-                        : 'bg-white border-slate-300'
-                    }`}
-                  >
-                    {rememberMe && <HiOutlineCheck className="w-3 h-3 text-white stroke-[3]" />}
-                  </div>
-                  <span className="text-[13px] text-slate-700 font-medium">
-                    Remember me
-                  </span>
-                </label>
-              </div>
-
-              {/* Continue Button */}
-              <button
-                type="submit"
-                disabled={isCheckingUser}
-                className="w-full mt-2 rounded-xl bg-[#0e3a71] hover:bg-[#0a2c56] text-white font-semibold py-3 text-[14px] shadow-sm shadow-[#0e3a71]/20 active:scale-[0.99] transition-all cursor-pointer flex items-center justify-center gap-2 disabled:opacity-75 disabled:cursor-not-allowed"
-              >
-                {isCheckingUser ? (
-                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                ) : (
-                  'Continue'
-                )}
-              </button>
-            </form>
-          </div>
-        )}
-
-        {/* STEP 2: ENTER 4-DIGIT PIN */}
-        {step === 2 && (
-          <div className="w-full">
-            {/* Heading */}
-            <div className="text-center mb-6">
-              <h1 className="text-[21px] sm:text-[22px] font-bold text-slate-900 tracking-tight">
-                Enter your PIN
-              </h1>
-              <p className="text-[13px] text-slate-500 mt-1 font-normal">
-                {userData?.fullName ? (
-                  <>
-                    Welcome back,{' '}
-                    <span className="text-slate-700 font-semibold">{userData.fullName}</span>
-                    {userData.businessName ? (
-                      <> · <span className="text-slate-600">{userData.businessName}</span></>
-                    ) : null}
-                  </>
-                ) : (
-                  <>
-                    Account Number:{' '}
-                    <span className="text-slate-700 font-semibold">{identifier}</span>
-                  </>
-                )}
-              </p>
-            </div>
-
-            <form onSubmit={handleLoginSubmit} className="space-y-4">
-              {/* 4 PIN Boxes */}
-              <div className="flex justify-center gap-3 my-2">
-                {pin.map((digit, idx) => {
-                  const isCurrent = focusedIndex === idx
-                  return (
+            {/* Step 1: Mobile Number Input Form */}
+            {step === 1 && (
+              <form onSubmit={handleContinue} className="space-y-3 max-w-sm mx-auto">
+                <div>
+                  <div className="relative flex items-center">
+                    <div className="absolute left-4 flex items-center pointer-events-none text-[#009fe3]">
+                      <HiOutlineUser className="w-4.5 h-4.5" />
+                    </div>
                     <input
-                      key={idx}
-                      ref={pinInputRefs[idx]}
-                      type="password"
-                      inputMode="numeric"
-                      maxLength={1}
-                      disabled={isLoggingIn}
-                      value={digit}
-                      onFocus={() => setFocusedIndex(idx)}
-                      onChange={(e) => handlePinChange(idx, e.target.value)}
-                      onKeyDown={(e) => handlePinKeyDown(idx, e)}
-                      onPaste={handlePinPaste}
-                      className={`w-13 h-14 sm:w-14 sm:h-15 text-center text-xl font-bold rounded-xl transition-all duration-150 outline-none ${
-                        isCurrent
-                          ? 'border-2 border-[#2563eb] bg-white text-slate-900 shadow-sm shadow-blue-500/10'
-                          : 'border border-slate-200 bg-white text-slate-900'
-                      } ${isLoggingIn ? 'opacity-60 cursor-not-allowed' : ''}`}
+                      type="tel"
+                      value={identifier}
+                      onChange={(e) => setIdentifier(e.target.value)}
+                      placeholder="Mobile Number..."
+                      disabled={isCheckingUser}
+                      className="w-full rounded-full bg-[#e8f4fc] hover:bg-[#e0effa] focus:bg-white border-2 border-transparent focus:border-[#009fe3] pl-11 pr-4 py-2.5 sm:py-3 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-4 focus:ring-[#009fe3]/20 transition-all font-semibold disabled:opacity-60 shadow-inner"
+                      autoFocus
                     />
-                  )
-                })}
-              </div>
+                  </div>
+                </div>
 
-              {/* Action Links */}
-              <div className="flex items-center justify-between text-[13px] font-medium px-1">
-                <button
-                  type="button"
-                  disabled={isLoggingIn}
-                  onClick={() => {
-                    setStep(1)
-                    setPin(Array(PIN_LENGTH).fill(''))
-                  }}
-                  className="inline-flex items-center gap-1 text-[#2563eb] hover:underline cursor-pointer transition-colors disabled:opacity-50"
+                {/* Remember Me */}
+                <div className="flex items-center justify-between px-1.5 pt-0.5">
+                  <label className="flex items-center gap-2 cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      checked={rememberMe}
+                      onChange={(e) => setRememberMe(e.target.checked)}
+                      className="sr-only"
+                    />
+                    <div
+                      className={`w-4 h-4 rounded-md flex items-center justify-center border transition-all ${
+                        rememberMe
+                          ? 'bg-[#009fe3] border-[#009fe3] shadow-xs'
+                          : 'bg-white border-slate-300 hover:border-slate-400'
+                      }`}
+                    >
+                      {rememberMe && <HiOutlineCheck className="w-3 h-3 text-white stroke-[3]" />}
+                    </div>
+                    <span className="text-xs text-slate-600 font-medium">
+                      Remember me
+                    </span>
+                  </label>
+                </div>
+
+                {/* Submit / Continue Button */}
+                <div className="pt-1.5">
+                  <button
+                    type="submit"
+                    disabled={isCheckingUser}
+                    className="w-full rounded-full bg-gradient-to-r from-[#009fe3] via-[#0878c7] to-[#085a9c] text-white font-bold py-2.5 sm:py-3 text-sm tracking-wider shadow-md shadow-[#009fe3]/30 cursor-pointer flex items-center justify-center gap-2 disabled:opacity-75 disabled:cursor-not-allowed uppercase"
+                  >
+                    {isCheckingUser ? (
+                      <div className="w-4.5 h-4.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    ) : (
+                      'CONTINUE'
+                    )}
+                  </button>
+                </div>
+              </form>
+            )}
+
+            {/* Step 2: 4-Digit PIN Input Form */}
+            {step === 2 && (
+              <form onSubmit={handleLoginSubmit} className="space-y-4 max-w-sm mx-auto">
+                {/* 4 Digit PIN Input Boxes */}
+                <div className="pt-0.5">
+                  <label className="block text-center text-xs font-bold uppercase tracking-wider text-slate-500 mb-2.5">
+                    ENTER 4-DIGIT PIN
+                  </label>
+                  <div className="flex justify-center gap-2.5 sm:gap-3">
+                    {pin.map((digit, idx) => {
+                      const isCurrent = focusedIndex === idx
+                      return (
+                        <input
+                          key={idx}
+                          ref={pinInputRefs[idx]}
+                          type="password"
+                          inputMode="numeric"
+                          maxLength={1}
+                          disabled={isLoggingIn}
+                          value={digit}
+                          onFocus={() => setFocusedIndex(idx)}
+                          onChange={(e) => handlePinChange(idx, e.target.value)}
+                          onKeyDown={(e) => handlePinKeyDown(idx, e)}
+                          onPaste={handlePinPaste}
+                          className={`w-11 h-13 sm:w-12 sm:h-14 text-center text-xl font-bold rounded-2xl transition-all duration-200 outline-none ${
+                            isCurrent
+                              ? 'border-2 border-[#009fe3] bg-white text-[#085a9c] shadow-md shadow-[#009fe3]/25 ring-4 ring-[#009fe3]/20'
+                              : digit
+                              ? 'border-2 border-[#009fe3]/50 bg-[#e8f4fc] text-[#085a9c]'
+                              : 'border-2 border-transparent bg-[#e8f4fc] text-slate-800 hover:bg-[#e0effa]'
+                          } ${isLoggingIn ? 'opacity-60 cursor-not-allowed' : ''}`}
+                        />
+                      )
+                    })}
+                  </div>
+                </div>
+
+                {/* Back / Clear Controls */}
+                <div className="flex items-center justify-between text-xs font-semibold px-1.5">
+                  <button
+                    type="button"
+                    disabled={isLoggingIn}
+                    onClick={() => {
+                      setStep(1)
+                      setPin(Array(PIN_LENGTH).fill(''))
+                    }}
+                    className="inline-flex items-center gap-1.5 text-[#009fe3] hover:text-[#085a9c] hover:underline cursor-pointer transition-colors disabled:opacity-50"
+                  >
+                    <HiOutlineArrowLeft className="w-3.5 h-3.5" />
+                    <span>Change number</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    disabled={isLoggingIn}
+                    onClick={handleClearPin}
+                    className="inline-flex items-center gap-1 text-slate-400 hover:text-slate-600 cursor-pointer transition-colors disabled:opacity-50"
+                  >
+                    <RiDeleteBack2Line className="w-3.5 h-3.5" />
+                    <span>Clear</span>
+                  </button>
+                </div>
+
+                {/* Submit / Login Button */}
+                <div className="pt-1">
+                  <button
+                    type="submit"
+                    disabled={isLoggingIn}
+                    className="w-full rounded-full bg-gradient-to-r from-[#009fe3] via-[#0878c7] to-[#085a9c] text-white font-bold py-2.5 sm:py-3 text-sm tracking-wider shadow-md shadow-[#009fe3]/30 cursor-pointer flex items-center justify-center gap-2 disabled:opacity-75 disabled:cursor-not-allowed uppercase"
+                  >
+                    {isLoggingIn ? (
+                      <div className="w-4.5 h-4.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    ) : (
+                      'LOG IN'
+                    )}
+                  </button>
+                </div>
+              </form>
+            )}
+
+            {/* Bottom Developed & Maintained Footer */}
+            <div className="text-center mt-4 pt-1">
+              <p className="text-[11px] sm:text-xs font-medium text-black">
+                Developed and Maintaince by{' '}
+                <a
+                  href="https://www.webnstech.net/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-amber-500 hover:underline font-semibold cursor-pointer"
                 >
-                  <HiOutlineArrowLeft className="w-3.5 h-3.5" />
-                  <span>Change number</span>
-                </button>
+                  webens technology ltd
+                </a>
+              </p>
+            </div>
 
-                <button
-                  type="button"
-                  disabled={isLoggingIn}
-                  onClick={handleClearPin}
-                  className="inline-flex items-center gap-1 text-slate-400 hover:text-slate-600 cursor-pointer transition-colors disabled:opacity-50"
-                >
-                  <RiDeleteBack2Line className="w-4 h-4" />
-                  <span>Clear</span>
-                </button>
-              </div>
-
-              {/* Login Button */}
-              <button
-                type="submit"
-                disabled={isLoggingIn}
-                className="w-full mt-2 rounded-xl bg-[#0e3a71] hover:bg-[#0a2c56] text-white font-semibold py-3 text-[14px] shadow-sm shadow-[#0e3a71]/20 active:scale-[0.99] transition-all cursor-pointer flex items-center justify-center gap-2 disabled:opacity-75 disabled:cursor-not-allowed"
-              >
-                {isLoggingIn ? (
-                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                ) : (
-                  'Login'
-                )}
-              </button>
-            </form>
           </div>
-        )}
-
-        {/* Card Divider & Footer */}
-        <div className="w-full mt-7 pt-5 border-t border-slate-100 text-center">
-          <p className="text-[12px] text-slate-400">
-            Developed & Maintained by{' '}
-            <a
-              href="https://www.webnstech.net/"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-[#2563eb] font-medium hover:underline"
-            >
-              WEBNS Technology Ltd.
-            </a>
-          </p>
         </div>
+
       </div>
     </div>
   )

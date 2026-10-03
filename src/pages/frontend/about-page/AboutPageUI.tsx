@@ -1,14 +1,6 @@
 
 import { useState } from "react";
-import {
-  Globe,
-  FileText,
-  Users,
-  Plane,
-  Shield,
-  CheckCircle,
-  ArrowRight,
-} from "lucide-react";
+import { Globe, FileText, Users, Plane, Shield, CheckCircle, ArrowRight } from "lucide-react";
 import Counter, { MotionDiv } from "@/utils/framer.motion";
 import CTABanner from "@/components/cta-section/CTABanner";
 
@@ -218,11 +210,11 @@ const AboutPageUI = () => {
       <section className="py-20 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 md:px-8">
           <div className="text-center mb-16">
-           <MotionDiv>
-           <h2 className="text-4xl md:text-5xl font-bold mb-6">
+          <MotionDiv>
+            <h2 className="text-4xl md:text-5xl font-bold mb-6">
               Our Proven Process
             </h2>
-           </MotionDiv>
+          </MotionDiv>
             <MotionDiv>
             <p className="text-xl text-[var(--body-color)] max-w-3xl mx-auto">
               We follow a systematic 6-step approach to ensure your success in

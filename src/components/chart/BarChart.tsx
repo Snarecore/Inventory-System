@@ -79,7 +79,7 @@ const SalesPurchaseChart = ({ monthlySalesCommissionData }: SalesPurchaseChartPr
           },
         },
         datalabels: {
-          display: false, // 🚀 turn off numbers on bars
+          display: false, // turn off numbers on bars
         },
     },
     interaction: {
