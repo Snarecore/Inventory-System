@@ -1,10 +1,54 @@
+import React, { Suspense } from 'react'
 import { createBrowserRouter, Navigate } from 'react-router-dom'
 import { RootLayout } from '@/layouts/RootLayout'
-import { Home } from '@/pages/Home'
-import { Login } from '@/pages/Login'
-import { NotFound } from '@/pages/NotFound'
+import AdminLayout from '@/layouts/AdminLayout'
+import { Home } from '@/pages/frontend/Home'
+import { Login } from '@/pages/frontend/Login'
+import { NotFound } from '@/pages/frontend/NotFound'
+
+// Lazy loaded Admin Pages
+const Dashboard = React.lazy(() => import('@/pages/admin/main/admin-dashboard/Dashboard'))
+const Products = React.lazy(() => import('@/pages/admin/inventory/product'))
+const CreateProduct = React.lazy(() => import('@/pages/admin/inventory/create-product'))
+const ProductDetails = React.lazy(() => import('@/pages/admin/inventory/product/components/ProductDetails'))
+const MainCategory = React.lazy(() => import('@/pages/admin/inventory/category/main-category'))
+const FirstCategory = React.lazy(() => import('@/pages/admin/inventory/category/first-category'))
+const SecondCategory = React.lazy(() => import('@/pages/admin/inventory/category/second-category'))
+const ThirdCategory = React.lazy(() => import('@/pages/admin/inventory/category/third-category'))
+const Orders = React.lazy(() => import('@/pages/admin/orders'))
+const Admins = React.lazy(() => import('@/pages/admin/people/admin'))
+const Users = React.lazy(() => import('@/pages/admin/people/user'))
+const Vendors = React.lazy(() => import('@/pages/admin/people/vendor'))
+const HeroSlider = React.lazy(() => import('@/pages/admin/settings/home/hero-slider'))
+const Promotions = React.lazy(() => import('@/pages/admin/settings/home/promotion'))
+const HomePageCms = React.lazy(() => import('@/pages/admin/settings/home/page-cms'))
+const HeaderFooterCms = React.lazy(() => import('@/pages/admin/settings/header-footer-cms'))
+const ContactMessage = React.lazy(() => import('@/pages/admin/settings/contact/contact-message'))
+const ContactPageCms = React.lazy(() => import('@/pages/admin/settings/contact/contact-page-cms'))
+const ShopPageCms = React.lazy(() => import('@/pages/admin/settings/shop-page-cms'))
+const SocialLinks = React.lazy(() => import('@/pages/admin/settings/social-links'))
+const PrivacyPolicy = React.lazy(() => import('@/pages/admin/settings/policy/privacy'))
+const TermsConditions = React.lazy(() => import('@/pages/admin/settings/policy/terms-condition'))
+const ExchangePolicy = React.lazy(() => import('@/pages/admin/settings/policy/exchange-return/ExchangeForm'))
+const Chat = React.lazy(() => import('@/pages/admin/chat'))
+const PageMeta = React.lazy(() => import('@/pages/admin/seo'))
+const Blogs = React.lazy(() => import('@/pages/admin/blog'))
+const BlogCreation = React.lazy(() => import('@/pages/admin/blog-creation'))
+
+const LoadingFallback = () => (
+  <div className="flex h-64 w-full items-center justify-center">
+    <div className="h-8 w-8 animate-spin rounded-full border-4 border-solid border-primary border-t-transparent"></div>
+  </div>
+)
+
+const withSuspense = (Component: React.ComponentType) => (
+  <Suspense fallback={<LoadingFallback />}>
+    <Component />
+  </Suspense>
+)
 
 export const router = createBrowserRouter([
+  // Public Frontend Routes
   {
     path: '/login',
     element: <Login />,
@@ -21,11 +65,134 @@ export const router = createBrowserRouter([
         path: '404',
         element: <NotFound />,
       },
+    ],
+  },
+
+  // Admin Protected / Management Routes
+  {
+    path: '/admin',
+    element: <AdminLayout />,
+    children: [
       {
-        path: '*',
-        element: <Navigate to="/404" replace />,
+        index: true,
+        element: withSuspense(Dashboard),
+      },
+      {
+        path: 'dashboard',
+        element: <Navigate to="/admin" replace />,
+      },
+      {
+        path: 'products',
+        element: withSuspense(Products),
+      },
+      {
+        path: 'create-product',
+        element: withSuspense(CreateProduct),
+      },
+      {
+        path: 'products/:id',
+        element: withSuspense(ProductDetails),
+      },
+      {
+        path: 'main-category',
+        element: withSuspense(MainCategory),
+      },
+      {
+        path: 'first-category',
+        element: withSuspense(FirstCategory),
+      },
+      {
+        path: 'second-category',
+        element: withSuspense(SecondCategory),
+      },
+      {
+        path: 'third-category',
+        element: withSuspense(ThirdCategory),
+      },
+      {
+        path: 'orders',
+        element: withSuspense(Orders),
+      },
+      {
+        path: 'admins',
+        element: withSuspense(Admins),
+      },
+      {
+        path: 'users',
+        element: withSuspense(Users),
+      },
+      {
+        path: 'vendors',
+        element: withSuspense(Vendors),
+      },
+      {
+        path: 'hero-slider',
+        element: withSuspense(HeroSlider),
+      },
+      {
+        path: 'promotions',
+        element: withSuspense(Promotions),
+      },
+      {
+        path: 'home-page-cms',
+        element: withSuspense(HomePageCms),
+      },
+      {
+        path: 'header-footer-cms',
+        element: withSuspense(HeaderFooterCms),
+      },
+      {
+        path: 'contact-message',
+        element: withSuspense(ContactMessage),
+      },
+      {
+        path: 'contact-page-cms',
+        element: withSuspense(ContactPageCms),
+      },
+      {
+        path: 'shop-page-cms',
+        element: withSuspense(ShopPageCms),
+      },
+      {
+        path: 'social-link',
+        element: withSuspense(SocialLinks),
+      },
+      {
+        path: 'privacy-policy',
+        element: withSuspense(PrivacyPolicy),
+      },
+      {
+        path: 'terms-conditions',
+        element: withSuspense(TermsConditions),
+      },
+      {
+        path: 'exchange-policy',
+        element: withSuspense(ExchangePolicy),
+      },
+      {
+        path: 'chat',
+        element: withSuspense(Chat),
+      },
+      {
+        path: 'page-meta',
+        element: withSuspense(PageMeta),
+      },
+      {
+        path: 'blogs',
+        element: withSuspense(Blogs),
+      },
+      {
+        path: 'create-blog',
+        element: withSuspense(BlogCreation),
       },
     ],
   },
+
+  // Fallback route
+  {
+    path: '*',
+    element: <Navigate to="/404" replace />,
+  },
 ])
+
 

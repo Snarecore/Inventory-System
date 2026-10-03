@@ -1,13 +1,13 @@
 import React from 'react'
 import { RouterProvider } from 'react-router-dom'
-import { ThemeProvider } from '@/context/ThemeContext'
+import { Providers } from '@/providers/Providers'
 import { router } from '@/routes'
 
 export const App: React.FC = () => {
   return (
-    <ThemeProvider>
+    <Providers>
       <RouterProvider router={router} />
-    </ThemeProvider>
+    </Providers>
   )
 }
 

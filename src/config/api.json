@@ -1,0 +1,58 @@
+{
+    "setting": {
+        "home": {
+            "homePageCmsUrl": "home-page-cms"
+        },
+        "heroSliderUrl": "hero-slider",
+        "promotionsUrl": "promotions",
+        "popupUrl": "popups",
+        "contactUs": {
+            "contactMessageUrl": "contact-us-message",
+            "contactPageCmsUrl": "contact-page-cms"
+        },
+        "policy": {
+            "exchangeReturnUrl": "return-policy-cms",
+            "privacyPolicyUrl": "privacy-policy-cms",
+            "termsConditionsUrl": "terms-and-conditions-cms",
+            "policyOneUrl": "policy-one-cms",
+            "policyTwoUrl": "policy-two-cms"
+        },
+        "headerFooterCms": "header-footer-cms",
+        "shopPageCms": "shop-page-cms",
+        "faqUrl": "faq"
+    },
+    "inventory": {
+        "mainCategoryUrl": "main-category",
+        "firstCategoryUrl": "first-category",
+        "secondCategoryUrl": "second-category",
+        "thirdCategoryUrl": "third-category",
+        "productUrl": "product",
+        "productListUrl": "product/admin-products",
+        "productStatusUrl": "product/update-status"
+    },
+    "blog": {
+        "blogUrl": "blog"
+    },
+    "order": {
+        "orderListUrl": "orders",
+        "orderDetailUrl": "orders"
+    },
+    "auth": {
+        "loginUrl": "auth/login",
+        "registrationUrl": "auth/register"
+    },
+    "dashboard": {
+        "adminDashboardUrl": "site/admin-dashboard"
+    },
+    "people": {
+        "user": "user",
+        "admin": "admin",
+        "vendor": "vendor"
+    },
+    "socialLinks": {
+        "socialLinks": "social-link"
+    },
+    "pageMeta": {
+        "pageMetaUrl": "page-meta"
+    }
+}

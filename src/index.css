@@ -6,18 +6,40 @@
    Change colors here to instantly change the theme throughout the whole site!
    এখানে কালার কোড পরিবর্তন করলেই পুরো ওয়েবসাইটের কালার অটোমেটিক পরিবর্তন হয়ে যাবে।
    ========================================================================== */
+:root {
+  --primary-color: #154674;
+  --primary-color-hover: #0f365c;
+  --primary-color-light: #f0f7fd;
+  --primary-color-dark: #0a2540;
+  --primary-color-muted: #e8f4fc;
+  --secondary-color: #009fe3;
+  --secondary-color-hover: #0085be;
+  --secondary-color-light: #ecfeff;
+  --quaternary-color: #16a34a;
+  --gray-color: #cac2c2;
+  --brand-primary: #154674;
+  --brand-primary-light: #f0f7fd;
+  --brand-primary-dark: #0a2540;
+  --brand-secondary: #009fe3;
+}
+
 @theme {
   /* Brand / Primary Color (ক্যাশ বই ব্র্যান্ড কালার) */
-  --color-primary: #154674;
-  --color-primary-hover: #0f365c;
-  --color-primary-light: #f0f7fd;
-  --color-primary-dark: #0a2540;
-  --color-primary-muted: #e8f4fc;
+  --color-primary: var(--primary-color);
+  --color-primary-hover: var(--primary-color-hover);
+  --color-primary-light: var(--primary-color-light);
+  --color-primary-dark: var(--primary-color-dark);
+  --color-primary-muted: var(--primary-color-muted);
 
-  /* Accent Color (স্কাই ব্লু) */
+  /* Secondary & Accent */
+  --color-secondary: var(--secondary-color);
+  --color-secondary-hover: var(--secondary-color-hover);
+  --color-secondary-light: var(--secondary-color-light);
   --color-accent: #009fe3;
   --color-accent-hover: #0085be;
   --color-accent-light: #ecfeff;
+  --color-quaternary: var(--quaternary-color);
+  --color-gray-light: var(--gray-color);
 
   /* Gradient Colors for Banners / Logos / Hero */
   --color-brand-from: #154674;
@@ -45,6 +67,46 @@ html {
   scroll-behavior: smooth;
 }
 
+/* Custom scrollbars */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--primary-color);
+  border-radius: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: var(--primary-color);
+}
+
+.dropdownScrollbar::-webkit-scrollbar {
+  width: 5px;
+  height: 3px;
+}
+
+.dropdownScrollbar::-webkit-scrollbar-thumb {
+  background-color: var(--primary-color);
+  border-radius: 6px;
+}
+
 /* Custom animations */
 @keyframes spinSlow {
   from {
@@ -58,3 +120,4 @@ html {
 .animate-spin-slow {
   animation: spinSlow 12s linear infinite;
 }
+
