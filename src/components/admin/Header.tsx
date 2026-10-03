@@ -3,11 +3,14 @@ import { BsThreeDotsVertical } from "react-icons/bs";
 import { GiHamburgerMenu } from "react-icons/gi";
 import { IoClose } from "react-icons/io5";
 import { menu } from "@/navigation/sidebar";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { RiArrowDropDownLine, RiArrowDropRightLine } from "react-icons/ri";
 import { GoDotFill } from "react-icons/go";
 import { MotionDiv } from "@/utils/framer.motion";
 import { FaCog, FaSignOutAlt, FaUserCircle } from "react-icons/fa";
+import { getUserInfo, getStoredUser, removeStoredUser } from "@/utils/auth-storage";
+import { showSuccessToast } from "@/utils/toast-utils";
+import { useQueryClient } from "@tanstack/react-query";
 
 const MenuItem = ({
     icon,
@@ -27,6 +30,8 @@ const MenuItem = ({
 );
 
 const Header = ({ sidebarClick }: { sidebarClick: boolean }) => {
+    const navigate = useNavigate();
+    const queryClient = useQueryClient();
     const location = useLocation();
     const pathname = location.pathname;
     const [showSidebar] = useState(false);
@@ -36,6 +41,11 @@ const Header = ({ sidebarClick }: { sidebarClick: boolean }) => {
     const [openSubMenu, setOpenSubMenu] = useState<number | null>(null);
     const dropdownRef = useRef<HTMLDivElement>(null);
     const userImageRef = useRef<HTMLDivElement>(null);
+
+    const userInfo = getUserInfo();
+    const storedUser = getStoredUser();
+    const displayName = userInfo?.fullName || userInfo?.businessName || storedUser?.name || "Admin";
+    const displayRole = userInfo?.userRole || storedUser?.role || "Super Admin";
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
@@ -66,7 +76,12 @@ const Header = ({ sidebarClick }: { sidebarClick: boolean }) => {
     };
 
     const handleLogout = () => {
-        alert("Logged Out!");
+        removeStoredUser();
+        queryClient.clear();
+        setShowUserDropdown(false);
+        setShowMenuDropdown(false);
+        showSuccessToast("লগআউট সফল হয়েছে");
+        navigate("/login", { replace: true });
     };
 
     return (
@@ -114,11 +129,11 @@ const Header = ({ sidebarClick }: { sidebarClick: boolean }) => {
                                         className="w-[45px] h-[45px] rounded-full border border-gray-200"
                                     />
                                     <div>
-                                        <p className="text-[15px] font-semibold text-gray-800">
-                                            Majba
+                                        <p className="text-[15px] font-semibold text-gray-800 truncate max-w-[140px]">
+                                            {displayName}
                                         </p>
                                         <p className="text-[12px] text-gray-500 capitalize">
-                                            Super Admin
+                                            {displayRole}
                                         </p>
                                     </div>
                                 </div>
@@ -307,8 +322,8 @@ const Header = ({ sidebarClick }: { sidebarClick: boolean }) => {
                                 className="w-[45px] h-[45px] rounded-full border border-gray-200"
                             />
                             <div>
-                                <p className="text-[15px] font-semibold text-gray-800">Majba</p>
-                                <p className="text-[12px] text-gray-500 capitalize">Super Admin</p>
+                                <p className="text-[15px] font-semibold text-gray-800 truncate max-w-[150px]">{displayName}</p>
+                                <p className="text-[12px] text-gray-500 capitalize">{displayRole}</p>
                             </div>
                         </div>
 

@@ -38,8 +38,7 @@
         "orderDetailUrl": "orders"
     },
     "auth": {
-        "loginUrl": "auth/login",
-        "registrationUrl": "auth/register"
+        "loginUrl": "user-login"
     },
     "dashboard": {
         "adminDashboardUrl": "site/admin-dashboard"

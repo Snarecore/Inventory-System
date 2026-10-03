@@ -6,7 +6,7 @@ export interface ApiRequestProps {
 export interface GetDataProps extends ApiRequestProps { }
 
 export interface PostDataProps extends ApiRequestProps {
-    body: Record<string, unknown>;
+    body: Record<string, unknown> | any;
 }
 
 export interface PatchDataProps extends PostDataProps { }

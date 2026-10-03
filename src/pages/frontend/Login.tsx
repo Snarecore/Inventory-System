@@ -1,23 +1,39 @@
 import React, { useState, useRef, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { HiOutlineUser, HiOutlineArrowLeft, HiOutlineCheck } from 'react-icons/hi'
 import { RiDeleteBack2Line } from 'react-icons/ri'
 import logoImg from '@/assets/logo.jpeg'
+import { PhoneStepSchema, PinStepSchema } from '@/features/auth/login/login.schema'
+import { loginApi } from '@/features/auth/login/login.api'
+import { LoginSuccessResponse } from '@/features/auth/login/login.types'
+import { isSessionValid, saveLoginSession } from '@/utils/auth-storage'
+import { showErrorToast, showSuccessToast } from '@/utils/toast-utils'
+
+const PIN_LENGTH = 4
 
 export const Login: React.FC = () => {
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const redirectUrl = searchParams.get('redirect') || '/admin'
 
-  // State Management
+  // If user is already authenticated, redirect straight to dashboard
+  useEffect(() => {
+    if (isSessionValid()) {
+      navigate('/admin', { replace: true })
+    }
+  }, [navigate])
+
+  // Step State (1: Phone / Identifier, 2: 4-digit PIN)
   const [step, setStep] = useState<1 | 2>(1)
-  const [identifier, setIdentifier] = useState('01701085399')
+  const [identifier, setIdentifier] = useState('01317020309')
   const [rememberMe, setRememberMe] = useState(true)
-  const [pin, setPin] = useState<string[]>(['', '', '', ''])
+  const [userData, setUserData] = useState<LoginSuccessResponse | null>(null)
+  const [pin, setPin] = useState<string[]>(Array(PIN_LENGTH).fill(''))
   const [focusedIndex, setFocusedIndex] = useState<number>(0)
-  const [errorMessage, setErrorMessage] = useState<string>('')
-  const [isLoading, setIsLoading] = useState(false)
-  const [isSuccess, setIsSuccess] = useState(false)
+  const [isCheckingUser, setIsCheckingUser] = useState(false)
+  const [isLoggingIn, setIsLoggingIn] = useState(false)
 
-  // Refs for 4-digit PIN inputs
+  // PIN input element references
   const pinInputRefs = [
     useRef<HTMLInputElement>(null),
     useRef<HTMLInputElement>(null),
@@ -25,34 +41,51 @@ export const Login: React.FC = () => {
     useRef<HTMLInputElement>(null),
   ]
 
-  // Focus management when switching to step 2
-  useEffect(() => {
-    if (step === 2) {
-      const emptyIndex = pin.findIndex((digit) => digit === '')
-      const targetIndex = emptyIndex === -1 ? 0 : emptyIndex
-      setFocusedIndex(targetIndex)
-      setTimeout(() => {
-        pinInputRefs[targetIndex]?.current?.focus()
-      }, 50)
-    }
-  }, [step])
-
-  // Step 1: Submit handler
-  const handleContinue = (e: React.FormEvent) => {
+  // Step 1: Submit Phone Number Handler
+  const handleContinue = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!identifier.trim()) {
-      setErrorMessage('Please enter your mobile number or email')
+
+    const cleanNumber = identifier.trim().replace(/[\s-]/g, '')
+    const validation = PhoneStepSchema.safeParse({ phone: cleanNumber, rememberMe })
+
+    if (!validation.success) {
+      const firstError = validation.error.errors[0]?.message || 'সঠিক মোবাইল নম্বর দিন'
+      showErrorToast(firstError)
       return
     }
-    setErrorMessage('')
-    setIsLoading(true)
-    setTimeout(() => {
-      setIsLoading(false)
+
+    setIdentifier(cleanNumber)
+    setIsCheckingUser(true)
+
+    try {
+      const res = await loginApi.checkUser(cleanNumber)
+      if (
+        (res as any).error ||
+        String(res.status).toLowerCase() === 'error'
+      ) {
+        const errorMsg =
+          (res as any).msg === 'Phone number is available'
+            ? 'এই মোবাইল নম্বরে কোনো অ্যাকাউন্ট পাওয়া যায়নি।'
+            : (res as any).msg || (res as any).message || 'অ্যাকাউন্ট যাচাই ব্যর্থ হয়েছে।'
+        showErrorToast(errorMsg)
+        return
+      }
+
+      setUserData(res as LoginSuccessResponse)
+      setPin(Array(PIN_LENGTH).fill(''))
+      setFocusedIndex(0)
       setStep(2)
-    }, 200)
+      setTimeout(() => {
+        pinInputRefs[0]?.current?.focus()
+      }, 50)
+    } catch (err: any) {
+      showErrorToast(err?.message || 'অ্যাকাউন্ট যাচাই করতে সমস্যা হয়েছে।')
+    } finally {
+      setIsCheckingUser(false)
+    }
   }
 
-  // Step 2: PIN input changes
+  // Step 2: Handle single PIN digit change
   const handlePinChange = (index: number, value: string) => {
     const cleanedVal = value.replace(/\D/g, '')
 
@@ -68,13 +101,20 @@ export const Login: React.FC = () => {
     newPin[index] = char
     setPin(newPin)
 
-    if (index < 3) {
+    // Auto-advance to next input
+    if (index < PIN_LENGTH - 1) {
       setFocusedIndex(index + 1)
       pinInputRefs[index + 1]?.current?.focus()
+    } else {
+      // If 4th digit entered, auto-submit if complete
+      const fullPin = newPin.join('')
+      if (fullPin.length === PIN_LENGTH) {
+        submitLogin(fullPin)
+      }
     }
   }
 
-  // Step 2: Handle backspace & arrow navigation
+  // Step 2: Keyboard navigation (Backspace, Left/Right arrows)
   const handlePinKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Backspace') {
       if (pin[index] === '' && index > 0) {
@@ -88,62 +128,156 @@ export const Login: React.FC = () => {
     } else if (e.key === 'ArrowLeft' && index > 0) {
       setFocusedIndex(index - 1)
       pinInputRefs[index - 1]?.current?.focus()
-    } else if (e.key === 'ArrowRight' && index < 3) {
+    } else if (e.key === 'ArrowRight' && index < PIN_LENGTH - 1) {
       setFocusedIndex(index + 1)
       pinInputRefs[index + 1]?.current?.focus()
     }
   }
 
-  // Step 2: Handle pasting multi-digit PIN
+  // Step 2: Paste clipboard PIN
   const handlePinPaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
     e.preventDefault()
-    const pastedData = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 4)
+    const pastedData = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, PIN_LENGTH)
     if (!pastedData) return
 
-    const newPin = ['', '', '', '']
+    const newPin = Array(PIN_LENGTH).fill('')
     for (let i = 0; i < pastedData.length; i++) {
       newPin[i] = pastedData[i]
     }
     setPin(newPin)
 
-    const nextIndex = Math.min(pastedData.length, 3)
-    setFocusedIndex(nextIndex)
-    pinInputRefs[nextIndex]?.current?.focus()
+    if (pastedData.length === PIN_LENGTH) {
+      setFocusedIndex(PIN_LENGTH - 1)
+      pinInputRefs[PIN_LENGTH - 1]?.current?.focus()
+      submitLogin(pastedData)
+    } else {
+      const nextIndex = Math.min(pastedData.length, PIN_LENGTH - 1)
+      setFocusedIndex(nextIndex)
+      pinInputRefs[nextIndex]?.current?.focus()
+    }
   }
 
-  // Clear all PIN digits
+  // Clear all PIN boxes
   const handleClearPin = () => {
-    setPin(['', '', '', ''])
-    setErrorMessage('')
+    setPin(Array(PIN_LENGTH).fill(''))
     setFocusedIndex(0)
     pinInputRefs[0]?.current?.focus()
   }
 
-  // Final login submit
-  const handleLoginSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    const enteredPin = pin.join('')
-    if (enteredPin.length < 4) {
-      setErrorMessage('Please enter 4-digit PIN')
+  // Step 2: Submit PIN to backend
+  const submitLogin = async (pinCode: string) => {
+    const pinValidation = PinStepSchema.safeParse({ pin: pinCode })
+    if (!pinValidation.success) {
+      const pinErr = pinValidation.error.errors[0]?.message || '৪ ডিজিটের পিন দিন'
+      showErrorToast(pinErr)
       return
     }
 
-    setErrorMessage('')
-    setIsLoading(true)
+    setIsLoggingIn(true)
 
-    setTimeout(() => {
-      setIsLoading(false)
-      setIsSuccess(true)
+    try {
+      // 1. Direct PIN validation against retrieved user profile
+      if (userData && userData.pin) {
+        if (userData.pin === pinCode) {
+          saveLoginSession(userData, rememberMe)
+          showSuccessToast('লগইন সফল হয়েছে! ড্যাশবোর্ডে নেওয়া হচ্ছে...')
+          setTimeout(() => {
+            navigate(redirectUrl, { replace: true })
+          }, 600)
+          return
+        } else {
+          showErrorToast('ভুল পিন দিয়েছেন! সঠিক পিন দিন।')
+          setPin(Array(PIN_LENGTH).fill(''))
+          setFocusedIndex(0)
+          setTimeout(() => {
+            pinInputRefs[0]?.current?.focus()
+          }, 50)
+          return
+        }
+      }
+
+      // 2. Fallback check via checkUser
+      const checkRes = await loginApi.checkUser(identifier)
+      if (
+        !(checkRes as any).error &&
+        String(checkRes.status).toLowerCase() === 'success' &&
+        (checkRes as LoginSuccessResponse).pin
+      ) {
+        const userRes = checkRes as LoginSuccessResponse
+        if (userRes.pin === pinCode) {
+          saveLoginSession(userRes, rememberMe)
+          showSuccessToast('লগইন সফল হয়েছে! ড্যাশবোর্ডে নেওয়া হচ্ছে...')
+          setTimeout(() => {
+            navigate(redirectUrl, { replace: true })
+          }, 600)
+          return
+        } else {
+          showErrorToast('ভুল পিন দিয়েছেন! সঠিক পিন দিন।')
+          setPin(Array(PIN_LENGTH).fill(''))
+          setFocusedIndex(0)
+          setTimeout(() => {
+            pinInputRefs[0]?.current?.focus()
+          }, 50)
+          return
+        }
+      }
+
+      // 3. Fallback to user-login endpoint
+      const response = await loginApi.loginUser({
+        authentication: {
+          phone_number: identifier,
+          password: pinCode,
+          pin: pinCode,
+        },
+        fcm_token: 'web_client_token',
+        login_version: '1.0.1',
+      })
+
+      if (
+        (response as any).error ||
+        String(response.status).toLowerCase() === 'error' ||
+        !response.token
+      ) {
+        const rawMsg = (response as any).msg || (response as any).message
+        const errorMsg =
+          rawMsg === 'Invalid password'
+            ? 'ভুল পিন দিয়েছেন! সঠিক পিন দিন।'
+            : rawMsg || 'লগইন ব্যর্থ হয়েছে। নম্বর এবং পিন যাচাই করুন।'
+        showErrorToast(errorMsg)
+        setPin(Array(PIN_LENGTH).fill(''))
+        setFocusedIndex(0)
+        setTimeout(() => {
+          pinInputRefs[0]?.current?.focus()
+        }, 50)
+        return
+      }
+
+      saveLoginSession(response as LoginSuccessResponse, rememberMe)
+      showSuccessToast('লগইন সফল হয়েছে! ড্যাশবোর্ডে নেওয়া হচ্ছে...')
       setTimeout(() => {
-        navigate('/')
-      }, 1000)
-    }, 400)
+        navigate(redirectUrl, { replace: true })
+      }, 600)
+    } catch (err: any) {
+      showErrorToast(err?.message || 'লগইন করতে সমস্যা হয়েছে।')
+      setPin(Array(PIN_LENGTH).fill(''))
+      setFocusedIndex(0)
+      setTimeout(() => {
+        pinInputRefs[0]?.current?.focus()
+      }, 50)
+    } finally {
+      setIsLoggingIn(false)
+    }
+  }
+
+  const handleLoginSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    submitLogin(pin.join(''))
   }
 
   return (
     <div className="min-h-screen bg-[#f9fafb] flex items-center justify-center p-4 sm:p-6 font-sans antialiased text-slate-800">
       {/* Centered Auth Card */}
-      <div className="w-full max-w-[390px] bg-white rounded-3xl border border-slate-100 shadow-[0_10px_35px_-10px_rgba(0,0,0,0.06)] px-7 py-8 sm:px-8 sm:py-9 flex flex-col items-center">
+      <div className="w-full max-w-[400px] bg-white rounded-3xl border border-slate-100 shadow-[0_10px_35px_-10px_rgba(0,0,0,0.06)] px-7 py-8 sm:px-8 sm:py-9 flex flex-col items-center">
         {/* Brand Logo */}
         <div className="mb-4 select-none">
           <img
@@ -156,23 +290,23 @@ export const Login: React.FC = () => {
         {/* Step Indicator */}
         <div className="flex items-center gap-2 mb-4">
           <div
-            className={`w-2 h-2 rounded-full transition-colors ${
+            className={`w-2.5 h-2.5 rounded-full transition-colors ${
               step === 1 ? 'bg-[#1d4ed8]' : 'bg-[#93c5fd]'
             }`}
           />
           <div
-            className={`w-7 h-[2px] transition-colors ${
+            className={`w-8 h-[2px] transition-colors ${
               step === 1 ? 'bg-slate-200' : 'bg-[#93c5fd]'
             }`}
           />
           <div
-            className={`w-2 h-2 rounded-full transition-colors ${
+            className={`w-2.5 h-2.5 rounded-full transition-colors ${
               step === 2 ? 'bg-[#1d4ed8]' : 'bg-slate-200'
             }`}
           />
         </div>
 
-        {/* STEP 1: LOGIN TO ACCOUNT */}
+        {/* STEP 1: ENTER MOBILE NUMBER */}
         {step === 1 && (
           <div className="w-full">
             {/* Heading */}
@@ -181,7 +315,7 @@ export const Login: React.FC = () => {
                 Login to Account
               </h1>
               <p className="text-[13px] text-slate-500 mt-1 font-normal">
-                Enter your mobile number or email to continue
+                Enter your mobile number to continue
               </p>
             </div>
 
@@ -189,18 +323,19 @@ export const Login: React.FC = () => {
               {/* Input Field */}
               <div>
                 <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-700 mb-1.5">
-                  MOBILE / EMAIL <span className="text-rose-500">*</span>
+                  MOBILE NUMBER <span className="text-rose-500">*</span>
                 </label>
                 <div className="relative flex items-center">
                   <div className="absolute left-3.5 flex items-center pointer-events-none text-slate-400">
                     <HiOutlineUser className="w-[18px] h-[18px]" />
                   </div>
                   <input
-                    type="text"
+                    type="tel"
                     value={identifier}
                     onChange={(e) => setIdentifier(e.target.value)}
-                    placeholder="01701085399"
-                    className="w-full rounded-xl border border-slate-200 bg-white pl-10 pr-3.5 py-2.5 sm:py-3 text-[14px] text-slate-900 placeholder:text-slate-400 focus:border-[#2563eb] focus:outline-none focus:ring-2 focus:ring-[#2563eb]/15 transition-all font-normal"
+                    placeholder="01317020309"
+                    disabled={isCheckingUser}
+                    className="w-full rounded-xl border border-slate-200 bg-white pl-10 pr-3.5 py-2.5 sm:py-3 text-[14px] text-slate-900 placeholder:text-slate-400 focus:border-[#2563eb] focus:outline-none focus:ring-2 focus:ring-[#2563eb]/15 transition-all font-normal disabled:opacity-60"
                     autoFocus
                   />
                 </div>
@@ -230,20 +365,13 @@ export const Login: React.FC = () => {
                 </label>
               </div>
 
-              {/* Error Alert */}
-              {errorMessage && (
-                <div className="text-xs text-rose-500 font-medium bg-rose-50 border border-rose-100 rounded-lg p-2 text-center">
-                  {errorMessage}
-                </div>
-              )}
-
               {/* Continue Button */}
               <button
                 type="submit"
-                disabled={isLoading}
-                className="w-full mt-2 rounded-xl bg-[#0e3a71] hover:bg-[#0a2c56] text-white font-semibold py-3 text-[14px] shadow-sm shadow-[#0e3a71]/20 active:scale-[0.99] transition-all cursor-pointer flex items-center justify-center gap-2"
+                disabled={isCheckingUser}
+                className="w-full mt-2 rounded-xl bg-[#0e3a71] hover:bg-[#0a2c56] text-white font-semibold py-3 text-[14px] shadow-sm shadow-[#0e3a71]/20 active:scale-[0.99] transition-all cursor-pointer flex items-center justify-center gap-2 disabled:opacity-75 disabled:cursor-not-allowed"
               >
-                {isLoading ? (
+                {isCheckingUser ? (
                   <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                 ) : (
                   'Continue'
@@ -253,7 +381,7 @@ export const Login: React.FC = () => {
           </div>
         )}
 
-        {/* STEP 2: ENTER YOUR PIN */}
+        {/* STEP 2: ENTER 4-DIGIT PIN */}
         {step === 2 && (
           <div className="w-full">
             {/* Heading */}
@@ -262,11 +390,20 @@ export const Login: React.FC = () => {
                 Enter your PIN
               </h1>
               <p className="text-[13px] text-slate-500 mt-1 font-normal">
-                Welcome back,{' '}
-                <span className="text-slate-600 font-medium">
-                  {identifier.includes('@') ? identifier.split('@')[0] : 'Shaurav Shaha'}
-                </span>{' '}
-                · <span className="text-slate-600">Shaha Enterprise</span>
+                {userData?.fullName ? (
+                  <>
+                    Welcome back,{' '}
+                    <span className="text-slate-700 font-semibold">{userData.fullName}</span>
+                    {userData.businessName ? (
+                      <> · <span className="text-slate-600">{userData.businessName}</span></>
+                    ) : null}
+                  </>
+                ) : (
+                  <>
+                    Account Number:{' '}
+                    <span className="text-slate-700 font-semibold">{identifier}</span>
+                  </>
+                )}
               </p>
             </div>
 
@@ -282,6 +419,7 @@ export const Login: React.FC = () => {
                       type="password"
                       inputMode="numeric"
                       maxLength={1}
+                      disabled={isLoggingIn}
                       value={digit}
                       onFocus={() => setFocusedIndex(idx)}
                       onChange={(e) => handlePinChange(idx, e.target.value)}
@@ -289,9 +427,9 @@ export const Login: React.FC = () => {
                       onPaste={handlePinPaste}
                       className={`w-13 h-14 sm:w-14 sm:h-15 text-center text-xl font-bold rounded-xl transition-all duration-150 outline-none ${
                         isCurrent
-                          ? 'border-2 border-[#2563eb] bg-white text-slate-900'
+                          ? 'border-2 border-[#2563eb] bg-white text-slate-900 shadow-sm shadow-blue-500/10'
                           : 'border border-slate-200 bg-white text-slate-900'
-                      }`}
+                      } ${isLoggingIn ? 'opacity-60 cursor-not-allowed' : ''}`}
                     />
                   )
                 })}
@@ -301,11 +439,12 @@ export const Login: React.FC = () => {
               <div className="flex items-center justify-between text-[13px] font-medium px-1">
                 <button
                   type="button"
+                  disabled={isLoggingIn}
                   onClick={() => {
                     setStep(1)
-                    setErrorMessage('')
+                    setPin(Array(PIN_LENGTH).fill(''))
                   }}
-                  className="inline-flex items-center gap-1 text-[#2563eb] hover:underline cursor-pointer transition-colors"
+                  className="inline-flex items-center gap-1 text-[#2563eb] hover:underline cursor-pointer transition-colors disabled:opacity-50"
                 >
                   <HiOutlineArrowLeft className="w-3.5 h-3.5" />
                   <span>Change number</span>
@@ -313,34 +452,22 @@ export const Login: React.FC = () => {
 
                 <button
                   type="button"
+                  disabled={isLoggingIn}
                   onClick={handleClearPin}
-                  className="inline-flex items-center gap-1 text-slate-400 hover:text-slate-600 cursor-pointer transition-colors"
+                  className="inline-flex items-center gap-1 text-slate-400 hover:text-slate-600 cursor-pointer transition-colors disabled:opacity-50"
                 >
                   <RiDeleteBack2Line className="w-4 h-4" />
                   <span>Clear</span>
                 </button>
               </div>
 
-              {/* Error or Success Message */}
-              {errorMessage && (
-                <div className="text-xs text-rose-500 font-medium bg-rose-50 border border-rose-100 rounded-lg p-2 text-center">
-                  {errorMessage}
-                </div>
-              )}
-
-              {isSuccess && (
-                <div className="text-xs text-emerald-600 font-medium bg-emerald-50 border border-emerald-100 rounded-lg p-2 text-center">
-                  ✓ Successfully logged in! Redirecting...
-                </div>
-              )}
-
               {/* Login Button */}
               <button
                 type="submit"
-                disabled={isLoading || isSuccess}
-                className="w-full mt-2 rounded-xl bg-[#0e3a71] hover:bg-[#0a2c56] text-white font-semibold py-3 text-[14px] shadow-sm shadow-[#0e3a71]/20 active:scale-[0.99] transition-all cursor-pointer flex items-center justify-center gap-2"
+                disabled={isLoggingIn}
+                className="w-full mt-2 rounded-xl bg-[#0e3a71] hover:bg-[#0a2c56] text-white font-semibold py-3 text-[14px] shadow-sm shadow-[#0e3a71]/20 active:scale-[0.99] transition-all cursor-pointer flex items-center justify-center gap-2 disabled:opacity-75 disabled:cursor-not-allowed"
               >
-                {isLoading ? (
+                {isLoggingIn ? (
                   <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                 ) : (
                   'Login'
@@ -355,7 +482,7 @@ export const Login: React.FC = () => {
           <p className="text-[12px] text-slate-400">
             Developed & Maintained by{' '}
             <a
-              href="https://webnstechnology.com"
+              href="https://www.webnstech.net/"
               target="_blank"
               rel="noopener noreferrer"
               className="text-[#2563eb] font-medium hover:underline"
