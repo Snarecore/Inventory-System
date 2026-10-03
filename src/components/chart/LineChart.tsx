@@ -149,17 +149,19 @@ export default function MonthlyReportsLine({
   );
 
   return (
-    <div className="w-full rounded-2xl bg-white p-4 shadow-sm">
-      <div className="flex items-center gap-3 mb-4">
-        <span className="bg-[#e6f4fe] text-[#009fe3] p-2 rounded-full">
-          <FiGrid size={20} />
-        </span>
-        <p className="text-2xl font-bold">{title}</p>
+    <div className="w-full h-full rounded-2xl bg-white p-5 shadow-sm flex flex-col justify-between">
+      <div>
+        <div className="flex items-center gap-2.5 mb-3">
+          <span className="bg-[#e6f4fe] text-[#009fe3] p-1.5 rounded-full">
+            <FiGrid size={18} />
+          </span>
+          <p className="text-xl font-bold">{title}</p>
+        </div>
+
+        <div className="border-b border-gray-200 mb-4"></div>
       </div>
 
-      <div className="border-b border-gray-300 mb-8"></div>
-
-      <div className="relative h-[320px]">
+      <div className="relative w-full h-[340px] flex-1 min-h-[300px]">
         <Line ref={chartRef} data={data} options={options} plugins={[hoverLine]} />
       </div>
     </div>

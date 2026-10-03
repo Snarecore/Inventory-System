@@ -42,6 +42,12 @@ const AdminDashboard = () => {
       { month: "2025-04", totalSales: "430.00", totalCommission: "100.00" },
       { month: "2025-05", totalSales: "70.00", totalCommission: "40.00" },
       { month: "2025-06", totalSales: "100.00", totalCommission: "90.00" },
+      { month: "2025-07", totalSales: "180.00", totalCommission: "60.00" },
+      { month: "2025-08", totalSales: "240.00", totalCommission: "80.00" },
+      { month: "2025-09", totalSales: "160.00", totalCommission: "70.00" },
+      { month: "2025-10", totalSales: "310.00", totalCommission: "110.00" },
+      { month: "2025-11", totalSales: "290.00", totalCommission: "95.00" },
+      { month: "2025-12", totalSales: "380.00", totalCommission: "120.00" },
     ],
     recentProducts: [],
     recentOrders: [],
@@ -119,11 +125,11 @@ const AdminDashboard = () => {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-          <div className="col-span-8">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
+          <div className="col-span-12 lg:col-span-8 flex flex-col h-full">
             <MonthlyReportsLine />
           </div>
-          <div className="col-span-4">
+          <div className="col-span-12 lg:col-span-4 flex flex-col h-full">
             <NewAgentsBar />
           </div>
         </div>

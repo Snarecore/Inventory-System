@@ -127,69 +127,20 @@ export default function NewAgentsBar({
   );
 
   return (
-    <div
-      className="w-full rounded-2xl shadow-sm"
-      style={{
-        background: cardBg,
-        padding: windowWidth < 768 ? 12 : 16,
-      }}
-    >
-      <div className="flex flex-col lg:flex-row items-start gap-3 lg:gap-4">
-        <div className="w-full">
-          <div className="flex items-center gap-2 lg:gap-3 mb-3 lg:mb-4">
-            <span className="bg-[var(--color-primary-light)] text-[var(--color-primary)] p-1.5 lg:p-2 rounded-full">
-              <FiGrid size={windowWidth < 768 ? 16 : 20} />
-            </span>
-            <p className="text-lg lg:text-xl font-bold">{title}</p>
-          </div>
-
-          <div className="border-b border-gray-300 mb-3 lg:mb-4"></div>
-
-          <div 
-            className="relative w-full"
-            style={{ 
-              height: windowWidth < 768 ? 280 : windowWidth < 1024 ? 320 : 360 
-            }}
-          >
-            <Bar data={data} options={options} plugins={[valueLabels]} />
-          </div>
+    <div className="w-full h-full rounded-2xl bg-white p-5 shadow-sm flex flex-col justify-between">
+      <div>
+        <div className="flex items-center gap-2.5 mb-3">
+          <span className="bg-[#e6f4fe] text-[#009fe3] p-1.5 rounded-full">
+            <FiGrid size={18} />
+          </span>
+          <p className="text-xl font-bold">{title}</p>
         </div>
 
+        <div className="border-b border-gray-200 mb-4"></div>
+      </div>
 
-        {/* <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-          <button
-            onClick={() => setYear(2022)}
-            style={{
-              border: "1px solid #e5e7eb",
-              background: year === 2022 ? "#FCEFEA" : "#fff",
-              color: year === 2022 ? "#E04F16" : "#374151",
-              borderRadius: 10,
-              padding: "6px 10px",
-              fontSize: 12,
-              fontWeight: 600,
-              cursor: "pointer",
-              transition: "all 0.3s ease",
-            }}
-          >
-            2022
-          </button>
-          <button
-            onClick={() => setYear(2021)}
-            style={{
-              border: "1px solid #e5e7eb",
-              background: year === 2021 ? "#FCEFEA" : "#fff",
-              color: year === 2021 ? "#E04F16" : "#6b7280",
-              borderRadius: 10,
-              padding: "6px 10px",
-              fontSize: 12,
-              fontWeight: 600,
-              cursor: "pointer",
-              transition: "all 0.3s ease",
-            }}
-          >
-            2021
-          </button>
-        </div> */}
+      <div className="relative w-full h-[340px] flex-1 min-h-[300px]">
+        <Bar data={data} options={options} plugins={[valueLabels]} />
       </div>
     </div>
   );
