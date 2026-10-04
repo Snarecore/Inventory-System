@@ -21,6 +21,7 @@ import { getData, postData } from '@/services/api-service';
 interface Option {
     label: string;
     value: string;
+    decimalAllow?: boolean;
 }
 
 interface ProductFormState {
@@ -62,6 +63,7 @@ const CreateProductForm = () => {
     const [fieldValues, setFieldValues] = useState<ProductFormState>(initialFieldValues);
     const [selectedUnit, setSelectedUnit] = useState<Option | null>(null);
     const [selectedSecondaryUnit, setSelectedSecondaryUnit] = useState<Option | null>(null);
+    const [isDecimalAllowed, setIsDecimalAllowed] = useState(false);
     const [selectedCategory, setSelectedCategory] = useState<Option | null>(null);
     const [isLoading, setIsLoading] = useState(false);
 
@@ -190,9 +192,12 @@ const CreateProductForm = () => {
 
         if (list.length > 0) {
             return list.map((item: any) => {
-                if (typeof item === 'string') return { label: item, value: item };
+                if (typeof item === 'string') return { label: item, value: item, decimalAllow: false };
                 const name = item.name || item.unitName || item.unit_name || item.title || "";
-                return { label: name, value: name };
+                const decimalAllow = item.decimalAllow !== undefined
+                    ? Boolean(item.decimalAllow)
+                    : (item.decimal_allow !== undefined ? Boolean(item.decimal_allow) : false);
+                return { label: name, value: name, decimalAllow };
             }).filter(opt => Boolean(opt.value));
         }
 
@@ -229,18 +234,35 @@ const CreateProductForm = () => {
             if (!fieldValues.unit) {
                 const initialUnit = unitOptions[0];
                 setSelectedUnit(initialUnit);
+                setIsDecimalAllowed(Boolean(initialUnit.decimalAllow));
                 setFieldValues((prev) => ({ ...prev, unit: initialUnit.value }));
             } else {
                 const match = unitOptions.find(
                     (opt) => opt.value.toLowerCase() === fieldValues.unit.toLowerCase()
                 );
-                if (match) setSelectedUnit(match);
+                if (match) {
+                    setSelectedUnit(match);
+                    setIsDecimalAllowed(Boolean(match.decimalAllow));
+                }
             }
         }
     }, [unitOptions]);
 
     const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
         const { name, value } = event.target;
+
+        if (name === "quantity") {
+            if (!isDecimalAllowed) {
+                // Disallow decimals: strip non-digits
+                const sanitized = value.replace(/[^0-9]/g, '');
+                setFieldValues((prev) => ({
+                    ...prev,
+                    quantity: sanitized
+                }));
+                return;
+            }
+        }
+
         setFieldValues((prev) => ({
             ...prev,
             [name]: value
@@ -257,18 +279,39 @@ const CreateProductForm = () => {
 
     const handleUnitSelect = (option: Option) => {
         setSelectedUnit(option);
+        const allowDec = Boolean(option.decimalAllow);
+        setIsDecimalAllowed(allowDec);
+
         setFieldValues((prev) => {
             const isSameAsSecondary = prev.secondary_unit.toLowerCase() === option.value.toLowerCase();
             if (isSameAsSecondary) {
                 setSelectedSecondaryUnit(null);
             }
+
+            // If switching to a unit that doesn't allow decimals, convert decimal quantity to integer
+            let cleanQuantity = prev.quantity;
+            if (!allowDec && cleanQuantity.includes('.')) {
+                cleanQuantity = cleanQuantity.split('.')[0] || "0";
+            }
+
             return {
                 ...prev,
                 unit: option.value,
+                quantity: cleanQuantity,
                 secondary_unit: isSameAsSecondary ? "" : prev.secondary_unit,
                 secondary_price: isSameAsSecondary ? "" : prev.secondary_price,
             };
         });
+    };
+
+    const handleDecimalToggle = (checked: boolean) => {
+        setIsDecimalAllowed(checked);
+        if (!checked) {
+            setFieldValues((prev) => ({
+                ...prev,
+                quantity: prev.quantity.includes('.') ? (prev.quantity.split('.')[0] || "0") : prev.quantity
+            }));
+        }
     };
 
     const handleSecondaryUnitSelect = (option: Option) => {
@@ -386,15 +429,40 @@ const CreateProductForm = () => {
                                 />
                             </div>
 
-                            {/* Unit (Primary) */}
+                            {/* Unit (Primary) with Allow Decimal Toggle */}
                             <div className="relative z-20">
+                                <div className="flex items-center justify-between mb-1">
+                                    <label className="text-sm font-medium text-[#212b36]">
+                                        Unit{isUnitsLoading ? " (Loading...)" : ""} <span className="text-red-600 ml-0.5">*</span>
+                                    </label>
+                                    <label 
+                                        className="flex items-center gap-1 cursor-pointer select-none"
+                                        title="Allow decimal numbers in quantity"
+                                    >
+                                        <span className="text-[11px] font-medium text-gray-400">Allow Decimal</span>
+                                        <div className="relative inline-flex items-center flex-shrink-0">
+                                            <input
+                                                type="checkbox"
+                                                checked={isDecimalAllowed}
+                                                onChange={(e) => handleDecimalToggle(e.target.checked)}
+                                                className="sr-only peer"
+                                            />
+                                            <div className="w-6 h-3.5 bg-gray-300 peer-focus:outline-none rounded-full peer peer-checked:bg-[var(--color-primary,#009FE3)]">
+                                                <div
+                                                    className={`absolute top-[2px] left-[2px] w-2.5 h-2.5 bg-white rounded-full transition-transform ${
+                                                        isDecimalAllowed ? "translate-x-2.5" : ""
+                                                    }`}
+                                                />
+                                            </div>
+                                        </div>
+                                    </label>
+                                </div>
                                 <SelectInput
-                                    label={`Unit${isUnitsLoading ? " (Loading...)" : ""}`}
+                                    label=""
                                     value={selectedUnit}
                                     options={unitOptions}
                                     onChange={handleUnitSelect}
                                     placeholder="Select Unit"
-                                    required
                                 />
                             </div>
 
@@ -427,11 +495,17 @@ const CreateProductForm = () => {
                             <div>
                                 <InputField
                                     label="Quantity"
-                                    type="number"
+                                    type={isDecimalAllowed ? "number" : "text"}
                                     name="quantity"
                                     value={fieldValues.quantity}
                                     onChange={handleChange}
                                     placeholder="0"
+                                    step={isDecimalAllowed ? "0.01" : "1"}
+                                    onKeyDown={(e) => {
+                                        if (!isDecimalAllowed && (e.key === '.' || e.key === ',' || e.key === 'e' || e.key === 'E')) {
+                                            e.preventDefault();
+                                        }
+                                    }}
                                 />
                             </div>
 
@@ -521,52 +595,59 @@ const CreateProductForm = () => {
                                 />
                             </div>
 
-                            {/* Status (Compact in 3rd column under Barcode) */}
-                            <div className="lg:col-start-3 flex justify-end items-center">
-                                <div className="flex items-center justify-between gap-3 bg-gray-50 px-3.5 py-1.5 rounded-lg border border-gray-200 h-[38px] w-full sm:w-44">
-                                    <span className="text-sm font-medium text-[#212b36]">
-                                        Status
-                                    </span>
-                                    <label className="relative inline-flex items-center cursor-pointer flex-shrink-0">
-                                        <input
-                                            type="checkbox"
-                                            name="status"
-                                            checked={fieldValues.status === "active"}
-                                            onChange={(e) => handleStatusToggle(e.target.checked)}
-                                            className="sr-only peer"
-                                        />
-                                        <div className="w-9 h-5 bg-gray-300 peer-focus:outline-none rounded-full peer peer-checked:bg-[var(--color-primary,#009FE3)]">
-                                            <div
-                                                className={`absolute top-[2px] left-[2px] w-4 h-4 bg-white rounded-full transition-transform ${
-                                                    fieldValues.status === "active" ? "translate-x-4" : ""
-                                                }`}
-                                            />
-                                        </div>
-                                    </label>
-                                </div>
-                            </div>
                         </div>
                     </div>
                 )}
             </div>
 
-            {/* Bottom Actions */}
-            <div className="flex items-center justify-end gap-4 py-1">
-                <Button
-                    label="Cancel"
-                    onClick={() => navigate("/admin/products")}
-                    color="#6b7280"
-                    hoverColor="#4b5563"
-                    disabled={isLoading}
-                />
-                <Button
-                    label="Save Product"
-                    onClick={handleSubmitForm}
-                    color="#009FE3"
-                    hoverColor="#0085be"
-                    isLoading={isLoading}
-                    disabled={isLoading}
-                />
+            {/* Bottom Action Bar with Status and Action Buttons */}
+            <div className="bg-white shadow-sm rounded-lg border border-gray-100 p-3 sm:px-5 flex flex-wrap items-center justify-between gap-4">
+                {/* Status Toggle on Left */}
+                <div className="flex items-center gap-3">
+                    <span className="text-sm font-medium text-[#212b36]">
+                        Status
+                    </span>
+                    <label className="relative inline-flex items-center cursor-pointer flex-shrink-0">
+                        <input
+                            type="checkbox"
+                            name="status"
+                            checked={fieldValues.status === "active"}
+                            onChange={(e) => handleStatusToggle(e.target.checked)}
+                            className="sr-only peer"
+                        />
+                        <div className="w-9 h-5 bg-gray-300 peer-focus:outline-none rounded-full peer peer-checked:bg-[var(--color-primary,#009FE3)]">
+                            <div
+                                className={`absolute top-[2px] left-[2px] w-4 h-4 bg-white rounded-full transition-transform ${
+                                    fieldValues.status === "active" ? "translate-x-4" : ""
+                                }`}
+                            />
+                        </div>
+                    </label>
+                    <span className={`text-xs font-semibold px-2 py-0.5 rounded ${
+                        fieldValues.status === "active" ? "bg-emerald-50 text-emerald-600" : "bg-gray-100 text-gray-500"
+                    }`}>
+                        {fieldValues.status === "active" ? "Active" : "Inactive"}
+                    </span>
+                </div>
+
+                {/* Cancel & Save Buttons on Right */}
+                <div className="flex items-center gap-3">
+                    <Button
+                        label="Cancel"
+                        onClick={() => navigate("/admin/products")}
+                        color="#6b7280"
+                        hoverColor="#4b5563"
+                        disabled={isLoading}
+                    />
+                    <Button
+                        label="Save Product"
+                        onClick={handleSubmitForm}
+                        color="#009FE3"
+                        hoverColor="#0085be"
+                        isLoading={isLoading}
+                        disabled={isLoading}
+                    />
+                </div>
             </div>
         </form>
     );

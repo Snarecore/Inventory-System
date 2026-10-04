@@ -13,6 +13,10 @@ interface InputFieldProps {
   wrapperClass?: string;
   icon?: React.ReactNode;
   disabled?: boolean;
+  step?: string;
+  min?: string | number;
+  max?: string | number;
+  onKeyDown?: React.KeyboardEventHandler<HTMLInputElement>;
   onChange?: ((value: string) => void) | ((event: ChangeEvent<HTMLInputElement>) => void);
 }
 
@@ -28,6 +32,10 @@ const InputField: React.FC<InputFieldProps> = ({
   wrapperClass = "",
   icon,
   disabled = false,
+  step,
+  min,
+  max,
+  onKeyDown,
   placeholder = "",
   onChange,
 }) => {
@@ -67,6 +75,10 @@ const InputField: React.FC<InputFieldProps> = ({
           disabled={disabled}
           required={required}
           readOnly={readOnly}
+          step={step}
+          min={min}
+          max={max}
+          onKeyDown={onKeyDown}
           onChange={handleChange}
           className={`w-full focus:outline-none placeholder:text-sm px-1.5 text-sm
             ${inputClass}

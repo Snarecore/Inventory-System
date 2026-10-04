@@ -51,10 +51,12 @@ const SelectInput: React.FC<SelectInputProps> = ({ label, value, options, onChan
     return (
         <div className="flex flex-col items-center w-full">
             <div ref={dropdownRef} className="relative w-full">
-                <label className="text-sm font-medium text-[#212b36] block mb-1">
-                    {label}
-                    {required && <span className="text-red-600 ml-1">*</span>}
-                </label>
+                {label && (
+                    <label className="text-sm font-medium text-[#212b36] block mb-1">
+                        {label}
+                        {required && <span className="text-red-600 ml-1">*</span>}
+                    </label>
+                )}
 
                 <div
                     className={`border p-2 sm:p-3 h-[38px] rounded-lg cursor-pointer bg-white flex justify-between items-center w-full text-black transition-all duration-300 text-sm px-2 py-2 active:bg-gray-50 touch-manipulation ${openDropdown ? "border-[var(--primary-color)] ring-[var(--primary-color)]" : "border-gray-200"} ${disabled ? "opacity-50 cursor-not-allowed" : ""}`}
