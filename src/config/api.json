@@ -48,8 +48,8 @@
         "admin": "admin",
         "vendor": "vendor"
     },
-    "socialLinks": {
-        "socialLinks": "social-link"
+    "productList": {
+        "productListUrl": "get-product-list"
     },
     "pageMeta": {
         "pageMetaUrl": "page-meta"

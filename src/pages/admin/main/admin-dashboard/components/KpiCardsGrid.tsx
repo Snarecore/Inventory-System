@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { FiShoppingCart, FiTrendingDown, FiEye, FiEyeOff } from 'react-icons/fi';
+import React from 'react';
+import { FiShoppingCart } from 'react-icons/fi';
 import { IoCubeOutline } from 'react-icons/io5';
 import { FaStore, FaUserFriends, FaMoneyBillWave, FaUniversity } from 'react-icons/fa';
 import { MotionDiv } from '@/utils/framer.motion';
@@ -10,9 +10,6 @@ interface KpiCardsGridProps {
 }
 
 export const KpiCardsGrid: React.FC<KpiCardsGridProps> = ({ data }) => {
-  const [showCash, setShowCash] = useState<boolean>(true);
-  const [showBank, setShowBank] = useState<boolean>(true);
-
   const formatCurrency = (val: number) => `৳${val.toLocaleString('en-IN')}`;
 
   return (
@@ -77,25 +74,13 @@ export const KpiCardsGrid: React.FC<KpiCardsGridProps> = ({ data }) => {
         </div>
       </MotionDiv>
 
-      {/* 5. Cash Balance* - Orange / Amber */}
+      {/* 5. Cash Balance - Orange / Amber */}
       <MotionDiv>
         <div className="px-4 py-6 rounded-md bg-[#FE9F43] text-white shadow-sm hover:shadow-md transition-all duration-300">
           <div className="flex items-center justify-between">
             <div>
-              <div className="flex items-center gap-2">
-                <p className="text-[24px] font-bold">
-                  {showCash ? formatCurrency(data.cashBalance) : '••••••••'}
-                </p>
-                <button
-                  type="button"
-                  onClick={() => setShowCash(!showCash)}
-                  className="text-white/80 hover:text-white transition-colors cursor-pointer text-sm"
-                  title={showCash ? 'Hide Balance' : 'Show Balance'}
-                >
-                  {showCash ? <FiEyeOff size={16} /> : <FiEye size={16} />}
-                </button>
-              </div>
-              <p className="text-sm">Cash Balance*</p>
+              <p className="text-[24px] font-bold">{formatCurrency(data.cashBalance)}</p>
+              <p className="text-sm">Cash Balance</p>
             </div>
             <div className="text-5xl hover:scale-120 transition-all ease-in duration-300">
               <FaMoneyBillWave />
@@ -104,25 +89,13 @@ export const KpiCardsGrid: React.FC<KpiCardsGridProps> = ({ data }) => {
         </div>
       </MotionDiv>
 
-      {/* 6. Bank Balance* - Matching Rich Indigo/Violet */}
+      {/* 6. Bank Balance - Matching Rich Indigo/Violet */}
       <MotionDiv>
         <div className="px-4 py-6 rounded-md bg-[#7367f0] text-white shadow-sm hover:shadow-md transition-all duration-300">
           <div className="flex items-center justify-between">
             <div>
-              <div className="flex items-center gap-2">
-                <p className="text-[24px] font-bold">
-                  {showBank ? formatCurrency(data.bankBalance) : '••••••••'}
-                </p>
-                <button
-                  type="button"
-                  onClick={() => setShowBank(!showBank)}
-                  className="text-white/80 hover:text-white transition-colors cursor-pointer text-sm"
-                  title={showBank ? 'Hide Balance' : 'Show Balance'}
-                >
-                  {showBank ? <FiEyeOff size={16} /> : <FiEye size={16} />}
-                </button>
-              </div>
-              <p className="text-sm">Bank Balance*</p>
+              <p className="text-[24px] font-bold">{formatCurrency(data.bankBalance)}</p>
+              <p className="text-sm">Bank Balance</p>
             </div>
             <div className="text-5xl hover:scale-120 transition-all ease-in duration-300">
               <FaUniversity />
