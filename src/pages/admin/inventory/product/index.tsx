@@ -6,7 +6,6 @@ import { useNavigate } from "react-router-dom";
 import { FaPlus, FaPlusCircle } from "react-icons/fa";
 import { IoIosAddCircleOutline } from "react-icons/io";
 import RefreshButton from "@/components/table-components/RefreshButton";
-import Footer from "@/components/admin/Footer";
 
 const Products = () => {
 	const dataLimit = 10;
@@ -83,8 +82,7 @@ const Products = () => {
 	// }, [currentPageNumber, searchQuery, selectedFilters]);
 
 	return (
-		<>
-			<div className="flex flex-col gap-6 min-h-screen p-6">
+		<div className="flex flex-col gap-6 p-6">
 				<div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
 					<PageHeader
 						headerTitle="Product List"
@@ -119,8 +117,6 @@ const Products = () => {
 					/>
 				</div>
 			</div>
-			<Footer />
-		</>
 	);
 };
 

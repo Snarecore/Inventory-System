@@ -7,7 +7,6 @@ import AdminTable from "./components/AdminTable";
 import AdminForm from "./components/AdminForm";
 import { FaPlus, FaPlusCircle } from "react-icons/fa";
 import RefreshButton from "@/components/table-components/RefreshButton";
-import Footer from "@/components/admin/Footer";
 
 interface AdminDataProps {
     id: string;
@@ -70,7 +69,7 @@ const Admin = () => {
 
     return (
         <>
-            <div className="flex flex-col gap-6 min-h-screen p-6">
+            <div className="flex flex-col gap-6 p-6">
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                     <PageHeader
                         headerTitle="Admin List"
@@ -104,7 +103,6 @@ const Admin = () => {
                 </div>
             </div>
 
-            <Footer />
             <AdminForm isOpen={isModalOpen} onClose={closeModal} editData={editData} />
         </>
     );

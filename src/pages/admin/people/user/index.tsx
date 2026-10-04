@@ -3,7 +3,6 @@ import { useEffect, useState } from "react";
 import Button from "@/components/button/Button";
 import { FaPlus, FaPlusCircle } from "react-icons/fa";
 import RefreshButton from "@/components/table-components/RefreshButton";
-import Footer from "@/components/admin/Footer";
 import UserTable from "./components/UserTable";
 
 interface UserDataProps {
@@ -60,43 +59,39 @@ const Users = () => {
   };
 
   return (
-    <>
-      <div className="flex flex-col gap-6 min-h-screen p-6">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <PageHeader
-            headerTitle="Admin List"
-            headerDescription="Manage your admins"
-          />
+    <div className="flex flex-col gap-6 p-6">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <PageHeader
+          headerTitle="Admin List"
+          headerDescription="Manage your admins"
+        />
 
-          <div className="flex items-center gap-2">
-            <RefreshButton onClick={handleRefresh} />
-            <Button
-              label="Add Product"
-              onClick={() => openModal()}
-              color="var(--color-primary)"
-              hoverColor="var(--color-primary-hover)"
-              // buttonClass="w-full sm:w-auto"
-              icon={
-                <FaPlus
-                  size={18}
-                  className="text-[var(--color-primary-light)]"
-                />
-              }
-            />
-          </div>
-        </div>
-        <div className="grid grid-cols-1 gap-4 sm:gap-8">
-          <div>
-            <UserTable
-              currentPageNumber={currentPageNumber}
-              handlePagination={handlePagination}
-            />
-          </div>
+        <div className="flex items-center gap-2">
+          <RefreshButton onClick={handleRefresh} />
+          <Button
+            label="Add Product"
+            onClick={() => openModal()}
+            color="var(--color-primary)"
+            hoverColor="var(--color-primary-hover)"
+            // buttonClass="w-full sm:w-auto"
+            icon={
+              <FaPlus
+                size={18}
+                className="text-[var(--color-primary-light)]"
+              />
+            }
+          />
         </div>
       </div>
-
-      <Footer />
-    </>
+      <div className="grid grid-cols-1 gap-4 sm:gap-8">
+        <div>
+          <UserTable
+            currentPageNumber={currentPageNumber}
+            handlePagination={handlePagination}
+          />
+        </div>
+      </div>
+    </div>
   );
 };
 

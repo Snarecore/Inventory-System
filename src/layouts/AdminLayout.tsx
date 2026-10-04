@@ -1,5 +1,6 @@
 import Sidebar from "@/components/admin/Sidebar";
 import Header from "@/components/admin/Header";
+import Footer from "@/components/admin/Footer";
 import { useState } from "react";
 import { MdKeyboardDoubleArrowLeft, MdKeyboardDoubleArrowRight } from "react-icons/md";
 import { Outlet } from "react-router-dom";
@@ -34,8 +35,11 @@ export default function AdminLayout() {
 			<div className="flex flex-col flex-1 min-w-0">
 				<Header sidebarClick={sidebarClick} />
 
-				<main className="flex-1 overflow-auto bg-[#F6F6F6] mt-16">
-					<Outlet />
+				<main className="flex-1 overflow-auto bg-[#F6F6F6] mt-16 flex flex-col justify-between">
+					<div className="flex-1">
+						<Outlet />
+					</div>
+					<Footer />
 				</main>
 			</div>
 		</div>

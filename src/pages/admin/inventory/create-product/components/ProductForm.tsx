@@ -27,6 +27,8 @@ interface ProductFormState {
     name: string;
     category: string;
     unit: string;
+    secondary_unit: string;
+    secondary_price: string;
     quantity: string;
     buy_price: string;
     sell_price: string;
@@ -42,6 +44,8 @@ const initialFieldValues: ProductFormState = {
     name: "",
     category: "",
     unit: "",
+    secondary_unit: "",
+    secondary_price: "",
     quantity: "0",
     buy_price: "",
     sell_price: "",
@@ -57,6 +61,7 @@ const CreateProductForm = () => {
     const [isOpen, setIsOpen] = useState(true);
     const [fieldValues, setFieldValues] = useState<ProductFormState>(initialFieldValues);
     const [selectedUnit, setSelectedUnit] = useState<Option | null>(null);
+    const [selectedSecondaryUnit, setSelectedSecondaryUnit] = useState<Option | null>(null);
     const [selectedCategory, setSelectedCategory] = useState<Option | null>(null);
     const [isLoading, setIsLoading] = useState(false);
 
@@ -194,6 +199,14 @@ const CreateProductForm = () => {
         return [];
     }, [rawUnitData]);
 
+    // Filter secondary unit options: exclude the currently selected primary unit
+    const secondaryUnitOptions: Option[] = useMemo(() => {
+        if (!selectedUnit?.value) return [];
+        return unitOptions.filter(
+            (opt) => opt.value.toLowerCase() !== selectedUnit.value.toLowerCase()
+        );
+    }, [unitOptions, selectedUnit]);
+
     // Sync selected category when options are loaded
     useEffect(() => {
         if (categoryOptions.length > 0) {
@@ -244,9 +257,25 @@ const CreateProductForm = () => {
 
     const handleUnitSelect = (option: Option) => {
         setSelectedUnit(option);
+        setFieldValues((prev) => {
+            const isSameAsSecondary = prev.secondary_unit.toLowerCase() === option.value.toLowerCase();
+            if (isSameAsSecondary) {
+                setSelectedSecondaryUnit(null);
+            }
+            return {
+                ...prev,
+                unit: option.value,
+                secondary_unit: isSameAsSecondary ? "" : prev.secondary_unit,
+                secondary_price: isSameAsSecondary ? "" : prev.secondary_price,
+            };
+        });
+    };
+
+    const handleSecondaryUnitSelect = (option: Option) => {
+        setSelectedSecondaryUnit(option);
         setFieldValues((prev) => ({
             ...prev,
-            unit: option.value
+            secondary_unit: option.value
         }));
     };
 
@@ -280,6 +309,8 @@ const CreateProductForm = () => {
                     name: fieldValues.name.trim(),
                     category: fieldValues.category.trim(),
                     unit: fieldValues.unit.trim() || "PCS",
+                    secondary_unit: fieldValues.secondary_unit.trim(),
+                    secondary_price: fieldValues.secondary_price ? Number(fieldValues.secondary_price) : 0,
                     quantity: fieldValues.quantity ? Number(fieldValues.quantity) : 0,
                     buy_price: Number(fieldValues.buy_price) || 0,
                     sell_price: Number(fieldValues.sell_price) || 0,
@@ -355,7 +386,7 @@ const CreateProductForm = () => {
                                 />
                             </div>
 
-                            {/* Unit */}
+                            {/* Unit (Primary) */}
                             <div className="relative z-20">
                                 <SelectInput
                                     label={`Unit${isUnitsLoading ? " (Loading...)" : ""}`}
@@ -363,6 +394,32 @@ const CreateProductForm = () => {
                                     options={unitOptions}
                                     onChange={handleUnitSelect}
                                     placeholder="Select Unit"
+                                    required
+                                />
+                            </div>
+
+                            {/* Secondary Unit */}
+                            <div className="relative z-20">
+                                <SelectInput
+                                    label="Secondary Unit (Optional)"
+                                    value={selectedSecondaryUnit}
+                                    options={secondaryUnitOptions}
+                                    onChange={handleSecondaryUnitSelect}
+                                    placeholder={selectedUnit ? "Select Secondary Unit" : "Select Unit First"}
+                                    disabled={!selectedUnit || secondaryUnitOptions.length === 0}
+                                />
+                            </div>
+
+                            {/* Secondary Unit Price */}
+                            <div>
+                                <InputField
+                                    label="Secondary Unit Price (৳)"
+                                    type="number"
+                                    name="secondary_price"
+                                    value={fieldValues.secondary_price}
+                                    onChange={handleChange}
+                                    placeholder="0.00"
+                                    disabled={!selectedUnit || !fieldValues.secondary_unit}
                                 />
                             </div>
 
