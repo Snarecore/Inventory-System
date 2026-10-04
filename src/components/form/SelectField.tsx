@@ -67,7 +67,7 @@ const SelectInput: React.FC<SelectInputProps> = ({ label, value, options, onChan
                 </div>
 
                 {openDropdown && (
-                    <div className={`absolute w-full ${showTop ? 'bottom-[60%] mt-0' : 'mt-1'} bg-white border border-gray-300 rounded-t-lg z-10 max-w-full`}>
+                    <div className={`absolute left-0 right-0 w-full ${showTop ? 'bottom-full mb-1' : 'top-full mt-1'} bg-white border border-gray-200 rounded-lg shadow-xl z-50 max-w-full`}>
                         <div className="p-1 sm:p-2 border-b border-gray-300">
                             <input
                                 type="text"

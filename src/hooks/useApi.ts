@@ -69,18 +69,24 @@ export interface FetchDataProps {
     apiUrl: string;
 }
 
-const isSuccessfulResponse = <T extends { statusCode: number }>(response: T): boolean => {
-    return response.statusCode === 200 || response.statusCode === 201;
+const isSuccessfulResponse = <T extends { statusCode?: number; status?: string | number; error?: boolean }>(response: T): boolean => {
+    if (!response) return false;
+    if (response.error === true) return false;
+    if (response.statusCode === 200 || response.statusCode === 201) return true;
+    if (typeof response.status === 'string' && response.status.toLowerCase() === 'success') return true;
+    if (response.status === 200 || response.status === 201) return true;
+    return response.error === false || (!response.error && ((response as any).data !== undefined || (response as any).productsList !== undefined));
 };
 
 const handleErrorMessage = (error: unknown) => {
     if (error && typeof error === 'object') {
         const errorObj = error as { 
-            response?: { data?: { message?: string | string[] } }; 
-            data?: { message?: string | string[] }; 
-            message?: string | string[]; 
+            response?: { data?: { message?: string | string[]; msg?: string | string[] } }; 
+            data?: { message?: string | string[]; msg?: string | string[] }; 
+            message?: string | string[];
+            msg?: string | string[];
         };
-        const errorMessage = errorObj.response?.data?.message || errorObj.data?.message || errorObj.message;
+        const errorMessage = errorObj.response?.data?.msg || errorObj.response?.data?.message || errorObj.data?.msg || errorObj.data?.message || errorObj.msg || errorObj.message;
         if (errorMessage) {
             Array.isArray(errorMessage) ? errorMessage.forEach(showErrorToast) : showErrorToast(errorMessage);
         }
@@ -270,7 +276,8 @@ export const useAPI = () => {
             if (validateFormData({ body, requiredFields })) {
                 const response = await (mutation as any).mutateAsync({ url, body }) as ApiResponse<T>;
                 if (isSuccessfulResponse(response)) {
-                    if (showSuccessMessage) showSuccessToast(response?.message);
+                    const successText = (response as any)?.msg || (response as any)?.message || "Operation successful!";
+                    if (showSuccessMessage) showSuccessToast(successText);
                     if (invalidateQueryKey && invalidateQueryKey.length > 0) {
                         await queryClient.invalidateQueries({
                             queryKey: invalidateQueryKey,
@@ -279,7 +286,7 @@ export const useAPI = () => {
                         });
                     }
                     return { success: true, data: response };
-                } else if (response?.message && showErrorMessage) {
+                } else if (((response as any)?.message || (response as any)?.msg) && showErrorMessage) {
                     handleErrorMessage(response);
                 }
             }

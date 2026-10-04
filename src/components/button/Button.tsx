@@ -22,8 +22,8 @@ const Button: React.FC<ButtonProps> = ({
   buttonClass = "",
   onClick,
   children,
-  color = "var(--color-primary)",
-  // hoverColor = "var(--color-primary-hover)",
+  color = "#009FE3",
+  hoverColor = "#0085be",
   icon,
 }) => {
   return (
@@ -31,7 +31,7 @@ const Button: React.FC<ButtonProps> = ({
       type={type}
       onClick={onClick}
       disabled={disabled || isLoading}
-      className={`flex items-center justify-center sm:w-fit w-full py-[0.4rem] px-[0.85rem] text-[14px] text-white rounded-md transition-all duration-300 ease-in-out cursor-pointer
+      className={`flex items-center justify-center sm:w-fit w-full py-[0.4rem] px-[0.85rem] text-[14px] text-white rounded-md transition-all duration-300 ease-in-out cursor-pointer hover:opacity-95 shadow-xs
         ${buttonClass} ${disabled || isLoading ? "opacity-50 cursor-not-allowed" : ""}
       `}
       style={{
@@ -39,8 +39,10 @@ const Button: React.FC<ButtonProps> = ({
         borderColor: color,
       }}
       onMouseOver={(e) => {
-        // e.currentTarget.style.backgroundColor = hoverColor;
-        // e.currentTarget.style.borderColor = hoverColor;
+        if (hoverColor) {
+          e.currentTarget.style.backgroundColor = hoverColor;
+          e.currentTarget.style.borderColor = hoverColor;
+        }
       }}
       onMouseOut={(e) => {
         e.currentTarget.style.backgroundColor = color;

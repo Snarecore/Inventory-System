@@ -28,7 +28,10 @@
         "thirdCategoryUrl": "third-category",
         "productUrl": "product",
         "productListUrl": "product/admin-products",
-        "productStatusUrl": "product/update-status"
+        "productStatusUrl": "product/update-status",
+        "insertProductUrl": "insert-product",
+        "productCategoriesListUrl": "product-categories-list",
+        "productUnitsListUrl": "product-units-list"
     },
     "blog": {
         "blogUrl": "blog"

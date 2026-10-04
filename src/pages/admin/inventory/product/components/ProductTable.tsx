@@ -347,7 +347,7 @@ const ProductsTable = ({ dataList, fetchProductList, pageCount, currentPageNumbe
 
                                     <td className="px-6 py-4">
                                         <div className="flex items-center gap-2">
-                                            <Link to={`/product-details/${data.id}`}
+                                            <Link to={`/admin/products/${data.id}`}
                                                 className="inline-flex items-center justify-center hover:bg-gray-200 border border-[#e6eaed] hover:text-[var(--color-primary)] p-2 rounded-md cursor-pointer">
                                                 <FiEye />
                                             </Link>

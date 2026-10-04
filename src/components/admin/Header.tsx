@@ -177,7 +177,7 @@ const Header = ({ sidebarClick }: { sidebarClick: boolean }) => {
                                     </p>
 
                                     {section.items.map((item) => {
-                                        const isParentActive = item.subItems.some(
+                                        const isParentActive = item.subItems?.some(
                                             (subItem) => subItem.path === pathname
                                         );
                                         const isOpen = openSubMenu === item.id;
@@ -185,7 +185,7 @@ const Header = ({ sidebarClick }: { sidebarClick: boolean }) => {
 
                                         return (
                                             <div key={item.id}>
-                                                {item.subItems.length > 0 ? (
+                                                {item.subItems && item.subItems.length > 0 ? (
                                                     <div
                                                         onClick={() => toggleSubMenu(item.id)}
                                                         className={`w-full group px-[12px] py-[8px] flex items-center justify-between cursor-pointer rounded-md transition-all mb-[2px] ${isOpen || isParentActive

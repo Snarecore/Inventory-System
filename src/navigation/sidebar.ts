@@ -1,5 +1,6 @@
 import {
 	FaThLarge,
+	FaListUl,
 	FaShoppingCart,
 	FaShoppingBag,
 	FaBoxes,
@@ -18,6 +19,8 @@ import {
 	FaShieldAlt,
 	FaCog,
 } from "react-icons/fa";
+import { BiCube } from "react-icons/bi";
+import { TbTablePlus } from "react-icons/tb";
 
 export const menu = [
 	{
@@ -31,6 +34,31 @@ export const menu = [
 				path: "/admin",
 				permissionKey: "dashboard.view",
 				subItems: [],
+			},
+		],
+	},
+	{
+		sectionName: "Categories",
+		items: [
+			{
+				id: 200,
+				name: "Product Category",
+				title: "Product Category",
+				icon: FaBoxes,
+				path: "/admin/main-category",
+				
+			},
+
+			{
+				id: 205,
+				name: "Expense Category",
+				title: "Expense Category",
+				icon: FaReceipt,
+				path: "/expenses/categories",
+				permissionKey: "category.expenses.view",
+				subItems: [
+					{ id: 206, name: "Expense Categories", path: "/expenses/categories", permissionKey: "expenses.categories.view" },
+				],
 			},
 		],
 	},
@@ -113,21 +141,22 @@ export const menu = [
 				],
 			},
 			{
-				id: 5,
-				name: "Products",
-				title: "Products",
-				icon: FaBox,
-				path: "/products",
+				id: 301,
+				name: "Product",
+				title: "Product",
+				icon: BiCube,
+				path: "/admin/products",
 				permissionKey: "products.view",
-				subItems: [
-					{ id: 43, name: "Products", path: "/products", permissionKey: "products.list.view" },
-					{ id: 44, name: "Categories", path: "/products/categories", permissionKey: "products.categories.view" },
-					{ id: 45, name: "Brands", path: "/products/brands", permissionKey: "products.brands.view" },
-					{ id: 46, name: "Units", path: "/products/units", permissionKey: "products.units.view" },
-					{ id: 47, name: "Variants", path: "/products/variants", permissionKey: "products.variants.view" },
-					{ id: 48, name: "Barcodes", path: "/products/barcodes", permissionKey: "products.barcodes.view" },
-					{ id: 49, name: "Pricing", path: "/products/pricing", permissionKey: "products.pricing.view" },
-				],
+				subItems: [],
+			},
+			{
+				id: 302,
+				name: "Create Product",
+				title: "Create Product",
+				icon: TbTablePlus,
+				path: "/admin/create-product",
+				permissionKey: "products.create.view",
+				subItems: [],
 			},
 			{
 				id: 14,

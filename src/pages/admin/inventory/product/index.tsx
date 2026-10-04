@@ -94,13 +94,13 @@ const Products = () => {
 						<RefreshButton onClick={handleRefresh} />
 						<Button
 							label="Add Product"
-							onClick={() => navigate("/create-product")}
-							color="var(--color-primary)"
-							hoverColor="var(--color-primary-hover)"
+							onClick={() => navigate("/admin/create-product")}
+							color="#009FE3"
+							hoverColor="#0085be"
 							// buttonClass="w-full sm:w-auto"
 							icon={
 								<FaPlus
-									className="text-[var(--color-primary-light)]"
+									className="text-white"
 								/>
 							}
 						/>

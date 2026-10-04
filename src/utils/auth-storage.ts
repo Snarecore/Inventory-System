@@ -34,11 +34,13 @@ export function getStoredUser(): User | null {
 
 export function getStoredToken(): string {
     if (typeof window === "undefined") return "";
-    return (
+    const directToken =
         localStorage.getItem(STORAGE_KEY_TOKEN) ||
-        sessionStorage.getItem(STORAGE_KEY_TOKEN) ||
-        ""
-    );
+        sessionStorage.getItem(STORAGE_KEY_TOKEN);
+    if (directToken) return directToken;
+    const userInfo = getUserInfo();
+    if (userInfo?.token) return userInfo.token;
+    return "";
 }
 
 export function setStoredToken(token: string, rememberMe = true): void {
