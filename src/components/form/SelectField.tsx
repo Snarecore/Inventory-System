@@ -49,8 +49,8 @@ const SelectInput: React.FC<SelectInputProps> = ({ label, value, options, onChan
     const filteredOptions = options.filter((option) => option.label && option.label.toLocaleLowerCase().includes(searchTerm.toLocaleLowerCase()));
 
     return (
-        <div className="flex flex-col items-center w-full">
-            <div ref={dropdownRef} className="relative w-full">
+        <div className={`flex flex-col items-center w-full ${openDropdown ? 'relative z-50' : ''}`}>
+            <div ref={dropdownRef} className={`relative w-full ${openDropdown ? 'z-50' : ''}`}>
                 {label && (
                     <label className="text-sm font-medium text-[#212b36] block mb-1">
                         {label}
@@ -69,7 +69,7 @@ const SelectInput: React.FC<SelectInputProps> = ({ label, value, options, onChan
                 </div>
 
                 {openDropdown && (
-                    <div className={`absolute left-0 right-0 w-full ${showTop ? 'bottom-full mb-1' : 'top-full mt-1'} bg-white border border-gray-200 rounded-lg shadow-xl z-50 max-w-full`}>
+                    <div className={`absolute left-0 right-0 w-full ${showTop ? 'bottom-full mb-1' : 'top-full mt-1'} bg-white border border-gray-200 rounded-lg shadow-xl z-[100] max-w-full`}>
                         <div className="p-1 sm:p-2 border-b border-gray-300">
                             <input
                                 type="text"

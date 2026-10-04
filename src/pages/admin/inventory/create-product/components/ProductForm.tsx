@@ -466,19 +466,19 @@ const CreateProductForm = () => {
                                 />
                             </div>
 
-                            {/* Secondary Unit */}
+                            {/* Secondary Unit (Optional) */}
                             <div className="relative z-20">
                                 <SelectInput
                                     label="Secondary Unit (Optional)"
                                     value={selectedSecondaryUnit}
                                     options={secondaryUnitOptions}
                                     onChange={handleSecondaryUnitSelect}
-                                    placeholder={selectedUnit ? "Select Secondary Unit" : "Select Unit First"}
+                                    placeholder={selectedUnit ? "Select Secondary Unit (Optional)" : "Select Unit First"}
                                     disabled={!selectedUnit || secondaryUnitOptions.length === 0}
                                 />
                             </div>
 
-                            {/* Secondary Unit Price */}
+                            {/* Secondary Unit Price (Optional) */}
                             <div>
                                 <InputField
                                     label="Secondary Unit Price (৳)"
@@ -488,6 +488,32 @@ const CreateProductForm = () => {
                                     onChange={handleChange}
                                     placeholder="0.00"
                                     disabled={!selectedUnit || !fieldValues.secondary_unit}
+                                />
+                            </div>
+
+                            {/* Buy Price */}
+                            <div>
+                                <InputField
+                                    label="Buy Price (৳)"
+                                    type="number"
+                                    name="buy_price"
+                                    required
+                                    value={fieldValues.buy_price}
+                                    onChange={handleChange}
+                                    placeholder="0.00"
+                                />
+                            </div>
+
+                            {/* Sell Price */}
+                            <div>
+                                <InputField
+                                    label="Sell Price (৳)"
+                                    type="number"
+                                    name="sell_price"
+                                    required
+                                    value={fieldValues.sell_price}
+                                    onChange={handleChange}
+                                    placeholder="0.00"
                                 />
                             </div>
 
@@ -518,32 +544,6 @@ const CreateProductForm = () => {
                                     value={fieldValues.low_stock_threshold}
                                     onChange={handleChange}
                                     placeholder="5"
-                                />
-                            </div>
-
-                            {/* Buy Price */}
-                            <div>
-                                <InputField
-                                    label="Buy Price (৳)"
-                                    type="number"
-                                    name="buy_price"
-                                    required
-                                    value={fieldValues.buy_price}
-                                    onChange={handleChange}
-                                    placeholder="0.00"
-                                />
-                            </div>
-
-                            {/* Sell Price */}
-                            <div>
-                                <InputField
-                                    label="Sell Price (৳)"
-                                    type="number"
-                                    name="sell_price"
-                                    required
-                                    value={fieldValues.sell_price}
-                                    onChange={handleChange}
-                                    placeholder="0.00"
                                 />
                             </div>
 
