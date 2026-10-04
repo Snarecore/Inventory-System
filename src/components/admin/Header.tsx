@@ -250,9 +250,9 @@ const Header = ({ sidebarClick }: { sidebarClick: boolean }) => {
                                                     </Link>
                                                 )}
 
-                                                {item.subItems.length > 0 && isOpen && (
+                                                {Boolean(item.subItems && item.subItems.length > 0) && isOpen && (
                                                     <ul>
-                                                        {item.subItems.map((subItem) => {
+                                                        {item.subItems?.map((subItem) => {
                                                             const isActive = pathname === subItem.path;
                                                             return (
                                                                 <li
