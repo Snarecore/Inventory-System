@@ -1,10 +1,10 @@
 import React, { ChangeEvent, useState, useEffect, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { useNavigate, useParams, useSearchParams, useLocation } from "react-router-dom";
 import Button from '@/components/button/Button';
 import SelectInput from '@/components/form/SelectField';
 import InputField from '@/components/form/TextInput';
 import { RiArrowDropDownLine } from 'react-icons/ri';
-import { useNavigate } from "react-router-dom";
 import { showErrorToast } from '@/utils/toast-utils';
 import { useAPI } from '@/hooks/useApi';
 import apiConfig from '@/config/api.json';
@@ -17,6 +17,7 @@ import {
 } from '@/config/query-key';
 import { buildAccessUser, withBranchScope } from '@/utils/access-user';
 import { getData, postData } from '@/services/api-service';
+import type { ProductItem } from '@/types';
 
 interface Option {
     label: string;
@@ -59,6 +60,16 @@ const initialFieldValues: ProductFormState = {
 };
 
 const CreateProductForm = () => {
+    const { id: routeId } = useParams();
+    const [searchParams] = useSearchParams();
+    const location = useLocation();
+    const navigate = useNavigate();
+
+    // Determine edit mode & target product ID/code
+    const editId = routeId || searchParams.get("id") || searchParams.get("edit");
+    const stateEditData: ProductItem | undefined = (location.state as any)?.editData;
+    const isEditMode = Boolean(editId || stateEditData);
+
     const [isOpen, setIsOpen] = useState(true);
     const [fieldValues, setFieldValues] = useState<ProductFormState>(initialFieldValues);
     const [selectedUnit, setSelectedUnit] = useState<Option | null>(null);
@@ -66,10 +77,11 @@ const CreateProductForm = () => {
     const [isDecimalAllowed, setIsDecimalAllowed] = useState(false);
     const [selectedCategory, setSelectedCategory] = useState<Option | null>(null);
     const [isLoading, setIsLoading] = useState(false);
+    const [hasLoadedInitialData, setHasLoadedInitialData] = useState(false);
 
-    const { postMutation, handleApiMutation } = useAPI();
-    const navigate = useNavigate();
+    const { postMutation, patchMutation, handleApiMutation } = useAPI();
     const insertProductUrl = apiConfig.inventory?.insertProductUrl || "insert-product";
+    const productBaseUrl = apiConfig.inventory?.productUrl || "product";
     const categoriesUrl = apiConfig.inventory?.productCategoriesListUrl || "product-categories-list";
     const unitsUrl = apiConfig.inventory?.productUnitsListUrl || "product-units-list";
     const productListUrl = apiConfig.productList?.productListUrl || "get-product-list";
@@ -94,8 +106,8 @@ const CreateProductForm = () => {
         staleTime: 5 * 60 * 1000,
     });
 
-    // 3. Fetch Product List to get the last sequence number and auto-generate pcode, barcode, sku
-    const { data: productListData } = useQuery({
+    // 3. Fetch Product List to prefill edit form or auto-generate pcode/barcode for new product
+    const { data: productListData, isLoading: isProductListLoading } = useQuery({
         queryKey: [productListQueryKey],
         queryFn: async () => {
             try {
@@ -111,20 +123,91 @@ const CreateProductForm = () => {
         staleTime: 30 * 1000,
     });
 
-    // Auto-generate next pcode, barcode, sku based on existing products in the system
+    // Normalize product list
+    const productList: ProductItem[] = useMemo(() => {
+        if (!productListData) return [];
+        if (Array.isArray((productListData as any).productsList)) {
+            return (productListData as any).productsList;
+        } else if (Array.isArray((productListData as any).data)) {
+            return (productListData as any).data;
+        } else if (Array.isArray(productListData)) {
+            return productListData as ProductItem[];
+        }
+        return [];
+    }, [productListData]);
+
+    // Find product to edit if in edit mode
+    const editingProduct: ProductItem | null = useMemo(() => {
+        if (!isEditMode) return null;
+        if (stateEditData) return stateEditData;
+        if (editId && productList.length > 0) {
+            return (
+                productList.find(
+                    (p) =>
+                        String(p.id) === String(editId) ||
+                        String(p.pcode) === String(editId) ||
+                        String(p.productCode) === String(editId) ||
+                        String(p.sku) === String(editId)
+                ) || null
+            );
+        }
+        return null;
+    }, [isEditMode, stateEditData, editId, productList]);
+
+    // Load product data into form fields when in edit mode
     useEffect(() => {
-        if (productListData) {
-            let list: any[] = [];
-            if (Array.isArray((productListData as any).productsList)) {
-                list = (productListData as any).productsList;
-            } else if (Array.isArray((productListData as any).data)) {
-                list = (productListData as any).data;
-            } else if (Array.isArray(productListData)) {
-                list = productListData as any[];
+        if (isEditMode && editingProduct && !hasLoadedInitialData) {
+            const name = editingProduct.name || editingProduct.productName || "";
+            const category = editingProduct.category || editingProduct.categoryName || "";
+            const unit = editingProduct.unit || "PCS";
+            const secondary_unit = editingProduct.secondary_unit || editingProduct.secondaryUnit || "";
+            const secondary_price = editingProduct.secondary_price !== undefined ? String(editingProduct.secondary_price) : "";
+            const quantity = String(editingProduct.quantity ?? editingProduct.stock ?? "0");
+            const buy_price = editingProduct.buy_price !== undefined ? String(editingProduct.buy_price) : (editingProduct.buyPrice !== undefined ? String(editingProduct.buyPrice) : "");
+            const sell_price = editingProduct.sell_price !== undefined ? String(editingProduct.sell_price) : (editingProduct.sellPrice !== undefined ? String(editingProduct.sellPrice) : "");
+            const pcode = editingProduct.pcode || editingProduct.productCode || editingProduct.code || "";
+            const sku = editingProduct.sku || "";
+            const barcode = editingProduct.barcode || "";
+            const low_stock_threshold = String(editingProduct.low_stock_threshold ?? editingProduct.lowStockThreshold ?? "5");
+            const packing_levels = editingProduct.packing_levels || editingProduct.packingLevels || "";
+            const status = (editingProduct.status === "inactive" || editingProduct.status === false || editingProduct.status === "INACTIVE") ? "inactive" : "active";
+
+            setFieldValues({
+                name,
+                category,
+                unit,
+                secondary_unit,
+                secondary_price,
+                quantity,
+                buy_price,
+                sell_price,
+                pcode,
+                sku,
+                barcode,
+                low_stock_threshold,
+                packing_levels,
+                status,
+            });
+
+            if (category) {
+                setSelectedCategory({ label: category, value: category });
+            }
+            if (unit) {
+                setSelectedUnit({ label: unit, value: unit });
+            }
+            if (secondary_unit) {
+                setSelectedSecondaryUnit({ label: secondary_unit, value: secondary_unit });
             }
 
+            setHasLoadedInitialData(true);
+        }
+    }, [isEditMode, editingProduct, hasLoadedInitialData]);
+
+    // Auto-generate next pcode, barcode, sku ONLY in Create mode
+    useEffect(() => {
+        if (!isEditMode && productListData) {
             let maxNum = 0;
-            list.forEach((item: any) => {
+            productList.forEach((item: any) => {
                 const codeStr = item.pcode || item.productCode || item.code || "";
                 const match = String(codeStr).match(/\d+/);
                 if (match) {
@@ -136,7 +219,7 @@ const CreateProductForm = () => {
                 }
             });
 
-            const nextNum = maxNum > 0 ? maxNum + 1 : (list.length + 1);
+            const nextNum = maxNum > 0 ? maxNum + 1 : (productList.length + 1);
             const generatedPcode = `P-${String(nextNum).padStart(4, "0")}`;
             const generatedBarcode = `894${String(nextNum).padStart(9, "0")}`;
             const generatedSku = `SKU-${String(nextNum).padStart(4, "0")}`;
@@ -147,7 +230,7 @@ const CreateProductForm = () => {
                 barcode: prev.barcode || generatedBarcode,
                 sku: prev.sku || generatedSku,
             }));
-        } else {
+        } else if (!isEditMode) {
             setFieldValues((prev) => ({
                 ...prev,
                 pcode: prev.pcode || "P-0001",
@@ -155,7 +238,7 @@ const CreateProductForm = () => {
                 sku: prev.sku || "SKU-0001",
             }));
         }
-    }, [productListData]);
+    }, [isEditMode, productListData, productList]);
 
     // Parse category options directly from server response
     const categoryOptions: Option[] = useMemo(() => {
@@ -215,28 +298,28 @@ const CreateProductForm = () => {
     // Sync selected category when options are loaded
     useEffect(() => {
         if (categoryOptions.length > 0) {
-            if (!fieldValues.category) {
+            if (!fieldValues.category && !isEditMode) {
                 const initialCat = categoryOptions[0];
                 setSelectedCategory(initialCat);
                 setFieldValues((prev) => ({ ...prev, category: initialCat.value }));
-            } else {
+            } else if (fieldValues.category) {
                 const match = categoryOptions.find(
                     (opt) => opt.value.toLowerCase() === fieldValues.category.toLowerCase()
                 );
                 if (match) setSelectedCategory(match);
             }
         }
-    }, [categoryOptions]);
+    }, [categoryOptions, fieldValues.category, isEditMode]);
 
     // Sync selected unit when options are loaded
     useEffect(() => {
         if (unitOptions.length > 0) {
-            if (!fieldValues.unit) {
+            if (!fieldValues.unit && !isEditMode) {
                 const initialUnit = unitOptions[0];
                 setSelectedUnit(initialUnit);
                 setIsDecimalAllowed(Boolean(initialUnit.decimalAllow));
                 setFieldValues((prev) => ({ ...prev, unit: initialUnit.value }));
-            } else {
+            } else if (fieldValues.unit) {
                 const match = unitOptions.find(
                     (opt) => opt.value.toLowerCase() === fieldValues.unit.toLowerCase()
                 );
@@ -246,7 +329,7 @@ const CreateProductForm = () => {
                 }
             }
         }
-    }, [unitOptions]);
+    }, [unitOptions, fieldValues.unit, isEditMode]);
 
     const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
         const { name, value } = event.target;
@@ -288,7 +371,6 @@ const CreateProductForm = () => {
                 setSelectedSecondaryUnit(null);
             }
 
-            // If switching to a unit that doesn't allow decimals, convert decimal quantity to integer
             let cleanQuantity = prev.quantity;
             if (!allowDec && cleanQuantity.includes('.')) {
                 cleanQuantity = cleanQuantity.split('.')[0] || "0";
@@ -346,40 +428,75 @@ const CreateProductForm = () => {
 
         setIsLoading(true);
         try {
+            const targetId = editingProduct?.id || editId || fieldValues.pcode;
+            const productPayload = withBranchScope({
+                ...(isEditMode && targetId ? { id: targetId } : {}),
+                name: fieldValues.name.trim(),
+                category: fieldValues.category.trim(),
+                unit: fieldValues.unit.trim() || "PCS",
+                secondary_unit: fieldValues.secondary_unit.trim(),
+                secondary_price: fieldValues.secondary_price ? Number(fieldValues.secondary_price) : 0,
+                quantity: fieldValues.quantity ? Number(fieldValues.quantity) : 0,
+                buy_price: Number(fieldValues.buy_price) || 0,
+                sell_price: Number(fieldValues.sell_price) || 0,
+                pcode: fieldValues.pcode.trim(),
+                sku: fieldValues.sku.trim(),
+                barcode: fieldValues.barcode.trim(),
+                low_stock_threshold: fieldValues.low_stock_threshold ? Number(fieldValues.low_stock_threshold) : 0,
+                packing_levels: fieldValues.packing_levels.trim(),
+                status: fieldValues.status,
+            });
+
             const payload = {
                 accessUser: buildAccessUser(),
-                product: withBranchScope({
-                    name: fieldValues.name.trim(),
-                    category: fieldValues.category.trim(),
-                    unit: fieldValues.unit.trim() || "PCS",
-                    secondary_unit: fieldValues.secondary_unit.trim(),
-                    secondary_price: fieldValues.secondary_price ? Number(fieldValues.secondary_price) : 0,
-                    quantity: fieldValues.quantity ? Number(fieldValues.quantity) : 0,
-                    buy_price: Number(fieldValues.buy_price) || 0,
-                    sell_price: Number(fieldValues.sell_price) || 0,
-                    pcode: fieldValues.pcode.trim(),
-                    sku: fieldValues.sku.trim(),
-                    barcode: fieldValues.barcode.trim(),
-                    low_stock_threshold: fieldValues.low_stock_threshold ? Number(fieldValues.low_stock_threshold) : 0,
-                    packing_levels: fieldValues.packing_levels.trim(),
-                    status: fieldValues.status,
-                })
+                product: productPayload,
             };
 
-            const result = await handleApiMutation({
-                mutation: postMutation as any,
-                url: insertProductUrl,
-                body: payload as any,
-                invalidateQueryKey: [productListQueryKey, productQueryKey, insertProductQueryKey],
-                showSuccessMessage: true,
-                showErrorMessage: true
-            });
+            let result: any;
+
+            if (isEditMode) {
+                // Try PATCH first if configured, with automatic fallback to POST /insert-product
+                try {
+                    result = await handleApiMutation({
+                        mutation: patchMutation as any,
+                        url: `${productBaseUrl}/${targetId}`,
+                        body: payload as any,
+                        invalidateQueryKey: [productListQueryKey, productQueryKey, insertProductQueryKey],
+                        showSuccessMessage: true,
+                        showErrorMessage: false,
+                    });
+                } catch {
+                    result = null;
+                }
+
+                // If PATCH is not supported by the backend (404/405/Error), use POST /insert-product (v4 upsert standard)
+                if (!result?.success) {
+                    result = await handleApiMutation({
+                        mutation: postMutation as any,
+                        url: insertProductUrl,
+                        body: payload as any,
+                        invalidateQueryKey: [productListQueryKey, productQueryKey, insertProductQueryKey],
+                        showSuccessMessage: true,
+                        showErrorMessage: true
+                    });
+                }
+            } else {
+                // POST Mutation for creating product
+                result = await handleApiMutation({
+                    mutation: postMutation as any,
+                    url: insertProductUrl,
+                    body: payload as any,
+                    invalidateQueryKey: [productListQueryKey, productQueryKey, insertProductQueryKey],
+                    showSuccessMessage: true,
+                    showErrorMessage: true
+                });
+            }
 
             if (result?.success) {
                 navigate("/admin/products");
             }
         } catch (error: any) {
-            showErrorToast(error?.message || "Failed to create product");
+            console.error("Product submit error:", error);
         } finally {
             setIsLoading(false);
         }
@@ -393,7 +510,7 @@ const CreateProductForm = () => {
                     onClick={() => setIsOpen(!isOpen)}
                 >
                     <h2 className="text-base font-bold text-[#212b36]">
-                        Product Information
+                        {isEditMode ? "Edit Product Information" : "Product Information"}
                     </h2>
                     <RiArrowDropDownLine
                         className={`text-2xl sm:text-3xl transition-all duration-300 ease-in-out text-gray-500 ${isOpen ? "rotate-180" : ""}`}
@@ -630,7 +747,7 @@ const CreateProductForm = () => {
                     </span>
                 </div>
 
-                {/* Cancel & Save Buttons on Right */}
+                {/* Cancel & Save/Update Buttons on Right */}
                 <div className="flex items-center gap-3">
                     <Button
                         label="Cancel"
@@ -640,7 +757,7 @@ const CreateProductForm = () => {
                         disabled={isLoading}
                     />
                     <Button
-                        label="Save Product"
+                        label={isEditMode ? "Update Product" : "Save Product"}
                         onClick={handleSubmitForm}
                         color="#009FE3"
                         hoverColor="#0085be"

@@ -90,6 +90,10 @@ export const router = createBrowserRouter([
         element: withSuspense(CreateProduct),
       },
       {
+        path: 'edit-product/:id',
+        element: withSuspense(CreateProduct),
+      },
+      {
         path: 'products/:id',
         element: withSuspense(ProductDetails),
       },

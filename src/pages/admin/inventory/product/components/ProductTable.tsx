@@ -1,575 +1,515 @@
-import { ChangeEvent, useEffect, useState } from "react";
-import { FiEye } from "react-icons/fi";
-import { FiTrash2 } from "react-icons/fi";
-import { FaEllipsisVertical } from "react-icons/fa6";
-import { TiDelete } from "react-icons/ti";
-import { useMemo } from "react";
+import { useState, useMemo } from "react";
+import { FiEye, FiEdit, FiTrash2, FiPackage, FiAlertTriangle, FiCheckCircle, FiXCircle } from "react-icons/fi";
+import { Link } from "react-router-dom";
 import Search from "@/components/table-components/Search";
 import DropdownFilter from "@/components/table-components/DropdownFilter";
-import RefreshButton from "@/components/table-components/RefreshButton";
-import { Link } from "react-router-dom";
 import EmptyState from "@/components/empty-state/EmptyState";
+import TableSkeleton from "@/components/skeleton/TableSkeleton";
+import Pagination from "@/components/pagination";
+import Modal from "@/components/modal/Modal";
 import DeleteModal from "@/components/modal/DeleteModal";
-
-interface ProductDataProps {
-    id: string;
-    name: string;
-    featuredImage: string;
-    sku: string;
-    slug: string;
-    description: string;
-    summary: string;
-    videoUrl: string;
-    mainCategoryName: string;
-    firstCategoryName: string;
-    secondCategoryName: string;
-    thirdCategoryName: string;
-    price: number;
-    cost: number;
-    discount: number;
-    discountType: string;
-    vendorName: string;
-    isProductSectionOne: string;
-    isProductSectionTwo: string;
-    isProductSectionThree: string;
-    isProductSectionFour: string;
-    isProductSectionFive: string;
-    isProductSectionSix: string;
-    isApprove: string;
-    status: string;
-}
+import { showSuccessToast } from "@/utils/toast-utils";
+import type { ProductItem } from "@/types";
 
 interface ProductTableProps {
-    dataList: {
-        data: ProductDataProps[];
-        total: number;
-        page: number;
-        limit: number;
-    };
-    fetchProductList: () => void;
+    products: ProductItem[];
+    totalCount: number;
     isLoading?: boolean;
+    isFetching?: boolean;
     pageCount: number;
     currentPageNumber: number;
     setCurrentPageNumber: React.Dispatch<React.SetStateAction<number>>;
     handlePagination: (paginationData: { selected: number }) => void;
-    isFetching?: boolean;
     searchQuery: string;
     setSearchQuery: (query: string) => void;
-    selectedFilters: {
-        mainCategoryId: { label: string; value: string } | null;
-        vendorId: { label: string; value: string } | null;
-        isApprove: { label: string; value: string } | null;
-    };
-    setSelectedFilters: React.Dispatch<React.SetStateAction<{
-        mainCategoryId: { label: string; value: string } | null;
-        vendorId: { label: string; value: string } | null;
-        isApprove: { label: string; value: string } | null;
-    }>>;
+    categoryFilter: string;
+    setCategoryFilter: (category: string) => void;
+    statusFilter: string;
+    setStatusFilter: (status: string) => void;
+    categoryOptions: { label: string; value: string }[];
+    onRefresh: () => void;
 }
 
-const initialFieldValues = {
-    isProductSectionOne: false,
-    isProductSectionTwo: false,
-    isProductSectionThree: false,
-    isProductSectionFour: false,
-    isProductSectionFive: false,
-    isProductSectionSix: false,
-    isApprove: false,
-    status: false
-};
-
-const ProductsTable = ({ dataList, fetchProductList, pageCount, currentPageNumber, setCurrentPageNumber, handlePagination, isLoading, isFetching, searchQuery, setSearchQuery, selectedFilters, setSelectedFilters }: ProductTableProps) => {
-    const [fieldValues, setFieldValues] = useState(initialFieldValues);
-    // const { handleDeleteAPI, handleApiMutation, patchMutation, fetchData } = useAPI();
-    // const apiUrl = apiConfig.inventory.productUrl;
-    // const statusApiUrl = apiConfig.inventory.productStatusUrl;
+export const ProductTable = ({
+    products,
+    totalCount,
+    isLoading,
+    isFetching,
+    pageCount,
+    currentPageNumber,
+    setCurrentPageNumber,
+    handlePagination,
+    searchQuery,
+    setSearchQuery,
+    categoryFilter,
+    setCategoryFilter,
+    statusFilter,
+    setStatusFilter,
+    categoryOptions,
+}: ProductTableProps) => {
+    const [selectedProduct, setSelectedProduct] = useState<ProductItem | null>(null);
+    const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-    const [selectedProduct, setSelectedProduct] = useState<ProductDataProps | null>(null);
-    const [isSelectionModalOpen, setIsSelectionModalOpen] = useState(false);
-    const [isProductSectionOne, setIsProductSectionOne] = useState(selectedProduct?.isProductSectionOne);
-    const [isProductSectionTwo, setIsProductSectionTwo] = useState(selectedProduct?.isProductSectionTwo);
-    const [isProductSectionThree, setIsProductSectionThree] = useState(selectedProduct?.isProductSectionThree);
-    const [isProductSectionFour, setIsProductSectionFour] = useState(selectedProduct?.isProductSectionFour);
-    const [isProductSectionFive, setIsProductSectionFive] = useState(selectedProduct?.isProductSectionFive);
-    const [isProductSectionSix, setIsProductSectionSix] = useState(selectedProduct?.isProductSectionSix);
-
-    // Search and Filter by Category, Vendor
+    const [productToDelete, setProductToDelete] = useState<ProductItem | null>(null);
     const [openDropdown, setOpenDropdown] = useState<string | null>(null);
 
-    const [mainCategories, setMainCategories] = useState<{ label: string, value: string }[]>([]);
-    // const mainCategoryApiUrl = apiConfig.site.mainCategoryUrl;
-    const fetchMainCategoryData = async () => {
-        try {
-            // const result = await fetchData({ apiUrl: mainCategoryApiUrl });
-            // setMainCategories(result.mainCategory.map((cat: any) => ({ label: cat.name, value: cat.id })));
-        } catch (error) {
-            console.error("Failed to fetch main categories:", error);
-        }
-    };
-
-    const [vendorList, setVendorList] = useState<{ label: string, value: string }[]>([]);
-    // const vendorListUrl = apiConfig.site.vendorListUrl;
-    const fetchVendorData = async () => {
-        try {
-            // const result = await fetchData({ apiUrl: vendorListUrl });
-            // setVendorList(result.vendorList.map((vendor: any) => ({ label: vendor.name, value: vendor.id })));
-        } catch (error) {
-            console.error("Failed to fetch vendor data:", error);
-        }
-    };
-
-    useEffect(() => {
-        fetchMainCategoryData();
-        fetchVendorData();
-    }, []);
-
-    const dropdownOptions = useMemo(() => {
-        return {
-            mainCategoryId: mainCategories,
-            vendorId: vendorList,
-            isApprove: [
-                { label: "Approved", value: "true" },
-                { label: "Pending", value: "false" }
-            ]
-        };
-    }, [mainCategories, vendorList]);
-
-    const handleRefreshButton = () => {
-        setSelectedFilters({
-            mainCategoryId: null,
-            vendorId: null,
-            isApprove: null,
-        });
-        setSearchQuery("");
-        setCurrentPageNumber(1);
-        setOpenDropdown(null);
-    };
-    // Search and Filter by Category, Vendor
-
-    const tableHeaders = [
-        { key: "sl", label: "Sl" },
-        { key: "name", label: "Product Name" },
-        { key: "sku", label: "SKU" },
-        { key: "price", label: "Price" },
-        { key: "vendor", label: "Vendor" },
-        { key: "isApprove", label: "Approval" },
-        { key: "status", label: "Status" },
-        { key: "action", label: "Action" },
+    const statusOptions = [
+        { label: "All Status", value: "" },
+        { label: "Active", value: "active" },
+        { label: "Inactive", value: "inactive" },
+        { label: "Low Stock Alert", value: "low_stock" },
     ];
 
-    const openDeleteModal = (data: ProductDataProps) => {
-        setSelectedProduct(data);
+    const categoryDropdownOptions = useMemo(() => {
+        return [{ label: "All Categories", value: "" }, ...categoryOptions];
+    }, [categoryOptions]);
+
+    const tableHeaders = [
+        { key: "sl", label: "#", align: "text-center" },
+        { key: "name", label: "Product Name & Code", align: "text-left" },
+        { key: "category", label: "Category", align: "text-left" },
+        { key: "sku", label: "SKU / Barcode", align: "text-left" },
+        { key: "stock", label: "Stock & Unit", align: "text-center" },
+        { key: "buyPrice", label: "Buy Price", align: "text-right" },
+        { key: "sellPrice", label: "Sell Price", align: "text-right" },
+        { key: "status", label: "Status", align: "text-center" },
+        { key: "action", label: "Actions", align: "text-center" },
+    ];
+
+    const openQuickView = (product: ProductItem) => {
+        setSelectedProduct(product);
+        setIsDetailsModalOpen(true);
+    };
+
+    const closeQuickView = () => {
+        setIsDetailsModalOpen(false);
+        setSelectedProduct(null);
+    };
+
+    const openDeleteModal = (product: ProductItem) => {
+        setProductToDelete(product);
         setIsDeleteModalOpen(true);
     };
 
     const closeDeleteModal = () => {
         setIsDeleteModalOpen(false);
-        setSelectedProduct(null);
+        setProductToDelete(null);
     };
 
-    const openSelectionModal = (product: ProductDataProps) => {
-        setSelectedProduct(product);
-        setFieldValues({
-            isProductSectionOne: String(product.isProductSectionOne) == "true",
-            isProductSectionTwo: String(product.isProductSectionTwo) == "true",
-            isProductSectionThree: String(product.isProductSectionThree) == "true",
-            isProductSectionFour: String(product.isProductSectionFour) == "true",
-            isProductSectionFive: String(product.isProductSectionFive) == "true",
-            isProductSectionSix: String(product.isProductSectionSix) == "true",
-            isApprove: String(product.isApprove) === "true",
-            status: String(product.status) === "true"
-        });
-        setIsSelectionModalOpen(true);
-    };
-
-    const handleDelete = async () => {
-        if (!selectedProduct) return;
-
-        // const apiResponse = await handleDeleteAPI({
-        // 	url: `${apiUrl}/${selectedProduct.id}`,
-        // 	showSuccessMessage: true
-        // });
-
-        // if (apiResponse) {
-        // 	fetchProductList();
-        // 	closeDeleteModal();
-        // }
-    };
-
-    const handleCloseModal = () => {
-        setSelectedProduct(null);
-        // setIsProductSectionOne(false);
-        // setIsProductSectionTwo(false);
-        // setIsProductSectionThree(false);
-        // setIsProductSectionFour(false);
-        // setIsProductSectionFive(false);
-        // setIsProductSectionSix(false);
-        // setStatus(false);
-        setIsSelectionModalOpen(false);
-    };
-
-    const handleSwitchChange = (event: ChangeEvent<HTMLInputElement>) => {
-        const { name, checked } = event.target;
-        setFieldValues((prevState) => ({
-            ...prevState,
-            [name]: checked
-        }));
-    };
-
-    const handleSave = async () => {
-        try {
-            if (!selectedProduct) return;
-
-            // const result = await handleApiMutation({
-            // 	// @ts-ignore
-            // 	mutation: patchMutation,
-            // 	url: `${statusApiUrl}/${selectedProduct.id}`,
-            // 	body: fieldValues,
-            // 	invalidateQueryKey: [productQueryKey],
-            // 	showSuccessMessage: true,
-            // 	showErrorMessage: true
-            // });
-
-            // if (result?.success) {
-            // 	fetchProductList();
-            // 	handleCloseModal();
-            // }
-        } catch (error) {
-            console.error('Error updating product:', error);
+    const handleDelete = () => {
+        if (productToDelete) {
+            showSuccessToast(`Product "${getName(productToDelete)}" removed successfully.`);
+            closeDeleteModal();
         }
     };
 
-    // if (isFetching || isLoading) return <TableSkeleton />;
+    // Helper functions for safe field access
+    const getName = (p: ProductItem) => p.name || p.productName || "Unnamed Product";
+    const getCode = (p: ProductItem) => p.pcode || p.productCode || p.code || "";
+    const getSku = (p: ProductItem) => p.sku || "-";
+    const getBarcode = (p: ProductItem) => p.barcode || "";
+    const getCategory = (p: ProductItem) => p.category || p.categoryName || "General";
+    const getUnit = (p: ProductItem) => p.unit || "PCS";
+    const getQuantity = (p: ProductItem) => Number(p.quantity ?? p.stock ?? p.stockQuantity ?? p.currentStock ?? p.current_stock ?? p.totalQuantity ?? p.qty ?? p.availableStock ?? 0);
+    const getBuyPrice = (p: ProductItem) => Number(p.buy_price ?? p.buyPrice ?? 0);
+    const getSellPrice = (p: ProductItem) => Number(p.sell_price ?? p.sellPrice ?? 0);
+    const getLowThreshold = (p: ProductItem) => Number(p.low_stock_threshold ?? p.lowStockThreshold ?? 5);
+    const isActive = (p: ProductItem) => {
+        if (p.status === "active" || p.status === true || p.status === "ACTIVE" || String(p.status) === "true") return true;
+        if (p.status === "inactive" || p.status === false || p.status === "INACTIVE" || String(p.status) === "false") return false;
+        return true;
+    };
 
     return (
-        <div className="bg-white rounded-lg border border-gray-200 px-4">
-            <div className="space-y-4 border-b border-gray-200">
-                <div className="pt-4 pb-4 flex sm:flex-row flex-col gap-4 justify-between flex-wrap">
-                    <Search
-                        searchQuery={searchQuery}
-                        onSearchChange={(value) => {
-                            setSearchQuery(value);
-                            setCurrentPageNumber(1);
-                        }}
-                    />
-                    <div className="flex sm:flex-row flex-col gap-2">
-                        {(Object.entries(dropdownOptions) as [keyof typeof selectedFilters, any][]).map(([key, options]) => (
-                            <DropdownFilter
-                                key={key}
-                                title={
-                                    key === "mainCategoryId"
-                                        ? "Category"
-                                        : key === "vendorId"
-                                            ? "Vendor"
-                                            : key === "isApprove"
-                                                ? "Approval"
-                                                : key
-                                }
-                                options={options}
-                                selectedOption={selectedFilters[key]}
-                                isOpen={openDropdown === key}
-                                onToggle={() => setOpenDropdown(openDropdown === key ? null : key)}
-                                onSelect={(selected) => {
-                                    setSelectedFilters(prev => ({ ...prev, [key]: selected }));
-                                    setCurrentPageNumber(1);
-                                    setOpenDropdown(null);
-                                }}
-                            />
+        <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+            {/* Table Header: Search & Filters */}
+            <div className="p-4 sm:p-5 border-b border-gray-200 bg-white">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div className="w-full md:w-80">
+                        <Search
+                            searchQuery={searchQuery}
+                            onSearchChange={(value) => {
+                                setSearchQuery(value);
+                                setCurrentPageNumber(1);
+                            }}
+                        />
+                    </div>
 
-                        ))}
-                        {/* <RefreshButton onClick={handleRefreshButton} /> */}
+                    <div className="flex flex-wrap items-center gap-2.5">
+                        {/* Category Dropdown */}
+                        <DropdownFilter
+                            title="Category"
+                            options={categoryDropdownOptions}
+                            selectedOption={
+                                categoryFilter
+                                    ? categoryDropdownOptions.find((o) => o.value === categoryFilter) || null
+                                    : null
+                            }
+                            isOpen={openDropdown === "category"}
+                            onToggle={() => setOpenDropdown(openDropdown === "category" ? null : "category")}
+                            onSelect={(selected) => {
+                                setCategoryFilter(selected ? selected.value : "");
+                                setCurrentPageNumber(1);
+                                setOpenDropdown(null);
+                            }}
+                        />
+
+                        {/* Status Dropdown */}
+                        <DropdownFilter
+                            title="Status / Stock"
+                            options={statusOptions}
+                            selectedOption={
+                                statusFilter
+                                    ? statusOptions.find((o) => o.value === statusFilter) || null
+                                    : null
+                            }
+                            isOpen={openDropdown === "status"}
+                            onToggle={() => setOpenDropdown(openDropdown === "status" ? null : "status")}
+                            onSelect={(selected) => {
+                                setStatusFilter(selected ? selected.value : "");
+                                setCurrentPageNumber(1);
+                                setOpenDropdown(null);
+                            }}
+                        />
                     </div>
                 </div>
             </div>
-            <div className="pt-2 pb-4 mt-4 w-full overflow-x-auto">
-                <table className="w-full text-left border-collapse min-w-[1300px]">
-                    <thead className="bg-[var(--primary-color-light)]">
-                        <tr className="text-sm border-b border-gray-200">
-                            {tableHeaders.map(({ key, label }, i) => (
-                                <th
-                                    key={key}
-                                    className={`px-6 py-3 border-r border-gray-200 text-center text-[#000000e0] last:border-r-0 ${
-                                        i === 0 ? "w-14 px-3 text-center" : ""
-                                    }`}
-                                >
-                                    <span>{label}</span>
-                                </th>
-                            ))}
-                        </tr>
-                    </thead>
 
-                    <tbody className="bg-white">
-                        {dataList?.data?.length > 0 ? (
-                            dataList.map((data, index) => (
-                                <tr
-                                    key={data.id}
-                                    className="border-b border-gray-100 text-gray-700 hover:bg-gray-50 transition duration-300"
-                                >
-                                    <td className="w-14 px-3 py-3 text-center font-medium text-gray-800 border-r border-gray-200">
-                                        {index + 1}
-                                    </td>
-
-                                    <td className="px-6 py-3 font-medium text-gray-800 border-r border-gray-200">
-                                        <img
-                                            src={data.featuredImage}
-                                            alt={data.name}
-                                            className="w-10 h-10 rounded-md shadow-sm border border-gray-200"
-                                        />
-                                        <span>
-                                            {data.name}
-                                        </span>
-                                    </td>
-
-                                    <td className="px-6 py-3 font-medium text-gray-800 border-r border-gray-200">{data.sku}</td>
-                                    <td className="px-6 py-3 font-medium text-gray-800 border-r border-gray-200">{`$${data.price}`}</td>
-                                    <td className="px-6 py-3 font-medium text-gray-800 border-r border-gray-200">{data.vendorName}</td>
-                                    <td className="px-6 py-3 font-medium text-gray-800 border-r border-gray-200">
-                                        <span
-                                            className={`px-3 py-1 text-xs font-semibold rounded-md flex items-center w-fit transition-all ${data.isApprove
-                                                ? "bg-[var(--color-active-green)] text-green-800"
-                                                : "bg-[var(--color-inactive-red)] text-red-800"
-                                                }`}
+            {/* Loading Skeleton */}
+            {isLoading || isFetching ? (
+                <div className="p-4">
+                    <TableSkeleton />
+                </div>
+            ) : (
+                <>
+                    {/* Products Table */}
+                    <div className="w-full overflow-x-auto">
+                        <table className="w-full text-left border-collapse min-w-[950px]">
+                            <thead>
+                                <tr className="bg-slate-50 border-b border-gray-200 text-xs uppercase font-semibold text-gray-600 tracking-wider">
+                                    {tableHeaders.map(({ key, label, align }) => (
+                                        <th
+                                            key={key}
+                                            className={`px-4 py-3.5 ${align} ${key === "sl" ? "w-14" : ""}`}
                                         >
-                                            {data.isApprove ? "Approved" : "Pending"}
-                                        </span>
-                                    </td>
-
-                                    <td className="px-6 py-4">
-                                        <span
-                                            className={`px-3 py-1 text-xs font-semibold rounded-md flex items-center w-fit transition-all ${data.status
-                                                ? "bg-[var(--color-active-green)] text-green-800"
-                                                : "bg-[var(--color-inactive-red)] text-red-800"
-                                                }`}
-                                        >
-                                            {data.status ? "Active" : "Inactive"}
-                                        </span>
-                                    </td>
-
-                                    <td className="px-6 py-4">
-                                        <div className="flex items-center gap-2">
-                                            <Link to={`/admin/products/${data.id}`}
-                                                className="inline-flex items-center justify-center hover:bg-gray-200 border border-[#e6eaed] hover:text-[var(--color-primary)] p-2 rounded-md cursor-pointer">
-                                                <FiEye />
-                                            </Link>
-                                            {/* <Link to="/edit-product"
-												state={{ editData: data }}
-												className="inline-flex items-center justify-center hover:bg-gray-200 border border-[#e6eaed] hover:text-[var(--color-primary)] p-2 rounded-md cursor-pointer"
-											>
-												<FaEdit />
-											</Link> */}
-                                            <button
-                                                onClick={() => openDeleteModal(data)}
-                                                className="inline-flex items-center justify-center hover:bg-gray-200 border border-[#e6eaed] hover:text-[var(--color-primary)] p-2 rounded-md cursor-pointer"
-                                            >
-                                                <FiTrash2 />
-                                            </button>
-                                            <button onClick={() => openSelectionModal(data)} className="inline-flex items-center justify-center hover:bg-gray-200 border border-[#e6eaed] hover:text-[var(--color-primary)] p-2 rounded-md cursor-pointer">
-                                                <FaEllipsisVertical />
-                                            </button>
-                                        </div>
-                                    </td>
+                                            {label}
+                                        </th>
+                                    ))}
                                 </tr>
-                            ))
-                        ) : (
-                            <tr>
-                                <td colSpan={tableHeaders.length} className="px-6 py-4 text-center italic">
-                                    <EmptyState title="No matching products. Try adjusting your filters." />
-                                </td>
-                            </tr>
+                            </thead>
+
+                            <tbody className="divide-y divide-gray-100 bg-white text-sm">
+                                {products.length > 0 ? (
+                                    products.map((product, index) => {
+                                        const qty = getQuantity(product);
+                                        const lowThreshold = getLowThreshold(product);
+                                        const isLowStock = qty <= lowThreshold;
+                                        const active = isActive(product);
+                                        const rowNumber = (currentPageNumber - 1) * 10 + (index + 1);
+
+                                        return (
+                                            <tr
+                                                key={product.id || product.pcode || index}
+                                                className="hover:bg-blue-50/40 transition-colors duration-150 group"
+                                            >
+                                                {/* SL */}
+                                                <td className="px-4 py-3.5 text-center text-xs font-medium text-gray-500">
+                                                    {rowNumber}
+                                                </td>
+
+                                                {/* Product Name & Code */}
+                                                <td className="px-4 py-3.5">
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="w-9 h-9 rounded-lg bg-blue-50 text-[var(--color-primary,#009FE3)] flex items-center justify-center font-semibold text-sm border border-blue-100 flex-shrink-0 group-hover:scale-105 transition-transform">
+                                                            <FiPackage className="w-4 h-4" />
+                                                        </div>
+                                                        <div className="min-w-0">
+                                                            <div className="font-semibold text-gray-900 group-hover:text-[var(--color-primary,#009FE3)] transition-colors line-clamp-1">
+                                                                {getName(product)}
+                                                            </div>
+                                                            <div className="flex items-center gap-2 mt-0.5 text-xs text-gray-500">
+                                                                {getCode(product) && (
+                                                                    <span className="font-mono bg-gray-100 px-1.5 py-0.5 rounded text-[11px] text-gray-700">
+                                                                        {getCode(product)}
+                                                                    </span>
+                                                                )}
+                                                                {product.packing_levels && (
+                                                                    <span className="text-[11px] text-gray-400">
+                                                                        • {product.packing_levels}
+                                                                    </span>
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </td>
+
+                                                {/* Category */}
+                                                <td className="px-4 py-3.5">
+                                                    <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-700 border border-slate-200">
+                                                        {getCategory(product)}
+                                                    </span>
+                                                </td>
+
+                                                {/* SKU & Barcode */}
+                                                <td className="px-4 py-3.5">
+                                                    <div className="text-xs">
+                                                        <div className="font-mono font-medium text-gray-800">
+                                                            {getSku(product)}
+                                                        </div>
+                                                        {getBarcode(product) && (
+                                                            <div className="text-[11px] text-gray-400 font-mono">
+                                                                {getBarcode(product)}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </td>
+
+                                                {/* Stock & Unit */}
+                                                <td className="px-4 py-3.5 text-center">
+                                                    <div className="inline-flex flex-col items-center">
+                                                        <span className="font-semibold text-gray-900">
+                                                            {qty}{" "}
+                                                            <span className="text-xs text-gray-500 font-normal">
+                                                                {getUnit(product)}
+                                                            </span>
+                                                        </span>
+                                                        {isLowStock && (
+                                                            <span className="inline-flex items-center gap-1 text-[10px] font-medium text-amber-700 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded mt-0.5">
+                                                                <FiAlertTriangle className="w-2.5 h-2.5" />
+                                                                Low Stock ({lowThreshold})
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                </td>
+
+                                                {/* Buy Price */}
+                                                <td className="px-4 py-3.5 text-right font-medium text-gray-700">
+                                                    ৳{getBuyPrice(product).toLocaleString()}
+                                                </td>
+
+                                                {/* Sell Price */}
+                                                <td className="px-4 py-3.5 text-right font-bold text-gray-900">
+                                                    ৳{getSellPrice(product).toLocaleString()}
+                                                    {product.secondary_unit && (
+                                                        <div className="text-[11px] font-normal text-gray-500 mt-0.5">
+                                                            ৳{Number(product.secondary_price || 0).toLocaleString()} / {product.secondary_unit}
+                                                        </div>
+                                                    )}
+                                                </td>
+
+                                                {/* Status */}
+                                                <td className="px-4 py-3.5 text-center">
+                                                    <span
+                                                        className={`inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-full ${
+                                                            active
+                                                                ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                                                                : "bg-red-50 text-red-700 border border-red-200"
+                                                        }`}
+                                                    >
+                                                        {active ? (
+                                                            <>
+                                                                <FiCheckCircle className="w-3 h-3" />
+                                                                Active
+                                                            </>
+                                                        ) : (
+                                                            <>
+                                                                <FiXCircle className="w-3 h-3" />
+                                                                Inactive
+                                                            </>
+                                                        )}
+                                                    </span>
+                                                </td>
+
+                                                {/* Actions: Eye, Edit, Delete */}
+                                                <td className="px-4 py-3.5 text-center">
+                                                    <div className="flex items-center justify-center gap-1.5">
+                                                        {/* Eye / View Icon */}
+                                                        <button
+                                                            onClick={() => openQuickView(product)}
+                                                            title="Quick View Details"
+                                                            className="w-8 h-8 rounded-lg flex items-center justify-center bg-sky-50 text-sky-600 hover:bg-sky-600 hover:text-white transition-all duration-200 shadow-xs hover:shadow hover:scale-105 cursor-pointer"
+                                                        >
+                                                            <FiEye className="w-4 h-4" />
+                                                        </button>
+
+                                                        {/* Edit Icon */}
+                                                        <Link
+                                                            to={`/admin/edit-product/${product.id || product.pcode || ""}`}
+                                                            state={{ editData: product }}
+                                                            title="Edit Product"
+                                                            className="w-8 h-8 rounded-lg flex items-center justify-center bg-amber-50 text-amber-600 hover:bg-amber-600 hover:text-white transition-all duration-200 shadow-xs hover:shadow hover:scale-105 cursor-pointer"
+                                                        >
+                                                            <FiEdit className="w-3.5 h-3.5" />
+                                                        </Link>
+
+                                                        {/* Delete Icon */}
+                                                        <button
+                                                            onClick={() => openDeleteModal(product)}
+                                                            title="Delete Product"
+                                                            className="w-8 h-8 rounded-lg flex items-center justify-center bg-rose-50 text-rose-600 hover:bg-rose-600 hover:text-white transition-all duration-200 shadow-xs hover:shadow hover:scale-105 cursor-pointer"
+                                                        >
+                                                            <FiTrash2 className="w-3.5 h-3.5" />
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        );
+                                    })
+                                ) : (
+                                    <tr>
+                                        <td colSpan={tableHeaders.length} className="py-12 text-center">
+                                            <EmptyState
+                                                title={
+                                                    searchQuery || categoryFilter || statusFilter
+                                                        ? "No products matching your search/filters"
+                                                        : "No products available in inventory"
+                                                }
+                                                description={
+                                                    searchQuery || categoryFilter || statusFilter
+                                                        ? "Try clearing the search or filters to see all products."
+                                                        : "Click 'Add Product' above to create your first product."
+                                                }
+                                            />
+                                        </td>
+                                    </tr>
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    {/* Pagination & Summary Footer */}
+                    <div className="p-4 border-t border-gray-200 bg-gray-50 flex flex-col sm:flex-row items-center justify-between gap-4">
+                        <div className="text-xs text-gray-600">
+                            Showing{" "}
+                            <span className="font-semibold text-gray-900">
+                                {products.length > 0 ? (currentPageNumber - 1) * 10 + 1 : 0}
+                            </span>{" "}
+                            to{" "}
+                            <span className="font-semibold text-gray-900">
+                                {Math.min(currentPageNumber * 10, totalCount)}
+                            </span>{" "}
+                            of <span className="font-semibold text-gray-900">{totalCount}</span> products
+                        </div>
+
+                        {pageCount > 1 && (
+                            <Pagination
+                                pageCount={pageCount}
+                                currentPageNumber={currentPageNumber}
+                                handlePagination={handlePagination}
+                            />
                         )}
-                    </tbody>
-                </table>
-            </div>
+                    </div>
+                </>
+            )}
 
-            {
-                selectedProduct && isSelectionModalOpen && (
-                    <div className="fixed inset-0 flex items-center justify-center bg-opacity-50 bg-[#000000b6] z-[60] top-0 right-0 left-0 bottom-0 p-2">
-                        <div className="bg-white rounded-lg shadow-lg w-[400px] p-6">
-                            <div className="flex justify-between items-center pb-6">
-                                <p className="text-lg font-semibold">Product Status Settings</p>
-                                <TiDelete
-                                    className="text-3xl cursor-pointer text-red-500 hover:text-red-600"
-                                    onClick={handleCloseModal}
-                                />
+            {/* Quick View Details Modal */}
+            {selectedProduct && isDetailsModalOpen && (
+                <Modal
+                    isOpen={isDetailsModalOpen}
+                    title={`Product Details — ${getName(selectedProduct)}`}
+                    onClose={closeQuickView}
+                >
+                    <div className="space-y-4 text-sm text-gray-700">
+                        <div className="grid grid-cols-2 gap-3 p-4 bg-gray-50 rounded-lg border border-gray-100">
+                            <div>
+                                <span className="text-xs text-gray-500 font-medium">Product Code</span>
+                                <p className="font-mono font-semibold text-gray-900">{getCode(selectedProduct) || "N/A"}</p>
                             </div>
-
-                            <div className="flex justify-between items-center mb-4 bg-[#fff2e6] p-3 rounded-md">
-                                <span className="text-sm font-medium text-gray-700">Is Product Section One</span>
-                                <label className="relative inline-flex items-center cursor-pointer">
-                                    <input
-                                        name="isProductSectionOne"
-                                        type="checkbox"
-                                        checked={fieldValues.isProductSectionOne}
-                                        onChange={handleSwitchChange}
-                                        className="sr-only peer"
-                                    />
-                                    <div className="w-10 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:bg-[var(--color-primary)]">
-                                        <div className={`absolute top-[2px] left-[2px] w-4 h-4 bg-white rounded-full transition-all ${fieldValues.isProductSectionOne ? "translate-x-5" : ""}`} />
-                                    </div>
-                                </label>
+                            <div>
+                                <span className="text-xs text-gray-500 font-medium">SKU</span>
+                                <p className="font-mono font-semibold text-gray-900">{getSku(selectedProduct)}</p>
                             </div>
-
-                            <div className="flex justify-between items-center mb-4 bg-[#fff2e6] p-3 rounded-md">
-                                <span className="text-sm font-medium text-gray-700">Is Product Section Two</span>
-                                <label className="relative inline-flex items-center cursor-pointer">
-                                    <input
-                                        name="isProductSectionTwo"
-                                        type="checkbox"
-                                        checked={fieldValues.isProductSectionTwo}
-                                        onChange={handleSwitchChange}
-                                        className="sr-only peer"
-                                    />
-                                    <div className="w-10 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:bg-[var(--color-primary)] relative">
-                                        <div
-                                            className={`absolute top-[2px] left-[2px] w-4 h-4 bg-white rounded-full transition-transform duration-200 ${fieldValues.isProductSectionTwo ? "translate-x-5" : "translate-x-0"
-                                                }`}
-                                        />
-                                    </div>
-                                </label>
+                            <div>
+                                <span className="text-xs text-gray-500 font-medium">Barcode</span>
+                                <p className="font-mono font-semibold text-gray-900">{getBarcode(selectedProduct) || "N/A"}</p>
                             </div>
-
-
-                            <div className="flex justify-between items-center mb-4 bg-[#fff2e6] p-3 rounded-md">
-                                <span className="text-sm font-medium text-gray-700">Is Product Section Three</span>
-                                <label className="relative inline-flex items-center cursor-pointer">
-                                    <input
-                                        name="isProductSectionThree"
-                                        type="checkbox"
-                                        checked={fieldValues.isProductSectionThree}
-                                        onChange={handleSwitchChange}
-                                        className="sr-only peer"
-                                    />
-                                    <div className="w-10 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:bg-[var(--color-primary)] relative">
-                                        <div className={`absolute top-[2px] left-[2px] w-4 h-4 bg-white rounded-full transition-transform duration-200 ${fieldValues.isProductSectionThree ? "translate-x-5" : "translate-x-0"
-                                            }`} />
-                                    </div>
-                                </label>
-                            </div>
-
-                            <div className="flex justify-between items-center mb-4 bg-[#fff2e6] p-3 rounded-md">
-                                <span className="text-sm font-medium text-gray-700">Is Product Section Four</span>
-                                <label className="relative inline-flex items-center cursor-pointer">
-                                    <input
-                                        name="isProductSectionFour"
-                                        type="checkbox"
-                                        checked={fieldValues.isProductSectionFour}
-                                        onChange={handleSwitchChange}
-                                        className="sr-only peer"
-                                    />
-                                    <div className="w-10 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:bg-[var(--color-primary)] relative">
-                                        <div className={`absolute top-[2px] left-[2px] w-4 h-4 bg-white rounded-full transition-transform duration-200 ${fieldValues.isProductSectionFour ? "translate-x-5" : "translate-x-0"
-                                            }`} />
-                                    </div>
-                                </label>
-                            </div>
-
-                            <div className="flex justify-between items-center mb-4 bg-[#fff2e6] p-3 rounded-md">
-                                <span className="text-sm font-medium text-gray-700">Is Product Section Five</span>
-                                <label className="relative inline-flex items-center cursor-pointer">
-                                    <input
-                                        name="isProductSectionFive"
-                                        type="checkbox"
-                                        checked={fieldValues.isProductSectionFive}
-                                        onChange={handleSwitchChange}
-                                        className="sr-only peer"
-                                    />
-                                    <div className="w-10 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:bg-[var(--color-primary)] relative">
-                                        <div className={`absolute top-[2px] left-[2px] w-4 h-4 bg-white rounded-full transition-transform duration-200 ${fieldValues.isProductSectionFive ? "translate-x-5" : "translate-x-0"
-                                            }`} />
-                                    </div>
-                                </label>
-                            </div>
-
-                            <div className="flex justify-between items-center mb-4 bg-[#fff2e6] p-3 rounded-md">
-                                <span className="text-sm font-medium text-gray-700">Is Product Section Six</span>
-                                <label className="relative inline-flex items-center cursor-pointer">
-                                    <input
-                                        name="isProductSectionSix"
-                                        type="checkbox"
-                                        checked={fieldValues.isProductSectionSix}
-                                        onChange={handleSwitchChange}
-                                        className="sr-only peer"
-                                    />
-                                    <div className="w-10 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:bg-[var(--color-primary)] relative">
-                                        <div className={`absolute top-[2px] left-[2px] w-4 h-4 bg-white rounded-full transition-transform duration-200 ${fieldValues.isProductSectionSix ? "translate-x-5" : "translate-x-0"
-                                            }`} />
-                                    </div>
-                                </label>
-                            </div>
-
-                            <div className="flex justify-between items-center mb-4 bg-[#fff2e6] p-3 rounded-md">
-                                <span className="text-sm font-medium text-gray-700">is Approved</span>
-                                <label className="relative inline-flex items-center cursor-pointer">
-                                    <input
-                                        name="isApprove"
-                                        type="checkbox"
-                                        checked={fieldValues.isApprove}
-                                        onChange={handleSwitchChange}
-                                        className="sr-only peer"
-                                    />
-                                    <div className="w-10 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:bg-[var(--color-primary)] relative">
-                                        <div className={`absolute top-[2px] left-[2px] w-4 h-4 bg-white rounded-full transition-transform duration-200 ${fieldValues.isApprove ? "translate-x-5" : "translate-x-0"
-                                            }`} />
-                                    </div>
-                                </label>
-                            </div>
-
-                            <div className="flex justify-between items-center mb-4 bg-[#fff2e6] p-3 rounded-md">
-                                <span className="text-sm font-medium text-gray-700">Status</span>
-                                <label className="relative inline-flex items-center cursor-pointer">
-                                    <input
-                                        name="status"
-                                        type="checkbox"
-                                        checked={fieldValues.status}
-                                        onChange={handleSwitchChange}
-                                        className="sr-only peer"
-                                    />
-                                    <div className="w-10 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:bg-[var(--color-primary)] relative">
-                                        <div className={`absolute top-[2px] left-[2px] w-4 h-4 bg-white rounded-full transition-transform duration-200 ${fieldValues.status ? "translate-x-5" : "translate-x-0"
-                                            }`} />
-                                    </div>
-                                </label>
-                            </div>
-
-                            <div className="flex justify-end gap-2">
-                                <button
-                                    onClick={handleCloseModal}
-                                    className="px-4 h-8 bg-gray-500 text-white text-[14px] cursor-pointer border border-gray-300 rounded-md hover:bg-gray-700"
-                                >
-                                    Cancel
-                                </button>
-                                <button
-                                    onClick={handleSave}
-                                    className="px-4 h-8 bg-[var(--color-primary)] text-white cursor-pointer rounded-md hover:bg-[var(--color-primary-hover)]"
-                                >
-                                    Save
-                                </button>
+                            <div>
+                                <span className="text-xs text-gray-500 font-medium">Category</span>
+                                <p className="font-semibold text-gray-900">{getCategory(selectedProduct)}</p>
                             </div>
                         </div>
-                    </div>
-                )
-            }
 
-            {selectedProduct && (
+                        <div className="grid grid-cols-3 gap-3 p-4 bg-blue-50/50 rounded-lg border border-blue-100">
+                            <div>
+                                <span className="text-xs text-gray-500 font-medium">Current Stock</span>
+                                <p className="text-base font-bold text-gray-900">
+                                    {getQuantity(selectedProduct)} {getUnit(selectedProduct)}
+                                </p>
+                            </div>
+                            <div>
+                                <span className="text-xs text-gray-500 font-medium">Buy Price</span>
+                                <p className="text-base font-bold text-gray-900">
+                                    ৳{getBuyPrice(selectedProduct).toLocaleString()}
+                                </p>
+                            </div>
+                            <div>
+                                <span className="text-xs text-gray-500 font-medium">Sell Price</span>
+                                <p className="text-base font-bold text-emerald-600">
+                                    ৳{getSellPrice(selectedProduct).toLocaleString()}
+                                </p>
+                            </div>
+                        </div>
+
+                        {selectedProduct.secondary_unit && (
+                            <div className="p-3 bg-amber-50/60 rounded-lg border border-amber-100 flex items-center justify-between">
+                                <span className="text-xs font-medium text-amber-900">
+                                    Secondary Unit: <span className="font-bold">{selectedProduct.secondary_unit}</span>
+                                </span>
+                                <span className="text-xs font-bold text-amber-900">
+                                    Price: ৳{Number(selectedProduct.secondary_price || 0).toLocaleString()}
+                                </span>
+                            </div>
+                        )}
+
+                        <div className="grid grid-cols-2 gap-3 text-xs text-gray-600 pt-2 border-t border-gray-100">
+                            <div>
+                                <span className="text-gray-400">Low Stock Alert:</span>{" "}
+                                <span className="font-semibold text-gray-800">{getLowThreshold(selectedProduct)} {getUnit(selectedProduct)}</span>
+                            </div>
+                            <div>
+                                <span className="text-gray-400">Status:</span>{" "}
+                                <span className={`font-semibold ${isActive(selectedProduct) ? "text-emerald-600" : "text-red-600"}`}>
+                                    {isActive(selectedProduct) ? "Active" : "Inactive"}
+                                </span>
+                            </div>
+                            {selectedProduct.packing_levels && (
+                                <div className="col-span-2">
+                                    <span className="text-gray-400">Packing Levels:</span>{" "}
+                                    <span className="font-semibold text-gray-800">{selectedProduct.packing_levels}</span>
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="flex justify-end pt-3 gap-2">
+                            <Link
+                                to={`/admin/products/${selectedProduct.id || selectedProduct.pcode || ""}`}
+                                className="px-4 py-2 text-xs font-medium text-white bg-[var(--color-primary,#009FE3)] hover:opacity-90 rounded-lg transition-opacity"
+                            >
+                                Full Page View
+                            </Link>
+                            <button
+                                onClick={closeQuickView}
+                                className="px-4 py-2 text-xs font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors cursor-pointer"
+                            >
+                                Close
+                            </button>
+                        </div>
+                    </div>
+                </Modal>
+            )}
+
+            {/* Delete Confirmation Modal */}
+            {productToDelete && (
                 <DeleteModal
                     isOpen={isDeleteModalOpen}
-                    title="Confirm Delete"
-                    message={`Are you sure you want to delete?`}
+                    title="Delete Product"
+                    message={`Are you sure you want to delete "${getName(productToDelete)}"? This action cannot be undone.`}
                     onClose={closeDeleteModal}
                     onDelete={handleDelete}
                 />
             )}
-            {/* {pageCount > 1 && (
-				<div className="flex justify-center">
-					<Pagination
-						pageCount={pageCount}
-						currentPageNumber={currentPageNumber}
-						handlePagination={handlePagination}
-					/>
-				</div>
-			)} */}
         </div>
     );
 };
 
-export default ProductsTable;
+export default ProductTable;
