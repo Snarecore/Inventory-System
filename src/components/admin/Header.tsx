@@ -90,7 +90,7 @@ const Header = ({ sidebarClick }: { sidebarClick: boolean }) => {
             ? "lg:w-[calc(100%-90px)]"
             : "lg:w-[calc(100%-252px)]"
             }`}>
-            <div className="flex lg:hidden items-center justify-between px-4 py-3 bg-white transition-all ease-in-out duration-300">
+            <div className="flex lg:hidden items-center justify-between px-4 h-16 bg-white border-b border-gray-200 transition-all ease-in-out duration-300">
                 {showSidebarMenu ? (
                     <IoClose
                         size={26}
@@ -166,7 +166,7 @@ const Header = ({ sidebarClick }: { sidebarClick: boolean }) => {
 
                 {showSidebarMenu && (
                     <div
-                        className={`fixed top-17 left-0 w-full h-[calc(100vh-68px)] border-t border-gray-200 overflow-auto bg-white shadow-lg transform transition-all duration-300 ease-in-out ${showSidebarMenu ? "translate-x-0 opacity-100" : "-translate-x-full opacity-0"
+                        className={`fixed top-16 left-0 w-full h-[calc(100vh-64px)] border-t border-gray-200 overflow-auto bg-white shadow-lg transform transition-all duration-300 ease-in-out ${showSidebarMenu ? "translate-x-0 opacity-100" : "-translate-x-full opacity-0"
                             }`}
                     >
                         <div className="p-4">
@@ -288,7 +288,7 @@ const Header = ({ sidebarClick }: { sidebarClick: boolean }) => {
                 <div className="" onClick={() => {}}></div>
             )}
 
-            <div className="flex justify-end items-center px-4 h-16 bg-white border-b border-gray-200">
+            <div className="hidden lg:flex justify-end items-center px-4 h-16 bg-white border-b border-gray-200">
                 <div className="flex gap-4 items-center">
                     <div
                         ref={userImageRef}
@@ -301,8 +301,8 @@ const Header = ({ sidebarClick }: { sidebarClick: boolean }) => {
                                 className="w-[40px] h-[40px] rounded-lg"
                             />
                             <div>
-                                <p className="text-[15px] font-semibold text-gray-800">Majba</p>
-                                <p className="text-[12px] text-gray-500 capitalize">Super Admin</p>
+                                <p className="text-[15px] font-semibold text-gray-800">{displayName}</p>
+                                <p className="text-[12px] text-gray-500 capitalize">{displayRole}</p>
                             </div>
                         </MotionDiv>
                     </div>
