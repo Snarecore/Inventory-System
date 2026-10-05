@@ -114,7 +114,7 @@ export const PartyTable: React.FC<PartyTableProps> = ({
   return (
     <div className="bg-white rounded-xl border border-gray-200 shadow-sm relative">
       {/* Table Header: Search (Left) & Controls/Filters (Right) */}
-      <div className="px-4 py-3 border-b border-gray-200 bg-white rounded-t-xl relative z-20">
+      <div className="px-4 py-2.5 border-b border-gray-200 bg-white rounded-t-xl relative z-20">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           {/* Left: Search Box & Sort Button */}
           <div className="flex items-center gap-2 w-full sm:w-auto">
@@ -253,7 +253,7 @@ export const PartyTable: React.FC<PartyTableProps> = ({
                   {tableHeaders.map(({ key, label, align }) => (
                     <th
                       key={key}
-                      className={`px-4 py-[11px] ${align} ${key === "sl" ? "w-14" : ""}`}
+                      className={`px-4 py-[9px] ${align} ${key === "sl" ? "w-14" : ""}`}
                     >
                       {label}
                     </th>
@@ -278,19 +278,19 @@ export const PartyTable: React.FC<PartyTableProps> = ({
                         className="hover:bg-blue-50/40 transition-colors duration-150 group"
                       >
                         {/* SL */}
-                        <td className="px-4 py-[11px] text-center text-xs font-normal text-black">
+                        <td className="px-4 py-[9px] text-center text-xs font-normal text-black">
                           {rowNumber}
                         </td>
 
                         {/* Party Details (Name) */}
-                        <td className="px-4 py-[11px]">
+                        <td className="px-4 py-[9px]">
                           <div className="font-normal text-[13px] text-black leading-tight">
                             {name}
                           </div>
                         </td>
 
                         {/* Type */}
-                        <td className="px-4 py-[11px] text-left pl-4">
+                        <td className="px-4 py-[9px] text-left pl-4">
                           <span
                             className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-normal border ${
                               type === "SUPPLIER"
@@ -303,17 +303,17 @@ export const PartyTable: React.FC<PartyTableProps> = ({
                         </td>
 
                         {/* Contact Info (Phone) */}
-                        <td className="px-4 py-[11px] pl-12 text-left font-normal text-[13px] text-black">
+                        <td className="px-4 py-[9px] pl-12 text-left font-normal text-[13px] text-black">
                           {phone}
                         </td>
 
                         {/* Balance */}
-                        <td className="px-4 py-[11px] pr-10 text-right font-normal text-[13px] text-black">
+                        <td className="px-4 py-[9px] pr-10 text-right font-normal text-[13px] text-black">
                           ৳{balance.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
                         </td>
 
                         {/* Status Badge */}
-                        <td className="px-4 py-[11px] text-center">
+                        <td className="px-4 py-[9px] text-center">
                           <span
                             className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold ${
                               active
@@ -326,7 +326,7 @@ export const PartyTable: React.FC<PartyTableProps> = ({
                         </td>
 
                         {/* Actions: Eye, Edit */}
-                        <td className="px-4 py-[11px] text-center">
+                        <td className="px-4 py-[9px] text-center">
                           <div className="flex items-center justify-center gap-1.5">
                             {/* Eye / View Icon */}
                             <button

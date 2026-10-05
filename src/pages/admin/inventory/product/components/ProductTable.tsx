@@ -235,7 +235,7 @@ export const ProductTable = ({
     return (
         <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
             {/* Table Header: Search (Left) & Controls/Filters (Right) */}
-            <div className="px-4 py-3 border-b border-gray-200 bg-white">
+            <div className="px-4 py-2.5 border-b border-gray-200 bg-white">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                     {/* Left: Search Box */}
                     <div className="w-full sm:w-60">
@@ -325,7 +325,7 @@ export const ProductTable = ({
                                     {tableHeaders.map(({ key, label, align }) => (
                                         <th
                                             key={key}
-                                            className={`px-4 py-[11px] ${align} ${key === "sl" ? "w-14" : ""}`}
+                                            className={`px-4 py-[9px] ${align} ${key === "sl" ? "w-14" : ""}`}
                                         >
                                             {label}
                                         </th>
@@ -349,12 +349,12 @@ export const ProductTable = ({
                                                 className="hover:bg-blue-50/40 transition-colors duration-150 group"
                                             >
                                                 {/* SL */}
-                                                <td className="px-4 py-[11px] text-center text-xs font-normal text-black">
+                                                <td className="px-4 py-[9px] text-center text-xs font-normal text-black">
                                                     {rowNumber}
                                                 </td>
 
                                                 {/* Product Name */}
-                                                <td className="px-4 py-[11px]">
+                                                <td className="px-4 py-[9px]">
                                                     <div className="flex items-center gap-3">
                                                         <div className="min-w-0">
                                                             <div className="font-normal text-[13px] text-black leading-tight">
@@ -372,14 +372,14 @@ export const ProductTable = ({
                                                 </td>
 
                                                 {/* Category */}
-                                                <td className="px-4 py-[11px]">
+                                                <td className="px-4 py-[9px]">
                                                     <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-normal bg-slate-100 text-black border border-slate-200">
                                                         {getCategory(product)}
                                                     </span>
                                                 </td>
 
                                                 {/* Stock & Unit */}
-                                                <td className="px-4 py-[11px] text-center">
+                                                <td className="px-4 py-[9px] text-center">
                                                     <div className="inline-flex items-center justify-center gap-2">
                                                         <span className="font-normal text-[13px] text-black">
                                                             {qty}{" "}
@@ -396,17 +396,17 @@ export const ProductTable = ({
                                                 </td>
 
                                                 {/* Buy Price */}
-                                                <td className="px-4 py-[11px] text-right font-normal text-[13px] text-black">
+                                                <td className="px-4 py-[9px] text-right font-normal text-[13px] text-black">
                                                     ৳{getBuyPrice(product).toLocaleString()}
                                                 </td>
 
                                                 {/* Sell Price */}
-                                                <td className="px-4 py-[11px] text-right font-normal text-[13px] text-black">
+                                                <td className="px-4 py-[9px] text-right font-normal text-[13px] text-black">
                                                     ৳{getSellPrice(product).toLocaleString()}
                                                 </td>
 
                                                 {/* Status Badge */}
-                                                <td className="px-4 py-[11px] text-center" onClick={(e) => e.stopPropagation()}>
+                                                <td className="px-4 py-[9px] text-center" onClick={(e) => e.stopPropagation()}>
                                                     <button
                                                         type="button"
                                                         disabled={togglingId === prodId}
@@ -423,7 +423,7 @@ export const ProductTable = ({
                                                 </td>
 
                                                 {/* Actions: Eye, Edit, Delete */}
-                                                <td className="px-4 py-[11px] text-center">
+                                                <td className="px-4 py-[9px] text-center">
                                                     <div className="flex items-center justify-center gap-1.5">
                                                         {/* Eye / View Icon */}
                                                         <button
