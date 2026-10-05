@@ -110,24 +110,21 @@ export const ProductTable = ({
 
     const handleDelete = async () => {
         if (!productToDelete) return;
-        const targetId = productToDelete.id || (productToDelete as any).product_id || productToDelete.pcode;
         try {
             const deletePayload = withBranchScope({
+                ...productToDelete,
                 id: productToDelete.id || (productToDelete as any).product_id,
                 product_id: productToDelete.id || (productToDelete as any).product_id,
-                pcode: productToDelete.pcode || (productToDelete as any).productCode || (productToDelete as any).code || "",
-                name: productToDelete.name || (productToDelete as any).productName || "",
-                category: productToDelete.category || (productToDelete as any).categoryName || "General",
-                unit: productToDelete.unit || "PCS",
-                secondary_unit: (productToDelete as any).secondary_unit || (productToDelete as any).secondaryUnit || null,
-                quantity: 0,
-                buy_price: Number(productToDelete.buy_price ?? (productToDelete as any).buyPrice ?? 0),
-                sell_price: Number(productToDelete.sell_price ?? (productToDelete as any).sellPrice ?? 0),
-                is_decimal: (productToDelete as any).is_decimal === "Yes" || (productToDelete as any).is_decimal === true || (productToDelete as any).isDecimal === "Yes" || (productToDelete as any).isDecimal === true ? "Yes" : "No",
-                status: "Inactive",
+                name: getName(productToDelete),
+                pcode: getCode(productToDelete),
+                category: getCategory(productToDelete),
+                unit: getUnit(productToDelete),
+                buy_price: getBuyPrice(productToDelete),
+                sell_price: getSellPrice(productToDelete),
                 is_deleted: "YES",
                 isDeleted: "YES",
                 isSync: "YES",
+                status: "Inactive",
                 operation: "delete",
                 updated_at: new Date().toISOString()
             });
@@ -160,32 +157,19 @@ export const ProductTable = ({
         if (!targetId || togglingId) return;
 
         setTogglingId(targetId);
-        const currentActive = isActive(product);
-        const nextActive = !currentActive;
-        const nextStatus = nextActive ? "Active" : "Inactive";
+        const nextStatus = isActive(product) ? "Inactive" : "Active";
 
         try {
             const updatedProductPayload = withBranchScope({
+                ...product,
                 id: product.id || (product as any).product_id,
                 product_id: product.id || (product as any).product_id,
-                pcode: product.pcode || (product as any).productCode || (product as any).code || "",
-                name: product.name || (product as any).productName || "",
-                category: product.category || (product as any).categoryName || "General",
-                unit: product.unit || "PCS",
-                secondary_unit: (product as any).secondary_unit || (product as any).secondaryUnit || null,
-                secondary_price: Number((product as any).secondary_price || (product as any).secondaryPrice || 0),
-                quantity: Number(product.quantity ?? (product as any).stock ?? 0),
-                buy_price: Number(product.buy_price ?? (product as any).buyPrice ?? 0),
-                sell_price: Number(product.sell_price ?? (product as any).sellPrice ?? 0),
-                sku: product.sku || null,
-                barcode: product.barcode || null,
-                low_stock_threshold: Number(product.low_stock_threshold ?? (product as any).lowStockThreshold ?? 0),
-                packing_levels: product.packing_levels || (product as any).packingLevels || null,
-                description: product.description || null,
-                vat_percent: Number((product as any).vat_percent ?? (product as any).vatPercent ?? 0),
-                vat: Number((product as any).vat ?? 0),
-                unit_vat: Number((product as any).unit_vat ?? (product as any).unitVat ?? 0),
-                is_decimal: (product as any).is_decimal === "Yes" || (product as any).is_decimal === true || (product as any).isDecimal === "Yes" || (product as any).isDecimal === true ? "Yes" : "No",
+                name: getName(product),
+                pcode: getCode(product),
+                category: getCategory(product),
+                unit: getUnit(product),
+                buy_price: getBuyPrice(product),
+                sell_price: getSellPrice(product),
                 status: nextStatus,
                 operation: "update",
                 updated_at: new Date().toISOString()
