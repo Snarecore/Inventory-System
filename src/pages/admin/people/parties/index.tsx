@@ -187,13 +187,26 @@ const Parties: React.FC = () => {
           return nameB.localeCompare(nameA);
         });
       case "latest":
-      default:
-        return result.sort((a, b) => {
-          const idA = Number(a.id || (a as any).party_id || 0);
-          const idB = Number(b.id || (b as any).party_id || 0);
-          if (idA && idB) return idB - idA;
+      default: {
+        const reversed = [...filteredParties].reverse();
+        return reversed.sort((a, b) => {
+          const timeA = new Date(a.createdAt || (a as any).created_at || (a as any).createdAtTime || (a as any).updatedAt || (a as any).updated_at || (a as any).date || 0).getTime();
+          const timeB = new Date(b.createdAt || (b as any).created_at || (b as any).createdAtTime || (b as any).updatedAt || (b as any).updated_at || (b as any).date || 0).getTime();
+          if (!isNaN(timeA) && !isNaN(timeB) && timeA > 0 && timeB > 0 && timeA !== timeB) {
+            return timeB - timeA;
+          }
+
+          const rawIdA = a.id ?? (a as any).party_id ?? (a as any).partyId ?? (a as any).code ?? (a as any).partyCode;
+          const rawIdB = b.id ?? (b as any).party_id ?? (b as any).partyId ?? (b as any).code ?? (b as any).partyCode;
+          const numA = Number(String(rawIdA || '').replace(/\D/g, ''));
+          const numB = Number(String(rawIdB || '').replace(/\D/g, ''));
+          if (numA && numB && numA !== numB) {
+            return numB - numA;
+          }
+
           return 0;
         });
+      }
     }
   }, [filteredParties, sortBy]);
 

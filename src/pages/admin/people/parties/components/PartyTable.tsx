@@ -95,7 +95,7 @@ export const PartyTable: React.FC<PartyTableProps> = ({
   ];
 
   const tableHeaders = [
-    { key: "sl", label: "#", align: "text-center", width: "w-[5%]" },
+    { key: "sl", label: "SL", align: "text-center", width: "w-[5%]" },
     { key: "name", label: "Party Details", align: "text-left", width: "w-[18%]" },
     { key: "type", label: "Type", align: "text-left", width: "w-[15%]" },
     { key: "contact", label: "Contact Info", align: "text-left", width: "w-[18%]" },
@@ -404,8 +404,10 @@ export const PartyTable: React.FC<PartyTableProps> = ({
                         </td>
 
                         {/* Balance */}
-                        <td className="px-4 py-[11px] text-left font-normal text-[13px] text-black whitespace-nowrap">
-                          ৳{balance.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                        <td className="px-4 py-[11px] text-left">
+                          <div className="w-[105px] text-right font-normal text-[13px] text-black whitespace-nowrap">
+                            ৳{balance.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                          </div>
                         </td>
 
                         {/* Status Badge (Click to Toggle Active / Inactive) */}

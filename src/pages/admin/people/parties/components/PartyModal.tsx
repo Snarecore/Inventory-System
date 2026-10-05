@@ -152,37 +152,38 @@ const PartyModal: React.FC<PartyModalProps> = ({
       isOpen={isOpen}
       title={isEdit ? "Edit Party" : "Add New Party"}
       onClose={onClose}
-      maxWidth="w-full max-w-[550px]"
+      maxWidth="w-full max-w-[520px]"
+      className="!py-3.5 !px-5"
     >
-      <form onSubmit={handleSubmit} className="flex flex-col gap-4 text-left">
+      <form onSubmit={handleSubmit} className="flex flex-col gap-2.5 text-left">
         {/* Type Selection Tabs */}
         <div>
-          <label className="text-xs font-semibold text-gray-700 uppercase tracking-wider block mb-1.5">
+          <label className="text-xs font-semibold text-gray-700 uppercase tracking-wider block mb-1">
             Party Type <span className="text-red-500">*</span>
           </label>
-          <div className="grid grid-cols-2 gap-2 p-1 bg-gray-100 rounded-lg">
+          <div className="grid grid-cols-2 gap-1.5 p-1 bg-gray-100 rounded-lg">
             <button
               type="button"
               onClick={() => setPartyType("CUSTOMER")}
-              className={`flex items-center justify-center gap-2 py-2 px-3 rounded-md text-xs font-semibold transition-all cursor-pointer ${
+              className={`flex items-center justify-center gap-1.5 py-1.5 px-3 rounded-md text-xs font-semibold transition-all cursor-pointer ${
                 partyType === "CUSTOMER"
                   ? "bg-white text-[#009fe3] shadow-xs"
                   : "text-gray-600 hover:text-gray-900"
               }`}
             >
-              <FaUserTie className="text-sm" />
+              <FaUserTie className="text-xs" />
               Customer
             </button>
             <button
               type="button"
               onClick={() => setPartyType("SUPPLIER")}
-              className={`flex items-center justify-center gap-2 py-2 px-3 rounded-md text-xs font-semibold transition-all cursor-pointer ${
+              className={`flex items-center justify-center gap-1.5 py-1.5 px-3 rounded-md text-xs font-semibold transition-all cursor-pointer ${
                 partyType === "SUPPLIER"
                   ? "bg-white text-[#28c76f] shadow-xs"
                   : "text-gray-600 hover:text-gray-900"
               }`}
             >
-              <FaTruck className="text-sm" />
+              <FaTruck className="text-xs" />
               Supplier
             </button>
           </div>
@@ -197,12 +198,13 @@ const PartyModal: React.FC<PartyModalProps> = ({
             onChange={(val: any) => setPartyName(typeof val === "string" ? val : (val?.target?.value ?? ""))}
             required
             message={errors.partyName}
+            wrapperClass="!h-[35px]"
             icon={<FaUserTie className="text-gray-400 text-xs" />}
           />
         </div>
 
         {/* Phone & Email in a 2-col row */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
           <div>
             <TextInput
               label="Phone Number"
@@ -211,6 +213,7 @@ const PartyModal: React.FC<PartyModalProps> = ({
               onChange={(val: any) => setPartyPhone(typeof val === "string" ? val : (val?.target?.value ?? ""))}
               required
               message={errors.partyPhone}
+              wrapperClass="!h-[35px]"
               icon={<FaPhone className="text-gray-400 text-xs" />}
             />
           </div>
@@ -221,6 +224,7 @@ const PartyModal: React.FC<PartyModalProps> = ({
               placeholder="e.g. info@domain.com"
               value={partyEmail}
               onChange={(val: any) => setPartyEmail(typeof val === "string" ? val : (val?.target?.value ?? ""))}
+              wrapperClass="!h-[35px]"
               icon={<FaEnvelope className="text-gray-400 text-xs" />}
             />
           </div>
@@ -233,12 +237,13 @@ const PartyModal: React.FC<PartyModalProps> = ({
             placeholder="Street address, city, district..."
             value={partyAddress}
             onChange={(val: any) => setPartyAddress(typeof val === "string" ? val : (val?.target?.value ?? ""))}
+            wrapperClass="!h-[35px]"
             icon={<FaMapMarkerAlt className="text-gray-400 text-xs" />}
           />
         </div>
 
         {/* Opening Balance & Status */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
           <div>
             <TextInput
               label="Opening Balance (৳)"
@@ -246,6 +251,7 @@ const PartyModal: React.FC<PartyModalProps> = ({
               placeholder="0.00"
               value={openingBalance}
               onChange={(val: any) => setOpeningBalance(typeof val === "string" ? val : (val?.target?.value ?? ""))}
+              wrapperClass="!h-[35px]"
               icon={<FaMoneyBillWave className="text-gray-400 text-xs" />}
             />
           </div>
@@ -254,7 +260,7 @@ const PartyModal: React.FC<PartyModalProps> = ({
             <select
               value={status}
               onChange={(e) => setStatus(e.target.value as "active" | "inactive")}
-              className="w-full h-[38px] px-3 text-sm bg-white border border-gray-200 rounded-lg text-black focus:outline-none focus:ring-1 focus:ring-[var(--primary-color)]"
+              className="w-full h-[35px] px-3 text-sm bg-white border border-gray-200 rounded-lg text-black focus:outline-none focus:ring-1 focus:ring-[var(--primary-color)]"
             >
               <option value="active">Active</option>
               <option value="inactive">Inactive</option>
@@ -263,7 +269,7 @@ const PartyModal: React.FC<PartyModalProps> = ({
         </div>
 
         {/* Action Buttons */}
-        <div className="flex justify-end gap-2.5 mt-2 pt-3 border-t border-gray-100">
+        <div className="flex justify-end gap-2 mt-1 pt-2.5 border-t border-gray-100">
           <Button
             label="Cancel"
             onClick={onClose}
@@ -271,7 +277,7 @@ const PartyModal: React.FC<PartyModalProps> = ({
             disabled={isSubmitting}
             color="#f3f4f6"
             hoverColor="#e5e7eb"
-            buttonClass="!text-gray-700 !border-gray-300 shadow-none"
+            buttonClass="!text-gray-700 !border-gray-300 shadow-none !py-1.5 !px-3.5"
           />
           <Button
             label={isSubmitting ? "Saving..." : isEdit ? "Update Party" : "Create Party"}
@@ -281,6 +287,7 @@ const PartyModal: React.FC<PartyModalProps> = ({
             isLoading={isSubmitting}
             color="#009fe3"
             hoverColor="#0085be"
+            buttonClass="!py-1.5 !px-4"
           />
         </div>
       </form>

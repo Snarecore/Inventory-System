@@ -202,12 +202,34 @@ const Products = () => {
         };
     }, [allProducts]);
 
+    // Sorted products (latest added product first)
+    const sortedProducts = useMemo(() => {
+        const reversed = [...filteredProducts].reverse();
+        return reversed.sort((a, b) => {
+            const timeA = new Date(a.createdAt || (a as any).created_at || (a as any).updatedAt || (a as any).updated_at || 0).getTime();
+            const timeB = new Date(b.createdAt || (b as any).created_at || (b as any).updatedAt || (b as any).updated_at || 0).getTime();
+            if (!isNaN(timeA) && !isNaN(timeB) && timeA > 0 && timeB > 0 && timeA !== timeB) {
+                return timeB - timeA;
+            }
+
+            const rawIdA = a.id ?? (a as any).product_id ?? (a as any).productId ?? a.pcode ?? (a as any).productCode ?? (a as any).code;
+            const rawIdB = b.id ?? (b as any).product_id ?? (b as any).productId ?? b.pcode ?? (b as any).productCode ?? (b as any).code;
+            const numA = Number(String(rawIdA || '').replace(/\D/g, ''));
+            const numB = Number(String(rawIdB || '').replace(/\D/g, ''));
+            if (numA && numB && numA !== numB) {
+                return numB - numA;
+            }
+
+            return 0;
+        });
+    }, [filteredProducts]);
+
     // Pagination calculations
-    const pageCount = Math.max(1, Math.ceil(filteredProducts.length / dataLimit));
+    const pageCount = Math.max(1, Math.ceil(sortedProducts.length / dataLimit));
     const paginatedProducts = useMemo(() => {
         const start = (currentPageNumber - 1) * dataLimit;
-        return filteredProducts.slice(start, start + dataLimit);
-    }, [filteredProducts, currentPageNumber, dataLimit]);
+        return sortedProducts.slice(start, start + dataLimit);
+    }, [sortedProducts, currentPageNumber, dataLimit]);
 
     const handlePagination = (paginationData: { selected: number }) => {
         setCurrentPageNumber(paginationData.selected + 1);
@@ -324,7 +346,7 @@ const Products = () => {
             {/* Products Table Component */}
             <ProductTable
                 products={paginatedProducts}
-                totalCount={filteredProducts.length}
+                totalCount={sortedProducts.length}
                 isLoading={isLoading}
                 isFetching={isFetching}
                 pageCount={pageCount}
