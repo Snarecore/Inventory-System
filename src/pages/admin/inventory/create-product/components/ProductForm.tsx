@@ -446,6 +446,15 @@ const CreateProductForm = () => {
         setIsLoading(true);
         try {
             const targetId = editingProduct?.id || (editingProduct as any)?.product_id || editId;
+            const formattedPackingLevels = () => {
+                const raw = fieldValues.packing_levels.trim();
+                if (!raw) return null;
+                if (/^\d+(\.\d+)?$/.test(raw) && fieldValues.secondary_unit && fieldValues.unit) {
+                    return `${raw} ${fieldValues.secondary_unit}/${fieldValues.unit}`;
+                }
+                return raw;
+            };
+
             const productPayload = withBranchScope({
                 ...(isEditMode && targetId ? {
                     id: targetId,
@@ -469,7 +478,7 @@ const CreateProductForm = () => {
                 sku: fieldValues.sku.trim() || null,
                 barcode: fieldValues.barcode.trim() || null,
                 low_stock_threshold: fieldValues.low_stock_threshold ? Number(fieldValues.low_stock_threshold) : 0,
-                packing_levels: fieldValues.packing_levels.trim() || null,
+                packing_levels: formattedPackingLevels(),
                 is_decimal: isDecimalAllowed ? "Yes" : "No",
                 status: fieldValues.status === "active" ? "Active" : "Inactive",
             });
@@ -593,7 +602,31 @@ const CreateProductForm = () => {
                                 />
                             </div>
 
-
+                            {/* Conversion Rate / Packaging Ratio (When Secondary Unit is selected) */}
+                            {selectedUnit && selectedSecondaryUnit ? (
+                                <div>
+                                    <InputField
+                                        label={`Conversion Ratio (1 ${selectedUnit.label} = ? ${selectedSecondaryUnit.label})`}
+                                        type="text"
+                                        name="packing_levels"
+                                        value={fieldValues.packing_levels}
+                                        onChange={handleChange}
+                                        placeholder={`e.g. 10 (1 ${selectedUnit.label} = 10 ${selectedSecondaryUnit.label})`}
+                                    />
+                                    {fieldValues.packing_levels && (
+                                        <div className="mt-1 flex items-center gap-1.5 text-xs text-sky-700 bg-sky-50 border border-sky-200 px-2.5 py-1 rounded-md">
+                                            <span className="font-semibold">📦 Conversion:</span>
+                                            <span>
+                                                1 {selectedUnit.label} = {
+                                                    fieldValues.packing_levels.toLowerCase().includes(selectedSecondaryUnit.label.toLowerCase())
+                                                        ? fieldValues.packing_levels
+                                                        : `${fieldValues.packing_levels} ${selectedSecondaryUnit.label}`
+                                                }
+                                            </span>
+                                        </div>
+                                    )}
+                                </div>
+                            ) : null}
 
                             {/* Buy Price */}
                             <div>
@@ -651,17 +684,19 @@ const CreateProductForm = () => {
                                 />
                             </div>
 
-                            {/* Packing Levels */}
-                            <div>
-                                <InputField
-                                    label="Packing Levels"
-                                    type="text"
-                                    name="packing_levels"
-                                    value={fieldValues.packing_levels}
-                                    onChange={handleChange}
-                                    placeholder="e.g. 10 pcs/box"
-                                />
-                            </div>
+                            {/* Packing Levels (Only when Secondary Unit is NOT selected) */}
+                            {!selectedSecondaryUnit && (
+                                <div>
+                                    <InputField
+                                        label="Packing Levels (Optional)"
+                                        type="text"
+                                        name="packing_levels"
+                                        value={fieldValues.packing_levels}
+                                        onChange={handleChange}
+                                        placeholder="e.g. 10 pcs/box"
+                                    />
+                                </div>
+                            )}
 
                             {/* Product Code */}
                             <div>
