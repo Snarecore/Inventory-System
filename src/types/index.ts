@@ -48,3 +48,38 @@ export interface ProductItem {
   orgId?: number | string
   [key: string]: any
 }
+
+export type PartyType = 'CUSTOMER' | 'SUPPLIER'
+
+export interface PartyItem {
+  id?: string | number
+  partyId?: string | number
+  party_id?: string | number
+  name?: string
+  partyName?: string
+  party_name?: string
+  type?: PartyType | string
+  partyType?: PartyType | string
+  party_type?: PartyType | string
+  phone?: string
+  phoneNumber?: string
+  partyPhone?: string
+  party_phone?: string
+  email?: string
+  partyEmail?: string
+  address?: string
+  partyAddress?: string
+  openingBalance?: number | string
+  opening_balance?: number | string
+  balance?: number | string
+  dueAmount?: number | string
+  due_amount?: number | string
+  status?: 'active' | 'inactive' | string | boolean
+  branchId?: number | string
+  orgId?: number | string
+  created_at?: string
+  updated_at?: string
+  createdAt?: string
+  updatedAt?: string
+  [key: string]: any
+}

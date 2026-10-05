@@ -4,7 +4,6 @@
             "homePageCmsUrl": "home-page-cms"
         },
         "heroSliderUrl": "hero-slider",
-        "promotionsUrl": "promotions",
         "popupUrl": "popups",
         "socialLinksUrl": "social-link",
         "contactUs": {
@@ -63,6 +62,11 @@
     },
     "productList": {
         "productListUrl": "get-product-list"
+    },
+    "party": {
+        "partyListUrl": "get-party-info-list",
+        "insertPartyUrl": "insert-party-info",
+        "updatePartyUrl": "party-info-update"
     },
     "pageMeta": {
         "pageMetaUrl": "page-meta"

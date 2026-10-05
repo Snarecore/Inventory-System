@@ -19,8 +19,8 @@ const Orders = React.lazy(() => import('@/pages/admin/orders'))
 const Admins = React.lazy(() => import('@/pages/admin/people/admin'))
 const Users = React.lazy(() => import('@/pages/admin/people/user'))
 const Vendors = React.lazy(() => import('@/pages/admin/people/vendor'))
+const Parties = React.lazy(() => import('@/pages/admin/people/parties'))
 const HeroSlider = React.lazy(() => import('@/pages/admin/settings/home/hero-slider'))
-const Promotions = React.lazy(() => import('@/pages/admin/settings/home/promotion'))
 const HomePageCms = React.lazy(() => import('@/pages/admin/settings/home/page-cms'))
 const HeaderFooterCms = React.lazy(() => import('@/pages/admin/settings/header-footer-cms'))
 const ContactMessage = React.lazy(() => import('@/pages/admin/settings/contact/contact-message'))
@@ -52,6 +52,18 @@ export const router = createBrowserRouter([
   {
     path: '/login',
     element: <Login />,
+  },
+  {
+    path: '/customers',
+    element: <Navigate to="/admin/parties?type=CUSTOMER" replace />,
+  },
+  {
+    path: '/suppliers',
+    element: <Navigate to="/admin/parties?type=SUPPLIER" replace />,
+  },
+  {
+    path: '/parties',
+    element: <Navigate to="/admin/parties" replace />,
   },
   {
     path: '/',
@@ -130,12 +142,20 @@ export const router = createBrowserRouter([
         element: withSuspense(Vendors),
       },
       {
-        path: 'hero-slider',
-        element: withSuspense(HeroSlider),
+        path: 'parties',
+        element: withSuspense(Parties),
       },
       {
-        path: 'promotions',
-        element: withSuspense(Promotions),
+        path: 'customers',
+        element: <Navigate to="/admin/parties?type=CUSTOMER" replace />,
+      },
+      {
+        path: 'suppliers',
+        element: <Navigate to="/admin/parties?type=SUPPLIER" replace />,
+      },
+      {
+        path: 'hero-slider',
+        element: withSuspense(HeroSlider),
       },
       {
         path: 'home-page-cms',
