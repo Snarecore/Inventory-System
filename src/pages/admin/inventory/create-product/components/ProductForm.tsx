@@ -1,5 +1,5 @@
 import React, { ChangeEvent, useState, useEffect, useMemo } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate, useParams, useSearchParams, useLocation } from "react-router-dom";
 import Button from '@/components/button/Button';
 import SelectInput from '@/components/form/SelectField';
@@ -79,6 +79,7 @@ const CreateProductForm = () => {
     const [isLoading, setIsLoading] = useState(false);
     const [hasLoadedInitialData, setHasLoadedInitialData] = useState(false);
 
+    const queryClient = useQueryClient();
     const { postMutation, patchMutation, handleApiMutation } = useAPI();
     const insertProductUrl = apiConfig.inventory?.insertProductUrl || "insert-product";
     const productBaseUrl = apiConfig.inventory?.productUrl || "product";
@@ -107,7 +108,7 @@ const CreateProductForm = () => {
     });
 
     // 3. Fetch Product List to prefill edit form or auto-generate pcode/barcode for new product
-    const { data: productListData, isLoading: isProductListLoading } = useQuery({
+    const { data: productListData, isLoading: isProductListLoading, refetch: refetchProductList } = useQuery({
         queryKey: [productListQueryKey],
         queryFn: async () => {
             try {
@@ -120,57 +121,76 @@ const CreateProductForm = () => {
                 return null;
             }
         },
-        staleTime: 30 * 1000,
+        staleTime: 0,
+        refetchOnMount: "always",
+        refetchOnWindowFocus: true,
     });
+
+    useEffect(() => {
+        if (isEditMode) {
+            refetchProductList();
+        }
+    }, [isEditMode, editId]);
 
     // Normalize product list
     const productList: ProductItem[] = useMemo(() => {
         if (!productListData) return [];
+        let list: any[] = [];
         if (Array.isArray((productListData as any).productsList)) {
-            return (productListData as any).productsList;
+            list = (productListData as any).productsList;
         } else if (Array.isArray((productListData as any).data)) {
-            return (productListData as any).data;
+            list = (productListData as any).data;
         } else if (Array.isArray(productListData)) {
-            return productListData as ProductItem[];
+            list = productListData as ProductItem[];
         }
-        return [];
+        return list.filter((p: any) => {
+            const isDel = String(p.isDeleted || p.is_deleted || p.isDelete || p.is_delete || "").trim().toUpperCase();
+            return isDel !== "Y" && isDel !== "YES" && isDel !== "TRUE" && isDel !== "1";
+        });
     }, [productListData]);
 
     // Find product to edit if in edit mode
     const editingProduct: ProductItem | null = useMemo(() => {
         if (!isEditMode) return null;
-        if (stateEditData) return stateEditData;
         if (editId && productList.length > 0) {
-            return (
-                productList.find(
-                    (p) =>
-                        String(p.id) === String(editId) ||
-                        String(p.pcode) === String(editId) ||
-                        String(p.productCode) === String(editId) ||
-                        String(p.sku) === String(editId)
-                ) || null
+            const found = productList.find(
+                (p: any) =>
+                    String(p.id) === String(editId) ||
+                    String(p.product_id) === String(editId) ||
+                    String(p._id) === String(editId) ||
+                    String(p.pcode) === String(editId) ||
+                    String(p.productCode) === String(editId) ||
+                    String(p.code) === String(editId) ||
+                    String(p.sku) === String(editId)
             );
+            if (found) return found;
         }
+        if (stateEditData) return stateEditData;
         return null;
-    }, [isEditMode, stateEditData, editId, productList]);
+    }, [isEditMode, editId, productList, stateEditData]);
 
     // Load product data into form fields when in edit mode
     useEffect(() => {
-        if (isEditMode && editingProduct && !hasLoadedInitialData) {
+        if (isEditMode && editingProduct) {
             const name = editingProduct.name || editingProduct.productName || "";
             const category = editingProduct.category || editingProduct.categoryName || "";
             const unit = editingProduct.unit || "PCS";
             const secondary_unit = editingProduct.secondary_unit || editingProduct.secondaryUnit || "";
-            const secondary_price = editingProduct.secondary_price !== undefined ? String(editingProduct.secondary_price) : "";
+            const secondary_price = editingProduct.secondary_price !== undefined && editingProduct.secondary_price !== null ? String(editingProduct.secondary_price) : (editingProduct.secondaryPrice !== undefined ? String(editingProduct.secondaryPrice) : "");
             const quantity = String(editingProduct.quantity ?? editingProduct.stock ?? "0");
-            const buy_price = editingProduct.buy_price !== undefined ? String(editingProduct.buy_price) : (editingProduct.buyPrice !== undefined ? String(editingProduct.buyPrice) : "");
-            const sell_price = editingProduct.sell_price !== undefined ? String(editingProduct.sell_price) : (editingProduct.sellPrice !== undefined ? String(editingProduct.sellPrice) : "");
+            const buy_price = editingProduct.buy_price !== undefined && editingProduct.buy_price !== null ? String(editingProduct.buy_price) : (editingProduct.buyPrice !== undefined ? String(editingProduct.buyPrice) : "");
+            const sell_price = editingProduct.sell_price !== undefined && editingProduct.sell_price !== null ? String(editingProduct.sell_price) : (editingProduct.sellPrice !== undefined ? String(editingProduct.sellPrice) : "");
             const pcode = editingProduct.pcode || editingProduct.productCode || editingProduct.code || "";
             const sku = editingProduct.sku || "";
             const barcode = editingProduct.barcode || "";
             const low_stock_threshold = String(editingProduct.low_stock_threshold ?? editingProduct.lowStockThreshold ?? "5");
             const packing_levels = editingProduct.packing_levels || editingProduct.packingLevels || "";
-            const status = (editingProduct.status === "inactive" || editingProduct.status === false || editingProduct.status === "INACTIVE") ? "inactive" : "active";
+            
+            const isDec = (editingProduct as any).is_decimal === "Yes" || (editingProduct as any).is_decimal === true || (editingProduct as any).isDecimal === "Yes" || (editingProduct as any).isDecimal === true;
+            setIsDecimalAllowed(isDec);
+
+            const rawStatus = String(editingProduct.status ?? "").trim().toLowerCase();
+            const status: "active" | "inactive" = (rawStatus === "inactive" || rawStatus === "false" || rawStatus === "0" || editingProduct.status === false || editingProduct.status === 0) ? "inactive" : "active";
 
             setFieldValues({
                 name,
@@ -198,10 +218,8 @@ const CreateProductForm = () => {
             if (secondary_unit) {
                 setSelectedSecondaryUnit({ label: secondary_unit, value: secondary_unit });
             }
-
-            setHasLoadedInitialData(true);
         }
-    }, [isEditMode, editingProduct, hasLoadedInitialData]);
+    }, [isEditMode, editingProduct]);
 
     // Auto-generate next pcode, barcode, sku ONLY in Create mode
     useEffect(() => {
@@ -428,23 +446,33 @@ const CreateProductForm = () => {
 
         setIsLoading(true);
         try {
-            const targetId = editingProduct?.id || editId || fieldValues.pcode;
+            const targetId = editingProduct?.id || (editingProduct as any)?.product_id || editId;
             const productPayload = withBranchScope({
-                ...(isEditMode && targetId ? { id: targetId } : {}),
+                ...(isEditMode && targetId ? {
+                    id: targetId,
+                    product_id: targetId,
+                    operation: "update",
+                    updated_at: new Date().toISOString()
+                } : {
+                    operation: "insert",
+                    created_at: new Date().toISOString(),
+                    updated_at: new Date().toISOString()
+                }),
                 name: fieldValues.name.trim(),
-                category: fieldValues.category.trim(),
+                category: fieldValues.category.trim() || "General",
                 unit: fieldValues.unit.trim() || "PCS",
-                secondary_unit: fieldValues.secondary_unit.trim(),
+                secondary_unit: fieldValues.secondary_unit.trim() || null,
                 secondary_price: fieldValues.secondary_price ? Number(fieldValues.secondary_price) : 0,
                 quantity: fieldValues.quantity ? Number(fieldValues.quantity) : 0,
                 buy_price: Number(fieldValues.buy_price) || 0,
                 sell_price: Number(fieldValues.sell_price) || 0,
                 pcode: fieldValues.pcode.trim(),
-                sku: fieldValues.sku.trim(),
-                barcode: fieldValues.barcode.trim(),
+                sku: fieldValues.sku.trim() || null,
+                barcode: fieldValues.barcode.trim() || null,
                 low_stock_threshold: fieldValues.low_stock_threshold ? Number(fieldValues.low_stock_threshold) : 0,
-                packing_levels: fieldValues.packing_levels.trim(),
-                status: fieldValues.status,
+                packing_levels: fieldValues.packing_levels.trim() || null,
+                is_decimal: isDecimalAllowed ? "Yes" : "No",
+                status: fieldValues.status === "active" ? "Active" : "Inactive",
             });
 
             const payload = {
@@ -452,47 +480,18 @@ const CreateProductForm = () => {
                 product: productPayload,
             };
 
-            let result: any;
-
-            if (isEditMode) {
-                // Try PATCH first if configured, with automatic fallback to POST /insert-product
-                try {
-                    result = await handleApiMutation({
-                        mutation: patchMutation as any,
-                        url: `${productBaseUrl}/${targetId}`,
-                        body: payload as any,
-                        invalidateQueryKey: [productListQueryKey, productQueryKey, insertProductQueryKey],
-                        showSuccessMessage: true,
-                        showErrorMessage: false,
-                    });
-                } catch {
-                    result = null;
-                }
-
-                // If PATCH is not supported by the backend (404/405/Error), use POST /insert-product (v4 upsert standard)
-                if (!result?.success) {
-                    result = await handleApiMutation({
-                        mutation: postMutation as any,
-                        url: insertProductUrl,
-                        body: payload as any,
-                        invalidateQueryKey: [productListQueryKey, productQueryKey, insertProductQueryKey],
-                        showSuccessMessage: true,
-                        showErrorMessage: true
-                    });
-                }
-            } else {
-                // POST Mutation for creating product
-                result = await handleApiMutation({
-                    mutation: postMutation as any,
-                    url: insertProductUrl,
-                    body: payload as any,
-                    invalidateQueryKey: [productListQueryKey, productQueryKey, insertProductQueryKey],
-                    showSuccessMessage: true,
-                    showErrorMessage: true
-                });
-            }
+            const result = await handleApiMutation({
+                mutation: postMutation as any,
+                url: insertProductUrl,
+                body: payload as any,
+                invalidateQueryKey: [productListQueryKey, productQueryKey, insertProductQueryKey],
+                showSuccessMessage: true,
+                showErrorMessage: true
+            });
 
             if (result?.success) {
+                await queryClient.invalidateQueries({ queryKey: [productListQueryKey] });
+                await queryClient.refetchQueries({ queryKey: [productListQueryKey] });
                 navigate("/admin/products");
             }
         } catch (error: any) {
@@ -595,18 +594,7 @@ const CreateProductForm = () => {
                                 />
                             </div>
 
-                            {/* Secondary Unit Price (Optional) */}
-                            <div>
-                                <InputField
-                                    label="Secondary Unit Price (৳)"
-                                    type="number"
-                                    name="secondary_price"
-                                    value={fieldValues.secondary_price}
-                                    onChange={handleChange}
-                                    placeholder="0.00"
-                                    disabled={!selectedUnit || !fieldValues.secondary_unit}
-                                />
-                            </div>
+
 
                             {/* Buy Price */}
                             <div>

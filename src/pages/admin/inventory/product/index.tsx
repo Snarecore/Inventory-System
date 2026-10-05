@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { FaPlus, FaMoneyBillWave } from "react-icons/fa";
 import { IoCubeOutline } from "react-icons/io5";
-import { FiCheckCircle, FiAlertTriangle } from "react-icons/fi";
+import { FiCheckCircle, FiAlertTriangle, FiXCircle } from "react-icons/fi";
 import { MotionDiv } from "@/utils/framer.motion";
 import PageHeader from "@/components/page-header/PageHeader";
 import Button from "@/components/button/Button";
@@ -16,7 +16,7 @@ import { getData, postData } from "@/services/api-service";
 import type { ProductItem } from "@/types";
 
 const Products = () => {
-    const dataLimit = 10;
+    const [dataLimit, setDataLimit] = useState(10);
     const navigate = useNavigate();
 
     const [currentPageNumber, setCurrentPageNumber] = useState(1);
@@ -52,8 +52,14 @@ const Products = () => {
             });
             return response;
         },
-        staleTime: 30 * 1000,
+        staleTime: 0,
+        refetchOnMount: "always",
+        refetchOnWindowFocus: true,
     });
+
+    useEffect(() => {
+        refetchProducts();
+    }, []);
 
     // 2. Fetch Categories from GET /product-categories-list
     const { data: rawCategoryData, refetch: refetchCategories } = useQuery({
@@ -71,16 +77,18 @@ const Products = () => {
     // Normalize product list from response
     const allProducts: ProductItem[] = useMemo(() => {
         if (!rawProductData) return [];
+        let list: any[] = [];
         if (Array.isArray((rawProductData as any).productsList)) {
-            return (rawProductData as any).productsList;
+            list = (rawProductData as any).productsList;
+        } else if (Array.isArray((rawProductData as any).data)) {
+            list = (rawProductData as any).data;
+        } else if (Array.isArray(rawProductData)) {
+            list = rawProductData as ProductItem[];
         }
-        if (Array.isArray((rawProductData as any).data)) {
-            return (rawProductData as any).data;
-        }
-        if (Array.isArray(rawProductData)) {
-            return rawProductData as ProductItem[];
-        }
-        return [];
+        return list.filter((p: any) => {
+            const isDel = String(p.isDeleted || p.is_deleted || p.isDelete || p.is_delete || "").trim().toUpperCase();
+            return isDel !== "Y" && isDel !== "YES" && isDel !== "TRUE" && isDel !== "1";
+        });
     }, [rawProductData]);
 
     // Build Category dropdown options
@@ -116,8 +124,10 @@ const Products = () => {
 
     // Helper to evaluate product status
     const isProductActive = (p: ProductItem) => {
-        if (p.status === "active" || p.status === true || p.status === "ACTIVE" || String(p.status) === "true") return true;
-        if (p.status === "inactive" || p.status === false || p.status === "INACTIVE" || String(p.status) === "false") return false;
+        const raw = String(p?.status ?? "").trim().toLowerCase();
+        if (raw === "inactive" || raw === "false" || raw === "0" || p?.status === false || p?.status === 0) {
+            return false;
+        }
         return true;
     };
 
@@ -171,6 +181,7 @@ const Products = () => {
     const metrics = useMemo(() => {
         const total = allProducts.length;
         const activeCount = allProducts.filter(isProductActive).length;
+        const inactiveCount = allProducts.filter((p) => !isProductActive(p)).length;
         const lowStockCount = allProducts.filter((p) => {
             const qty = getProductQuantity(p);
             const threshold = Number(p.low_stock_threshold ?? p.lowStockThreshold ?? 5);
@@ -185,6 +196,7 @@ const Products = () => {
         return {
             total,
             activeCount,
+            inactiveCount,
             lowStockCount,
             totalStockValue,
         };
@@ -212,7 +224,7 @@ const Products = () => {
     };
 
     return (
-        <div className="flex flex-col gap-3.5 p-4 sm:p-5 max-w-[1600px] mx-auto w-full">
+        <div className="flex flex-col gap-3 px-4 py-2.5 sm:px-5 sm:py-3 max-w-[1600px] mx-auto w-full">
             {/* Header with Title & Actions */}
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                 <PageHeader
@@ -231,17 +243,17 @@ const Products = () => {
                 </div>
             </div>
 
-            {/* Dashboard-Inspired KPI Summary Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 w-full">
+            {/* Dashboard-Inspired KPI Summary Cards (5 Cards) */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 w-full">
                 {/* 1. Total Products - Sky Blue */}
                 <MotionDiv delay={0.05}>
-                    <div className="px-4 py-3 rounded-xl bg-[#009fe3] text-white shadow-xs">
+                    <div className="px-4 py-2.5 rounded-xl bg-[#009fe3] text-white shadow-xs">
                         <div className="flex items-center justify-between">
                             <div>
-                                <p className="text-[22px] font-bold tracking-tight">{metrics.total}</p>
-                                <p className="text-[11px] font-medium text-white/90 uppercase tracking-wider">Total Products</p>
+                                <p className="text-[20px] font-bold tracking-tight">{metrics.total}</p>
+                                <p className="text-[11px] font-medium text-white uppercase tracking-wider">Total Products</p>
                             </div>
-                            <div className="text-3xl text-white/90">
+                            <div className="text-2xl text-white">
                                 <IoCubeOutline />
                             </div>
                         </div>
@@ -250,43 +262,58 @@ const Products = () => {
 
                 {/* 2. Active Products - Emerald Green */}
                 <MotionDiv delay={0.1}>
-                    <div className="px-4 py-3 rounded-xl bg-[#28c76f] text-white shadow-xs">
+                    <div className="px-4 py-2.5 rounded-xl bg-[#28c76f] text-white shadow-xs">
                         <div className="flex items-center justify-between">
                             <div>
-                                <p className="text-[22px] font-bold tracking-tight">{metrics.activeCount}</p>
-                                <p className="text-[11px] font-medium text-white/90 uppercase tracking-wider">Active Products</p>
+                                <p className="text-[20px] font-bold tracking-tight">{metrics.activeCount}</p>
+                                <p className="text-[11px] font-medium text-white uppercase tracking-wider">Active Products</p>
                             </div>
-                            <div className="text-3xl text-white/90">
+                            <div className="text-2xl text-white">
                                 <FiCheckCircle />
                             </div>
                         </div>
                     </div>
                 </MotionDiv>
 
-                {/* 3. Low Stock Alert - Amber / Orange */}
+                {/* 3. Inactive Products - Rose / Red */}
                 <MotionDiv delay={0.15}>
-                    <div className="px-4 py-3 rounded-xl bg-[#FE9F43] text-white shadow-xs">
+                    <div className="px-4 py-2.5 rounded-xl bg-[#ea5455] text-white shadow-xs">
                         <div className="flex items-center justify-between">
                             <div>
-                                <p className="text-[22px] font-bold tracking-tight">{metrics.lowStockCount}</p>
-                                <p className="text-[11px] font-medium text-white/90 uppercase tracking-wider">Low Stock Alert</p>
+                                <p className="text-[20px] font-bold tracking-tight">{metrics.inactiveCount}</p>
+                                <p className="text-[11px] font-medium text-white uppercase tracking-wider">Inactive Products</p>
                             </div>
-                            <div className="text-3xl text-white/90">
+                            <div className="text-2xl text-white">
+                                <FiXCircle />
+                            </div>
+                        </div>
+                    </div>
+                </MotionDiv>
+
+                {/* 4. Low Stock Alert - Amber / Orange */}
+                <MotionDiv delay={0.2}>
+                    <div className="px-4 py-2.5 rounded-xl bg-[#FE9F43] text-white shadow-xs">
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <p className="text-[20px] font-bold tracking-tight">{metrics.lowStockCount}</p>
+                                <p className="text-[11px] font-medium text-white uppercase tracking-wider">Low Stock Alert</p>
+                            </div>
+                            <div className="text-2xl text-white">
                                 <FiAlertTriangle />
                             </div>
                         </div>
                     </div>
                 </MotionDiv>
 
-                {/* 4. Stock Valuation - Rich Indigo / Violet */}
-                <MotionDiv delay={0.2}>
-                    <div className="px-4 py-3 rounded-xl bg-[#7367f0] text-white shadow-xs">
+                {/* 5. Stock Valuation - Midnight Navy */}
+                <MotionDiv delay={0.25}>
+                    <div className="px-4 py-2.5 rounded-xl bg-[#1b2850] text-white shadow-xs">
                         <div className="flex items-center justify-between">
                             <div>
-                                <p className="text-[22px] font-bold tracking-tight">৳{metrics.totalStockValue.toLocaleString('en-IN')}</p>
-                                <p className="text-[11px] font-medium text-white/90 uppercase tracking-wider">Stock Valuation</p>
+                                <p className="text-[20px] font-bold tracking-tight">৳{metrics.totalStockValue.toLocaleString('en-IN')}</p>
+                                <p className="text-[11px] font-medium text-white uppercase tracking-wider">Stock Valuation</p>
                             </div>
-                            <div className="text-3xl text-white/90">
+                            <div className="text-2xl text-white">
                                 <FaMoneyBillWave />
                             </div>
                         </div>
@@ -303,6 +330,8 @@ const Products = () => {
                 pageCount={pageCount}
                 currentPageNumber={currentPageNumber}
                 setCurrentPageNumber={setCurrentPageNumber}
+                dataLimit={dataLimit}
+                setDataLimit={setDataLimit}
                 handlePagination={handlePagination}
                 searchQuery={searchQuery}
                 setSearchQuery={setSearchQuery}

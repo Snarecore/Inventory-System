@@ -4,12 +4,16 @@ import InputField from "@/components/form/TextInput";
 import ToggleInput from "@/components/form/ToggleInput";
 import ImageUpload from "@/components/image/ImageUpload";
 import Modal from "@/components/modal/Modal";
+import { useAPI } from "@/hooks/useApi";
+import apiConfig from "@/config/api.json";
+import { mainCategoryQueryKey } from "@/config/query-key";
 
 const initialFieldValues = {
     name: "",
     image: "" as string | File,
     bannerImage: "" as string | File,
-    status: true
+    status: true,
+    position: ""
 };
 
 const requiredFields: any = [
@@ -18,19 +22,23 @@ const requiredFields: any = [
     { key: "name", value: "name", label: "name" }
 ];
 
-const CategoryForm = ({ isOpen, onClose, editData }: any) => {
+const CategoryForm = ({ isOpen, onClose, editData, fetchData }: any) => {
     const [fieldValues, setFieldValues] = useState(initialFieldValues);
     const [isLoading, setIsLoading] = useState(false);
-    // const { postFormMutation, patchFormMutation, handleApiMutation } = useAPI();
-    // const apiUrl = apiConfig.inventory.mainCategoryUrl;
+    const { postFormMutation, patchFormMutation, handleApiMutation } = useAPI();
+    const apiUrl = apiConfig.inventory.mainCategoryUrl;
 
     useEffect(() => {
         if (editData) {
-            setFieldValues(editData);
+            setFieldValues({
+                ...editData,
+                status: editData.status !== undefined ? Boolean(editData.status) : true,
+                position: editData.position === 9999 ? "" : (editData.position ?? "")
+            });
         } else {
             setFieldValues(initialFieldValues);
         }
-    }, [editData]);
+    }, [editData, isOpen]);
 
     const resetForm = () => {
         setFieldValues(initialFieldValues);
@@ -43,16 +51,6 @@ const CategoryForm = ({ isOpen, onClose, editData }: any) => {
             [name]: value
         }));
     };
-
-    // const handleImageUpload = (file: File) => {
-    //     // @ts-ignore
-    //     setFieldValues((prevState) => ({ ...prevState, image: file }));
-    // };
-
-    // const handleBannerImageUpload = (file: File) => {
-    //     // @ts-ignore
-    //     setFieldValues((prevState) => ({ ...prevState, bannerImage: file }));
-    // };
 
     const handleImageUpload = (file: File | null) => {
         if (file) {
@@ -75,23 +73,24 @@ const CategoryForm = ({ isOpen, onClose, editData }: any) => {
 
     const handleSubmitForm = async () => {
         setIsLoading(true);
-        // const mutation = editData ? patchFormMutation : postFormMutation;
-        // const url = editData ? `${apiUrl}/${editData.id}` : apiUrl;
+        const mutation = editData ? patchFormMutation : postFormMutation;
+        const url = editData ? `${apiUrl}/${editData.id}` : apiUrl;
 
-        // const result = await handleApiMutation({
-        //     mutation,
-        //     url,
-        //     body: fieldValues,
-        //     invalidateQueryKey: [mainCategoryQueryKey],
-        //     showSuccessMessage: true,
-        //     showErrorMessage: true,
-        //     requiredFields
-        // });
+        const result = await handleApiMutation({
+            mutation,
+            url,
+            body: fieldValues,
+            invalidateQueryKey: [mainCategoryQueryKey],
+            showSuccessMessage: true,
+            showErrorMessage: true,
+            requiredFields
+        });
 
-        // if (result?.success) {
-        //     onClose();
-        //     resetForm();
-        // }
+        if (result?.success) {
+            onClose();
+            resetForm();
+            if (fetchData) fetchData();
+        }
         setIsLoading(false);
     };
 
@@ -102,7 +101,12 @@ const CategoryForm = ({ isOpen, onClose, editData }: any) => {
             title={editData ? "Edit Category" : "Create Category"}
             footerButtons={
                 <>
-                    <Button label="Cancel" onClick={onClose} color="var(--color-secondary)" hoverColor="var(--color-secondary-hover)"/>
+                    <Button
+                        label="Cancel"
+                        onClick={onClose}
+                        color="var(--color-secondary)"
+                        hoverColor="var(--color-secondary-hover)"
+                    />
                     <Button 
                         label="Save" 
                         onClick={handleSubmitForm}
@@ -117,39 +121,50 @@ const CategoryForm = ({ isOpen, onClose, editData }: any) => {
             <div className="space-y-4">
                 <div>
                     <h3 className="block text-sm font-medium text-gray-700">Image:
-                    <span className="text-xs text-gray-500 ml-1">(Width: 80px)</span>
+                        <span className="text-xs text-gray-500 ml-1">(Width: 80px)</span>
                     </h3>
                     <ImageUpload
                         value={
                             typeof fieldValues.image === "string"
                                 ? fieldValues.image
-                                : URL.createObjectURL(fieldValues.image)
+                                : fieldValues.image
+                                ? URL.createObjectURL(fieldValues.image)
+                                : ""
                         }
                         onChange={handleImageUpload}
                     />
                 </div>
                 <div>
                     <h3 className="block text-sm font-medium text-gray-700">Banner Image:
-                    <span className="text-xs text-gray-500 ml-1">(Recommended Size: 1920x192 PX)</span>
+                        <span className="text-xs text-gray-500 ml-1">(Recommended Size: 1920x192 PX)</span>
                     </h3>
                     <ImageUpload
                         value={
                             typeof fieldValues.bannerImage === "string"
                                 ? fieldValues.bannerImage
-                                : URL.createObjectURL(fieldValues.bannerImage)
+                                : fieldValues.bannerImage
+                                ? URL.createObjectURL(fieldValues.bannerImage)
+                                : ""
                         }
                         onChange={handleBannerImageUpload}
                     />
                 </div>
 
                 <div>
-                    <InputField label="Name" type="text" name="name" value={fieldValues.name} required onChange={handleChange} />
+                    <InputField
+                        label="Name"
+                        type="text"
+                        name="name"
+                        value={fieldValues.name}
+                        required
+                        onChange={handleChange}
+                    />
                 </div>
 
                 <ToggleInput
                     label="Status"
                     name="status"
-                    checked={fieldValues.status}
+                    checked={Boolean(fieldValues.status)}
                     onChange={handleSwitchChange}
                 />
             </div>

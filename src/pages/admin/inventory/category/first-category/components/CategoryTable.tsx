@@ -1,8 +1,13 @@
-import EmptyState from "@/components/empty-state/EmptyState";
-import DeleteModal from "@/components/modal/DeleteModal";
 import { useState } from "react";
 import { FaEdit } from "react-icons/fa";
 import { FiTrash2 } from "react-icons/fi";
+import DeleteModal from "@/components/modal/DeleteModal";
+import TableSkeleton from "@/components/skeleton/TableSkeleton";
+import EmptyState from "@/components/empty-state/EmptyState";
+import Pagination from "@/components/pagination";
+import { useAPI } from "@/hooks/useApi";
+import apiConfig from "@/config/api.json";
+import { firstCategoryQueryKey } from "@/config/query-key";
 
 interface FirstCategoryDataProps {
 	id: string;
@@ -17,10 +22,10 @@ interface FirstCategoryTableProps {
 	dataList: FirstCategoryDataProps[];
 	fetchData: () => void;
 	isLoading?: boolean;
+	isFetching?: boolean;
 	pageCount: number;
 	currentPageNumber: number;
 	handlePagination: (paginationData: { selected: number }) => void;
-	isFetching?: boolean;
 	onEdit: (data?: FirstCategoryDataProps) => void;
 }
 
@@ -28,15 +33,17 @@ const CategoryTable = ({
 	dataList,
 	fetchData,
 	isLoading,
-	pageCount, currentPageNumber, handlePagination,
-	isFetching,
+	isFetching: _isFetching,
+	pageCount,
+	currentPageNumber,
+	handlePagination,
 	onEdit
 }: FirstCategoryTableProps) => {
 	const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 	const [selectedFirstCategory, setSelectedFirstCategory] = useState<FirstCategoryDataProps | null>(null);
 
-	// const { handleDeleteAPI } = useAPI();
-	// const apiUrl = apiConfig.inventory.firstCategoryUrl;
+	const { handleDeleteAPI, handleApiMutation, patchMutation } = useAPI();
+	const apiUrl = apiConfig.inventory.firstCategoryUrl;
 
 	const tableHeaders = [
 		{ key: "sl", label: "Sl" },
@@ -59,22 +66,43 @@ const CategoryTable = ({
 
 	const handleDelete = async () => {
 		if (!selectedFirstCategory) return;
-		// const apiResponse = await handleDeleteAPI({
-		// 	url: `${apiUrl}/${selectedFirstCategory.id}`,
-		// 	showSuccessMessage: true
-		// });
-		// if (apiResponse) {
-		// 	fetchData();
-		// 	closeDeleteModal();
-		// }
+		const apiResponse = await handleDeleteAPI({
+			url: `${apiUrl}/${selectedFirstCategory.id}`,
+			invalidateQueryKey: [firstCategoryQueryKey],
+			showSuccessMessage: true
+		});
+		if (apiResponse) {
+			fetchData();
+			closeDeleteModal();
+		}
 	};
 
-	// if (isFetching || isLoading) return <TableSkeleton />;
+	const handleToggleStatus = async (category: FirstCategoryDataProps) => {
+		try {
+			const newStatus = !Boolean(category.status);
+			const result = await handleApiMutation({
+				mutation: patchMutation,
+				url: `${apiUrl}/${category.id}`,
+				body: { status: newStatus },
+				invalidateQueryKey: [firstCategoryQueryKey],
+				showSuccessMessage: true,
+				showErrorMessage: true
+			});
+
+			if (result?.success) {
+				fetchData();
+			}
+		} catch (error) {
+			console.error("Failed to toggle status:", error);
+		}
+	};
+
+	if (isLoading && (!dataList || dataList.length === 0)) return <TableSkeleton />;
 
 	return (
-		<div className="p-6 bg-white rounded-lg border border-gray-200">
-			<div className="mt-4 w-full overflow-x-auto">
-				<table className="w-full text-left border-collapse min-w-[900px] cursor-pointer">
+		<div className="p-6 bg-white rounded-lg border border-gray-200 shadow-xs">
+			<div className="w-full overflow-x-auto">
+				<table className="w-full text-left border-collapse min-w-[900px]">
 					<thead className="bg-gray-100">
 						<tr className="text-gray-600 text-sm border-b border-gray-200">
 							{tableHeaders?.map(({ key, label }) => (
@@ -85,44 +113,87 @@ const CategoryTable = ({
 						</tr>
 					</thead>
 					<tbody className="bg-white divide-y divide-gray-200 rounded-lg">
-						{dataList?.length > 0 ? (
-							dataList?.map((data, index) => (
-								<tr key={data.id} className="border-b border-gray-100 text-gray-700 hover:bg-gray-50 transition duration-300">
-									<td className="px-6 py-4 font-medium text-gray-800">
-										{index + 1}
-									</td>
-									<td className="px-6 py-4">
-										<img
-											src={data.bannerImage}
-											alt="image"
-											height={70}
-											width={70}
-											className="rounded-md shadow-sm border border-gray-200 hover:scale-105 transition-all ease-in-out duration-300"
-										/>
-									</td>
-									<td className="px-6 py-4">{data.name}</td>
-									<td className="px-6 py-4">{data.mainCategoryName}</td>
-									<td className="px-6 py-4">
-										<span className={`px-3 py-1 text-xs font-semibold rounded-md flex items-center w-fit transition-all ${data.status ? "bg-[var(--color-active-green)] text-green-800" : "bg-[var(--color-inactive-red)] text-red-800"}`}>
-											{data.status ? "Active" : "Inactive"}
-										</span>
-									</td>
-									<td className="px-6 py-4">
-										<div className="flex items-center gap-2">
-											<button onClick={() => onEdit(data)} className="border border-gray-300 text-gray-700 hover:text-[#fe9f43] hover:bg-gray-200 cursor-pointer p-2 rounded-md transition duration-300">
-												<FaEdit />
-											</button>
-											<button onClick={() => openDeleteModal(data)} className="border border-gray-300 text-gray-700 hover:text-[#fe9f43] hover:bg-gray-200 cursor-pointer p-2 rounded-md transition duration-300">
-												<FiTrash2 />
-											</button>
-										</div>
-									</td>
-								</tr>
-							))
+						{dataList && dataList.length > 0 ? (
+							dataList.map((data, index) => {
+								const isActive = Boolean(data.status);
+								return (
+									<tr key={data.id || index} className="border-b border-gray-100 text-gray-700 hover:bg-gray-50 transition duration-300">
+										<td className="px-6 py-4 font-medium text-gray-800">
+											{(currentPageNumber - 1) * 10 + index + 1}
+										</td>
+										<td className="px-6 py-4">
+											{data.bannerImage ? (
+												<img
+													src={data.bannerImage}
+													alt={data.name}
+													height={70}
+													width={70}
+													className="w-14 h-14 object-cover rounded-md shadow-sm border border-gray-200 hover:scale-105 transition-all ease-in-out duration-300"
+												/>
+											) : (
+												<span className="text-xs text-gray-400">No Image</span>
+											)}
+										</td>
+										<td className="px-6 py-4 font-medium text-gray-800">{data.name}</td>
+										<td className="px-6 py-4 text-gray-600">{data.mainCategoryName || "-"}</td>
+										<td className="px-6 py-4" onClick={(e) => e.stopPropagation()}>
+											<div className="flex items-center gap-2">
+												<label className="relative inline-flex items-center cursor-pointer">
+													<input
+														type="checkbox"
+														checked={isActive}
+														onChange={() => handleToggleStatus(data)}
+														className="sr-only peer"
+													/>
+													<div className="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:bg-[var(--color-primary)] relative transition-all duration-200">
+														<div
+															className={`absolute top-[2px] left-[2px] w-4 h-4 bg-white rounded-full transition-transform duration-200 ${
+																isActive ? "translate-x-4" : "translate-x-0"
+															}`}
+														/>
+													</div>
+												</label>
+												<span
+													className={`text-xs font-semibold px-2 py-0.5 rounded ${
+														isActive
+															? "bg-green-100 text-green-800"
+															: "bg-red-100 text-red-800"
+													}`}
+												>
+													{isActive ? "Active" : "Inactive"}
+												</span>
+											</div>
+										</td>
+										<td className="px-6 py-4">
+											<div className="flex items-center gap-2">
+												<button
+													onClick={() => onEdit(data)}
+													className="border border-gray-300 text-gray-700 hover:text-[var(--color-primary)] hover:bg-gray-200 cursor-pointer p-2 rounded-md transition duration-300"
+													title="Edit"
+												>
+													<FaEdit />
+												</button>
+												<button
+													onClick={() => openDeleteModal(data)}
+													className="border border-gray-300 text-gray-700 hover:text-red-600 hover:bg-red-50 cursor-pointer p-2 rounded-md transition duration-300"
+													title="Delete"
+												>
+													<FiTrash2 />
+												</button>
+											</div>
+										</td>
+									</tr>
+								);
+							})
 						) : (
 							<tr>
-								<td colSpan={tableHeaders.length} className="px-6 py-4 text-center italic">
-									<EmptyState title="No category available" description="Click below to add your first category!" buttonText="+ Add New category" onButtonClick={() => onEdit()} />
+								<td colSpan={tableHeaders.length} className="px-6 py-8 text-center italic">
+									<EmptyState
+										title="No category available"
+										description="Click below to add your first category!"
+										buttonText="+ Add New Category"
+										onButtonClick={() => onEdit()}
+									/>
 								</td>
 							</tr>
 						)}
@@ -133,20 +204,20 @@ const CategoryTable = ({
 				<DeleteModal
 					isOpen={isDeleteModalOpen}
 					title="Confirm Delete"
-					message={`Are you sure you want to delete?`}
+					message={`Are you sure you want to delete "${selectedFirstCategory.name}"?`}
 					onClose={closeDeleteModal}
 					onDelete={handleDelete}
 				/>
 			)}
-			{/* {pageCount > 1 && (
-				<div className="flex justify-center">
+			{pageCount > 1 && (
+				<div className="flex justify-center mt-6">
 					<Pagination
 						pageCount={pageCount}
 						currentPageNumber={currentPageNumber}
 						handlePagination={handlePagination}
 					/>
 				</div>
-			)} */}
+			)}
 		</div>
 	);
 };

@@ -1,9 +1,12 @@
-import Button from "@/components/button/Button";
-import PageHeader from "@/components/page-header/PageHeader";
 import { useEffect, useState } from "react";
 import { IoMdAddCircleOutline } from "react-icons/io";
 import CategoryTable from "./components/CategoryTable";
 import CategoryForm from "./components/CategoryForm";
+import apiConfig from "@/config/api.json";
+import { useAPI } from "@/hooks/useApi";
+import { secondCategoryQueryKey } from "@/config/query-key";
+import PageHeader from "@/components/page-header/PageHeader";
+import Button from "@/components/button/Button";
 
 interface SecondCategoryDataProps {
 	id: string;
@@ -19,34 +22,34 @@ interface SecondCategoryDataProps {
 const SecondCategory = () => {
 	const dataLimit = 10;
 	const [currentPageNumber, setCurrentPageNumber] = useState(1);
-	// const { usePaginatedQuery } = useAPI();
+	const { usePaginatedQuery } = useAPI();
 	const [isModalOpen, setIsModalOpen] = useState(false);
 	const [editData, setEditData] = useState<SecondCategoryDataProps | null>(null);
 
-	// const getSecondCategoryApiUrl = () => {
-	// 	const apiUrl = `${apiConfig.inventory.secondCategoryUrl}?page=${currentPageNumber}&limit=${dataLimit}`;
-	// 	return apiUrl;
-	// }
+	const getSecondCategoryApiUrl = () => {
+		const apiUrl = `${apiConfig.inventory.secondCategoryUrl}?page=${currentPageNumber}&limit=${dataLimit}`;
+		return apiUrl;
+	};
 
 	const handlePagination = (paginationData: { selected: number }) => {
 		const selectedPage = paginationData.selected + 1;
 		setCurrentPageNumber(selectedPage);
 	};
 
-	// const {
-	// 	data: dataList,
-	// 	refetch: fetchData,
-	// 	isFetching,
-	// 	pageCount,
-	// 	isLoading
-	// } = usePaginatedQuery({
-	// 	queryKey: [secondCategoryQueryKey],
-	// 	url: getSecondCategoryApiUrl()
-	// });
+	const {
+		data: dataList,
+		refetch: fetchData,
+		isFetching,
+		pageCount,
+		isLoading
+	} = usePaginatedQuery({
+		queryKey: [secondCategoryQueryKey, String(currentPageNumber)],
+		url: getSecondCategoryApiUrl()
+	});
 
-	// useEffect(() => {
-	// 	fetchData();
-	// }, [currentPageNumber]);
+	useEffect(() => {
+		fetchData();
+	}, [currentPageNumber]);
 
 	const openModal = (data?: SecondCategoryDataProps) => {
 		setEditData(data || null);
@@ -66,13 +69,24 @@ const SecondCategory = () => {
 						headerTitle="Second Category"
 						headerDescription="Manage your second categories"
 					/>
-					<Button label="Add New Second Category" onClick={() => openModal()} color="var(--color-primary)" hoverColor="var(--color-primary-hover)" icon={<IoMdAddCircleOutline size={18} />} />
+					<Button
+						label="Add New Second Category"
+						onClick={() => openModal()}
+						color="var(--color-primary)"
+						hoverColor="var(--color-primary-hover)"
+						icon={<IoMdAddCircleOutline size={18} />}
+					/>
 				</div>
 				<div className="grid grid-cols-12 gap-12">
 					<div className="col-span-12 xl:col-span-12">
 						<CategoryTable
+							dataList={dataList as any}
+							fetchData={fetchData}
+							pageCount={pageCount}
 							currentPageNumber={currentPageNumber}
 							handlePagination={handlePagination}
+							isLoading={isLoading}
+							isFetching={isFetching}
 							onEdit={openModal}
 						/>
 					</div>
@@ -83,6 +97,7 @@ const SecondCategory = () => {
 				isOpen={isModalOpen}
 				onClose={closeModal}
 				editData={editData}
+				fetchData={fetchData}
 			/>
 		</>
 	);

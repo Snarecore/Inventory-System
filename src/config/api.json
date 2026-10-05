@@ -6,6 +6,7 @@
         "heroSliderUrl": "hero-slider",
         "promotionsUrl": "promotions",
         "popupUrl": "popups",
+        "socialLinksUrl": "social-link",
         "contactUs": {
             "contactMessageUrl": "contact-us-message",
             "contactPageCmsUrl": "contact-page-cms"
@@ -32,6 +33,15 @@
         "insertProductUrl": "insert-product",
         "productCategoriesListUrl": "product-categories-list",
         "productUnitsListUrl": "product-units-list"
+    },
+    "site": {
+        "mainCategoryUrl": "main-category",
+        "firstCategoryUrl": "first-category",
+        "secondCategoryUrl": "second-category",
+        "thirdCategoryUrl": "third-category"
+    },
+    "socialLinks": {
+        "socialLinks": "social-link"
     },
     "blog": {
         "blogUrl": "blog"

@@ -1,21 +1,23 @@
 import React from "react";
-import { FaSearch } from "react-icons/fa";
+import { FiSearch } from "react-icons/fi";
 
 interface SearchProps {
 	searchQuery: string;
 	onSearchChange: (query: string) => void;
+	placeholder?: string;
+	className?: string;
 }
 
-const Search = React.memo(({ searchQuery, onSearchChange }: SearchProps) => {
+const Search = React.memo(({ searchQuery, onSearchChange, placeholder = "Search", className = "" }: SearchProps) => {
 	return (
-		<div className="relative">
-			<FaSearch className="absolute left-3 top-3 text-gray-400" />
+		<div className={`relative flex items-center w-full ${className}`}>
+			<FiSearch className="absolute left-2.5 text-gray-400 text-sm pointer-events-none" />
 			<input
 				type="text"
-				placeholder="Search"
+				placeholder={placeholder}
 				value={searchQuery}
 				onChange={(e) => onSearchChange(e.target.value)}
-				className="w-full pl-10 h-[38px] w-[220px] border border-gray-300 rounded-md placeholder:text-gray-400 placeholder:text-[13px] focus:outline-none"
+				className="w-full pl-8 pr-3 h-[32px] text-xs text-black border border-gray-300 rounded-md bg-white placeholder:text-gray-400 focus:outline-none focus:border-gray-400 transition-colors"
 			/>
 		</div>
 	);

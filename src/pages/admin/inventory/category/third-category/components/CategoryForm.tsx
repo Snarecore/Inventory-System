@@ -5,6 +5,9 @@ import ToggleInput from "@/components/form/ToggleInput";
 import ImageUpload from "@/components/image/ImageUpload";
 import Modal from "@/components/modal/Modal";
 import { ChangeEvent, useEffect, useState } from "react";
+import { useAPI } from "@/hooks/useApi";
+import apiConfig from "@/config/api.json";
+import { thirdCategoryQueryKey } from "@/config/query-key";
 
 interface Option {
 	label: string;
@@ -31,70 +34,81 @@ const requiredFields = [
 	{ key: "secondCategoryId", value: "second category", label: "dropdown" }
 ];
 
-const CategoryForm = ({ isOpen, onClose, editData }: any) => {
-	// const { postFormMutation, patchFormMutation, handleApiMutation, fetchData } = useAPI();
+const CategoryForm = ({ isOpen, onClose, editData, fetchData }: any) => {
+	const { postFormMutation, patchFormMutation, handleApiMutation, fetchData: fetchApiData } = useAPI();
 	const [isLoading, setIsLoading] = useState(false);
 	const [fieldValues, setFieldValues] = useState(initialFieldValues);
 	const [selectedMainCategory, setSelectedMainCategory] = useState<Option | null>(null);
 	const [selectedFirstCategory, setSelectedFirstCategory] = useState<Option | null>(null);
 	const [selectedSecondCategory, setSelectedSecondCategory] = useState<Option | null>(null);
-	// const apiUrl = apiConfig.inventory.thirdCategoryUrl;
-	// const mainCategoryUrl = apiConfig.site.mainCategoryUrl;
-	// const firstCategoryUrl = apiConfig.site.firstCategoryUrl;
-	// const secondCategoryUrl = apiConfig.site.secondCategoryUrl;
 	const [mainCategories, setMainCategories] = useState<any>([]);
-    const [firstCategories, setFirstCategories] = useState<any[]>([]);
-    const [secondCategories, setSecondCategories] = useState<any[]>([]);
+	const [firstCategories, setFirstCategories] = useState<any[]>([]);
+	const [secondCategories, setSecondCategories] = useState<any[]>([]);
+
+	const apiUrl = apiConfig.inventory.thirdCategoryUrl;
+	const mainCategoryUrl = apiConfig.site?.mainCategoryUrl || apiConfig.inventory?.mainCategoryUrl;
+	const firstCategoryUrl = apiConfig.site?.firstCategoryUrl || apiConfig.inventory?.firstCategoryUrl;
+	const secondCategoryUrl = apiConfig.site?.secondCategoryUrl || apiConfig.inventory?.secondCategoryUrl;
 
 	const fetchMainCategoryData = async () => {
-        try {
-            // const mainCategories = await fetchData({ apiUrl: mainCategoryUrl });
-            setMainCategories(mainCategories.mainCategory);
-        } catch (err) {
-            console.error("Fetch failed:", err);
-        }
-    };
+		try {
+			const res = await fetchApiData({ apiUrl: mainCategoryUrl });
+			const list = Array.isArray(res) ? res : res?.mainCategory || res?.data || [];
+			setMainCategories(list);
+		} catch (err) {
+			console.error("Fetch failed:", err);
+		}
+	};
 
-    useEffect(() => {
-        fetchMainCategoryData();
-    }, []);
+	const fetchFirstCategoryData = async (mainCategoryId: string) => {
+		try {
+			const response = await fetchApiData({
+				apiUrl: `${firstCategoryUrl}?mainCategoryId=${mainCategoryId}&limit=100`
+			});
+			const list = Array.isArray(response)
+				? response
+				: response?.firstCategories || response?.data?.data || response?.data || [];
+			setFirstCategories(list);
+		} catch (err) {
+			console.error("Failed to fetch first categories", err);
+		}
+	};
 
-    const formattedMainCategories = (mainCategories || []).map((item: any) => ({
-        label: item.name,
-        value: item.id
-    }));
+	const fetchSecondCategoryData = async (firstCategoryId: string) => {
+		try {
+			const response = await fetchApiData({
+				apiUrl: `${secondCategoryUrl}?firstCategoryId=${firstCategoryId}&limit=100`
+			});
+			const list = Array.isArray(response)
+				? response
+				: response?.secondCategories || response?.data?.data || response?.data || [];
+			setSecondCategories(list);
+		} catch (err) {
+			console.error("Failed to fetch second categories", err);
+		}
+	};
 
-    // const fetchFirstCategoryData = async (mainCategoryId: string) => {
-    //     try {
-    //         const response = await fetchData({
-    //             apiUrl: `${firstCategoryUrl}?mainCategoryId=${mainCategoryId}`
-    //         });
-    //         setFirstCategories(response.firstCategories || []);
-    //     } catch (err) {
-    //         console.error("Failed to fetch first categories", err);
-    //     }
-    // };
+	useEffect(() => {
+		if (isOpen) {
+			fetchMainCategoryData();
+		}
+	}, [isOpen]);
+
+	const formattedMainCategories = (mainCategories || []).map((item: any) => ({
+		label: item.name || item.title || "",
+		value: item.id || item._id || ""
+	}));
+
 	const formattedFirstCategories = firstCategories.map((item: any) => ({
-        label: item.name,
-        value: item.id
-    }));
-
-    const fetchSecondCategoryData = async (firstCategoryId: string) => {
-        // try {
-        //     const response = await fetchData({
-        //         apiUrl: `${secondCategoryUrl}?firstCategoryId=${firstCategoryId}`
-        //     });
-        //     setSecondCategories(response.secondCategories || []);
-        // } catch (err) {
-        //     console.error("Failed to fetch second categories", err);
-        // }
-    };
+		label: item.name || item.title || "",
+		value: item.id || item._id || ""
+	}));
 
 	const formattedSecondCategories = secondCategories.map((item: any) => ({
-        label: item.name,
-        value: item.id
-    }));
-	
+		label: item.name || item.title || "",
+		value: item.id || item._id || ""
+	}));
+
 	const handleSelectedMainCategory = (category: Option) => {
 		setSelectedMainCategory(category);
 		setSelectedFirstCategory(null);
@@ -109,31 +123,31 @@ const CategoryForm = ({ isOpen, onClose, editData }: any) => {
 			secondCategoryName: ""
 		}));
 
-		setTimeout(() => {
-			// fetchFirstCategoryData(category.value);
-		}, 0);
+		if (category.value) {
+			fetchFirstCategoryData(category.value);
+		}
 	};
 
 	const handleSelectedFirstCategory = (category: Option) => {
 		setSelectedFirstCategory(category);
 		setSelectedSecondCategory(null);
-		setFieldValues((prevState) => ({
-			...prevState,
+		setFieldValues((prev) => ({
+			...prev,
 			firstCategoryId: category.value,
 			firstCategoryName: category.label,
 			secondCategoryId: "",
 			secondCategoryName: ""
 		}));
 
-		setTimeout(() => {
+		if (category.value) {
 			fetchSecondCategoryData(category.value);
-		}, 0);
+		}
 	};
 
 	const handleSelectedSecondCategory = (category: Option) => {
 		setSelectedSecondCategory(category);
-		setFieldValues((prevState) => ({
-			...prevState,
+		setFieldValues((prev) => ({
+			...prev,
 			secondCategoryId: category.value,
 			secondCategoryName: category.label
 		}));
@@ -141,22 +155,27 @@ const CategoryForm = ({ isOpen, onClose, editData }: any) => {
 
 	useEffect(() => {
 		if (editData) {
-			setFieldValues(editData);
-			if (editData.mainCategoryId && editData.mainCategoryName) {
+			setFieldValues({
+				...editData,
+				status: editData.status !== undefined ? Boolean(editData.status) : true
+			});
+			if (editData.mainCategoryId) {
 				setSelectedMainCategory({
-					label: editData.mainCategoryName,
+					label: editData.mainCategoryName || "",
 					value: editData.mainCategoryId
 				});
+				fetchFirstCategoryData(editData.mainCategoryId);
 			}
-			if (editData.firstCategoryId && editData.firstCategoryName) {
+			if (editData.firstCategoryId) {
 				setSelectedFirstCategory({
-					label: editData.firstCategoryName,
+					label: editData.firstCategoryName || "",
 					value: editData.firstCategoryId
 				});
+				fetchSecondCategoryData(editData.firstCategoryId);
 			}
-			if (editData.secondCategoryId && editData.secondCategoryName) {
+			if (editData.secondCategoryId) {
 				setSelectedSecondCategory({
-					label: editData.secondCategoryName,
+					label: editData.secondCategoryName || "",
 					value: editData.secondCategoryId
 				});
 			}
@@ -166,7 +185,7 @@ const CategoryForm = ({ isOpen, onClose, editData }: any) => {
 			setSelectedFirstCategory(null);
 			setSelectedSecondCategory(null);
 		}
-	}, [editData]);
+	}, [editData, isOpen]);
 
 	const resetForm = () => {
 		setFieldValues(initialFieldValues);
@@ -183,16 +202,11 @@ const CategoryForm = ({ isOpen, onClose, editData }: any) => {
 		}));
 	};
 
-	// const handleImageUpload = (file: File) => {
-	// 	// @ts-ignore
-	// 	setFieldValues((prevState) => ({ ...prevState, bannerImage: file }));
-	// };
-
 	const handleImageUpload = (file: File | null) => {
-        if (file) {
-            setFieldValues((prevState) => ({ ...prevState, bannerImage: file }));
-        }
-    };
+		if (file) {
+			setFieldValues((prevState) => ({ ...prevState, bannerImage: file }));
+		}
+	};
 
 	const handleSwitchChange = (checked: boolean) => {
 		setFieldValues((prevState) => ({
@@ -203,23 +217,24 @@ const CategoryForm = ({ isOpen, onClose, editData }: any) => {
 
 	const handleSubmitForm = async () => {
 		setIsLoading(true);
-		// const mutation = editData ? patchFormMutation : postFormMutation;
-		// const url = editData ? `${apiUrl}/${editData.id}` : apiUrl;
+		const mutation = editData ? patchFormMutation : postFormMutation;
+		const url = editData ? `${apiUrl}/${editData.id}` : apiUrl;
 
-		// const result = await handleApiMutation({
-		// 	// @ts-ignore
-		// 	mutation,
-		// 	url,
-		// 	body: fieldValues,
-		// 	invalidateQueryKey: [thirdCategoryQueryKey],
-		// 	showSuccessMessage: true,
-		// 	showErrorMessage: true,
-		// 	requiredFields
-		// });
-		// if (result?.success) {
-		// 	onClose();
-		// 	resetForm();
-		// }
+		const result = await handleApiMutation({
+			mutation,
+			url,
+			body: fieldValues,
+			invalidateQueryKey: [thirdCategoryQueryKey],
+			showSuccessMessage: true,
+			showErrorMessage: true,
+			requiredFields
+		});
+
+		if (result?.success) {
+			onClose();
+			resetForm();
+			if (fetchData) fetchData();
+		}
 		setIsLoading(false);
 	};
 
@@ -230,7 +245,12 @@ const CategoryForm = ({ isOpen, onClose, editData }: any) => {
 			title={editData ? "Edit Third Category" : "Create Third Category"}
 			footerButtons={
 				<>
-					<Button label="Cancel" onClick={onClose} color="var(--color-secondary)" hoverColor="var(--color-secondary-hover)" />
+					<Button
+						label="Cancel"
+						onClick={onClose}
+						color="var(--color-secondary)"
+						hoverColor="var(--color-secondary-hover)"
+					/>
 					<Button
 						label="Save"
 						onClick={handleSubmitForm}
@@ -244,76 +264,75 @@ const CategoryForm = ({ isOpen, onClose, editData }: any) => {
 		>
 			<div className="space-y-4">
 				<div>
-					<p className="block text-sm font-medium text-gray-700">
-						Banner Image:
+					<h3 className="block text-sm font-medium text-gray-700">Banner Image:
 						<span className="text-xs text-gray-500 ml-1">(Recommended Size: 1920x192 PX)</span>
-					</p>
-					{/* <ImageUpload value={fieldValues.bannerImage} onChange={handleImageUpload} /> */}
+					</h3>
 					<ImageUpload
-                        value={
-                            typeof fieldValues.bannerImage === "string"
-                                ? fieldValues.bannerImage
-                                : URL.createObjectURL(fieldValues.bannerImage)
-                        }
-                        onChange={handleImageUpload}
-                    />
+						value={
+							typeof fieldValues.bannerImage === "string"
+								? fieldValues.bannerImage
+								: fieldValues.bannerImage
+								? URL.createObjectURL(fieldValues.bannerImage)
+								: ""
+						}
+						onChange={handleImageUpload}
+					/>
 				</div>
 
 				<div>
-					<InputField label="Name" type="text"
+					<InputField
+						label="Name"
+						type="text"
 						name="name"
 						value={fieldValues.name}
 						required
-						onChange={handleChange} />
+						onChange={handleChange}
+					/>
 				</div>
 
+				<SelectInput
+					label="Main Category"
+					value={selectedMainCategory}
+					options={formattedMainCategories}
+					onChange={handleSelectedMainCategory}
+					placeholder="Select Main Category"
+					showTop={true}
+					required
+				/>
+
+				{selectedMainCategory && (
 					<SelectInput
-						label="Main Category"
-						value={selectedMainCategory}
-						options={formattedMainCategories}
-						onChange={handleSelectedMainCategory}
-						placeholder="Select Main Category"
+						label="First Category"
+						value={selectedFirstCategory}
+						options={formattedFirstCategories}
+						onChange={handleSelectedFirstCategory}
+						placeholder="Select First Category"
 						showTop={true}
 						required
 					/>
+				)}
 
-					{
-						selectedMainCategory && (
-							<SelectInput
-								label="First Category"
-								value={selectedFirstCategory}
-								options={formattedFirstCategories}
-								onChange={handleSelectedFirstCategory}
-								placeholder="Select First Category"
-								showTop={true}
-								required
-							/>
-						)
-					}
-
-					{
-						selectedFirstCategory && (
-							<SelectInput
-								label="Second Category"
-								value={selectedSecondCategory}
-								options={formattedSecondCategories}
-								onChange={handleSelectedSecondCategory}
-								placeholder="Select Second Category"
-								showTop={true}
-								required
-							/>
-						)
-					}
+				{selectedFirstCategory && (
+					<SelectInput
+						label="Second Category"
+						value={selectedSecondCategory}
+						options={formattedSecondCategories}
+						onChange={handleSelectedSecondCategory}
+						placeholder="Select Second Category"
+						showTop={true}
+						required
+					/>
+				)}
 
 				<ToggleInput
 					label="Status"
 					name="status"
-					checked={fieldValues.status}
+					checked={Boolean(fieldValues.status)}
 					onChange={handleSwitchChange}
 				/>
 			</div>
 		</Modal>
-	)
-}
+	);
+};
 
 export default CategoryForm;

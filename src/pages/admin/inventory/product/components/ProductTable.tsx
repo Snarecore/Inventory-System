@@ -8,7 +8,11 @@ import TableSkeleton from "@/components/skeleton/TableSkeleton";
 import Pagination from "@/components/pagination";
 import Modal from "@/components/modal/Modal";
 import DeleteModal from "@/components/modal/DeleteModal";
-import { showSuccessToast } from "@/utils/toast-utils";
+import { showSuccessToast, showErrorToast } from "@/utils/toast-utils";
+import { useAPI } from "@/hooks/useApi";
+import apiConfig from "@/config/api.json";
+import { productListQueryKey, productQueryKey, insertProductQueryKey } from "@/config/query-key";
+import { buildAccessUser, withBranchScope } from "@/utils/access-user";
 import type { ProductItem } from "@/types";
 
 interface ProductTableProps {
@@ -19,6 +23,8 @@ interface ProductTableProps {
     pageCount: number;
     currentPageNumber: number;
     setCurrentPageNumber: React.Dispatch<React.SetStateAction<number>>;
+    dataLimit: number;
+    setDataLimit: React.Dispatch<React.SetStateAction<number>>;
     handlePagination: (paginationData: { selected: number }) => void;
     searchQuery: string;
     setSearchQuery: (query: string) => void;
@@ -38,6 +44,8 @@ export const ProductTable = ({
     pageCount,
     currentPageNumber,
     setCurrentPageNumber,
+    dataLimit,
+    setDataLimit,
     handlePagination,
     searchQuery,
     setSearchQuery,
@@ -46,12 +54,19 @@ export const ProductTable = ({
     statusFilter,
     setStatusFilter,
     categoryOptions,
+    onRefresh,
 }: ProductTableProps) => {
     const [selectedProduct, setSelectedProduct] = useState<ProductItem | null>(null);
     const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [productToDelete, setProductToDelete] = useState<ProductItem | null>(null);
     const [openDropdown, setOpenDropdown] = useState<string | null>(null);
+    const [togglingId, setTogglingId] = useState<string | null>(null);
+
+    const { handleDeleteAPI, handleApiMutation, patchMutation, postMutation } = useAPI();
+    const productBaseUrl = apiConfig.inventory?.productUrl || "product";
+    const statusApiUrl = apiConfig.inventory?.productStatusUrl || "product/update-status";
+    const insertProductUrl = apiConfig.inventory?.insertProductUrl || "insert-product";
 
     const statusOptions = [
         { label: "All Status", value: "" },
@@ -66,9 +81,8 @@ export const ProductTable = ({
 
     const tableHeaders = [
         { key: "sl", label: "#", align: "text-center" },
-        { key: "name", label: "Product Name & Code", align: "text-left" },
+        { key: "name", label: "Product Name", align: "text-left" },
         { key: "category", label: "Category", align: "text-left" },
-        { key: "sku", label: "SKU / Barcode", align: "text-left" },
         { key: "stock", label: "Stock & Unit", align: "text-center" },
         { key: "buyPrice", label: "Buy Price", align: "text-right" },
         { key: "sellPrice", label: "Sell Price", align: "text-right" },
@@ -96,10 +110,108 @@ export const ProductTable = ({
         setProductToDelete(null);
     };
 
-    const handleDelete = () => {
-        if (productToDelete) {
-            showSuccessToast(`Product "${getName(productToDelete)}" removed successfully.`);
-            closeDeleteModal();
+    const handleDelete = async () => {
+        if (!productToDelete) return;
+        const targetId = productToDelete.id || (productToDelete as any).product_id || productToDelete.pcode;
+        try {
+            const deletePayload = withBranchScope({
+                id: productToDelete.id || (productToDelete as any).product_id,
+                product_id: productToDelete.id || (productToDelete as any).product_id,
+                pcode: productToDelete.pcode || (productToDelete as any).productCode || (productToDelete as any).code || "",
+                name: productToDelete.name || (productToDelete as any).productName || "",
+                category: productToDelete.category || (productToDelete as any).categoryName || "General",
+                unit: productToDelete.unit || "PCS",
+                secondary_unit: (productToDelete as any).secondary_unit || (productToDelete as any).secondaryUnit || null,
+                quantity: 0,
+                buy_price: Number(productToDelete.buy_price ?? (productToDelete as any).buyPrice ?? 0),
+                sell_price: Number(productToDelete.sell_price ?? (productToDelete as any).sellPrice ?? 0),
+                is_decimal: (productToDelete as any).is_decimal === "Yes" || (productToDelete as any).is_decimal === true || (productToDelete as any).isDecimal === "Yes" || (productToDelete as any).isDecimal === true ? "Yes" : "No",
+                status: "Inactive",
+                is_deleted: "YES",
+                isDeleted: "YES",
+                isSync: "YES",
+                operation: "delete",
+                updated_at: new Date().toISOString()
+            });
+
+            const result = await handleApiMutation({
+                mutation: postMutation as any,
+                url: insertProductUrl,
+                body: {
+                    accessUser: buildAccessUser(),
+                    product: deletePayload
+                },
+                invalidateQueryKey: [productListQueryKey, productQueryKey, insertProductQueryKey],
+                showSuccessMessage: true,
+                showErrorMessage: true
+            });
+
+            if (result?.success) {
+                closeDeleteModal();
+                onRefresh();
+            }
+        } catch (error) {
+            console.error("Failed to delete product:", error);
+            showErrorToast("Failed to delete product.");
+        }
+    };
+
+    const handleToggleProductStatus = async (product: ProductItem) => {
+        const prodId = product.id || (product as any).product_id || product.pcode;
+        const targetId = String(prodId || "");
+        if (!targetId || togglingId) return;
+
+        setTogglingId(targetId);
+        const currentActive = isActive(product);
+        const nextActive = !currentActive;
+        const nextStatus = nextActive ? "Active" : "Inactive";
+
+        try {
+            const updatedProductPayload = withBranchScope({
+                id: product.id || (product as any).product_id,
+                product_id: product.id || (product as any).product_id,
+                pcode: product.pcode || (product as any).productCode || (product as any).code || "",
+                name: product.name || (product as any).productName || "",
+                category: product.category || (product as any).categoryName || "General",
+                unit: product.unit || "PCS",
+                secondary_unit: (product as any).secondary_unit || (product as any).secondaryUnit || null,
+                secondary_price: Number((product as any).secondary_price || (product as any).secondaryPrice || 0),
+                quantity: Number(product.quantity ?? (product as any).stock ?? 0),
+                buy_price: Number(product.buy_price ?? (product as any).buyPrice ?? 0),
+                sell_price: Number(product.sell_price ?? (product as any).sellPrice ?? 0),
+                sku: product.sku || null,
+                barcode: product.barcode || null,
+                low_stock_threshold: Number(product.low_stock_threshold ?? (product as any).lowStockThreshold ?? 0),
+                packing_levels: product.packing_levels || (product as any).packingLevels || null,
+                description: product.description || null,
+                vat_percent: Number((product as any).vat_percent ?? (product as any).vatPercent ?? 0),
+                vat: Number((product as any).vat ?? 0),
+                unit_vat: Number((product as any).unit_vat ?? (product as any).unitVat ?? 0),
+                is_decimal: (product as any).is_decimal === "Yes" || (product as any).is_decimal === true || (product as any).isDecimal === "Yes" || (product as any).isDecimal === true ? "Yes" : "No",
+                status: nextStatus,
+                operation: "update",
+                updated_at: new Date().toISOString()
+            });
+
+            const result = await handleApiMutation({
+                mutation: postMutation as any,
+                url: insertProductUrl,
+                body: {
+                    accessUser: buildAccessUser(),
+                    product: updatedProductPayload
+                },
+                invalidateQueryKey: [productListQueryKey, productQueryKey, insertProductQueryKey],
+                showSuccessMessage: true,
+                showErrorMessage: true
+            });
+
+            if (result?.success) {
+                onRefresh();
+            }
+        } catch (error) {
+            console.error("Failed to toggle status:", error);
+        } finally {
+            setTogglingId(null);
         }
     };
 
@@ -115,27 +227,52 @@ export const ProductTable = ({
     const getSellPrice = (p: ProductItem) => Number(p.sell_price ?? p.sellPrice ?? 0);
     const getLowThreshold = (p: ProductItem) => Number(p.low_stock_threshold ?? p.lowStockThreshold ?? 5);
     const isActive = (p: ProductItem) => {
-        if (p.status === "active" || p.status === true || p.status === "ACTIVE" || String(p.status) === "true") return true;
-        if (p.status === "inactive" || p.status === false || p.status === "INACTIVE" || String(p.status) === "false") return false;
+        const raw = String(p?.status ?? "").trim().toLowerCase();
+        if (raw === "inactive" || raw === "false" || raw === "0" || p?.status === false || p?.status === 0) {
+            return false;
+        }
         return true;
     };
 
     return (
         <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-            {/* Table Header: Search & Filters */}
-            <div className="p-4 sm:p-5 border-b border-gray-200 bg-white">
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                    <div className="w-full md:w-80">
+            {/* Table Header: Search (Left) & Controls/Filters (Right) */}
+            <div className="px-4 py-3 border-b border-gray-200 bg-white">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    {/* Left: Search Box */}
+                    <div className="w-full sm:w-60">
                         <Search
                             searchQuery={searchQuery}
                             onSearchChange={(value) => {
                                 setSearchQuery(value);
                                 setCurrentPageNumber(1);
                             }}
+                            placeholder="Search..."
                         />
                     </div>
 
-                    <div className="flex flex-wrap items-center gap-2.5">
+                    {/* Right: Show Entries & Dropdown Filters */}
+                    <div className="flex flex-wrap items-center gap-2.5 sm:gap-3">
+                        {/* Show Entries Card */}
+                        <div className="border border-gray-200 rounded-lg px-2.5 h-[32px] inline-flex items-center gap-1.5 bg-white text-xs text-black whitespace-nowrap shadow-2xs">
+                            <span>Show</span>
+                            <select
+                                value={dataLimit}
+                                onChange={(e) => {
+                                    setDataLimit(Number(e.target.value));
+                                    setCurrentPageNumber(1);
+                                }}
+                                className="border border-gray-300 rounded px-1.5 py-0.5 text-xs text-black bg-white focus:outline-none focus:border-gray-400 cursor-pointer"
+                            >
+                                {[10, 20, 50, 70, 100].map((limit) => (
+                                    <option key={limit} value={limit}>
+                                        {limit}
+                                    </option>
+                                ))}
+                            </select>
+                            <span>entries</span>
+                        </div>
+
                         {/* Category Dropdown */}
                         <DropdownFilter
                             title="Category"
@@ -176,7 +313,7 @@ export const ProductTable = ({
             </div>
 
             {/* Loading Skeleton */}
-            {isLoading || isFetching ? (
+            {isLoading && products.length === 0 ? (
                 <div className="p-4">
                     <TableSkeleton />
                 </div>
@@ -186,11 +323,11 @@ export const ProductTable = ({
                     <div className="w-full overflow-x-auto">
                         <table className="w-full text-left border-collapse min-w-[950px]">
                             <thead>
-                                <tr className="bg-slate-50 border-b border-gray-200 text-xs uppercase font-semibold text-gray-600 tracking-wider">
+                                <tr className="bg-slate-50 border-b border-gray-200 text-xs text-black ">
                                     {tableHeaders.map(({ key, label, align }) => (
                                         <th
                                             key={key}
-                                            className={`px-4 py-3.5 ${align} ${key === "sl" ? "w-14" : ""}`}
+                                            className={`px-4 py-[11px] ${align} ${key === "sl" ? "w-14" : ""}`}
                                         >
                                             {label}
                                         </th>
@@ -205,131 +342,98 @@ export const ProductTable = ({
                                         const lowThreshold = getLowThreshold(product);
                                         const isLowStock = qty <= lowThreshold;
                                         const active = isActive(product);
-                                        const rowNumber = (currentPageNumber - 1) * 10 + (index + 1);
+                                        const rowNumber = (currentPageNumber - 1) * dataLimit + (index + 1);
+                                        const prodId = String(product.id || product.pcode || index);
 
                                         return (
                                             <tr
-                                                key={product.id || product.pcode || index}
+                                                key={prodId}
                                                 className="hover:bg-blue-50/40 transition-colors duration-150 group"
                                             >
                                                 {/* SL */}
-                                                <td className="px-4 py-3.5 text-center text-xs font-medium text-gray-500">
+                                                <td className="px-4 py-[11px] text-center text-xs font-normal text-black">
                                                     {rowNumber}
                                                 </td>
 
-                                                {/* Product Name & Code */}
-                                                <td className="px-4 py-3.5">
+                                                {/* Product Name */}
+                                                <td className="px-4 py-[11px]">
                                                     <div className="flex items-center gap-3">
-                                                        <div className="w-9 h-9 rounded-lg bg-blue-50 text-[var(--color-primary,#009FE3)] flex items-center justify-center font-semibold text-sm border border-blue-100 flex-shrink-0 group-hover:scale-105 transition-transform">
-                                                            <FiPackage className="w-4 h-4" />
-                                                        </div>
                                                         <div className="min-w-0">
-                                                            <div className="font-semibold text-gray-900 group-hover:text-[var(--color-primary,#009FE3)] transition-colors line-clamp-1">
+                                                            <div className="font-normal text-[13px] text-black leading-tight">
                                                                 {getName(product)}
                                                             </div>
-                                                            <div className="flex items-center gap-2 mt-0.5 text-xs text-gray-500">
-                                                                {getCode(product) && (
-                                                                    <span className="font-mono bg-gray-100 px-1.5 py-0.5 rounded text-[11px] text-gray-700">
-                                                                        {getCode(product)}
-                                                                    </span>
-                                                                )}
-                                                                {product.packing_levels && (
-                                                                    <span className="text-[11px] text-gray-400">
+                                                            {product.packing_levels && (
+                                                                <div className="flex items-center gap-2 mt-0.5 text-xs text-black">
+                                                                    <span className="text-[11px] text-gray-500">
                                                                         • {product.packing_levels}
                                                                     </span>
-                                                                )}
-                                                            </div>
+                                                                </div>
+                                                            )}
                                                         </div>
                                                     </div>
                                                 </td>
 
                                                 {/* Category */}
-                                                <td className="px-4 py-3.5">
-                                                    <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-700 border border-slate-200">
+                                                <td className="px-4 py-[11px]">
+                                                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-normal bg-slate-100 text-black border border-slate-200">
                                                         {getCategory(product)}
                                                     </span>
                                                 </td>
 
-                                                {/* SKU & Barcode */}
-                                                <td className="px-4 py-3.5">
-                                                    <div className="text-xs">
-                                                        <div className="font-mono font-medium text-gray-800">
-                                                            {getSku(product)}
-                                                        </div>
-                                                        {getBarcode(product) && (
-                                                            <div className="text-[11px] text-gray-400 font-mono">
-                                                                {getBarcode(product)}
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                </td>
-
                                                 {/* Stock & Unit */}
-                                                <td className="px-4 py-3.5 text-center">
-                                                    <div className="inline-flex flex-col items-center">
-                                                        <span className="font-semibold text-gray-900">
+                                                <td className="px-4 py-[11px] text-center">
+                                                    <div className="inline-flex items-center justify-center gap-2">
+                                                        <span className="font-normal text-[13px] text-black">
                                                             {qty}{" "}
-                                                            <span className="text-xs text-gray-500 font-normal">
+                                                            <span className="text-[13px] text-black font-normal">
                                                                 {getUnit(product)}
                                                             </span>
                                                         </span>
                                                         {isLowStock && (
-                                                            <span className="inline-flex items-center gap-1 text-[10px] font-medium text-amber-700 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded mt-0.5">
-                                                                <FiAlertTriangle className="w-2.5 h-2.5" />
-                                                                Low Stock ({lowThreshold})
+                                                            <span className="inline-flex items-center text-[10px] font-medium text-amber-800 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded">
+                                                                Low Stock
                                                             </span>
                                                         )}
                                                     </div>
                                                 </td>
 
                                                 {/* Buy Price */}
-                                                <td className="px-4 py-3.5 text-right font-medium text-gray-700">
+                                                <td className="px-4 py-[11px] text-right font-normal text-[13px] text-black">
                                                     ৳{getBuyPrice(product).toLocaleString()}
                                                 </td>
 
                                                 {/* Sell Price */}
-                                                <td className="px-4 py-3.5 text-right font-bold text-gray-900">
+                                                <td className="px-4 py-[11px] text-right font-normal text-[13px] text-black">
                                                     ৳{getSellPrice(product).toLocaleString()}
-                                                    {product.secondary_unit && (
-                                                        <div className="text-[11px] font-normal text-gray-500 mt-0.5">
-                                                            ৳{Number(product.secondary_price || 0).toLocaleString()} / {product.secondary_unit}
-                                                        </div>
-                                                    )}
                                                 </td>
 
-                                                {/* Status */}
-                                                <td className="px-4 py-3.5 text-center">
-                                                    <span
-                                                        className={`inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-full ${
+                                                {/* Status Badge */}
+                                                <td className="px-4 py-[11px] text-center" onClick={(e) => e.stopPropagation()}>
+                                                    <button
+                                                        type="button"
+                                                        disabled={togglingId === prodId}
+                                                        onClick={() => handleToggleProductStatus(product)}
+                                                        title={`Click to mark as ${active ? "Inactive" : "Active"}`}
+                                                        className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold cursor-pointer transition-all duration-150 ${
                                                             active
-                                                                ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
-                                                                : "bg-red-50 text-red-700 border border-red-200"
-                                                        }`}
+                                                                ? "bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100"
+                                                                : "bg-rose-50 text-rose-700 border border-rose-200 hover:bg-rose-100"
+                                                        } ${togglingId === prodId ? "opacity-50 cursor-wait" : ""}`}
                                                     >
-                                                        {active ? (
-                                                            <>
-                                                                <FiCheckCircle className="w-3 h-3" />
-                                                                Active
-                                                            </>
-                                                        ) : (
-                                                            <>
-                                                                <FiXCircle className="w-3 h-3" />
-                                                                Inactive
-                                                            </>
-                                                        )}
-                                                    </span>
+                                                        {active ? "Active" : "Inactive"}
+                                                    </button>
                                                 </td>
 
                                                 {/* Actions: Eye, Edit, Delete */}
-                                                <td className="px-4 py-3.5 text-center">
+                                                <td className="px-4 py-[11px] text-center">
                                                     <div className="flex items-center justify-center gap-1.5">
                                                         {/* Eye / View Icon */}
                                                         <button
                                                             onClick={() => openQuickView(product)}
                                                             title="Quick View Details"
-                                                            className="w-8 h-8 rounded-lg flex items-center justify-center bg-sky-50 text-sky-600 hover:bg-sky-600 hover:text-white transition-all duration-200 shadow-xs hover:shadow hover:scale-105 cursor-pointer"
+                                                            className="w-7 h-7 rounded-lg flex items-center justify-center bg-sky-50 text-sky-600 hover:bg-sky-600 hover:text-white transition-colors duration-150 cursor-pointer"
                                                         >
-                                                            <FiEye className="w-4 h-4" />
+                                                            <FiEye className="w-3.5 h-3.5" />
                                                         </button>
 
                                                         {/* Edit Icon */}
@@ -337,7 +441,7 @@ export const ProductTable = ({
                                                             to={`/admin/edit-product/${product.id || product.pcode || ""}`}
                                                             state={{ editData: product }}
                                                             title="Edit Product"
-                                                            className="w-8 h-8 rounded-lg flex items-center justify-center bg-amber-50 text-amber-600 hover:bg-amber-600 hover:text-white transition-all duration-200 shadow-xs hover:shadow hover:scale-105 cursor-pointer"
+                                                            className="w-7 h-7 rounded-lg flex items-center justify-center bg-amber-50 text-amber-600 hover:bg-amber-600 hover:text-white transition-colors duration-150 cursor-pointer"
                                                         >
                                                             <FiEdit className="w-3.5 h-3.5" />
                                                         </Link>
@@ -346,7 +450,7 @@ export const ProductTable = ({
                                                         <button
                                                             onClick={() => openDeleteModal(product)}
                                                             title="Delete Product"
-                                                            className="w-8 h-8 rounded-lg flex items-center justify-center bg-rose-50 text-rose-600 hover:bg-rose-600 hover:text-white transition-all duration-200 shadow-xs hover:shadow hover:scale-105 cursor-pointer"
+                                                            className="w-7 h-7 rounded-lg flex items-center justify-center bg-rose-50 text-rose-600 hover:bg-rose-600 hover:text-white transition-colors duration-150 cursor-pointer"
                                                         >
                                                             <FiTrash2 className="w-3.5 h-3.5" />
                                                         </button>
@@ -378,17 +482,17 @@ export const ProductTable = ({
                     </div>
 
                     {/* Pagination & Summary Footer */}
-                    <div className="p-4 border-t border-gray-200 bg-gray-50 flex flex-col sm:flex-row items-center justify-between gap-4">
-                        <div className="text-xs text-gray-600">
+                    <div className="px-4 py-2.5 border-t border-gray-200 bg-gray-50 flex flex-col sm:flex-row items-center justify-between gap-3">
+                        <div className="text-xs text-black">
                             Showing{" "}
-                            <span className="font-semibold text-gray-900">
-                                {products.length > 0 ? (currentPageNumber - 1) * 10 + 1 : 0}
+                            <span className="font-semibold text-black">
+                                {products.length > 0 ? (currentPageNumber - 1) * dataLimit + 1 : 0}
                             </span>{" "}
                             to{" "}
-                            <span className="font-semibold text-gray-900">
-                                {Math.min(currentPageNumber * 10, totalCount)}
+                            <span className="font-semibold text-black">
+                                {Math.min(currentPageNumber * dataLimit, totalCount)}
                             </span>{" "}
-                            of <span className="font-semibold text-gray-900">{totalCount}</span> products
+                            of <span className="font-semibold text-black">{totalCount}</span> products
                         </div>
 
                         {pageCount > 1 && (
@@ -406,104 +510,170 @@ export const ProductTable = ({
             {selectedProduct && isDetailsModalOpen && (
                 <Modal
                     isOpen={isDetailsModalOpen}
-                    title={`Product Details — ${getName(selectedProduct)}`}
                     onClose={closeQuickView}
+                    title="Product Quick View"
+                    maxWidth="w-full max-w-3xl"
                 >
-                    <div className="space-y-4 text-sm text-gray-700">
-                        <div className="grid grid-cols-2 gap-3 p-4 bg-gray-50 rounded-lg border border-gray-100">
-                            <div>
-                                <span className="text-xs text-gray-500 font-medium">Product Code</span>
-                                <p className="font-mono font-semibold text-gray-900">{getCode(selectedProduct) || "N/A"}</p>
+                    <div className="space-y-3 text-black">
+                        {/* Header info - single line */}
+                        <div className="flex flex-wrap items-center justify-between gap-2 pb-2.5 border-b border-gray-200">
+                            <div className="flex flex-wrap items-center gap-2.5">
+                                <h3 className="text-base font-semibold text-black">
+                                    {getName(selectedProduct)}
+                                </h3>
+                                <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-black border border-gray-300">
+                                    {getCategory(selectedProduct)}
+                                </span>
+                                {getCode(selectedProduct) && (
+                                    <span className="text-xs font-mono text-black">
+                                        (Code: {getCode(selectedProduct)})
+                                    </span>
+                                )}
                             </div>
                             <div>
-                                <span className="text-xs text-gray-500 font-medium">SKU</span>
-                                <p className="font-mono font-semibold text-gray-900">{getSku(selectedProduct)}</p>
-                            </div>
-                            <div>
-                                <span className="text-xs text-gray-500 font-medium">Barcode</span>
-                                <p className="font-mono font-semibold text-gray-900">{getBarcode(selectedProduct) || "N/A"}</p>
-                            </div>
-                            <div>
-                                <span className="text-xs text-gray-500 font-medium">Category</span>
-                                <p className="font-semibold text-gray-900">{getCategory(selectedProduct)}</p>
+                                <span
+                                    className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                                        isActive(selectedProduct)
+                                            ? "bg-emerald-50 text-emerald-800 border border-emerald-200"
+                                            : "bg-rose-50 text-rose-800 border border-rose-200"
+                                    }`}
+                                >
+                                    ● {isActive(selectedProduct) ? "Active" : "Inactive"}
+                                </span>
                             </div>
                         </div>
 
-                        <div className="grid grid-cols-3 gap-3 p-4 bg-blue-50/50 rounded-lg border border-blue-100">
-                            <div>
-                                <span className="text-xs text-gray-500 font-medium">Current Stock</span>
-                                <p className="text-base font-bold text-gray-900">
-                                    {getQuantity(selectedProduct)} {getUnit(selectedProduct)}
-                                </p>
-                            </div>
-                            <div>
-                                <span className="text-xs text-gray-500 font-medium">Buy Price</span>
-                                <p className="text-base font-bold text-gray-900">
-                                    ৳{getBuyPrice(selectedProduct).toLocaleString()}
-                                </p>
-                            </div>
-                            <div>
-                                <span className="text-xs text-gray-500 font-medium">Sell Price</span>
-                                <p className="text-base font-bold text-emerald-600">
-                                    ৳{getSellPrice(selectedProduct).toLocaleString()}
-                                </p>
+                        {/* Stock & Pricing */}
+                        <div>
+                            <h4 className="text-xs font-semibold uppercase tracking-wider text-black mb-1.5">
+                                Stock & Pricing
+                            </h4>
+                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                                <div className="px-3 py-2 bg-gray-50 rounded-lg border border-gray-200">
+                                    <span className="text-xs text-black block mb-0.5">Available Stock</span>
+                                    <span className="text-sm font-semibold text-black">
+                                        {getQuantity(selectedProduct)} {getUnit(selectedProduct)}
+                                    </span>
+                                </div>
+                                <div className="px-3 py-2 bg-gray-50 rounded-lg border border-gray-200">
+                                    <span className="text-xs text-black block mb-0.5">Low Stock Alert</span>
+                                    <span className="text-sm font-medium text-black">
+                                        {getLowThreshold(selectedProduct)} {getUnit(selectedProduct)}
+                                    </span>
+                                </div>
+                                <div className="px-3 py-2 bg-gray-50 rounded-lg border border-gray-200">
+                                    <span className="text-xs text-black block mb-0.5">Buy Price</span>
+                                    <span className="text-sm font-semibold text-black">
+                                        ৳{getBuyPrice(selectedProduct).toLocaleString()}
+                                    </span>
+                                </div>
+                                <div className="px-3 py-2 bg-gray-50 rounded-lg border border-gray-200">
+                                    <span className="text-xs text-black block mb-0.5">Sell Price</span>
+                                    <span className="text-sm font-semibold text-black">
+                                        ৳{getSellPrice(selectedProduct).toLocaleString()}
+                                    </span>
+                                </div>
                             </div>
                         </div>
 
-                        {selectedProduct.secondary_unit && (
-                            <div className="p-3 bg-amber-50/60 rounded-lg border border-amber-100 flex items-center justify-between">
-                                <span className="text-xs font-medium text-amber-900">
-                                    Secondary Unit: <span className="font-bold">{selectedProduct.secondary_unit}</span>
-                                </span>
-                                <span className="text-xs font-bold text-amber-900">
-                                    Price: ৳{Number(selectedProduct.secondary_price || 0).toLocaleString()}
-                                </span>
+                        {/* Identification & Units */}
+                        <div>
+                            <h4 className="text-xs font-semibold uppercase tracking-wider text-black mb-1.5">
+                                Identification & Unit Details
+                            </h4>
+                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                                <div className="px-3 py-2 bg-gray-50 rounded-lg border border-gray-200">
+                                    <span className="text-xs text-black block mb-0.5">SKU</span>
+                                    <span className="text-xs font-mono font-medium text-black">
+                                        {getSku(selectedProduct)}
+                                    </span>
+                                </div>
+                                <div className="px-3 py-2 bg-gray-50 rounded-lg border border-gray-200">
+                                    <span className="text-xs text-black block mb-0.5">Barcode</span>
+                                    <span className="text-xs font-mono font-medium text-black">
+                                        {getBarcode(selectedProduct) || "-"}
+                                    </span>
+                                </div>
+                                <div className="px-3 py-2 bg-gray-50 rounded-lg border border-gray-200">
+                                    <span className="text-xs text-black block mb-0.5">Primary Unit</span>
+                                    <span className="text-xs font-medium text-black">
+                                        {getUnit(selectedProduct)}
+                                    </span>
+                                </div>
+                                <div className="px-3 py-2 bg-gray-50 rounded-lg border border-gray-200">
+                                    <span className="text-xs text-black block mb-0.5">Secondary Unit</span>
+                                    <span className="text-xs font-medium text-black">
+                                        {(selectedProduct as any).secondary_unit || (selectedProduct as any).secondaryUnit || "-"}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Additional Configurations */}
+                        <div>
+                            <h4 className="text-xs font-semibold uppercase tracking-wider text-black mb-1.5">
+                                Additional Details
+                            </h4>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                                <div className="px-3 py-2 bg-gray-50 rounded-lg border border-gray-200">
+                                    <span className="text-xs text-black block mb-0.5">Decimal Quantity Sale</span>
+                                    <span className="text-xs font-medium text-black">
+                                        {(selectedProduct as any).is_decimal === "Yes" || (selectedProduct as any).is_decimal === true || (selectedProduct as any).isDecimal === "Yes" || (selectedProduct as any).isDecimal === true ? "Allowed (Fractional quantity supported)" : "Not Allowed (Whole numbers only)"}
+                                    </span>
+                                </div>
+                                <div className="px-3 py-2 bg-gray-50 rounded-lg border border-gray-200">
+                                    <span className="text-xs text-black block mb-0.5">Packing Levels</span>
+                                    <span className="text-xs font-medium text-black">
+                                        {selectedProduct.packing_levels || (selectedProduct as any).packingLevels || "-"}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Description (if any) */}
+                        {selectedProduct.description && (
+                            <div>
+                                <h4 className="text-xs font-semibold uppercase tracking-wider text-black mb-1.5">
+                                    Description / Note
+                                </h4>
+                                <div className="px-3 py-2 bg-gray-50 rounded-lg border border-gray-200 text-xs font-medium text-black">
+                                    {selectedProduct.description}
+                                </div>
                             </div>
                         )}
 
-                        <div className="grid grid-cols-2 gap-3 text-xs text-gray-600 pt-2 border-t border-gray-100">
-                            <div>
-                                <span className="text-gray-400">Low Stock Alert:</span>{" "}
-                                <span className="font-semibold text-gray-800">{getLowThreshold(selectedProduct)} {getUnit(selectedProduct)}</span>
-                            </div>
-                            <div>
-                                <span className="text-gray-400">Status:</span>{" "}
-                                <span className={`font-semibold ${isActive(selectedProduct) ? "text-emerald-600" : "text-red-600"}`}>
-                                    {isActive(selectedProduct) ? "Active" : "Inactive"}
-                                </span>
-                            </div>
-                            {selectedProduct.packing_levels && (
-                                <div className="col-span-2">
-                                    <span className="text-gray-400">Packing Levels:</span>{" "}
-                                    <span className="font-semibold text-gray-800">{selectedProduct.packing_levels}</span>
-                                </div>
-                            )}
-                        </div>
-
-                        <div className="flex justify-end pt-3 gap-2">
-                            <Link
-                                to={`/admin/products/${selectedProduct.id || selectedProduct.pcode || ""}`}
-                                className="px-4 py-2 text-xs font-medium text-white bg-[var(--color-primary,#009FE3)] hover:opacity-90 rounded-lg transition-opacity"
-                            >
-                                Full Page View
-                            </Link>
+                        {/* Footer Actions */}
+                        <div className="pt-2.5 border-t border-gray-200 flex justify-end gap-2.5">
                             <button
+                                type="button"
                                 onClick={closeQuickView}
-                                className="px-4 py-2 text-xs font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors cursor-pointer"
+                                className="px-4 py-1.5 text-xs font-medium text-black bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors cursor-pointer"
                             >
                                 Close
                             </button>
+                            <Link
+                                to={`/admin/edit-product/${selectedProduct.id || selectedProduct.pcode || ""}`}
+                                state={{ editData: selectedProduct }}
+                                className="px-4 py-1.5 text-xs font-medium text-white bg-[var(--color-primary,#009FE3)] hover:opacity-90 rounded-lg transition-opacity inline-flex items-center gap-1.5 cursor-pointer shadow-sm"
+                            >
+                                <FiEdit className="w-3.5 h-3.5" />
+                                Edit Product
+                            </Link>
                         </div>
                     </div>
                 </Modal>
             )}
 
             {/* Delete Confirmation Modal */}
-            {productToDelete && (
+            {productToDelete && isDeleteModalOpen && (
                 <DeleteModal
                     isOpen={isDeleteModalOpen}
                     title="Delete Product"
-                    message={`Are you sure you want to delete "${getName(productToDelete)}"? This action cannot be undone.`}
+                    message={
+                        getQuantity(productToDelete) > 0
+                            ? `Are you sure you want to delete "${getName(productToDelete)}"? Currently it has ${getQuantity(productToDelete)} ${getUnit(productToDelete)} in stock. Deleting will inactivate and remove it from your inventory.`
+                            : `Are you sure you want to delete "${getName(productToDelete)}"? This will inactivate and remove it from your inventory.`
+                    }
                     onClose={closeDeleteModal}
                     onDelete={handleDelete}
                 />

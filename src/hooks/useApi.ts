@@ -72,8 +72,9 @@ export interface FetchDataProps {
 const isSuccessfulResponse = <T extends { statusCode?: number; status?: string | number; error?: boolean }>(response: T): boolean => {
     if (!response) return false;
     if (response.error === true) return false;
-    if (response.statusCode === 200 || response.statusCode === 201) return true;
+    if (typeof response.status === 'string' && response.status.toLowerCase() === 'error') return false;
     if (typeof response.status === 'string' && response.status.toLowerCase() === 'success') return true;
+    if (response.statusCode === 200 || response.statusCode === 201) return true;
     if (response.status === 200 || response.status === 201) return true;
     return response.error === false || (!response.error && ((response as any).data !== undefined || (response as any).productsList !== undefined));
 };
@@ -227,11 +228,21 @@ export const useAPI = () => {
         let totalItems = 0;
         let pageCount = 1;
 
-        if (response?.statusCode === 200 && (response as any)?.data) {
-            const { data: apiData, total, pageCount: apiPageCount } = (response as any).data;
-            data = (apiData || []) as T[];
-            totalItems = total ?? 0;
-            pageCount = apiPageCount ?? 1;
+        if (response && !(response as any).error) {
+            const raw = (response as any).data !== undefined ? (response as any).data : response;
+            if (raw && typeof raw === 'object' && Array.isArray(raw.data)) {
+                data = raw.data as T[];
+                totalItems = raw.total ?? data.length;
+                pageCount = raw.pageCount ?? Math.max(1, Math.ceil(totalItems / 10));
+            } else if (Array.isArray(raw)) {
+                data = raw as T[];
+                totalItems = (response as any).total ?? data.length;
+                pageCount = (response as any).pageCount ?? Math.max(1, Math.ceil(totalItems / 10));
+            } else if (Array.isArray((response as any).productsList)) {
+                data = (response as any).productsList as T[];
+                totalItems = (response as any).total ?? data.length;
+                pageCount = (response as any).pageCount ?? Math.max(1, Math.ceil(totalItems / 10));
+            }
         } else if (error) {
             const errorMessage = error?.message;
             if (showToast) {
@@ -284,6 +295,20 @@ export const useAPI = () => {
                             exact: false,
                             refetchType: 'all'
                         });
+                        for (const singleKey of invalidateQueryKey) {
+                            if (typeof singleKey === 'string') {
+                                await queryClient.invalidateQueries({
+                                    queryKey: [singleKey],
+                                    exact: false,
+                                    refetchType: 'all'
+                                });
+                                await queryClient.refetchQueries({
+                                    queryKey: [singleKey],
+                                    exact: false,
+                                    type: 'all'
+                                });
+                            }
+                        }
                     }
                     return { success: true, data: response };
                 } else if (((response as any)?.message || (response as any)?.msg) && showErrorMessage) {
@@ -305,7 +330,7 @@ export const useAPI = () => {
             const response = await deleteMutation.mutateAsync({ url }) as ApiResponse<T>;
             if (isSuccessfulResponse(response)) {
                 if (showSuccessMessage) {
-                    showSuccessToast(response.message);
+                    showSuccessToast(response.message || (response as any)?.msg || "Deleted successfully!");
                 }
                 if (invalidateQueryKey && invalidateQueryKey.length > 0) {
                     await queryClient.invalidateQueries({
@@ -313,6 +338,20 @@ export const useAPI = () => {
                         exact: false,
                         refetchType: 'all'
                     });
+                    for (const singleKey of invalidateQueryKey) {
+                        if (typeof singleKey === 'string') {
+                            await queryClient.invalidateQueries({
+                                queryKey: [singleKey],
+                                exact: false,
+                                refetchType: 'all'
+                            });
+                            await queryClient.refetchQueries({
+                                queryKey: [singleKey],
+                                exact: false,
+                                type: 'all'
+                            });
+                        }
+                    }
                 }
                 return response;
             } else {

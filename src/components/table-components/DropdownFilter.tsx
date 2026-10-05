@@ -36,7 +36,7 @@ const DropdownFilter: React.FC<DropdownFilterProps> = ({
 		<div className="relative inline-block" ref={dropdownRef}>
 			{/* Trigger */}
 			<div
-				className={`border border-gray-200 px-3 rounded-md cursor-pointer inline-flex justify-between items-center gap-1 h-[38px] text-[13px] w-full sm:w-fit
+				className={`border border-gray-200 px-2.5 rounded-md cursor-pointer inline-flex justify-between items-center gap-1 h-[32px] text-xs text-black w-full sm:w-fit
           ${isOpen ? "bg-[var(--color-primary)] text-white" : "hover:bg-[var(--color-primary)] hover:text-white transition-all ease-in duration-300"}`}
 				onClick={onToggle}
 				role="button"
@@ -46,7 +46,7 @@ const DropdownFilter: React.FC<DropdownFilterProps> = ({
 				<span className="truncate max-w-[16ch]">
 					{selectedOption ? selectedOption.label : title}
 				</span>
-				<RiArrowDropDownLine size={20} />
+				<RiArrowDropDownLine size={18} />
 			</div>
 
 			{isOpen && (

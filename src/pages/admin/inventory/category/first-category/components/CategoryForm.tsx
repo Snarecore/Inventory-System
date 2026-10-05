@@ -5,6 +5,9 @@ import ToggleInput from "@/components/form/ToggleInput";
 import ImageUpload from "@/components/image/ImageUpload";
 import Modal from "@/components/modal/Modal";
 import { ChangeEvent, useEffect, useState } from "react";
+import { useAPI } from "@/hooks/useApi";
+import apiConfig from "@/config/api.json";
+import { firstCategoryQueryKey } from "@/config/query-key";
 
 interface Option {
 	label: string;
@@ -25,38 +28,38 @@ const requiredFields = [
 	{ key: "mainCategoryId", value: "main category", label: "dropdown" }
 ];
 
-const CategoryForm = ({ isOpen, onClose, editData }: any) => {
-	// const { postFormMutation, patchFormMutation, handleApiMutation, fetchData } = useAPI();
+const CategoryForm = ({ isOpen, onClose, editData, fetchData }: any) => {
+	const { postFormMutation, patchFormMutation, handleApiMutation, fetchData: fetchApiData } = useAPI();
 	const [fieldValues, setFieldValues] = useState(initialFieldValues);
 	const [isLoading, setIsLoading] = useState(false);
-	const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 	const [mainCategories, setMainCategories] = useState<any>([]);
 	const [selectedMainCategory, setSelectedMainCategory] = useState<Option | null>(null);
-	// const apiUrl = apiConfig.inventory.firstCategoryUrl;
-	// const mainCategoryUrl = apiConfig.site.mainCategoryUrl;
+	const apiUrl = apiConfig.inventory.firstCategoryUrl;
+	const mainCategoryUrl = apiConfig.site?.mainCategoryUrl || apiConfig.inventory?.mainCategoryUrl;
 
-	// const fetchMainCategoryData = async () => {
-	// 	try {
-	// 		const mainCategories = await fetchData({ apiUrl: mainCategoryUrl });
-	// 		setMainCategories(mainCategories.mainCategory);
-	// 	} catch (err) {
-	// 		console.error("Fetch failed:", err);
-	// 	}
-	// };
+	const fetchMainCategoryData = async () => {
+		try {
+			const res = await fetchApiData({ apiUrl: mainCategoryUrl });
+			const list = Array.isArray(res) ? res : res?.mainCategory || res?.data || [];
+			setMainCategories(list);
+		} catch (err) {
+			console.error("Fetch failed:", err);
+		}
+	};
 
-	// useEffect(() => {
-	// 	fetchMainCategoryData();
-	// }, []);
+	useEffect(() => {
+		if (isOpen) {
+			fetchMainCategoryData();
+		}
+	}, [isOpen]);
 
 	const formattedMainCategories = (mainCategories || []).map((item: any) => ({
-		label: item.name,
-		value: item.id
+		label: item.name || item.title || "",
+		value: item.id || item._id || ""
 	}));
-
 
 	const handleSelectedMainCategory = (category: Option) => {
 		setSelectedMainCategory(category);
-		setIsDropdownOpen(false);
 		setFieldValues((prevState) => ({
 			...prevState,
 			mainCategoryId: category.value,
@@ -66,10 +69,13 @@ const CategoryForm = ({ isOpen, onClose, editData }: any) => {
 
 	useEffect(() => {
 		if (editData) {
-			setFieldValues(editData);
-			if (editData.mainCategoryId && editData.mainCategoryName) {
+			setFieldValues({
+				...editData,
+				status: editData.status !== undefined ? Boolean(editData.status) : true
+			});
+			if (editData.mainCategoryId) {
 				setSelectedMainCategory({
-					label: editData.mainCategoryName,
+					label: editData.mainCategoryName || "",
 					value: editData.mainCategoryId
 				});
 			}
@@ -77,7 +83,7 @@ const CategoryForm = ({ isOpen, onClose, editData }: any) => {
 			setFieldValues(initialFieldValues);
 			setSelectedMainCategory(null);
 		}
-	}, [editData]);
+	}, [editData, isOpen]);
 
 	const resetForm = () => {
 		setFieldValues(initialFieldValues);
@@ -91,11 +97,6 @@ const CategoryForm = ({ isOpen, onClose, editData }: any) => {
 			[name]: value
 		}));
 	};
-
-	// const handleImageUpload = (file: File) => {
-	// 	// @ts-ignore
-	// 	setFieldValues((prevState) => ({ ...prevState, bannerImage: file }));
-	// };
 
 	const handleImageUpload = (file: File | null) => {
 		if (file) {
@@ -112,23 +113,24 @@ const CategoryForm = ({ isOpen, onClose, editData }: any) => {
 
 	const handleSubmitForm = async () => {
 		setIsLoading(true);
-		// const mutation = editData ? patchFormMutation : postFormMutation;
-		// const url = editData ? `${apiUrl}/${editData.id}` : apiUrl;
+		const mutation = editData ? patchFormMutation : postFormMutation;
+		const url = editData ? `${apiUrl}/${editData.id}` : apiUrl;
 
-		// const result = await handleApiMutation({
-		// 	mutation,
-		// 	url,
-		// 	body: fieldValues,
-		// 	invalidateQueryKey: [firstCategoryQueryKey],
-		// 	showSuccessMessage: true,
-		// 	showErrorMessage: true,
-		// 	requiredFields
-		// });
+		const result = await handleApiMutation({
+			mutation,
+			url,
+			body: fieldValues,
+			invalidateQueryKey: [firstCategoryQueryKey],
+			showSuccessMessage: true,
+			showErrorMessage: true,
+			requiredFields
+		});
 
-		// if (result?.success) {
-		// 	onClose();
-		// 	resetForm();
-		// }
+		if (result?.success) {
+			onClose();
+			resetForm();
+			if (fetchData) fetchData();
+		}
 		setIsLoading(false);
 	};
 
@@ -139,7 +141,12 @@ const CategoryForm = ({ isOpen, onClose, editData }: any) => {
 			title={editData ? "Edit First Category" : "Create First Category"}
 			footerButtons={
 				<>
-					<Button label="Cancel" onClick={onClose} color="var(--color-secondary)" hoverColor="var(--color-secondary-hover)" />
+					<Button
+						label="Cancel"
+						onClick={onClose}
+						color="var(--color-secondary)"
+						hoverColor="var(--color-secondary-hover)"
+					/>
 					<Button
 						label="Save"
 						onClick={handleSubmitForm}
@@ -156,23 +163,27 @@ const CategoryForm = ({ isOpen, onClose, editData }: any) => {
 					<h3 className="block text-sm font-medium text-gray-700">Banner Image:
 						<span className="text-xs text-gray-500 ml-1">(Recommended Size: 1920x192 PX)</span>
 					</h3>
-					{/* <ImageUpload value={fieldValues.bannerImage} onChange={handleImageUpload} /> */}
 					<ImageUpload
 						value={
 							typeof fieldValues.bannerImage === "string"
 								? fieldValues.bannerImage
-								: URL.createObjectURL(fieldValues.bannerImage)
+								: fieldValues.bannerImage
+								? URL.createObjectURL(fieldValues.bannerImage)
+								: ""
 						}
 						onChange={handleImageUpload}
 					/>
 				</div>
 
 				<div>
-					<InputField label="Name" type="text"
+					<InputField
+						label="Name"
+						type="text"
 						name="name"
 						value={fieldValues.name}
 						required
-						onChange={handleChange} />
+						onChange={handleChange}
+					/>
 				</div>
 
 				<SelectInput
@@ -188,7 +199,7 @@ const CategoryForm = ({ isOpen, onClose, editData }: any) => {
 				<ToggleInput
 					label="Status"
 					name="status"
-					checked={fieldValues.status}
+					checked={Boolean(fieldValues.status)}
 					onChange={handleSwitchChange}
 				/>
 			</div>
