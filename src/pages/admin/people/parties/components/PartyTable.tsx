@@ -95,13 +95,13 @@ export const PartyTable: React.FC<PartyTableProps> = ({
   ];
 
   const tableHeaders = [
-    { key: "sl", label: "#", align: "text-center" },
-    { key: "name", label: "Party Details", align: "text-left" },
-    { key: "type", label: "Type", align: "text-center" },
-    { key: "contact", label: "Contact Info", align: "text-left" },
-    { key: "balance", label: "Opening Balance", align: "text-right" },
-    { key: "status", label: "Status", align: "text-center" },
-    { key: "action", label: "Actions", align: "text-center" },
+    { key: "sl", label: "#", align: "text-center", width: "w-[5%]" },
+    { key: "name", label: "Party Details", align: "text-left", width: "w-[18%]" },
+    { key: "type", label: "Type", align: "text-left", width: "w-[15%]" },
+    { key: "contact", label: "Contact Info", align: "text-left", width: "w-[18%]" },
+    { key: "balance", label: "Opening Balance", align: "text-left", width: "w-[18%]" },
+    { key: "status", label: "Status", align: "text-left", width: "w-[15%]" },
+    { key: "action", label: "Actions", align: "text-center", width: "w-[11%]" },
   ];
 
   const getPartyName = (p: PartyItem) => p.name || p.partyName || p.party_name || "Unnamed Party";
@@ -343,13 +343,13 @@ export const PartyTable: React.FC<PartyTableProps> = ({
         <>
           {/* Table */}
           <div className="w-full overflow-x-auto">
-            <table className="w-full text-left border-collapse min-w-[750px]">
+            <table className="w-full text-left border-collapse table-fixed min-w-[800px]">
               <thead>
                 <tr className="bg-slate-50 border-b border-gray-200 text-xs text-black">
-                  {tableHeaders.map(({ key, label, align }) => (
+                  {tableHeaders.map(({ key, label, align, width }) => (
                     <th
                       key={key}
-                      className={`px-4 py-[11px] ${align} ${key === "sl" ? "w-14" : ""}`}
+                      className={`px-4 py-[11px] ${align} ${width}`}
                     >
                       {label}
                     </th>
@@ -371,24 +371,24 @@ export const PartyTable: React.FC<PartyTableProps> = ({
                     return (
                       <tr
                         key={partyId}
-                        className="hover:bg-blue-50/40 transition-colors duration-150 group"
+                        className="h-[48px] hover:bg-blue-50/40 transition-colors duration-150 group"
                       >
                         {/* SL */}
-                        <td className="px-4 py-[11px] text-center text-xs font-normal text-black">
+                        <td className="px-4 py-[11px] text-center text-xs font-normal text-black whitespace-nowrap">
                           {rowNumber}
                         </td>
 
                         {/* Party Details (Name) */}
-                        <td className="px-4 py-[11px]">
-                          <div className="font-normal text-[13px] text-black leading-tight">
+                        <td className="px-4 py-[11px] text-left">
+                          <div className="font-normal text-[13px] text-black leading-tight truncate" title={name}>
                             {name}
                           </div>
                         </td>
 
                         {/* Type */}
-                        <td className="px-4 py-[11px] text-center">
+                        <td className="px-4 py-[11px] text-left whitespace-nowrap">
                           <span
-                            className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-normal border ${
+                            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-normal border ${
                               type === "SUPPLIER"
                                 ? "bg-emerald-50 text-emerald-700 border-emerald-200"
                                 : "bg-sky-50 text-sky-700 border-sky-200"
@@ -399,18 +399,18 @@ export const PartyTable: React.FC<PartyTableProps> = ({
                         </td>
 
                         {/* Contact Info (Phone) */}
-                        <td className="px-4 py-[11px] text-left font-normal text-[13px] text-black">
+                        <td className="px-4 py-[11px] text-left font-normal text-[13px] text-black whitespace-nowrap truncate" title={phone}>
                           {phone}
                         </td>
 
                         {/* Balance */}
-                        <td className="px-4 py-[11px] text-right font-normal text-[13px] text-black">
+                        <td className="px-4 py-[11px] text-left font-normal text-[13px] text-black whitespace-nowrap">
                           ৳{balance.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
                         </td>
 
                         {/* Status Badge (Click to Toggle Active / Inactive) */}
                         <td
-                          className="px-4 py-[11px] text-center"
+                          className="px-4 py-[11px] text-left whitespace-nowrap"
                           onClick={(e) => e.stopPropagation()}
                         >
                           <button
@@ -429,7 +429,7 @@ export const PartyTable: React.FC<PartyTableProps> = ({
                         </td>
 
                         {/* Actions: Eye, Edit */}
-                        <td className="px-4 py-[11px] text-center">
+                        <td className="px-4 py-[11px] text-center whitespace-nowrap">
                           <div className="flex items-center justify-center gap-1.5">
                             {/* Eye / View Icon */}
                             <button

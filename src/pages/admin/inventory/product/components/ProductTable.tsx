@@ -80,7 +80,7 @@ export const ProductTable = ({
     }, [categoryOptions]);
 
     const tableHeaders = [
-        { key: "sl", label: "#", align: "text-center" },
+        { key: "sl", label: "SL", align: "text-center" },
         { key: "name", label: "Product Name", align: "text-left" },
         { key: "category", label: "Category", align: "text-left" },
         { key: "stock", label: "Stock & Unit", align: "text-center" },
