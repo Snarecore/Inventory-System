@@ -60,10 +60,10 @@ const Sidebar = ({ sidebarClick }: SidebarProps) => {
   return (
     <div
       className={`hidden lg:flex flex-col h-screen bg-white shadow-md transition-all ease-in duration-300 border-r border-gray-200 relative shrink-0 ${
-        sidebarClick ? "w-24" : "w-63"
+        sidebarClick ? "w-20" : "w-56"
       }`}
     >
-      <div className={`h-16 flex items-center border-b border-gray-200 px-4 shrink-0 ${sidebarClick ? "justify-center px-2" : "justify-start"}`}>
+      <div className={`h-16 flex items-center border-b border-gray-200 shrink-0 ${sidebarClick ? "justify-center px-2" : "justify-start px-3.5"}`}>
         <Link to={"/admin"} className="flex items-center">
           {sidebarClick ? (
             <img
@@ -75,60 +75,64 @@ const Sidebar = ({ sidebarClick }: SidebarProps) => {
             <img
               src={logoImg}
               alt="Cash Boi"
-              className="h-8 w-auto max-w-[170px] object-contain"
+              className="h-8 w-auto max-w-[155px] object-contain"
             />
           )}
         </Link>
       </div>
 
-      <div className="flex-1 p-2 overflow-y-auto custom-scrollbar">
+      <div className="flex-1 px-2.5 py-3 overflow-y-auto custom-scrollbar">
         {menu.map((section) => (
-          <div key={section.sectionName} className={`p-2 ${sidebarClick ? "mb-0" : "mb-2"}`}>
-            <p className={`text-xs text-[#092c4c] font-bold ${sidebarClick ? "mb-0" : "mb-2"}`}>
-              {sidebarClick ? "" : section.sectionName}
-            </p>
+          <div key={section.sectionName} className={sidebarClick ? "mb-2" : "mb-3"}>
+            {!sidebarClick && section.sectionName && (
+              <p className="text-xs text-[#092c4c] font-bold px-2 mb-2">
+                {section.sectionName}
+              </p>
+            )}
 
-              {section.items.map((item) => {
-                const isParentActive = item.subItems?.some(
-                  (subItem: any) => subItem.path === pathname
-                );
-                const isItemActive = item.path === pathname;
-                const isOpen = openSubMenu === item.id;
+            {section.items.map((item) => {
+              const isParentActive = item.subItems?.some(
+                (subItem: any) => subItem.path === pathname
+              );
+              const isItemActive = item.path === pathname;
+              const isOpen = openSubMenu === item.id;
 
-                const shouldShowActive =
-                  item.subItems && item.subItems.length > 0
-                    ? isOpen || isParentActive
-                    : isItemActive && !isAnySubmenuActive;
+              const shouldShowActive =
+                item.subItems && item.subItems.length > 0
+                  ? isOpen || isParentActive
+                  : isItemActive && !isAnySubmenuActive;
 
-                const Icon = item.icon;
+              const Icon = item.icon;
 
-                return (
-                  <div key={item.id}>
-                    {item.subItems && item.subItems.length > 0 ? (
-                      <div
-                        onClick={() => handleParentItemClick(item)}
-                        className={`${sidebarClick ? "" : "w-[200px]"} group px-[12px] py-[8px] flex items-center justify-between cursor-pointer rounded-md transition-all mb-[4px]
-                        ${
-                          sidebarClick
-                            ? ""
-                            : shouldShowActive
-                            ? "bg-[var(--color-primary-light)] text-[var(--color-primary)]"
-                            : "hover:bg-gray-100"
-                        }
-                        `}
-                        aria-expanded={!sidebarClick && isOpen}
-                        aria-disabled={sidebarClick}
-                      >
-                        <div className="flex items-center gap-2">
-                          <span
-                            className={`text-lg transition-all ${
-                              shouldShowActive
-                                ? "text-[var(--color-primary)]"
-                                : "text-[#5b6670] group-hover:text-[var(--color-primary)]"
-                            }`}
-                          >
-                            <Icon title={item.name} size={14} />
-                          </span>
+              return (
+                <div key={item.id} className="mb-1">
+                  {item.subItems && item.subItems.length > 0 ? (
+                    <div
+                      onClick={() => handleParentItemClick(item)}
+                      className={`w-full group py-2 flex items-center cursor-pointer rounded-md transition-all ${
+                        sidebarClick
+                          ? "justify-center px-0"
+                          : "justify-between px-3"
+                      } ${
+                        shouldShowActive
+                          ? "bg-[var(--color-primary-light)] text-[var(--color-primary)]"
+                          : "hover:bg-gray-100"
+                      }`}
+                      aria-expanded={!sidebarClick && isOpen}
+                      aria-disabled={sidebarClick}
+                      title={sidebarClick ? item.name : undefined}
+                    >
+                      <div className={`flex items-center gap-2.5 ${sidebarClick ? "justify-center" : ""}`}>
+                        <span
+                          className={`text-base transition-all ${
+                            shouldShowActive
+                              ? "text-[var(--color-primary)]"
+                              : "text-[#5b6670] group-hover:text-[var(--color-primary)]"
+                          }`}
+                        >
+                          <Icon title={item.name} size={16} />
+                        </span>
+                        {!sidebarClick && (
                           <span
                             className={`text-sm font-medium transition-all ${
                               shouldShowActive
@@ -136,42 +140,45 @@ const Sidebar = ({ sidebarClick }: SidebarProps) => {
                                 : "text-[#212b36] group-hover:text-[var(--color-primary)]"
                             }`}
                           >
-                            {sidebarClick ? "" : item.name}
-                          </span>
-                        </div>
-
-                        {!sidebarClick && (
-                          <span className="text-xl rounded-full">
-                            {isOpen ? (
-                              <RiArrowDropDownLine className="text-[var(--color-primary)]" />
-                            ) : (
-                              <RiArrowDropRightLine className="text-[var(--color-primary)]" />
-                            )}
+                            {item.name}
                           </span>
                         )}
                       </div>
-                    ) : (
-                      <Link
-                        to={item.path}
-                        className={`${
-                          sidebarClick ? "" : "w-[200px]"
-                        } group px-[12px] py-[8px] flex items-center gap-2 rounded-md transition-all mb-[2px] ${
-                          sidebarClick
-                            ? ""
-                            : shouldShowActive
-                            ? "bg-[var(--color-primary-light)] text-[var(--color-primary)]"
-                            : "hover:bg-gray-100"
+
+                      {!sidebarClick && (
+                        <span className="text-xl">
+                          {isOpen ? (
+                            <RiArrowDropDownLine className="text-[var(--color-primary)]" />
+                          ) : (
+                            <RiArrowDropRightLine className="text-[var(--color-primary)]" />
+                          )}
+                        </span>
+                      )}
+                    </div>
+                  ) : (
+                    <Link
+                      to={item.path}
+                      className={`w-full group py-2 flex items-center rounded-md transition-all ${
+                        sidebarClick
+                          ? "justify-center px-0"
+                          : "gap-2.5 px-3"
+                      } ${
+                        shouldShowActive
+                          ? "bg-[var(--color-primary-light)] text-[var(--color-primary)]"
+                          : "hover:bg-gray-100"
+                      }`}
+                      title={sidebarClick ? item.name : undefined}
+                    >
+                      <span
+                        className={`text-base transition-all ${
+                          shouldShowActive
+                            ? "text-[var(--color-primary)]"
+                            : "text-[#5b6670] group-hover:text-[var(--color-primary)]"
                         }`}
                       >
-                        <span
-                          className={`text-lg transition-all ${
-                            shouldShowActive
-                              ? "text-[var(--color-primary)]"
-                              : "text-[#5b6670] group-hover:text-[var(--color-primary)]"
-                          }`}
-                        >
-                          <Icon title={item.name} size={14} />
-                        </span>
+                        <Icon title={item.name} size={16} />
+                      </span>
+                      {!sidebarClick && (
                         <span
                           className={`text-sm font-medium transition-all ${
                             shouldShowActive
@@ -179,53 +186,51 @@ const Sidebar = ({ sidebarClick }: SidebarProps) => {
                               : "text-[#212b36] group-hover:text-[var(--color-primary)]"
                           }`}
                         >
-                          {sidebarClick ? "" : item.name}
+                          {item.name}
                         </span>
-                      </Link>
-                    )}
-
-                    {item.subItems &&
-                      item.subItems.length > 0 &&
-                      !sidebarClick &&
-                      isOpen && (
-                        <ul>
-                          {item.subItems.map((subItem) => {
-                            const isActive = pathname === subItem.path;
-                            return (
-                              <li key={subItem.id}>
-                                <Link
-                                  to={subItem.path}
-                                  className={`block w-[200px] rounded-md group pl-4 py-2.5 p-2 cursor-pointer text-[13px] transition-all ${
-                                    sidebarClick
-                                      ? ""
-                                      : isActive
-                                      ? "text-[var(--color-primary)] font-medium"
-                                      : "text-[#646b72] hover:bg-gray-100 hover:text-[var(--color-primary)]"
-                                  }
-                                  `}
-                                >
-                                  <span className="flex items-center gap-2">
-                                    <div
-                                      className={`shrink-0 rounded-full transition-all duration-200 ${
-                                        isActive
-                                          ? "border-3 border-[var(--color-primary)] group-hover:border-[var(--color-primary)]"
-                                          : "border-2 border-gray-400 group-hover:border-[var(--color-primary)]"
-                                      }`}
-                                    />
-                                    {subItem.name}
-                                  </span>
-                                </Link>
-                              </li>
-                            );
-                          })}
-                        </ul>
                       )}
-                  </div>
-                );
-              })}
-            </div>
-          ))}
-        </div>
+                    </Link>
+                  )}
+
+                  {item.subItems &&
+                    item.subItems.length > 0 &&
+                    !sidebarClick &&
+                    isOpen && (
+                      <ul className="mt-1 space-y-0.5">
+                        {item.subItems.map((subItem) => {
+                          const isActive = pathname === subItem.path;
+                          return (
+                            <li key={subItem.id}>
+                              <Link
+                                to={subItem.path}
+                                className={`block w-full rounded-md pl-6 pr-3 py-2 cursor-pointer text-[13px] transition-all ${
+                                  isActive
+                                    ? "text-[var(--color-primary)] font-medium bg-[var(--color-primary-light)]"
+                                    : "text-[#646b72] hover:bg-gray-100 hover:text-[var(--color-primary)]"
+                                }`}
+                              >
+                                <span className="flex items-center gap-2">
+                                  <div
+                                    className={`w-1.5 h-1.5 shrink-0 rounded-full transition-all duration-200 ${
+                                      isActive
+                                        ? "bg-[var(--color-primary)]"
+                                        : "bg-gray-400 group-hover:bg-[var(--color-primary)]"
+                                    }`}
+                                  />
+                                  {subItem.name}
+                                </span>
+                              </Link>
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    )}
+                </div>
+              );
+            })}
+          </div>
+        ))}
+      </div>
     </div>
   );
 };

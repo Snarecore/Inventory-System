@@ -86,9 +86,9 @@ const Header = ({ sidebarClick }: { sidebarClick: boolean }) => {
     };
 
     return (
-        <div className={`w-full fixed z-50 ${sidebarClick
-            ? "lg:w-[calc(100%-90px)]"
-            : "lg:w-[calc(100%-252px)]"
+        <div className={`fixed top-0 right-0 left-0 z-40 transition-[left] duration-300 ${sidebarClick
+            ? "lg:left-20"
+            : "lg:left-56"
             }`}>
             <div className="flex lg:hidden items-center justify-between px-4 h-16 bg-white border-b border-gray-200 transition-all ease-in-out duration-300">
                 {showSidebarMenu ? (
