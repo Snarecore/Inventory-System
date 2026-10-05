@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { FiEye, FiEdit, FiTrash2, FiPackage, FiAlertTriangle, FiCheckCircle, FiXCircle } from "react-icons/fi";
+import { FiEye, FiEdit, FiTrash2 } from "react-icons/fi";
 import { Link } from "react-router-dom";
 import Search from "@/components/table-components/Search";
 import DropdownFilter from "@/components/table-components/DropdownFilter";
@@ -8,7 +8,7 @@ import TableSkeleton from "@/components/skeleton/TableSkeleton";
 import Pagination from "@/components/pagination";
 import Modal from "@/components/modal/Modal";
 import DeleteModal from "@/components/modal/DeleteModal";
-import { showSuccessToast, showErrorToast } from "@/utils/toast-utils";
+import { showErrorToast } from "@/utils/toast-utils";
 import { useAPI } from "@/hooks/useApi";
 import apiConfig from "@/config/api.json";
 import { productListQueryKey, productQueryKey, insertProductQueryKey } from "@/config/query-key";
@@ -63,9 +63,7 @@ export const ProductTable = ({
     const [openDropdown, setOpenDropdown] = useState<string | null>(null);
     const [togglingId, setTogglingId] = useState<string | null>(null);
 
-    const { handleDeleteAPI, handleApiMutation, patchMutation, postMutation } = useAPI();
-    const productBaseUrl = apiConfig.inventory?.productUrl || "product";
-    const statusApiUrl = apiConfig.inventory?.productStatusUrl || "product/update-status";
+    const { handleApiMutation, postMutation } = useAPI();
     const insertProductUrl = apiConfig.inventory?.insertProductUrl || "insert-product";
 
     const statusOptions = [

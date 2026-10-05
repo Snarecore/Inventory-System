@@ -1,5 +1,5 @@
 import React from "react";
-import { FiEdit, FiUser, FiPhone, FiMail, FiMapPin, FiCreditCard } from "react-icons/fi";
+import { FiEdit } from "react-icons/fi";
 import Modal from "@/components/modal/Modal";
 import type { PartyItem } from "@/types";
 

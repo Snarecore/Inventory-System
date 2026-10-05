@@ -54,12 +54,7 @@ const Products = () => {
         },
         staleTime: 0,
         refetchOnMount: "always",
-        refetchOnWindowFocus: true,
     });
-
-    useEffect(() => {
-        refetchProducts();
-    }, []);
 
     // 2. Fetch Categories from GET /product-categories-list
     const { data: rawCategoryData, refetch: refetchCategories } = useQuery({

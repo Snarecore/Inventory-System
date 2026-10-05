@@ -80,9 +80,8 @@ const CreateProductForm = () => {
     const [hasLoadedInitialData, setHasLoadedInitialData] = useState(false);
 
     const queryClient = useQueryClient();
-    const { postMutation, patchMutation, handleApiMutation } = useAPI();
+    const { postMutation, handleApiMutation } = useAPI();
     const insertProductUrl = apiConfig.inventory?.insertProductUrl || "insert-product";
-    const productBaseUrl = apiConfig.inventory?.productUrl || "product";
     const categoriesUrl = apiConfig.inventory?.productCategoriesListUrl || "product-categories-list";
     const unitsUrl = apiConfig.inventory?.productUnitsListUrl || "product-units-list";
     const productListUrl = apiConfig.productList?.productListUrl || "get-product-list";

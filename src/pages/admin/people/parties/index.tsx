@@ -1,9 +1,7 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useSearchParams } from "react-router-dom";
-import { FaPlus, FaUsers, FaUserTie, FaTruck, FaMoneyBillWave } from "react-icons/fa";
-import { FiUserCheck } from "react-icons/fi";
-import { MotionDiv } from "@/utils/framer.motion";
+import { FaPlus } from "react-icons/fa";
 import PageHeader from "@/components/page-header/PageHeader";
 import Button from "@/components/button/Button";
 import RefreshButton from "@/components/table-components/RefreshButton";
@@ -209,26 +207,6 @@ const Parties: React.FC = () => {
       }
     }
   }, [filteredParties, sortBy]);
-
-  // KPI Metrics
-  const metrics = useMemo(() => {
-    const total = allParties.length;
-    const customerCount = allParties.filter((p) => getPartyType(p) === "CUSTOMER").length;
-    const supplierCount = allParties.filter((p) => getPartyType(p) === "SUPPLIER").length;
-    const activeCount = allParties.filter(isPartyActive).length;
-    const totalBalance = allParties.reduce((sum, p) => {
-      const bal = Number(p.openingBalance ?? p.opening_balance ?? p.balance ?? p.dueAmount ?? p.due_amount ?? 0);
-      return sum + bal;
-    }, 0);
-
-    return {
-      total,
-      customerCount,
-      supplierCount,
-      activeCount,
-      totalBalance,
-    };
-  }, [allParties]);
 
   // Pagination calculation
   const pageCount = Math.max(1, Math.ceil(sortedParties.length / dataLimit));

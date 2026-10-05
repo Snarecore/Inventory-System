@@ -6,10 +6,6 @@ import DropdownFilter from "@/components/table-components/DropdownFilter";
 import EmptyState from "@/components/empty-state/EmptyState";
 import TableSkeleton from "@/components/skeleton/TableSkeleton";
 import Pagination from "@/components/pagination";
-import { showSuccessToast, showErrorToast } from "@/utils/toast-utils";
-import { buildAccessUser, withBranchScope } from "@/utils/access-user";
-import { postData } from "@/services/api-service";
-import apiConfig from "@/config/api.json";
 import type { PartyItem } from "@/types";
 
 interface PartyTableProps {
@@ -56,11 +52,9 @@ export const PartyTable: React.FC<PartyTableProps> = ({
   setSortBy,
   onEdit,
   onView,
-  onRefresh,
 }) => {
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const [isSortOpen, setIsSortOpen] = useState<boolean>(false);
-  const [togglingId, setTogglingId] = useState<string | null>(null);
   const sortRef = useRef<HTMLDivElement>(null);
 
   // Close sort dropdown when clicking outside
@@ -95,13 +89,13 @@ export const PartyTable: React.FC<PartyTableProps> = ({
   ];
 
   const tableHeaders = [
-    { key: "sl", label: "SL", align: "text-center", width: "w-[5%]" },
-    { key: "name", label: "Party Details", align: "text-left", width: "w-[18%]" },
-    { key: "type", label: "Type", align: "text-left", width: "w-[15%]" },
-    { key: "contact", label: "Contact Info", align: "text-left", width: "w-[18%]" },
-    { key: "balance", label: "Opening Balance", align: "text-left", width: "w-[18%]" },
-    { key: "status", label: "Status", align: "text-left", width: "w-[15%]" },
-    { key: "action", label: "Actions", align: "text-center", width: "w-[11%]" },
+    { key: "sl", label: "SL", align: "text-center" },
+    { key: "name", label: "Party Details", align: "text-left" },
+    { key: "type", label: "Type", align: "text-center" },
+    { key: "contact", label: "Contact Info", align: "text-left pl-8" },
+    { key: "balance", label: "Opening Balance", align: "text-right pr-10" },
+    { key: "status", label: "Status", align: "text-center" },
+    { key: "action", label: "Actions", align: "text-center" },
   ];
 
   const getPartyName = (p: PartyItem) => p.name || p.partyName || p.party_name || "Unnamed Party";
@@ -115,96 +109,6 @@ export const PartyTable: React.FC<PartyTableProps> = ({
   const isPartyActive = (p: PartyItem) => {
     const raw = String(p.status ?? "active").toLowerCase();
     return raw !== "inactive" && raw !== "false" && raw !== "0";
-  };
-
-  const handleTogglePartyStatus = async (party: PartyItem) => {
-    const rawId = party.id ?? (party as any).partyId ?? (party as any).party_id ?? (party as any).partyCode ?? (party as any).code;
-    const targetId = String(rawId || party.phone || (party as any).partyPhone || "");
-    if (!targetId || togglingId) return;
-
-    setTogglingId(targetId);
-    const currentActive = isPartyActive(party);
-    const nextActive = !currentActive;
-    const nextStatus = nextActive ? "Active" : "Inactive";
-    const numBalance = getPartyBalance(party);
-    const updateUrl = apiConfig.party?.updatePartyUrl || "party-info-update";
-    const insertUrl = apiConfig.party?.insertPartyUrl || "insert-party-info";
-
-    try {
-      const partyDetails = withBranchScope({
-        ...party,
-        ...(rawId ? {
-          id: rawId,
-          partyId: rawId,
-          party_id: rawId,
-          partyCode: rawId,
-          party_code: rawId,
-        } : {}),
-        name: getPartyName(party),
-        partyName: getPartyName(party),
-        party_name: getPartyName(party),
-        phone: getPartyPhone(party),
-        partyPhone: getPartyPhone(party),
-        phoneNumber: getPartyPhone(party),
-        party_phone: getPartyPhone(party),
-        email: party.email || (party as any).partyEmail || "",
-        partyEmail: party.email || (party as any).partyEmail || "",
-        address: party.address || (party as any).partyAddress || "",
-        partyAddress: party.address || (party as any).partyAddress || "",
-        type: getPartyType(party),
-        partyType: getPartyType(party),
-        party_type: getPartyType(party),
-        openingBalance: numBalance,
-        opening_balance: numBalance,
-        balance: numBalance,
-        dueAmount: numBalance,
-        due_amount: numBalance,
-        status: nextStatus,
-        operation: "update",
-        isSync: "YES",
-        updated_at: new Date().toISOString(),
-      });
-
-      const payload = {
-        accessUser: buildAccessUser(),
-        ...partyDetails,
-        party: partyDetails,
-        partyInfo: partyDetails,
-        party_info: partyDetails,
-      };
-
-      let response = await postData<any>({
-        url: updateUrl,
-        body: payload,
-      });
-
-      // If update endpoint returned an error, fallback to insert-party-info
-      if (String(response?.status).toLowerCase() === "error" || response?.error || !response) {
-        const fallbackRes = await postData<any>({
-          url: insertUrl,
-          body: payload,
-        });
-        if (String(fallbackRes?.status).toLowerCase() !== "error" && !fallbackRes?.error) {
-          response = fallbackRes;
-        }
-      }
-
-      if (
-        response &&
-        !response.error &&
-        String(response.status).toLowerCase() !== "error"
-      ) {
-        showSuccessToast(response?.msg || response?.message || `Party marked as ${nextStatus}`);
-        onRefresh();
-      } else {
-        showErrorToast(response?.msg || response?.message || "Failed to update party status");
-      }
-    } catch (error: any) {
-      console.error("Failed to toggle party status:", error);
-      showErrorToast(error?.response?.data?.msg || error?.message || "Failed to update party status");
-    } finally {
-      setTogglingId(null);
-    }
   };
 
   return (
@@ -343,13 +247,13 @@ export const PartyTable: React.FC<PartyTableProps> = ({
         <>
           {/* Table */}
           <div className="w-full overflow-x-auto">
-            <table className="w-full text-left border-collapse table-fixed min-w-[800px]">
+            <table className="w-full text-left border-collapse min-w-[750px]">
               <thead>
                 <tr className="bg-slate-50 border-b border-gray-200 text-xs text-black">
-                  {tableHeaders.map(({ key, label, align, width }) => (
+                  {tableHeaders.map(({ key, label, align }) => (
                     <th
                       key={key}
-                      className={`px-4 py-[11px] ${align} ${width}`}
+                      className={`px-4 py-[11px] ${align} ${key === "sl" ? "w-14" : ""}`}
                     >
                       {label}
                     </th>
@@ -371,24 +275,24 @@ export const PartyTable: React.FC<PartyTableProps> = ({
                     return (
                       <tr
                         key={partyId}
-                        className="h-[48px] hover:bg-blue-50/40 transition-colors duration-150 group"
+                        className="hover:bg-blue-50/40 transition-colors duration-150 group"
                       >
                         {/* SL */}
-                        <td className="px-4 py-[11px] text-center text-xs font-normal text-black whitespace-nowrap">
+                        <td className="px-4 py-[11px] text-center text-xs font-normal text-black">
                           {rowNumber}
                         </td>
 
                         {/* Party Details (Name) */}
-                        <td className="px-4 py-[11px] text-left">
-                          <div className="font-normal text-[13px] text-black leading-tight truncate" title={name}>
+                        <td className="px-4 py-[11px]">
+                          <div className="font-normal text-[13px] text-black leading-tight">
                             {name}
                           </div>
                         </td>
 
                         {/* Type */}
-                        <td className="px-4 py-[11px] text-left whitespace-nowrap">
+                        <td className="px-4 py-[11px] text-center">
                           <span
-                            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-normal border ${
+                            className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-normal border ${
                               type === "SUPPLIER"
                                 ? "bg-emerald-50 text-emerald-700 border-emerald-200"
                                 : "bg-sky-50 text-sky-700 border-sky-200"
@@ -399,39 +303,30 @@ export const PartyTable: React.FC<PartyTableProps> = ({
                         </td>
 
                         {/* Contact Info (Phone) */}
-                        <td className="px-4 py-[11px] text-left font-normal text-[13px] text-black whitespace-nowrap truncate" title={phone}>
+                        <td className="px-4 py-[11px] pl-8 text-left font-normal text-[13px] text-black">
                           {phone}
                         </td>
 
                         {/* Balance */}
-                        <td className="px-4 py-[11px] text-left">
-                          <div className="w-[105px] text-right font-normal text-[13px] text-black whitespace-nowrap">
-                            ৳{balance.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
-                          </div>
+                        <td className="px-4 py-[11px] pr-10 text-right font-normal text-[13px] text-black">
+                          ৳{balance.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
                         </td>
 
-                        {/* Status Badge (Click to Toggle Active / Inactive) */}
-                        <td
-                          className="px-4 py-[11px] text-left whitespace-nowrap"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          <button
-                            type="button"
-                            disabled={togglingId === partyId}
-                            onClick={() => handleTogglePartyStatus(party)}
-                            title={`Click to mark as ${active ? "Inactive" : "Active"}`}
-                            className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold cursor-pointer transition-all duration-150 ${
+                        {/* Status Badge */}
+                        <td className="px-4 py-[11px] text-center">
+                          <span
+                            className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold ${
                               active
-                                ? "bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100"
-                                : "bg-rose-50 text-rose-700 border border-rose-200 hover:bg-rose-100"
-                            } ${togglingId === partyId ? "opacity-50 cursor-wait" : ""}`}
+                                ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                                : "bg-rose-50 text-rose-700 border border-rose-200"
+                            }`}
                           >
                             {active ? "Active" : "Inactive"}
-                          </button>
+                          </span>
                         </td>
 
                         {/* Actions: Eye, Edit */}
-                        <td className="px-4 py-[11px] text-center whitespace-nowrap">
+                        <td className="px-4 py-[11px] text-center">
                           <div className="flex items-center justify-center gap-1.5">
                             {/* Eye / View Icon */}
                             <button
