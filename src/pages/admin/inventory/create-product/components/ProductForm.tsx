@@ -48,7 +48,7 @@ const initialFieldValues: ProductFormState = {
     unit: "",
     secondary_unit: "",
     secondary_price: "",
-    quantity: "0",
+    quantity: "",
     buy_price: "",
     sell_price: "",
     pcode: "",
@@ -390,7 +390,7 @@ const CreateProductForm = () => {
 
             let cleanQuantity = prev.quantity;
             if (!allowDec && cleanQuantity.includes('.')) {
-                cleanQuantity = cleanQuantity.split('.')[0] || "0";
+                cleanQuantity = cleanQuantity.split('.')[0] || "";
             }
 
             return {
@@ -408,7 +408,7 @@ const CreateProductForm = () => {
         if (!checked) {
             setFieldValues((prev) => ({
                 ...prev,
-                quantity: prev.quantity.includes('.') ? (prev.quantity.split('.')[0] || "0") : prev.quantity
+                quantity: prev.quantity.includes('.') ? (prev.quantity.split('.')[0] || "") : prev.quantity
             }));
         }
     };

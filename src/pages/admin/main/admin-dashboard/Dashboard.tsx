@@ -9,10 +9,10 @@ import { mockKpiData } from './data/mockDashboardData';
 
 const AdminDashboard: React.FC = () => {
   return (
-    <div className="flex flex-col gap-8 p-6 bg-[#f8fafc]">
+    <div className="flex flex-col gap-4 sm:gap-4.5 p-4 sm:p-5 bg-[#f8fafc]">
       <KpiCardsGrid data={mockKpiData} />
       
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-4.5 items-stretch">
         <div className="col-span-12 lg:col-span-8 flex flex-col h-full">
           <SaleAnalysisChart />
         </div>
@@ -21,7 +21,7 @@ const AdminDashboard: React.FC = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-4.5 items-stretch">
         <div className="col-span-12 lg:col-span-8 flex flex-col h-full">
           <ProfitLossChart />
         </div>

@@ -32,7 +32,7 @@ const PartyModal: React.FC<PartyModalProps> = ({
   const [partyPhone, setPartyPhone] = useState("");
   const [partyEmail, setPartyEmail] = useState("");
   const [partyAddress, setPartyAddress] = useState("");
-  const [openingBalance, setOpeningBalance] = useState<string>("0");
+  const [openingBalance, setOpeningBalance] = useState<string>("");
   const [status, setStatus] = useState<"active" | "inactive">("active");
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -47,7 +47,11 @@ const PartyModal: React.FC<PartyModalProps> = ({
         setPartyPhone(partyData.phone || partyData.partyPhone || partyData.phoneNumber || partyData.party_phone || "");
         setPartyEmail(partyData.email || partyData.partyEmail || "");
         setPartyAddress(partyData.address || partyData.partyAddress || "");
-        setOpeningBalance(String(partyData.openingBalance ?? partyData.opening_balance ?? partyData.balance ?? partyData.dueAmount ?? 0));
+        setOpeningBalance(
+          partyData.openingBalance != null || partyData.opening_balance != null || partyData.balance != null || partyData.dueAmount != null
+            ? String(partyData.openingBalance ?? partyData.opening_balance ?? partyData.balance ?? partyData.dueAmount ?? "")
+            : ""
+        );
         
         const rawStatus = String(partyData.status ?? "active").toLowerCase();
         setStatus(rawStatus === "inactive" || rawStatus === "false" || rawStatus === "0" ? "inactive" : "active");
@@ -57,7 +61,7 @@ const PartyModal: React.FC<PartyModalProps> = ({
         setPartyPhone("");
         setPartyEmail("");
         setPartyAddress("");
-        setOpeningBalance("0");
+        setOpeningBalance("");
         setStatus("active");
       }
       setErrors({});

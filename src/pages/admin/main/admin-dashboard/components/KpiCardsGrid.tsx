@@ -16,7 +16,7 @@ export const KpiCardsGrid: React.FC<KpiCardsGridProps> = ({ data }) => {
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 w-full cursor-pointer">
       {/* 1. Today's Sale - Primary Navy/Teal */}
       <MotionDiv>
-        <div className="px-4 py-6 rounded-md bg-[var(--color-primary)] text-white shadow-sm hover:shadow-md transition-all duration-300">
+        <div className="px-4 py-4 rounded-md bg-[var(--color-primary)] text-white shadow-sm hover:shadow-md transition-all duration-300">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-[24px] font-bold">{formatCurrency(data.todaysSale)}</p>
@@ -31,7 +31,7 @@ export const KpiCardsGrid: React.FC<KpiCardsGridProps> = ({ data }) => {
 
       {/* 2. Today's Expense - Bright Sky Blue */}
       <MotionDiv>
-        <div className="px-4 py-6 rounded-md bg-[#009fe3] text-white shadow-sm hover:shadow-md transition-all duration-300">
+        <div className="px-4 py-4 rounded-md bg-[#009fe3] text-white shadow-sm hover:shadow-md transition-all duration-300">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-[24px] font-bold">{formatCurrency(data.todaysExpense)}</p>
@@ -46,7 +46,7 @@ export const KpiCardsGrid: React.FC<KpiCardsGridProps> = ({ data }) => {
 
       {/* 3. Total Receivable - Midnight Navy */}
       <MotionDiv>
-        <div className="px-4 py-6 rounded-md bg-[#1b2850] text-white shadow-sm hover:shadow-md transition-all duration-300">
+        <div className="px-4 py-4 rounded-md bg-[#1b2850] text-white shadow-sm hover:shadow-md transition-all duration-300">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-[24px] font-bold">{formatCurrency(data.totalReceivable)}</p>
@@ -61,7 +61,7 @@ export const KpiCardsGrid: React.FC<KpiCardsGridProps> = ({ data }) => {
 
       {/* 4. Total Payable - Emerald Green */}
       <MotionDiv>
-        <div className="px-4 py-6 rounded-md bg-[#28c76f] text-white shadow-sm hover:shadow-md transition-all duration-300">
+        <div className="px-4 py-4 rounded-md bg-[#28c76f] text-white shadow-sm hover:shadow-md transition-all duration-300">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-[24px] font-bold">{formatCurrency(data.totalPayable)}</p>
@@ -76,7 +76,7 @@ export const KpiCardsGrid: React.FC<KpiCardsGridProps> = ({ data }) => {
 
       {/* 5. Cash Balance - Orange / Amber */}
       <MotionDiv>
-        <div className="px-4 py-6 rounded-md bg-[#FE9F43] text-white shadow-sm hover:shadow-md transition-all duration-300">
+        <div className="px-4 py-4 rounded-md bg-[#FE9F43] text-white shadow-sm hover:shadow-md transition-all duration-300">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-[24px] font-bold">{formatCurrency(data.cashBalance)}</p>
@@ -91,7 +91,7 @@ export const KpiCardsGrid: React.FC<KpiCardsGridProps> = ({ data }) => {
 
       {/* 6. Bank Balance - Matching Rich Indigo/Violet */}
       <MotionDiv>
-        <div className="px-4 py-6 rounded-md bg-[#7367f0] text-white shadow-sm hover:shadow-md transition-all duration-300">
+        <div className="px-4 py-4 rounded-md bg-[#7367f0] text-white shadow-sm hover:shadow-md transition-all duration-300">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-[24px] font-bold">{formatCurrency(data.bankBalance)}</p>

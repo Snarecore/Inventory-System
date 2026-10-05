@@ -165,10 +165,10 @@ export const ProfitLossChart: React.FC = () => {
   };
 
   return (
-    <div className="w-full h-full bg-white p-5 rounded-2xl shadow-sm flex flex-col justify-between">
+    <div className="w-full h-full bg-white p-4 rounded-2xl shadow-sm flex flex-col justify-between">
       <div>
         {/* Header with Title & Month Filter */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-2.5">
           <p className="text-xl font-bold flex items-center gap-2.5 text-gray-800">
             <span className="bg-[#e6f4fe] text-[#009fe3] p-1.5 rounded-full">
               <FiGrid size={18} />
@@ -212,10 +212,10 @@ export const ProfitLossChart: React.FC = () => {
           </div>
         </div>
 
-        <div className="border-b border-gray-200 mb-4"></div>
+        <div className="border-b border-gray-200 mb-3"></div>
 
         {/* Dynamic Metric Stat Boxes */}
-        <div className="flex flex-wrap gap-4 mb-4">
+        <div className="flex flex-wrap gap-4 mb-3">
           <div className="text-sm border border-gray-200 rounded-lg p-2.5 flex-1 min-w-36">
             <div className="flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-[#009fe3]"></span>

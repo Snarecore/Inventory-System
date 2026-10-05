@@ -70,24 +70,24 @@ export const AssetAnalysisChart: React.FC = () => {
   }));
 
   return (
-    <div className="w-full h-full bg-white p-5 rounded-2xl shadow-sm flex flex-col justify-between">
+    <div className="w-full h-full bg-white p-4 rounded-2xl shadow-sm flex flex-col justify-between">
       <div>
-        <div className="flex items-center gap-2.5 mb-3">
+        <div className="flex items-center gap-2.5 mb-2.5">
           <span className="bg-[#e6f4fe] text-[#009fe3] p-1.5 rounded-full">
             <FiGrid size={18} />
           </span>
           <p className="text-xl font-bold">Asset Analysis</p>
         </div>
 
-        <div className="border-b border-gray-200 mb-4"></div>
+        <div className="border-b border-gray-200 mb-3"></div>
       </div>
 
-      <div className="flex items-center justify-between gap-4 my-auto py-2">
+      <div className="flex items-center justify-between gap-4 my-auto py-1">
         <div className="h-36 w-36 sm:h-38 sm:w-38 shrink-0">
           <Doughnut data={data} options={options} />
         </div>
 
-        <div className="space-y-2.5 flex-1">
+        <div className="space-y-2 flex-1">
           {legendItems.map((item, index: number) => (
             <div key={index} className="flex flex-col">
               <div className="flex items-center gap-2 text-xs text-gray-600">
@@ -105,10 +105,10 @@ export const AssetAnalysisChart: React.FC = () => {
         </div>
       </div>
 
-      <div className="mt-4">
+      <div className="mt-3">
         <p className="text-xs font-semibold text-gray-700">Asset Summary</p>
         <div className="border border-gray-200 mt-1.5 rounded-lg text-xs overflow-hidden">
-          <div className="flex items-center justify-between border-b border-gray-200 px-3 py-2">
+          <div className="flex items-center justify-between border-b border-gray-200 px-3 py-1.5">
             <p className="flex items-center gap-2 text-gray-600">
               <span className="w-2 h-2 rounded-full inline-block bg-black"></span>
               Total Assets
@@ -116,7 +116,7 @@ export const AssetAnalysisChart: React.FC = () => {
             <p className="font-semibold text-gray-900">৳{mockAssetAnalysis.totalAsset.toLocaleString('en-IN')}</p>
           </div>
 
-          <div className="flex items-center justify-between px-3 py-2">
+          <div className="flex items-center justify-between px-3 py-1.5">
             <p className="flex items-center gap-2 text-gray-600">
               <span className="w-2 h-2 rounded-full inline-block bg-[#28c76f]"></span>
               Liquid Assets (Cash + Bank)
