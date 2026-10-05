@@ -90,9 +90,9 @@ export const PartyTable: React.FC<PartyTableProps> = ({
 
   const tableHeaders = [
     { key: "sl", label: "SL", align: "text-center" },
-    { key: "name", label: "Party Details", align: "text-left" },
-    { key: "type", label: "Type", align: "text-center" },
-    { key: "contact", label: "Contact Info", align: "text-left pl-8" },
+    { key: "name", label: "Name", align: "text-left pl-"  },
+    { key: "type", label: "Type", align: "text-left pl-6" },
+    { key: "contact", label: "Contact Info", align: "text-left pl-12" },
     { key: "balance", label: "Opening Balance", align: "text-right pr-10" },
     { key: "status", label: "Status", align: "text-center" },
     { key: "action", label: "Actions", align: "text-center" },
@@ -290,7 +290,7 @@ export const PartyTable: React.FC<PartyTableProps> = ({
                         </td>
 
                         {/* Type */}
-                        <td className="px-4 py-[11px] text-center">
+                        <td className="px-4 py-[11px] text-left pl-4">
                           <span
                             className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-normal border ${
                               type === "SUPPLIER"
@@ -303,7 +303,7 @@ export const PartyTable: React.FC<PartyTableProps> = ({
                         </td>
 
                         {/* Contact Info (Phone) */}
-                        <td className="px-4 py-[11px] pl-8 text-left font-normal text-[13px] text-black">
+                        <td className="px-4 py-[11px] pl-12 text-left font-normal text-[13px] text-black">
                           {phone}
                         </td>
 
