@@ -34,6 +34,9 @@ const Chat = React.lazy(() => import('@/pages/admin/chat'))
 const PageMeta = React.lazy(() => import('@/pages/admin/seo'))
 const Blogs = React.lazy(() => import('@/pages/admin/blog'))
 const BlogCreation = React.lazy(() => import('@/pages/admin/blog-creation'))
+const Purchases = React.lazy(() => import('@/pages/admin/trade/purchases'))
+const CreatePurchase = React.lazy(() => import('@/pages/admin/trade/create-purchase'))
+const PurchaseOrders = React.lazy(() => import('@/pages/admin/trade/purchase-orders'))
 
 const LoadingFallback = () => (
   <div className="flex h-64 w-full items-center justify-center">
@@ -64,6 +67,22 @@ export const router = createBrowserRouter([
   {
     path: '/parties',
     element: <Navigate to="/admin/parties" replace />,
+  },
+  {
+    path: '/purchases',
+    element: <Navigate to="/admin/purchases" replace />,
+  },
+  {
+    path: '/purchase/orders',
+    element: <Navigate to="/admin/purchase-orders" replace />,
+  },
+  {
+    path: '/purchase/invoices',
+    element: <Navigate to="/admin/purchases" replace />,
+  },
+  {
+    path: '/purchase/requisitions',
+    element: <Navigate to="/admin/purchases" replace />,
   },
   {
     path: '/',
@@ -144,6 +163,22 @@ export const router = createBrowserRouter([
       {
         path: 'parties',
         element: withSuspense(Parties),
+      },
+      {
+        path: 'purchases',
+        element: withSuspense(Purchases),
+      },
+      {
+        path: 'create-purchase',
+        element: withSuspense(CreatePurchase),
+      },
+      {
+        path: 'edit-purchase/:id',
+        element: withSuspense(CreatePurchase),
+      },
+      {
+        path: 'purchase-orders',
+        element: withSuspense(PurchaseOrders),
       },
       {
         path: 'customers',

@@ -68,6 +68,22 @@
         "insertPartyUrl": "insert-party-info",
         "updatePartyUrl": "party-info-update"
     },
+    "purchase": {
+        "purchaseListUrl": "get-purchase-list",
+        "insertPurchasesUrl": "insert-purchases",
+        "updatePurchasesUrl": "update-purchases",
+        "purchaseChallanSettingsUrl": "get-purchase-challan-settings",
+        "insertOrUpdatePurchaseChallanSettingsUrl": "insert-or-update-purchase-challan-settings"
+    },
+    "bank": {
+        "bankInfoListUrl": "get-bank-info-list",
+        "bankNameListUrl": "get-bank-name-list",
+        "insertBankAccountUrl": "insert-bank-account"
+    },
+    "mfs": {
+        "mfsUserListUrl": "mfs-user-list",
+        "insertMfsUserUrl": "insert-mfs-user"
+    },
     "pageMeta": {
         "pageMetaUrl": "page-meta"
     }

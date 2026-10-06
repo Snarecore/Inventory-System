@@ -83,3 +83,80 @@ export interface PartyItem {
   updatedAt?: string
   [key: string]: any
 }
+
+export interface PurchaseDetailItem {
+  id?: string | number
+  productId: string | number
+  productCode?: string
+  pcode?: string
+  productName: string
+  unit?: string
+  quantity: number
+  buyPrice: number
+  discount?: number
+  vat?: number
+  delivery_charge?: number
+  total: number
+  status?: string
+  advenType?: string
+  [key: string]: any
+}
+
+export interface PurchaseItem {
+  id?: string | number
+  purchaseId?: string | number
+  invoiceNo?: string
+  supplierId?: string | number
+  supplierName?: string
+  supplierPhone?: string
+  supplierAddress?: string
+  purchaseDate?: string
+  challanNo?: string
+  vehicleNo?: string
+  driverName?: string
+  driverPhone?: string
+  transportCost?: number
+  totalAmount?: number
+  discount?: number
+  discountType?: 'FLAT' | 'PERCENT'
+  vat?: number
+  delivery_charge?: number
+  grandTotal?: number
+  paidAmount?: number
+  dueAmount?: number
+  paymentType?: 'CASH' | 'CREDIT' | 'BANK' | 'MFS' | string
+  status?: string
+  osType?: string
+  note?: string
+  cashReceived?: number
+  cardReceived?: number
+  mfsReceived?: number
+  bankId?: string | number | null
+  bankName?: string | null
+  accountNo?: string | null
+  bankAccountName?: string | null
+  mfsId?: string | number | null
+  mfsName?: string | null
+  mfsMethod?: string | null
+  mfsPhone?: string | null
+  customerPaid?: number
+  returnAmount?: number
+  purchaseDetails?: PurchaseDetailItem[]
+  createdAt?: string
+  created_at?: string
+  updatedAt?: string
+  updated_at?: string
+  [key: string]: any
+}
+
+export interface PurchaseChallanSettings {
+  showChallanNo?: boolean
+  showVehicleNo?: boolean
+  showDriverName?: boolean
+  showDriverPhone?: boolean
+  showTransportCost?: boolean
+  showDeliveryDate?: boolean
+  showNotes?: boolean
+  showPoNumber?: boolean
+  [key: string]: any
+}
