@@ -151,7 +151,7 @@ const ChallanSettingsModal: React.FC<ChallanSettingsModalProps> = ({
     },
     {
       key: "showPoNumber" as keyof PurchaseChallanSettings,
-      label: "PO / Requisition No",
+      label: "PO",
       description: "Link purchase to internal Purchase Order / Requisition number",
       icon: FaIdCard,
     },

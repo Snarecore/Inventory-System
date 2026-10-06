@@ -14,6 +14,7 @@ import {
   FaCreditCard,
   FaMobileAlt,
   FaUniversity,
+  FaWallet,
 } from "react-icons/fa";
 import Button from "@/components/button/Button";
 import PartyModal from "@/pages/admin/people/parties/components/PartyModal";
@@ -40,8 +41,6 @@ interface FormLineItem {
   unit: string;
   buyPrice: string; // string so empty string doesn't force 0
   quantity: string;
-  discount: string;
-  discountType: "FLAT" | "PERCENT";
   vat: string;
   total: number;
   stock?: number | string;
@@ -320,9 +319,15 @@ const CreatePurchaseForm: React.FC = () => {
     if (!rawBankData) return [];
     if (Array.isArray(rawBankData)) return rawBankData;
     const raw = rawBankData as any;
+    if (Array.isArray(raw.bankAccounts)) return raw.bankAccounts;
     if (Array.isArray(raw.bankInfoList)) return raw.bankInfoList;
     if (Array.isArray(raw.bankList)) return raw.bankList;
     if (Array.isArray(raw.data)) return raw.data;
+    if (raw.data && typeof raw.data === "object") {
+      if (Array.isArray(raw.data.bankAccounts)) return raw.data.bankAccounts;
+      if (Array.isArray(raw.data.bankInfoList)) return raw.data.bankInfoList;
+      if (Array.isArray(raw.data.bankList)) return raw.data.bankList;
+    }
     return [];
   }, [rawBankData]);
 
@@ -348,9 +353,15 @@ const CreatePurchaseForm: React.FC = () => {
     if (!rawMfsData) return [];
     if (Array.isArray(rawMfsData)) return rawMfsData;
     const raw = rawMfsData as any;
+    if (Array.isArray(raw.mfsUsers)) return raw.mfsUsers;
     if (Array.isArray(raw.mfsUserList)) return raw.mfsUserList;
     if (Array.isArray(raw.mfsList)) return raw.mfsList;
     if (Array.isArray(raw.data)) return raw.data;
+    if (raw.data && typeof raw.data === "object") {
+      if (Array.isArray(raw.data.mfsUsers)) return raw.data.mfsUsers;
+      if (Array.isArray(raw.data.mfsUserList)) return raw.data.mfsUserList;
+      if (Array.isArray(raw.data.mfsList)) return raw.data.mfsList;
+    }
     return [];
   }, [rawMfsData]);
 
@@ -442,8 +453,6 @@ const CreatePurchaseForm: React.FC = () => {
           unit: item.unit || "pcs",
           buyPrice: String(item.buyPrice || ""),
           quantity: String(item.quantity || "1"),
-          discount: item.discount ? String(item.discount) : "",
-          discountType: "FLAT",
           vat: item.vat ? String(item.vat) : "",
           total: Number(item.total || Number(item.buyPrice || 0) * Number(item.quantity || 1)),
         }));
@@ -482,26 +491,15 @@ const CreatePurchaseForm: React.FC = () => {
   const computeLineTotal = (
     priceStr: string,
     qtyStr: string,
-    discStr: string,
-    discType: "FLAT" | "PERCENT",
     vatStr: string
   ) => {
     const p = Number(priceStr) || 0;
     const q = Number(qtyStr) || 0;
-    const d = Number(discStr) || 0;
     const v = Number(vatStr) || 0;
 
     const baseAmount = p * q;
-    let discountAmount = 0;
-    if (discType === "PERCENT") {
-      discountAmount = (baseAmount * d) / 100;
-    } else {
-      discountAmount = d;
-    }
-
-    const netAmount = Math.max(0, baseAmount - discountAmount);
-    const vatAmount = (netAmount * v) / 100;
-    return Math.round((netAmount + vatAmount) * 100) / 100;
+    const vatAmount = (baseAmount * v) / 100;
+    return Math.round((baseAmount + vatAmount) * 100) / 100;
   };
 
   // Add Product to line items
@@ -519,7 +517,7 @@ const CreatePurchaseForm: React.FC = () => {
         const updated = [...prev];
         const item = updated[existingIdx];
         const newQty = String((Number(item.quantity) || 0) + 1);
-        const total = computeLineTotal(item.buyPrice, newQty, item.discount, item.discountType, item.vat);
+        const total = computeLineTotal(item.buyPrice, newQty, item.vat);
         updated[existingIdx] = { ...item, quantity: newQty, total };
         return updated;
       } else {
@@ -530,8 +528,6 @@ const CreatePurchaseForm: React.FC = () => {
           unit: prodUnit,
           buyPrice: buyPrice > 0 ? String(buyPrice) : "",
           quantity: "1",
-          discount: "",
-          discountType: "FLAT",
           vat: "",
           total: buyPrice,
           stock: currentStock,
@@ -548,7 +544,7 @@ const CreatePurchaseForm: React.FC = () => {
     setLineItems((prev) => {
       const updated = [...prev];
       const item = { ...updated[index], [field]: value };
-      item.total = computeLineTotal(item.buyPrice, item.quantity, item.discount, item.discountType, item.vat);
+      item.total = computeLineTotal(item.buyPrice, item.quantity, item.vat);
       updated[index] = item;
       return updated;
     });
@@ -568,48 +564,30 @@ const CreatePurchaseForm: React.FC = () => {
     }, 0);
   }, [lineItems]);
 
-  // 2. Line Items Total Discount
-  const lineDiscountsTotal = useMemo(() => {
-    return lineItems.reduce((sum, item) => {
-      const p = Number(item.buyPrice) || 0;
-      const q = Number(item.quantity) || 0;
-      const d = Number(item.discount) || 0;
-      const base = p * q;
-      if (item.discountType === "PERCENT") {
-        return sum + (base * d) / 100;
-      }
-      return sum + d;
-    }, 0);
-  }, [lineItems]);
-
-  // 3. Line Items Total VAT
+  // 2. Line Items Total VAT
   const lineVatTotal = useMemo(() => {
     return lineItems.reduce((sum, item) => {
       const p = Number(item.buyPrice) || 0;
       const q = Number(item.quantity) || 0;
-      const d = Number(item.discount) || 0;
       const v = Number(item.vat) || 0;
       const base = p * q;
-      const disc = item.discountType === "PERCENT" ? (base * d) / 100 : d;
-      const net = Math.max(0, base - disc);
-      return sum + (net * v) / 100;
+      return sum + (base * v) / 100;
     }, 0);
   }, [lineItems]);
 
-  // 4. Invoice-level Overall Discount
+  // 3. Invoice-level Overall Discount
   const calculatedInvoiceDiscount = useMemo(() => {
     const rawDisc = Number(invoiceDiscount) || 0;
     if (invoiceDiscountType === "PERCENT") {
-      const netBeforeOverall = Math.max(0, rawSubtotal - lineDiscountsTotal);
-      return (netBeforeOverall * rawDisc) / 100;
+      return (rawSubtotal * rawDisc) / 100;
     }
     return rawDisc;
-  }, [rawSubtotal, lineDiscountsTotal, invoiceDiscount, invoiceDiscountType]);
+  }, [rawSubtotal, invoiceDiscount, invoiceDiscountType]);
 
-  // 5. Total Discount combined
+  // 4. Total Discount combined
   const totalDiscount = useMemo(() => {
-    return lineDiscountsTotal + calculatedInvoiceDiscount;
-  }, [lineDiscountsTotal, calculatedInvoiceDiscount]);
+    return calculatedInvoiceDiscount;
+  }, [calculatedInvoiceDiscount]);
 
   // 6. Invoice-level VAT
   const calculatedInvoiceVat = useMemo(() => {
@@ -691,12 +669,16 @@ const CreatePurchaseForm: React.FC = () => {
   const handleSelectRegisteredBank = (bankId: string) => {
     setSelectedBankId(bankId);
     const found = registeredBankAccounts.find(
-      (b) => String(b.id || b.bankId) === String(bankId)
+      (b) => String(b.id || b.bankId || b._id) === String(bankId)
     );
     if (found) {
       setBankName(found.bankName || found.name || "");
-      setAccountNo(found.accountNo || found.bankAccountNo || "");
+      setAccountNo(found.accountNo || found.bankAccountNumber || found.bankAccountNo || "");
       setBankRef(found.accountName || found.branchName || "");
+    } else {
+      setBankName("");
+      setAccountNo("");
+      setBankRef("");
     }
   };
 
@@ -704,11 +686,14 @@ const CreatePurchaseForm: React.FC = () => {
   const handleSelectRegisteredMfs = (mfsId: string) => {
     setSelectedMfsId(mfsId);
     const found = registeredMfsAccounts.find(
-      (m) => String(m.id || m.mfsId) === String(mfsId)
+      (m) => String(m.id || m.mfsId || m._id) === String(mfsId)
     );
     if (found) {
-      setMfsName(found.mfsName || found.name || "bKash");
+      setMfsName(found.mfsName || found.name || found.method || "bKash");
       setMfsPhone(found.mobileNo || found.phone || found.accountNo || "");
+    } else {
+      setMfsName("bKash");
+      setMfsPhone("");
     }
   };
 
@@ -750,11 +735,9 @@ const CreatePurchaseForm: React.FC = () => {
       const purchaseDetailsPayload: PurchaseDetailItem[] = lineItems.map((item) => {
         const p = Number(item.buyPrice) || 0;
         const q = Number(item.quantity) || 0;
-        const d = Number(item.discount) || 0;
         const v = Number(item.vat) || 0;
         const base = p * q;
-        const lineDisc = item.discountType === "PERCENT" ? (base * d) / 100 : d;
-        const lineVat = ((base - lineDisc) * v) / 100;
+        const lineVat = (base * v) / 100;
 
         return {
           productId: item.productId,
@@ -764,7 +747,7 @@ const CreatePurchaseForm: React.FC = () => {
           unit: item.unit || "pcs",
           quantity: q,
           buyPrice: p,
-          discount: lineDisc,
+          discount: 0,
           vat: lineVat,
           delivery_charge: 0,
           total: Number(item.total),
@@ -1146,7 +1129,7 @@ const CreatePurchaseForm: React.FC = () => {
         {challanSettings.showPoNumber && (
           <div>
             <label className="text-[11px] font-semibold text-gray-700 uppercase tracking-wider block mb-1">
-              PO / Requisition No
+              PO 
             </label>
             <input
               type="text"
@@ -1246,7 +1229,6 @@ const CreatePurchaseForm: React.FC = () => {
                 <th className="py-2 px-2 text-center w-16">Unit</th>
                 <th className="py-2 px-2 text-right w-28">Buy Price (৳)</th>
                 <th className="py-2 px-2 text-center w-24">Quantity</th>
-                <th className="py-2 px-2 text-right w-28">Item Discount</th>
                 <th className="py-2 px-2 text-right w-20">VAT (%)</th>
                 <th className="py-2 px-3 text-right w-28">Total (৳)</th>
                 <th className="py-2 px-2 text-center w-10"></th>
@@ -1327,35 +1309,6 @@ const CreatePurchaseForm: React.FC = () => {
                       </div>
                     </td>
 
-                    {/* Line Item Discount (Flat ৳ or %) */}
-                    <td className="py-2 px-2 text-right">
-                      <div className="flex items-center gap-1">
-                        <button
-                          type="button"
-                          onClick={() =>
-                            handleUpdateLineItem(
-                              idx,
-                              "discountType",
-                              item.discountType === "FLAT" ? "PERCENT" : "FLAT"
-                            )
-                          }
-                          className="px-1 py-0.5 text-[10px] font-bold rounded bg-gray-100 hover:bg-gray-200 text-gray-700 border border-gray-300 shrink-0 cursor-pointer"
-                          title="Toggle Flat (৳) or Percentage (%)"
-                        >
-                          {item.discountType === "FLAT" ? "৳" : "%"}
-                        </button>
-                        <input
-                          type="number"
-                          step="0.01"
-                          value={item.discount}
-                          placeholder="0"
-                          onWheel={(e) => e.currentTarget.blur()}
-                          onChange={(e) => handleUpdateLineItem(idx, "discount", e.target.value)}
-                          className="w-full px-1.5 py-1 text-xs border border-gray-300 rounded text-right font-mono focus:outline-none focus:border-[var(--color-primary)]"
-                        />
-                      </div>
-                    </td>
-
                     {/* Line VAT % */}
                     <td className="py-2 px-2 text-right">
                       <input
@@ -1389,7 +1342,7 @@ const CreatePurchaseForm: React.FC = () => {
                 ))
               ) : (
                 <tr>
-                  <td colSpan={9} className="py-8 text-center text-gray-400">
+                  <td colSpan={8} className="py-8 text-center text-gray-400">
                     No items in purchase. Search and add products above.
                   </td>
                 </tr>
@@ -1531,10 +1484,11 @@ const CreatePurchaseForm: React.FC = () => {
             </div>
           </div>
 
-          {/* Quick Payment Presets */}
+          {/* Payment Collected Section (Matching cash-boi_v2) */}
           <div className="flex items-center justify-between flex-wrap gap-1">
-            <span className="text-[11px] font-bold text-gray-700 uppercase tracking-wider">
-              Payment Breakdown
+            <span className="text-[11px] font-bold text-gray-700 uppercase tracking-wider flex items-center gap-1.5">
+              <FaWallet size={12} className="text-gray-500" />
+              Payment Collected
             </span>
             <div className="flex items-center gap-1">
               <button
@@ -1563,21 +1517,38 @@ const CreatePurchaseForm: React.FC = () => {
                 onClick={handlePayFullCredit}
                 className="px-2 py-0.5 text-[10px] font-bold rounded bg-rose-50 text-rose-700 border border-rose-200 hover:bg-rose-100 cursor-pointer"
               >
-                All Due / Credit
+                All Due
               </button>
             </div>
           </div>
 
-          {/* Clean, Non-Confusing Split Payment Rows */}
-          <div className="flex flex-col gap-2 bg-gray-50/70 p-2.5 rounded-lg border border-gray-200 text-xs">
-            {/* 1. Cash Payment Row */}
-            <div className="flex items-center justify-between gap-2">
-              <div className="flex items-center gap-1.5 text-emerald-700 font-bold min-w-[120px]">
-                <FaMoneyBillWave size={13} />
-                <span>Cash Payment:</span>
+          {/* Payment Cards: Cash, Card, MFS */}
+          <div className="flex flex-col gap-2.5">
+            {/* 1. Cash Card */}
+            <div
+              className={`p-2.5 rounded-xl border transition-all flex items-center justify-between gap-2.5 ${
+                Number(cashAmount) > 0
+                  ? "border-blue-400 bg-white shadow-xs"
+                  : "border-gray-200 bg-gray-50/70"
+              }`}
+            >
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-lg bg-emerald-100/90 text-emerald-600 flex items-center justify-center shrink-0">
+                  <FaMoneyBillWave size={15} />
+                </div>
+                <span className="font-bold text-xs text-gray-800 tracking-wider">CASH</span>
               </div>
-              <div className="relative w-44">
-                <span className="absolute left-2.5 top-1.5 text-gray-400 text-xs">৳</span>
+
+              <div
+                className={`flex items-center h-8 rounded-lg border bg-white overflow-hidden w-32 sm:w-36 transition-colors ${
+                  Number(cashAmount) > 0
+                    ? "border-emerald-500 ring-1 ring-emerald-500"
+                    : "border-gray-300 focus-within:border-emerald-500 focus-within:ring-1 focus-within:ring-emerald-500"
+                }`}
+              >
+                <span className="text-[11px] text-gray-400 px-2.5 bg-gray-50 h-full flex items-center border-r border-gray-200 font-mono select-none">
+                  ৳
+                </span>
                 <input
                   type="number"
                   step="0.01"
@@ -1585,14 +1556,14 @@ const CreatePurchaseForm: React.FC = () => {
                   value={cashAmount}
                   onWheel={(e) => e.currentTarget.blur()}
                   onChange={(e) => setCashAmount(e.target.value)}
-                  className="w-full pl-6 pr-2 py-1 text-xs border border-gray-300 rounded text-right font-mono font-bold text-gray-900 bg-white focus:outline-none focus:border-[var(--color-primary)]"
+                  className="w-full text-right px-2 text-xs font-mono font-bold text-gray-900 outline-none bg-transparent"
                 />
               </div>
             </div>
 
             {/* Optional Change Tendered Toggle */}
             {numCash > 0 && (
-              <div className="flex items-center justify-end gap-2 text-[11px] pr-0.5">
+              <div className="flex items-center justify-end gap-2 text-[11px] px-1 -mt-1">
                 <button
                   type="button"
                   onClick={() => setShowCashGivenCalc(!showCashGivenCalc)}
@@ -1604,11 +1575,11 @@ const CreatePurchaseForm: React.FC = () => {
             )}
 
             {showCashGivenCalc && numCash > 0 && (
-              <div className="flex items-center justify-between gap-2 bg-emerald-50/50 p-1.5 rounded border border-emerald-100">
+              <div className="flex items-center justify-between gap-2 bg-emerald-50/50 p-2 rounded-lg border border-emerald-100 -mt-1">
                 <span className="text-[11px] text-gray-600 font-medium">Cash Tendered:</span>
                 <div className="flex items-center gap-2">
                   <div className="relative w-32">
-                    <span className="absolute left-2 top-1 text-gray-400 text-xs">৳</span>
+                    <span className="absolute left-2 top-1 text-gray-400 text-xs font-mono">৳</span>
                     <input
                       type="number"
                       step="0.01"
@@ -1616,7 +1587,7 @@ const CreatePurchaseForm: React.FC = () => {
                       value={cashGiven}
                       onWheel={(e) => e.currentTarget.blur()}
                       onChange={(e) => setCashGiven(e.target.value)}
-                      className="w-full pl-5 pr-1.5 py-0.5 text-xs border border-gray-300 rounded text-right font-mono bg-white"
+                      className="w-full pl-5 pr-1.5 py-0.5 text-xs border border-gray-300 rounded text-right font-mono bg-white outline-none focus:border-emerald-500"
                     />
                   </div>
                   {changeReturnAmount > 0 && (
@@ -1628,153 +1599,116 @@ const CreatePurchaseForm: React.FC = () => {
               </div>
             )}
 
-            {/* 2. Bank / Card Payment Row */}
-            <div className="flex flex-col gap-1.5 border-t border-gray-200/70 pt-1.5">
-              <div className="flex items-center justify-between gap-2">
-                <div className="flex items-center gap-1.5 text-blue-700 font-bold min-w-[120px]">
-                  <FaCreditCard size={13} />
-                  <span>Bank / Card:</span>
+            {/* 2. Card / Bank Card */}
+            <div
+              className={`p-2.5 rounded-xl border transition-all flex items-center justify-between gap-2.5 ${
+                Number(bankAmount) > 0
+                  ? "border-blue-400 bg-white shadow-xs"
+                  : "border-gray-200 bg-gray-50/70"
+              }`}
+            >
+              <div className="flex items-center gap-2.5 flex-1 min-w-0">
+                <div className="w-9 h-9 rounded-lg bg-sky-100/90 text-sky-600 flex items-center justify-center shrink-0">
+                  <FaCreditCard size={15} />
                 </div>
-                <div className="relative w-44">
-                  <span className="absolute left-2.5 top-1.5 text-gray-400 text-xs">৳</span>
-                  <input
-                    type="number"
-                    step="0.01"
-                    placeholder="0.00"
-                    value={bankAmount}
-                    onWheel={(e) => e.currentTarget.blur()}
-                    onChange={(e) => setBankAmount(e.target.value)}
-                    className="w-full pl-6 pr-2 py-1 text-xs border border-gray-300 rounded text-right font-mono font-bold text-gray-900 bg-white focus:outline-none focus:border-[var(--color-primary)]"
-                  />
+                <div className="flex flex-col flex-1 min-w-0">
+                  <span className="font-bold text-xs text-gray-800 tracking-wider">CARD</span>
+                  <select
+                    value={selectedBankId}
+                    onChange={(e) => handleSelectRegisteredBank(e.target.value)}
+                    className="mt-1 w-full max-w-[180px] sm:max-w-[240px] px-2 py-1 text-[11px] border border-gray-300 rounded-lg bg-white text-gray-800 focus:outline-none focus:border-sky-500 cursor-pointer truncate"
+                  >
+                    <option value="">
+                      {registeredBankAccounts.length ? "Select Bank..." : "No bank account registered"}
+                    </option>
+                    {registeredBankAccounts.map((b) => (
+                      <option key={b.id || b.bankId || b._id} value={b.id || b.bankId || b._id}>
+                        {b.bankName || b.name}
+                        {b.accountNo || b.bankAccountNumber || b.bankAccountNo
+                          ? ` – ${b.accountNo || b.bankAccountNumber || b.bankAccountNo}`
+                          : ""}
+                      </option>
+                    ))}
+                  </select>
                 </div>
               </div>
 
-              {numBank > 0 && (
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-1.5 bg-blue-50/50 p-2 rounded-lg border border-blue-100">
-                  {registeredBankAccounts.length > 0 ? (
-                    <div>
-                      <select
-                        value={selectedBankId}
-                        onChange={(e) => handleSelectRegisteredBank(e.target.value)}
-                        className="w-full p-1 text-[11px] border border-gray-300 rounded bg-white cursor-pointer"
-                      >
-                        <option value="">-- Choose Bank Account --</option>
-                        {registeredBankAccounts.map((b) => (
-                          <option key={b.id || b.bankId} value={b.id || b.bankId}>
-                            {b.bankName || b.name} ({b.accountNo || b.bankAccountNo})
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  ) : (
-                    <div>
-                      <input
-                        type="text"
-                        placeholder="Bank Name (e.g. DBBL)"
-                        value={bankName}
-                        onChange={(e) => setBankName(e.target.value)}
-                        className="w-full p-1 text-[11px] border border-gray-300 rounded bg-white"
-                      />
-                    </div>
-                  )}
-
-                  <div>
-                    <input
-                      type="text"
-                      placeholder="Account No"
-                      value={accountNo}
-                      onChange={(e) => setAccountNo(e.target.value)}
-                      className="w-full p-1 text-[11px] border border-gray-300 rounded bg-white font-mono"
-                    />
-                  </div>
-
-                  <div>
-                    <input
-                      type="text"
-                      placeholder="Cheque / Ref No"
-                      value={bankRef}
-                      onChange={(e) => setBankRef(e.target.value)}
-                      className="w-full p-1 text-[11px] border border-gray-300 rounded bg-white"
-                    />
-                  </div>
-                </div>
-              )}
+              <div
+                className={`flex items-center h-8 rounded-lg border bg-white overflow-hidden w-32 sm:w-36 shrink-0 transition-colors ${
+                  Number(bankAmount) > 0
+                    ? "border-sky-500 ring-1 ring-sky-500"
+                    : "border-gray-300 focus-within:border-sky-500 focus-within:ring-1 focus-within:ring-sky-500"
+                }`}
+              >
+                <span className="text-[11px] text-gray-400 px-2.5 bg-gray-50 h-full flex items-center border-r border-gray-200 font-mono select-none">
+                  ৳
+                </span>
+                <input
+                  type="number"
+                  step="0.01"
+                  placeholder="0.00"
+                  value={bankAmount}
+                  onWheel={(e) => e.currentTarget.blur()}
+                  onChange={(e) => setBankAmount(e.target.value)}
+                  className="w-full text-right px-2 text-xs font-mono font-bold text-gray-900 outline-none bg-transparent"
+                />
+              </div>
             </div>
 
-            {/* 3. MFS Payment Row */}
-            <div className="flex flex-col gap-1.5 border-t border-gray-200/70 pt-1.5">
-              <div className="flex items-center justify-between gap-2">
-                <div className="flex items-center gap-1.5 text-purple-700 font-bold min-w-[120px]">
-                  <FaMobileAlt size={13} />
-                  <span>MFS Payment:</span>
+            {/* 3. MFS Card */}
+            <div
+              className={`p-2.5 rounded-xl border transition-all flex items-center justify-between gap-2.5 ${
+                Number(mfsAmount) > 0
+                  ? "border-blue-400 bg-white shadow-xs"
+                  : "border-gray-200 bg-gray-50/70"
+              }`}
+            >
+              <div className="flex items-center gap-2.5 flex-1 min-w-0">
+                <div className="w-9 h-9 rounded-lg bg-amber-100/90 text-amber-600 flex items-center justify-center shrink-0">
+                  <FaWallet size={15} />
                 </div>
-                <div className="relative w-44">
-                  <span className="absolute left-2.5 top-1.5 text-gray-400 text-xs">৳</span>
-                  <input
-                    type="number"
-                    step="0.01"
-                    placeholder="0.00"
-                    value={mfsAmount}
-                    onWheel={(e) => e.currentTarget.blur()}
-                    onChange={(e) => setMfsAmount(e.target.value)}
-                    className="w-full pl-6 pr-2 py-1 text-xs border border-gray-300 rounded text-right font-mono font-bold text-gray-900 bg-white focus:outline-none focus:border-[var(--color-primary)]"
-                  />
+                <div className="flex flex-col flex-1 min-w-0">
+                  <span className="font-bold text-xs text-gray-800 tracking-wider">MFS</span>
+                  <select
+                    value={selectedMfsId}
+                    onChange={(e) => handleSelectRegisteredMfs(e.target.value)}
+                    className="mt-1 w-full max-w-[180px] sm:max-w-[240px] px-2 py-1 text-[11px] border border-gray-300 rounded-lg bg-white text-gray-800 focus:outline-none focus:border-amber-500 cursor-pointer truncate"
+                  >
+                    <option value="">
+                      {registeredMfsAccounts.length ? "Select MFS..." : "No MFS wallet registered"}
+                    </option>
+                    {registeredMfsAccounts.map((m) => (
+                      <option key={m.id || m.mfsId || m._id} value={m.id || m.mfsId || m._id}>
+                        {m.mfsName || m.name}
+                        {m.method || m.mfsMethod || m.mobileNo
+                          ? ` – ${m.method || m.mfsMethod || m.mobileNo}`
+                          : ""}
+                      </option>
+                    ))}
+                  </select>
                 </div>
               </div>
 
-              {numMfs > 0 && (
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-1.5 bg-purple-50/50 p-2 rounded-lg border border-purple-100">
-                  {registeredMfsAccounts.length > 0 ? (
-                    <div>
-                      <select
-                        value={selectedMfsId}
-                        onChange={(e) => handleSelectRegisteredMfs(e.target.value)}
-                        className="w-full p-1 text-[11px] border border-gray-300 rounded bg-white cursor-pointer"
-                      >
-                        <option value="">-- Choose MFS Account --</option>
-                        {registeredMfsAccounts.map((m) => (
-                          <option key={m.id || m.mfsId} value={m.id || m.mfsId}>
-                            {m.mfsName || m.name} ({m.mobileNo || m.phone || m.accountNo})
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  ) : (
-                    <div>
-                      <select
-                        value={mfsName}
-                        onChange={(e) => setMfsName(e.target.value)}
-                        className="w-full p-1 text-[11px] border border-gray-300 rounded bg-white cursor-pointer"
-                      >
-                        <option value="bKash">bKash</option>
-                        <option value="Nagad">Nagad</option>
-                        <option value="Rocket">Rocket</option>
-                        <option value="Upay">Upay</option>
-                      </select>
-                    </div>
-                  )}
-
-                  <div>
-                    <input
-                      type="text"
-                      placeholder="MFS Mobile No"
-                      value={mfsPhone}
-                      onChange={(e) => setMfsPhone(e.target.value)}
-                      className="w-full p-1 text-[11px] border border-gray-300 rounded bg-white font-mono"
-                    />
-                  </div>
-
-                  <div>
-                    <input
-                      type="text"
-                      placeholder="TrxID (Optional)"
-                      value={mfsTrxId}
-                      onChange={(e) => setMfsTrxId(e.target.value)}
-                      className="w-full p-1 text-[11px] border border-gray-300 rounded bg-white font-mono"
-                    />
-                  </div>
-                </div>
-              )}
+              <div
+                className={`flex items-center h-8 rounded-lg border bg-white overflow-hidden w-32 sm:w-36 shrink-0 transition-colors ${
+                  Number(mfsAmount) > 0
+                    ? "border-amber-500 ring-1 ring-amber-500"
+                    : "border-gray-300 focus-within:border-amber-500 focus-within:ring-1 focus-within:ring-amber-500"
+                }`}
+              >
+                <span className="text-[11px] text-gray-400 px-2.5 bg-gray-50 h-full flex items-center border-r border-gray-200 font-mono select-none">
+                  ৳
+                </span>
+                <input
+                  type="number"
+                  step="0.01"
+                  placeholder="0.00"
+                  value={mfsAmount}
+                  onWheel={(e) => e.currentTarget.blur()}
+                  onChange={(e) => setMfsAmount(e.target.value)}
+                  className="w-full text-right px-2 text-xs font-mono font-bold text-gray-900 outline-none bg-transparent"
+                />
+              </div>
             </div>
           </div>
 
