@@ -113,7 +113,7 @@ export const AssetAnalysisChart: React.FC = () => {
               <span className="w-2 h-2 rounded-full inline-block bg-black"></span>
               Total Assets
             </p>
-            <p className="font-semibold text-gray-900">৳{mockAssetAnalysis.totalAsset.toLocaleString('en-IN')}</p>
+            <p className="font-semibold text-black">৳{mockAssetAnalysis.totalAsset.toLocaleString('en-IN')}</p>
           </div>
 
           <div className="flex items-center justify-between px-3 py-1.5">
@@ -121,7 +121,7 @@ export const AssetAnalysisChart: React.FC = () => {
               <span className="w-2 h-2 rounded-full inline-block bg-[#28c76f]"></span>
               Liquid Assets (Cash + Bank)
             </p>
-            <p className="font-semibold text-gray-900">
+            <p className="font-semibold text-black">
               ৳{(mockAssetAnalysis.breakdown[0].amount + mockAssetAnalysis.breakdown[3].amount).toLocaleString('en-IN')}
             </p>
           </div>

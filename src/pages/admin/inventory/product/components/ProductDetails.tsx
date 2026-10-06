@@ -119,38 +119,38 @@ const ProductDetails = () => {
                 {/* Main Details Card */}
                 <div className="md:col-span-2 bg-white rounded-xl border border-gray-200 shadow-sm p-6 space-y-6">
                     <div>
-                        <h3 className="text-base font-bold text-gray-900 mb-4 pb-2 border-b border-gray-100">
+                        <h3 className="text-base font-bold text-black mb-4 pb-2 border-b border-gray-100">
                             General Information
                         </h3>
                         <dl className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div className="bg-gray-50 p-3 rounded-lg">
                                 <dt className="text-xs text-gray-500 font-medium">Product Name</dt>
-                                <dd className="text-sm font-semibold text-gray-900 mt-1">{name}</dd>
+                                <dd className="text-sm font-semibold text-black mt-1">{name}</dd>
                             </div>
 
                             <div className="bg-gray-50 p-3 rounded-lg">
                                 <dt className="text-xs text-gray-500 font-medium">Category</dt>
-                                <dd className="text-sm font-semibold text-gray-900 mt-1">{category}</dd>
+                                <dd className="text-sm font-semibold text-black mt-1">{category}</dd>
                             </div>
 
                             <div className="bg-gray-50 p-3 rounded-lg">
                                 <dt className="text-xs text-gray-500 font-medium">Product Code (PCode)</dt>
-                                <dd className="text-sm font-mono font-semibold text-gray-900 mt-1">{pcode}</dd>
+                                <dd className="text-sm  font-semibold text-black mt-1">{pcode}</dd>
                             </div>
 
                             <div className="bg-gray-50 p-3 rounded-lg">
                                 <dt className="text-xs text-gray-500 font-medium">SKU</dt>
-                                <dd className="text-sm font-mono font-semibold text-gray-900 mt-1">{sku}</dd>
+                                <dd className="text-sm  font-semibold text-black mt-1">{sku}</dd>
                             </div>
 
                             <div className="bg-gray-50 p-3 rounded-lg">
                                 <dt className="text-xs text-gray-500 font-medium">Barcode</dt>
-                                <dd className="text-sm font-mono font-semibold text-gray-900 mt-1">{barcode}</dd>
+                                <dd className="text-sm   font-semibold text-black mt-1">{barcode}</dd>
                             </div>
 
                             <div className="bg-gray-50 p-3 rounded-lg">
                                 <dt className="text-xs text-gray-500 font-medium">Packing Levels</dt>
-                                <dd className="text-sm font-semibold text-gray-900 mt-1">
+                                <dd className="text-sm font-semibold text-black mt-1">
                                     {product.packing_levels || product.packingLevels || "N/A"}
                                 </dd>
                             </div>
@@ -158,13 +158,13 @@ const ProductDetails = () => {
                     </div>
 
                     <div>
-                        <h3 className="text-base font-bold text-gray-900 mb-4 pb-2 border-b border-gray-100">
+                        <h3 className="text-base font-bold text-black mb-4 pb-2 border-b border-gray-100">
                             Pricing & Secondary Units
                         </h3>
                         <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
                             <div className="bg-blue-50/50 p-3.5 rounded-lg border border-blue-100">
                                 <span className="text-xs text-gray-500 font-medium">Buy Price</span>
-                                <p className="text-lg font-bold text-gray-900 mt-1">৳{buyPrice.toLocaleString()}</p>
+                                <p className="text-lg font-bold text-black mt-1">৳{buyPrice.toLocaleString()}</p>
                             </div>
 
                             <div className="bg-emerald-50/50 p-3.5 rounded-lg border border-emerald-100">
@@ -204,7 +204,7 @@ const ProductDetails = () => {
                 <div className="space-y-6">
                     <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 space-y-4">
                         <div className="flex items-center justify-between">
-                            <h3 className="text-base font-bold text-gray-900">Inventory Status</h3>
+                            <h3 className="text-base font-bold text-black">Inventory Status</h3>
                             <span
                                 className={`inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-full ${
                                     isActive
@@ -228,7 +228,7 @@ const ProductDetails = () => {
 
                         <div className="p-4 bg-gray-50 rounded-lg text-center">
                             <span className="text-xs text-gray-500 font-medium">Available Quantity</span>
-                            <p className="text-3xl font-extrabold text-gray-900 mt-1">
+                            <p className="text-3xl font-extrabold text-black mt-1">
                                 {quantity} <span className="text-base font-medium text-gray-500">{unit}</span>
                             </p>
                             {isLowStock && (
@@ -256,7 +256,7 @@ const ProductDetails = () => {
                             <FiPackage className="w-5 h-5" />
                         </div>
                         <div>
-                            <h4 className="text-sm font-bold text-gray-900">Need to update stock?</h4>
+                            <h4 className="text-sm font-bold text-black">Need to update stock?</h4>
                             <p className="text-xs text-gray-600 mt-1">
                                 Purchases and Sales directly update inventory stock for this item in real-time.
                             </p>

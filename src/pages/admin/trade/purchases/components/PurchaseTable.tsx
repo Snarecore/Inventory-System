@@ -2,7 +2,6 @@ import React, { useState, useRef, useEffect } from "react";
 import { FiEye, FiEdit, FiPrinter } from "react-icons/fi";
 import { BsFilterRight } from "react-icons/bs";
 import Search from "@/components/table-components/Search";
-import DropdownFilter from "@/components/table-components/DropdownFilter";
 import EmptyState from "@/components/empty-state/EmptyState";
 import TableSkeleton from "@/components/skeleton/TableSkeleton";
 import Pagination from "@/components/pagination";
@@ -63,7 +62,6 @@ export const PurchaseTable: React.FC<PurchaseTableProps> = ({
   onPrint,
   onOpenChallanSettings,
 }) => {
-  const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const [isSortOpen, setIsSortOpen] = useState<boolean>(false);
   const sortRef = useRef<HTMLDivElement>(null);
 
@@ -133,48 +131,57 @@ export const PurchaseTable: React.FC<PurchaseTableProps> = ({
           {/* Supplier Filter */}
           {suppliersList.length > 0 && (
             <div className="w-full sm:w-44">
-              <DropdownFilter
-                name="supplier"
-                openDropdown={openDropdown}
-                setOpenDropdown={setOpenDropdown}
-                options={supplierOptions}
-                filterValue={supplierFilter}
-                setFilterValue={(val) => {
-                  setSupplierFilter(val);
+              <select
+                value={supplierFilter}
+                onChange={(e) => {
+                  setSupplierFilter(e.target.value);
                   setCurrentPageNumber(1);
                 }}
-              />
+                className="w-full h-8 px-2.5 text-xs border border-gray-200 rounded-lg bg-gray-50/50 hover:bg-white text-black font-medium focus:outline-none focus:border-[var(--color-primary)] cursor-pointer"
+              >
+                <option value="">All Suppliers</option>
+                {suppliersList.map((s) => (
+                  <option key={s.id ?? s.partyId ?? s.name} value={String(s.id ?? s.partyId ?? s.name)}>
+                    {s.name || s.partyName || "Supplier"}
+                  </option>
+                ))}
+              </select>
             </div>
           )}
 
           {/* Status Filter */}
-          <div className="w-full sm:w-40">
-            <DropdownFilter
-              name="status"
-              openDropdown={openDropdown}
-              setOpenDropdown={setOpenDropdown}
-              options={statusOptions}
-              filterValue={statusFilter}
-              setFilterValue={(val) => {
-                setStatusFilter(val);
+          <div className="w-full sm:w-36">
+            <select
+              value={statusFilter}
+              onChange={(e) => {
+                setStatusFilter(e.target.value);
                 setCurrentPageNumber(1);
               }}
-            />
+              className="w-full h-8 px-2.5 text-xs border border-gray-200 rounded-lg bg-gray-50/50 hover:bg-white text-black font-medium focus:outline-none focus:border-[var(--color-primary)] cursor-pointer"
+            >
+              <option value="">All Status</option>
+              <option value="PAID">Paid</option>
+              <option value="PARTIAL">Partial</option>
+              <option value="DUE">Due / Credit</option>
+            </select>
           </div>
 
           {/* Payment Method Filter */}
           <div className="w-full sm:w-36">
-            <DropdownFilter
-              name="method"
-              openDropdown={openDropdown}
-              setOpenDropdown={setOpenDropdown}
-              options={methodOptions}
-              filterValue={paymentMethodFilter}
-              setFilterValue={(val) => {
-                setPaymentMethodFilter(val);
+            <select
+              value={paymentMethodFilter}
+              onChange={(e) => {
+                setPaymentMethodFilter(e.target.value);
                 setCurrentPageNumber(1);
               }}
-            />
+              className="w-full h-8 px-2.5 text-xs border border-gray-200 rounded-lg bg-gray-50/50 hover:bg-white text-black font-medium focus:outline-none focus:border-[var(--color-primary)] cursor-pointer"
+            >
+              <option value="">All Methods</option>
+              <option value="CASH">Cash</option>
+              <option value="BANK">Bank</option>
+              <option value="MFS">MFS (bKash/Nagad)</option>
+              <option value="CREDIT">Credit</option>
+            </select>
           </div>
         </div>
 
@@ -185,9 +192,9 @@ export const PurchaseTable: React.FC<PurchaseTableProps> = ({
               type="button"
               onClick={onOpenChallanSettings}
               title="Challan Field Settings"
-              className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-gray-700 bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-lg transition-colors cursor-pointer"
+              className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-black bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-lg transition-colors cursor-pointer"
             >
-              <FaSlidersH className="text-gray-500" size={12} />
+              <FaSlidersH className="text-black" size={12} />
               <span className="hidden sm:inline">Challan Settings</span>
             </button>
           )}
@@ -197,9 +204,9 @@ export const PurchaseTable: React.FC<PurchaseTableProps> = ({
             <button
               type="button"
               onClick={() => setIsSortOpen(!isSortOpen)}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-gray-700 bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-lg transition-colors cursor-pointer"
+              className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-black bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-lg transition-colors cursor-pointer"
             >
-              <BsFilterRight className="text-gray-500 text-sm" />
+              <BsFilterRight className="text-black text-sm" />
               <span>Sort: {sortOptions.find((s) => s.value === sortBy)?.label || "Latest"}</span>
             </button>
 
@@ -217,7 +224,7 @@ export const PurchaseTable: React.FC<PurchaseTableProps> = ({
                     className={`w-full text-left px-3 py-1.5 text-xs transition-colors cursor-pointer ${
                       sortBy === opt.value
                         ? "bg-sky-50 text-[var(--color-primary)] font-semibold"
-                        : "text-gray-700 hover:bg-gray-50"
+                        : "text-black hover:bg-gray-50"
                     }`}
                   >
                     {opt.label}
@@ -241,18 +248,18 @@ export const PurchaseTable: React.FC<PurchaseTableProps> = ({
         ) : (
           <table className="w-full text-left border-collapse text-xs">
             <thead>
-              <tr className="bg-gray-50/80 border-b border-gray-200 text-[11px] font-semibold text-gray-600 uppercase tracking-wider">
-                <th className="py-2 px-3 text-center w-10">SL</th>
-                <th className="py-2 px-3">Invoice No</th>
-                <th className="py-2 px-3">Date</th>
-                <th className="py-2 px-3">Supplier</th>
-                <th className="py-2 px-3 text-center">Items</th>
-                <th className="py-2 px-3 text-right">Total (৳)</th>
-                <th className="py-2 px-3 text-right">Paid (৳)</th>
-                <th className="py-2 px-3 text-right">Due (৳)</th>
-                <th className="py-2 px-3 text-center">Method</th>
-                <th className="py-2 px-3 text-center">Status</th>
-                <th className="py-2 px-3 text-center w-28">Actions</th>
+              <tr className="bg-gray-50/80 border-b border-gray-200 text-xs font-semibold text-black">
+                <th className="py-2.5 px-3 text-center w-10">SL</th>
+                <th className="py-2.5 px-3">Invoice No</th>
+                <th className="py-2.5 px-3">Date</th>
+                <th className="py-2.5 px-3">Supplier</th>
+                <th className="py-2.5 px-3 text-center">Items</th>
+                <th className="py-2.5 px-3 text-right">Total (৳)</th>
+                <th className="py-2.5 px-3 text-right">Paid (৳)</th>
+                <th className="py-2.5 px-3 text-right">Due (৳)</th>
+                <th className="py-2.5 px-3 text-center">Method</th>
+                <th className="py-2.5 px-3 text-center">Status</th>
+                <th className="py-2.5 px-3 text-center w-28">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
@@ -264,13 +271,13 @@ export const PurchaseTable: React.FC<PurchaseTableProps> = ({
                 const dueAmount = Number(purchase.dueAmount ?? Math.max(0, grandTotal - paidAmount));
                 const paymentType = (purchase.paymentType || "CASH").toUpperCase();
 
-                let statusBadge = "PAID";
+                let statusBadge = "Paid";
                 let statusBg = "bg-emerald-50 text-emerald-700 border-emerald-200";
                 if (dueAmount > 0 && paidAmount > 0) {
-                  statusBadge = "PARTIAL";
+                  statusBadge = "Partial";
                   statusBg = "bg-amber-50 text-amber-700 border-amber-200";
                 } else if (dueAmount > 0 && paidAmount === 0) {
-                  statusBadge = "DUE";
+                  statusBadge = "Due";
                   statusBg = "bg-rose-50 text-rose-700 border-rose-200";
                 }
 
@@ -280,16 +287,16 @@ export const PurchaseTable: React.FC<PurchaseTableProps> = ({
                     className="hover:bg-sky-50/40 transition-colors group"
                   >
                     {/* SL */}
-                    <td className="py-2 px-3 text-center text-gray-500 font-mono text-[11px]">
+                    <td className="py-2.5 px-3 text-center text-black text-[11px]">
                       {serialNumber}
                     </td>
 
                     {/* Invoice No */}
-                    <td className="py-2 px-3">
+                    <td className="py-2.5 px-3">
                       <button
                         type="button"
                         onClick={() => onView(purchase)}
-                        className="font-semibold text-[var(--color-primary)] hover:underline cursor-pointer flex items-center gap-1 font-mono"
+                        className="font-medium text-black hover:text-[var(--color-primary)] cursor-pointer flex items-center gap-1"
                       >
                         {purchase.invoiceNo
                           ? purchase.invoiceNo.startsWith("-")
@@ -298,70 +305,63 @@ export const PurchaseTable: React.FC<PurchaseTableProps> = ({
                           : `PUR-${purchase.id || index + 1}`}
                       </button>
                       {purchase.challanNo && (
-                        <span className="text-[10px] text-gray-400 block font-mono">
+                        <span className="text-[10px] text-black/70 block">
                           Ch: {purchase.challanNo}
                         </span>
                       )}
                     </td>
 
                     {/* Date */}
-                    <td className="py-2 px-3 text-gray-600 whitespace-nowrap">
+                    <td className="py-2.5 px-3 text-black whitespace-nowrap">
                       <span className="flex items-center gap-1 text-[11px]">
-                        <FaCalendarAlt size={10} className="text-gray-400" />
                         {purchase.purchaseDate || (purchase.createdAt ? purchase.createdAt.substring(0, 10) : "N/A")}
                       </span>
                     </td>
 
                     {/* Supplier */}
-                    <td className="py-2 px-3">
-                      <span className="font-medium text-gray-900 block truncate max-w-[170px]">
+                    <td className="py-2.5 px-3">
+                      <span className="font-medium text-black block truncate max-w-[170px]">
                         {purchase.supplierName || "Direct Supplier"}
                       </span>
-                      {purchase.supplierPhone && (
-                        <span className="text-[10px] text-gray-500 flex items-center gap-1 font-mono mt-0.5">
-                          <FaPhone size={8} className="text-gray-400" />
-                          {purchase.supplierPhone}
-                        </span>
-                      )}
                     </td>
 
                     {/* Items */}
-                    <td className="py-2 px-3 text-center">
-                      <span className="inline-block px-1.5 py-0.5 bg-gray-100 text-gray-700 rounded text-[11px] font-medium">
+                    <td className="py-2.5 px-3 text-center">
+                      <span className="inline-block px-1.5 py-0.5 bg-gray-100 text-black rounded text-[11px] font-medium">
                         {itemsCount}
                       </span>
                     </td>
 
                     {/* Grand Total */}
-                    <td className="py-2 px-3 text-right font-bold text-gray-900 font-mono">
+                    <td className="py-2.5 px-3 text-right font-semibold text-black">
                       ৳ {formatMoney(grandTotal)}
                     </td>
 
                     {/* Paid */}
-                    <td className="py-2 px-3 text-right font-semibold text-emerald-600 font-mono">
+                    <td className="py-2.5 px-3 text-right font-medium text-emerald-700">
                       ৳ {formatMoney(paidAmount)}
                     </td>
 
                     {/* Due */}
                     <td
-                      className={`py-2 px-3 text-right font-semibold font-mono ${
-                        dueAmount > 0 ? "text-rose-600" : "text-gray-400"
+                      className={`py-2.5 px-3 text-right font-medium  ${
+                        dueAmount > 0 ? "text-rose-700" : "text-black"
                       }`}
                     >
                       ৳ {formatMoney(dueAmount)}
                     </td>
 
                     {/* Method */}
-                    <td className="py-2 px-3 text-center">
-                      <span className="inline-block px-2 py-0.5 rounded text-[10px] font-semibold bg-sky-50 text-sky-700 border border-sky-200">
+                    <td className="py-2.5 px-3 text-center">
+                      <span className="inline-block px-2 py-0.5 rounded text-[10px] font-medium bg-sky-50 text-sky-800 border border-sky-200">
                         {paymentType}
                       </span>
                     </td>
 
                     {/* Status */}
-                    <td className="py-2 px-3 text-center">
+                    <td className="py-2.5 px-3 text-center">
                       <span
-                        className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-bold border ${statusBg}`}
+                        className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-semibold border ${statusBg}`}
                       >
                         {statusBadge}
                       </span>

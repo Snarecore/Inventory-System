@@ -507,7 +507,7 @@ export const ProductTable = ({
                                     {getCategory(selectedProduct)}
                                 </span>
                                 {getCode(selectedProduct) && (
-                                    <span className="text-xs font-mono text-black">
+                                    <span className="text-xs   text-black">
                                         (Code: {getCode(selectedProduct)})
                                     </span>
                                 )}
@@ -566,13 +566,13 @@ export const ProductTable = ({
                             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
                                 <div className="px-3 py-2 bg-gray-50 rounded-lg border border-gray-200">
                                     <span className="text-xs text-black block mb-0.5">SKU</span>
-                                    <span className="text-xs font-mono font-medium text-black">
+                                    <span className="text-xs   font-medium text-black">
                                         {getSku(selectedProduct)}
                                     </span>
                                 </div>
                                 <div className="px-3 py-2 bg-gray-50 rounded-lg border border-gray-200">
                                     <span className="text-xs text-black block mb-0.5">Barcode</span>
-                                    <span className="text-xs font-mono font-medium text-black">
+                                    <span className="text-xs   font-medium text-black">
                                         {getBarcode(selectedProduct) || "-"}
                                     </span>
                                 </div>

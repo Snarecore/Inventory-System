@@ -33,9 +33,12 @@ const PurchaseInvoiceModal: React.FC<PurchaseInvoiceModalProps> = ({
       <html>
         <head>
           <title>Purchase Invoice - ${purchase.invoiceNo || "Invoice"}</title>
+          <link rel="preconnect" href="https://fonts.googleapis.com">
+          <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+          <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300..800;1,300..800&display=swap" rel="stylesheet">
           <style>
             @page { size: A4; margin: 12mm; }
-            body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; color: #111827; font-size: 12px; line-height: 1.4; padding: 0; margin: 0; }
+            body { font-family: "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; color: #111827; font-size: 12px; line-height: 1.4; padding: 0; margin: 0; }
             .invoice-box { max-width: 100%; margin: auto; }
             .header { display: flex; justify-content: space-between; border-bottom: 2px solid #009fe3; padding-bottom: 8px; margin-bottom: 12px; }
             .company-title { font-size: 18px; font-weight: bold; color: #009fe3; }
@@ -79,26 +82,59 @@ const PurchaseInvoiceModal: React.FC<PurchaseInvoiceModalProps> = ({
     }).format(num);
   };
 
-  const details = purchase.purchaseDetails || [];
-  const subtotal = Number(purchase.totalAmount) || details.reduce((acc, item) => acc + (Number(item.total) || (Number(item.buyPrice || 0) * Number(item.quantity || 1))), 0);
-  const discount = Number(purchase.discount) || 0;
-  const vat = Number(purchase.vat) || 0;
-  const delivery = Number(purchase.delivery_charge || purchase.transportCost) || 0;
-  const grandTotal = Number(purchase.grandTotal) || (subtotal - discount + vat + delivery);
-  const paid = Number(purchase.paidAmount) || 0;
-  const due = Number(purchase.dueAmount ?? (grandTotal - paid));
+  const p: any = purchase;
+  const rawDetails =
+    p.purchaseDetails ||
+    p.purchasesDetails ||
+    p.purchase_details ||
+    p.details ||
+    p.items ||
+    p.products ||
+    p.purchaseListDetails ||
+    p.salesDetails ||
+    p.saleDetails ||
+    p.productList ||
+    p.productsList ||
+    [];
+  const details: any[] = Array.isArray(rawDetails) ? rawDetails : [];
+
+  const delivery = Number(p.transportCost ?? p.transport_cost ?? p.delivery_charge ?? p.deliveryCharge ?? 0);
+  const discount = Number(p.discount ?? p.discount_amount ?? p.discountAmount ?? 0);
+  const vat = Number(p.vat ?? p.vat_amount ?? p.vatAmount ?? p.invoiceVat ?? 0);
+  const subtotal =
+    Number(p.totalAmount ?? p.total_amount ?? p.subtotal ?? 0) ||
+    details.reduce((acc, item: any) => {
+      const price = Number(item.buyPrice ?? item.buy_price ?? item.price ?? item.rate ?? 0);
+      const qty = Number(item.quantity ?? item.qty ?? 1);
+      return acc + (Number(item.total) || price * qty);
+    }, 0);
+
+  const grandTotal = Number(p.grandTotal ?? p.grand_total ?? p.total ?? (subtotal - discount + vat + delivery));
+  const paid = Number(p.paidAmount ?? p.paid_amount ?? p.paid ?? p.cashReceived ?? 0);
+  const due = Number(p.dueAmount ?? p.due_amount ?? p.due ?? Math.max(0, grandTotal - paid));
+
+  const supplierName = p.supplierName || p.supplier_name || p.partyName || p.party_name || p.customerName || "Direct Supplier";
+  const supplierPhone = p.supplierPhone || p.supplier_phone || p.partyPhone || p.party_phone || p.customerPhone;
+  const supplierAddress = p.supplierAddress || p.supplier_address || p.partyAddress || p.party_address || p.customerAddress;
+
+  const vehicleNo = p.vehicleNo || p.vehicle_no || p.truckNo || p.truck_no || "N/A";
+  const driverName = p.driverName || p.driver_name || "N/A";
+  const driverPhone = p.driverPhone || p.driver_phone || "N/A";
+  const challanNo = p.challanNo || p.challan_no || p.challanRefNo;
+  const invoiceNo = p.invoiceNo || p.invoice_no || p.billNo || "N/A";
+  const invoiceDate = p.purchaseDate || p.salesDate || p.date || p.created_at || p.createdAt || "N/A";
 
   return (
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title={`Purchase Invoice - ${purchase.invoiceNo || "INV"}`}
+      title={`Purchase Invoice - ${invoiceNo}`}
       maxWidth="w-full max-w-[800px]"
       footerButtons={
         <div className="flex items-center justify-between w-full">
           <div className="flex items-center gap-2">
             <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-sky-100 text-sky-800">
-              Payment: {purchase.paymentType || "CASH"}
+              Payment: {p.paymentType || p.payment_type || (paid > 0 ? "CASH" : "CREDIT")}
             </span>
             <span
               className={`text-xs font-semibold px-2.5 py-1 rounded-full ${
@@ -109,7 +145,7 @@ const PurchaseInvoiceModal: React.FC<PurchaseInvoiceModalProps> = ({
                   : "bg-rose-100 text-rose-800"
               }`}
             >
-              Status: {purchase.status || (due <= 0 ? "PAID" : paid > 0 ? "PARTIAL" : "DUE")}
+              Status: {p.status || p.paymentStatus || (due <= 0 ? "PAID" : paid > 0 ? "PARTIAL" : "DUE")}
             </span>
           </div>
 
@@ -134,33 +170,33 @@ const PurchaseInvoiceModal: React.FC<PurchaseInvoiceModalProps> = ({
     >
       <div className="flex flex-col gap-3 py-1">
         {/* Printable View Container */}
-        <div ref={printRef} className="p-3 sm:p-4 bg-white border border-gray-200 rounded-lg text-xs text-gray-800">
+        <div ref={printRef} className="p-3 sm:p-4 bg-white border border-gray-200 rounded-lg text-xs text-black">
           {/* Header */}
           <div className="flex flex-col sm:flex-row justify-between items-start border-b-2 border-[var(--color-primary)] pb-3 gap-2">
             <div>
               <h2 className="text-base sm:text-lg font-bold text-[var(--color-primary)]">
                 {userInfo?.businessName || userInfo?.organizationName || "Cash Boi Inventory"}
               </h2>
-              <p className="text-[11px] text-gray-500">
+              <p className="text-[11px] text-black">
                 Phone: {userInfo?.phone || userInfo?.phoneNumber || "N/A"}
               </p>
-              <p className="text-[11px] text-gray-500">
+              <p className="text-[11px] text-black">
                 Branch: {userInfo?.branchName || `Branch #${userInfo?.branchId || 1}`}
               </p>
             </div>
             <div className="sm:text-right">
-              <h1 className="text-base sm:text-lg font-bold text-gray-900 uppercase tracking-tight">
+              <h1 className="text-base sm:text-lg font-bold text-black uppercase tracking-tight">
                 Purchase Invoice
               </h1>
-              <p className="text-xs font-medium text-gray-700">
-                Invoice #: <span className="font-semibold">{purchase.invoiceNo || "N/A"}</span>
+              <p className="text-xs font-medium text-black">
+                Invoice #: <span className="font-semibold">{invoiceNo}</span>
               </p>
-              <p className="text-[11px] text-gray-500">
-                Date: {purchase.purchaseDate || purchase.created_at || purchase.createdAt || "N/A"}
+              <p className="text-[11px] text-black">
+                Date: {invoiceDate}
               </p>
-              {purchase.challanNo && (
-                <p className="text-[11px] text-gray-500">
-                  Challan Ref: <span className="font-medium text-gray-700">{purchase.challanNo}</span>
+              {challanNo && (
+                <p className="text-[11px] text-black">
+                  Challan Ref: <span className="font-medium text-black">{challanNo}</span>
                 </p>
               )}
             </div>
@@ -169,42 +205,42 @@ const PurchaseInvoiceModal: React.FC<PurchaseInvoiceModalProps> = ({
           {/* Supplier and Challan Meta Info */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 my-3">
             <div className="bg-gray-50 p-2.5 rounded-md border border-gray-200">
-              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-1">
+              <span className="text-[10px] font-bold text-black uppercase tracking-wider block mb-1">
                 Supplier Information
               </span>
-              <p className="font-bold text-gray-900 text-xs">{purchase.supplierName || "Direct Supplier"}</p>
-              {purchase.supplierPhone && (
-                <p className="text-gray-600 text-[11px] flex items-center gap-1.5 mt-0.5">
-                  <FaPhone size={10} className="text-gray-400" /> {purchase.supplierPhone}
+              <p className="font-bold text-black text-xs">{supplierName}</p>
+              {supplierPhone && (
+                <p className="text-black text-[11px] flex items-center gap-1.5 mt-0.5">
+                  <FaPhone size={10} className="text-black" /> {supplierPhone}
                 </p>
               )}
-              {purchase.supplierAddress && (
-                <p className="text-gray-600 text-[11px] flex items-center gap-1.5 mt-0.5">
-                  <FaMapMarkerAlt size={10} className="text-gray-400" /> {purchase.supplierAddress}
+              {supplierAddress && (
+                <p className="text-black text-[11px] flex items-center gap-1.5 mt-0.5">
+                  <FaMapMarkerAlt size={10} className="text-black" /> {supplierAddress}
                 </p>
               )}
             </div>
 
             <div className="bg-gray-50 p-2.5 rounded-md border border-gray-200">
-              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-1">
+              <span className="text-[10px] font-bold text-black uppercase tracking-wider block mb-1">
                 Logistics & Transport
               </span>
-              <div className="grid grid-cols-2 gap-1.5 text-[11px]">
+              <div className="grid grid-cols-2 gap-1.5 text-[11px] text-black">
                 <div>
-                  <span className="text-gray-500">Vehicle No:</span>{" "}
-                  <span className="font-medium text-gray-800">{purchase.vehicleNo || "N/A"}</span>
+                  <span className="text-black font-normal">Vehicle No:</span>{" "}
+                  <span className="font-medium text-black">{vehicleNo}</span>
                 </div>
                 <div>
-                  <span className="text-gray-500">Driver:</span>{" "}
-                  <span className="font-medium text-gray-800">{purchase.driverName || "N/A"}</span>
+                  <span className="text-black font-normal">Driver:</span>{" "}
+                  <span className="font-medium text-black">{driverName}</span>
                 </div>
                 <div>
-                  <span className="text-gray-500">Driver Phone:</span>{" "}
-                  <span className="font-medium text-gray-800">{purchase.driverPhone || "N/A"}</span>
+                  <span className="text-black font-normal">Driver Phone:</span>{" "}
+                  <span className="font-medium text-black">{driverPhone}</span>
                 </div>
                 <div>
-                  <span className="text-gray-500">Transport:</span>{" "}
-                  <span className="font-medium text-gray-800">৳ {formatMoney(delivery)}</span>
+                  <span className="text-black font-normal">Transport:</span>{" "}
+                  <span className="font-medium text-black">৳ {formatMoney(delivery)}</span>
                 </div>
               </div>
             </div>
@@ -213,44 +249,44 @@ const PurchaseInvoiceModal: React.FC<PurchaseInvoiceModalProps> = ({
           {/* Line Items Table */}
           <div className="overflow-x-auto my-2 border border-gray-200 rounded-md">
             <table className="w-full text-[11px] text-left">
-              <thead className="bg-gray-100 text-gray-700 uppercase font-semibold border-b border-gray-200">
+              <thead className="bg-gray-100 text-black font-semibold border-b border-gray-200 text-xs">
                 <tr>
-                  <th className="py-1.5 px-2 text-center w-8">#</th>
-                  <th className="py-1.5 px-2">Item Description</th>
-                  <th className="py-1.5 px-2 text-center">Unit</th>
-                  <th className="py-1.5 px-2 text-right">Buy Price</th>
-                  <th className="py-1.5 px-2 text-center">Qty</th>
-                  <th className="py-1.5 px-2 text-right">Discount</th>
-                  <th className="py-1.5 px-2 text-right">VAT</th>
-                  <th className="py-1.5 px-2 text-right">Total (৳)</th>
+                  <th className="py-2 px-2 text-center w-8">#</th>
+                  <th className="py-2 px-2">Item Description</th>
+                  <th className="py-2 px-2 text-center">Unit</th>
+                  <th className="py-2 px-2 text-right">Buy Price</th>
+                  <th className="py-2 px-2 text-center">Qty</th>
+                  <th className="py-2 px-2 text-right">Discount</th>
+                  <th className="py-2 px-2 text-right">VAT</th>
+                  <th className="py-2 px-2 text-right">Total (৳)</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-200">
+              <tbody className="divide-y divide-gray-200 text-black">
                 {details.length > 0 ? (
-                  details.map((item, idx) => {
-                    const itemPrice = Number(item.buyPrice || item.price || 0);
-                    const itemQty = Number(item.quantity || item.qty || 1);
-                    const itemDisc = Number(item.discount || 0);
-                    const itemVat = Number(item.vat || 0);
-                    const itemTotal = Number(item.total || itemPrice * itemQty - itemDisc + itemVat);
+                  details.map((item: any, idx) => {
+                    const itemPrice = Number(item.buyPrice ?? item.buy_price ?? item.price ?? item.rate ?? item.unitPrice ?? item.sellPrice ?? 0);
+                    const itemQty = Number(item.quantity ?? item.qty ?? item.count ?? 1);
+                    const itemDisc = Number(item.discount ?? item.discount_amount ?? 0);
+                    const itemVat = Number(item.vat ?? item.vat_amount ?? 0);
+                    const itemTotal = Number(item.total ?? item.total_price ?? item.subtotal ?? (itemPrice * itemQty - itemDisc + itemVat));
 
                     return (
                       <tr key={idx} className="hover:bg-gray-50">
-                        <td className="py-1.5 px-2 text-center text-gray-500">{idx + 1}</td>
+                        <td className="py-1.5 px-2 text-center text-black font-mono">{idx + 1}</td>
                         <td className="py-1.5 px-2">
-                          <span className="font-semibold text-gray-900 block">{item.productName || "Product"}</span>
-                          {(item.pcode || item.productCode) && (
-                            <span className="text-[10px] text-gray-400 font-mono">
-                              Code: {item.pcode || item.productCode}
+                          <span className="font-semibold text-black block">{item.productName || item.product_name || item.name || "Product"}</span>
+                          {(item.pcode || item.productCode || item.product_code || item.code) && (
+                            <span className="text-[10px] text-black/80 font-mono">
+                              Code: {item.pcode || item.productCode || item.product_code || item.code}
                             </span>
                           )}
                         </td>
-                        <td className="py-1.5 px-2 text-center text-gray-600">{item.unit || "pcs"}</td>
-                        <td className="py-1.5 px-2 text-right font-mono">৳ {formatMoney(itemPrice)}</td>
-                        <td className="py-1.5 px-2 text-center font-semibold">{itemQty}</td>
-                        <td className="py-1.5 px-2 text-right text-gray-600 font-mono">৳ {formatMoney(itemDisc)}</td>
-                        <td className="py-1.5 px-2 text-right text-gray-600 font-mono">৳ {formatMoney(itemVat)}</td>
-                        <td className="py-1.5 px-2 text-right font-bold text-gray-900 font-mono">
+                        <td className="py-1.5 px-2 text-center text-black">{item.unit || item.unitName || "pcs"}</td>
+                        <td className="py-1.5 px-2 text-right text-black font-mono">৳ {formatMoney(itemPrice)}</td>
+                        <td className="py-1.5 px-2 text-center font-semibold text-black">{itemQty}</td>
+                        <td className="py-1.5 px-2 text-right text-black font-mono">৳ {formatMoney(itemDisc)}</td>
+                        <td className="py-1.5 px-2 text-right text-black font-mono">৳ {formatMoney(itemVat)}</td>
+                        <td className="py-1.5 px-2 text-right font-bold text-black font-mono">
                           ৳ {formatMoney(itemTotal)}
                         </td>
                       </tr>
@@ -258,7 +294,7 @@ const PurchaseInvoiceModal: React.FC<PurchaseInvoiceModalProps> = ({
                   })
                 ) : (
                   <tr>
-                    <td colSpan={8} className="text-center py-4 text-gray-400">
+                    <td colSpan={8} className="text-center py-4 text-black font-medium">
                       No line items recorded for this purchase.
                     </td>
                   </tr>
@@ -269,34 +305,34 @@ const PurchaseInvoiceModal: React.FC<PurchaseInvoiceModalProps> = ({
 
           {/* Financial Totals */}
           <div className="flex flex-col sm:flex-row justify-between items-start gap-3 mt-3">
-            <div className="text-[11px] text-gray-600 max-w-sm">
+            <div className="text-[11px] text-black max-w-sm">
               {purchase.note && (
                 <div className="bg-amber-50 p-2 rounded border border-amber-200">
-                  <span className="font-semibold text-amber-800 block">Note / Instructions:</span>
-                  <p className="text-amber-900 mt-0.5">{purchase.note}</p>
+                  <span className="font-semibold text-amber-900 block">Note / Instructions:</span>
+                  <p className="text-black mt-0.5">{purchase.note}</p>
                 </div>
               )}
             </div>
 
-            <div className="w-full sm:w-64 bg-gray-50 p-2.5 rounded-md border border-gray-200 text-xs">
-              <div className="flex justify-between py-1 text-gray-600">
+            <div className="w-full sm:w-64 bg-gray-50 p-2.5 rounded-md border border-gray-200 text-xs text-black">
+              <div className="flex justify-between py-1 text-black font-medium">
                 <span>Subtotal:</span>
                 <span className="font-mono text-right">৳ {formatMoney(subtotal)}</span>
               </div>
               {discount > 0 && (
-                <div className="flex justify-between py-1 text-rose-600">
+                <div className="flex justify-between py-1 text-rose-700 font-medium">
                   <span>Discount:</span>
                   <span className="font-mono text-right">- ৳ {formatMoney(discount)}</span>
                 </div>
               )}
               {vat > 0 && (
-                <div className="flex justify-between py-1 text-gray-600">
+                <div className="flex justify-between py-1 text-black font-medium">
                   <span>VAT / Tax:</span>
                   <span className="font-mono text-right">+ ৳ {formatMoney(vat)}</span>
                 </div>
               )}
               {delivery > 0 && (
-                <div className="flex justify-between py-1 text-gray-600">
+                <div className="flex justify-between py-1 text-black font-medium">
                   <span>Transport / Freight:</span>
                   <span className="font-mono text-right">+ ৳ {formatMoney(delivery)}</span>
                 </div>
@@ -309,7 +345,7 @@ const PurchaseInvoiceModal: React.FC<PurchaseInvoiceModalProps> = ({
                 <span>Paid Amount:</span>
                 <span className="font-mono text-right">৳ {formatMoney(paid)}</span>
               </div>
-              <div className={`flex justify-between py-1 font-bold border-t border-gray-200 ${due > 0 ? "text-rose-600" : "text-gray-600"}`}>
+              <div className={`flex justify-between py-1 font-bold border-t border-gray-200 ${due > 0 ? "text-rose-700" : "text-black"}`}>
                 <span>Due Balance:</span>
                 <span className="font-mono text-right">৳ {formatMoney(due)}</span>
               </div>
@@ -317,14 +353,14 @@ const PurchaseInvoiceModal: React.FC<PurchaseInvoiceModalProps> = ({
           </div>
 
           {/* Signature Footer */}
-          <div className="hidden sm:flex justify-between items-center mt-12 pt-4 border-t border-dashed border-gray-300 text-[11px] text-gray-500">
-            <div className="text-center w-36 border-t border-gray-400 pt-1">
+          <div className="hidden sm:flex justify-between items-center mt-12 pt-4 border-t border-dashed border-gray-300 text-[11px] text-black">
+            <div className="text-center w-36 border-t border-gray-400 pt-1 font-medium text-black">
               Received By
             </div>
-            <div className="text-center w-36 border-t border-gray-400 pt-1">
+            <div className="text-center w-36 border-t border-gray-400 pt-1 font-medium text-black">
               Store In-Charge
             </div>
-            <div className="text-center w-36 border-t border-gray-400 pt-1">
+            <div className="text-center w-36 border-t border-gray-400 pt-1 font-medium text-black">
               Authorized Signature
             </div>
           </div>

@@ -401,7 +401,7 @@ const CreatePurchaseForm: React.FC = () => {
     }
   }, [rawChallanSettings]);
 
-  // 1. Resolve edit data from location state OR from loaded purchase list matching routeId
+  // 1. Resolve edit data from location state OR from loaded purchase list matching routeId (pure database API)
   const effectiveEditData: any = useMemo(() => {
     if (stateEditData) return stateEditData;
     if (!routeId || !rawPurchaseData) return null;
@@ -872,12 +872,21 @@ const CreatePurchaseForm: React.FC = () => {
         supplierAddress: selectedSupplier.address || selectedSupplier.partyAddress || "",
         customerAddress: selectedSupplier.address || selectedSupplier.partyAddress || "",
         challanNo: challanNo.trim(),
+        challan_no: challanNo.trim(),
         vehicleNo: vehicleNo.trim(),
+        vehicle_no: vehicleNo.trim(),
         driverName: driverName.trim(),
+        driver_name: driverName.trim(),
         driverPhone: driverPhone.trim(),
+        driver_phone: driverPhone.trim(),
+        poNumber: poNumber.trim(),
+        po_number: poNumber.trim(),
         deliveryDate: deliveryDate || purchaseDate,
+        delivery_date: deliveryDate || purchaseDate,
         transportCost: calculatedTransport,
+        transport_cost: calculatedTransport,
         delivery_charge: calculatedTransport,
+        deliveryCharge: calculatedTransport,
         totalAmount: rawSubtotal,
         discount: totalDiscount,
         discountType: invoiceDiscountType,
@@ -908,9 +917,18 @@ const CreatePurchaseForm: React.FC = () => {
         purchaseDetails: purchaseDetailsPayload,
       };
 
-      if (isEditMode && (stateEditData?.id || stateEditData?.purchaseId || routeId)) {
-        purchasePayload.id = stateEditData?.id || stateEditData?.purchaseId || routeId;
-        purchasePayload.purchaseId = stateEditData?.id || stateEditData?.purchaseId || routeId;
+      const editId =
+        effectiveEditData?.id ??
+        effectiveEditData?.purchaseId ??
+        effectiveEditData?.purchase_id ??
+        stateEditData?.id ??
+        stateEditData?.purchaseId ??
+        routeId;
+
+      if (isEditMode && editId) {
+        purchasePayload.id = editId;
+        purchasePayload.purchaseId = editId;
+        purchasePayload.purchase_id = editId;
       }
 
       console.log("Submitting purchase payload to backend:", purchasePayload);
@@ -933,13 +951,20 @@ const CreatePurchaseForm: React.FC = () => {
       
       const savedItem: any = {
         ...purchasePayload,
-        id: res?.id || res?.purchaseId || res?.purchase_id || invoiceNo,
+        id: res?.id || res?.purchaseId || res?.purchase_id || editId || invoiceNo,
         createdAt: new Date().toISOString(),
       };
 
       queryClient.setQueryData([purchaseListQueryKey], (oldData: any) => {
         if (!oldData) return { status: "Success", purchaseList: [savedItem] };
         if (Array.isArray(oldData)) {
+          if (isEditMode) {
+            return oldData.map((item: any) => {
+              const itemId = String(item.id ?? item.purchaseId ?? item.invoiceNo ?? "");
+              const targetId = String(savedItem.id ?? savedItem.purchaseId ?? savedItem.invoiceNo ?? "");
+              return itemId === targetId || String(item.invoiceNo) === String(savedItem.invoiceNo) ? { ...item, ...savedItem } : item;
+            });
+          }
           return [savedItem, ...oldData];
         }
         if (oldData && typeof oldData === "object") {
@@ -953,9 +978,16 @@ const CreatePurchaseForm: React.FC = () => {
             ? "data"
             : "purchaseList";
           const currentList = Array.isArray(oldData[listKey]) ? oldData[listKey] : [];
+          const updatedList = isEditMode
+            ? currentList.map((item: any) => {
+                const itemId = String(item.id ?? item.purchaseId ?? item.invoiceNo ?? "");
+                const targetId = String(savedItem.id ?? savedItem.purchaseId ?? savedItem.invoiceNo ?? "");
+                return itemId === targetId || String(item.invoiceNo) === String(savedItem.invoiceNo) ? { ...item, ...savedItem } : item;
+              })
+            : [savedItem, ...currentList];
           return {
             ...oldData,
-            [listKey]: [savedItem, ...currentList],
+            [listKey]: updatedList,
           };
         }
         return oldData;
@@ -1001,11 +1033,11 @@ const CreatePurchaseForm: React.FC = () => {
       {/* Top Header Bar */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 border-b border-gray-200 pb-2">
         <div className="flex items-center gap-2">
-          <h1 className="text-base sm:text-lg font-bold text-gray-900 flex items-center gap-2">
+          <h1 className="text-base sm:text-lg font-bold text-black flex items-center gap-2">
             <FaCalculator className="text-[var(--color-primary)]" size={18} />
             {isEditMode ? "Edit Purchase Invoice" : "Create New Purchase"}
           </h1>
-          <span className="text-xs px-2 py-0.5 rounded-full bg-sky-100 text-sky-800 font-mono font-semibold">
+          <span className="text-xs px-2 py-0.5 rounded-full bg-sky-100 text-sky-800   font-semibold">
             {invoiceNo || "INV"}
           </span>
         </div>
@@ -1079,7 +1111,7 @@ const CreatePurchaseForm: React.FC = () => {
                   {selectedSupplier.name || selectedSupplier.partyName}
                 </span>
                 {(selectedSupplier.phone || selectedSupplier.partyPhone) && (
-                  <span className="text-[11px] text-gray-700 font-mono shrink-0">
+                  <span className="text-[11px] text-gray-700   shrink-0">
                     ({selectedSupplier.phone || selectedSupplier.partyPhone})
                   </span>
                 )}
@@ -1119,11 +1151,11 @@ const CreatePurchaseForm: React.FC = () => {
                       <div className="flex items-center gap-1.5 truncate">
                         <span className="font-semibold text-black">{s.name || s.partyName}</span>
                         {(s.phone || s.partyPhone) && (
-                          <span className="text-[11px] text-gray-500 font-mono">({s.phone || s.partyPhone})</span>
+                          <span className="text-[11px] text-gray-500  ">({s.phone || s.partyPhone})</span>
                         )}
                       </div>
                       {(s.balance || s.openingBalance || s.dueAmount) && (
-                        <span className="text-[10px] font-mono text-rose-600 bg-rose-50 px-1.5 py-0.5 rounded shrink-0 ml-1">
+                        <span className="text-[10px]   text-rose-600 bg-rose-50 px-1.5 py-0.5 rounded shrink-0 ml-1">
                           Bal: ৳{s.balance || s.openingBalance || s.dueAmount}
                         </span>
                       )}
@@ -1146,7 +1178,7 @@ const CreatePurchaseForm: React.FC = () => {
             type="text"
             value={invoiceNo}
             onChange={(e) => setInvoiceNo(e.target.value)}
-            className="w-full h-9 px-2.5 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:border-[var(--color-primary)] font-mono font-bold text-black"
+            className="w-full h-9 px-2.5 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:border-[var(--color-primary)]   font-bold text-black"
             placeholder="INV-0001"
           />
         </div>
@@ -1174,7 +1206,7 @@ const CreatePurchaseForm: React.FC = () => {
               type="text"
               value={challanNo}
               onChange={(e) => setChallanNo(e.target.value)}
-              className="w-full h-9 px-2.5 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:border-[var(--color-primary)] font-mono font-semibold text-black"
+              className="w-full h-9 px-2.5 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:border-[var(--color-primary)]   font-semibold text-black"
               placeholder="e.g. CH-98234"
             />
           </div>
@@ -1190,7 +1222,7 @@ const CreatePurchaseForm: React.FC = () => {
               type="text"
               value={vehicleNo}
               onChange={(e) => setVehicleNo(e.target.value)}
-              className="w-full h-9 px-2.5 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:border-[var(--color-primary)] font-mono font-semibold text-black"
+              className="w-full h-9 px-2.5 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:border-[var(--color-primary)]   font-semibold text-black"
               placeholder="e.g. DHAKA-METRO-11-2233"
             />
           </div>
@@ -1222,7 +1254,7 @@ const CreatePurchaseForm: React.FC = () => {
               type="text"
               value={driverPhone}
               onChange={(e) => setDriverPhone(e.target.value)}
-              className="w-full h-9 px-2.5 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:border-[var(--color-primary)] font-mono font-semibold text-black"
+              className="w-full h-9 px-2.5 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:border-[var(--color-primary)]   font-semibold text-black"
               placeholder="017xxxxxxxx"
             />
           </div>
@@ -1238,7 +1270,7 @@ const CreatePurchaseForm: React.FC = () => {
               type="text"
               value={poNumber}
               onChange={(e) => setPoNumber(e.target.value)}
-              className="w-full h-9 px-2.5 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:border-[var(--color-primary)] font-mono font-semibold text-black"
+              className="w-full h-9 px-2.5 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:border-[var(--color-primary)]   font-semibold text-black"
               placeholder="e.g. PO-2026-001"
             />
           </div>
@@ -1282,8 +1314,8 @@ const CreatePurchaseForm: React.FC = () => {
                     className="p-2.5 hover:bg-sky-50 cursor-pointer flex items-center justify-between text-xs transition-colors"
                   >
                     <div className="flex flex-col">
-                      <span className="font-bold text-gray-900">{p.name || p.productName}</span>
-                      <span className="text-[10px] text-gray-500 font-mono">
+                      <span className="font-bold text-black">{p.name || p.productName}</span>
+                      <span className="text-[10px] text-gray-500  ">
                         Code: {p.pcode || p.productCode || "N/A"} | Unit: {p.unit || "pcs"}
                       </span>
                     </div>
@@ -1292,7 +1324,7 @@ const CreatePurchaseForm: React.FC = () => {
                       <span className="text-[11px] px-2 py-0.5 rounded bg-gray-100 text-gray-700">
                         Stock: <span className="font-semibold">{stock}</span>
                       </span>
-                      <span className="font-mono font-bold text-gray-900 text-right min-w-[70px]">
+                      <span className="  font-bold text-black text-right min-w-[70px]">
                         ৳ {formatMoney(buyPrice)}
                       </span>
                       <button
@@ -1319,7 +1351,7 @@ const CreatePurchaseForm: React.FC = () => {
             Purchase Items List ({lineItems.length})
           </h2>
           <span className="text-[11px] text-gray-500 font-medium">
-            Subtotal: <span className="font-mono font-bold text-gray-900">৳ {formatMoney(rawSubtotal)}</span>
+            Subtotal: <span className="  font-bold text-black">৳ {formatMoney(rawSubtotal)}</span>
           </span>
         </div>
 
@@ -1342,7 +1374,7 @@ const CreatePurchaseForm: React.FC = () => {
                 lineItems.map((item, idx) => (
                   <tr key={idx} className="hover:bg-gray-50/70 transition-colors">
                     {/* SL */}
-                    <td className="py-2 px-2 text-center text-gray-700 font-mono text-[11px] whitespace-nowrap">
+                    <td className="py-2 px-2 text-center text-gray-700   text-[11px] whitespace-nowrap">
                       {idx + 1}
                     </td>
 
@@ -1350,7 +1382,7 @@ const CreatePurchaseForm: React.FC = () => {
                     <td className="py-2 px-3">
                       <span className="font-semibold text-black block">{item.productName}</span>
                       {item.productCode && (
-                        <span className="text-[10px] text-gray-500 font-mono">Code: {item.productCode}</span>
+                        <span className="text-[10px] text-gray-500  ">Code: {item.productCode}</span>
                       )}
                     </td>
 
@@ -1372,7 +1404,7 @@ const CreatePurchaseForm: React.FC = () => {
                           placeholder="0.00"
                           onWheel={(e) => e.currentTarget.blur()}
                           onChange={(e) => handleUpdateLineItem(idx, "buyPrice", e.target.value)}
-                          className="w-full pl-5 pr-1.5 py-1 text-xs border border-gray-300 rounded text-right font-mono font-bold text-black focus:outline-none focus:border-[var(--color-primary)]"
+                          className="w-full pl-5 pr-1.5 py-1 text-xs border border-gray-300 rounded text-right   font-bold text-black focus:outline-none focus:border-[var(--color-primary)]"
                         />
                       </div>
                     </td>
@@ -1397,7 +1429,7 @@ const CreatePurchaseForm: React.FC = () => {
                           placeholder="1"
                           onWheel={(e) => e.currentTarget.blur()}
                           onChange={(e) => handleUpdateLineItem(idx, "quantity", e.target.value)}
-                          className="w-12 py-1 text-xs text-center font-mono font-bold text-black focus:outline-none border-x border-gray-300"
+                          className="w-12 py-1 text-xs text-center   font-bold text-black focus:outline-none border-x border-gray-300"
                         />
                         <button
                           type="button"
@@ -1421,12 +1453,12 @@ const CreatePurchaseForm: React.FC = () => {
                         placeholder="0"
                         onWheel={(e) => e.currentTarget.blur()}
                         onChange={(e) => handleUpdateLineItem(idx, "vat", e.target.value)}
-                        className="w-full px-1.5 py-1 text-xs border border-gray-300 rounded text-right font-mono font-bold text-black focus:outline-none focus:border-[var(--color-primary)]"
+                        className="w-full px-1.5 py-1 text-xs border border-gray-300 rounded text-right   font-bold text-black focus:outline-none focus:border-[var(--color-primary)]"
                       />
                     </td>
 
                     {/* Total (Right Aligned Display) */}
-                    <td className="py-2 px-3 text-right font-bold text-black font-mono whitespace-nowrap">
+                    <td className="py-2 px-3 text-right font-bold text-black   whitespace-nowrap">
                       ৳ {formatMoney(item.total)}
                     </td>
 
@@ -1501,7 +1533,7 @@ const CreatePurchaseForm: React.FC = () => {
                   placeholder="0"
                   onWheel={(e) => e.currentTarget.blur()}
                   onChange={(e) => setInvoiceDiscount(e.target.value)}
-                  className="w-full px-2 py-1 text-xs border border-gray-300 rounded text-right font-mono text-black font-bold focus:outline-none focus:border-[var(--color-primary)]"
+                  className="w-full px-2 py-1 text-xs border border-gray-300 rounded text-right   text-black font-bold focus:outline-none focus:border-[var(--color-primary)]"
                 />
               </div>
             </div>
@@ -1517,7 +1549,7 @@ const CreatePurchaseForm: React.FC = () => {
                   placeholder="0"
                   onWheel={(e) => e.currentTarget.blur()}
                   onChange={(e) => setInvoiceVat(e.target.value)}
-                  className="w-full px-2 py-1 text-xs border border-gray-300 rounded text-right font-mono text-black font-bold focus:outline-none focus:border-[var(--color-primary)]"
+                  className="w-full px-2 py-1 text-xs border border-gray-300 rounded text-right   text-black font-bold focus:outline-none focus:border-[var(--color-primary)]"
                 />
               </div>
             </div>
@@ -1527,7 +1559,7 @@ const CreatePurchaseForm: React.FC = () => {
               <div className="flex items-center justify-between gap-2">
                 <label className="text-xs text-black font-semibold">Transport (৳):</label>
                 <div className="relative w-32 sm:w-36">
-                  <span className="absolute left-2 top-1 text-black text-xs font-bold font-mono">৳</span>
+                  <span className="absolute left-2 top-1 text-black text-xs font-bold  ">৳</span>
                   <input
                     type="number"
                     step="0.01"
@@ -1535,7 +1567,7 @@ const CreatePurchaseForm: React.FC = () => {
                     placeholder="0.00"
                     onWheel={(e) => e.currentTarget.blur()}
                     onChange={(e) => setTransportCost(e.target.value)}
-                    className="w-full pl-5 pr-2 py-1 text-xs border border-gray-300 rounded text-right font-mono text-black font-bold focus:outline-none focus:border-[var(--color-primary)]"
+                    className="w-full pl-5 pr-2 py-1 text-xs border border-gray-300 rounded text-right   text-black font-bold focus:outline-none focus:border-[var(--color-primary)]"
                   />
                 </div>
               </div>
@@ -1565,25 +1597,25 @@ const CreatePurchaseForm: React.FC = () => {
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 bg-gray-50/80 p-2 rounded-lg border border-gray-200">
             <div>
               <span className="text-[10px] text-black uppercase font-bold block">Subtotal</span>
-              <span className="text-xs font-bold font-mono text-black block text-right">
+              <span className="text-xs font-bold   text-black block text-right">
                 ৳ {formatMoney(rawSubtotal)}
               </span>
             </div>
             <div>
               <span className="text-[10px] text-black uppercase font-bold block">Discount</span>
-              <span className="text-xs font-bold font-mono text-rose-600 block text-right">
+              <span className="text-xs font-bold   text-rose-600 block text-right">
                 - ৳ {formatMoney(totalDiscount)}
               </span>
             </div>
             <div>
               <span className="text-[10px] text-black uppercase font-bold block">VAT + Transport</span>
-              <span className="text-xs font-bold font-mono text-black block text-right">
+              <span className="text-xs font-bold   text-black block text-right">
                 + ৳ {formatMoney(totalVat + calculatedTransport)}
               </span>
             </div>
             <div className="bg-sky-100/70 p-1 px-1.5 rounded text-right flex flex-col justify-center">
               <span className="text-[10px] text-sky-950 uppercase font-bold block">Grand Total</span>
-              <span className="text-xs sm:text-sm font-extrabold font-mono text-[var(--color-primary)] block">
+              <span className="text-xs sm:text-sm font-extrabold   text-[var(--color-primary)] block">
                 ৳ {formatMoney(grandTotal)}
               </span>
             </div>
@@ -1651,7 +1683,7 @@ const CreatePurchaseForm: React.FC = () => {
                     : "border-gray-300 focus-within:border-emerald-500 focus-within:ring-1 focus-within:ring-emerald-500"
                 }`}
               >
-                <span className="text-[11px] text-black font-bold px-2 bg-gray-50 h-full flex items-center border-r border-gray-200 font-mono select-none">
+                <span className="text-[11px] text-black font-bold px-2 bg-gray-50 h-full flex items-center border-r border-gray-200   select-none">
                   ৳
                 </span>
                 <input
@@ -1661,7 +1693,7 @@ const CreatePurchaseForm: React.FC = () => {
                   value={cashAmount}
                   onWheel={(e) => e.currentTarget.blur()}
                   onChange={(e) => setCashAmount(e.target.value)}
-                  className="w-full text-right px-1.5 text-xs font-mono font-bold text-black outline-none bg-transparent placeholder:text-gray-600"
+                  className="w-full text-right px-1.5 text-xs   font-bold text-black outline-none bg-transparent placeholder:text-gray-600"
                 />
               </div>
             </div>
@@ -1684,7 +1716,7 @@ const CreatePurchaseForm: React.FC = () => {
                 <span className="text-[11px] text-black font-semibold">Cash Tendered:</span>
                 <div className="flex items-center gap-2">
                   <div className="relative w-28 sm:w-32">
-                    <span className="absolute left-2 top-0.5 text-black text-xs font-bold font-mono">৳</span>
+                    <span className="absolute left-2 top-0.5 text-black text-xs font-bold  ">৳</span>
                     <input
                       type="number"
                       step="0.01"
@@ -1692,11 +1724,11 @@ const CreatePurchaseForm: React.FC = () => {
                       value={cashGiven}
                       onWheel={(e) => e.currentTarget.blur()}
                       onChange={(e) => setCashGiven(e.target.value)}
-                      className="w-full pl-5 pr-1.5 py-0.5 text-xs border border-gray-300 rounded text-right font-mono font-bold text-black bg-white outline-none focus:border-emerald-500"
+                      className="w-full pl-5 pr-1.5 py-0.5 text-xs border border-gray-300 rounded text-right   font-bold text-black bg-white outline-none focus:border-emerald-500"
                     />
                   </div>
                   {changeReturnAmount > 0 && (
-                    <span className="text-[11px] text-black font-mono font-bold">
+                    <span className="text-[11px] text-black   font-bold">
                       Return: ৳{formatMoney(changeReturnAmount)}
                     </span>
                   )}
@@ -1743,7 +1775,7 @@ const CreatePurchaseForm: React.FC = () => {
                     : "border-gray-300 focus-within:border-sky-500 focus-within:ring-1 focus-within:ring-sky-500"
                 }`}
               >
-                <span className="text-[11px] text-black font-bold px-2 bg-gray-50 h-full flex items-center border-r border-gray-200 font-mono select-none">
+                <span className="text-[11px] text-black font-bold px-2 bg-gray-50 h-full flex items-center border-r border-gray-200   select-none">
                   ৳
                 </span>
                 <input
@@ -1753,7 +1785,7 @@ const CreatePurchaseForm: React.FC = () => {
                   value={bankAmount}
                   onWheel={(e) => e.currentTarget.blur()}
                   onChange={(e) => setBankAmount(e.target.value)}
-                  className="w-full text-right px-1.5 text-xs font-mono font-bold text-black outline-none bg-transparent placeholder:text-gray-600"
+                  className="w-full text-right px-1.5 text-xs   font-bold text-black outline-none bg-transparent placeholder:text-gray-600"
                 />
               </div>
             </div>
@@ -1797,7 +1829,7 @@ const CreatePurchaseForm: React.FC = () => {
                     : "border-gray-300 focus-within:border-amber-500 focus-within:ring-1 focus-within:ring-amber-500"
                 }`}
               >
-                <span className="text-[11px] text-black font-bold px-2 bg-gray-50 h-full flex items-center border-r border-gray-200 font-mono select-none">
+                <span className="text-[11px] text-black font-bold px-2 bg-gray-50 h-full flex items-center border-r border-gray-200   select-none">
                   ৳
                 </span>
                 <input
@@ -1807,7 +1839,7 @@ const CreatePurchaseForm: React.FC = () => {
                   value={mfsAmount}
                   onWheel={(e) => e.currentTarget.blur()}
                   onChange={(e) => setMfsAmount(e.target.value)}
-                  className="w-full text-right px-1.5 text-xs font-mono font-bold text-black outline-none bg-transparent placeholder:text-gray-600"
+                  className="w-full text-right px-1.5 text-xs   font-bold text-black outline-none bg-transparent placeholder:text-gray-600"
                 />
               </div>
             </div>
@@ -1819,7 +1851,7 @@ const CreatePurchaseForm: React.FC = () => {
               <span className="text-[10px] font-bold text-black uppercase tracking-wide">
                 Total Paid (৳)
               </span>
-              <span className="text-xs sm:text-sm font-extrabold font-mono text-emerald-800">
+              <span className="text-xs sm:text-sm font-extrabold   text-emerald-800">
                 ৳ {formatMoney(totalPaid)}
               </span>
             </div>
@@ -1837,7 +1869,7 @@ const CreatePurchaseForm: React.FC = () => {
                 Due Balance (৳)
               </span>
               <span
-                className={`text-xs sm:text-sm font-extrabold font-mono ${
+                className={`text-xs sm:text-sm font-extrabold   ${
                   dueAmount > 0 ? "text-rose-600" : "text-black"
                 }`}
               >

@@ -149,7 +149,7 @@ export const SaleAnalysisChart: React.FC = () => {
                 className={`px-3 py-1 text-xs font-semibold rounded-md transition-all capitalize cursor-pointer ${
                   timeframe === tf
                     ? 'bg-[#009fe3] text-white shadow-sm'
-                    : 'text-gray-600 hover:text-gray-900'
+                    : 'text-gray-600 hover:text-black'
                 }`}
               >
                 {tf}

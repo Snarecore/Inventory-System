@@ -29,7 +29,7 @@ export const TopSaleItemsWidget: React.FC = () => {
               </div>
 
               <div className="text-right shrink-0">
-                <span className="font-bold text-gray-900">
+                <span className="font-bold text-black">
                   ৳{item.totalRevenue.toLocaleString('en-IN')}
                 </span>
                 <p className="text-[10px] text-gray-500">{item.soldQuantity} Sold</p>

@@ -196,7 +196,7 @@ const PurchaseOrders: React.FC = () => {
 
                   return (
                     <tr key={order.id || index} className="hover:bg-sky-50/40 transition-colors">
-                      <td className="py-2 px-3 text-center text-gray-500 font-mono text-[11px]">{sl}</td>
+                      <td className="py-2 px-3 text-center text-gray-500   text-[11px]">{sl}</td>
                       <td className="py-2 px-3">
                         <button
                           type="button"
@@ -204,7 +204,7 @@ const PurchaseOrders: React.FC = () => {
                             setSelectedPurchaseForView(order);
                             setIsViewModalOpen(true);
                           }}
-                          className="font-semibold text-[var(--color-primary)] hover:underline font-mono cursor-pointer"
+                          className="font-semibold text-[var(--color-primary)] hover:underline   cursor-pointer"
                         >
                           {order.invoiceNo || `PO-${order.id || index + 1}`}
                         </button>
@@ -216,11 +216,11 @@ const PurchaseOrders: React.FC = () => {
                         </span>
                       </td>
                       <td className="py-2 px-3">
-                        <span className="font-medium text-gray-900 block truncate max-w-[180px]">
+                        <span className="font-medium text-black block truncate max-w-[180px]">
                           {order.supplierName || "Supplier"}
                         </span>
                         {order.supplierPhone && (
-                          <span className="text-[10px] text-gray-500 flex items-center gap-1 font-mono">
+                          <span className="text-[10px] text-gray-500 flex items-center gap-1  ">
                             <FaPhone size={8} className="text-gray-400" />
                             {order.supplierPhone}
                           </span>
@@ -231,7 +231,7 @@ const PurchaseOrders: React.FC = () => {
                           {itemsCount}
                         </span>
                       </td>
-                      <td className="py-2 px-3 text-right font-bold text-gray-900 font-mono">
+                      <td className="py-2 px-3 text-right font-bold text-black  ">
                         ৳ {formatMoney(total)}
                       </td>
                       <td className="py-2 px-3 text-center">

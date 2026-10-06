@@ -69,7 +69,7 @@ const AppluPageUI = () => {
                     <div className="lg:col-span-2 space-y-6">
                       <div>
                         <MotionDiv>
-                        <h3 className="text-xl font-semibold text-gray-900 mb-4 flex items-center">
+                        <h3 className="text-xl font-semibold text-black mb-4 flex items-center">
                           <User className="w-5 h-5 mr-2 text-primary" />
                           Personal Information
                         </h3>
@@ -206,7 +206,7 @@ const AppluPageUI = () => {
     
                       {/* Address Information */}
                       <MotionDiv>
-                        <h3 className="text-xl font-semibold text-gray-900 mb-4 flex items-center">
+                        <h3 className="text-xl font-semibold text-black mb-4 flex items-center">
                           <MapPin className="w-5 h-5 mr-2 text-primary" />
                           Address Information
                         </h3>
@@ -250,7 +250,7 @@ const AppluPageUI = () => {
                     {/* Right Column - File Uploads */}
                     <MotionDiv className="space-y-6">
                       <div>
-                        <h3 className="text-xl font-semibold text-gray-900 mb-4 flex items-center">
+                        <h3 className="text-xl font-semibold text-black mb-4 flex items-center">
                           <Upload className="w-5 h-5 mr-2 text-primary" />
                           Document Uploads
                         </h3>

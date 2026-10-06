@@ -67,7 +67,7 @@ const RecruitPageUI = () => {
                 <div className="lg:col-span-2 space-y-6">
                   <div>
                    <MotionDiv>
-                   <h3 className="text-xl font-semibold text-gray-900 mb-4 flex items-center">
+                   <h3 className="text-xl font-semibold text-black mb-4 flex items-center">
                       <Building2 className="w-5 h-5 mr-2 text-primary" />
                       Company Information
                     </h3>
@@ -271,7 +271,7 @@ const RecruitPageUI = () => {
                   {/* Job Requirements */}
                   <div>
                    <MotionDiv>
-                   <h3 className="text-xl font-semibold text-gray-900 mb-4 flex items-center">
+                   <h3 className="text-xl font-semibold text-black mb-4 flex items-center">
                       <MapPin className="w-5 h-5 mr-2 text-primary" />
                       Recruitment Requirements
                     </h3>
@@ -301,7 +301,7 @@ const RecruitPageUI = () => {
                 {/* Right Column - Document Uploads */}
                 <div className="space-y-6">
                   <MotionDiv>
-                    <h3 className="text-xl font-semibold text-gray-900 mb-4 flex items-center">
+                    <h3 className="text-xl font-semibold text-black mb-4 flex items-center">
                       <Upload className="w-5 h-5 mr-2 text-primary" />
                       Relevant Documents
                     </h3>
@@ -368,7 +368,7 @@ const RecruitPageUI = () => {
 
                     {/* Partnership Benefits */}
                     <div className="bg-gray-50 rounded-lg p-4 mt-6">
-                      <h4 className="font-semibold text-gray-900 mb-2">Partnership Benefits</h4>
+                      <h4 className="font-semibold text-black mb-2">Partnership Benefits</h4>
                       <ul className="text-sm text-gray-600 space-y-1">
                         <li>• Access to pre-screened candidates</li>
                         <li>• Reduced hiring time and costs</li>

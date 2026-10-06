@@ -223,7 +223,7 @@ export const ProfitLossChart: React.FC = () => {
                 {isAllMonths ? '6M Total Income' : 'Monthly Income'}
               </span>
             </div>
-            <p className="font-bold text-lg text-gray-900 mt-1">
+            <p className="font-bold text-lg text-black mt-1">
               ৳{totalIncome.toLocaleString('en-IN')}
             </p>
           </div>
@@ -235,7 +235,7 @@ export const ProfitLossChart: React.FC = () => {
                 {isAllMonths ? '6M Total Expense' : 'Monthly Expense'}
               </span>
             </div>
-            <p className="font-bold text-lg text-gray-900 mt-1">
+            <p className="font-bold text-lg text-black mt-1">
               ৳{totalExpense.toLocaleString('en-IN')}
             </p>
           </div>

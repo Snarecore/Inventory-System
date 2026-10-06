@@ -169,7 +169,7 @@ const ChatWindow = ({ selectedUser }: { selectedUser: SelectedUser }) => {
                                 <div className="flex flex-col">
                                     <div className={`px-4 py-2 rounded-2xl ${msg.isMe
                                         ? 'bg-blue-500 text-white rounded-br-md'
-                                        : 'bg-white text-gray-900 rounded-bl-md border border-gray-200'
+                                        : 'bg-white text-black rounded-bl-md border border-gray-200'
                                         }`}>
                                         <p className="text-sm whitespace-pre-line">{msg.content}</p>
                                     </div>

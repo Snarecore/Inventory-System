@@ -27,7 +27,7 @@ const ChatSidebar = ({ setSelectedUser, selectedUser }: any) => {
     return (
         <div className="h-full flex flex-col bg-white">
             <div className="px-4 py-3.5 border-b border-gray-200">
-                <p className="text-xl font-bold text-gray-900">Chats</p>
+                <p className="text-xl font-bold text-black">Chats</p>
             </div>
 
             <div className="flex-1 p-2">

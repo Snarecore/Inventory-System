@@ -141,7 +141,7 @@ function GalleryPageUI() {
                   />
                 </div>
                 <MotionDiv className="p-4 text-center">
-                  <h3 className="font-semibold text-gray-900 mb-1">
+                  <h3 className="font-semibold text-black mb-1">
                     {client.name}
                   </h3>
                   <p className="text-gray-600 text-sm">{client.country}</p>
@@ -196,7 +196,7 @@ function GalleryPageUI() {
             </div>
 
             <div className="p-6 text-center">
-              <h3 className="text-2xl font-bold text-gray-900 mb-2">
+              <h3 className="text-2xl font-bold text-black mb-2">
                 {clients[selectedImageIndex].name}
               </h3>
               <p className="text-gray-600 text-lg mb-2">

@@ -25,7 +25,6 @@ const PurchaseStats: React.FC<PurchaseStatsProps> = ({
     {
       title: "Total Purchases",
       value: `৳ ${formatMoney(totalAmount)}`,
-      sub: `${totalCount} Invoices`,
       icon: FaShoppingBag,
       color: "text-blue-600",
       bg: "bg-blue-50 border-blue-100",
@@ -34,7 +33,6 @@ const PurchaseStats: React.FC<PurchaseStatsProps> = ({
     {
       title: "Total Paid",
       value: `৳ ${formatMoney(totalPaid)}`,
-      sub: "Settled payments",
       icon: FaMoneyBillWave,
       color: "text-emerald-600",
       bg: "bg-emerald-50 border-emerald-100",
@@ -43,7 +41,6 @@ const PurchaseStats: React.FC<PurchaseStatsProps> = ({
     {
       title: "Total Due / Credit",
       value: `৳ ${formatMoney(totalDue)}`,
-      sub: "Supplier balance due",
       icon: FaExclamationCircle,
       color: "text-rose-600",
       bg: "bg-rose-50 border-rose-100",
@@ -52,7 +49,6 @@ const PurchaseStats: React.FC<PurchaseStatsProps> = ({
     {
       title: "Avg. Purchase Value",
       value: `৳ ${formatMoney(totalCount > 0 ? totalAmount / totalCount : 0)}`,
-      sub: "Per invoice avg",
       icon: FaReceipt,
       color: "text-purple-600",
       bg: "bg-purple-50 border-purple-100",
@@ -75,9 +71,6 @@ const PurchaseStats: React.FC<PurchaseStatsProps> = ({
               </span>
               <span className={`text-base sm:text-lg font-bold truncate mt-0.5 ${card.color}`}>
                 {card.value}
-              </span>
-              <span className="text-[10px] text-gray-400 mt-0.5 truncate">
-                {card.sub}
               </span>
             </div>
             <div className={`p-2 rounded-lg shrink-0 ${card.iconBg}`}>

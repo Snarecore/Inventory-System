@@ -59,7 +59,7 @@ export const PartyDetailsModal: React.FC<PartyDetailsModalProps> = ({
               {isSupplier ? "Supplier" : "Customer"}
             </span>
             {partyCode && (
-              <span className="text-xs font-mono text-gray-500">
+              <span className="text-xs   text-gray-500">
                 (Code: {partyCode})
               </span>
             )}

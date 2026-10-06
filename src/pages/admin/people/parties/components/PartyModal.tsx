@@ -172,7 +172,7 @@ const PartyModal: React.FC<PartyModalProps> = ({
               className={`flex items-center justify-center gap-1.5 py-1.5 px-3 rounded-md text-xs font-semibold transition-all cursor-pointer ${
                 partyType === "CUSTOMER"
                   ? "bg-white text-[#009fe3] shadow-xs"
-                  : "text-gray-600 hover:text-gray-900"
+                  : "text-gray-600 hover:text-black"
               }`}
             >
               <FaUserTie className="text-xs" />
@@ -184,7 +184,7 @@ const PartyModal: React.FC<PartyModalProps> = ({
               className={`flex items-center justify-center gap-1.5 py-1.5 px-3 rounded-md text-xs font-semibold transition-all cursor-pointer ${
                 partyType === "SUPPLIER"
                   ? "bg-white text-[#28c76f] shadow-xs"
-                  : "text-gray-600 hover:text-gray-900"
+                  : "text-gray-600 hover:text-black"
               }`}
             >
               <FaTruck className="text-xs" />
