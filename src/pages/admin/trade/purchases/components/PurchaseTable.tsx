@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useMemo } from "react";
 import { FiEye, FiEdit, FiPrinter } from "react-icons/fi";
 import { BsFilterRight } from "react-icons/bs";
 import Search from "@/components/table-components/Search";
@@ -6,7 +6,7 @@ import EmptyState from "@/components/empty-state/EmptyState";
 import TableSkeleton from "@/components/skeleton/TableSkeleton";
 import Pagination from "@/components/pagination";
 import type { PurchaseItem, PartyItem } from "@/types";
-import { FaPhone, FaCalendarAlt, FaSlidersH } from "react-icons/fa";
+import { FaPhone, FaCalendarAlt, FaSlidersH, FaSearch } from "react-icons/fa";
 
 interface PurchaseTableProps {
   purchases: PurchaseItem[];
@@ -63,12 +63,19 @@ export const PurchaseTable: React.FC<PurchaseTableProps> = ({
   onOpenChallanSettings,
 }) => {
   const [isSortOpen, setIsSortOpen] = useState<boolean>(false);
+  const [isSupplierDropdownOpen, setIsSupplierDropdownOpen] = useState<boolean>(false);
+  const [supplierSearchQuery, setSupplierSearchQuery] = useState<string>("");
+
   const sortRef = useRef<HTMLDivElement>(null);
+  const supplierRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (sortRef.current && !sortRef.current.contains(event.target as Node)) {
         setIsSortOpen(false);
+      }
+      if (supplierRef.current && !supplierRef.current.contains(event.target as Node)) {
+        setIsSupplierDropdownOpen(false);
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
@@ -82,6 +89,28 @@ export const PurchaseTable: React.FC<PurchaseTableProps> = ({
       maximumFractionDigits: 2,
     }).format(num);
   };
+
+  // Filtered suppliers for searchable dropdown
+  const filteredSupplierOptions = useMemo(() => {
+    if (!supplierSearchQuery.trim()) return suppliersList;
+    const q = supplierSearchQuery.toLowerCase().trim();
+    return suppliersList.filter((s) => {
+      const name = (s.name || s.partyName || "").toLowerCase();
+      const phone = (s.phone || s.partyPhone || "").toLowerCase();
+      return name.includes(q) || phone.includes(q);
+    });
+  }, [suppliersList, supplierSearchQuery]);
+
+  const selectedSupplierObj = useMemo(() => {
+    if (!supplierFilter) return null;
+    return suppliersList.find(
+      (s) => String(s.id ?? s.partyId ?? s.name ?? "") === String(supplierFilter)
+    );
+  }, [suppliersList, supplierFilter]);
+
+  const currentSupplierLabel = selectedSupplierObj
+    ? (selectedSupplierObj.name || selectedSupplierObj.partyName || "Supplier")
+    : "All Suppliers";
 
   const statusOptions = [
     { value: "", label: "All Payment Status" },
@@ -98,14 +127,6 @@ export const PurchaseTable: React.FC<PurchaseTableProps> = ({
     { value: "CREDIT", label: "Credit" },
   ];
 
-  const supplierOptions = [
-    { value: "", label: "All Suppliers" },
-    ...suppliersList.map((s) => ({
-      value: String(s.id ?? s.partyId ?? s.party_id ?? s.name ?? ""),
-      label: s.name || s.partyName || s.party_name || "Supplier",
-    })),
-  ];
-
   const sortOptions = [
     { value: "latest", label: "Latest Purchases" },
     { value: "amount_high_to_low", label: "Amount: High to Low" },
@@ -120,33 +141,91 @@ export const PurchaseTable: React.FC<PurchaseTableProps> = ({
       <div className="p-2.5 sm:p-3 border-b border-gray-100 flex flex-col lg:flex-row lg:items-center justify-between gap-2.5">
         <div className="flex flex-col sm:flex-row sm:items-center gap-2 flex-1 flex-wrap">
           {/* Search Box */}
-          <div className="w-full sm:w-64">
+          <div className="w-full sm:w-48">
             <Search
               searchQuery={searchQuery}
               onSearchChange={setSearchQuery}
               setSearchQuery={setSearchQuery}
-              placeholder="Search invoice, supplier, phone..."
+              placeholder="Search purchases..."
             />
           </div>
 
-          {/* Supplier Filter */}
+          {/* Searchable Supplier Filter */}
           {suppliersList.length > 0 && (
-            <div className="w-full sm:w-44">
-              <select
-                value={supplierFilter}
-                onChange={(e) => {
-                  setSupplierFilter(e.target.value);
-                  setCurrentPageNumber(1);
-                }}
-                className="w-full h-8 px-2.5 text-xs border border-gray-200 rounded-lg bg-gray-50/50 hover:bg-white text-black font-medium focus:outline-none focus:border-[var(--color-primary)] cursor-pointer"
+            <div className="relative w-full sm:w-48" ref={supplierRef}>
+              <button
+                type="button"
+                onClick={() => setIsSupplierDropdownOpen(!isSupplierDropdownOpen)}
+                className="w-full h-8 px-2.5 flex items-center justify-between text-xs border border-gray-200 rounded-lg bg-gray-50/50 hover:bg-white text-black font-medium focus:outline-none focus:border-[var(--color-primary)] cursor-pointer"
               >
-                <option value="">All Suppliers</option>
-                {suppliersList.map((s) => (
-                  <option key={s.id ?? s.partyId ?? s.name} value={String(s.id ?? s.partyId ?? s.name)}>
-                    {s.name || s.partyName || "Supplier"}
-                  </option>
-                ))}
-              </select>
+                <span className="truncate max-w-[145px]">{currentSupplierLabel}</span>
+                <span className="text-[10px] text-gray-500 ml-1">▼</span>
+              </button>
+
+              {isSupplierDropdownOpen && (
+                <div className="absolute left-0 mt-1 w-64 bg-white rounded-lg shadow-xl border border-gray-200 p-2 z-50">
+                  <div className="relative mb-2">
+                    <FaSearch className="absolute left-2.5 top-2.5 text-gray-400 text-xs" />
+                    <input
+                      type="text"
+                      placeholder="Search supplier name, phone..."
+                      value={supplierSearchQuery}
+                      onChange={(e) => setSupplierSearchQuery(e.target.value)}
+                      className="w-full pl-7 pr-2 py-1.5 text-xs border border-gray-200 rounded-md focus:outline-none focus:border-[var(--color-primary)] text-black"
+                      autoFocus
+                    />
+                  </div>
+
+                  <div className="max-h-48 overflow-y-auto divide-y divide-gray-100">
+                    <div
+                      onClick={() => {
+                        setSupplierFilter("");
+                        setIsSupplierDropdownOpen(false);
+                        setSupplierSearchQuery("");
+                        setCurrentPageNumber(1);
+                      }}
+                      className={`p-2 hover:bg-sky-50 cursor-pointer rounded-md transition-colors text-xs font-medium ${
+                        !supplierFilter ? "bg-sky-50 text-[var(--color-primary)] font-semibold" : "text-black"
+                      }`}
+                    >
+                      All Suppliers
+                    </div>
+
+                    {filteredSupplierOptions.length > 0 ? (
+                      filteredSupplierOptions.map((s) => {
+                        const sVal = String(s.id ?? s.partyId ?? s.name ?? "");
+                        const isSelected = supplierFilter === sVal;
+                        const sName = s.name || s.partyName || "Supplier";
+                        const sPhone = s.phone || s.partyPhone || "";
+
+                        return (
+                          <div
+                            key={s.id ?? s.partyId ?? s.name}
+                            onClick={() => {
+                              setSupplierFilter(sVal);
+                              setIsSupplierDropdownOpen(false);
+                              setSupplierSearchQuery("");
+                              setCurrentPageNumber(1);
+                            }}
+                            className={`p-2 hover:bg-sky-50 cursor-pointer rounded-md transition-colors text-xs flex justify-between items-center ${
+                              isSelected ? "bg-sky-50 text-[var(--color-primary)] font-semibold" : "text-black"
+                            }`}
+                          >
+                            <span className="truncate">{sName}</span>
+                            {sPhone && (
+                              <span className="text-[10px] text-gray-500 font-mono shrink-0 ml-1">
+                                ({sPhone})
+                              </span>
+                            )}
+                          </div>
+                        );
+                      })
+                    ) : (
+                      <div className="p-3 text-center text-gray-400 text-xs">No supplier found</div>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
@@ -249,7 +328,7 @@ export const PurchaseTable: React.FC<PurchaseTableProps> = ({
         ) : (
           <table className="w-full text-left border-collapse text-xs">
             <thead>
-              <tr className="bg-gray-50/80 border-b border-gray-200 text-xs font-semibold text-black">
+              <tr className="bg-[#009fe3] text-white text-xs font-semibold">
                 <th className="py-2.5 px-3 text-center w-10">SL</th>
                 <th className="py-2.5 px-3">Invoice No</th>
                 <th className="py-2.5 px-3">Date</th>
