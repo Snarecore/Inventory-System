@@ -401,65 +401,164 @@ const CreatePurchaseForm: React.FC = () => {
     }
   }, [rawChallanSettings]);
 
+  // 1. Resolve edit data from location state OR from loaded purchase list matching routeId
+  const effectiveEditData: any = useMemo(() => {
+    if (stateEditData) return stateEditData;
+    if (!routeId || !rawPurchaseData) return null;
+
+    let list: any[] = [];
+    if (Array.isArray(rawPurchaseData)) {
+      list = rawPurchaseData;
+    } else if (rawPurchaseData && typeof rawPurchaseData === "object") {
+      const raw = rawPurchaseData as any;
+      if (Array.isArray(raw.purchaseList)) list = raw.purchaseList;
+      else if (Array.isArray(raw.purchasesList)) list = raw.purchasesList;
+      else if (Array.isArray(raw.purchaseListDetails)) list = raw.purchaseListDetails;
+      else if (Array.isArray(raw.purchaseInfoList)) list = raw.purchaseInfoList;
+      else if (Array.isArray(raw.data)) list = raw.data;
+      else if (raw.data && typeof raw.data === "object") {
+        if (Array.isArray(raw.data.purchaseList)) list = raw.data.purchaseList;
+        else if (Array.isArray(raw.data.purchasesList)) list = raw.data.purchasesList;
+        else if (Array.isArray(raw.data.data)) list = raw.data.data;
+      }
+    }
+
+    const found = list.find((p: any) => {
+      if (!p) return false;
+      const id = String(p.id ?? p.purchaseId ?? p.purchase_id ?? p.purId ?? "");
+      const inv = String(p.invoiceNo ?? p.invoice_no ?? p.billNo ?? "");
+      return id === String(routeId) || inv === String(routeId);
+    });
+
+    return found || null;
+  }, [stateEditData, routeId, rawPurchaseData]);
+
   // Prefill in Edit Mode
   useEffect(() => {
-    if (stateEditData) {
-      setInvoiceNo(stateEditData.invoiceNo || "");
-      setPurchaseDate(stateEditData.purchaseDate || new Date().toISOString().substring(0, 10));
-      setChallanNo(stateEditData.challanNo || "");
-      setVehicleNo(stateEditData.vehicleNo || "");
-      setDriverName(stateEditData.driverName || "");
-      setDriverPhone(stateEditData.driverPhone || "");
-      setDeliveryDate(stateEditData.deliveryDate || stateEditData.delivery_date || "");
-      setTransportCost(stateEditData.transportCost || stateEditData.delivery_charge ? String(stateEditData.transportCost || stateEditData.delivery_charge) : "");
-      setNotes(stateEditData.note || "");
-      setInvoiceDiscount(stateEditData.discount ? String(stateEditData.discount) : "");
-      setInvoiceDiscountType(stateEditData.discountType === "PERCENT" ? "PERCENT" : "FLAT");
-      setInvoiceVat(stateEditData.vat ? String(stateEditData.vat) : "");
+    if (effectiveEditData) {
+      const data: any = effectiveEditData;
+      setInvoiceNo(data.invoiceNo || data.invoice_no || data.billNo || "");
+      setPurchaseDate(data.purchaseDate || data.salesDate || data.date || new Date().toISOString().substring(0, 10));
+      setChallanNo(data.challanNo || data.challan_no || data.challanRefNo || "");
+      setVehicleNo(data.vehicleNo || data.vehicle_no || data.truckNo || "");
+      setDriverName(data.driverName || data.driver_name || "");
+      setDriverPhone(data.driverPhone || data.driver_phone || "");
+      setPoNumber(data.poNumber || data.po_number || data.poNo || "");
+      setDeliveryDate(data.deliveryDate || data.delivery_date || "");
+
+      const transport = data.transportCost ?? data.transport_cost ?? data.delivery_charge ?? data.deliveryCharge ?? "";
+      setTransportCost(transport !== "" && transport !== null && Number(transport) > 0 ? String(transport) : "");
+
+      setNotes(data.note || data.notes || data.remarks || "");
+
+      const disc = data.discount ?? data.discountAmount ?? data.discount_amount ?? "";
+      setInvoiceDiscount(disc !== "" && disc !== null && Number(disc) > 0 ? String(disc) : "");
+      setInvoiceDiscountType(data.discountType === "PERCENT" || data.discount_type === "PERCENT" ? "PERCENT" : "FLAT");
+
+      const vatVal = data.vat ?? data.vatAmount ?? data.vat_amount ?? data.invoiceVat ?? "";
+      setInvoiceVat(vatVal !== "" && vatVal !== null && Number(vatVal) > 0 ? String(vatVal) : "");
 
       // Split payments
-      setCashAmount(stateEditData.cashReceived ? String(stateEditData.cashReceived) : "");
-      setBankAmount(stateEditData.cardReceived ? String(stateEditData.cardReceived) : "");
-      setMfsAmount(stateEditData.mfsReceived ? String(stateEditData.mfsReceived) : "");
-      setBankName(stateEditData.bankName || "");
-      setAccountNo(stateEditData.accountNo || "");
-      setBankRef(stateEditData.bankAccountName || "");
-      setMfsName(stateEditData.mfsName || "bKash");
-      setMfsPhone(stateEditData.mfsPhone || "");
+      const cash =
+        data.cashReceived ??
+        data.cash_received ??
+        data.cashAmount ??
+        (data.paymentType === "CASH" && !data.bankId && !data.mfsId ? data.paidAmount : "");
+      const bank =
+        data.cardReceived ??
+        data.card_received ??
+        data.bankAmount ??
+        (data.bankId || data.bank_id ? data.paidAmount : "");
+      const mfs =
+        data.mfsReceived ??
+        data.mfs_received ??
+        data.mfsAmount ??
+        (data.mfsId || data.mfs_id ? data.paidAmount : "");
 
-      if (stateEditData.supplierId || stateEditData.supplierName) {
+      setCashAmount(cash !== "" && cash !== null && Number(cash) > 0 ? String(cash) : "");
+      setBankAmount(bank !== "" && bank !== null && Number(bank) > 0 ? String(bank) : "");
+      setMfsAmount(mfs !== "" && mfs !== null && Number(mfs) > 0 ? String(mfs) : "");
+
+      if (data.bankId || data.bank_id) setSelectedBankId(String(data.bankId || data.bank_id));
+      setBankName(data.bankName || data.bank_name || "");
+      setAccountNo(data.accountNo || data.account_no || "");
+      setBankRef(data.bankAccountName || data.bank_account_name || data.branchName || "");
+
+      if (data.mfsId || data.mfs_id) setSelectedMfsId(String(data.mfsId || data.mfs_id));
+      setMfsName(data.mfsName || data.mfs_name || "bKash");
+      setMfsPhone(data.mfsPhone || data.mfs_phone || "");
+
+      // Supplier
+      const suppId = data.supplierId || data.supplier_id || data.customerId || data.customer_id;
+      const suppName = data.supplierName || data.supplier_name || data.customerName || data.customer_name;
+      const suppPhone = data.supplierPhone || data.supplier_phone || data.customerPhone || data.customer_phone;
+      const suppAddress = data.supplierAddress || data.supplier_address || data.customerAddress || data.customer_address;
+
+      if (suppId || suppName) {
         const found = suppliersList.find(
           (s) =>
-            (stateEditData.supplierId && (s.id === stateEditData.supplierId || s.partyId === stateEditData.supplierId)) ||
-            (stateEditData.supplierName && (s.name === stateEditData.supplierName || s.partyName === stateEditData.supplierName))
+            (suppId && (String(s.id) === String(suppId) || String(s.partyId) === String(suppId))) ||
+            (suppName && (s.name === suppName || s.partyName === suppName))
         );
         if (found) {
           setSelectedSupplier(found);
         } else {
           setSelectedSupplier({
-            id: stateEditData.supplierId,
-            name: stateEditData.supplierName,
-            phone: stateEditData.supplierPhone,
-            address: stateEditData.supplierAddress,
+            id: suppId,
+            name: suppName,
+            phone: suppPhone,
+            address: suppAddress,
           });
         }
       }
 
-      if (Array.isArray(stateEditData.purchaseDetails)) {
-        const loadedItems: FormLineItem[] = stateEditData.purchaseDetails.map((item) => ({
-          productId: item.productId,
-          productCode: item.productCode || item.pcode || "",
-          productName: item.productName || "Product",
-          unit: item.unit || "pcs",
-          buyPrice: String(item.buyPrice || ""),
-          quantity: String(item.quantity || "1"),
-          vat: item.vat ? String(item.vat) : "",
-          total: Number(item.total || Number(item.buyPrice || 0) * Number(item.quantity || 1)),
-        }));
+      // Line Items (Purchase Details)
+      const rawDetails =
+        data.purchaseDetails ||
+        data.purchasesDetails ||
+        data.purchase_details ||
+        data.details ||
+        data.items ||
+        data.products ||
+        data.purchaseListDetails ||
+        data.salesDetails ||
+        [];
+
+      if (Array.isArray(rawDetails) && rawDetails.length > 0) {
+        const loadedItems: FormLineItem[] = rawDetails.map((item: any) => {
+          const buyP =
+            item.buyPrice ??
+            item.buy_price ??
+            item.price ??
+            item.rate ??
+            item.sellPrice ??
+            item.unitPrice ??
+            item.unit_price ??
+            0;
+          const q = item.quantity ?? item.qty ?? item.quantity_count ?? item.count ?? 1;
+          const v = item.vat ?? item.vat_percent ?? item.vatPercent ?? 0;
+          const tot =
+            item.total ??
+            item.total_price ??
+            item.subtotal ??
+            item.totalAmount ??
+            Number(buyP) * Number(q);
+
+          return {
+            productId: item.productId ?? item.product_id ?? item.id ?? item.prodId ?? "",
+            productCode: item.productCode || item.product_code || item.pcode || item.code || "",
+            productName: item.productName || item.product_name || item.name || item.title || "Product",
+            unit: item.unit || item.unitName || "pcs",
+            buyPrice: String(buyP),
+            quantity: String(q),
+            vat: v ? String(v) : "",
+            total: Number(tot),
+          };
+        });
         setLineItems(loadedItems);
       }
     }
-  }, [stateEditData, suppliersList]);
+  }, [effectiveEditData, suppliersList]);
 
   // Filtered Products for Search Dropdown
   const filteredProducts = useMemo(() => {
