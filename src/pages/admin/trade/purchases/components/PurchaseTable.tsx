@@ -123,6 +123,7 @@ export const PurchaseTable: React.FC<PurchaseTableProps> = ({
           <div className="w-full sm:w-64">
             <Search
               searchQuery={searchQuery}
+              onSearchChange={setSearchQuery}
               setSearchQuery={setSearchQuery}
               placeholder="Search invoice, supplier, phone..."
             />
