@@ -958,13 +958,13 @@ const CreatePurchaseForm: React.FC = () => {
         {/* Supplier Selector */}
         <div className="relative" ref={supplierRef}>
           <div className="flex items-center justify-between mb-1">
-            <label className="text-[11px] font-semibold text-gray-700 uppercase tracking-wider">
+            <label className="text-[11px] font-bold text-black uppercase tracking-wider">
               Supplier <span className="text-rose-500">*</span>
             </label>
             <button
               type="button"
               onClick={() => setIsPartyModalOpen(true)}
-              className="text-[11px] font-medium text-[var(--color-primary)] hover:underline flex items-center gap-1 cursor-pointer"
+              className="text-[11px] font-bold text-[var(--color-primary)] hover:underline flex items-center gap-1 cursor-pointer"
             >
               <FaUserPlus size={10} /> + New
             </button>
@@ -972,26 +972,28 @@ const CreatePurchaseForm: React.FC = () => {
 
           <div
             onClick={() => setIsSupplierDropdownOpen(!isSupplierDropdownOpen)}
-            className="flex items-center justify-between p-2 border border-gray-300 rounded-lg bg-gray-50/50 hover:bg-white cursor-pointer text-xs"
+            className="flex items-center justify-between h-9 px-2.5 py-1.5 border border-gray-300 rounded-lg bg-gray-50/50 hover:bg-white cursor-pointer text-xs"
           >
             {selectedSupplier ? (
-              <div className="flex flex-col min-w-0">
-                <span className="font-bold text-gray-900 truncate">
+              <div className="flex items-center gap-1.5 min-w-0 truncate">
+                <span className="font-bold text-black truncate">
                   {selectedSupplier.name || selectedSupplier.partyName}
                 </span>
-                <span className="text-[10px] text-gray-500 font-mono">
-                  {selectedSupplier.phone || selectedSupplier.partyPhone || "No Phone"}
-                </span>
+                {(selectedSupplier.phone || selectedSupplier.partyPhone) && (
+                  <span className="text-[11px] text-gray-700 font-mono shrink-0">
+                    ({selectedSupplier.phone || selectedSupplier.partyPhone})
+                  </span>
+                )}
               </div>
             ) : (
               <span className="text-gray-400">Select or search supplier...</span>
             )}
-            <span className="text-gray-400 text-xs">▼</span>
+            <span className="text-gray-500 text-xs ml-1 shrink-0">▼</span>
           </div>
 
           {/* Supplier Dropdown Panel */}
           {isSupplierDropdownOpen && (
-            <div className="absolute left-0 mt-1 w-72 bg-white rounded-lg shadow-xl border border-gray-200 p-2 z-40">
+            <div className="absolute left-0 mt-1 w-80 bg-white rounded-lg shadow-xl border border-gray-200 p-2 z-40">
               <div className="relative mb-2">
                 <FaSearch className="absolute left-2.5 top-2.5 text-gray-400 text-xs" />
                 <input
@@ -999,7 +1001,7 @@ const CreatePurchaseForm: React.FC = () => {
                   placeholder="Search supplier name, phone..."
                   value={supplierSearchQuery}
                   onChange={(e) => setSupplierSearchQuery(e.target.value)}
-                  className="w-full pl-7 pr-2 py-1.5 text-xs border border-gray-200 rounded-md focus:outline-none focus:border-[var(--color-primary)]"
+                  className="w-full pl-7 pr-2 py-1.5 text-xs border border-gray-200 rounded-md focus:outline-none focus:border-[var(--color-primary)] text-black"
                   autoFocus
                 />
               </div>
@@ -1015,12 +1017,14 @@ const CreatePurchaseForm: React.FC = () => {
                       }}
                       className="p-2 hover:bg-sky-50 cursor-pointer rounded-md transition-colors text-xs flex justify-between items-center"
                     >
-                      <div>
-                        <span className="font-semibold text-gray-900 block">{s.name || s.partyName}</span>
-                        <span className="text-[10px] text-gray-500 font-mono">{s.phone || s.partyPhone}</span>
+                      <div className="flex items-center gap-1.5 truncate">
+                        <span className="font-semibold text-black">{s.name || s.partyName}</span>
+                        {(s.phone || s.partyPhone) && (
+                          <span className="text-[11px] text-gray-500 font-mono">({s.phone || s.partyPhone})</span>
+                        )}
                       </div>
                       {(s.balance || s.openingBalance || s.dueAmount) && (
-                        <span className="text-[10px] font-mono text-rose-600 bg-rose-50 px-1.5 py-0.5 rounded">
+                        <span className="text-[10px] font-mono text-rose-600 bg-rose-50 px-1.5 py-0.5 rounded shrink-0 ml-1">
                           Bal: ৳{s.balance || s.openingBalance || s.dueAmount}
                         </span>
                       )}
@@ -1036,42 +1040,42 @@ const CreatePurchaseForm: React.FC = () => {
 
         {/* Invoice No */}
         <div>
-          <label className="text-[11px] font-semibold text-gray-700 uppercase tracking-wider block mb-1">
+          <label className="text-[11px] font-bold text-black uppercase tracking-wider block mb-1">
             Invoice No <span className="text-rose-500">*</span>
           </label>
           <input
             type="text"
             value={invoiceNo}
             onChange={(e) => setInvoiceNo(e.target.value)}
-            className="w-full p-2 text-xs border border-gray-300 rounded-lg focus:outline-none focus:border-[var(--color-primary)] font-mono font-medium"
+            className="w-full h-9 px-2.5 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:border-[var(--color-primary)] font-mono font-bold text-black"
             placeholder="INV-0001"
           />
         </div>
 
         {/* Purchase Date */}
         <div>
-          <label className="text-[11px] font-semibold text-gray-700 uppercase tracking-wider block mb-1">
+          <label className="text-[11px] font-bold text-black uppercase tracking-wider block mb-1">
             Purchase Date <span className="text-rose-500">*</span>
           </label>
           <input
             type="date"
             value={purchaseDate}
             onChange={(e) => setPurchaseDate(e.target.value)}
-            className="w-full p-2 text-xs border border-gray-300 rounded-lg focus:outline-none focus:border-[var(--color-primary)] font-medium"
+            className="w-full h-9 px-2.5 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:border-[var(--color-primary)] font-semibold text-black"
           />
         </div>
 
         {/* Optional Challan No */}
         {challanSettings.showChallanNo && (
           <div>
-            <label className="text-[11px] font-semibold text-gray-700 uppercase tracking-wider block mb-1">
+            <label className="text-[11px] font-bold text-black uppercase tracking-wider block mb-1">
               Challan Ref No
             </label>
             <input
               type="text"
               value={challanNo}
               onChange={(e) => setChallanNo(e.target.value)}
-              className="w-full p-2 text-xs border border-gray-300 rounded-lg focus:outline-none focus:border-[var(--color-primary)] font-mono"
+              className="w-full h-9 px-2.5 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:border-[var(--color-primary)] font-mono font-semibold text-black"
               placeholder="e.g. CH-98234"
             />
           </div>
@@ -1080,14 +1084,14 @@ const CreatePurchaseForm: React.FC = () => {
         {/* Optional Vehicle No */}
         {challanSettings.showVehicleNo && (
           <div>
-            <label className="text-[11px] font-semibold text-gray-700 uppercase tracking-wider block mb-1">
+            <label className="text-[11px] font-bold text-black uppercase tracking-wider block mb-1">
               Vehicle / Truck No
             </label>
             <input
               type="text"
               value={vehicleNo}
               onChange={(e) => setVehicleNo(e.target.value)}
-              className="w-full p-2 text-xs border border-gray-300 rounded-lg focus:outline-none focus:border-[var(--color-primary)] font-mono"
+              className="w-full h-9 px-2.5 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:border-[var(--color-primary)] font-mono font-semibold text-black"
               placeholder="e.g. DHAKA-METRO-11-2233"
             />
           </div>
@@ -1096,14 +1100,14 @@ const CreatePurchaseForm: React.FC = () => {
         {/* Optional Driver Name */}
         {challanSettings.showDriverName && (
           <div>
-            <label className="text-[11px] font-semibold text-gray-700 uppercase tracking-wider block mb-1">
+            <label className="text-[11px] font-bold text-black uppercase tracking-wider block mb-1">
               Driver Name
             </label>
             <input
               type="text"
               value={driverName}
               onChange={(e) => setDriverName(e.target.value)}
-              className="w-full p-2 text-xs border border-gray-300 rounded-lg focus:outline-none focus:border-[var(--color-primary)]"
+              className="w-full h-9 px-2.5 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:border-[var(--color-primary)] font-semibold text-black"
               placeholder="e.g. Rafiq Hossain"
             />
           </div>
@@ -1112,14 +1116,14 @@ const CreatePurchaseForm: React.FC = () => {
         {/* Optional Driver Phone */}
         {challanSettings.showDriverPhone && (
           <div>
-            <label className="text-[11px] font-semibold text-gray-700 uppercase tracking-wider block mb-1">
+            <label className="text-[11px] font-bold text-black uppercase tracking-wider block mb-1">
               Driver Phone
             </label>
             <input
               type="text"
               value={driverPhone}
               onChange={(e) => setDriverPhone(e.target.value)}
-              className="w-full p-2 text-xs border border-gray-300 rounded-lg focus:outline-none focus:border-[var(--color-primary)] font-mono"
+              className="w-full h-9 px-2.5 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:border-[var(--color-primary)] font-mono font-semibold text-black"
               placeholder="017xxxxxxxx"
             />
           </div>
@@ -1128,15 +1132,15 @@ const CreatePurchaseForm: React.FC = () => {
         {/* Optional PO Number */}
         {challanSettings.showPoNumber && (
           <div>
-            <label className="text-[11px] font-semibold text-gray-700 uppercase tracking-wider block mb-1">
-              PO 
+            <label className="text-[11px] font-bold text-black uppercase tracking-wider block mb-1">
+              PO Number
             </label>
             <input
               type="text"
               value={poNumber}
               onChange={(e) => setPoNumber(e.target.value)}
-              className="w-full p-2 text-xs border border-gray-300 rounded-lg focus:outline-none focus:border-[var(--color-primary)] font-mono"
-              placeholder="PO-2026-001"
+              className="w-full h-9 px-2.5 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:border-[var(--color-primary)] font-mono font-semibold text-black"
+              placeholder="e.g. PO-2026-001"
             />
           </div>
         )}
@@ -1223,15 +1227,15 @@ const CreatePurchaseForm: React.FC = () => {
         <div className="overflow-x-auto w-full">
           <table className="w-full text-xs text-left border-collapse">
             <thead>
-              <tr className="bg-gray-50 border-b border-gray-200 text-[11px] font-semibold text-gray-600 uppercase tracking-wider">
-                <th className="py-2 px-2 text-center w-8">#</th>
-                <th className="py-2 px-3 min-w-[190px]">Product</th>
-                <th className="py-2 px-2 text-center w-16">Unit</th>
-                <th className="py-2 px-2 text-right w-28">Buy Price (৳)</th>
-                <th className="py-2 px-2 text-center w-24">Quantity</th>
-                <th className="py-2 px-2 text-right w-20">VAT (%)</th>
-                <th className="py-2 px-3 text-right w-28">Total (৳)</th>
-                <th className="py-2 px-2 text-center w-10"></th>
+              <tr className="bg-gray-50 border-b border-gray-200 text-[11px] font-semibold text-black uppercase tracking-wider">
+                <th className="py-2 px-2 text-center w-8 whitespace-nowrap">#</th>
+                <th className="py-2 px-3 min-w-[180px]">Product</th>
+                <th className="py-2 px-2 text-center w-16 whitespace-nowrap">Unit</th>
+                <th className="py-2 px-2 text-right w-28 min-w-[110px] whitespace-nowrap">Buy Price (৳)</th>
+                <th className="py-2 px-2 text-center w-28 min-w-[110px] whitespace-nowrap">Quantity</th>
+                <th className="py-2 px-2 text-right w-20 min-w-[70px] whitespace-nowrap">VAT (%)</th>
+                <th className="py-2 px-3 text-right w-36 min-w-[130px] whitespace-nowrap">Total (৳)</th>
+                <th className="py-2 px-2 text-center w-10 whitespace-nowrap"></th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
@@ -1239,29 +1243,29 @@ const CreatePurchaseForm: React.FC = () => {
                 lineItems.map((item, idx) => (
                   <tr key={idx} className="hover:bg-gray-50/70 transition-colors">
                     {/* SL */}
-                    <td className="py-2 px-2 text-center text-gray-500 font-mono text-[11px]">
+                    <td className="py-2 px-2 text-center text-gray-700 font-mono text-[11px] whitespace-nowrap">
                       {idx + 1}
                     </td>
 
                     {/* Product Name & Code */}
                     <td className="py-2 px-3">
-                      <span className="font-semibold text-gray-900 block">{item.productName}</span>
+                      <span className="font-semibold text-black block">{item.productName}</span>
                       {item.productCode && (
-                        <span className="text-[10px] text-gray-400 font-mono">Code: {item.productCode}</span>
+                        <span className="text-[10px] text-gray-500 font-mono">Code: {item.productCode}</span>
                       )}
                     </td>
 
                     {/* Unit */}
-                    <td className="py-2 px-2 text-center">
-                      <span className="text-gray-600 bg-gray-100 px-1.5 py-0.5 rounded text-[11px]">
+                    <td className="py-2 px-2 text-center whitespace-nowrap">
+                      <span className="text-black font-semibold bg-gray-100 px-1.5 py-0.5 rounded text-[11px]">
                         {item.unit || "pcs"}
                       </span>
                     </td>
 
                     {/* Buy Price (Right Aligned Money Input, No Wheel/Spinners) */}
-                    <td className="py-2 px-2 text-right">
+                    <td className="py-2 px-2 text-right whitespace-nowrap">
                       <div className="relative inline-block w-full">
-                        <span className="absolute left-1.5 top-1.5 text-gray-400 text-[11px]">৳</span>
+                        <span className="absolute left-1.5 top-1.5 text-black font-bold text-[11px]">৳</span>
                         <input
                           type="number"
                           step="0.01"
@@ -1269,13 +1273,13 @@ const CreatePurchaseForm: React.FC = () => {
                           placeholder="0.00"
                           onWheel={(e) => e.currentTarget.blur()}
                           onChange={(e) => handleUpdateLineItem(idx, "buyPrice", e.target.value)}
-                          className="w-full pl-5 pr-1.5 py-1 text-xs border border-gray-300 rounded text-right font-mono font-medium focus:outline-none focus:border-[var(--color-primary)]"
+                          className="w-full pl-5 pr-1.5 py-1 text-xs border border-gray-300 rounded text-right font-mono font-bold text-black focus:outline-none focus:border-[var(--color-primary)]"
                         />
                       </div>
                     </td>
 
                     {/* Quantity (Stepper) */}
-                    <td className="py-2 px-2 text-center">
+                    <td className="py-2 px-2 text-center whitespace-nowrap">
                       <div className="inline-flex items-center border border-gray-300 rounded overflow-hidden">
                         <button
                           type="button"
@@ -1283,7 +1287,7 @@ const CreatePurchaseForm: React.FC = () => {
                             const q = Math.max(1, (Number(item.quantity) || 1) - 1);
                             handleUpdateLineItem(idx, "quantity", String(q));
                           }}
-                          className="px-1.5 py-1 bg-gray-100 hover:bg-gray-200 text-gray-600 font-bold text-xs cursor-pointer"
+                          className="px-1.5 py-1 bg-gray-100 hover:bg-gray-200 text-black font-bold text-xs cursor-pointer"
                         >
                           -
                         </button>
@@ -1294,7 +1298,7 @@ const CreatePurchaseForm: React.FC = () => {
                           placeholder="1"
                           onWheel={(e) => e.currentTarget.blur()}
                           onChange={(e) => handleUpdateLineItem(idx, "quantity", e.target.value)}
-                          className="w-12 py-1 text-xs text-center font-mono font-semibold focus:outline-none border-x border-gray-300"
+                          className="w-12 py-1 text-xs text-center font-mono font-bold text-black focus:outline-none border-x border-gray-300"
                         />
                         <button
                           type="button"
@@ -1302,7 +1306,7 @@ const CreatePurchaseForm: React.FC = () => {
                             const q = (Number(item.quantity) || 0) + 1;
                             handleUpdateLineItem(idx, "quantity", String(q));
                           }}
-                          className="px-1.5 py-1 bg-gray-100 hover:bg-gray-200 text-gray-600 font-bold text-xs cursor-pointer"
+                          className="px-1.5 py-1 bg-gray-100 hover:bg-gray-200 text-black font-bold text-xs cursor-pointer"
                         >
                           +
                         </button>
@@ -1310,7 +1314,7 @@ const CreatePurchaseForm: React.FC = () => {
                     </td>
 
                     {/* Line VAT % */}
-                    <td className="py-2 px-2 text-right">
+                    <td className="py-2 px-2 text-right whitespace-nowrap">
                       <input
                         type="number"
                         step="0.01"
@@ -1318,17 +1322,17 @@ const CreatePurchaseForm: React.FC = () => {
                         placeholder="0"
                         onWheel={(e) => e.currentTarget.blur()}
                         onChange={(e) => handleUpdateLineItem(idx, "vat", e.target.value)}
-                        className="w-full px-1.5 py-1 text-xs border border-gray-300 rounded text-right font-mono focus:outline-none focus:border-[var(--color-primary)]"
+                        className="w-full px-1.5 py-1 text-xs border border-gray-300 rounded text-right font-mono font-bold text-black focus:outline-none focus:border-[var(--color-primary)]"
                       />
                     </td>
 
                     {/* Total (Right Aligned Display) */}
-                    <td className="py-2 px-3 text-right font-bold text-gray-900 font-mono">
+                    <td className="py-2 px-3 text-right font-bold text-black font-mono whitespace-nowrap">
                       ৳ {formatMoney(item.total)}
                     </td>
 
                     {/* Delete Action */}
-                    <td className="py-2 px-2 text-center">
+                    <td className="py-2 px-2 text-center whitespace-nowrap">
                       <button
                         type="button"
                         onClick={() => handleRemoveLineItem(idx)}
@@ -1355,92 +1359,94 @@ const CreatePurchaseForm: React.FC = () => {
       {/* Financial Summary & Split Payment Breakdown (2 Column Dense Grid) */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-2.5">
         {/* Left Column: Overall Discounts, VAT, Transport & Remarks (5 cols) */}
-        <div className="lg:col-span-5 bg-white p-3 rounded-xl border border-gray-200 shadow-xs flex flex-col gap-2.5">
-          <h3 className="text-xs font-bold text-gray-800 uppercase tracking-wider">
-            Discounts & Extra Charges
-          </h3>
+        <div className="lg:col-span-5 bg-white p-2.5 sm:p-3 rounded-xl border border-gray-200 shadow-xs flex flex-col justify-between gap-2">
+          <div className="flex flex-col gap-2">
+            <h3 className="text-xs font-bold text-black uppercase tracking-wider">
+              Discounts & Extra Charges
+            </h3>
 
-          {/* Overall Invoice Discount */}
-          <div className="flex items-center justify-between gap-2">
-            <div className="flex items-center gap-1.5">
-              <label className="text-xs text-gray-700 font-medium">Overall Discount:</label>
-              <div className="inline-flex rounded border border-gray-300 overflow-hidden text-[10px]">
-                <button
-                  type="button"
-                  onClick={() => setInvoiceDiscountType("FLAT")}
-                  className={`px-1.5 py-0.5 font-bold cursor-pointer transition-colors ${
-                    invoiceDiscountType === "FLAT"
-                      ? "bg-[var(--color-primary)] text-white"
-                      : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                  }`}
-                >
-                  ৳ Flat
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setInvoiceDiscountType("PERCENT")}
-                  className={`px-1.5 py-0.5 font-bold cursor-pointer transition-colors ${
-                    invoiceDiscountType === "PERCENT"
-                      ? "bg-[var(--color-primary)] text-white"
-                      : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                  }`}
-                >
-                  %
-                </button>
-              </div>
-            </div>
-            <div className="relative w-36">
-              <input
-                type="number"
-                step="0.01"
-                value={invoiceDiscount}
-                placeholder="0"
-                onWheel={(e) => e.currentTarget.blur()}
-                onChange={(e) => setInvoiceDiscount(e.target.value)}
-                className="w-full px-2 py-1 text-xs border border-gray-300 rounded text-right font-mono focus:outline-none focus:border-[var(--color-primary)]"
-              />
-            </div>
-          </div>
-
-          {/* Invoice VAT % */}
-          <div className="flex items-center justify-between gap-2">
-            <label className="text-xs text-gray-700 font-medium">Invoice VAT (%):</label>
-            <div className="relative w-36">
-              <input
-                type="number"
-                step="0.01"
-                value={invoiceVat}
-                placeholder="0"
-                onWheel={(e) => e.currentTarget.blur()}
-                onChange={(e) => setInvoiceVat(e.target.value)}
-                className="w-full px-2 py-1 text-xs border border-gray-300 rounded text-right font-mono focus:outline-none focus:border-[var(--color-primary)]"
-              />
-            </div>
-          </div>
-
-          {/* Transport / Freight Charge */}
-          {challanSettings.showTransportCost && (
+            {/* Overall Invoice Discount */}
             <div className="flex items-center justify-between gap-2">
-              <label className="text-xs text-gray-700 font-medium">Transport / Freight (৳):</label>
-              <div className="relative w-36">
-                <span className="absolute left-2 top-1.5 text-gray-400 text-xs">৳</span>
+              <div className="flex items-center gap-1.5">
+                <label className="text-xs text-black font-semibold">Overall Discount:</label>
+                <div className="inline-flex rounded border border-gray-300 overflow-hidden text-[10px]">
+                  <button
+                    type="button"
+                    onClick={() => setInvoiceDiscountType("FLAT")}
+                    className={`px-1.5 py-0.5 font-bold cursor-pointer transition-colors ${
+                      invoiceDiscountType === "FLAT"
+                        ? "bg-[var(--color-primary)] text-white"
+                        : "bg-gray-100 text-black hover:bg-gray-200"
+                    }`}
+                  >
+                    ৳ Flat
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setInvoiceDiscountType("PERCENT")}
+                    className={`px-1.5 py-0.5 font-bold cursor-pointer transition-colors ${
+                      invoiceDiscountType === "PERCENT"
+                        ? "bg-[var(--color-primary)] text-white"
+                        : "bg-gray-100 text-black hover:bg-gray-200"
+                    }`}
+                  >
+                    %
+                  </button>
+                </div>
+              </div>
+              <div className="relative w-32 sm:w-36">
                 <input
                   type="number"
                   step="0.01"
-                  value={transportCost}
-                  placeholder="0.00"
+                  value={invoiceDiscount}
+                  placeholder="0"
                   onWheel={(e) => e.currentTarget.blur()}
-                  onChange={(e) => setTransportCost(e.target.value)}
-                  className="w-full pl-5 pr-2 py-1 text-xs border border-gray-300 rounded text-right font-mono focus:outline-none focus:border-[var(--color-primary)]"
+                  onChange={(e) => setInvoiceDiscount(e.target.value)}
+                  className="w-full px-2 py-1 text-xs border border-gray-300 rounded text-right font-mono text-black font-bold focus:outline-none focus:border-[var(--color-primary)]"
                 />
               </div>
             </div>
-          )}
+
+            {/* Invoice VAT % */}
+            <div className="flex items-center justify-between gap-2">
+              <label className="text-xs text-black font-semibold">Invoice VAT (%):</label>
+              <div className="relative w-32 sm:w-36">
+                <input
+                  type="number"
+                  step="0.01"
+                  value={invoiceVat}
+                  placeholder="0"
+                  onWheel={(e) => e.currentTarget.blur()}
+                  onChange={(e) => setInvoiceVat(e.target.value)}
+                  className="w-full px-2 py-1 text-xs border border-gray-300 rounded text-right font-mono text-black font-bold focus:outline-none focus:border-[var(--color-primary)]"
+                />
+              </div>
+            </div>
+
+            {/* Transport / Freight Charge */}
+            {challanSettings.showTransportCost && (
+              <div className="flex items-center justify-between gap-2">
+                <label className="text-xs text-black font-semibold">Transport (৳):</label>
+                <div className="relative w-32 sm:w-36">
+                  <span className="absolute left-2 top-1 text-black text-xs font-bold font-mono">৳</span>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={transportCost}
+                    placeholder="0.00"
+                    onWheel={(e) => e.currentTarget.blur()}
+                    onChange={(e) => setTransportCost(e.target.value)}
+                    className="w-full pl-5 pr-2 py-1 text-xs border border-gray-300 rounded text-right font-mono text-black font-bold focus:outline-none focus:border-[var(--color-primary)]"
+                  />
+                </div>
+              </div>
+            )}
+          </div>
 
           {/* Notes */}
           {challanSettings.showNotes && (
-            <div className="mt-1">
-              <label className="text-[11px] font-semibold text-gray-600 uppercase tracking-wider block mb-1">
+            <div className="mt-0.5">
+              <label className="text-[10px] font-bold text-black uppercase tracking-wider block mb-0.5">
                 Purchase Notes / Remarks
               </label>
               <textarea
@@ -1448,105 +1454,105 @@ const CreatePurchaseForm: React.FC = () => {
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
                 placeholder="Add special terms, batch notes, or delivery remarks..."
-                className="w-full p-2 text-xs border border-gray-300 rounded-lg focus:outline-none focus:border-[var(--color-primary)] resize-none"
+                className="w-full p-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:border-[var(--color-primary)] resize-none text-black font-medium"
               />
             </div>
           )}
         </div>
 
         {/* Right Column: Financial Totals & Clean Split Payment Breakdown (7 cols) */}
-        <div className="lg:col-span-7 bg-white p-3 rounded-xl border border-gray-200 shadow-xs flex flex-col justify-between gap-2.5">
+        <div className="lg:col-span-7 bg-white p-2.5 sm:p-3 rounded-xl border border-gray-200 shadow-xs flex flex-col justify-between gap-2">
           {/* Detailed Financial Summary Ribbon */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 bg-gray-50 p-2.5 rounded-lg border border-gray-200">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 bg-gray-50/80 p-2 rounded-lg border border-gray-200">
             <div>
-              <span className="text-[10px] text-gray-500 uppercase font-semibold block">Subtotal</span>
-              <span className="text-xs font-bold font-mono text-gray-900 block text-right">
+              <span className="text-[10px] text-black uppercase font-bold block">Subtotal</span>
+              <span className="text-xs font-bold font-mono text-black block text-right">
                 ৳ {formatMoney(rawSubtotal)}
               </span>
             </div>
             <div>
-              <span className="text-[10px] text-gray-500 uppercase font-semibold block">Discount</span>
+              <span className="text-[10px] text-black uppercase font-bold block">Discount</span>
               <span className="text-xs font-bold font-mono text-rose-600 block text-right">
                 - ৳ {formatMoney(totalDiscount)}
               </span>
             </div>
             <div>
-              <span className="text-[10px] text-gray-500 uppercase font-semibold block">VAT + Transport</span>
-              <span className="text-xs font-bold font-mono text-gray-800 block text-right">
+              <span className="text-[10px] text-black uppercase font-bold block">VAT + Transport</span>
+              <span className="text-xs font-bold font-mono text-black block text-right">
                 + ৳ {formatMoney(totalVat + calculatedTransport)}
               </span>
             </div>
-            <div className="bg-sky-100/70 p-1.5 rounded text-right">
-              <span className="text-[10px] text-sky-800 uppercase font-bold block">Grand Total</span>
-              <span className="text-sm font-extrabold font-mono text-[var(--color-primary)] block">
+            <div className="bg-sky-100/70 p-1 px-1.5 rounded text-right flex flex-col justify-center">
+              <span className="text-[10px] text-sky-950 uppercase font-bold block">Grand Total</span>
+              <span className="text-xs sm:text-sm font-extrabold font-mono text-[var(--color-primary)] block">
                 ৳ {formatMoney(grandTotal)}
               </span>
             </div>
           </div>
 
           {/* Payment Collected Section (Matching cash-boi_v2) */}
-          <div className="flex items-center justify-between flex-wrap gap-1">
-            <span className="text-[11px] font-bold text-gray-700 uppercase tracking-wider flex items-center gap-1.5">
-              <FaWallet size={12} className="text-gray-500" />
+          <div className="flex items-center justify-between flex-wrap gap-1.5">
+            <span className="text-[11px] font-bold text-black uppercase tracking-wider flex items-center gap-1.5">
+              <FaWallet size={12} className="text-black" />
               Payment Collected
             </span>
             <div className="flex items-center gap-1">
               <button
                 type="button"
                 onClick={handlePayFullCash}
-                className="px-2 py-0.5 text-[10px] font-bold rounded bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 cursor-pointer"
+                className="px-2 py-0.5 text-[11px] font-bold rounded-md bg-emerald-50 text-emerald-800 border border-emerald-300 hover:bg-emerald-100 transition-colors cursor-pointer"
               >
-                All Cash
+                Cash
               </button>
               <button
                 type="button"
                 onClick={handlePayFullBank}
-                className="px-2 py-0.5 text-[10px] font-bold rounded bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100 cursor-pointer"
+                className="px-2 py-0.5 text-[11px] font-bold rounded-md bg-blue-50 text-blue-800 border border-blue-300 hover:bg-blue-100 transition-colors cursor-pointer"
               >
-                All Bank
+                Bank
               </button>
               <button
                 type="button"
                 onClick={handlePayFullMfs}
-                className="px-2 py-0.5 text-[10px] font-bold rounded bg-purple-50 text-purple-700 border border-purple-200 hover:bg-purple-100 cursor-pointer"
+                className="px-2 py-0.5 text-[11px] font-bold rounded-md bg-purple-50 text-purple-800 border border-purple-300 hover:bg-purple-100 transition-colors cursor-pointer"
               >
-                All MFS
+                MFS
               </button>
               <button
                 type="button"
                 onClick={handlePayFullCredit}
-                className="px-2 py-0.5 text-[10px] font-bold rounded bg-rose-50 text-rose-700 border border-rose-200 hover:bg-rose-100 cursor-pointer"
+                className="px-2 py-0.5 text-[11px] font-bold rounded-md bg-rose-50 text-rose-800 border border-rose-300 hover:bg-rose-100 transition-colors cursor-pointer"
               >
-                All Due
+                Credit / Due
               </button>
             </div>
           </div>
 
           {/* Payment Cards: Cash, Card, MFS */}
-          <div className="flex flex-col gap-2.5">
+          <div className="flex flex-col gap-1.5">
             {/* 1. Cash Card */}
             <div
-              className={`p-2.5 rounded-xl border transition-all flex items-center justify-between gap-2.5 ${
+              className={`px-2.5 py-1.5 rounded-lg border transition-all flex items-center justify-between gap-2 ${
                 Number(cashAmount) > 0
-                  ? "border-blue-400 bg-white shadow-xs"
-                  : "border-gray-200 bg-gray-50/70"
+                  ? "border-emerald-400 bg-emerald-50/20 shadow-2xs"
+                  : "border-gray-200 bg-gray-50/50 hover:bg-white"
               }`}
             >
-              <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-lg bg-emerald-100/90 text-emerald-600 flex items-center justify-center shrink-0">
-                  <FaMoneyBillWave size={15} />
+              <div className="flex items-center gap-2 min-w-0">
+                <div className="w-7 h-7 rounded-md bg-emerald-100/90 text-emerald-700 flex items-center justify-center shrink-0">
+                  <FaMoneyBillWave size={13} />
                 </div>
-                <span className="font-bold text-xs text-gray-800 tracking-wider">CASH</span>
+                <span className="font-bold text-xs text-black tracking-wider">CASH</span>
               </div>
 
               <div
-                className={`flex items-center h-8 rounded-lg border bg-white overflow-hidden w-32 sm:w-36 transition-colors ${
+                className={`flex items-center h-7 rounded-md border bg-white overflow-hidden w-28 sm:w-36 shrink-0 transition-colors ${
                   Number(cashAmount) > 0
-                    ? "border-emerald-500 ring-1 ring-emerald-500"
+                    ? "border-emerald-500 ring-1 ring-emerald-500/50"
                     : "border-gray-300 focus-within:border-emerald-500 focus-within:ring-1 focus-within:ring-emerald-500"
                 }`}
               >
-                <span className="text-[11px] text-gray-400 px-2.5 bg-gray-50 h-full flex items-center border-r border-gray-200 font-mono select-none">
+                <span className="text-[11px] text-black font-bold px-2 bg-gray-50 h-full flex items-center border-r border-gray-200 font-mono select-none">
                   ৳
                 </span>
                 <input
@@ -1556,18 +1562,18 @@ const CreatePurchaseForm: React.FC = () => {
                   value={cashAmount}
                   onWheel={(e) => e.currentTarget.blur()}
                   onChange={(e) => setCashAmount(e.target.value)}
-                  className="w-full text-right px-2 text-xs font-mono font-bold text-gray-900 outline-none bg-transparent"
+                  className="w-full text-right px-1.5 text-xs font-mono font-bold text-black outline-none bg-transparent placeholder:text-gray-600"
                 />
               </div>
             </div>
 
             {/* Optional Change Tendered Toggle */}
             {numCash > 0 && (
-              <div className="flex items-center justify-end gap-2 text-[11px] px-1 -mt-1">
+              <div className="flex items-center justify-end gap-2 text-[10px] px-1 -mt-0.5">
                 <button
                   type="button"
                   onClick={() => setShowCashGivenCalc(!showCashGivenCalc)}
-                  className="text-[var(--color-primary)] hover:underline cursor-pointer"
+                  className="text-[var(--color-primary)] hover:underline cursor-pointer font-bold"
                 >
                   {showCashGivenCalc ? "- Hide Change Calculator" : "+ Calculate Cash Change / ভাংতি"}
                 </button>
@@ -1575,11 +1581,11 @@ const CreatePurchaseForm: React.FC = () => {
             )}
 
             {showCashGivenCalc && numCash > 0 && (
-              <div className="flex items-center justify-between gap-2 bg-emerald-50/50 p-2 rounded-lg border border-emerald-100 -mt-1">
-                <span className="text-[11px] text-gray-600 font-medium">Cash Tendered:</span>
+              <div className="flex items-center justify-between gap-2 bg-emerald-50/60 px-2.5 py-1.5 rounded-lg border border-emerald-200 -mt-0.5">
+                <span className="text-[11px] text-black font-semibold">Cash Tendered:</span>
                 <div className="flex items-center gap-2">
-                  <div className="relative w-32">
-                    <span className="absolute left-2 top-1 text-gray-400 text-xs font-mono">৳</span>
+                  <div className="relative w-28 sm:w-32">
+                    <span className="absolute left-2 top-0.5 text-black text-xs font-bold font-mono">৳</span>
                     <input
                       type="number"
                       step="0.01"
@@ -1587,11 +1593,11 @@ const CreatePurchaseForm: React.FC = () => {
                       value={cashGiven}
                       onWheel={(e) => e.currentTarget.blur()}
                       onChange={(e) => setCashGiven(e.target.value)}
-                      className="w-full pl-5 pr-1.5 py-0.5 text-xs border border-gray-300 rounded text-right font-mono bg-white outline-none focus:border-emerald-500"
+                      className="w-full pl-5 pr-1.5 py-0.5 text-xs border border-gray-300 rounded text-right font-mono font-bold text-black bg-white outline-none focus:border-emerald-500"
                     />
                   </div>
                   {changeReturnAmount > 0 && (
-                    <span className="text-xs text-emerald-800 font-mono font-bold">
+                    <span className="text-[11px] text-black font-mono font-bold">
                       Return: ৳{formatMoney(changeReturnAmount)}
                     </span>
                   )}
@@ -1601,46 +1607,44 @@ const CreatePurchaseForm: React.FC = () => {
 
             {/* 2. Card / Bank Card */}
             <div
-              className={`p-2.5 rounded-xl border transition-all flex items-center justify-between gap-2.5 ${
+              className={`px-2.5 py-1.5 rounded-lg border transition-all flex items-center justify-between gap-2 ${
                 Number(bankAmount) > 0
-                  ? "border-blue-400 bg-white shadow-xs"
-                  : "border-gray-200 bg-gray-50/70"
+                  ? "border-sky-400 bg-sky-50/20 shadow-2xs"
+                  : "border-gray-200 bg-gray-50/50 hover:bg-white"
               }`}
             >
-              <div className="flex items-center gap-2.5 flex-1 min-w-0">
-                <div className="w-9 h-9 rounded-lg bg-sky-100/90 text-sky-600 flex items-center justify-center shrink-0">
-                  <FaCreditCard size={15} />
+              <div className="flex items-center gap-2 flex-1 min-w-0 mr-1 sm:mr-2">
+                <div className="w-7 h-7 rounded-md bg-sky-100/90 text-sky-700 flex items-center justify-center shrink-0">
+                  <FaCreditCard size={13} />
                 </div>
-                <div className="flex flex-col flex-1 min-w-0">
-                  <span className="font-bold text-xs text-gray-800 tracking-wider">CARD</span>
-                  <select
-                    value={selectedBankId}
-                    onChange={(e) => handleSelectRegisteredBank(e.target.value)}
-                    className="mt-1 w-full max-w-[180px] sm:max-w-[240px] px-2 py-1 text-[11px] border border-gray-300 rounded-lg bg-white text-gray-800 focus:outline-none focus:border-sky-500 cursor-pointer truncate"
-                  >
-                    <option value="">
-                      {registeredBankAccounts.length ? "Select Bank..." : "No bank account registered"}
+                <span className="font-bold text-xs text-black tracking-wider shrink-0">CARD</span>
+                <select
+                  value={selectedBankId}
+                  onChange={(e) => handleSelectRegisteredBank(e.target.value)}
+                  className="h-6.5 w-full max-w-[150px] sm:max-w-[220px] px-2 text-[11px] border border-gray-300 rounded-md bg-white text-black font-medium focus:outline-none focus:border-sky-500 cursor-pointer truncate"
+                >
+                  <option value="" className="text-black">
+                    {registeredBankAccounts.length ? "Select Bank..." : "No bank registered"}
+                  </option>
+                  {registeredBankAccounts.map((b) => (
+                    <option key={b.id || b.bankId || b._id} value={b.id || b.bankId || b._id} className="text-black">
+                      {b.bankName || b.name}
+                      {b.accountNo || b.bankAccountNumber || b.bankAccountNo
+                        ? ` – ${b.accountNo || b.bankAccountNumber || b.bankAccountNo}`
+                        : ""}
                     </option>
-                    {registeredBankAccounts.map((b) => (
-                      <option key={b.id || b.bankId || b._id} value={b.id || b.bankId || b._id}>
-                        {b.bankName || b.name}
-                        {b.accountNo || b.bankAccountNumber || b.bankAccountNo
-                          ? ` – ${b.accountNo || b.bankAccountNumber || b.bankAccountNo}`
-                          : ""}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                  ))}
+                </select>
               </div>
 
               <div
-                className={`flex items-center h-8 rounded-lg border bg-white overflow-hidden w-32 sm:w-36 shrink-0 transition-colors ${
+                className={`flex items-center h-7 rounded-md border bg-white overflow-hidden w-28 sm:w-36 shrink-0 transition-colors ${
                   Number(bankAmount) > 0
-                    ? "border-sky-500 ring-1 ring-sky-500"
+                    ? "border-sky-500 ring-1 ring-sky-500/50"
                     : "border-gray-300 focus-within:border-sky-500 focus-within:ring-1 focus-within:ring-sky-500"
                 }`}
               >
-                <span className="text-[11px] text-gray-400 px-2.5 bg-gray-50 h-full flex items-center border-r border-gray-200 font-mono select-none">
+                <span className="text-[11px] text-black font-bold px-2 bg-gray-50 h-full flex items-center border-r border-gray-200 font-mono select-none">
                   ৳
                 </span>
                 <input
@@ -1650,53 +1654,51 @@ const CreatePurchaseForm: React.FC = () => {
                   value={bankAmount}
                   onWheel={(e) => e.currentTarget.blur()}
                   onChange={(e) => setBankAmount(e.target.value)}
-                  className="w-full text-right px-2 text-xs font-mono font-bold text-gray-900 outline-none bg-transparent"
+                  className="w-full text-right px-1.5 text-xs font-mono font-bold text-black outline-none bg-transparent placeholder:text-gray-600"
                 />
               </div>
             </div>
 
             {/* 3. MFS Card */}
             <div
-              className={`p-2.5 rounded-xl border transition-all flex items-center justify-between gap-2.5 ${
+              className={`px-2.5 py-1.5 rounded-lg border transition-all flex items-center justify-between gap-2 ${
                 Number(mfsAmount) > 0
-                  ? "border-blue-400 bg-white shadow-xs"
-                  : "border-gray-200 bg-gray-50/70"
+                  ? "border-amber-400 bg-amber-50/20 shadow-2xs"
+                  : "border-gray-200 bg-gray-50/50 hover:bg-white"
               }`}
             >
-              <div className="flex items-center gap-2.5 flex-1 min-w-0">
-                <div className="w-9 h-9 rounded-lg bg-amber-100/90 text-amber-600 flex items-center justify-center shrink-0">
-                  <FaWallet size={15} />
+              <div className="flex items-center gap-2 flex-1 min-w-0 mr-1 sm:mr-2">
+                <div className="w-7 h-7 rounded-md bg-amber-100/90 text-amber-700 flex items-center justify-center shrink-0">
+                  <FaWallet size={13} />
                 </div>
-                <div className="flex flex-col flex-1 min-w-0">
-                  <span className="font-bold text-xs text-gray-800 tracking-wider">MFS</span>
-                  <select
-                    value={selectedMfsId}
-                    onChange={(e) => handleSelectRegisteredMfs(e.target.value)}
-                    className="mt-1 w-full max-w-[180px] sm:max-w-[240px] px-2 py-1 text-[11px] border border-gray-300 rounded-lg bg-white text-gray-800 focus:outline-none focus:border-amber-500 cursor-pointer truncate"
-                  >
-                    <option value="">
-                      {registeredMfsAccounts.length ? "Select MFS..." : "No MFS wallet registered"}
+                <span className="font-bold text-xs text-black tracking-wider shrink-0">MFS</span>
+                <select
+                  value={selectedMfsId}
+                  onChange={(e) => handleSelectRegisteredMfs(e.target.value)}
+                  className="h-6.5 w-full max-w-[150px] sm:max-w-[220px] px-2 text-[11px] border border-gray-300 rounded-md bg-white text-black font-medium focus:outline-none focus:border-amber-500 cursor-pointer truncate"
+                >
+                  <option value="" className="text-black">
+                    {registeredMfsAccounts.length ? "Select MFS..." : "No MFS registered"}
+                  </option>
+                  {registeredMfsAccounts.map((m) => (
+                    <option key={m.id || m.mfsId || m._id} value={m.id || m.mfsId || m._id} className="text-black">
+                      {m.mfsName || m.name}
+                      {m.method || m.mfsMethod || m.mobileNo
+                        ? ` – ${m.method || m.mfsMethod || m.mobileNo}`
+                        : ""}
                     </option>
-                    {registeredMfsAccounts.map((m) => (
-                      <option key={m.id || m.mfsId || m._id} value={m.id || m.mfsId || m._id}>
-                        {m.mfsName || m.name}
-                        {m.method || m.mfsMethod || m.mobileNo
-                          ? ` – ${m.method || m.mfsMethod || m.mobileNo}`
-                          : ""}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                  ))}
+                </select>
               </div>
 
               <div
-                className={`flex items-center h-8 rounded-lg border bg-white overflow-hidden w-32 sm:w-36 shrink-0 transition-colors ${
+                className={`flex items-center h-7 rounded-md border bg-white overflow-hidden w-28 sm:w-36 shrink-0 transition-colors ${
                   Number(mfsAmount) > 0
-                    ? "border-amber-500 ring-1 ring-amber-500"
+                    ? "border-amber-500 ring-1 ring-amber-500/50"
                     : "border-gray-300 focus-within:border-amber-500 focus-within:ring-1 focus-within:ring-amber-500"
                 }`}
               >
-                <span className="text-[11px] text-gray-400 px-2.5 bg-gray-50 h-full flex items-center border-r border-gray-200 font-mono select-none">
+                <span className="text-[11px] text-black font-bold px-2 bg-gray-50 h-full flex items-center border-r border-gray-200 font-mono select-none">
                   ৳
                 </span>
                 <input
@@ -1706,30 +1708,38 @@ const CreatePurchaseForm: React.FC = () => {
                   value={mfsAmount}
                   onWheel={(e) => e.currentTarget.blur()}
                   onChange={(e) => setMfsAmount(e.target.value)}
-                  className="w-full text-right px-2 text-xs font-mono font-bold text-gray-900 outline-none bg-transparent"
+                  className="w-full text-right px-1.5 text-xs font-mono font-bold text-black outline-none bg-transparent placeholder:text-gray-600"
                 />
               </div>
             </div>
           </div>
 
           {/* Bottom Totals: Total Paid & Due Balance */}
-          <div className="grid grid-cols-2 gap-2 border-t border-gray-200 pt-2 items-center">
-            <div className="bg-emerald-50 p-2 rounded-lg border border-emerald-200">
-              <span className="text-[10px] font-bold text-emerald-800 uppercase block">
-                Total Paid Amount (৳)
+          <div className="grid grid-cols-2 gap-2 border-t border-gray-200 pt-1.5 items-center">
+            <div className="bg-emerald-50/80 px-2.5 py-1.5 rounded-lg border border-emerald-200 flex items-center justify-between">
+              <span className="text-[10px] font-bold text-black uppercase tracking-wide">
+                Total Paid (৳)
               </span>
-              <span className="text-sm font-extrabold font-mono text-emerald-700 block text-right">
+              <span className="text-xs sm:text-sm font-extrabold font-mono text-emerald-800">
                 ৳ {formatMoney(totalPaid)}
               </span>
             </div>
 
-            <div className={`p-2 rounded-lg border ${dueAmount > 0 ? "bg-rose-50 border-rose-200" : "bg-gray-50 border-gray-200"}`}>
-              <span className="text-[10px] font-bold text-gray-600 uppercase block">
+            <div
+              className={`px-2.5 py-1.5 rounded-lg border flex items-center justify-between transition-colors ${
+                dueAmount > 0 ? "bg-rose-50/80 border-rose-200" : "bg-gray-50 border-gray-200"
+              }`}
+            >
+              <span
+                className={`text-[10px] font-bold uppercase tracking-wide ${
+                  dueAmount > 0 ? "text-rose-900" : "text-black"
+                }`}
+              >
                 Due Balance (৳)
               </span>
               <span
-                className={`text-sm font-extrabold font-mono block text-right ${
-                  dueAmount > 0 ? "text-rose-600" : "text-gray-400"
+                className={`text-xs sm:text-sm font-extrabold font-mono ${
+                  dueAmount > 0 ? "text-rose-600" : "text-black"
                 }`}
               >
                 ৳ {formatMoney(dueAmount)}
