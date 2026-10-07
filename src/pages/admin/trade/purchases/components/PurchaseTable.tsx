@@ -1,7 +1,9 @@
 import React, { useState, useRef, useEffect, useMemo } from "react";
-import { FiEye, FiEdit, FiPrinter, FiChevronDown } from "react-icons/fi";
+import { FiEye, FiEdit, FiPrinter, FiChevronDown, FiTrash2 } from "react-icons/fi";
 import { BsFilterRight } from "react-icons/bs";
+import moment from "moment";
 import Search from "@/components/table-components/Search";
+import DateRangePicker from "@/components/date-range-picker/DateRangePicker";
 import EmptyState from "@/components/empty-state/EmptyState";
 import TableSkeleton from "@/components/skeleton/TableSkeleton";
 import Pagination from "@/components/pagination";
@@ -31,11 +33,18 @@ interface PurchaseTableProps {
   supplierFilter: string;
   setSupplierFilter: (supplierId: string) => void;
   suppliersList?: PartyItem[];
+  dateFilter?: string;
+  setDateFilter?: (filter: string) => void;
+  customStartDate?: string;
+  setCustomStartDate?: (date: string) => void;
+  customEndDate?: string;
+  setCustomEndDate?: (date: string) => void;
   sortBy?: string;
   setSortBy?: (sort: string) => void;
   onEdit: (purchase: PurchaseItem) => void;
   onView: (purchase: PurchaseItem) => void;
   onPrint: (purchase: PurchaseItem) => void;
+  onDelete?: (purchase: PurchaseItem) => void;
   onOpenChallanSettings?: () => void;
   onExport?: () => void;
 }
@@ -60,11 +69,18 @@ export const PurchaseTable: React.FC<PurchaseTableProps> = ({
   supplierFilter,
   setSupplierFilter,
   suppliersList = [],
+  dateFilter = "all",
+  setDateFilter,
+  customStartDate = "",
+  setCustomStartDate,
+  customEndDate = "",
+  setCustomEndDate,
   sortBy = "latest",
   setSortBy,
   onEdit,
   onView,
   onPrint,
+  onDelete,
   onOpenChallanSettings,
   onExport,
 }) => {
@@ -160,12 +176,13 @@ export const PurchaseTable: React.FC<PurchaseTableProps> = ({
   ];
 
   return (
-    <div className="bg-white rounded-xl shadow-xs border border-gray-200 flex flex-col relative">
-      {/* Search and Filters Bar - Single Line Layout */}
-      <div className="p-2 sm:p-2.5 border-b border-gray-100 flex items-center justify-between gap-2 relative z-30">
-        <div className="flex items-center gap-2 flex-nowrap shrink-0">
+    <div className="bg-white rounded-xl shadow-xs border border-gray-200 flex flex-col relative z-20 overflow-visible">
+      {/* Search and Filters Bar - Fully Responsive Layout */}
+      <div className="p-2 sm:p-2.5 lg:p-3 border-b border-gray-100 flex flex-col xl:flex-row xl:items-center justify-between gap-2.5 xl:gap-2 relative z-40 overflow-visible">
+        {/* Left Section: Search Box + Filters Group */}
+        <div className="flex flex-col md:flex-row items-stretch md:items-center gap-2 flex-1 min-w-0">
           {/* Search Box */}
-          <div className="w-36 sm:w-44 shrink-0">
+          <div className="w-full md:w-52 lg:w-60 xl:flex-1 xl:max-w-xs shrink-0 md:shrink">
             <Search
               searchQuery={searchQuery}
               onSearchChange={setSearchQuery}
@@ -174,148 +191,175 @@ export const PurchaseTable: React.FC<PurchaseTableProps> = ({
             />
           </div>
 
-          {/* Searchable Supplier Filter */}
-          {suppliersList.length > 0 && (
-            <div className="relative w-36 sm:w-44 shrink-0 z-40" ref={supplierRef}>
-              <button
-                type="button"
-                onClick={() => setIsSupplierDropdownOpen(!isSupplierDropdownOpen)}
-                className="w-full h-8 px-2.5 flex items-center justify-between text-xs border border-gray-200 rounded-lg bg-gray-50/50 hover:bg-white text-black font-medium focus:outline-none focus:border-[var(--color-primary)] cursor-pointer"
-              >
-                <span className="truncate max-w-[130px]">{currentSupplierLabel}</span>
-                <FiChevronDown className="text-gray-500 shrink-0 ml-1 text-xs" size={13} />
-              </button>
+          {/* Filters Group (2 cols on mobile, 4 cols on sm/md, flex inline on xl) */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 xl:flex items-center gap-2 flex-1 xl:flex-none">
+            {/* Date Filter Dropdown */}
+            <div className="w-full xl:w-36 shrink-0 z-50">
+              <DateRangePicker
+                startDate={customStartDate}
+                endDate={customEndDate}
+                selectedPreset={dateFilter}
+                onPresetChange={(preset) => {
+                  if (setDateFilter) setDateFilter(preset);
+                  setCurrentPageNumber(1);
+                }}
+                onChange={({ startDate, endDate, label }) => {
+                  if (setCustomStartDate) setCustomStartDate(startDate);
+                  if (setCustomEndDate) setCustomEndDate(endDate);
+                  if (setDateFilter) setDateFilter(label || "custom");
+                  setCurrentPageNumber(1);
+                }}
+                size="sm"
+              />
+            </div>
 
-              {isSupplierDropdownOpen && (
-                <div className="absolute left-0 top-full mt-1 w-64 bg-white rounded-lg shadow-2xl border border-gray-200 p-2 z-[9999]">
-                  <div className="relative mb-2">
-                    <FaSearch className="absolute left-2.5 top-2.5 text-gray-400 text-xs" />
-                    <input
-                      type="text"
-                      placeholder="Search supplier name, phone..."
-                      value={supplierSearchQuery}
-                      onChange={(e) => setSupplierSearchQuery(e.target.value)}
-                      className="w-full pl-7 pr-2 py-1.5 text-xs border border-gray-200 rounded-md focus:outline-none focus:border-[var(--color-primary)] text-black"
-                      autoFocus
-                    />
-                  </div>
+            {/* Searchable Supplier Filter */}
+            {suppliersList.length > 0 && (
+              <div className="relative w-full xl:w-36 shrink-0 z-50" ref={supplierRef}>
+                <button
+                  type="button"
+                  onClick={() => setIsSupplierDropdownOpen(!isSupplierDropdownOpen)}
+                  className="w-full h-8 px-2 flex items-center justify-between text-xs border border-gray-200 rounded-lg bg-gray-50/50 hover:bg-white text-black font-medium focus:outline-none focus:border-[var(--color-primary)] cursor-pointer"
+                >
+                  <span className="truncate flex-1 text-left">{currentSupplierLabel}</span>
+                  <FiChevronDown className="text-gray-500 shrink-0 ml-1 text-xs" size={13} />
+                </button>
 
-                  <div className="max-h-48 overflow-y-auto divide-y divide-gray-100">
-                    <div
-                      onClick={() => {
-                        setSupplierFilter("");
-                        setIsSupplierDropdownOpen(false);
-                        setSupplierSearchQuery("");
-                        setCurrentPageNumber(1);
-                      }}
-                      className={`p-2 hover:bg-sky-50 cursor-pointer rounded-md transition-colors text-xs font-medium ${
-                        !supplierFilter ? "bg-sky-50 text-[var(--color-primary)] font-semibold" : "text-black"
-                      }`}
-                    >
-                      All Suppliers
+                {isSupplierDropdownOpen && (
+                  <div className="absolute left-0 top-full mt-1 w-64 max-w-[calc(100vw-2rem)] bg-white rounded-lg shadow-2xl border border-gray-200 p-2 z-[99999]">
+                    <div className="relative mb-2">
+                      <FaSearch className="absolute left-2.5 top-2.5 text-gray-400 text-xs" />
+                      <input
+                        type="text"
+                        placeholder="Search supplier name, phone..."
+                        value={supplierSearchQuery}
+                        onChange={(e) => setSupplierSearchQuery(e.target.value)}
+                        className="w-full pl-7 pr-2 py-1.5 text-xs border border-gray-200 rounded-md focus:outline-none focus:border-[var(--color-primary)] text-black"
+                        autoFocus
+                      />
                     </div>
 
-                    {filteredSupplierOptions.length > 0 ? (
-                      filteredSupplierOptions.map((s) => {
-                        const sVal = String(s.id ?? s.partyId ?? s.name ?? "");
-                        const isSelected = supplierFilter === sVal;
-                        const sName = s.name || s.partyName || "Supplier";
-                        const sPhone = s.phone || s.partyPhone || "";
+                    <div className="max-h-48 overflow-y-auto divide-y divide-gray-100">
+                      <div
+                        onClick={() => {
+                          setSupplierFilter("");
+                          setIsSupplierDropdownOpen(false);
+                          setSupplierSearchQuery("");
+                          setCurrentPageNumber(1);
+                        }}
+                        className={`p-2 hover:bg-sky-50 cursor-pointer rounded-md transition-colors text-xs font-medium ${
+                          !supplierFilter ? "bg-sky-50 text-[var(--color-primary)] font-semibold" : "text-black"
+                        }`}
+                      >
+                        All Suppliers
+                      </div>
 
-                        return (
-                          <div
-                            key={s.id ?? s.partyId ?? s.name}
-                            onClick={() => {
-                              setSupplierFilter(sVal);
-                              setIsSupplierDropdownOpen(false);
-                              setSupplierSearchQuery("");
-                              setCurrentPageNumber(1);
-                            }}
-                            className={`p-2 hover:bg-sky-50 cursor-pointer rounded-md transition-colors text-xs flex justify-between items-center ${
-                              isSelected ? "bg-sky-50 text-[var(--color-primary)] font-semibold" : "text-black"
-                            }`}
-                          >
-                            <span className="truncate">{sName}</span>
-                            {sPhone && (
-                              <span className="text-[10px] text-gray-500 shrink-0 ml-1">
-                                ({sPhone})
-                              </span>
-                            )}
-                          </div>
-                        );
-                      })
-                    ) : (
-                      <div className="p-3 text-center text-gray-400 text-xs">No supplier found</div>
-                    )}
+                      {filteredSupplierOptions.length > 0 ? (
+                        filteredSupplierOptions.map((s) => {
+                          const sVal = String(s.id ?? s.partyId ?? s.name ?? "");
+                          const isSelected = supplierFilter === sVal;
+                          const sName = s.name || s.partyName || "Supplier";
+                          const sPhone = s.phone || s.partyPhone || "";
+
+                          return (
+                            <div
+                              key={s.id ?? s.partyId ?? s.name}
+                              onClick={() => {
+                                setSupplierFilter(sVal);
+                                setIsSupplierDropdownOpen(false);
+                                setSupplierSearchQuery("");
+                                setCurrentPageNumber(1);
+                              }}
+                              className={`p-2 hover:bg-sky-50 cursor-pointer rounded-md transition-colors text-xs flex justify-between items-center ${
+                                isSelected ? "bg-sky-50 text-[var(--color-primary)] font-semibold" : "text-black"
+                              }`}
+                            >
+                              <span className="truncate">{sName}</span>
+                              {sPhone && (
+                                <span className="text-[10px] text-gray-500 shrink-0 ml-1">
+                                  ({sPhone})
+                                </span>
+                              )}
+                            </div>
+                          );
+                        })
+                      ) : (
+                        <div className="p-3 text-center text-gray-400 text-xs">No supplier found</div>
+                      )}
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
+              </div>
+            )}
+
+            {/* Status Filter */}
+            <div className="relative w-full xl:w-28 shrink-0">
+              <select
+                value={statusFilter}
+                onChange={(e) => {
+                  setStatusFilter(e.target.value);
+                  setCurrentPageNumber(1);
+                }}
+                className="w-full h-8 pl-2.5 pr-6 text-xs border border-gray-200 rounded-lg bg-gray-50/50 hover:bg-white text-black font-medium focus:outline-none focus:border-[var(--color-primary)] cursor-pointer appearance-none"
+              >
+                <option value="">All Status</option>
+                <option value="PAID">Paid</option>
+                <option value="PARTIAL">Partial</option>
+                <option value="DUE">Due / Credit</option>
+              </select>
+              <FiChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none text-xs" size={13} />
             </div>
-          )}
 
-          {/* Status Filter */}
-          <div className="w-28 sm:w-32 shrink-0">
-            <select
-              value={statusFilter}
-              onChange={(e) => {
-                setStatusFilter(e.target.value);
-                setCurrentPageNumber(1);
-              }}
-              className="w-full h-8 px-2.5 text-xs border border-gray-200 rounded-lg bg-gray-50/50 hover:bg-white text-black font-medium focus:outline-none focus:border-[var(--color-primary)] cursor-pointer"
-            >
-              <option value="">All Status</option>
-              <option value="PAID">Paid</option>
-              <option value="PARTIAL">Partial</option>
-              <option value="DUE">Due / Credit</option>
-            </select>
-          </div>
-
-          {/* Payment Method Filter */}
-          <div className="w-28 sm:w-32 shrink-0">
-            <select
-              value={paymentMethodFilter}
-              onChange={(e) => {
-                setPaymentMethodFilter(e.target.value);
-                setCurrentPageNumber(1);
-              }}
-              className="w-full h-8 px-2.5 text-xs border border-gray-200 rounded-lg bg-gray-50/50 hover:bg-white text-black font-medium focus:outline-none focus:border-[var(--color-primary)] cursor-pointer"
-            >
-              <option value="">All Methods</option>
-              <option value="CASH">Cash</option>
-              <option value="BANK">Bank</option>
-              <option value="MFS">MFS (bKash/Nagad)</option>
-              <option value="CREDIT">Credit</option>
-            </select>
+            {/* Payment Method Filter */}
+            <div className="relative w-full xl:w-28 shrink-0">
+              <select
+                value={paymentMethodFilter}
+                onChange={(e) => {
+                  setPaymentMethodFilter(e.target.value);
+                  setCurrentPageNumber(1);
+                }}
+                className="w-full h-8 pl-2.5 pr-6 text-xs border border-gray-200 rounded-lg bg-gray-50/50 hover:bg-white text-black font-medium focus:outline-none focus:border-[var(--color-primary)] cursor-pointer appearance-none"
+              >
+                <option value="">All Methods</option>
+                <option value="CASH">Cash</option>
+                <option value="BANK">Bank</option>
+                <option value="MFS">MFS (bKash/Nagad)</option>
+                <option value="CREDIT">Credit</option>
+              </select>
+              <FiChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none text-xs" size={13} />
+            </div>
           </div>
         </div>
 
-        {/* Right Sort & Settings Toolbar */}
-        <div className="flex items-center gap-2 shrink-0 flex-nowrap ml-auto">
+        {/* Right Actions: Challan Settings, Sort, Export (3-col balanced grid on mobile, flex on sm/xl) */}
+        <div className="grid grid-cols-3 sm:flex items-center justify-end gap-1.5 sm:gap-2 shrink-0 pt-1.5 xl:pt-0 border-t xl:border-t-0 border-gray-100">
           {onOpenChallanSettings && (
             <button
               type="button"
               onClick={onOpenChallanSettings}
               title="Challan Field Settings"
-              className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-black bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-lg transition-colors cursor-pointer shrink-0"
+              className="w-full sm:w-auto flex items-center justify-center gap-1 px-2 sm:px-2.5 h-8 text-[11px] sm:text-xs font-medium text-black bg-gray-50/80 hover:bg-gray-100 border border-gray-200 rounded-lg transition-colors cursor-pointer"
             >
-              <FaSlidersH className="text-black" size={12} />
-              <span className="hidden sm:inline">Challan Settings</span>
+              <FaSlidersH className="text-black shrink-0" size={11} />
+              <span className="truncate">Challan</span>
             </button>
           )}
 
           {/* Sort Menu */}
-          <div className="relative shrink-0 z-40" ref={sortRef}>
+          <div className="relative shrink-0 z-50 w-full sm:w-auto" ref={sortRef}>
             <button
               type="button"
               onClick={() => setIsSortOpen(!isSortOpen)}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-black bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-lg transition-colors cursor-pointer"
+              className="w-full sm:w-auto flex items-center justify-center gap-1 px-2 sm:px-2.5 h-8 text-[11px] sm:text-xs font-medium text-black bg-gray-50/80 hover:bg-gray-100 border border-gray-200 rounded-lg transition-colors cursor-pointer"
             >
-              <BsFilterRight className="text-black text-sm" />
-              <span>Sort: {sortOptions.find((s) => s.value === sortBy)?.label || "Latest"}</span>
+              <BsFilterRight className="text-black text-sm shrink-0" />
+              <span className="truncate">
+                {sortBy === "latest" ? "Latest" : sortOptions.find((s) => s.value === sortBy)?.label || "Sort"}
+              </span>
             </button>
 
             {isSortOpen && (
-              <div className="absolute right-0 top-full mt-1 w-48 bg-white rounded-lg shadow-2xl border border-gray-100 py-1 z-[9999]">
+              <div className="absolute right-0 top-full mt-1 w-48 bg-white rounded-lg shadow-2xl border border-gray-100 py-1 z-[99999]">
                 {sortOptions.map((opt) => (
                   <button
                     key={opt.value}
@@ -343,9 +387,9 @@ export const PurchaseTable: React.FC<PurchaseTableProps> = ({
             type="button"
             onClick={handleExport}
             title="Download Excel Report"
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 rounded-lg transition-all shadow-xs cursor-pointer active:scale-95 shrink-0"
+            className="w-full sm:w-auto flex items-center justify-center gap-1.5 px-3 h-8 text-[11px] sm:text-xs font-semibold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 rounded-lg transition-all shadow-xs cursor-pointer active:scale-95"
           >
-            <FaFileExcel className="text-emerald-600" size={13} />
+            <FaFileExcel className="text-emerald-600 shrink-0" size={12} />
             <span>Export</span>
           </button>
         </div>
@@ -363,7 +407,7 @@ export const PurchaseTable: React.FC<PurchaseTableProps> = ({
         ) : (
           <table className="w-full text-left border-collapse text-xs">
             <thead>
-              <tr className="bg-[#009fe3] text-white text-xs font-semibold">
+              <tr className="bg-[#41BEF3] text-black text-xs font-semibold">
                 <th className="py-2.5 px-3 text-center w-10">SL</th>
                 <th className="py-2.5 px-3">Supplier</th>
                 <th className="py-2.5 px-3">Date</th>
@@ -372,7 +416,7 @@ export const PurchaseTable: React.FC<PurchaseTableProps> = ({
                 <th className="py-2.5 px-3 text-right">Paid (৳)</th>
                 <th className="py-2.5 px-3 text-right">Due (৳)</th>
                 <th className="py-2.5 px-3 text-center">Method</th>
-                <th className="py-2.5 px-3 text-center">Status</th>
+                <th className="py-2.5 px-3 text-center">Payment Status</th>
                 <th className="py-2.5 px-3 text-center w-28">Actions</th>
               </tr>
             </thead>
@@ -507,6 +551,16 @@ export const PurchaseTable: React.FC<PurchaseTableProps> = ({
                         >
                           <FiEdit size={14} />
                         </button>
+                        {onDelete && (
+                          <button
+                            type="button"
+                            onClick={() => onDelete(purchase)}
+                            title="Delete Purchase"
+                            className="p-1 rounded text-rose-600 hover:bg-rose-100 transition-colors cursor-pointer"
+                          >
+                            <FiTrash2 size={14} />
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>

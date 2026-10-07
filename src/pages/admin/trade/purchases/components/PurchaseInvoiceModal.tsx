@@ -1,4 +1,4 @@
-import React, { useRef } from "react";
+import React, { useRef, useEffect } from "react";
 import Modal from "@/components/modal/Modal";
 import Button from "@/components/button/Button";
 import type { PurchaseItem } from "@/types";
@@ -9,17 +9,67 @@ interface PurchaseInvoiceModalProps {
   isOpen: boolean;
   onClose: () => void;
   purchase: PurchaseItem | null;
+  autoPrint?: boolean;
 }
 
 const PurchaseInvoiceModal: React.FC<PurchaseInvoiceModalProps> = ({
   isOpen,
   onClose,
   purchase,
+  autoPrint = false,
 }) => {
   const printRef = useRef<HTMLDivElement>(null);
   const userInfo = getUserInfo();
 
-  if (!purchase) return null;
+  const p: any = purchase || {};
+  const rawDetails =
+    p.purchaseDetails ||
+    p.purchasesDetails ||
+    p.purchase_details ||
+    p.details ||
+    p.items ||
+    p.products ||
+    p.purchaseListDetails ||
+    p.salesDetails ||
+    p.saleDetails ||
+    p.productList ||
+    p.productsList ||
+    [];
+  const details: any[] = Array.isArray(rawDetails) ? rawDetails : [];
+
+  const delivery = Number(p.transportCost ?? p.transport_cost ?? p.delivery_charge ?? p.deliveryCharge ?? 0);
+  const discount = Number(p.discount ?? p.discount_amount ?? p.discountAmount ?? 0);
+  const vat = Number(p.vat ?? p.vat_amount ?? p.vatAmount ?? p.invoiceVat ?? 0);
+  const subtotal =
+    Number(p.totalAmount ?? p.total_amount ?? p.subtotal ?? 0) ||
+    details.reduce((acc, item: any) => {
+      const price = Number(item.buyPrice ?? item.buy_price ?? item.price ?? item.rate ?? 0);
+      const qty = Number(item.quantity ?? item.qty ?? 1);
+      return acc + (Number(item.total) || price * qty);
+    }, 0);
+
+  const grandTotal = Number(p.grandTotal ?? p.grand_total ?? p.total ?? (subtotal - discount + vat + delivery));
+  const paid = Number(p.paidAmount ?? p.paid_amount ?? p.paid ?? p.cashReceived ?? 0);
+  const due = Number(p.dueAmount ?? p.due_amount ?? p.due ?? Math.max(0, grandTotal - paid));
+
+  const supplierName = p.supplierName || p.supplier_name || p.partyName || p.party_name || p.customerName || "Direct Supplier";
+  const supplierPhone = p.supplierPhone || p.supplier_phone || p.partyPhone || p.party_phone || p.customerPhone;
+  const supplierAddress = p.supplierAddress || p.supplier_address || p.partyAddress || p.party_address || p.customerAddress;
+
+  const vehicleNo = p.vehicleNo || p.vehicle_no || p.truckNo || p.truck_no || "N/A";
+  const driverName = p.driverName || p.driver_name || "N/A";
+  const driverPhone = p.driverPhone || p.driver_phone || "N/A";
+  const challanNo = p.challanNo || p.challan_no || p.challanRefNo;
+  const invoiceNo = p.invoiceNo || p.invoice_no || p.billNo || "N/A";
+  const invoiceDate = p.purchaseDate || p.salesDate || p.date || p.created_at || p.createdAt || "N/A";
+
+  const formatMoney = (amount: number | string | undefined) => {
+    const num = Number(amount) || 0;
+    return new Intl.NumberFormat("en-IN", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(num);
+  };
 
   const handlePrint = () => {
     const printWindow = window.open("", "_blank");
@@ -283,7 +333,7 @@ const PurchaseInvoiceModal: React.FC<PurchaseInvoiceModalProps> = ({
 
             <div class="bottom-section">
               <div style="max-width: 350px; font-size: 11px; color: #475569;">
-                ${purchase.note ? `<div style="background: #fffbeb; border: 1px solid #fde68a; border-radius: 6px; padding: 6px 10px;"><strong>Note:</strong> ${purchase.note}</div>` : ""}
+                ${p.note ? `<div style="background: #fffbeb; border: 1px solid #fde68a; border-radius: 6px; padding: 6px 10px;"><strong>Note:</strong> ${p.note}</div>` : ""}
               </div>
 
               <div class="totals-card">
@@ -342,55 +392,16 @@ const PurchaseInvoiceModal: React.FC<PurchaseInvoiceModalProps> = ({
     printWindow.document.close();
   };
 
-  const formatMoney = (amount: number | string | undefined) => {
-    const num = Number(amount) || 0;
-    return new Intl.NumberFormat("en-IN", {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    }).format(num);
-  };
+  useEffect(() => {
+    if (isOpen && autoPrint && purchase) {
+      const timer = setTimeout(() => {
+        handlePrint();
+      }, 350);
+      return () => clearTimeout(timer);
+    }
+  }, [isOpen, autoPrint, purchase]);
 
-  const p: any = purchase;
-  const rawDetails =
-    p.purchaseDetails ||
-    p.purchasesDetails ||
-    p.purchase_details ||
-    p.details ||
-    p.items ||
-    p.products ||
-    p.purchaseListDetails ||
-    p.salesDetails ||
-    p.saleDetails ||
-    p.productList ||
-    p.productsList ||
-    [];
-  const details: any[] = Array.isArray(rawDetails) ? rawDetails : [];
-
-  const delivery = Number(p.transportCost ?? p.transport_cost ?? p.delivery_charge ?? p.deliveryCharge ?? 0);
-  const discount = Number(p.discount ?? p.discount_amount ?? p.discountAmount ?? 0);
-  const vat = Number(p.vat ?? p.vat_amount ?? p.vatAmount ?? p.invoiceVat ?? 0);
-  const subtotal =
-    Number(p.totalAmount ?? p.total_amount ?? p.subtotal ?? 0) ||
-    details.reduce((acc, item: any) => {
-      const price = Number(item.buyPrice ?? item.buy_price ?? item.price ?? item.rate ?? 0);
-      const qty = Number(item.quantity ?? item.qty ?? 1);
-      return acc + (Number(item.total) || price * qty);
-    }, 0);
-
-  const grandTotal = Number(p.grandTotal ?? p.grand_total ?? p.total ?? (subtotal - discount + vat + delivery));
-  const paid = Number(p.paidAmount ?? p.paid_amount ?? p.paid ?? p.cashReceived ?? 0);
-  const due = Number(p.dueAmount ?? p.due_amount ?? p.due ?? Math.max(0, grandTotal - paid));
-
-  const supplierName = p.supplierName || p.supplier_name || p.partyName || p.party_name || p.customerName || "Direct Supplier";
-  const supplierPhone = p.supplierPhone || p.supplier_phone || p.partyPhone || p.party_phone || p.customerPhone;
-  const supplierAddress = p.supplierAddress || p.supplier_address || p.partyAddress || p.party_address || p.customerAddress;
-
-  const vehicleNo = p.vehicleNo || p.vehicle_no || p.truckNo || p.truck_no || "N/A";
-  const driverName = p.driverName || p.driver_name || "N/A";
-  const driverPhone = p.driverPhone || p.driver_phone || "N/A";
-  const challanNo = p.challanNo || p.challan_no || p.challanRefNo;
-  const invoiceNo = p.invoiceNo || p.invoice_no || p.billNo || "N/A";
-  const invoiceDate = p.purchaseDate || p.salesDate || p.date || p.created_at || p.createdAt || "N/A";
+  if (!purchase) return null;
 
   return (
     <Modal

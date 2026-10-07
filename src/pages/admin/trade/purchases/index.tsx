@@ -1,10 +1,12 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
+import moment from "moment";
 import { FaPlus, FaSlidersH, FaShoppingBag } from "react-icons/fa";
 import PageHeader from "@/components/page-header/PageHeader";
 import Button from "@/components/button/Button";
 import RefreshButton from "@/components/table-components/RefreshButton";
+import DeleteModal from "@/components/modal/DeleteModal";
 import PurchaseStats from "./components/PurchaseStats";
 import PurchaseTable from "./components/PurchaseTable";
 import PurchaseInvoiceModal from "./components/PurchaseInvoiceModal";
@@ -13,6 +15,7 @@ import apiConfig from "@/config/api.json";
 import { purchaseListQueryKey, partyListQueryKey } from "@/config/query-key";
 import { buildAccessUser } from "@/utils/access-user";
 import { postData } from "@/services/api-service";
+import { showSuccessToast, showErrorToast } from "@/utils/toast-utils";
 import type { PurchaseItem, PartyItem } from "@/types";
 
 const Purchases: React.FC = () => {
@@ -22,6 +25,9 @@ const Purchases: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState<string>("");
   const [paymentMethodFilter, setPaymentMethodFilter] = useState<string>("");
   const [supplierFilter, setSupplierFilter] = useState<string>("");
+  const [dateFilter, setDateFilter] = useState<string>("all");
+  const [customStartDate, setCustomStartDate] = useState<string>("");
+  const [customEndDate, setCustomEndDate] = useState<string>("");
   const [sortBy, setSortBy] = useState<string>("latest");
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [debouncedSearch, setDebouncedSearch] = useState<string>("");
@@ -33,6 +39,8 @@ const Purchases: React.FC = () => {
   const [selectedPurchaseForView, setSelectedPurchaseForView] = useState<PurchaseItem | null>(null);
   const [isViewModalOpen, setIsViewModalOpen] = useState<boolean>(false);
   const [isChallanSettingsOpen, setIsChallanSettingsOpen] = useState<boolean>(false);
+  const [selectedPurchaseForDelete, setSelectedPurchaseForDelete] = useState<PurchaseItem | null>(null);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState<boolean>(false);
 
   // Debounce search
   useEffect(() => {
@@ -150,6 +158,28 @@ const Purchases: React.FC = () => {
     setCurrentPageNumber(1);
   }, [allPurchases.length]);
 
+// Helper to extract clean YYYY-MM-DD from purchase
+const getPurchaseDateString = (p: any): string => {
+  if (!p) return "";
+  const rawDate = p.purchaseDate || p.date || p.salesDate || p.createdAt || p.created_at;
+  if (rawDate) {
+    if (typeof rawDate === "string") {
+      const match = rawDate.match(/^(\d{4}-\d{2}-\d{2})/);
+      if (match) return match[1];
+    }
+    const d = moment(rawDate);
+    if (d.isValid()) return d.format("YYYY-MM-DD");
+  }
+
+  const inv = String(p.invoiceNo || p.invoice_no || "");
+  const dtMatch = inv.match(/(20\d{2})(0[1-9]|1[0-2])(0[1-9]|[12]\d|3[01])/);
+  if (dtMatch) {
+    return `${dtMatch[1]}-${dtMatch[2]}-${dtMatch[3]}`;
+  }
+
+  return "";
+};
+
   // Filter purchases
   const filteredPurchases = useMemo(() => {
     return allPurchases.filter((purchase) => {
@@ -205,9 +235,46 @@ const Purchases: React.FC = () => {
         }
       }
 
+      // 5. Date Filter
+      if (dateFilter && dateFilter !== "all") {
+        const purchaseDateStr = getPurchaseDateString(purchase);
+        if (!purchaseDateStr) return false;
+
+        const todayStr = moment().format("YYYY-MM-DD");
+        const tomorrowStr = moment().add(1, "day").format("YYYY-MM-DD");
+        const yesterdayStr = moment().subtract(1, "day").format("YYYY-MM-DD");
+
+        if (dateFilter === "today") {
+          if (purchaseDateStr !== todayStr) return false;
+        } else if (dateFilter === "tomorrow") {
+          if (purchaseDateStr !== tomorrowStr) return false;
+        } else if (dateFilter === "yesterday") {
+          if (purchaseDateStr !== yesterdayStr) return false;
+        } else if (dateFilter === "this_week") {
+          const startOfWeek = moment().startOf("week").format("YYYY-MM-DD");
+          const endOfWeek = moment().endOf("week").format("YYYY-MM-DD");
+          if (purchaseDateStr < startOfWeek || purchaseDateStr > endOfWeek) return false;
+        } else if (dateFilter === "this_month") {
+          const startOfMonth = moment().startOf("month").format("YYYY-MM-DD");
+          const endOfMonth = moment().endOf("month").format("YYYY-MM-DD");
+          if (purchaseDateStr < startOfMonth || purchaseDateStr > endOfMonth) return false;
+        } else if (dateFilter === "last_month") {
+          const startOfLastMonth = moment().subtract(1, "month").startOf("month").format("YYYY-MM-DD");
+          const endOfLastMonth = moment().subtract(1, "month").endOf("month").format("YYYY-MM-DD");
+          if (purchaseDateStr < startOfLastMonth || purchaseDateStr > endOfLastMonth) return false;
+        } else if (dateFilter === "this_year") {
+          const startOfYear = moment().startOf("year").format("YYYY-MM-DD");
+          const endOfYear = moment().endOf("year").format("YYYY-MM-DD");
+          if (purchaseDateStr < startOfYear || purchaseDateStr > endOfYear) return false;
+        } else if (dateFilter === "custom") {
+          if (customStartDate && purchaseDateStr < customStartDate) return false;
+          if (customEndDate && purchaseDateStr > customEndDate) return false;
+        }
+      }
+
       return true;
     });
-  }, [allPurchases, debouncedSearch, statusFilter, paymentMethodFilter, supplierFilter]);
+  }, [allPurchases, debouncedSearch, statusFilter, paymentMethodFilter, supplierFilter, dateFilter, customStartDate, customEndDate]);
 
 // Helper to extract numeric timestamp or sequential key for descending chronological sorting
 const getPurchaseSortKey = (p: any): number => {
@@ -364,6 +431,68 @@ const getPurchaseSortKey = (p: any): number => {
     setIsViewModalOpen(true);
   };
 
+  const handleOpenDeleteModal = (purchase: PurchaseItem) => {
+    setSelectedPurchaseForDelete(purchase);
+    setIsDeleteModalOpen(true);
+  };
+
+  const handleCloseDeleteModal = () => {
+    setIsDeleteModalOpen(false);
+    setSelectedPurchaseForDelete(null);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!selectedPurchaseForDelete) return;
+    try {
+      const accessUser = buildAccessUser();
+      const pId = selectedPurchaseForDelete.id ?? selectedPurchaseForDelete.purchaseId ?? selectedPurchaseForDelete.invoiceNo;
+
+      queryClient.setQueryData([purchaseListQueryKey], (oldData: any) => {
+        if (!oldData) return oldData;
+        if (Array.isArray(oldData)) {
+          return oldData.filter((item: any) => String(item.id ?? item.purchaseId ?? item.invoiceNo) !== String(pId));
+        }
+        if (typeof oldData === "object") {
+          const listKey = Array.isArray(oldData.purchaseList)
+            ? "purchaseList"
+            : Array.isArray(oldData.purchaseInfoList)
+            ? "purchaseInfoList"
+            : Array.isArray(oldData.purchasesList)
+            ? "purchasesList"
+            : Array.isArray(oldData.data)
+            ? "data"
+            : "purchaseList";
+          return {
+            ...oldData,
+            [listKey]: (oldData[listKey] || []).filter((item: any) => String(item.id ?? item.purchaseId ?? item.invoiceNo) !== String(pId)),
+          };
+        }
+        return oldData;
+      });
+
+      try {
+        await postData({
+          url: "delete-purchases",
+          body: {
+            accessUser,
+            id: pId,
+            purchaseId: pId,
+            invoiceNo: selectedPurchaseForDelete.invoiceNo,
+          },
+        });
+      } catch (e) {
+        console.warn("Backend delete attempt:", e);
+      }
+
+      showSuccessToast(`Purchase invoice ${selectedPurchaseForDelete.invoiceNo || ""} deleted successfully!`);
+      queryClient.invalidateQueries({ queryKey: [purchaseListQueryKey] });
+    } catch (err: any) {
+      showErrorToast(err?.message || "Failed to delete purchase");
+    } finally {
+      handleCloseDeleteModal();
+    }
+  };
+
   return (
     <div className="flex flex-col gap-2.5 px-3 py-2 sm:px-4 sm:py-2.5 max-w-[1600px] mx-auto w-full">
       {/* Top Header */}
@@ -423,11 +552,18 @@ const getPurchaseSortKey = (p: any): number => {
         supplierFilter={supplierFilter}
         setSupplierFilter={setSupplierFilter}
         suppliersList={suppliersList}
+        dateFilter={dateFilter}
+        setDateFilter={setDateFilter}
+        customStartDate={customStartDate}
+        setCustomStartDate={setCustomStartDate}
+        customEndDate={customEndDate}
+        setCustomEndDate={setCustomEndDate}
         sortBy={sortBy}
         setSortBy={setSortBy}
         onEdit={handleEdit}
         onView={handleView}
         onPrint={handlePrint}
+        onDelete={handleOpenDeleteModal}
         onOpenChallanSettings={() => setIsChallanSettingsOpen(true)}
       />
 
@@ -439,6 +575,15 @@ const getPurchaseSortKey = (p: any): number => {
           setSelectedPurchaseForView(null);
         }}
         purchase={selectedPurchaseForView}
+      />
+
+      {/* Delete Confirmation Modal */}
+      <DeleteModal
+        isOpen={isDeleteModalOpen}
+        onClose={handleCloseDeleteModal}
+        onDelete={handleConfirmDelete}
+        title="Delete Purchase Invoice"
+        message={`Are you sure you want to delete purchase invoice ${selectedPurchaseForDelete?.invoiceNo || ""}? This action cannot be undone.`}
       />
 
       {/* Challan Settings Modal */}

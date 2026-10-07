@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
+import { FiChevronDown } from "react-icons/fi";
 import {
   FaTrash,
   FaSearch,
@@ -8,6 +9,7 @@ import {
   FaUserPlus,
   FaSlidersH,
   FaCheck,
+  FaPlus,
   FaPrint,
   FaCalculator,
   FaMoneyBillWave,
@@ -17,6 +19,8 @@ import {
   FaWallet,
 } from "react-icons/fa";
 import Button from "@/components/button/Button";
+import DeleteModal from "@/components/modal/DeleteModal";
+import ConfirmModal from "@/components/modal/ConfirmModal";
 import PartyModal from "@/pages/admin/people/parties/components/PartyModal";
 import ChallanSettingsModal from "@/pages/admin/trade/purchases/components/ChallanSettingsModal";
 import PurchaseInvoiceModal from "@/pages/admin/trade/purchases/components/PurchaseInvoiceModal";
@@ -125,7 +129,13 @@ const CreatePurchaseForm: React.FC = () => {
   const [challanSettings, setChallanSettings] = useState<PurchaseChallanSettings>(defaultChallanSettings);
   const [savedPurchaseForPrint, setSavedPurchaseForPrint] = useState<PurchaseItem | null>(null);
   const [isPrintModalOpen, setIsPrintModalOpen] = useState<boolean>(false);
+  const [shouldAutoPrint, setShouldAutoPrint] = useState<boolean>(false);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const [itemIndexToDelete, setItemIndexToDelete] = useState<number | null>(null);
+  const [isDeleteLineModalOpen, setIsDeleteLineModalOpen] = useState<boolean>(false);
+  const [isResetModalOpen, setIsResetModalOpen] = useState<boolean>(false);
+  const [isSaveConfirmModalOpen, setIsSaveConfirmModalOpen] = useState<boolean>(false);
+  const [pendingSavePrint, setPendingSavePrint] = useState<boolean>(false);
 
   // Fetch Existing Purchases to determine the next sequential invoice number
   const purchaseListUrl = apiConfig.purchase?.purchaseListUrl || "get-purchase-list";
@@ -563,12 +573,13 @@ const CreatePurchaseForm: React.FC = () => {
 
   // Filtered Suppliers for Supplier Dropdown
   const filteredSuppliers = useMemo(() => {
-    if (!supplierSearchQuery.trim()) return suppliersList.slice(0, 8);
+    if (!supplierSearchQuery.trim()) return suppliersList.slice(0, 10);
     const q = supplierSearchQuery.toLowerCase().trim();
     return suppliersList.filter((s) => {
       const name = (s.name || s.partyName || "").toLowerCase();
       const phone = (s.phone || s.partyPhone || "").toLowerCase();
-      return name.includes(q) || phone.includes(q);
+      const address = (s.address || s.partyAddress || s.city || "").toLowerCase();
+      return name.includes(q) || phone.includes(q) || address.includes(q);
     });
   }, [suppliersList, supplierSearchQuery]);
 
@@ -1070,15 +1081,13 @@ const CreatePurchaseForm: React.FC = () => {
 
       queryClient.invalidateQueries({ queryKey: [purchaseListQueryKey] });
 
-      if (shouldPrint) {
-        setSavedPurchaseForPrint({
-          ...purchasePayload,
-          id: res?.id || invoiceNo,
-        });
-        setIsPrintModalOpen(true);
-      } else {
-        navigate("/admin/purchases");
-      }
+      // Always open Invoice Modal after save so user can view/print invoice
+      setShouldAutoPrint(shouldPrint);
+      setSavedPurchaseForPrint({
+        ...purchasePayload,
+        id: res?.id || invoiceNo,
+      });
+      setIsPrintModalOpen(true);
     } catch (err: any) {
       console.error("Save purchase exception:", err);
       showErrorToast(err?.message || "An error occurred while saving purchase");
@@ -1088,21 +1097,24 @@ const CreatePurchaseForm: React.FC = () => {
   };
 
   const handleReset = () => {
-    if (window.confirm("Are you sure you want to reset the form? All unsaved data will be cleared.")) {
-      setLineItems([]);
-      setSelectedSupplier(null);
-      setInvoiceDiscount("");
-      setInvoiceVat("");
-      setTransportCost("");
-      setCashAmount("");
-      setBankAmount("");
-      setMfsAmount("");
-      setCashGiven("");
-      setNotes("");
-      setSelectedProductsMap({});
-      const code = businessCode || getBusinessCode() || buildAccessUser().businessCode || "1001";
-      setInvoiceNo(makeInvoiceNo(code));
-    }
+    setIsResetModalOpen(true);
+  };
+
+  const handleConfirmReset = () => {
+    setLineItems([]);
+    setSelectedSupplier(null);
+    setInvoiceDiscount("");
+    setInvoiceVat("");
+    setTransportCost("");
+    setCashAmount("");
+    setBankAmount("");
+    setMfsAmount("");
+    setCashGiven("");
+    setNotes("");
+    setSelectedProductsMap({});
+    const code = businessCode || getBusinessCode() || buildAccessUser().businessCode || "1001";
+    setInvoiceNo(makeInvoiceNo(code));
+    setIsResetModalOpen(false);
   };
 
   return (
@@ -1125,7 +1137,7 @@ const CreatePurchaseForm: React.FC = () => {
             onClick={() => setIsChallanSettingsOpen(true)}
             className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-gray-700 bg-white hover:bg-gray-50 border border-gray-200 rounded-lg shadow-xs transition-colors cursor-pointer"
           >
-            <FaSlidersH className="text-gray-500" size={12} />
+            <FaSlidersH className="text-black" size={12} />
             <span className="hidden sm:inline">Challan Settings</span>
           </button>
           <button
@@ -1188,25 +1200,30 @@ const CreatePurchaseForm: React.FC = () => {
                   {selectedSupplier.name || selectedSupplier.partyName}
                 </span>
                 {(selectedSupplier.phone || selectedSupplier.partyPhone) && (
-                  <span className="text-[11px] text-gray-700   shrink-0">
+                  <span className="text-[11px] text-gray-700 shrink-0">
                     ({selectedSupplier.phone || selectedSupplier.partyPhone})
+                  </span>
+                )}
+                {(selectedSupplier.address || selectedSupplier.partyAddress || selectedSupplier.city) && (
+                  <span className="text-[11px] text-black truncate">
+                    - {selectedSupplier.address || selectedSupplier.partyAddress || selectedSupplier.city}
                   </span>
                 )}
               </div>
             ) : (
               <span className="text-gray-400">Select or search supplier...</span>
             )}
-            <span className="text-gray-500 text-xs ml-1 shrink-0">▼</span>
+            <FiChevronDown className="text-gray-500 text-xs ml-1 shrink-0" size={14} />
           </div>
 
           {/* Supplier Dropdown Panel */}
           {isSupplierDropdownOpen && (
-            <div className="absolute left-0 mt-1 w-80 bg-white rounded-lg shadow-xl border border-gray-200 p-2 z-40">
+            <div className="absolute left-0 mt-1 w-80 sm:w-96 bg-white rounded-lg shadow-xl border border-gray-200 p-2 z-40">
               <div className="relative mb-2">
                 <FaSearch className="absolute left-2.5 top-2.5 text-gray-400 text-xs" />
                 <input
                   type="text"
-                  placeholder="Search supplier name, phone..."
+                  placeholder="Search supplier name, phone, address..."
                   value={supplierSearchQuery}
                   onChange={(e) => setSupplierSearchQuery(e.target.value)}
                   className="w-full pl-7 pr-2 py-1.5 text-xs border border-gray-200 rounded-md focus:outline-none focus:border-[var(--color-primary)] text-black"
@@ -1225,14 +1242,21 @@ const CreatePurchaseForm: React.FC = () => {
                       }}
                       className="p-2 hover:bg-sky-50 cursor-pointer rounded-md transition-colors text-xs flex justify-between items-center"
                     >
-                      <div className="flex items-center gap-1.5 truncate">
-                        <span className="font-semibold text-black">{s.name || s.partyName}</span>
-                        {(s.phone || s.partyPhone) && (
-                          <span className="text-[11px] text-gray-500  ">({s.phone || s.partyPhone})</span>
+                      <div className="flex flex-col min-w-0 pr-2">
+                        <div className="flex items-center gap-1.5 truncate">
+                          <span className="font-semibold text-black">{s.name || s.partyName}</span>
+                          {(s.phone || s.partyPhone) && (
+                            <span className="text-[11px] text-black">({s.phone || s.partyPhone})</span>
+                          )}
+                        </div>
+                        {(s.address || s.partyAddress || s.city) && (
+                          <span className="text-[10px] text-black truncate mt-0.5">
+                            {s.address || s.partyAddress || s.city}
+                          </span>
                         )}
                       </div>
                       {(s.balance || s.openingBalance || s.dueAmount) && (
-                        <span className="text-[10px]   text-rose-600 bg-rose-50 px-1.5 py-0.5 rounded shrink-0 ml-1">
+                        <span className="text-[10px] text-rose-600 bg-rose-50 px-1.5 py-0.5 rounded shrink-0 ml-1">
                           Bal: ৳{s.balance || s.openingBalance || s.dueAmount}
                         </span>
                       )}
@@ -1251,13 +1275,12 @@ const CreatePurchaseForm: React.FC = () => {
           <label className="text-[11px] font-bold text-black uppercase tracking-wider block mb-1">
             Invoice No <span className="text-rose-500">*</span>
           </label>
-          <input
-            type="text"
-            value={invoiceNo}
-            onChange={(e) => setInvoiceNo(e.target.value)}
-            className="w-full h-9 px-2.5 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:border-[var(--color-primary)] font-bold text-black"
-            placeholder="e.g. 28488-20261007090736718"
-          />
+          <div
+            className="w-full h-9 px-2.5 py-1.5 text-xs border border-gray-300 rounded-lg bg-gray-200 font-bold text-black flex items-center select-text cursor-default"
+            title="Auto-generated Invoice Number"
+          >
+            {invoiceNo || "N/A"}
+          </div>
         </div>
 
         {/* Purchase Date */}
@@ -1358,10 +1381,10 @@ const CreatePurchaseForm: React.FC = () => {
       <div className="bg-white p-2.5 rounded-xl border border-gray-200 shadow-xs relative" ref={productSearchRef}>
         <div className="flex items-center gap-2">
           <div className="relative flex-1">
-            <FaBarcode className="absolute left-3 top-3 text-gray-400 text-sm" />
+            <FaSearch className="absolute left-3 top-2.5 text-gray-400 text-xs" />
             <input
               type="text"
-              placeholder="Scan barcode or type product name / code / SKU to add item..."
+              placeholder="Search product name, code, or scan barcode to add..."
               value={productSearchQuery}
               onChange={(e) => {
                 setProductSearchQuery(e.target.value);
@@ -1369,23 +1392,31 @@ const CreatePurchaseForm: React.FC = () => {
               }}
               onFocus={() => setIsProductDropdownOpen(true)}
               onKeyDown={handleKeyDownSearch}
-              className="w-full pl-9 pr-3 py-2 text-xs border border-gray-300 rounded-lg focus:outline-none focus:border-[var(--color-primary)] bg-gray-50/50 focus:bg-white font-medium text-black"
+              className="w-full pl-8 pr-3 py-1.5 text-xs border border-[#0F365C] rounded-lg focus:outline-none focus:border-[var(--color-primary)] focus:ring-2 focus:ring-[var(--color-primary)]/20 bg-gray-50/40 focus:bg-white font-medium text-black placeholder:text-gray-400 placeholder:text-xs h-9 transition-all"
             />
           </div>
 
-          {/* Done Button replacing "Press Enter / Click to add" */}
+          {/* Dynamic Button: Add Your Product (when 0) / Done (when >0) */}
           <button
             type="button"
-            onClick={handleDoneSelectProducts}
-            disabled={selectedProductCount === 0}
-            className={`px-4 py-2 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all shadow-xs ${
+            onClick={selectedProductCount > 0 ? handleDoneSelectProducts : () => setIsProductDropdownOpen(true)}
+            className={`px-3.5 h-9 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all shadow-xs shrink-0 cursor-pointer ${
               selectedProductCount > 0
-                ? "bg-[var(--color-primary)] text-white hover:opacity-90 active:scale-95 cursor-pointer"
-                : "bg-gray-100 text-gray-400 cursor-not-allowed"
+                ? "bg-[var(--color-primary)] text-white   ring-2 ring-[var(--color-primary)]/20"
+                : "bg-[#0F365C] text-white border-gray-200"
             }`}
           >
-            <FaCheck size={11} />
-            <span>Done {selectedProductCount > 0 ? `(${selectedProductCount})` : ""}</span>
+            {selectedProductCount > 0 ? (
+              <>
+                <FaCheck size={11} />
+                <span>Done ({selectedProductCount})</span>
+              </>
+            ) : (
+              <>
+                <FaPlus size={10} className="text-white" />
+                <span>Add Your Product</span>
+              </>
+            )}
           </button>
         </div>
 
@@ -1423,7 +1454,7 @@ const CreatePurchaseForm: React.FC = () => {
                         <span className={`font-bold ${isSelected ? "text-[var(--color-primary)]" : "text-black"}`}>
                           {p.name || p.productName}
                         </span>
-                        <span className="text-[10px] text-gray-500">
+                        <span className="text-[10px] text-black">
                           Code: {p.pcode || p.productCode || "N/A"} | Unit: {p.unit || "pcs"}
                         </span>
                       </div>
@@ -1453,7 +1484,7 @@ const CreatePurchaseForm: React.FC = () => {
           <h2 className="text-xs font-bold text-gray-800 uppercase tracking-wider">
             Purchase Items List ({lineItems.length})
           </h2>
-          <span className="text-[11px] text-gray-500 font-medium">
+          <span className="text-[11px] text-black font-medium">
             Subtotal: <span className="  font-bold text-black">৳ {formatMoney(rawSubtotal)}</span>
           </span>
         </div>
@@ -1461,8 +1492,8 @@ const CreatePurchaseForm: React.FC = () => {
         <div className="overflow-x-auto w-full">
           <table className="w-full text-xs text-left border-collapse">
             <thead>
-              <tr className="bg-gray-50 border-b border-gray-200 text-[11px] font-semibold text-black uppercase tracking-wider">
-                <th className="py-2 px-2 text-center w-8 whitespace-nowrap">#</th>
+              <tr className="bg-[#41bef3] border-b border-gray-200 text-[11px] font-semibold text-black shadow-md">
+                <th className="py-2 px-2 text-center w-8 whitespace-nowrap">SL</th>
                 <th className="py-2 px-3 min-w-[180px]">Product</th>
                 <th className="py-2 px-2 text-center w-16 whitespace-nowrap">Unit</th>
                 <th className="py-2 px-2 text-right w-28 min-w-[110px] whitespace-nowrap">Buy Price (৳)</th>
@@ -1485,7 +1516,7 @@ const CreatePurchaseForm: React.FC = () => {
                     <td className="py-2 px-3">
                       <span className="font-semibold text-black block">{item.productName}</span>
                       {item.productCode && (
-                        <span className="text-[10px] text-gray-500  ">Code: {item.productCode}</span>
+                        <span className="text-[10px] text-black  ">Code: {item.productCode}</span>
                       )}
                     </td>
 
@@ -1569,7 +1600,10 @@ const CreatePurchaseForm: React.FC = () => {
                     <td className="py-2 px-2 text-center whitespace-nowrap">
                       <button
                         type="button"
-                        onClick={() => handleRemoveLineItem(idx)}
+                        onClick={() => {
+                          setItemIndexToDelete(idx);
+                          setIsDeleteLineModalOpen(true);
+                        }}
                         className="p-1 text-rose-500 hover:bg-rose-50 rounded transition-colors cursor-pointer"
                         title="Remove Item"
                       >
@@ -1757,7 +1791,7 @@ const CreatePurchaseForm: React.FC = () => {
                 onClick={handlePayFullCredit}
                 className="px-2 py-0.5 text-[11px] font-bold rounded-md bg-rose-50 text-rose-800 border border-rose-300 hover:bg-rose-100 transition-colors cursor-pointer"
               >
-                Credit / Due
+                Credit
               </button>
             </div>
           </div>
@@ -2006,9 +2040,38 @@ const CreatePurchaseForm: React.FC = () => {
         isOpen={isPrintModalOpen}
         onClose={() => {
           setIsPrintModalOpen(false);
+          setShouldAutoPrint(false);
           navigate("/admin/purchases");
         }}
         purchase={savedPurchaseForPrint}
+        autoPrint={shouldAutoPrint}
+      />
+
+      {/* Delete Line Item Modal */}
+      <DeleteModal
+        isOpen={isDeleteLineModalOpen}
+        onClose={() => {
+          setIsDeleteLineModalOpen(false);
+          setItemIndexToDelete(null);
+        }}
+        onDelete={() => {
+          if (itemIndexToDelete !== null) {
+            handleRemoveLineItem(itemIndexToDelete);
+          }
+          setIsDeleteLineModalOpen(false);
+          setItemIndexToDelete(null);
+        }}
+        title="Remove Product"
+        message={`Are you sure you want to remove "${itemIndexToDelete !== null && lineItems[itemIndexToDelete] ? lineItems[itemIndexToDelete]?.productName : 'this item'}" from the purchase list?`}
+      />
+
+      {/* Reset Form Modal */}
+      <DeleteModal
+        isOpen={isResetModalOpen}
+        onClose={() => setIsResetModalOpen(false)}
+        onDelete={handleConfirmReset}
+        title="Reset Purchase Form"
+        message="Are you sure you want to reset the form? All unsaved data and added products will be cleared."
       />
     </div>
   );
