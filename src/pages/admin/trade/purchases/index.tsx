@@ -564,7 +564,6 @@ const getPurchaseSortKey = (p: any): number => {
         onView={handleView}
         onPrint={handlePrint}
         onDelete={handleOpenDeleteModal}
-        onOpenChallanSettings={() => setIsChallanSettingsOpen(true)}
       />
 
       {/* View / Print Invoice Modal */}
