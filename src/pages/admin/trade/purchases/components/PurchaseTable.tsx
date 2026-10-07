@@ -345,7 +345,26 @@ export const PurchaseTable: React.FC<PurchaseTableProps> = ({
             <tbody className="divide-y divide-gray-100">
               {purchases.map((purchase, index) => {
                 const serialNumber = (currentPageNumber - 1) * dataLimit + index + 1;
-                const itemsCount = purchase.purchaseDetails?.length || (purchase as any)?.itemCount || 1;
+                const p: any = purchase;
+                const rawDetails =
+                  p.purchaseDetails ||
+                  p.purchasesDetails ||
+                  p.purchase_details ||
+                  p.details ||
+                  p.items ||
+                  p.products ||
+                  p.purchaseListDetails ||
+                  p.salesDetails ||
+                  p.saleDetails ||
+                  p.productList ||
+                  p.productsList;
+
+                const itemsCount =
+                  (Array.isArray(rawDetails) && rawDetails.length > 0 ? rawDetails.length : 0) ||
+                  Number(p.itemCount ?? p.item_count ?? p.totalItems ?? p.total_items ?? p.itemsCount ?? p.items_count ?? 0) ||
+                  Number(p.totalQty ?? p.total_qty ?? p.quantity ?? 0) ||
+                  (Array.isArray(rawDetails) ? rawDetails.length : 1);
+
                 const grandTotal = Number(purchase.grandTotal ?? purchase.totalAmount ?? 0);
                 const paidAmount = Number(purchase.paidAmount ?? 0);
                 const dueAmount = Number(purchase.dueAmount ?? Math.max(0, grandTotal - paidAmount));

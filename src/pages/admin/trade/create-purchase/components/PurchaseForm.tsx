@@ -900,6 +900,14 @@ const CreatePurchaseForm: React.FC = () => {
         customerPaid: Number(cashGiven) || totalPaid,
         returnAmount: changeReturnAmount,
         purchaseDetails: purchaseDetailsPayload,
+        details: purchaseDetailsPayload,
+        purchasesDetails: purchaseDetailsPayload,
+        purchase_details: purchaseDetailsPayload,
+        items: purchaseDetailsPayload,
+        itemCount: lineItems.length,
+        totalItems: lineItems.length,
+        itemsCount: lineItems.length,
+        totalQty: lineItems.reduce((sum, item) => sum + (Number(item.quantity) || 0), 0),
       };
 
       const editId =

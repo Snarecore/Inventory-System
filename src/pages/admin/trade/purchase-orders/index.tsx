@@ -191,7 +191,22 @@ const PurchaseOrders: React.FC = () => {
               <tbody className="divide-y divide-gray-100">
                 {paginatedOrders.map((order, index) => {
                   const sl = (currentPageNumber - 1) * dataLimit + index + 1;
-                  const itemsCount = order.purchaseDetails?.length || 1;
+                  const o: any = order;
+                  const rawDetails =
+                    o.purchaseDetails ||
+                    o.purchasesDetails ||
+                    o.purchase_details ||
+                    o.details ||
+                    o.items ||
+                    o.products ||
+                    o.purchaseListDetails;
+
+                  const itemsCount =
+                    (Array.isArray(rawDetails) && rawDetails.length > 0 ? rawDetails.length : 0) ||
+                    Number(o.itemCount ?? o.item_count ?? o.totalItems ?? o.total_items ?? o.itemsCount ?? o.items_count ?? 0) ||
+                    Number(o.totalQty ?? o.total_qty ?? o.quantity ?? 0) ||
+                    (Array.isArray(rawDetails) ? rawDetails.length : 1);
+
                   const total = Number(order.grandTotal ?? order.totalAmount ?? 0);
 
                   return (
