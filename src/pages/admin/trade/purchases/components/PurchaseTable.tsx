@@ -1,15 +1,18 @@
 import React, { useState, useRef, useEffect, useMemo } from "react";
-import { FiEye, FiEdit, FiPrinter } from "react-icons/fi";
+import { FiEye, FiEdit, FiPrinter, FiChevronDown } from "react-icons/fi";
 import { BsFilterRight } from "react-icons/bs";
 import Search from "@/components/table-components/Search";
 import EmptyState from "@/components/empty-state/EmptyState";
 import TableSkeleton from "@/components/skeleton/TableSkeleton";
 import Pagination from "@/components/pagination";
 import type { PurchaseItem, PartyItem } from "@/types";
-import { FaPhone, FaCalendarAlt, FaSlidersH, FaSearch } from "react-icons/fa";
+import { FaPhone, FaCalendarAlt, FaSlidersH, FaSearch, FaFileExcel } from "react-icons/fa";
+import { exportPurchasesToExcel } from "@/utils/excel-export";
+import { showSuccessToast, showErrorToast } from "@/utils/toast-utils";
 
 interface PurchaseTableProps {
   purchases: PurchaseItem[];
+  exportablePurchases?: PurchaseItem[];
   totalCount: number;
   isLoading?: boolean;
   isFetching?: boolean;
@@ -34,10 +37,12 @@ interface PurchaseTableProps {
   onView: (purchase: PurchaseItem) => void;
   onPrint: (purchase: PurchaseItem) => void;
   onOpenChallanSettings?: () => void;
+  onExport?: () => void;
 }
 
 export const PurchaseTable: React.FC<PurchaseTableProps> = ({
   purchases,
+  exportablePurchases,
   totalCount,
   isLoading,
   pageCount,
@@ -61,6 +66,7 @@ export const PurchaseTable: React.FC<PurchaseTableProps> = ({
   onView,
   onPrint,
   onOpenChallanSettings,
+  onExport,
 }) => {
   const [isSortOpen, setIsSortOpen] = useState<boolean>(false);
   const [isSupplierDropdownOpen, setIsSupplierDropdownOpen] = useState<boolean>(false);
@@ -68,6 +74,24 @@ export const PurchaseTable: React.FC<PurchaseTableProps> = ({
 
   const sortRef = useRef<HTMLDivElement>(null);
   const supplierRef = useRef<HTMLDivElement>(null);
+
+  const handleExport = () => {
+    if (onExport) {
+      onExport();
+      return;
+    }
+    const dataToExport = exportablePurchases && exportablePurchases.length > 0 ? exportablePurchases : purchases;
+    if (!dataToExport || dataToExport.length === 0) {
+      showErrorToast("No purchase records available to export");
+      return;
+    }
+    try {
+      exportPurchasesToExcel(dataToExport);
+      showSuccessToast(`Successfully exported ${dataToExport.length} purchases to Excel!`);
+    } catch (err: any) {
+      showErrorToast(err?.message || "Failed to export Excel file");
+    }
+  };
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -136,12 +160,12 @@ export const PurchaseTable: React.FC<PurchaseTableProps> = ({
   ];
 
   return (
-    <div className="bg-white rounded-xl shadow-xs border border-gray-200 overflow-hidden flex flex-col">
-      {/* Search and Filters Bar */}
-      <div className="p-2.5 sm:p-3 border-b border-gray-100 flex flex-col lg:flex-row lg:items-center justify-between gap-2.5">
-        <div className="flex flex-col sm:flex-row sm:items-center gap-2 flex-1 flex-wrap">
+    <div className="bg-white rounded-xl shadow-xs border border-gray-200 flex flex-col relative">
+      {/* Search and Filters Bar - Single Line Layout */}
+      <div className="p-2 sm:p-2.5 border-b border-gray-100 flex items-center justify-between gap-2 relative z-30">
+        <div className="flex items-center gap-2 flex-nowrap shrink-0">
           {/* Search Box */}
-          <div className="w-full sm:w-48">
+          <div className="w-36 sm:w-44 shrink-0">
             <Search
               searchQuery={searchQuery}
               onSearchChange={setSearchQuery}
@@ -152,18 +176,18 @@ export const PurchaseTable: React.FC<PurchaseTableProps> = ({
 
           {/* Searchable Supplier Filter */}
           {suppliersList.length > 0 && (
-            <div className="relative w-full sm:w-48" ref={supplierRef}>
+            <div className="relative w-36 sm:w-44 shrink-0 z-40" ref={supplierRef}>
               <button
                 type="button"
                 onClick={() => setIsSupplierDropdownOpen(!isSupplierDropdownOpen)}
                 className="w-full h-8 px-2.5 flex items-center justify-between text-xs border border-gray-200 rounded-lg bg-gray-50/50 hover:bg-white text-black font-medium focus:outline-none focus:border-[var(--color-primary)] cursor-pointer"
               >
-                <span className="truncate max-w-[145px]">{currentSupplierLabel}</span>
-                <span className="text-[10px] text-gray-500 ml-1">▼</span>
+                <span className="truncate max-w-[130px]">{currentSupplierLabel}</span>
+                <FiChevronDown className="text-gray-500 shrink-0 ml-1 text-xs" size={13} />
               </button>
 
               {isSupplierDropdownOpen && (
-                <div className="absolute left-0 mt-1 w-64 bg-white rounded-lg shadow-xl border border-gray-200 p-2 z-50">
+                <div className="absolute left-0 top-full mt-1 w-64 bg-white rounded-lg shadow-2xl border border-gray-200 p-2 z-[9999]">
                   <div className="relative mb-2">
                     <FaSearch className="absolute left-2.5 top-2.5 text-gray-400 text-xs" />
                     <input
@@ -230,7 +254,7 @@ export const PurchaseTable: React.FC<PurchaseTableProps> = ({
           )}
 
           {/* Status Filter */}
-          <div className="w-full sm:w-36">
+          <div className="w-28 sm:w-32 shrink-0">
             <select
               value={statusFilter}
               onChange={(e) => {
@@ -247,7 +271,7 @@ export const PurchaseTable: React.FC<PurchaseTableProps> = ({
           </div>
 
           {/* Payment Method Filter */}
-          <div className="w-full sm:w-36">
+          <div className="w-28 sm:w-32 shrink-0">
             <select
               value={paymentMethodFilter}
               onChange={(e) => {
@@ -266,13 +290,13 @@ export const PurchaseTable: React.FC<PurchaseTableProps> = ({
         </div>
 
         {/* Right Sort & Settings Toolbar */}
-        <div className="flex items-center gap-2 self-end lg:self-auto shrink-0">
+        <div className="flex items-center gap-2 shrink-0 flex-nowrap ml-auto">
           {onOpenChallanSettings && (
             <button
               type="button"
               onClick={onOpenChallanSettings}
               title="Challan Field Settings"
-              className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-black bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-lg transition-colors cursor-pointer"
+              className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-black bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-lg transition-colors cursor-pointer shrink-0"
             >
               <FaSlidersH className="text-black" size={12} />
               <span className="hidden sm:inline">Challan Settings</span>
@@ -280,7 +304,7 @@ export const PurchaseTable: React.FC<PurchaseTableProps> = ({
           )}
 
           {/* Sort Menu */}
-          <div className="relative" ref={sortRef}>
+          <div className="relative shrink-0 z-40" ref={sortRef}>
             <button
               type="button"
               onClick={() => setIsSortOpen(!isSortOpen)}
@@ -291,7 +315,7 @@ export const PurchaseTable: React.FC<PurchaseTableProps> = ({
             </button>
 
             {isSortOpen && (
-              <div className="absolute right-0 mt-1 w-48 bg-white rounded-lg shadow-lg border border-gray-100 py-1 z-30">
+              <div className="absolute right-0 top-full mt-1 w-48 bg-white rounded-lg shadow-2xl border border-gray-100 py-1 z-[9999]">
                 {sortOptions.map((opt) => (
                   <button
                     key={opt.value}
@@ -313,11 +337,22 @@ export const PurchaseTable: React.FC<PurchaseTableProps> = ({
               </div>
             )}
           </div>
+
+          {/* Export to Excel Button */}
+          <button
+            type="button"
+            onClick={handleExport}
+            title="Download Excel Report"
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 rounded-lg transition-all shadow-xs cursor-pointer active:scale-95 shrink-0"
+          >
+            <FaFileExcel className="text-emerald-600" size={13} />
+            <span>Export</span>
+          </button>
         </div>
       </div>
 
       {/* Main Table Content */}
-      <div className="overflow-x-auto w-full">
+      <div className="overflow-x-auto w-full relative z-10">
         {isLoading ? (
           <TableSkeleton columnCount={9} rowCount={8} />
         ) : purchases.length === 0 ? (

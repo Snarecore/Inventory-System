@@ -404,6 +404,7 @@ const getPurchaseSortKey = (p: any): number => {
       {/* Main Table */}
       <PurchaseTable
         purchases={paginatedPurchases}
+        exportablePurchases={sortedPurchases}
         totalCount={filteredPurchases.length}
         isLoading={isPurchasesLoading}
         isFetching={isFetching}
