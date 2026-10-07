@@ -330,9 +330,8 @@ export const PurchaseTable: React.FC<PurchaseTableProps> = ({
             <thead>
               <tr className="bg-[#009fe3] text-white text-xs font-semibold">
                 <th className="py-2.5 px-3 text-center w-10">SL</th>
-                <th className="py-2.5 px-3">Invoice No</th>
-                <th className="py-2.5 px-3">Date</th>
                 <th className="py-2.5 px-3">Supplier</th>
+                <th className="py-2.5 px-3">Date</th>
                 <th className="py-2.5 px-3 text-center">Items</th>
                 <th className="py-2.5 px-3 text-right">Total (৳)</th>
                 <th className="py-2.5 px-3 text-right">Paid (৳)</th>
@@ -390,37 +389,17 @@ export const PurchaseTable: React.FC<PurchaseTableProps> = ({
                       {serialNumber}
                     </td>
 
-                    {/* Invoice No */}
+                    {/* Supplier */}
                     <td className="py-2.5 px-3">
-                      <button
-                        type="button"
-                        onClick={() => onView(purchase)}
-                        className="font-medium text-black hover:text-[var(--color-primary)] cursor-pointer flex items-center gap-1"
-                      >
-                        {purchase.invoiceNo
-                          ? purchase.invoiceNo.startsWith("-")
-                            ? `PUR${purchase.invoiceNo}`
-                            : purchase.invoiceNo
-                          : `PUR-${purchase.id || index + 1}`}
-                      </button>
-                      {purchase.challanNo && (
-                        <span className="text-[10px] text-black/70 block">
-                          Ch: {purchase.challanNo}
-                        </span>
-                      )}
+                      <span className="font-medium text-black block truncate max-w-[170px]">
+                        {purchase.supplierName || "Direct Supplier"}
+                      </span>
                     </td>
 
                     {/* Date */}
                     <td className="py-2.5 px-3 text-black whitespace-nowrap">
                       <span className="flex items-center gap-1 text-[11px]">
                         {purchase.purchaseDate || (purchase.createdAt ? purchase.createdAt.substring(0, 10) : "N/A")}
-                      </span>
-                    </td>
-
-                    {/* Supplier */}
-                    <td className="py-2.5 px-3">
-                      <span className="font-medium text-black block truncate max-w-[170px]">
-                        {purchase.supplierName || "Direct Supplier"}
                       </span>
                     </td>
 
