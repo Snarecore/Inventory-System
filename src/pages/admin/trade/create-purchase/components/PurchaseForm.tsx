@@ -52,6 +52,12 @@ interface FormLineItem {
   stock?: number | string;
 }
 
+interface SelectedProductEntry {
+  product: ProductItem;
+  quantity: string;
+  buyPrice: string;
+}
+
 const defaultChallanSettings: PurchaseChallanSettings = {
   showChallanNo: true,
   showVehicleNo: true,
@@ -97,7 +103,7 @@ const CreatePurchaseForm: React.FC = () => {
   const [lineItems, setLineItems] = useState<FormLineItem[]>([]);
   const [productSearchQuery, setProductSearchQuery] = useState<string>("");
   const [isProductDropdownOpen, setIsProductDropdownOpen] = useState<boolean>(false);
-  const [selectedProductsMap, setSelectedProductsMap] = useState<Record<string, ProductItem>>({});
+  const [selectedProductsMap, setSelectedProductsMap] = useState<Record<string, SelectedProductEntry>>({});
   const productSearchRef = useRef<HTMLDivElement>(null);
 
   // Invoice-level Financials
@@ -612,16 +618,35 @@ const CreatePurchaseForm: React.FC = () => {
       if (copy[key]) {
         delete copy[key];
       } else {
-        copy[key] = product;
+        const bp = Number(product.buy_price ?? product.buyPrice ?? 0);
+        copy[key] = {
+          product,
+          quantity: "1",
+          buyPrice: bp > 0 ? String(bp) : "",
+        };
       }
       return copy;
     });
   };
 
+  // Inline update for selected product in dropdown
+  const handleUpdateDropdownItem = (key: string, field: "quantity" | "buyPrice", value: string) => {
+    setSelectedProductsMap((prev) => {
+      if (!prev[key]) return prev;
+      return {
+        ...prev,
+        [key]: {
+          ...prev[key],
+          [field]: value,
+        },
+      };
+    });
+  };
+
   // Done button handler: Add all selected / checked products to line items
   const handleDoneSelectProducts = () => {
-    const selectedList = Object.values(selectedProductsMap);
-    if (selectedList.length === 0) {
+    const selectedEntries = Object.values(selectedProductsMap);
+    if (selectedEntries.length === 0) {
       setIsProductDropdownOpen(false);
       return;
     }
@@ -629,30 +654,34 @@ const CreatePurchaseForm: React.FC = () => {
     setLineItems((prev) => {
       const updated = [...prev];
 
-      selectedList.forEach((product) => {
+      selectedEntries.forEach(({ product, quantity, buyPrice }) => {
         const prodId = product.id ?? product.productId ?? "";
         const prodCode = product.pcode || product.productCode || "";
         const prodName = product.name || product.productName || "Product";
         const prodUnit = product.unit || "pcs";
-        const buyPrice = Number(product.buy_price ?? product.buyPrice ?? 0);
         const currentStock = Number(product.stock ?? product.quantity ?? 0);
+        const addQty = Number(quantity) || 1;
+        const numBuyPrice = Number(buyPrice) || 0;
 
         const existingIdx = updated.findIndex((item) => String(item.productId) === String(prodId));
         if (existingIdx >= 0) {
           const item = updated[existingIdx];
-          const newQty = String((Number(item.quantity) || 0) + 1);
-          const total = computeLineTotal(item.buyPrice, newQty, item.vat);
-          updated[existingIdx] = { ...item, quantity: newQty, total };
+          const existingQty = Number(item.quantity) || 0;
+          const newQty = String(existingQty + addQty);
+          const finalBuyPrice = buyPrice || item.buyPrice;
+          const total = computeLineTotal(finalBuyPrice, newQty, item.vat);
+          updated[existingIdx] = { ...item, buyPrice: finalBuyPrice, quantity: newQty, total };
         } else {
+          const finalBuyPrice = buyPrice || (numBuyPrice > 0 ? String(numBuyPrice) : "");
           const newLine: FormLineItem = {
             productId: prodId,
             productCode: prodCode,
             productName: prodName,
             unit: prodUnit,
-            buyPrice: buyPrice > 0 ? String(buyPrice) : "",
-            quantity: "1",
+            buyPrice: finalBuyPrice,
+            quantity: String(addQty),
             vat: "",
-            total: buyPrice,
+            total: computeLineTotal(finalBuyPrice, String(addQty), ""),
             stock: currentStock,
           };
           updated.push(newLine);
@@ -1080,6 +1109,7 @@ const CreatePurchaseForm: React.FC = () => {
       });
 
       queryClient.invalidateQueries({ queryKey: [purchaseListQueryKey] });
+      queryClient.invalidateQueries({ queryKey: [productListQueryKey] });
 
       // Always open Invoice Modal after save so user can view/print invoice
       setShouldAutoPrint(shouldPrint);
@@ -1426,20 +1456,21 @@ const CreatePurchaseForm: React.FC = () => {
             {filteredProducts.length > 0 ? (
               filteredProducts.map((p) => {
                 const prodKey = String(p.id ?? p.productId ?? p.pcode ?? p.productCode ?? "");
-                const isSelected = Boolean(selectedProductsMap[prodKey]);
-                const buyPrice = Number(p.buy_price ?? p.buyPrice ?? 0);
+                const selectedEntry = selectedProductsMap[prodKey];
+                const isSelected = Boolean(selectedEntry);
+                const defaultBuyPrice = Number(p.buy_price ?? p.buyPrice ?? 0);
                 const stock = Number(p.stock ?? p.quantity ?? 0);
 
                 return (
                   <div
                     key={prodKey}
                     onClick={() => handleToggleSelectProduct(p)}
-                    className={`p-2.5 cursor-pointer flex items-center justify-between text-xs transition-colors select-none ${
-                      isSelected ? "bg-sky-50/80" : "hover:bg-gray-50"
+                    className={`p-2 sm:p-2.5 cursor-pointer flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs transition-colors select-none ${
+                      isSelected ? "bg-sky-50/90 border-l-4 border-l-[var(--color-primary)]" : "hover:bg-gray-50 border-l-4 border-l-transparent"
                     }`}
                   >
-                    <div className="flex items-center gap-3">
-                      {/* Checkbox on left of product */}
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      {/* Checkbox */}
                       <div
                         className={`w-4 h-4 rounded border flex items-center justify-center transition-colors shrink-0 ${
                           isSelected
@@ -1450,24 +1481,86 @@ const CreatePurchaseForm: React.FC = () => {
                         {isSelected && <FaCheck size={9} />}
                       </div>
 
-                      <div className="flex flex-col">
-                        <span className={`font-bold ${isSelected ? "text-[var(--color-primary)]" : "text-black"}`}>
+                      <div className="flex flex-col min-w-0">
+                        <span className={`font-bold truncate ${isSelected ? "text-[var(--color-primary)]" : "text-black"}`}>
                           {p.name || p.productName}
                         </span>
-                        <span className="text-[10px] text-black">
-                          Code: {p.pcode || p.productCode || "N/A"} | Unit: {p.unit || "pcs"}
+                        <span className="text-[10px] text-gray-500">
+                          Code: <span className="text-black font-medium">{p.pcode || p.productCode || "N/A"}</span> | Unit: <span className="text-black font-medium">{p.unit || "pcs"}</span>
                         </span>
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-3">
-                      <span className="text-[11px] px-2 py-0.5 rounded bg-gray-100 text-gray-700">
-                        Stock: <span className="font-semibold">{stock}</span>
-                      </span>
-                      <span className="font-bold text-black text-right min-w-[70px]">
-                        ৳ {formatMoney(buyPrice)}
-                      </span>
-                    </div>
+                    {/* Interactive inputs if selected, or read-only summary if not */}
+                    {isSelected ? (
+                      <div
+                        className="flex items-center gap-2 flex-wrap sm:flex-nowrap shrink-0"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        {/* Current Stock Badge */}
+                        <span className="text-[11px] px-2 py-1 rounded-md bg-gray-100 border border-gray-200 text-gray-700 font-medium">
+                          Stock: <span className="font-bold text-black">{stock}</span>
+                        </span>
+
+                        {/* Quantity Stepper Input */}
+                        <div className="flex items-center border border-gray-300 rounded-md overflow-hidden bg-white h-7 shadow-2xs">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const q = Math.max(1, (Number(selectedEntry.quantity) || 1) - 1);
+                              handleUpdateDropdownItem(prodKey, "quantity", String(q));
+                            }}
+                            className="px-2 bg-gray-100 hover:bg-gray-200 text-black font-bold text-xs h-full flex items-center justify-center cursor-pointer"
+                          >
+                            -
+                          </button>
+                          <input
+                            type="number"
+                            min="1"
+                            value={selectedEntry.quantity}
+                            onWheel={(e) => e.currentTarget.blur()}
+                            onChange={(e) => handleUpdateDropdownItem(prodKey, "quantity", e.target.value)}
+                            className="w-12 text-center font-bold text-xs text-black focus:outline-none h-full border-x border-gray-200"
+                            title="Purchase Quantity"
+                            placeholder="Qty"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const q = (Number(selectedEntry.quantity) || 0) + 1;
+                              handleUpdateDropdownItem(prodKey, "quantity", String(q));
+                            }}
+                            className="px-2 bg-gray-100 hover:bg-gray-200 text-black font-bold text-xs h-full flex items-center justify-center cursor-pointer"
+                          >
+                            +
+                          </button>
+                        </div>
+
+                        {/* Editable Buy Price Input */}
+                        <div className="relative inline-block w-24">
+                          <span className="absolute left-1.5 top-1.5 text-black font-bold text-[11px]">৳</span>
+                          <input
+                            type="number"
+                            step="0.01"
+                            value={selectedEntry.buyPrice}
+                            placeholder="0.00"
+                            onWheel={(e) => e.currentTarget.blur()}
+                            onChange={(e) => handleUpdateDropdownItem(prodKey, "buyPrice", e.target.value)}
+                            className="w-full pl-4 pr-1.5 py-1 text-xs border border-gray-300 rounded-md bg-white text-right font-bold text-black focus:outline-none focus:border-[var(--color-primary)] h-7 shadow-2xs"
+                            title="Buy Price for this purchase"
+                          />
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-3 shrink-0">
+                        <span className="text-[11px] px-2 py-0.5 rounded bg-gray-100 text-gray-700">
+                          Stock: <span className="font-semibold">{stock}</span>
+                        </span>
+                        <span className="font-bold text-black text-right min-w-[70px]">
+                          ৳ {formatMoney(defaultBuyPrice)}
+                        </span>
+                      </div>
+                    )}
                   </div>
                 );
               })
@@ -1494,12 +1587,13 @@ const CreatePurchaseForm: React.FC = () => {
             <thead>
               <tr className="bg-[#41bef3] border-b border-gray-200 text-[11px] font-semibold text-black shadow-md">
                 <th className="py-2 px-2 text-center w-8 whitespace-nowrap">SL</th>
-                <th className="py-2 px-3 min-w-[180px]">Product</th>
-                <th className="py-2 px-2 text-center w-16 whitespace-nowrap">Unit</th>
-                <th className="py-2 px-2 text-right w-28 min-w-[110px] whitespace-nowrap">Buy Price (৳)</th>
+                <th className="py-2 px-3 min-w-[170px]">Product</th>
+                <th className="py-2 px-2 text-center w-14 whitespace-nowrap">Unit</th>
+                <th className="py-2 px-2 text-center w-20 whitespace-nowrap">Stock</th>
+                <th className="py-2 px-2 text-right w-28 min-w-[100px] whitespace-nowrap">Buy Price (৳)</th>
                 <th className="py-2 px-2 text-center w-28 min-w-[110px] whitespace-nowrap">Quantity</th>
                 <th className="py-2 px-2 text-right w-20 min-w-[70px] whitespace-nowrap">VAT (%)</th>
-                <th className="py-2 px-3 text-right w-36 min-w-[130px] whitespace-nowrap">Total (৳)</th>
+                <th className="py-2 px-3 text-right w-32 min-w-[120px] whitespace-nowrap">Total (৳)</th>
                 <th className="py-2 px-2 text-center w-10 whitespace-nowrap"></th>
               </tr>
             </thead>
@@ -1524,6 +1618,13 @@ const CreatePurchaseForm: React.FC = () => {
                     <td className="py-2 px-2 text-center whitespace-nowrap">
                       <span className="text-black font-semibold bg-gray-100 px-1.5 py-0.5 rounded text-[11px]">
                         {item.unit || "pcs"}
+                      </span>
+                    </td>
+
+                    {/* Stock */}
+                    <td className="py-2 px-2 text-center whitespace-nowrap">
+                      <span className="text-gray-700 font-semibold bg-gray-100 px-2 py-0.5 rounded text-[11px]">
+                        {Number(item.stock) || 0}
                       </span>
                     </td>
 
@@ -1614,7 +1715,7 @@ const CreatePurchaseForm: React.FC = () => {
                 ))
               ) : (
                 <tr>
-                  <td colSpan={8} className="py-8 text-center text-gray-400">
+                  <td colSpan={9} className="py-8 text-center text-gray-400">
                     No items in purchase. Search and add products above.
                   </td>
                 </tr>
