@@ -82,6 +82,32 @@ export function setActiveBranchId(branchId: number, rememberMe = true): void {
     storage.setItem(STORAGE_KEY_ACTIVE_BRANCH, String(branchId));
 }
 
+export function getBusinessCode(): string {
+    if (typeof window === "undefined") return "";
+    const userInfo = getUserInfo();
+    if (userInfo?.businessCode) return String(userInfo.businessCode);
+    if ((userInfo as any)?.business_code) return String((userInfo as any).business_code);
+
+    const directCode = localStorage.getItem("businessCode") || sessionStorage.getItem("businessCode");
+    if (directCode) return directCode;
+
+    try {
+        const rawUser = localStorage.getItem(STORAGE_KEY_USER) || sessionStorage.getItem(STORAGE_KEY_USER);
+        if (rawUser) {
+            const parsed = JSON.parse(rawUser);
+            if (parsed.businessCode || parsed.business_code) return String(parsed.businessCode || parsed.business_code);
+        }
+    } catch {}
+
+    return "";
+}
+
+export function setBusinessCode(code: string, rememberMe = true): void {
+    if (typeof window === "undefined") return;
+    const storage = rememberMe ? localStorage : sessionStorage;
+    storage.setItem("businessCode", code);
+}
+
 export function setStoredUser(user: User, customExpiryMs?: number, rememberMe = true): void {
     if (typeof window === "undefined") return;
     try {
@@ -109,6 +135,7 @@ export function saveLoginSession(data: LoginSuccessResponse, rememberMe = true):
 
     const orgId = data.organizationId;
     const branchId = data.branchId;
+    const businessCode = data.businessCode || data.business_code || (data as any)?.businessCode || (data as any)?.business_code || getBusinessCode();
 
     const userInfo: UserInfo = {
         phone: data.phoneNumber,
@@ -117,12 +144,17 @@ export function saveLoginSession(data: LoginSuccessResponse, rememberMe = true):
         pin: data.pin,
         fullName: data.fullName,
         businessName: data.businessName,
+        businessCode: businessCode,
         userRole: data.userRole || "ADMIN",
         orgId: orgId,
         branchId: branchId,
     };
 
     setUserInfo(userInfo, rememberMe);
+
+    if (businessCode) {
+        setBusinessCode(businessCode, rememberMe);
+    }
 
     if (branchId !== undefined) {
         setActiveBranchId(branchId, rememberMe);

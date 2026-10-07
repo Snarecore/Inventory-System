@@ -16,6 +16,8 @@ export interface LoginSuccessResponse {
   pin?: string;
   fullName?: string;
   businessName?: string;
+  businessCode?: string;
+  business_code?: string;
   userRole?: string;
   organizationId?: number;
   branchId?: number;
@@ -37,6 +39,8 @@ export interface UserInfo {
   pin?: string;
   fullName?: string;
   businessName?: string;
+  businessCode?: string;
+  business_code?: string;
   userRole?: string;
   orgId?: number;
   branchId?: number;

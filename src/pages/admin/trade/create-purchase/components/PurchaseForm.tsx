@@ -30,6 +30,8 @@ import {
   mfsUserListQueryKey,
 } from "@/config/query-key";
 import { buildAccessUser } from "@/utils/access-user";
+import { getBusinessCode, setBusinessCode, getUserInfo, setUserInfo, getStoredUser } from "@/utils/auth-storage";
+import { makeInvoiceNo } from "@/utils/invoiceNo";
 import { postData } from "@/services/api-service";
 import { showSuccessToast, showErrorToast } from "@/utils/toast-utils";
 import type { PurchaseItem, PurchaseDetailItem, ProductItem, PartyItem, PurchaseChallanSettings } from "@/types";
@@ -143,72 +145,55 @@ const CreatePurchaseForm: React.FC = () => {
     refetchOnMount: "always",
   });
 
-  // Calculate Next Sequential Invoice Number based on last value in database
-  const nextInvoiceNumber = useMemo(() => {
-    if (!rawPurchaseData) return "PUR-0001";
-    let list: any[] = [];
-    if (Array.isArray(rawPurchaseData)) {
-      list = rawPurchaseData;
-    } else if (rawPurchaseData && typeof rawPurchaseData === "object") {
-      const raw = rawPurchaseData as any;
-      if (Array.isArray(raw.purchaseList)) list = raw.purchaseList;
-      else if (Array.isArray(raw.purchasesList)) list = raw.purchasesList;
-      else if (Array.isArray(raw.purchaseListDetails)) list = raw.purchaseListDetails;
-      else if (Array.isArray(raw.purchaseInfoList)) list = raw.purchaseInfoList;
-      else if (Array.isArray(raw.data)) list = raw.data;
-      else if (raw.data && typeof raw.data === "object") {
-        if (Array.isArray(raw.data.purchaseList)) list = raw.data.purchaseList;
-        else if (Array.isArray(raw.data.purchasesList)) list = raw.data.purchasesList;
-        else if (Array.isArray(raw.data.data)) list = raw.data.data;
-      }
-    }
+  // Business Code for Auto-Invoice Generation
+  const [businessCode, setBusinessCodeState] = useState<string>(() => {
+    return getBusinessCode() || buildAccessUser().businessCode || "";
+  });
 
-    const validList = list.filter((p: any) => {
-      if (!p || typeof p !== "object") return false;
-      const isDel = String(p.isDeleted || p.is_deleted || "").trim().toUpperCase();
-      return isDel !== "Y" && isDel !== "YES" && isDel !== "TRUE" && isDel !== "1";
-    });
-
-    if (validList.length === 0) {
-      return "PUR-0001";
-    }
-
-    let maxSeq = 0;
-    for (const p of validList) {
-      // 1. Check numeric database auto-increment ID
-      const rawId = p.id ?? p.purchaseId ?? p.purchase_id ?? p.purId;
-      if (typeof rawId === "number" && rawId > maxSeq && rawId < 1000000) {
-        maxSeq = Math.max(maxSeq, rawId);
-      } else if (typeof rawId === "string" && /^\d+$/.test(rawId.trim())) {
-        const n = Number(rawId.trim());
-        if (n > maxSeq && n < 1000000) maxSeq = Math.max(maxSeq, n);
-      }
-
-      // 2. Check invoice number (e.g., PUR-0001, PUR-12, INV-05, PUR-2026-001)
-      const inv = String(p.invoiceNo || p.invoice_no || p.billNo || "").trim();
-      const match = inv.match(/0*(\d{1,6})$/);
-      if (match && match[1]) {
-        const num = parseInt(match[1], 10);
-        if (!isNaN(num) && num > maxSeq && num < 1000000) {
-          maxSeq = Math.max(maxSeq, num);
-        }
-      }
-    }
-
-    const nextNum = maxSeq > 0 ? maxSeq + 1 : validList.length + 1;
-    const padded = String(nextNum).padStart(4, "0");
-    return `PUR-${padded}`;
-  }, [rawPurchaseData]);
-
-  // Set invoice number on load as soon as database purchases are fetched
+  // Fetch and sync business code if missing in storage
   useEffect(() => {
-    if (!isEditMode && nextInvoiceNumber) {
-      // Only set if invoiceNo is empty or was using default placeholder
-      if (!invoiceNo || invoiceNo === "PUR-0001") {
-        setInvoiceNo(nextInvoiceNumber);
+    const existing = getBusinessCode() || buildAccessUser().businessCode;
+    if (existing) {
+      if (existing !== businessCode) {
+        setBusinessCodeState(existing);
       }
+      return;
     }
-  }, [isEditMode, nextInvoiceNumber]);
+
+    const userInfo = getUserInfo();
+    const phone = userInfo?.phone || userInfo?.phoneNumber || getStoredUser()?.id || "";
+    if (!phone) return;
+
+    postData<any>({
+      url: "authorization-check-user",
+      body: {
+        authentication: {
+          phone_number: phone,
+        },
+      },
+    })
+      .then((res) => {
+        if (res && res.businessCode) {
+          const code = String(res.businessCode);
+          setBusinessCode(code);
+          setBusinessCodeState(code);
+          if (userInfo) {
+            setUserInfo({ ...userInfo, businessCode: code });
+          }
+          if (!isEditMode && (!invoiceNo || invoiceNo.startsWith("1001-") || !invoiceNo.startsWith(code))) {
+            setInvoiceNo(makeInvoiceNo(code));
+          }
+        }
+      })
+      .catch(() => {});
+  }, [isEditMode, businessCode, invoiceNo]);
+
+  // Auto-generate invoice number in format: <businessCode>-<YYYY><MM><DD><HH><mm><ss><ms>
+  useEffect(() => {
+    if (!isEditMode && !invoiceNo && businessCode) {
+      setInvoiceNo(makeInvoiceNo(businessCode));
+    }
+  }, [isEditMode, invoiceNo, businessCode]);
 
   // Click outside to close dropdowns
   useEffect(() => {
@@ -1024,7 +1009,8 @@ const CreatePurchaseForm: React.FC = () => {
       setMfsAmount("");
       setCashGiven("");
       setNotes("");
-      setInvoiceNo(nextInvoiceNumber || "PUR-0001");
+      const code = businessCode || getBusinessCode() || buildAccessUser().businessCode || "1001";
+      setInvoiceNo(makeInvoiceNo(code));
     }
   };
 
@@ -1178,8 +1164,8 @@ const CreatePurchaseForm: React.FC = () => {
             type="text"
             value={invoiceNo}
             onChange={(e) => setInvoiceNo(e.target.value)}
-            className="w-full h-9 px-2.5 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:border-[var(--color-primary)]   font-bold text-black"
-            placeholder="INV-0001"
+            className="w-full h-9 px-2.5 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:border-[var(--color-primary)] font-bold text-black"
+            placeholder="e.g. 28488-20261007090736718"
           />
         </div>
 
