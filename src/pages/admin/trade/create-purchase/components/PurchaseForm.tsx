@@ -1181,7 +1181,7 @@ const CreatePurchaseForm: React.FC = () => {
   return (
     <div className="flex flex-col gap-2.5 px-3 py-2 sm:px-4 sm:py-2.5 max-w-[1600px] mx-auto w-full">
       {/* Top Header Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 border-b border-gray-200 pb-2">
+      <div className="sticky top-0 z-30 bg-[#F6F6F6] py-2 sm:py-2.5 -mt-2 sm:-mt-2.5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 border-b border-gray-200">
         <div className="flex items-center gap-2">
           <h1 className="text-base sm:text-lg font-bold text-black flex items-center gap-2">
             <FaCalculator className="text-[var(--color-primary)]" size={18} />
@@ -1279,7 +1279,7 @@ const CreatePurchaseForm: React.FC = () => {
 
           {/* Supplier Dropdown Panel */}
           {isSupplierDropdownOpen && (
-            <div className="absolute left-0 mt-1 w-80 sm:w-96 bg-white rounded-lg shadow-xl border border-gray-200 p-2 z-40">
+            <div className="absolute left-0 mt-1 w-80 sm:w-96 bg-white rounded-lg shadow-xl border border-gray-200 p-2 z-20">
               <div className="relative mb-2">
                 <FaSearch className="absolute left-2.5 top-2.5 text-gray-400 text-xs" />
                 <input
@@ -1483,7 +1483,7 @@ const CreatePurchaseForm: React.FC = () => {
 
         {/* Product Search Results Dropdown */}
         {isProductDropdownOpen && (
-          <div className="absolute left-2.5 right-2.5 mt-1 bg-white rounded-lg shadow-xl border border-gray-200 max-h-64 overflow-y-auto z-40 divide-y divide-gray-100">
+          <div className="absolute left-2.5 right-2.5 mt-1 bg-white rounded-lg shadow-xl border border-gray-200 max-h-64 overflow-y-auto z-20 divide-y divide-gray-100">
             {filteredProducts.length > 0 ? (
               filteredProducts.map((p) => {
                 const prodKey = String(p.id ?? p.productId ?? p.pcode ?? p.productCode ?? "");
