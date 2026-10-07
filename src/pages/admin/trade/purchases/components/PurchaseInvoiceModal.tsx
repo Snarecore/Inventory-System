@@ -22,51 +22,319 @@ const PurchaseInvoiceModal: React.FC<PurchaseInvoiceModalProps> = ({
   if (!purchase) return null;
 
   const handlePrint = () => {
-    const printContent = printRef.current;
-    if (!printContent) return;
-
     const printWindow = window.open("", "_blank");
     if (!printWindow) return;
+
+    const rowsHtml = details.length > 0 ? details.map((item: any, idx) => {
+      const itemPrice = Number(item.buyPrice ?? item.buy_price ?? item.price ?? item.rate ?? item.unitPrice ?? item.sellPrice ?? 0);
+      const itemQty = Number(item.quantity ?? item.qty ?? item.count ?? 1);
+      const itemDisc = Number(item.discount ?? item.discount_amount ?? 0);
+      const itemVat = Number(item.vat ?? item.vat_amount ?? 0);
+      const itemTotal = Number(item.total ?? item.total_price ?? item.subtotal ?? (itemPrice * itemQty - itemDisc + itemVat));
+      const code = item.pcode || item.productCode || item.product_code || item.code;
+
+      return `
+        <tr>
+          <td style="text-align: center; padding: 6px 8px; border-bottom: 1px solid #e5e7eb;">${idx + 1}</td>
+          <td style="padding: 6px 8px; border-bottom: 1px solid #e5e7eb;">
+            <div style="font-weight: 600; color: #111827;">${item.productName || item.product_name || item.name || "Product"}</div>
+            ${code ? `<div style="font-size: 10px; color: #6b7280;">Code: ${code}</div>` : ""}
+          </td>
+          <td style="text-align: center; padding: 6px 8px; border-bottom: 1px solid #e5e7eb;">${item.unit || item.unitName || "PCS"}</td>
+          <td style="text-align: right; padding: 6px 8px; border-bottom: 1px solid #e5e7eb;">৳ ${formatMoney(itemPrice)}</td>
+          <td style="text-align: center; font-weight: 600; padding: 6px 8px; border-bottom: 1px solid #e5e7eb;">${itemQty}</td>
+          <td style="text-align: right; padding: 6px 8px; border-bottom: 1px solid #e5e7eb;">৳ ${formatMoney(itemDisc)}</td>
+          <td style="text-align: right; padding: 6px 8px; border-bottom: 1px solid #e5e7eb;">৳ ${formatMoney(itemVat)}</td>
+          <td style="text-align: right; font-weight: 700; padding: 6px 8px; border-bottom: 1px solid #e5e7eb;">৳ ${formatMoney(itemTotal)}</td>
+        </tr>
+      `;
+    }).join("") : `
+      <tr>
+        <td colspan="8" style="text-align: center; padding: 15px; color: #6b7280;">No line items recorded for this purchase.</td>
+      </tr>
+    `;
 
     printWindow.document.write(`
       <!DOCTYPE html>
       <html>
         <head>
-          <title>Purchase Invoice - ${purchase.invoiceNo || "Invoice"}</title>
+          <title>Purchase Invoice - ${invoiceNo}</title>
+          <meta charset="utf-8" />
           <link rel="preconnect" href="https://fonts.googleapis.com">
           <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-          <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300..800;1,300..800&display=swap" rel="stylesheet">
+          <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
           <style>
-            @page { size: A4; margin: 12mm; }
-            body { font-family: "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; color: #111827; font-size: 12px; line-height: 1.4; padding: 0; margin: 0; }
-            .invoice-box { max-width: 100%; margin: auto; }
-            .header { display: flex; justify-content: space-between; border-bottom: 2px solid #009fe3; padding-bottom: 8px; margin-bottom: 12px; }
-            .company-title { font-size: 18px; font-weight: bold; color: #009fe3; }
-            .invoice-title { font-size: 20px; font-weight: bold; text-align: right; color: #1f2937; }
-            .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 12px; }
-            .card-info { background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 6px; padding: 8px 12px; }
-            .info-title { font-size: 11px; font-weight: bold; text-transform: uppercase; color: #6b7280; margin-bottom: 4px; }
-            table { width: 100%; border-collapse: collapse; margin: 12px 0; }
-            th { background: #f3f4f6; color: #374151; font-weight: 600; text-align: left; padding: 6px 8px; border: 1px solid #e5e7eb; font-size: 11px; }
-            td { padding: 6px 8px; border: 1px solid #e5e7eb; font-size: 11px; }
-            .text-right { text-align: right; }
-            .text-center { text-align: center; }
-            .total-table { width: 300px; margin-left: auto; margin-top: 8px; }
-            .total-table td { padding: 4px 8px; }
-            .grand-total { font-weight: bold; font-size: 13px; background: #f0f9ff; color: #0369a1; }
-            .footer-sign { margin-top: 40px; display: flex; justify-content: space-between; }
-            .sign-box { border-top: 1px dashed #9ca3af; width: 150px; text-align: center; padding-top: 4px; font-size: 11px; color: #4b5563; }
-            @media print {
-              .no-print { display: none; }
+            @page {
+              size: A4 portrait;
+              margin: 0;
+            }
+            * {
+              box-sizing: border-box;
+              margin: 0;
+              padding: 0;
+            }
+            body {
+              font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+              color: #111827;
+              background: #fff;
+              font-size: 12px;
+              line-height: 1.4;
+              padding: 8mm 12mm;
+              -webkit-print-color-adjust: exact !important;
+              print-color-adjust: exact !important;
+              color-adjust: exact !important;
+            }
+            .invoice-wrapper {
+              max-width: 100%;
+              margin: 0 auto;
+              padding: 0;
+              border: none;
+            }
+            .header-row {
+              display: flex;
+              justify-content: space-between;
+              align-items: flex-start;
+              border-bottom: 2px solid #009fe3;
+              padding-bottom: 12px;
+              margin-bottom: 12px;
+            }
+            .biz-title {
+              font-size: 18px;
+              font-weight: 800;
+              color: #009fe3;
+              margin-bottom: 2px;
+            }
+            .biz-text {
+              font-size: 11px;
+              color: #374151;
+            }
+            .inv-title {
+              font-size: 18px;
+              font-weight: 800;
+              color: #111827;
+              text-align: right;
+              text-transform: uppercase;
+              letter-spacing: -0.5px;
+            }
+            .inv-meta {
+              font-size: 11px;
+              color: #374151;
+              text-align: right;
+              margin-top: 2px;
+            }
+            .cards-grid {
+              display: grid;
+              grid-template-columns: 1fr 1fr;
+              gap: 12px;
+              margin-bottom: 14px;
+            }
+            .info-card {
+              background-color: #f8fafc;
+              border: 1px solid #e2e8f0;
+              border-radius: 6px;
+              padding: 10px 12px;
+            }
+            .card-heading {
+              font-size: 10px;
+              font-weight: 700;
+              color: #475569;
+              text-transform: uppercase;
+              letter-spacing: 0.5px;
+              margin-bottom: 4px;
+            }
+            .table-container {
+              border: 1px solid #e2e8f0;
+              border-radius: 6px;
+              overflow: hidden;
+              margin-bottom: 14px;
+            }
+            table {
+              width: 100%;
+              border-collapse: collapse;
+              font-size: 11px;
+            }
+            thead {
+              background-color: #f1f5f9;
+            }
+            th {
+              padding: 8px 8px;
+              font-weight: 700;
+              color: #1e293b;
+              border-bottom: 1px solid #cbd5e1;
+              text-align: left;
+            }
+            .bottom-section {
+              display: flex;
+              justify-content: space-between;
+              align-items: flex-start;
+              gap: 16px;
+              margin-top: 12px;
+            }
+            .totals-card {
+              width: 260px;
+              background-color: #f8fafc;
+              border: 1px solid #e2e8f0;
+              border-radius: 6px;
+              padding: 10px 12px;
+              font-size: 11px;
+            }
+            .totals-row {
+              display: flex;
+              justify-content: space-between;
+              padding: 3px 0;
+              color: #334155;
+            }
+            .grand-total-row {
+              display: flex;
+              justify-content: space-between;
+              padding: 6px 0 4px 0;
+              border-top: 1px solid #cbd5e1;
+              margin-top: 4px;
+              font-weight: 800;
+              font-size: 13px;
+              color: #009fe3;
+            }
+            .signatures {
+              display: flex;
+              justify-content: space-between;
+              margin-top: 50px;
+              padding-top: 10px;
+              border-top: 1px dashed #cbd5e1;
+            }
+            .sign-item {
+              text-align: center;
+              width: 140px;
+              border-top: 1px solid #64748b;
+              padding-top: 4px;
+              font-size: 11px;
+              font-weight: 500;
+              color: #334155;
             }
           </style>
         </head>
         <body>
-          <div class="invoice-box">
-            ${printContent.innerHTML}
+          <div class="invoice-wrapper">
+            <div class="header-row">
+              <div>
+                <div class="biz-title">${userInfo?.businessName || userInfo?.organizationName || "Zia Enterprise"}</div>
+                <div class="biz-text">Phone: ${userInfo?.phone || userInfo?.phoneNumber || "N/A"}</div>
+                <div class="biz-text">Branch: ${userInfo?.branchName || `Branch #${userInfo?.branchId || 1}`}</div>
+              </div>
+              <div>
+                <div class="inv-title">PURCHASE INVOICE</div>
+                <div class="inv-meta">Invoice #: <strong>${invoiceNo}</strong></div>
+                <div class="inv-meta">Date: ${invoiceDate}</div>
+                ${challanNo ? `<div class="inv-meta">Challan Ref: ${challanNo}</div>` : ""}
+              </div>
+            </div>
+
+            <div class="cards-grid">
+              <div class="info-card">
+                <div class="card-heading">SUPPLIER INFORMATION</div>
+                <div style="font-weight: 700; color: #000000; font-size: 12px; margin-bottom: 4px;">${supplierName}</div>
+                ${supplierPhone ? `
+                  <div style="display: flex; align-items: center; gap: 6px; font-size: 11px; color: #000000; margin-top: 4px;">
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="#000000" style="flex-shrink: 0;">
+                      <path d="M6.62 10.79a15.053 15.053 0 006.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/>
+                    </svg>
+                    <span>${supplierPhone}</span>
+                  </div>
+                ` : ""}
+                ${supplierAddress ? `
+                  <div style="display: flex; align-items: center; gap: 6px; font-size: 11px; color: #000000; margin-top: 4px;">
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="#000000" style="flex-shrink: 0;">
+                      <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 010-5 2.5 2.5 0 010 5z"/>
+                    </svg>
+                    <span>${supplierAddress}</span>
+                  </div>
+                ` : ""}
+              </div>
+
+              <div class="info-card">
+                <div class="card-heading">LOGISTICS & TRANSPORT</div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px 10px; font-size: 11px; color: #000000; margin-top: 4px;">
+                  <div>Vehicle No: <strong style="color: #000000;">${vehicleNo}</strong></div>
+                  <div>Driver: <strong style="color: #000000;">${driverName}</strong></div>
+                  <div>Driver Phone: <strong style="color: #000000;">${driverPhone}</strong></div>
+                  <div>Transport: <strong style="color: #000000;">৳ ${formatMoney(delivery)}</strong></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="table-container">
+              <table>
+                <thead>
+                  <tr>
+                    <th style="text-align: center; width: 35px;">#</th>
+                    <th>Item Description</th>
+                    <th style="text-align: center; width: 60px;">Unit</th>
+                    <th style="text-align: right; width: 90px;">Buy Price</th>
+                    <th style="text-align: center; width: 45px;">Qty</th>
+                    <th style="text-align: right; width: 75px;">Discount</th>
+                    <th style="text-align: right; width: 75px;">VAT</th>
+                    <th style="text-align: right; width: 100px;">Total (৳)</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${rowsHtml}
+                </tbody>
+              </table>
+            </div>
+
+            <div class="bottom-section">
+              <div style="max-width: 350px; font-size: 11px; color: #475569;">
+                ${purchase.note ? `<div style="background: #fffbeb; border: 1px solid #fde68a; border-radius: 6px; padding: 6px 10px;"><strong>Note:</strong> ${purchase.note}</div>` : ""}
+              </div>
+
+              <div class="totals-card">
+                <div class="totals-row">
+                  <span>Subtotal:</span>
+                  <span>৳ ${formatMoney(subtotal)}</span>
+                </div>
+                ${discount > 0 ? `
+                  <div class="totals-row" style="color: #be123c;">
+                    <span>Discount:</span>
+                    <span>- ৳ ${formatMoney(discount)}</span>
+                  </div>
+                ` : ""}
+                ${vat > 0 ? `
+                  <div class="totals-row">
+                    <span>VAT:</span>
+                    <span>+ ৳ ${formatMoney(vat)}</span>
+                  </div>
+                ` : ""}
+                ${delivery > 0 ? `
+                  <div class="totals-row">
+                    <span>Transport:</span>
+                    <span>+ ৳ ${formatMoney(delivery)}</span>
+                  </div>
+                ` : ""}
+                <div class="grand-total-row">
+                  <span>Grand Total:</span>
+                  <span>৳ ${formatMoney(grandTotal)}</span>
+                </div>
+                <div class="totals-row" style="color: #047857; font-weight: 600; border-top: 1px solid #e2e8f0; margin-top: 3px; padding-top: 3px;">
+                  <span>Paid Amount:</span>
+                  <span>৳ ${formatMoney(paid)}</span>
+                </div>
+                <div class="totals-row" style="color: ${due > 0 ? '#be123c' : '#334155'}; font-weight: 700;">
+                  <span>Due Balance:</span>
+                  <span>৳ ${formatMoney(due)}</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="signatures">
+              <div class="sign-item">Received By</div>
+              <div class="sign-item">Store In-Charge</div>
+              <div class="sign-item">Authorized Signature</div>
+            </div>
           </div>
           <script>
-            window.onload = function() { window.print(); window.close(); }
+            window.onload = function() {
+              window.print();
+              window.close();
+            };
           </script>
         </body>
       </html>
@@ -272,21 +540,21 @@ const PurchaseInvoiceModal: React.FC<PurchaseInvoiceModalProps> = ({
 
                     return (
                       <tr key={idx} className="hover:bg-gray-50">
-                        <td className="py-1.5 px-2 text-center text-black font-mono">{idx + 1}</td>
+                        <td className="py-1.5 px-2 text-center text-black">{idx + 1}</td>
                         <td className="py-1.5 px-2">
                           <span className="font-semibold text-black block">{item.productName || item.product_name || item.name || "Product"}</span>
                           {(item.pcode || item.productCode || item.product_code || item.code) && (
-                            <span className="text-[10px] text-black/80 font-mono">
+                            <span className="text-[10px] text-black/80">
                               Code: {item.pcode || item.productCode || item.product_code || item.code}
                             </span>
                           )}
                         </td>
                         <td className="py-1.5 px-2 text-center text-black">{item.unit || item.unitName || "pcs"}</td>
-                        <td className="py-1.5 px-2 text-right text-black font-mono">৳ {formatMoney(itemPrice)}</td>
+                        <td className="py-1.5 px-2 text-right text-black">৳ {formatMoney(itemPrice)}</td>
                         <td className="py-1.5 px-2 text-center font-semibold text-black">{itemQty}</td>
-                        <td className="py-1.5 px-2 text-right text-black font-mono">৳ {formatMoney(itemDisc)}</td>
-                        <td className="py-1.5 px-2 text-right text-black font-mono">৳ {formatMoney(itemVat)}</td>
-                        <td className="py-1.5 px-2 text-right font-bold text-black font-mono">
+                        <td className="py-1.5 px-2 text-right text-black">৳ {formatMoney(itemDisc)}</td>
+                        <td className="py-1.5 px-2 text-right text-black">৳ {formatMoney(itemVat)}</td>
+                        <td className="py-1.5 px-2 text-right font-bold text-black">
                           ৳ {formatMoney(itemTotal)}
                         </td>
                       </tr>
@@ -317,37 +585,37 @@ const PurchaseInvoiceModal: React.FC<PurchaseInvoiceModalProps> = ({
             <div className="w-full sm:w-64 bg-gray-50 p-2.5 rounded-md border border-gray-200 text-xs text-black">
               <div className="flex justify-between py-1 text-black font-medium">
                 <span>Subtotal:</span>
-                <span className="font-mono text-right">৳ {formatMoney(subtotal)}</span>
+                <span className="text-right">৳ {formatMoney(subtotal)}</span>
               </div>
               {discount > 0 && (
                 <div className="flex justify-between py-1 text-rose-700 font-medium">
                   <span>Discount:</span>
-                  <span className="font-mono text-right">- ৳ {formatMoney(discount)}</span>
+                  <span className="text-right">- ৳ {formatMoney(discount)}</span>
                 </div>
               )}
               {vat > 0 && (
                 <div className="flex justify-between py-1 text-black font-medium">
                   <span>VAT / Tax:</span>
-                  <span className="font-mono text-right">+ ৳ {formatMoney(vat)}</span>
+                  <span className="text-right">+ ৳ {formatMoney(vat)}</span>
                 </div>
               )}
               {delivery > 0 && (
                 <div className="flex justify-between py-1 text-black font-medium">
                   <span>Transport / Freight:</span>
-                  <span className="font-mono text-right">+ ৳ {formatMoney(delivery)}</span>
+                  <span className="text-black text-right">+ ৳ {formatMoney(delivery)}</span>
                 </div>
               )}
               <div className="flex justify-between py-1.5 border-t border-gray-300 font-bold text-sm text-[var(--color-primary)]">
                 <span>Grand Total:</span>
-                <span className="font-mono text-right">৳ {formatMoney(grandTotal)}</span>
+                <span className="text-right">৳ {formatMoney(grandTotal)}</span>
               </div>
               <div className="flex justify-between py-1 text-emerald-700 font-semibold border-t border-gray-200">
                 <span>Paid Amount:</span>
-                <span className="font-mono text-right">৳ {formatMoney(paid)}</span>
+                <span className="text-right">৳ {formatMoney(paid)}</span>
               </div>
               <div className={`flex justify-between py-1 font-bold border-t border-gray-200 ${due > 0 ? "text-rose-700" : "text-black"}`}>
                 <span>Due Balance:</span>
-                <span className="font-mono text-right">৳ {formatMoney(due)}</span>
+                <span className="text-right">৳ {formatMoney(due)}</span>
               </div>
             </div>
           </div>

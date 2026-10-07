@@ -237,7 +237,7 @@ export const PurchaseTable: React.FC<PurchaseTableProps> = ({
                           >
                             <span className="truncate">{sName}</span>
                             {sPhone && (
-                              <span className="text-[10px] text-gray-500 font-mono shrink-0 ml-1">
+                              <span className="text-[10px] text-gray-500 shrink-0 ml-1">
                                 ({sPhone})
                               </span>
                             )}
