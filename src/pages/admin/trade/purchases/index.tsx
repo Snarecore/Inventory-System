@@ -15,7 +15,7 @@ import apiConfig from "@/config/api.json";
 import { purchaseListQueryKey, partyListQueryKey } from "@/config/query-key";
 import { buildAccessUser } from "@/utils/access-user";
 import { postData } from "@/services/api-service";
-import { showSuccessToast, showErrorToast } from "@/utils/toast-utils";
+import { showSuccessToast, showErrorToast, showDeleteToast } from "@/utils/toast-utils";
 import type { PurchaseItem, PartyItem } from "@/types";
 
 const Purchases: React.FC = () => {
@@ -484,7 +484,7 @@ const getPurchaseSortKey = (p: any): number => {
         console.warn("Backend delete attempt:", e);
       }
 
-      showSuccessToast(`Purchase invoice ${selectedPurchaseForDelete.invoiceNo || ""} deleted successfully!`);
+      showDeleteToast(`Purchase invoice ${selectedPurchaseForDelete.invoiceNo || ""} deleted successfully!`);
       queryClient.invalidateQueries({ queryKey: [purchaseListQueryKey] });
     } catch (err: any) {
       showErrorToast(err?.message || "Failed to delete purchase");

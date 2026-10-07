@@ -37,7 +37,7 @@ import { buildAccessUser } from "@/utils/access-user";
 import { getBusinessCode, setBusinessCode, getUserInfo, setUserInfo, getStoredUser } from "@/utils/auth-storage";
 import { makeInvoiceNo } from "@/utils/invoiceNo";
 import { postData } from "@/services/api-service";
-import { showSuccessToast, showErrorToast } from "@/utils/toast-utils";
+import { showSuccessToast, showErrorToast, showDeleteToast } from "@/utils/toast-utils";
 import type { PurchaseItem, PurchaseDetailItem, ProductItem, PartyItem, PurchaseChallanSettings } from "@/types";
 
 interface FormLineItem {
@@ -757,7 +757,10 @@ const CreatePurchaseForm: React.FC = () => {
   };
 
   const handleRemoveLineItem = (index: number) => {
+    const item = lineItems[index];
+    const name = item?.productName || "Product";
     setLineItems((prev) => prev.filter((_, i) => i !== index));
+    showDeleteToast(`"${name}" removed from purchase list!`);
   };
 
   // --- Financial Calculations ---
@@ -901,6 +904,33 @@ const CreatePurchaseForm: React.FC = () => {
       setMfsName("bKash");
       setMfsPhone("");
     }
+  };
+
+  // Pre-validate & Open Confirmation Modal
+  const handlePreSubmit = (shouldPrint = false) => {
+    if (!selectedSupplier) {
+      showErrorToast("Please select a supplier for this purchase");
+      return;
+    }
+    if (lineItems.length === 0) {
+      showErrorToast("Please add at least one product to the purchase");
+      return;
+    }
+
+    // Validate line items
+    for (const item of lineItems) {
+      if (!item.buyPrice || Number(item.buyPrice) <= 0) {
+        showErrorToast(`Please enter a valid buy price for "${item.productName}"`);
+        return;
+      }
+      if (!item.quantity || Number(item.quantity) <= 0) {
+        showErrorToast(`Please enter a valid quantity for "${item.productName}"`);
+        return;
+      }
+    }
+
+    setPendingSavePrint(shouldPrint);
+    setIsSaveConfirmModalOpen(true);
   };
 
   // Submit Purchase
@@ -1145,6 +1175,7 @@ const CreatePurchaseForm: React.FC = () => {
     const code = businessCode || getBusinessCode() || buildAccessUser().businessCode || "1001";
     setInvoiceNo(makeInvoiceNo(code));
     setIsResetModalOpen(false);
+    showDeleteToast("Purchase form reset successfully!");
   };
 
   return (
@@ -1186,7 +1217,7 @@ const CreatePurchaseForm: React.FC = () => {
           </button>
           <Button
             label={isSubmitting ? "Saving..." : isEditMode ? "Update Purchase" : "Save Purchase"}
-            onClick={() => handleSubmit(false)}
+            onClick={() => handlePreSubmit(false)}
             color="#009fe3"
             hoverColor="#0085be"
             disabled={isSubmitting}
@@ -1194,7 +1225,7 @@ const CreatePurchaseForm: React.FC = () => {
           />
           <Button
             label="Save & Print"
-            onClick={() => handleSubmit(true)}
+            onClick={() => handlePreSubmit(true)}
             color="#059669"
             hoverColor="#047857"
             disabled={isSubmitting}
@@ -2173,6 +2204,21 @@ const CreatePurchaseForm: React.FC = () => {
         onDelete={handleConfirmReset}
         title="Reset Purchase Form"
         message="Are you sure you want to reset the form? All unsaved data and added products will be cleared."
+      />
+
+      {/* Save / Update Confirmation Modal */}
+      <ConfirmModal
+        isOpen={isSaveConfirmModalOpen}
+        onClose={() => setIsSaveConfirmModalOpen(false)}
+        onConfirm={async () => {
+          setIsSaveConfirmModalOpen(false);
+          await handleSubmit(pendingSavePrint);
+        }}
+        isLoading={isSubmitting}
+        title={isEditMode ? "Update Purchase Invoice" : pendingSavePrint ? "Save & Print Purchase" : "Save Purchase Invoice"}
+        message={`Are you sure you want to ${isEditMode ? "update" : "save"} this purchase invoice (${invoiceNo || "Invoice"})?`}
+        confirmText={isEditMode ? "Yes, Update" : pendingSavePrint ? "Save & Print" : "Yes, Save"}
+        confirmButtonColor={pendingSavePrint ? "bg-emerald-600 hover:bg-emerald-700" : "bg-sky-600 hover:bg-sky-700"}
       />
     </div>
   );
