@@ -1,12 +1,9 @@
 import {
 	FaThLarge,
-	FaListUl,
 	FaShoppingCart,
 	FaShoppingBag,
 	FaBoxes,
-	FaBox,
 	FaUsers,
-	FaTruck,
 	FaDesktop,
 	FaBookOpen,
 	FaReceipt,
@@ -92,8 +89,6 @@ export const menu = [
 				subItems: [
 					{ id: 26, name: "Purchase List", path: "/admin/purchases", permissionKey: "purchase.list.view" },
 					{ id: 27, name: "Create Purchase", path: "/admin/create-purchase", permissionKey: "purchase.create.view" },
-					{ id: 28, name: "Purchase Orders", path: "/admin/purchase-orders", permissionKey: "purchase.orders.view" },
-					{ id: 29, name: "Suppliers", path: "/admin/parties?type=SUPPLIER", permissionKey: "suppliers.list.view" },
 				],
 			},
 			{

@@ -605,26 +605,29 @@ const CreateProductForm = () => {
                             {/* Conversion Rate / Packaging Ratio (When Secondary Unit is selected) */}
                             {selectedUnit && selectedSecondaryUnit ? (
                                 <div>
-                                    <InputField
-                                        label={`Conversion Ratio (1 ${selectedUnit.label} = ? ${selectedSecondaryUnit.label})`}
-                                        type="text"
-                                        name="packing_levels"
-                                        value={fieldValues.packing_levels}
-                                        onChange={handleChange}
-                                        placeholder={`e.g. 10 (1 ${selectedUnit.label} = 10 ${selectedSecondaryUnit.label})`}
-                                    />
-                                    {fieldValues.packing_levels && (
-                                        <div className="mt-1 flex items-center gap-1.5 text-xs text-sky-700 bg-sky-50 border border-sky-200 px-2.5 py-1 rounded-md">
-                                            <span className="font-semibold">📦 Conversion:</span>
-                                            <span>
+                                    <label htmlFor="packing_levels" className="text-sm font-medium text-[#212b36] block mb-1">
+                                        Conversion Ratio (1 {selectedUnit.label} = ? {selectedSecondaryUnit.label})
+                                    </label>
+                                    <div className="flex items-center w-full transition-all duration-300 border border-gray-200 rounded-lg px-2 h-[38px] bg-white text-black text-sm focus-within:ring-1 focus-within:ring-[var(--primary-color,#009fe3)] focus-within:border-[var(--primary-color,#009fe3)]">
+                                        <input
+                                            id="packing_levels"
+                                            name="packing_levels"
+                                            type="text"
+                                            value={fieldValues.packing_levels}
+                                            onChange={handleChange}
+                                            placeholder={`e.g. 10 (1 ${selectedUnit.label} = 10 ${selectedSecondaryUnit.label})`}
+                                            className="w-full focus:outline-none placeholder:text-sm px-1.5 text-sm bg-transparent"
+                                        />
+                                        {fieldValues.packing_levels ? (
+                                            <span className="shrink-0 text-[11px] font-semibold text-sky-700 bg-sky-50 border border-sky-200 px-2 py-0.5 rounded ml-1 whitespace-nowrap select-none">
                                                 1 {selectedUnit.label} = {
                                                     fieldValues.packing_levels.toLowerCase().includes(selectedSecondaryUnit.label.toLowerCase())
                                                         ? fieldValues.packing_levels
                                                         : `${fieldValues.packing_levels} ${selectedSecondaryUnit.label}`
                                                 }
                                             </span>
-                                        </div>
-                                    )}
+                                        ) : null}
+                                    </div>
                                 </div>
                             ) : null}
 
