@@ -209,7 +209,61 @@ const Purchases: React.FC = () => {
     });
   }, [allPurchases, debouncedSearch, statusFilter, paymentMethodFilter, supplierFilter]);
 
-  // Sort purchases (Recent first by default: #1 = Latest purchase, #2 = 2nd latest, #3 = 3rd, etc.)
+// Helper to extract numeric timestamp or sequential key for descending chronological sorting
+const getPurchaseSortKey = (p: any): number => {
+  if (!p) return 0;
+
+  // 1. If explicit ISO timestamp in createdAt/created_at/entryTime
+  const rawCreatedAt = p.createdAt || p.created_at || p.createdAtTime || p.entryTime || p.updatedAt || p.updated_at;
+  if (rawCreatedAt) {
+    const t = new Date(rawCreatedAt).getTime();
+    if (!isNaN(t) && t > 0) return t;
+  }
+
+  // 2. Extract timestamp from invoiceNo / billNo / refNo (e.g. 28488-20261007095617959 or PUR-20261006104802)
+  const inv = String(p.invoiceNo || p.invoice_no || p.billNo || p.id || "").trim();
+  const dtMatch = inv.match(/(20\d{2})(0[1-9]|1[0-2])(0[1-9]|[12]\d|3[01])([01]\d|2[0-3])([0-5]\d)([0-5]\d)(\d{1,4})?/);
+  if (dtMatch) {
+    const [, yr, mo, dy, hr, min, sec, ms] = dtMatch;
+    const d = new Date(
+      Number(yr),
+      Number(mo) - 1,
+      Number(dy),
+      Number(hr),
+      Number(min),
+      Number(sec),
+      ms ? Number(ms.padEnd(3, "0").slice(0, 3)) : 0
+    );
+    const t = d.getTime();
+    if (!isNaN(t) && t > 0) return t;
+  }
+
+  // 3. Fallback to orderNo or numeric database ID
+  const orderNo = p.orderNo || p.order_no || p.purchaseOrderNo || p.poNo;
+  if (orderNo && /^\d+$/.test(String(orderNo).trim())) {
+    const n = Number(String(orderNo).trim());
+    if (!isNaN(n) && n > 0) return n;
+  }
+
+  const rawId = p.id ?? p.purchaseId ?? p.purchase_id ?? p.purId;
+  if (typeof rawId === "number" && rawId > 0 && rawId < 10000000) {
+    return rawId;
+  } else if (typeof rawId === "string" && /^\d+$/.test(rawId.trim()) && rawId.length <= 7) {
+    const n = Number(rawId.trim());
+    if (!isNaN(n) && n > 0) return n;
+  }
+
+  // 4. Fallback to purchaseDate
+  const pDate = p.purchaseDate || p.date || p.salesDate;
+  if (pDate) {
+    const t = new Date(pDate).getTime();
+    if (!isNaN(t) && t > 0) return t;
+  }
+
+  return 0;
+};
+
+// Sort purchases (Recent first by default: #1 = Latest purchase, #2 = 2nd latest, #3 = 3rd, etc.)
   const sortedPurchases = useMemo(() => {
     switch (sortBy) {
       case "amount_high_to_low":
@@ -238,22 +292,12 @@ const Purchases: React.FC = () => {
         });
       case "latest":
       default: {
-        const reversed = [...filteredPurchases].reverse();
-        return reversed.sort((a, b) => {
-          const timeA = new Date(a.createdAt || (a as any).created_at || (a as any).createdAtTime || (a as any).updatedAt || (a as any).updated_at || (a as any).date || (a as any).purchaseDate || 0).getTime();
-          const timeB = new Date(b.createdAt || (b as any).created_at || (b as any).createdAtTime || (b as any).updatedAt || (b as any).updated_at || (b as any).date || (b as any).purchaseDate || 0).getTime();
-          if (!isNaN(timeA) && !isNaN(timeB) && timeA > 0 && timeB > 0 && timeA !== timeB) {
-            return timeB - timeA;
+        return [...filteredPurchases].sort((a, b) => {
+          const keyA = getPurchaseSortKey(a);
+          const keyB = getPurchaseSortKey(b);
+          if (keyA !== keyB) {
+            return keyB - keyA;
           }
-
-          const rawIdA = a.id ?? (a as any).purchase_id ?? (a as any).purchaseId ?? (a as any).purId;
-          const rawIdB = b.id ?? (b as any).purchase_id ?? (b as any).purchaseId ?? (b as any).purId;
-          const numA = Number(String(rawIdA || '').replace(/\D/g, ''));
-          const numB = Number(String(rawIdB || '').replace(/\D/g, ''));
-          if (numA && numB && numA !== numB) {
-            return numB - numA;
-          }
-
           return 0;
         });
       }
