@@ -93,6 +93,7 @@ const CreatePurchaseForm: React.FC = () => {
   const [lineItems, setLineItems] = useState<FormLineItem[]>([]);
   const [productSearchQuery, setProductSearchQuery] = useState<string>("");
   const [isProductDropdownOpen, setIsProductDropdownOpen] = useState<boolean>(false);
+  const [selectedProductsMap, setSelectedProductsMap] = useState<Record<string, ProductItem>>({});
   const productSearchRef = useRef<HTMLDivElement>(null);
 
   // Invoice-level Financials
@@ -586,7 +587,76 @@ const CreatePurchaseForm: React.FC = () => {
     return Math.round((baseAmount + vatAmount) * 100) / 100;
   };
 
-  // Add Product to line items
+  const selectedProductCount = useMemo(
+    () => Object.keys(selectedProductsMap).length,
+    [selectedProductsMap]
+  );
+
+  // Toggle selection for a product in dropdown
+  const handleToggleSelectProduct = (product: ProductItem) => {
+    const key = String(product.id ?? product.productId ?? product.pcode ?? product.productCode ?? "");
+    if (!key) return;
+    setSelectedProductsMap((prev) => {
+      const copy = { ...prev };
+      if (copy[key]) {
+        delete copy[key];
+      } else {
+        copy[key] = product;
+      }
+      return copy;
+    });
+  };
+
+  // Done button handler: Add all selected / checked products to line items
+  const handleDoneSelectProducts = () => {
+    const selectedList = Object.values(selectedProductsMap);
+    if (selectedList.length === 0) {
+      setIsProductDropdownOpen(false);
+      return;
+    }
+
+    setLineItems((prev) => {
+      const updated = [...prev];
+
+      selectedList.forEach((product) => {
+        const prodId = product.id ?? product.productId ?? "";
+        const prodCode = product.pcode || product.productCode || "";
+        const prodName = product.name || product.productName || "Product";
+        const prodUnit = product.unit || "pcs";
+        const buyPrice = Number(product.buy_price ?? product.buyPrice ?? 0);
+        const currentStock = Number(product.stock ?? product.quantity ?? 0);
+
+        const existingIdx = updated.findIndex((item) => String(item.productId) === String(prodId));
+        if (existingIdx >= 0) {
+          const item = updated[existingIdx];
+          const newQty = String((Number(item.quantity) || 0) + 1);
+          const total = computeLineTotal(item.buyPrice, newQty, item.vat);
+          updated[existingIdx] = { ...item, quantity: newQty, total };
+        } else {
+          const newLine: FormLineItem = {
+            productId: prodId,
+            productCode: prodCode,
+            productName: prodName,
+            unit: prodUnit,
+            buyPrice: buyPrice > 0 ? String(buyPrice) : "",
+            quantity: "1",
+            vat: "",
+            total: buyPrice,
+            stock: currentStock,
+          };
+          updated.push(newLine);
+        }
+      });
+
+      return updated;
+    });
+
+    setSelectedProductsMap({});
+    setProductSearchQuery("");
+    setIsProductDropdownOpen(false);
+  };
+
+  // Add Single Product to line items (or toggle)
   const handleAddProduct = (product: ProductItem) => {
     const prodId = product.id ?? product.productId ?? "";
     const prodCode = product.pcode || product.productCode || "";
@@ -622,6 +692,18 @@ const CreatePurchaseForm: React.FC = () => {
 
     setProductSearchQuery("");
     setIsProductDropdownOpen(false);
+  };
+
+  const handleKeyDownSearch = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      const selectedList = Object.values(selectedProductsMap);
+      if (selectedList.length > 0) {
+        handleDoneSelectProducts();
+      } else if (filteredProducts.length === 1) {
+        handleAddProduct(filteredProducts[0]);
+      }
+    }
   };
 
   const handleUpdateLineItem = (index: number, field: keyof FormLineItem, value: any) => {
@@ -1017,6 +1099,7 @@ const CreatePurchaseForm: React.FC = () => {
       setMfsAmount("");
       setCashGiven("");
       setNotes("");
+      setSelectedProductsMap({});
       const code = businessCode || getBusinessCode() || buildAccessUser().businessCode || "1001";
       setInvoiceNo(makeInvoiceNo(code));
     }
@@ -1285,48 +1368,74 @@ const CreatePurchaseForm: React.FC = () => {
                 setIsProductDropdownOpen(true);
               }}
               onFocus={() => setIsProductDropdownOpen(true)}
-              className="w-full pl-9 pr-3 py-2 text-xs border border-gray-300 rounded-lg focus:outline-none focus:border-[var(--color-primary)] bg-gray-50/50 focus:bg-white"
+              onKeyDown={handleKeyDownSearch}
+              className="w-full pl-9 pr-3 py-2 text-xs border border-gray-300 rounded-lg focus:outline-none focus:border-[var(--color-primary)] bg-gray-50/50 focus:bg-white font-medium text-black"
             />
           </div>
-          <span className="text-[11px] text-gray-400 hidden sm:inline">
-            Press Enter / Click to add
-          </span>
+
+          {/* Done Button replacing "Press Enter / Click to add" */}
+          <button
+            type="button"
+            onClick={handleDoneSelectProducts}
+            disabled={selectedProductCount === 0}
+            className={`px-4 py-2 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all shadow-xs ${
+              selectedProductCount > 0
+                ? "bg-[var(--color-primary)] text-white hover:opacity-90 active:scale-95 cursor-pointer"
+                : "bg-gray-100 text-gray-400 cursor-not-allowed"
+            }`}
+          >
+            <FaCheck size={11} />
+            <span>Done {selectedProductCount > 0 ? `(${selectedProductCount})` : ""}</span>
+          </button>
         </div>
 
         {/* Product Search Results Dropdown */}
         {isProductDropdownOpen && (
-          <div className="absolute left-2.5 right-2.5 mt-1 bg-white rounded-lg shadow-xl border border-gray-200 max-h-60 overflow-y-auto z-40 divide-y divide-gray-100">
+          <div className="absolute left-2.5 right-2.5 mt-1 bg-white rounded-lg shadow-xl border border-gray-200 max-h-64 overflow-y-auto z-40 divide-y divide-gray-100">
             {filteredProducts.length > 0 ? (
               filteredProducts.map((p) => {
+                const prodKey = String(p.id ?? p.productId ?? p.pcode ?? p.productCode ?? "");
+                const isSelected = Boolean(selectedProductsMap[prodKey]);
                 const buyPrice = Number(p.buy_price ?? p.buyPrice ?? 0);
                 const stock = Number(p.stock ?? p.quantity ?? 0);
 
                 return (
                   <div
-                    key={p.id || p.productId || p.pcode}
-                    onClick={() => handleAddProduct(p)}
-                    className="p-2.5 hover:bg-sky-50 cursor-pointer flex items-center justify-between text-xs transition-colors"
+                    key={prodKey}
+                    onClick={() => handleToggleSelectProduct(p)}
+                    className={`p-2.5 cursor-pointer flex items-center justify-between text-xs transition-colors select-none ${
+                      isSelected ? "bg-sky-50/80" : "hover:bg-gray-50"
+                    }`}
                   >
-                    <div className="flex flex-col">
-                      <span className="font-bold text-black">{p.name || p.productName}</span>
-                      <span className="text-[10px] text-gray-500  ">
-                        Code: {p.pcode || p.productCode || "N/A"} | Unit: {p.unit || "pcs"}
-                      </span>
+                    <div className="flex items-center gap-3">
+                      {/* Checkbox on left of product */}
+                      <div
+                        className={`w-4 h-4 rounded border flex items-center justify-center transition-colors shrink-0 ${
+                          isSelected
+                            ? "bg-[var(--color-primary)] border-[var(--color-primary)] text-white"
+                            : "border-gray-300 bg-white hover:border-[var(--color-primary)]"
+                        }`}
+                      >
+                        {isSelected && <FaCheck size={9} />}
+                      </div>
+
+                      <div className="flex flex-col">
+                        <span className={`font-bold ${isSelected ? "text-[var(--color-primary)]" : "text-black"}`}>
+                          {p.name || p.productName}
+                        </span>
+                        <span className="text-[10px] text-gray-500">
+                          Code: {p.pcode || p.productCode || "N/A"} | Unit: {p.unit || "pcs"}
+                        </span>
+                      </div>
                     </div>
 
                     <div className="flex items-center gap-3">
                       <span className="text-[11px] px-2 py-0.5 rounded bg-gray-100 text-gray-700">
                         Stock: <span className="font-semibold">{stock}</span>
                       </span>
-                      <span className="  font-bold text-black text-right min-w-[70px]">
+                      <span className="font-bold text-black text-right min-w-[70px]">
                         ৳ {formatMoney(buyPrice)}
                       </span>
-                      <button
-                        type="button"
-                        className="px-2 py-1 bg-[var(--color-primary)] text-white rounded text-[11px] font-medium cursor-pointer"
-                      >
-                        + Add
-                      </button>
                     </div>
                   </div>
                 );
