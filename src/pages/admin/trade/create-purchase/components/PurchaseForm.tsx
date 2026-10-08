@@ -2006,16 +2006,40 @@ const CreatePurchaseForm: React.FC = () => {
 
           {/* Notes */}
           {challanSettings.showNotes && (
-            <div className="mt-0.5">
-              <label className="text-[10px] font-bold text-black uppercase tracking-wider block mb-0.5">
-                Purchase Notes / Remarks
-              </label>
+            <div className="mt-1 flex flex-col gap-1.5">
+              <div className="flex items-center justify-between">
+                <label className="text-[10px] font-bold text-black uppercase tracking-wider block">
+                  Purchase Notes / Remarks
+                </label>
+                <span className="text-[10px] text-gray-500">Click to add default tags</span>
+              </div>
+
+              {/* Quick Default Comments */}
+              <div className="flex items-center gap-1.5 flex-wrap">
+                {[
+                  "Goods received in good condition",
+                  "Challan verified with physical stock",
+                  "Standard order delivered",
+                  "Payment approved upon verification",
+                ].map((tag) => (
+                  <button
+                    key={tag}
+                    type="button"
+                    onClick={() => setNotes((prev) => (prev ? `${prev}, ${tag}` : tag))}
+                    className="px-2 py-0.5 text-[10px] font-semibold bg-sky-50 text-sky-800 hover:bg-[var(--color-primary)] hover:text-white border border-sky-300 hover:border-[var(--color-primary)] rounded-md shadow-2xs transition-all cursor-pointer"
+                    title="Click to insert this note"
+                  >
+                    + {tag}
+                  </button>
+                ))}
+              </div>
+
               <textarea
-                rows={2}
+                rows={3}
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
-                placeholder="Add special terms, batch notes, or delivery remarks..."
-                className="w-full p-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:border-[var(--color-primary)] resize-none text-black font-medium"
+                placeholder="Add special terms, batch notes, delivery remarks (e.g. Goods received in good condition)..."
+                className="w-full p-2 text-xs border border-gray-300 rounded-lg focus:outline-none focus:border-[var(--color-primary)] resize-none text-black font-medium min-h-[75px]"
               />
             </div>
           )}

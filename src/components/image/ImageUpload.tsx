@@ -4,9 +4,11 @@ import { IoCloseSharp, IoCloudUploadOutline } from "react-icons/io5";
 interface ImageUploadProps {
 	value: string | null;
 	onChange: (file: File | null) => void;
+	size?: "sm" | "md" | "lg";
+	className?: string;
 }
 
-const ImageUpload: React.FC<ImageUploadProps> = ({ value, onChange }) => {
+const ImageUpload: React.FC<ImageUploadProps> = ({ value, onChange, size = "sm", className = "" }) => {
 	const id = useId();
 	const [selectedFile, setSelectedFile] = useState<File | null>(null);
 	const [preview, setPreview] = useState<string | null>(value);
@@ -38,14 +40,16 @@ const ImageUpload: React.FC<ImageUploadProps> = ({ value, onChange }) => {
 		onChange(null);
 	};
 
+	const dimensionClass = size === "sm" ? "w-[84px] h-[84px]" : size === "lg" ? "w-[120px] h-[120px]" : "w-[96px] h-[96px]";
+
 	return (
-		<div className="flex flex-row items-start space-x-3">
+		<div className={`flex flex-row items-start space-x-2.5 ${className}`}>
 			<label
 				htmlFor={`${id}-file-upload`}
-				className="w-[120px] h-[120px] flex items-center justify-center flex-col gap-2 border border-dashed border-[var(--color-primary)] bg-sky-50/40 text-[var(--color-primary)] text-sm rounded-md cursor-pointer hover:bg-sky-50/80 transition-all ease-in-out duration-300 mt-2"
+				className={`${dimensionClass} flex items-center justify-center flex-col gap-1 border border-dashed border-[var(--color-primary)] bg-sky-50/40 text-[var(--color-primary)] text-xs rounded-lg cursor-pointer hover:bg-sky-50/80 transition-all ease-in-out duration-300 mt-1`}
 			>
-				<IoCloudUploadOutline size={22} className="text-[var(--color-primary)]" />
-				<p className="font-semibold text-xs">Upload Image</p>
+				<IoCloudUploadOutline size={size === "sm" ? 18 : 22} className="text-[var(--color-primary)]" />
+				<p className="font-semibold text-[10px]">Upload Image</p>
 			</label>
 			<input
 				id={`${id}-file-upload`}
@@ -55,15 +59,19 @@ const ImageUpload: React.FC<ImageUploadProps> = ({ value, onChange }) => {
 				accept="image/png, image/jpeg, image/jpg"
 			/>
 			{preview && (
-				<div className="relative w-[120px] h-[120px]">
+				<div className={`relative ${dimensionClass} mt-1`}>
 					<img
 						src={preview}
 						alt="Uploaded File"
-						className="w-full h-full object-cover rounded-lg border border-gray-300 mt-2"
+						className="w-full h-full object-cover rounded-lg border border-gray-300"
 						onError={() => setPreview(null)}
 					/>
-					<button onClick={removeImage} className="absolute top-3 right-1 bg-red-500 text-white rounded-md cursor-pointer hover:bg-red-600 hover:text-white transition-all duration-300">
-						<IoCloseSharp size={14} />
+					<button
+						type="button"
+						onClick={removeImage}
+						className="absolute -top-1.5 -right-1.5 bg-rose-500 text-white rounded-full p-0.5 shadow-md cursor-pointer hover:bg-rose-600 transition-all duration-300"
+					>
+						<IoCloseSharp size={13} />
 					</button>
 				</div>
 			)}
