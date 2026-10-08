@@ -234,11 +234,18 @@ const PurchaseOrders: React.FC = () => {
                     o.products ||
                     o.purchaseListDetails;
 
-                  const itemsCount =
-                    (Array.isArray(rawDetails) && rawDetails.length > 0 ? rawDetails.length : 0) ||
-                    Number(o.itemCount ?? o.item_count ?? o.totalItems ?? o.total_items ?? o.itemsCount ?? o.items_count ?? 0) ||
-                    Number(o.totalQty ?? o.total_qty ?? o.quantity ?? 0) ||
-                    (Array.isArray(rawDetails) ? rawDetails.length : 1);
+                  let itemsCount = 1;
+                  if (Array.isArray(rawDetails) && rawDetails.length > 0) {
+                    const uniqueKeys = new Set<string>();
+                    rawDetails.forEach((d: any) => {
+                      const k = String(d.productId ?? d.product_id ?? d.productCode ?? d.pcode ?? d.productName ?? d.name ?? "").trim().toLowerCase();
+                      if (k) uniqueKeys.add(k);
+                    });
+                    itemsCount = uniqueKeys.size > 0 ? uniqueKeys.size : rawDetails.length;
+                  } else {
+                    const explicitCount = Number(o.itemCount ?? o.item_count ?? o.totalItems ?? o.total_items ?? o.itemsCount ?? o.items_count ?? o.productCount ?? o.product_count ?? 0);
+                    itemsCount = explicitCount > 0 ? explicitCount : 1;
+                  }
 
                   const total = Number(order.grandTotal ?? order.totalAmount ?? 0);
 

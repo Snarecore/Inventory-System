@@ -27,13 +27,25 @@ const getItemsCount = (p: any): number => {
     p.productsList;
 
   if (Array.isArray(rawDetails) && rawDetails.length > 0) {
-    return rawDetails.length;
+    const uniqueKeys = new Set<string>();
+    rawDetails.forEach((d: any) => {
+      const k = String(d.productId ?? d.product_id ?? d.productCode ?? d.pcode ?? d.productName ?? d.name ?? "").trim().toLowerCase();
+      if (k) uniqueKeys.add(k);
+    });
+    return uniqueKeys.size > 0 ? uniqueKeys.size : rawDetails.length;
   }
-  return (
-    Number(p.itemCount ?? p.item_count ?? p.totalItems ?? p.total_items ?? p.itemsCount ?? p.items_count ?? 0) ||
-    Number(p.totalQty ?? p.total_qty ?? p.quantity ?? 0) ||
-    1
+  const explicitCount = Number(
+    p.itemCount ??
+    p.item_count ??
+    p.totalItems ??
+    p.total_items ??
+    p.itemsCount ??
+    p.items_count ??
+    p.productCount ??
+    p.product_count ??
+    0
   );
+  return explicitCount > 0 ? explicitCount : 1;
 };
 
 /**

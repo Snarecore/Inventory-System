@@ -420,11 +420,18 @@ export const PurchaseTable: React.FC<PurchaseTableProps> = ({
                   p.productList ||
                   p.productsList;
 
-                const itemsCount =
-                  (Array.isArray(rawDetails) && rawDetails.length > 0 ? rawDetails.length : 0) ||
-                  Number(p.itemCount ?? p.item_count ?? p.totalItems ?? p.total_items ?? p.itemsCount ?? p.items_count ?? 0) ||
-                  Number(p.totalQty ?? p.total_qty ?? p.quantity ?? 0) ||
-                  (Array.isArray(rawDetails) ? rawDetails.length : 1);
+                let itemsCount = 1;
+                if (Array.isArray(rawDetails) && rawDetails.length > 0) {
+                  const uniqueKeys = new Set<string>();
+                  rawDetails.forEach((d: any) => {
+                    const k = String(d.productId ?? d.product_id ?? d.productCode ?? d.pcode ?? d.productName ?? d.name ?? "").trim().toLowerCase();
+                    if (k) uniqueKeys.add(k);
+                  });
+                  itemsCount = uniqueKeys.size > 0 ? uniqueKeys.size : rawDetails.length;
+                } else {
+                  const explicitCount = Number(p.itemCount ?? p.item_count ?? p.totalItems ?? p.total_items ?? p.itemsCount ?? p.items_count ?? p.productCount ?? p.product_count ?? 0);
+                  itemsCount = explicitCount > 0 ? explicitCount : 1;
+                }
 
                 const grandTotal = Number(purchase.grandTotal ?? purchase.totalAmount ?? 0);
                 const paidAmount = Number(purchase.paidAmount ?? 0);

@@ -42,11 +42,14 @@ import { showSuccessToast, showErrorToast, showDeleteToast } from "@/utils/toast
 import type { PurchaseItem, PurchaseDetailItem, ProductItem, PartyItem, PurchaseChallanSettings } from "@/types";
 
 interface FormLineItem {
+  id?: string | number;
+  purchaseDetailId?: string | number;
+  purchase_detail_id?: string | number;
   productId: string | number;
   productCode: string;
   productName: string;
   unit: string;
-  buyPrice: string; // string so empty string doesn't force 0
+  buyPrice: string;
   quantity: string;
   vat: string;
   total: number;
@@ -112,6 +115,8 @@ const CreatePurchaseForm: React.FC = () => {
   const [driverPhone, setDriverPhone] = useState<string>("");
   const [transportCost, setTransportCost] = useState<string>("");
   const [notes, setNotes] = useState<string>("");
+  const [isNotesDropdownOpen, setIsNotesDropdownOpen] = useState<boolean>(false);
+  const notesDropdownRef = useRef<HTMLDivElement>(null);
   const [attachment, setAttachment] = useState<string | null>(null);
 
   // Product Selection & Line Items
@@ -235,6 +240,9 @@ const CreatePurchaseForm: React.FC = () => {
       }
       if (productSearchRef.current && !productSearchRef.current.contains(e.target as Node)) {
         setIsProductDropdownOpen(false);
+      }
+      if (notesDropdownRef.current && !notesDropdownRef.current.contains(e.target as Node)) {
+        setIsNotesDropdownOpen(false);
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
@@ -464,9 +472,21 @@ const CreatePurchaseForm: React.FC = () => {
     return found || null;
   }, [stateEditData, routeId, rawPurchaseData]);
 
+  const initializedEditIdRef = useRef<string | null>(null);
+
   // Prefill in Edit Mode
   useEffect(() => {
     if (effectiveEditData) {
+      const currentEditId = String(
+        effectiveEditData.id ?? effectiveEditData.purchaseId ?? effectiveEditData.invoiceNo ?? routeId ?? ""
+      );
+
+      // Only initialize once per purchase ID unless line items are completely empty
+      if (initializedEditIdRef.current === currentEditId && lineItems.length > 0) {
+        return;
+      }
+      initializedEditIdRef.current = currentEditId;
+
       const data: any = effectiveEditData;
       setInvoiceNo(data.invoiceNo || data.invoice_no || data.billNo || "");
       setPurchaseDate(data.purchaseDate || data.salesDate || data.date || new Date().toISOString().substring(0, 10));
@@ -560,7 +580,33 @@ const CreatePurchaseForm: React.FC = () => {
         [];
 
       if (Array.isArray(rawDetails) && rawDetails.length > 0) {
-        const loadedItems: FormLineItem[] = rawDetails.map((item: any) => {
+        const seenProductKeys = new Set<string>();
+        const loadedItems: FormLineItem[] = [];
+
+        rawDetails.forEach((item: any) => {
+          const pId = item.productId ?? item.product_id ?? item.id ?? item.prodId ?? "";
+          const pCode = item.productCode || item.product_code || item.pcode || item.code || "";
+          const key = String(pId || pCode || "").trim().toLowerCase();
+
+          // Deduplicate if backend returned duplicate items in purchaseDetails
+          if (key && seenProductKeys.has(key)) {
+            const existingIdx = loadedItems.findIndex((it) => {
+              if (pId && it.productId && String(it.productId) === String(pId)) return true;
+              if (pCode && it.productCode && String(it.productCode).trim().toLowerCase() === String(pCode).trim().toLowerCase()) return true;
+              return false;
+            });
+            if (existingIdx >= 0) {
+              const prev = loadedItems[existingIdx];
+              const q = Number(item.quantity ?? item.qty ?? 1) || 1;
+              const newQty = String((Number(prev.quantity) || 0) + q);
+              const tot = computeLineTotal(prev.buyPrice, newQty, prev.vat);
+              loadedItems[existingIdx] = { ...prev, quantity: newQty, total: tot };
+            }
+            return;
+          }
+
+          if (key) seenProductKeys.add(key);
+
           const buyP =
             item.buyPrice ??
             item.buy_price ??
@@ -579,21 +625,35 @@ const CreatePurchaseForm: React.FC = () => {
             item.totalAmount ??
             Number(buyP) * Number(q);
 
-          return {
-            productId: item.productId ?? item.product_id ?? item.id ?? item.prodId ?? "",
-            productCode: item.productCode || item.product_code || item.pcode || item.code || "",
-            productName: item.productName || item.product_name || item.name || item.title || "Product",
-            unit: item.unit || item.unitName || "pcs",
+          // Match with allProducts to get current stock and fallback name/code
+          const matchedProd = allProducts.find((p) => {
+            const idMatch = pId && (String(p.id) === String(pId) || String(p.productId) === String(pId));
+            const codeMatch = pCode && (String(p.pcode).toLowerCase() === String(pCode).toLowerCase() || String(p.productCode).toLowerCase() === String(pCode).toLowerCase());
+            return idMatch || codeMatch;
+          });
+
+          const detailId = item.id ?? item.purchaseDetailId ?? item.purchase_detail_id ?? item.detailId ?? item.detail_id;
+
+          loadedItems.push({
+            id: detailId,
+            purchaseDetailId: detailId,
+            purchase_detail_id: detailId,
+            productId: pId || (matchedProd?.id ?? matchedProd?.productId ?? ""),
+            productCode: pCode || matchedProd?.pcode || matchedProd?.productCode || "",
+            productName: item.productName || item.product_name || item.name || item.title || matchedProd?.name || matchedProd?.productName || "Product",
+            unit: item.unit || item.unitName || matchedProd?.unit || "pcs",
             buyPrice: String(buyP),
             quantity: String(q),
             vat: v ? String(v) : "",
             total: Number(tot),
-          };
+            stock: item.stock ?? item.quantity ?? matchedProd?.stock ?? matchedProd?.quantity ?? 0,
+          });
         });
+
         setLineItems(loadedItems);
       }
     }
-  }, [effectiveEditData, suppliersList]);
+  }, [effectiveEditData, suppliersList, allProducts, routeId]);
 
   // Filtered Products for Search Dropdown
   const filteredProducts = useMemo(() => {
@@ -642,8 +702,28 @@ const CreatePurchaseForm: React.FC = () => {
     [selectedProductsMap]
   );
 
+  // Helper to check if a product is already added in the purchase line items list
+  const isProductAlreadyInList = (product: ProductItem) => {
+    const pId = product.id ?? product.productId;
+    const pCode = product.pcode || product.productCode;
+
+    return lineItems.some((item) => {
+      if (pId !== undefined && pId !== null && pId !== "" && item.productId !== undefined && item.productId !== null && item.productId !== "") {
+        if (String(item.productId) === String(pId)) return true;
+      }
+      if (pCode && item.productCode) {
+        if (String(item.productCode).trim().toLowerCase() === String(pCode).trim().toLowerCase()) return true;
+      }
+      return false;
+    });
+  };
+
   // Toggle selection for a product in dropdown
   const handleToggleSelectProduct = (product: ProductItem) => {
+    if (isProductAlreadyInList(product)) {
+      showErrorToast("This product is already added to the purchase list.");
+      return;
+    }
     const key = String(product.id ?? product.productId ?? product.pcode ?? product.productCode ?? "");
     if (!key) return;
     setSelectedProductsMap((prev) => {
@@ -696,7 +776,12 @@ const CreatePurchaseForm: React.FC = () => {
         const addQty = Number(quantity) || 1;
         const numBuyPrice = Number(buyPrice) || 0;
 
-        const existingIdx = updated.findIndex((item) => String(item.productId) === String(prodId));
+        const existingIdx = updated.findIndex((item) => {
+          if (prodId && item.productId && String(item.productId) === String(prodId)) return true;
+          if (prodCode && item.productCode && String(item.productCode).trim().toLowerCase() === String(prodCode).trim().toLowerCase()) return true;
+          return false;
+        });
+
         if (existingIdx >= 0) {
           const item = updated[existingIdx];
           const existingQty = Number(item.quantity) || 0;
@@ -731,6 +816,10 @@ const CreatePurchaseForm: React.FC = () => {
 
   // Add Single Product to line items (or toggle)
   const handleAddProduct = (product: ProductItem) => {
+    if (isProductAlreadyInList(product)) {
+      showErrorToast("This product is already added to the purchase list.");
+      return;
+    }
     const prodId = product.id ?? product.productId ?? "";
     const prodCode = product.pcode || product.productCode || "";
     const prodName = product.name || product.productName || "Product";
@@ -738,30 +827,18 @@ const CreatePurchaseForm: React.FC = () => {
     const buyPrice = Number(product.buy_price ?? product.buyPrice ?? 0);
     const currentStock = Number(product.stock ?? product.quantity ?? 0);
 
-    setLineItems((prev) => {
-      const existingIdx = prev.findIndex((item) => String(item.productId) === String(prodId));
-      if (existingIdx >= 0) {
-        const updated = [...prev];
-        const item = updated[existingIdx];
-        const newQty = String((Number(item.quantity) || 0) + 1);
-        const total = computeLineTotal(item.buyPrice, newQty, item.vat);
-        updated[existingIdx] = { ...item, quantity: newQty, total };
-        return updated;
-      } else {
-        const newLine: FormLineItem = {
-          productId: prodId,
-          productCode: prodCode,
-          productName: prodName,
-          unit: prodUnit,
-          buyPrice: buyPrice > 0 ? String(buyPrice) : "",
-          quantity: "1",
-          vat: "",
-          total: buyPrice,
-          stock: currentStock,
-        };
-        return [...prev, newLine];
-      }
-    });
+    const newLine: FormLineItem = {
+      productId: prodId,
+      productCode: prodCode,
+      productName: prodName,
+      unit: prodUnit,
+      buyPrice: buyPrice > 0 ? String(buyPrice) : "",
+      quantity: "1",
+      vat: "",
+      total: buyPrice,
+      stock: currentStock,
+    };
+    setLineItems((prev) => [...prev, newLine]);
 
     setProductSearchQuery("");
     setIsProductDropdownOpen(false);
@@ -774,7 +851,11 @@ const CreatePurchaseForm: React.FC = () => {
       if (selectedList.length > 0) {
         handleDoneSelectProducts();
       } else if (filteredProducts.length === 1) {
-        handleAddProduct(filteredProducts[0]);
+        if (!isProductAlreadyInList(filteredProducts[0])) {
+          handleAddProduct(filteredProducts[0]);
+        } else {
+          showErrorToast("This product is already added to the purchase list.");
+        }
       }
     }
   };
@@ -1021,13 +1102,21 @@ const CreatePurchaseForm: React.FC = () => {
         const lineVat = (base * v) / 100;
 
         return {
+          ...(item.id ? { id: item.id, purchaseDetailId: item.id, purchase_detail_id: item.id, detailId: item.id } : {}),
           productId: item.productId,
+          product_id: item.productId,
           productCode: item.productCode,
           pcode: item.productCode,
+          product_code: item.productCode,
           productName: item.productName,
+          product_name: item.productName,
           unit: item.unit || "pcs",
           quantity: q,
+          qty: q,
           buyPrice: p,
+          buy_price: p,
+          rate: p,
+          price: p,
           discount: 0,
           vat: lineVat,
           delivery_charge: 0,
@@ -1044,6 +1133,7 @@ const CreatePurchaseForm: React.FC = () => {
         orgId: accessUser.orgId,
         branchId: accessUser.branchId,
         invoiceNo: invoiceNo.trim(),
+        invoice_no: invoiceNo.trim(),
         purchaseDate,
         salesDate: purchaseDate, // backward compatibility with sales schema
         date: purchaseDate,
@@ -1099,9 +1189,11 @@ const CreatePurchaseForm: React.FC = () => {
         attachmentUrl: isAttachmentsEnabled ? (attachment || null) : null,
         challanImage: isAttachmentsEnabled ? (attachment || null) : null,
         documentUrl: isAttachmentsEnabled ? (attachment || null) : null,
-        createdAt: new Date().toISOString(),
-        created_at: new Date().toISOString(),
-        createdAtTime: new Date().toISOString(),
+        createdAt: isEditMode ? (effectiveEditData?.createdAt || effectiveEditData?.created_at || new Date().toISOString()) : new Date().toISOString(),
+        created_at: isEditMode ? (effectiveEditData?.createdAt || effectiveEditData?.created_at || new Date().toISOString()) : new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        operation: isEditMode ? "update" : "insert",
         cashReceived: numCash,
         cardReceived: numBank,
         mfsReceived: numMfs,
@@ -1138,6 +1230,7 @@ const CreatePurchaseForm: React.FC = () => {
         purchasePayload.id = editId;
         purchasePayload.purchaseId = editId;
         purchasePayload.purchase_id = editId;
+        purchasePayload.purchase_no = editId;
       }
 
       console.log("Submitting purchase payload to backend:", purchasePayload);
@@ -1648,6 +1741,7 @@ const CreatePurchaseForm: React.FC = () => {
             {filteredProducts.length > 0 ? (
               filteredProducts.map((p) => {
                 const prodKey = String(p.id ?? p.productId ?? p.pcode ?? p.productCode ?? "");
+                const isAlreadyInList = isProductAlreadyInList(p);
                 const selectedEntry = selectedProductsMap[prodKey];
                 const isSelected = Boolean(selectedEntry);
                 const defaultBuyPrice = Number(p.buy_price ?? p.buyPrice ?? 0);
@@ -1656,27 +1750,59 @@ const CreatePurchaseForm: React.FC = () => {
                 return (
                   <div
                     key={prodKey}
-                    onClick={() => handleToggleSelectProduct(p)}
-                    className={`p-2 sm:p-2.5 cursor-pointer flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs transition-colors select-none ${
-                      isSelected ? "bg-sky-50/90 border-l-4 border-l-[var(--color-primary)]" : "hover:bg-gray-50 border-l-4 border-l-transparent"
+                    onClick={() => {
+                      if (isAlreadyInList) {
+                        showErrorToast("This product is already in the purchase list.");
+                        return;
+                      }
+                      handleToggleSelectProduct(p);
+                    }}
+                    className={`p-2 sm:p-2.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs transition-colors select-none ${
+                      isAlreadyInList
+                        ? "bg-gray-100/80 cursor-not-allowed opacity-75 border-l-4 border-l-gray-300"
+                        : isSelected
+                        ? "bg-sky-50/90 border-l-4 border-l-[var(--color-primary)] cursor-pointer"
+                        : "hover:bg-gray-50 border-l-4 border-l-transparent cursor-pointer"
                     }`}
                   >
                     <div className="flex items-center gap-2.5 min-w-0">
                       {/* Checkbox */}
                       <div
                         className={`w-4 h-4 rounded border flex items-center justify-center transition-colors shrink-0 ${
-                          isSelected
+                          isAlreadyInList
+                            ? "bg-gray-200 border-gray-400 text-gray-600 cursor-not-allowed"
+                            : isSelected
                             ? "bg-[var(--color-primary)] border-[var(--color-primary)] text-white"
                             : "border-gray-300 bg-white hover:border-[var(--color-primary)]"
                         }`}
+                        title={isAlreadyInList ? "Already added to purchase list" : undefined}
                       >
-                        {isSelected && <FaCheck size={9} />}
+                        {isAlreadyInList ? (
+                          <FaCheck size={9} className="text-gray-600" />
+                        ) : isSelected ? (
+                          <FaCheck size={9} />
+                        ) : null}
                       </div>
 
                       <div className="flex flex-col min-w-0">
-                        <span className={`font-bold truncate ${isSelected ? "text-[var(--color-primary)]" : "text-black"}`}>
-                          {p.name || p.productName}
-                        </span>
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span
+                            className={`font-bold truncate ${
+                              isAlreadyInList
+                                ? "text-gray-700"
+                                : isSelected
+                                ? "text-[var(--color-primary)]"
+                                : "text-black"
+                            }`}
+                          >
+                            {p.name || p.productName}
+                          </span>
+                          {isAlreadyInList && (
+                            <span className="text-[10px] bg-emerald-100 text-emerald-800 border border-emerald-300 px-1.5 py-0.2 rounded font-semibold whitespace-nowrap">
+                              Added in list
+                            </span>
+                          )}
+                        </div>
                         <span className="text-[10px] text-gray-500">
                           Code: <span className="text-black font-medium">{p.pcode || p.productCode || "N/A"}</span> | Unit: <span className="text-black font-medium">{p.unit || "pcs"}</span>
                         </span>
@@ -1684,7 +1810,7 @@ const CreatePurchaseForm: React.FC = () => {
                     </div>
 
                     {/* Interactive inputs if selected, or read-only summary if not */}
-                    {isSelected ? (
+                    {!isAlreadyInList && isSelected ? (
                       <div
                         className="flex items-center gap-2 flex-wrap sm:flex-nowrap shrink-0"
                         onClick={(e) => e.stopPropagation()}
@@ -1918,9 +2044,9 @@ const CreatePurchaseForm: React.FC = () => {
       </div>
 
       {/* Financial Summary & Split Payment Breakdown (2 Column Dense Grid) */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-2.5">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-2.5 items-start">
         {/* Left Column: Overall Discounts, VAT, Transport & Remarks (5 cols) */}
-        <div className="lg:col-span-5 bg-white p-2.5 sm:p-3 rounded-xl border border-gray-200 shadow-xs flex flex-col justify-between gap-2">
+        <div className="lg:col-span-5 bg-white p-2.5 sm:p-3 rounded-xl border border-gray-200 shadow-xs flex flex-col gap-2">
           <div className="flex flex-col gap-2">
             <h3 className="text-xs font-bold text-black uppercase tracking-wider">
               Discounts & Extra Charges
@@ -2004,122 +2130,175 @@ const CreatePurchaseForm: React.FC = () => {
             )}
           </div>
 
-          {/* Notes */}
-          {challanSettings.showNotes && (
-            <div className="mt-1 flex flex-col gap-1.5">
-              <div className="flex items-center justify-between">
-                <label className="text-[10px] font-bold text-black uppercase tracking-wider block">
-                  Purchase Notes / Remarks
+          {/* Bottom of Left Box: Invoice Attachment & Purchase Notes Side by Side */}
+          <div className="mt-2 pt-2.5 border-t border-gray-200/90 flex flex-col sm:flex-row items-start gap-3">
+            {/* Invoice Attachment (Fixed compact upload box) */}
+            {(challanSettings.enableAttachments || challanSettings.showAttachments) && (
+              <div className="shrink-0">
+                <label className="text-[11px] font-bold text-black uppercase tracking-wider block mb-1">
+                  Attachment
                 </label>
-                <span className="text-[10px] text-gray-500">Click to add default tags</span>
+                <ImageUpload
+                  value={attachment}
+                  onChange={handleAttachmentChange}
+                />
               </div>
+            )}
 
-              {/* Quick Default Comments */}
-              <div className="flex items-center gap-1.5 flex-wrap">
-                {[
-                  "Goods received in good condition",
-                  "Challan verified with physical stock",
-                  "Standard order delivered",
-                  "Payment approved upon verification",
-                ].map((tag) => (
+            {/* Purchase Notes / Remarks (Fills the remaining width seamlessly) */}
+            {challanSettings.showNotes && (
+              <div className="relative flex-1 min-w-0 w-full flex flex-col" ref={notesDropdownRef}>
+                <div className="flex items-center justify-between gap-1 mb-1">
+                  <label className="text-[11px] font-bold text-black uppercase tracking-wider truncate">
+                    Notes / Remarks
+                  </label>
                   <button
-                    key={tag}
                     type="button"
-                    onClick={() => setNotes((prev) => (prev ? `${prev}, ${tag}` : tag))}
-                    className="px-2 py-0.5 text-[10px] font-semibold bg-sky-50 text-sky-800 hover:bg-[var(--color-primary)] hover:text-white border border-sky-300 hover:border-[var(--color-primary)] rounded-md shadow-2xs transition-all cursor-pointer"
-                    title="Click to insert this note"
+                    onClick={() => setIsNotesDropdownOpen(!isNotesDropdownOpen)}
+                    className="text-[10px] font-bold text-black hover:text-[var(--color-primary)] flex items-center gap-1 cursor-pointer bg-sky-50 hover:bg-sky-100 px-2 py-0.5 rounded-md border border-sky-200 transition-all shrink-0 shadow-2xs"
                   >
-                    + {tag}
+                    <span>+ Presets</span>
+                    <FiChevronDown
+                      size={11}
+                      className={`transition-transform duration-200 ${isNotesDropdownOpen ? "rotate-180" : ""}`}
+                    />
                   </button>
-                ))}
+                </div>
+
+                {/* Textarea Input with matched height to ImageUpload */}
+                <div className="relative mt-1">
+                  <textarea
+                    rows={3}
+                    value={notes}
+                    onChange={(e) => setNotes(e.target.value)}
+                    placeholder="Type notes or click '+ Presets' to add..."
+                    className="w-full p-2 text-xs border border-gray-300 rounded-lg focus:outline-none focus:border-[var(--color-primary)] resize-none text-black font-medium h-[84px] bg-white placeholder:text-gray-400 focus:ring-1 focus:ring-[var(--color-primary)]/30 transition-all"
+                  />
+
+                  {/* Floating Preset Suggestions Popover Menu */}
+                  {isNotesDropdownOpen && (
+                    <div className="absolute left-0 right-0 bottom-full mb-1.5 bg-white rounded-xl shadow-2xl border border-gray-200 p-2.5 z-40 max-h-60 overflow-y-auto animate-in fade-in zoom-in-95 duration-100">
+                      <div className="flex items-center justify-between pb-1.5 mb-1.5 border-b border-gray-100">
+                        <span className="text-[10.5px] font-bold text-black">
+                          Select preset remark:
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => setIsNotesDropdownOpen(false)}
+                          className="text-[10px] text-gray-500 hover:text-black font-semibold cursor-pointer px-1"
+                        >
+                          Close ✕
+                        </button>
+                      </div>
+
+                      <div className="flex flex-col gap-1.5">
+                        {[
+                          "Goods received in good condition",
+                          "Challan verified with physical stock",
+                          "Standard order delivered",
+                          "Payment approved upon verification",
+                          "Full payment completed upon delivery",
+                          "Partial delivery received",
+                        ].map((preset) => {
+                          const isIncluded = notes.toLowerCase().includes(preset.toLowerCase());
+                          return (
+                            <button
+                              key={preset}
+                              type="button"
+                              onClick={() => {
+                                setNotes((prev) => {
+                                  if (!prev.trim()) return preset;
+                                  if (prev.includes(preset)) return prev;
+                                  return `${prev}, ${preset}`;
+                                });
+                                setIsNotesDropdownOpen(false); // Clean auto-close on selection
+                              }}
+                              className={`px-2.5 py-1.5 text-xs rounded-lg text-left transition-all flex items-center justify-between gap-2 cursor-pointer border ${
+                                isIncluded
+                                  ? "bg-emerald-50 text-black border-emerald-400 font-bold"
+                                  : "bg-gray-50/80 hover:bg-sky-50 text-black border-gray-200 hover:border-sky-300 font-medium"
+                              }`}
+                            >
+                              <span className="truncate">{preset}</span>
+                              {isIncluded ? (
+                                <FaCheck size={11} className="text-emerald-600 shrink-0" />
+                              ) : (
+                                <FaPlus size={10} className="text-gray-400 shrink-0" />
+                              )}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
-
-              <textarea
-                rows={3}
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                placeholder="Add special terms, batch notes, delivery remarks (e.g. Goods received in good condition)..."
-                className="w-full p-2 text-xs border border-gray-300 rounded-lg focus:outline-none focus:border-[var(--color-primary)] resize-none text-black font-medium min-h-[75px]"
-              />
-            </div>
-          )}
-
-          {/* Challan / Invoice Document & Image Attachment */}
-          {(challanSettings.enableAttachments || challanSettings.showAttachments) && (
-            <div className="mt-1 pt-2 border-t border-gray-100">
-              <label className="text-[10px] font-bold text-black uppercase tracking-wider block mb-1">
-                Challan / Invoice Attachment (চালানের ছবি/ডকুমেন্ট)
-              </label>
-              <ImageUpload
-                value={attachment}
-                onChange={handleAttachmentChange}
-              />
-            </div>
-          )}
+            )}
+          </div>
         </div>
 
-        {/* Right Column: Financial Totals & Clean Split Payment Breakdown (7 cols) */}
-        <div className="lg:col-span-7 bg-white p-2.5 sm:p-3 rounded-xl border border-gray-200 shadow-xs flex flex-col justify-between gap-2">
+        {/* Right Column: Financial Totals & Clean Split Payment Breakdown (7 cols) - Medium Compact */}
+        <div className="lg:col-span-7 bg-white p-2.5 sm:p-3 rounded-xl border border-gray-200 shadow-xs flex flex-col gap-2">
           {/* Detailed Financial Summary Ribbon */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 bg-gray-50/80 p-2 rounded-lg border border-gray-200">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 bg-gray-50/90 py-1.5 px-2.5 rounded-lg border border-gray-200/90 shadow-2xs">
             <div>
-              <span className="text-[10px] text-black uppercase font-bold block">Subtotal</span>
-              <span className="text-xs font-bold   text-black block text-right">
+              <span className="text-[10px] text-black uppercase font-bold block tracking-wider leading-tight">Subtotal</span>
+              <span className="text-xs font-bold text-black block text-right leading-tight mt-0.5">
                 ৳ {formatMoney(rawSubtotal)}
               </span>
             </div>
             <div>
-              <span className="text-[10px] text-black uppercase font-bold block">Discount</span>
-              <span className="text-xs font-bold   text-rose-600 block text-right">
+              <span className="text-[10px] text-black uppercase font-bold block tracking-wider leading-tight">Discount</span>
+              <span className="text-xs font-bold text-rose-600 block text-right leading-tight mt-0.5">
                 - ৳ {formatMoney(totalDiscount)}
               </span>
             </div>
             <div>
-              <span className="text-[10px] text-black uppercase font-bold block">VAT + Transport</span>
-              <span className="text-xs font-bold   text-black block text-right">
+              <span className="text-[10px] text-black uppercase font-bold block tracking-wider leading-tight">VAT + Transport</span>
+              <span className="text-xs font-bold text-black block text-right leading-tight mt-0.5">
                 + ৳ {formatMoney(totalVat + calculatedTransport)}
               </span>
             </div>
-            <div className="bg-sky-100/70 p-1 px-1.5 rounded text-right flex flex-col justify-center">
-              <span className="text-[10px] text-sky-950 uppercase font-bold block">Grand Total</span>
-              <span className="text-xs sm:text-sm font-extrabold   text-[var(--color-primary)] block">
+            <div className="bg-sky-50 border border-sky-200/80 px-1.5 py-0.5 rounded text-right flex flex-col justify-center">
+              <span className="text-[10px] text-black uppercase font-bold block tracking-wider leading-tight">Grand Total</span>
+              <span className="text-xs sm:text-[13px] font-extrabold text-[var(--color-primary)] block leading-tight mt-0.5">
                 ৳ {formatMoney(grandTotal)}
               </span>
             </div>
           </div>
 
-          {/* Payment Collected Section (Matching cash-boi_v2) */}
-          <div className="flex items-center justify-between flex-wrap gap-1.5">
-            <span className="text-[11px] font-bold text-black uppercase tracking-wider flex items-center gap-1.5">
-              <FaWallet size={12} className="text-black" />
+          {/* Payment Collected Section */}
+          <div className="flex items-center justify-between flex-wrap gap-1">
+            <span className="text-[11px] font-bold text-gray-800 uppercase tracking-wider flex items-center gap-1.5">
+              <FaWallet size={11} className="text-gray-700" />
               Payment Collected
             </span>
             <div className="flex items-center gap-1">
               <button
                 type="button"
                 onClick={handlePayFullCash}
-                className="px-2 py-0.5 text-[11px] font-bold rounded-md bg-emerald-50 text-emerald-800 border border-emerald-300 hover:bg-emerald-100 transition-colors cursor-pointer"
+                className="px-1.5 py-0.5 text-[10px] font-bold rounded bg-emerald-50 text-emerald-800 border border-emerald-300 hover:bg-emerald-100 shadow-2xs transition-colors cursor-pointer"
               >
                 Cash
               </button>
               <button
                 type="button"
                 onClick={handlePayFullBank}
-                className="px-2 py-0.5 text-[11px] font-bold rounded-md bg-blue-50 text-blue-800 border border-blue-300 hover:bg-blue-100 transition-colors cursor-pointer"
+                className="px-1.5 py-0.5 text-[10px] font-bold rounded bg-sky-50 text-sky-800 border border-sky-300 hover:bg-sky-100 shadow-2xs transition-colors cursor-pointer"
               >
                 Bank
               </button>
               <button
                 type="button"
                 onClick={handlePayFullMfs}
-                className="px-2 py-0.5 text-[11px] font-bold rounded-md bg-purple-50 text-purple-800 border border-purple-300 hover:bg-purple-100 transition-colors cursor-pointer"
+                className="px-1.5 py-0.5 text-[10px] font-bold rounded bg-purple-50 text-purple-800 border border-purple-300 hover:bg-purple-100 shadow-2xs transition-colors cursor-pointer"
               >
                 MFS
               </button>
               <button
                 type="button"
                 onClick={handlePayFullCredit}
-                className="px-2 py-0.5 text-[11px] font-bold rounded-md bg-rose-50 text-rose-800 border border-rose-300 hover:bg-rose-100 transition-colors cursor-pointer"
+                className="px-1.5 py-0.5 text-[10px] font-bold rounded bg-rose-50 text-rose-800 border border-rose-300 hover:bg-rose-100 shadow-2xs transition-colors cursor-pointer"
               >
                 Credit
               </button>
@@ -2130,27 +2309,27 @@ const CreatePurchaseForm: React.FC = () => {
           <div className="flex flex-col gap-1.5">
             {/* 1. Cash Card */}
             <div
-              className={`px-2.5 py-1.5 rounded-lg border transition-all flex items-center justify-between gap-2 ${
+              className={`px-2.5 py-1 rounded-md border transition-all flex items-center justify-between gap-1.5 shadow-2xs ${
                 Number(cashAmount) > 0
-                  ? "border-emerald-400 bg-emerald-50/20 shadow-2xs"
+                  ? "border-emerald-400 bg-emerald-50/30"
                   : "border-gray-200 bg-gray-50/50 hover:bg-white"
               }`}
             >
-              <div className="flex items-center gap-2 min-w-0">
-                <div className="w-7 h-7 rounded-md bg-emerald-100/90 text-emerald-700 flex items-center justify-center shrink-0">
-                  <FaMoneyBillWave size={13} />
+              <div className="flex items-center gap-1.5 min-w-0">
+                <div className="w-6 h-6 rounded bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0">
+                  <FaMoneyBillWave size={11} />
                 </div>
-                <span className="font-bold text-xs text-black tracking-wider">CASH</span>
+                <span className="font-bold text-[11px] text-gray-800 tracking-wider">CASH</span>
               </div>
 
               <div
-                className={`flex items-center h-7 rounded-md border bg-white overflow-hidden w-24 xs:w-28 sm:w-36 shrink-0 transition-colors ${
+                className={`flex items-center h-6.5 rounded border bg-white overflow-hidden w-26 xs:w-30 sm:w-34 shrink-0 transition-colors shadow-2xs ${
                   Number(cashAmount) > 0
                     ? "border-emerald-500 ring-1 ring-emerald-500/50"
                     : "border-gray-300 focus-within:border-emerald-500 focus-within:ring-1 focus-within:ring-emerald-500"
                 }`}
               >
-                <span className="text-[11px] text-black font-bold px-1.5 sm:px-2 bg-gray-50 h-full flex items-center border-r border-gray-200 select-none">
+                <span className="text-[11px] text-gray-600 font-bold px-1.5 bg-gray-50 h-full flex items-center border-r border-gray-200 select-none">
                   ৳
                 </span>
                 <input
@@ -2160,14 +2339,14 @@ const CreatePurchaseForm: React.FC = () => {
                   value={cashAmount}
                   onWheel={(e) => e.currentTarget.blur()}
                   onChange={(e) => setCashAmount(e.target.value)}
-                  className="w-full text-right px-1.5 text-xs font-bold text-black outline-none bg-transparent placeholder:text-gray-600"
+                  className="w-full text-right px-1.5 text-xs font-bold text-black outline-none bg-transparent placeholder:text-gray-400 h-full"
                 />
               </div>
             </div>
 
             {/* Optional Change Tendered Toggle */}
             {numCash > 0 && (
-              <div className="flex items-center justify-end gap-2 text-[10px] px-1 -mt-0.5">
+              <div className="flex items-center justify-end gap-2 text-[10px] px-1 -my-0.5">
                 <button
                   type="button"
                   onClick={() => setShowCashGivenCalc(!showCashGivenCalc)}
@@ -2179,11 +2358,11 @@ const CreatePurchaseForm: React.FC = () => {
             )}
 
             {showCashGivenCalc && numCash > 0 && (
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 bg-emerald-50/60 px-2.5 py-1.5 rounded-lg border border-emerald-200 -mt-0.5">
-                <span className="text-[11px] text-black font-semibold">Cash Tendered:</span>
-                <div className="flex items-center gap-2">
-                  <div className="relative w-24 xs:w-28 sm:w-32">
-                    <span className="absolute left-2 top-0.5 text-black text-xs font-bold">৳</span>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 bg-emerald-50/60 px-2 py-1 rounded-md border border-emerald-200 shadow-2xs">
+                <span className="text-[11px] text-gray-800 font-semibold">Cash Tendered:</span>
+                <div className="flex items-center gap-1.5">
+                  <div className="relative w-26 xs:w-30 sm:w-32">
+                    <span className="absolute left-1.5 top-0.5 text-gray-600 text-xs font-bold">৳</span>
                     <input
                       type="number"
                       step="0.01"
@@ -2191,11 +2370,11 @@ const CreatePurchaseForm: React.FC = () => {
                       value={cashGiven}
                       onWheel={(e) => e.currentTarget.blur()}
                       onChange={(e) => setCashGiven(e.target.value)}
-                      className="w-full pl-5 pr-1.5 py-0.5 text-xs border border-gray-300 rounded text-right font-bold text-black bg-white outline-none focus:border-emerald-500"
+                      className="w-full pl-4.5 pr-1.5 py-0.5 text-xs border border-gray-300 rounded text-right font-bold text-black bg-white outline-none focus:border-emerald-500 h-6"
                     />
                   </div>
                   {changeReturnAmount > 0 && (
-                    <span className="text-[11px] text-black font-bold whitespace-nowrap">
+                    <span className="text-[11px] text-emerald-800 font-bold whitespace-nowrap">
                       Return: ৳{formatMoney(changeReturnAmount)}
                     </span>
                   )}
@@ -2205,21 +2384,21 @@ const CreatePurchaseForm: React.FC = () => {
 
             {/* 2. Card / Bank Card */}
             <div
-              className={`px-2.5 py-1.5 rounded-lg border transition-all flex items-center justify-between gap-2 ${
+              className={`px-2.5 py-1 rounded-md border transition-all flex items-center justify-between gap-1.5 shadow-2xs ${
                 Number(bankAmount) > 0
-                  ? "border-sky-400 bg-sky-50/20 shadow-2xs"
+                  ? "border-sky-400 bg-sky-50/30"
                   : "border-gray-200 bg-gray-50/50 hover:bg-white"
               }`}
             >
-              <div className="flex items-center gap-1.5 sm:gap-2 flex-1 min-w-0 mr-1 sm:mr-2">
-                <div className="w-7 h-7 rounded-md bg-sky-100/90 text-sky-700 flex items-center justify-center shrink-0">
-                  <FaCreditCard size={13} />
+              <div className="flex items-center gap-1.5 flex-1 min-w-0 mr-1">
+                <div className="w-6 h-6 rounded bg-sky-100 text-sky-700 flex items-center justify-center shrink-0">
+                  <FaCreditCard size={11} />
                 </div>
-                <span className="font-bold text-xs text-black tracking-wider shrink-0">CARD</span>
+                <span className="font-bold text-[11px] text-gray-800 tracking-wider shrink-0">CARD</span>
                 <select
                   value={selectedBankId}
                   onChange={(e) => handleSelectRegisteredBank(e.target.value)}
-                  className="h-6.5 w-full max-w-[110px] xs:max-w-[150px] sm:max-w-[220px] px-1.5 text-[11px] border border-gray-300 rounded-md bg-white text-black font-medium focus:outline-none focus:border-sky-500 cursor-pointer truncate"
+                  className="h-6.5 w-full max-w-[115px] xs:max-w-[155px] sm:max-w-[215px] px-1.5 text-[11px] border border-gray-300 rounded bg-white text-black font-medium focus:outline-none focus:border-sky-500 cursor-pointer truncate"
                 >
                   <option value="" className="text-black">
                     {registeredBankAccounts.length ? "Select Bank..." : "No bank registered"}
@@ -2236,13 +2415,13 @@ const CreatePurchaseForm: React.FC = () => {
               </div>
 
               <div
-                className={`flex items-center h-7 rounded-md border bg-white overflow-hidden w-24 xs:w-28 sm:w-36 shrink-0 transition-colors ${
+                className={`flex items-center h-6.5 rounded border bg-white overflow-hidden w-26 xs:w-30 sm:w-34 shrink-0 transition-colors shadow-2xs ${
                   Number(bankAmount) > 0
                     ? "border-sky-500 ring-1 ring-sky-500/50"
                     : "border-gray-300 focus-within:border-sky-500 focus-within:ring-1 focus-within:ring-sky-500"
                 }`}
               >
-                <span className="text-[11px] text-black font-bold px-1.5 sm:px-2 bg-gray-50 h-full flex items-center border-r border-gray-200 select-none">
+                <span className="text-[11px] text-gray-600 font-bold px-1.5 bg-gray-50 h-full flex items-center border-r border-gray-200 select-none">
                   ৳
                 </span>
                 <input
@@ -2252,28 +2431,28 @@ const CreatePurchaseForm: React.FC = () => {
                   value={bankAmount}
                   onWheel={(e) => e.currentTarget.blur()}
                   onChange={(e) => setBankAmount(e.target.value)}
-                  className="w-full text-right px-1.5 text-xs font-bold text-black outline-none bg-transparent placeholder:text-gray-600"
+                  className="w-full text-right px-1.5 text-xs font-bold text-black outline-none bg-transparent placeholder:text-gray-400 h-full"
                 />
               </div>
             </div>
 
             {/* 3. MFS Card */}
             <div
-              className={`px-2.5 py-1.5 rounded-lg border transition-all flex items-center justify-between gap-2 ${
+              className={`px-2.5 py-1 rounded-md border transition-all flex items-center justify-between gap-1.5 shadow-2xs ${
                 Number(mfsAmount) > 0
-                  ? "border-amber-400 bg-amber-50/20 shadow-2xs"
+                  ? "border-purple-400 bg-purple-50/30"
                   : "border-gray-200 bg-gray-50/50 hover:bg-white"
               }`}
             >
-              <div className="flex items-center gap-1.5 sm:gap-2 flex-1 min-w-0 mr-1 sm:mr-2">
-                <div className="w-7 h-7 rounded-md bg-amber-100/90 text-amber-700 flex items-center justify-center shrink-0">
-                  <FaWallet size={13} />
+              <div className="flex items-center gap-1.5 flex-1 min-w-0 mr-1">
+                <div className="w-6 h-6 rounded bg-purple-100 text-purple-700 flex items-center justify-center shrink-0">
+                  <FaMobileAlt size={11} />
                 </div>
-                <span className="font-bold text-xs text-black tracking-wider shrink-0">MFS</span>
+                <span className="font-bold text-[11px] text-gray-800 tracking-wider shrink-0">MFS</span>
                 <select
                   value={selectedMfsId}
                   onChange={(e) => handleSelectRegisteredMfs(e.target.value)}
-                  className="h-6.5 w-full max-w-[110px] xs:max-w-[150px] sm:max-w-[220px] px-1.5 text-[11px] border border-gray-300 rounded-md bg-white text-black font-medium focus:outline-none focus:border-amber-500 cursor-pointer truncate"
+                  className="h-6.5 w-full max-w-[115px] xs:max-w-[155px] sm:max-w-[215px] px-1.5 text-[11px] border border-gray-300 rounded bg-white text-black font-medium focus:outline-none focus:border-purple-500 cursor-pointer truncate"
                 >
                   <option value="" className="text-black">
                     {registeredMfsAccounts.length ? "Select MFS..." : "No MFS registered"}
@@ -2290,13 +2469,13 @@ const CreatePurchaseForm: React.FC = () => {
               </div>
 
               <div
-                className={`flex items-center h-7 rounded-md border bg-white overflow-hidden w-24 xs:w-28 sm:w-36 shrink-0 transition-colors ${
+                className={`flex items-center h-6.5 rounded border bg-white overflow-hidden w-26 xs:w-30 sm:w-34 shrink-0 transition-colors shadow-2xs ${
                   Number(mfsAmount) > 0
-                    ? "border-amber-500 ring-1 ring-amber-500/50"
-                    : "border-gray-300 focus-within:border-amber-500 focus-within:ring-1 focus-within:ring-amber-500"
+                    ? "border-purple-500 ring-1 ring-purple-500/50"
+                    : "border-gray-300 focus-within:border-purple-500 focus-within:ring-1 focus-within:ring-purple-500"
                 }`}
               >
-                <span className="text-[11px] text-black font-bold px-1.5 sm:px-2 bg-gray-50 h-full flex items-center border-r border-gray-200 select-none">
+                <span className="text-[11px] text-gray-600 font-bold px-1.5 bg-gray-50 h-full flex items-center border-r border-gray-200 select-none">
                   ৳
                 </span>
                 <input
@@ -2306,37 +2485,37 @@ const CreatePurchaseForm: React.FC = () => {
                   value={mfsAmount}
                   onWheel={(e) => e.currentTarget.blur()}
                   onChange={(e) => setMfsAmount(e.target.value)}
-                  className="w-full text-right px-1.5 text-xs font-bold text-black outline-none bg-transparent placeholder:text-gray-600"
+                  className="w-full text-right px-1.5 text-xs font-bold text-black outline-none bg-transparent placeholder:text-gray-400 h-full"
                 />
               </div>
             </div>
           </div>
 
           {/* Bottom Totals: Total Paid & Due Balance */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 border-t border-gray-200 pt-1.5 items-center">
-            <div className="bg-emerald-50/80 px-2.5 py-1.5 rounded-lg border border-emerald-200 flex items-center justify-between">
-              <span className="text-[10px] font-bold text-black uppercase tracking-wide">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 border-t border-gray-200/90 pt-1.5 items-center">
+            <div className="bg-emerald-50/90 px-2.5 py-1 rounded-md border border-emerald-200/90 flex items-center justify-between shadow-2xs">
+              <span className="text-[10.5px] font-bold text-emerald-950 uppercase tracking-wide">
                 Total Paid (৳)
               </span>
-              <span className="text-xs sm:text-sm font-extrabold text-emerald-800">
+              <span className="text-xs sm:text-[13px] font-extrabold text-emerald-800">
                 ৳ {formatMoney(totalPaid)}
               </span>
             </div>
 
             <div
-              className={`px-2.5 py-1.5 rounded-lg border flex items-center justify-between transition-colors ${
-                dueAmount > 0 ? "bg-rose-50/80 border-rose-200" : "bg-gray-50 border-gray-200"
+              className={`px-2.5 py-1 rounded-md border flex items-center justify-between transition-colors shadow-2xs ${
+                dueAmount > 0 ? "bg-rose-50/90 border-rose-200/90" : "bg-gray-50 border-gray-200"
               }`}
             >
               <span
-                className={`text-[10px] font-bold uppercase tracking-wide ${
-                  dueAmount > 0 ? "text-rose-900" : "text-black"
+                className={`text-[10.5px] font-bold uppercase tracking-wide ${
+                  dueAmount > 0 ? "text-rose-950" : "text-gray-700"
                 }`}
               >
                 Due Balance (৳)
               </span>
               <span
-                className={`text-xs sm:text-sm font-extrabold ${
+                className={`text-xs sm:text-[13px] font-extrabold ${
                   dueAmount > 0 ? "text-rose-600" : "text-black"
                 }`}
               >
