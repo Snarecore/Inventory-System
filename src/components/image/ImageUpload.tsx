@@ -40,9 +40,12 @@ const ImageUpload: React.FC<ImageUploadProps> = ({ value, onChange }) => {
 
 	return (
 		<div className="flex flex-row items-start space-x-3">
-			<label htmlFor={`${id}-file-upload`} className="w-[120px] h-[120px] flex items-center justify-center flex-col gap-2 border border-dashed border-[#e6eaed] text-sm rounded-md cursor-pointer hover:border-[var(--color-primary)] transition-all ease-in-out duration-300 mt-2">
-				<IoCloudUploadOutline size={20} />
-				<p className="font-semibold">Upload Image</p>
+			<label
+				htmlFor={`${id}-file-upload`}
+				className="w-[120px] h-[120px] flex items-center justify-center flex-col gap-2 border border-dashed border-[var(--color-primary)] bg-sky-50/40 text-[var(--color-primary)] text-sm rounded-md cursor-pointer hover:bg-sky-50/80 transition-all ease-in-out duration-300 mt-2"
+			>
+				<IoCloudUploadOutline size={22} className="text-[var(--color-primary)]" />
+				<p className="font-semibold text-xs">Upload Image</p>
 			</label>
 			<input
 				id={`${id}-file-upload`}

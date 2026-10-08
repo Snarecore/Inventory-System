@@ -332,8 +332,14 @@ const PurchaseInvoiceModal: React.FC<PurchaseInvoiceModalProps> = ({
             </div>
 
             <div class="bottom-section">
-              <div style="max-width: 350px; font-size: 11px; color: #475569;">
+              <div style="max-width: 350px; font-size: 11px; color: #475569; display: flex; flex-direction: column; gap: 8px;">
                 ${p.note ? `<div style="background: #fffbeb; border: 1px solid #fde68a; border-radius: 6px; padding: 6px 10px;"><strong>Note:</strong> ${p.note}</div>` : ""}
+                ${p.attachment || p.attachmentUrl || p.challanImage ? `
+                  <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 6px 10px;">
+                    <div style="font-weight: 600; color: #1e293b; margin-bottom: 4px;">Challan Attachment:</div>
+                    <img src="${p.attachment || p.attachmentUrl || p.challanImage}" alt="Challan Attachment" style="max-height: 120px; max-width: 200px; object-fit: contain; border-radius: 4px; border: 1px solid #cbd5e1;" />
+                  </div>
+                ` : ""}
               </div>
 
               <div class="totals-card">
@@ -584,11 +590,21 @@ const PurchaseInvoiceModal: React.FC<PurchaseInvoiceModalProps> = ({
 
           {/* Financial Totals */}
           <div className="flex flex-col sm:flex-row justify-between items-start gap-3 mt-3">
-            <div className="text-[11px] text-black max-w-sm">
+            <div className="text-[11px] text-black max-w-sm flex flex-col gap-2">
               {purchase.note && (
                 <div className="bg-amber-50 p-2 rounded border border-amber-200">
                   <span className="font-semibold text-amber-900 block">Note / Instructions:</span>
                   <p className="text-black mt-0.5">{purchase.note}</p>
+                </div>
+              )}
+              {(p.attachment || p.attachmentUrl || p.challanImage) && (
+                <div className="bg-gray-50 p-2 rounded border border-gray-200">
+                  <span className="font-semibold text-black block mb-1">Challan / Invoice Attachment:</span>
+                  <img
+                    src={p.attachment || p.attachmentUrl || p.challanImage}
+                    alt="Challan Attachment"
+                    className="max-h-28 max-w-[200px] object-contain rounded border border-gray-300"
+                  />
                 </div>
               )}
             </div>

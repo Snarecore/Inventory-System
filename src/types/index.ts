@@ -142,6 +142,10 @@ export interface PurchaseItem {
   customerPaid?: number
   returnAmount?: number
   purchaseDetails?: PurchaseDetailItem[]
+  attachment?: string | null
+  attachmentUrl?: string | null
+  challanImage?: string | null
+  documentUrl?: string | null
   createdAt?: string
   created_at?: string
   updatedAt?: string
@@ -150,13 +154,36 @@ export interface PurchaseItem {
 }
 
 export interface PurchaseChallanSettings {
-  showChallanNo?: boolean
-  showVehicleNo?: boolean
-  showDriverName?: boolean
-  showDriverPhone?: boolean
-  showTransportCost?: boolean
-  showDeliveryDate?: boolean
-  showNotes?: boolean
-  showPoNumber?: boolean
-  [key: string]: any
+  id?: number | string | null;
+  orgId?: number | string | null;
+  branchId?: number | string | null;
+  showChallanRefNo?: boolean;
+  showChallanDate?: boolean;
+  showVatChallan?: boolean;
+  showVatChallanDate?: boolean;
+  attachments?: boolean;
+  remarks?: boolean;
+  vehicleNumber?: boolean;
+  capacityCft?: boolean;
+  driverName?: boolean;
+  driverPhone?: boolean;
+  businessCode?: string | null;
+  phoneNumber?: string | null;
+  addedBy?: string | null;
+  addedDate?: string | null;
+  updatedBy?: string | null;
+  updatedDate?: string | null;
+  // Aliases for compatibility
+  showChallanNo?: boolean;
+  showVehicleNo?: boolean;
+  showDriverName?: boolean;
+  showDriverPhone?: boolean;
+  showTransportCost?: boolean;
+  showDeliveryDate?: boolean;
+  showNotes?: boolean;
+  showPoNumber?: boolean;
+  enableAttachments?: boolean;
+  showAttachments?: boolean;
+  [key: string]: any;
 }
+

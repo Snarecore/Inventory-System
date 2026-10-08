@@ -8,7 +8,19 @@ import { showSuccessToast, showErrorToast } from "@/utils/toast-utils";
 import apiConfig from "@/config/api.json";
 import { purchaseChallanSettingsQueryKey } from "@/config/query-key";
 import type { PurchaseChallanSettings } from "@/types";
-import { FaSlidersH, FaTruck, FaIdCard, FaUserTie, FaPhoneAlt, FaMoneyBillWave, FaCalendarAlt, FaStickyNote, FaFileInvoice } from "react-icons/fa";
+import {
+  FaSlidersH,
+  FaTruck,
+  FaUserTie,
+  FaPhoneAlt,
+  FaCalendarAlt,
+  FaStickyNote,
+  FaFileInvoice,
+  FaPaperclip,
+  FaReceipt,
+  FaCalendarCheck,
+  FaCubes,
+} from "react-icons/fa";
 
 interface ChallanSettingsModalProps {
   isOpen: boolean;
@@ -17,14 +29,16 @@ interface ChallanSettingsModalProps {
 }
 
 const defaultSettings: PurchaseChallanSettings = {
-  showChallanNo: true,
-  showVehicleNo: true,
-  showDriverName: true,
-  showDriverPhone: true,
-  showTransportCost: true,
-  showDeliveryDate: true,
-  showNotes: true,
-  showPoNumber: true,
+  showChallanRefNo: true,
+  showChallanDate: true,
+  showVatChallan: false,
+  showVatChallanDate: false,
+  attachments: true,
+  remarks: true,
+  vehicleNumber: true,
+  capacityCft: true,
+  driverName: true,
+  driverPhone: true,
 };
 
 const ChallanSettingsModal: React.FC<ChallanSettingsModalProps> = ({
@@ -61,14 +75,25 @@ const ChallanSettingsModal: React.FC<ChallanSettingsModalProps> = ({
       const data = (rawSettingsData as any)?.data || (rawSettingsData as any)?.settings || rawSettingsData;
       if (typeof data === "object" && data !== null) {
         setSettings({
-          showChallanNo: data.showChallanNo ?? data.show_challan_no ?? true,
-          showVehicleNo: data.showVehicleNo ?? data.show_vehicle_no ?? true,
-          showDriverName: data.showDriverName ?? data.show_driver_name ?? true,
-          showDriverPhone: data.showDriverPhone ?? data.show_driver_phone ?? true,
-          showTransportCost: data.showTransportCost ?? data.show_transport_cost ?? true,
-          showDeliveryDate: data.showDeliveryDate ?? data.show_delivery_date ?? true,
-          showNotes: data.showNotes ?? data.show_notes ?? true,
-          showPoNumber: data.showPoNumber ?? data.show_po_number ?? true,
+          id: data.id ?? null,
+          orgId: data.orgId ?? null,
+          branchId: data.branchId ?? null,
+          showChallanRefNo: data.showChallanRefNo ?? data.show_challan_ref_no ?? data.showChallanNo ?? data.show_challan_no ?? true,
+          showChallanDate: data.showChallanDate ?? data.show_challan_date ?? data.showDeliveryDate ?? data.show_delivery_date ?? true,
+          showVatChallan: data.showVatChallan ?? data.show_vat_challan ?? false,
+          showVatChallanDate: data.showVatChallanDate ?? data.show_vat_challan_date ?? false,
+          attachments: data.attachments ?? data.enableAttachments ?? data.enable_attachments ?? data.showAttachments ?? true,
+          remarks: data.remarks ?? data.showNotes ?? data.show_notes ?? true,
+          vehicleNumber: data.vehicleNumber ?? data.showVehicleNo ?? data.show_vehicle_no ?? true,
+          capacityCft: data.capacityCft ?? data.capacity_cft ?? true,
+          driverName: data.driverName ?? data.showDriverName ?? data.show_driver_name ?? true,
+          driverPhone: data.driverPhone ?? data.showDriverPhone ?? data.show_driver_phone ?? true,
+          businessCode: data.businessCode ?? null,
+          phoneNumber: data.phoneNumber ?? null,
+          addedBy: data.addedBy ?? null,
+          addedDate: data.addedDate ?? null,
+          updatedBy: data.updatedBy ?? null,
+          updatedDate: data.updatedDate ?? null,
         });
       }
     }
@@ -76,12 +101,34 @@ const ChallanSettingsModal: React.FC<ChallanSettingsModalProps> = ({
 
   const saveMutation = useMutation({
     mutationFn: async (updatedSettings: PurchaseChallanSettings) => {
+      const payload: any = {
+        accessUser: buildAccessUser(),
+        showChallanRefNo: Boolean(updatedSettings.showChallanRefNo),
+        showChallanDate: Boolean(updatedSettings.showChallanDate),
+        showVatChallan: Boolean(updatedSettings.showVatChallan),
+        showVatChallanDate: Boolean(updatedSettings.showVatChallanDate),
+        attachments: Boolean(updatedSettings.attachments),
+        remarks: Boolean(updatedSettings.remarks),
+        vehicleNumber: Boolean(updatedSettings.vehicleNumber),
+        capacityCft: Boolean(updatedSettings.capacityCft),
+        driverName: Boolean(updatedSettings.driverName),
+        driverPhone: Boolean(updatedSettings.driverPhone),
+        // Aliases for compatibility
+        showChallanNo: Boolean(updatedSettings.showChallanRefNo),
+        showDeliveryDate: Boolean(updatedSettings.showChallanDate),
+        showNotes: Boolean(updatedSettings.remarks),
+        showVehicleNo: Boolean(updatedSettings.vehicleNumber),
+        enableAttachments: Boolean(updatedSettings.attachments),
+        showAttachments: Boolean(updatedSettings.attachments),
+      };
+
+      if (updatedSettings.id) {
+        payload.id = updatedSettings.id;
+      }
+
       const response = await postData<any>({
         url: saveSettingsUrl,
-        body: {
-          accessUser: buildAccessUser(),
-          ...updatedSettings,
-        },
+        body: payload,
       });
       return response;
     },
@@ -114,51 +161,57 @@ const ChallanSettingsModal: React.FC<ChallanSettingsModalProps> = ({
 
   const options = [
     {
-      key: "showChallanNo" as keyof PurchaseChallanSettings,
+      key: "showChallanRefNo" as keyof PurchaseChallanSettings,
       label: "Challan / Ref No",
-      description: "Display external supplier challan or reference number field",
+      description: "Display external supplier challan or reference number field (showChallanRefNo)",
       icon: FaFileInvoice,
     },
     {
-      key: "showVehicleNo" as keyof PurchaseChallanSettings,
+      key: "showVatChallan" as keyof PurchaseChallanSettings,
+      label: "VAT Challan No",
+      description: "Display government Mushak / VAT challan number field (showVatChallan)",
+      icon: FaReceipt,
+    },
+    {
+      key: "showVatChallanDate" as keyof PurchaseChallanSettings,
+      label: "VAT Challan Date",
+      description: "Display VAT challan issued date field (showVatChallanDate)",
+      icon: FaCalendarCheck,
+    },
+    {
+      key: "attachments" as keyof PurchaseChallanSettings,
+      label: "Enable Attachments",
+      description: "Upload challan, invoice document or photo / ফাইল আপলোড সুবিধা (attachments)",
+      icon: FaPaperclip,
+    },
+    {
+      key: "vehicleNumber" as keyof PurchaseChallanSettings,
       label: "Vehicle / Truck No",
-      description: "Record carrier vehicle or transport truck license plate number",
+      description: "Record carrier vehicle or transport truck license plate number (vehicleNumber)",
       icon: FaTruck,
     },
     {
-      key: "showDriverName" as keyof PurchaseChallanSettings,
+      key: "capacityCft" as keyof PurchaseChallanSettings,
+      label: "Capacity (CFT)",
+      description: "Record carrier capacity in cubic feet (capacityCft)",
+      icon: FaCubes,
+    },
+    {
+      key: "driverName" as keyof PurchaseChallanSettings,
       label: "Driver Name",
-      description: "Record the name of transport driver / delivery agent",
+      description: "Record the name of transport driver / delivery agent (driverName)",
       icon: FaUserTie,
     },
     {
-      key: "showDriverPhone" as keyof PurchaseChallanSettings,
+      key: "driverPhone" as keyof PurchaseChallanSettings,
       label: "Driver Phone",
-      description: "Contact phone number of the carrier or driver",
+      description: "Contact phone number of the carrier or driver (driverPhone)",
       icon: FaPhoneAlt,
     },
     {
-      key: "showTransportCost" as keyof PurchaseChallanSettings,
-      label: "Transport / Labor Cost",
-      description: "Include dedicated freight, shipping, or unloading labor cost",
-      icon: FaMoneyBillWave,
-    },
-    {
-      key: "showDeliveryDate" as keyof PurchaseChallanSettings,
-      label: "Expected / Receive Date",
-      description: "Specific delivery date or physical stock receive timestamp",
-      icon: FaCalendarAlt,
-    },
-    {
-      key: "showPoNumber" as keyof PurchaseChallanSettings,
-      label: "PO",
-      description: "Link purchase to internal Purchase Order / Requisition number",
-      icon: FaIdCard,
-    },
-    {
-      key: "showNotes" as keyof PurchaseChallanSettings,
-      label: "Challan Notes & Remarks",
-      description: "Extra instructions, terms, and delivery note comments",
+      key: "remarks" as keyof PurchaseChallanSettings,
+      label: "Remarks / Notes",
+      description: "Extra instructions, terms, and challan delivery notes (remarks)",
       icon: FaStickyNote,
     },
   ];

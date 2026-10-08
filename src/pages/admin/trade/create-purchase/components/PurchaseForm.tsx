@@ -24,6 +24,7 @@ import ConfirmModal from "@/components/modal/ConfirmModal";
 import PartyModal from "@/pages/admin/people/parties/components/PartyModal";
 import ChallanSettingsModal from "@/pages/admin/trade/purchases/components/ChallanSettingsModal";
 import PurchaseInvoiceModal from "@/pages/admin/trade/purchases/components/PurchaseInvoiceModal";
+import ImageUpload from "@/components/image/ImageUpload";
 import apiConfig from "@/config/api.json";
 import {
   purchaseListQueryKey,
@@ -59,14 +60,25 @@ interface SelectedProductEntry {
 }
 
 const defaultChallanSettings: PurchaseChallanSettings = {
+  showChallanRefNo: true,
+  showChallanDate: true,
+  showVatChallan: false,
+  showVatChallanDate: false,
+  attachments: true,
+  remarks: true,
+  vehicleNumber: true,
+  capacityCft: true,
+  driverName: true,
+  driverPhone: true,
+  // Aliases
   showChallanNo: true,
   showVehicleNo: true,
-  showDriverName: true,
-  showDriverPhone: true,
-  showTransportCost: true,
   showDeliveryDate: true,
   showNotes: true,
+  showTransportCost: true,
   showPoNumber: true,
+  enableAttachments: true,
+  showAttachments: true,
 };
 
 const CreatePurchaseForm: React.FC = () => {
@@ -81,7 +93,6 @@ const CreatePurchaseForm: React.FC = () => {
   // Form Basic Info
   const [invoiceNo, setInvoiceNo] = useState<string>("");
   const [purchaseDate, setPurchaseDate] = useState<string>(() => new Date().toISOString().substring(0, 10));
-  const [poNumber, setPoNumber] = useState<string>("");
 
   // Supplier
   const [selectedSupplier, setSelectedSupplier] = useState<PartyItem | null>(null);
@@ -92,12 +103,16 @@ const CreatePurchaseForm: React.FC = () => {
 
   // Challan & Logistics Info
   const [challanNo, setChallanNo] = useState<string>("");
+  const [poNumber, setPoNumber] = useState<string>("");
+  const [vatChallan, setVatChallan] = useState<string>("");
+  const [vatChallanDate, setVatChallanDate] = useState<string>("");
   const [vehicleNo, setVehicleNo] = useState<string>("");
+  const [capacityCft, setCapacityCft] = useState<string>("");
   const [driverName, setDriverName] = useState<string>("");
   const [driverPhone, setDriverPhone] = useState<string>("");
-  const [deliveryDate, setDeliveryDate] = useState<string>("");
   const [transportCost, setTransportCost] = useState<string>("");
   const [notes, setNotes] = useState<string>("");
+  const [attachment, setAttachment] = useState<string | null>(null);
 
   // Product Selection & Line Items
   const [lineItems, setLineItems] = useState<FormLineItem[]>([]);
@@ -390,14 +405,28 @@ const CreatePurchaseForm: React.FC = () => {
       const data = (rawChallanSettings as any)?.data || (rawChallanSettings as any)?.settings || rawChallanSettings;
       if (typeof data === "object" && data !== null) {
         setChallanSettings({
-          showChallanNo: data.showChallanNo ?? data.show_challan_no ?? true,
-          showVehicleNo: data.showVehicleNo ?? data.show_vehicle_no ?? true,
-          showDriverName: data.showDriverName ?? data.show_driver_name ?? true,
-          showDriverPhone: data.showDriverPhone ?? data.show_driver_phone ?? true,
-          showTransportCost: data.showTransportCost ?? data.show_transport_cost ?? true,
-          showDeliveryDate: data.showDeliveryDate ?? data.show_delivery_date ?? true,
-          showNotes: data.showNotes ?? data.show_notes ?? true,
-          showPoNumber: data.showPoNumber ?? data.show_po_number ?? true,
+          id: data.id ?? null,
+          showChallanRefNo: data.showChallanRefNo ?? data.show_challan_ref_no ?? data.showChallanNo ?? data.show_challan_no ?? true,
+          showChallanDate: data.showChallanDate ?? data.show_challan_date ?? data.showDeliveryDate ?? data.show_delivery_date ?? true,
+          showVatChallan: data.showVatChallan ?? data.show_vat_challan ?? false,
+          showVatChallanDate: data.showVatChallanDate ?? data.show_vat_challan_date ?? false,
+          attachments: data.attachments ?? data.enableAttachments ?? data.enable_attachments ?? data.showAttachments ?? true,
+          remarks: data.remarks ?? data.showNotes ?? data.show_notes ?? true,
+          vehicleNumber: data.vehicleNumber ?? data.showVehicleNo ?? data.show_vehicle_no ?? true,
+          capacityCft: data.capacityCft ?? data.capacity_cft ?? true,
+          driverName: data.driverName ?? data.showDriverName ?? data.show_driver_name ?? true,
+          driverPhone: data.driverPhone ?? data.showDriverPhone ?? data.show_driver_phone ?? true,
+          // Aliases
+          showChallanNo: data.showChallanRefNo ?? data.showChallanNo ?? true,
+          showVehicleNo: data.vehicleNumber ?? data.showVehicleNo ?? true,
+          showDriverName: data.driverName ?? data.showDriverName ?? true,
+          showDriverPhone: data.driverPhone ?? data.showDriverPhone ?? true,
+          showTransportCost: data.showTransportCost ?? true,
+          showDeliveryDate: data.showChallanDate ?? data.showDeliveryDate ?? true,
+          showNotes: data.remarks ?? data.showNotes ?? true,
+          showPoNumber: data.showPoNumber ?? true,
+          enableAttachments: data.attachments ?? data.enableAttachments ?? true,
+          showAttachments: data.attachments ?? data.showAttachments ?? true,
         });
       }
     }
@@ -441,17 +470,21 @@ const CreatePurchaseForm: React.FC = () => {
       const data: any = effectiveEditData;
       setInvoiceNo(data.invoiceNo || data.invoice_no || data.billNo || "");
       setPurchaseDate(data.purchaseDate || data.salesDate || data.date || new Date().toISOString().substring(0, 10));
-      setChallanNo(data.challanNo || data.challan_no || data.challanRefNo || "");
-      setVehicleNo(data.vehicleNo || data.vehicle_no || data.truckNo || "");
+      setChallanNo(data.challanRefNo || data.challan_ref_no || data.challanNo || data.challan_no || "");
+      setVatChallan(data.vatChallan || data.vat_challan || data.vatChallanNo || "");
+      setVatChallanDate(data.vatChallanDate || data.vat_challan_date || "");
+      setVehicleNo(data.vehicleNumber || data.vehicle_number || data.vehicleNo || data.vehicle_no || data.truckNo || "");
+      setCapacityCft(data.capacityCft || data.capacity_cft || "");
       setDriverName(data.driverName || data.driver_name || "");
       setDriverPhone(data.driverPhone || data.driver_phone || "");
-      setPoNumber(data.poNumber || data.po_number || data.poNo || "");
-      setDeliveryDate(data.deliveryDate || data.delivery_date || "");
+
+      const existingAttach = data.attachments || data.attachment || data.attachmentUrl || data.challanImage || data.documentUrl || null;
+      setAttachment(existingAttach);
 
       const transport = data.transportCost ?? data.transport_cost ?? data.delivery_charge ?? data.deliveryCharge ?? "";
       setTransportCost(transport !== "" && transport !== null && Number(transport) > 0 ? String(transport) : "");
 
-      setNotes(data.note || data.notes || data.remarks || "");
+      setNotes(data.remarks || data.note || data.notes || "");
 
       const disc = data.discount ?? data.discountAmount ?? data.discount_amount ?? "";
       setInvoiceDiscount(disc !== "" && disc !== null && Number(disc) > 0 ? String(disc) : "");
@@ -906,6 +939,18 @@ const CreatePurchaseForm: React.FC = () => {
     }
   };
 
+  const handleAttachmentChange = (file: File | null) => {
+    if (!file) {
+      setAttachment(null);
+      return;
+    }
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setAttachment(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+  };
+
   // Pre-validate & Open Confirmation Modal
   const handlePreSubmit = (shouldPrint = false) => {
     if (!selectedSupplier) {
@@ -992,6 +1037,8 @@ const CreatePurchaseForm: React.FC = () => {
         };
       });
 
+      const isAttachmentsEnabled = Boolean(challanSettings.enableAttachments || challanSettings.showAttachments);
+
       const purchasePayload: any = {
         accessUser,
         orgId: accessUser.orgId,
@@ -1008,22 +1055,33 @@ const CreatePurchaseForm: React.FC = () => {
         customerPhone: selectedSupplier.phone || selectedSupplier.partyPhone || "",
         supplierAddress: selectedSupplier.address || selectedSupplier.partyAddress || "",
         customerAddress: selectedSupplier.address || selectedSupplier.partyAddress || "",
-        challanNo: challanNo.trim(),
-        challan_no: challanNo.trim(),
-        vehicleNo: vehicleNo.trim(),
-        vehicle_no: vehicleNo.trim(),
-        driverName: driverName.trim(),
-        driver_name: driverName.trim(),
-        driverPhone: driverPhone.trim(),
-        driver_phone: driverPhone.trim(),
-        poNumber: poNumber.trim(),
-        po_number: poNumber.trim(),
-        deliveryDate: deliveryDate || purchaseDate,
-        delivery_date: deliveryDate || purchaseDate,
-        transportCost: calculatedTransport,
-        transport_cost: calculatedTransport,
-        delivery_charge: calculatedTransport,
-        deliveryCharge: calculatedTransport,
+        showChallanRefNo: (challanSettings.showChallanRefNo ?? challanSettings.showChallanNo) ? true : false,
+        challanRefNo: (challanSettings.showChallanRefNo ?? challanSettings.showChallanNo) ? (challanNo.trim() || null) : null,
+        challanNo: (challanSettings.showChallanRefNo ?? challanSettings.showChallanNo) ? (challanNo.trim() || null) : null,
+        challan_no: (challanSettings.showChallanRefNo ?? challanSettings.showChallanNo) ? (challanNo.trim() || null) : null,
+        challanDate: purchaseDate,
+        challan_date: purchaseDate,
+        vatChallan: challanSettings.showVatChallan ? (vatChallan.trim() || null) : null,
+        vat_challan: challanSettings.showVatChallan ? (vatChallan.trim() || null) : null,
+        vatChallanNo: challanSettings.showVatChallan ? (vatChallan.trim() || null) : null,
+        vatChallanDate: challanSettings.showVatChallanDate ? (vatChallanDate || purchaseDate) : null,
+        vat_challan_date: challanSettings.showVatChallanDate ? (vatChallanDate || purchaseDate) : null,
+        vehicleNumber: (challanSettings.vehicleNumber ?? challanSettings.showVehicleNo) ? (vehicleNo.trim() || null) : null,
+        vehicle_number: (challanSettings.vehicleNumber ?? challanSettings.showVehicleNo) ? (vehicleNo.trim() || null) : null,
+        vehicleNo: (challanSettings.vehicleNumber ?? challanSettings.showVehicleNo) ? (vehicleNo.trim() || null) : null,
+        vehicle_no: (challanSettings.vehicleNumber ?? challanSettings.showVehicleNo) ? (vehicleNo.trim() || null) : null,
+        capacityCft: challanSettings.capacityCft ? (capacityCft.trim() || null) : null,
+        capacity_cft: challanSettings.capacityCft ? (capacityCft.trim() || null) : null,
+        driverName: (challanSettings.driverName ?? challanSettings.showDriverName) ? (driverName.trim() || null) : null,
+        driver_name: (challanSettings.driverName ?? challanSettings.showDriverName) ? (driverName.trim() || null) : null,
+        driverPhone: (challanSettings.driverPhone ?? challanSettings.showDriverPhone) ? (driverPhone.trim() || null) : null,
+        driver_phone: (challanSettings.driverPhone ?? challanSettings.showDriverPhone) ? (driverPhone.trim() || null) : null,
+        deliveryDate: purchaseDate,
+        delivery_date: purchaseDate,
+        transportCost: challanSettings.showTransportCost ? calculatedTransport : 0,
+        transport_cost: challanSettings.showTransportCost ? calculatedTransport : 0,
+        delivery_charge: challanSettings.showTransportCost ? calculatedTransport : 0,
+        deliveryCharge: challanSettings.showTransportCost ? calculatedTransport : 0,
         totalAmount: rawSubtotal,
         discount: totalDiscount,
         discountType: invoiceDiscountType,
@@ -1034,7 +1092,13 @@ const CreatePurchaseForm: React.FC = () => {
         paymentType,
         status: paymentStatus,
         osType: "WEB",
-        note: notes.trim(),
+        remarks: (challanSettings.remarks ?? challanSettings.showNotes) ? (notes.trim() || null) : null,
+        note: (challanSettings.remarks ?? challanSettings.showNotes) ? (notes.trim() || null) : null,
+        attachments: isAttachmentsEnabled ? (attachment || null) : null,
+        attachment: isAttachmentsEnabled ? (attachment || null) : null,
+        attachmentUrl: isAttachmentsEnabled ? (attachment || null) : null,
+        challanImage: isAttachmentsEnabled ? (attachment || null) : null,
+        documentUrl: isAttachmentsEnabled ? (attachment || null) : null,
         createdAt: new Date().toISOString(),
         created_at: new Date().toISOString(),
         createdAtTime: new Date().toISOString(),
@@ -1170,7 +1234,18 @@ const CreatePurchaseForm: React.FC = () => {
     setBankAmount("");
     setMfsAmount("");
     setCashGiven("");
+    setChallanNo("");
+    setChallanDate("");
+    setVatChallan("");
+    setVatChallanDate("");
+    setVehicleNo("");
+    setCapacityCft("");
+    setDriverName("");
+    setDriverPhone("");
+    setDeliveryDate("");
+    setPoNumber("");
     setNotes("");
+    setAttachment(null);
     setSelectedProductsMap({});
     const code = businessCode || getBusinessCode() || buildAccessUser().businessCode || "1001";
     setInvoiceNo(makeInvoiceNo(code));
@@ -1357,8 +1432,8 @@ const CreatePurchaseForm: React.FC = () => {
           />
         </div>
 
-        {/* Optional Challan No */}
-        {challanSettings.showChallanNo && (
+        {/* Optional Challan Ref No */}
+        {(challanSettings.showChallanRefNo ?? challanSettings.showChallanNo) && (
           <div>
             <label className="text-[11px] font-bold text-black uppercase tracking-wider block mb-1">
               Challan Ref No
@@ -1367,14 +1442,59 @@ const CreatePurchaseForm: React.FC = () => {
               type="text"
               value={challanNo}
               onChange={(e) => setChallanNo(e.target.value)}
-              className="w-full h-9 px-2.5 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:border-[var(--color-primary)]   font-semibold text-black"
+              className="w-full h-9 px-2.5 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:border-[var(--color-primary)] font-semibold text-black"
               placeholder="e.g. CH-98234"
             />
           </div>
         )}
 
+        {/* PO Number (UI / Design Only) */}
+        <div>
+          <label className="text-[11px] font-bold text-black uppercase tracking-wider block mb-1">
+            PO Number
+          </label>
+          <input
+            type="text"
+            value={poNumber}
+            onChange={(e) => setPoNumber(e.target.value)}
+            className="w-full h-9 px-2.5 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:border-[var(--color-primary)] font-semibold text-black"
+            placeholder="e.g. PO-98234"
+          />
+        </div>
+
+        {/* Optional VAT Challan No */}
+        {challanSettings.showVatChallan && (
+          <div>
+            <label className="text-[11px] font-bold text-black uppercase tracking-wider block mb-1">
+              VAT Challan No
+            </label>
+            <input
+              type="text"
+              value={vatChallan}
+              onChange={(e) => setVatChallan(e.target.value)}
+              className="w-full h-9 px-2.5 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:border-[var(--color-primary)] font-semibold text-black"
+              placeholder="e.g. VAT-98234"
+            />
+          </div>
+        )}
+
+        {/* Optional VAT Challan Date */}
+        {challanSettings.showVatChallanDate && (
+          <div>
+            <label className="text-[11px] font-bold text-black uppercase tracking-wider block mb-1">
+              VAT Challan Date
+            </label>
+            <input
+              type="date"
+              value={vatChallanDate}
+              onChange={(e) => setVatChallanDate(e.target.value)}
+              className="w-full h-9 px-2.5 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:border-[var(--color-primary)] font-semibold text-black"
+            />
+          </div>
+        )}
+
         {/* Optional Vehicle No */}
-        {challanSettings.showVehicleNo && (
+        {(challanSettings.vehicleNumber ?? challanSettings.showVehicleNo) && (
           <div>
             <label className="text-[11px] font-bold text-black uppercase tracking-wider block mb-1">
               Vehicle / Truck No
@@ -1383,14 +1503,30 @@ const CreatePurchaseForm: React.FC = () => {
               type="text"
               value={vehicleNo}
               onChange={(e) => setVehicleNo(e.target.value)}
-              className="w-full h-9 px-2.5 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:border-[var(--color-primary)]   font-semibold text-black"
+              className="w-full h-9 px-2.5 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:border-[var(--color-primary)] font-semibold text-black"
               placeholder="e.g. DHAKA-METRO-11-2233"
             />
           </div>
         )}
 
+        {/* Optional Capacity (CFT) */}
+        {challanSettings.capacityCft && (
+          <div>
+            <label className="text-[11px] font-bold text-black uppercase tracking-wider block mb-1">
+              Capacity (CFT)
+            </label>
+            <input
+              type="text"
+              value={capacityCft}
+              onChange={(e) => setCapacityCft(e.target.value)}
+              className="w-full h-9 px-2.5 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:border-[var(--color-primary)] font-semibold text-black"
+              placeholder="e.g. 500 CFT"
+            />
+          </div>
+        )}
+
         {/* Optional Driver Name */}
-        {challanSettings.showDriverName && (
+        {(challanSettings.driverName ?? challanSettings.showDriverName) && (
           <div>
             <label className="text-[11px] font-bold text-black uppercase tracking-wider block mb-1">
               Driver Name
@@ -1406,7 +1542,7 @@ const CreatePurchaseForm: React.FC = () => {
         )}
 
         {/* Optional Driver Phone */}
-        {challanSettings.showDriverPhone && (
+        {(challanSettings.driverPhone ?? challanSettings.showDriverPhone) && (
           <div>
             <label className="text-[11px] font-bold text-black uppercase tracking-wider block mb-1">
               Driver Phone
@@ -1415,24 +1551,8 @@ const CreatePurchaseForm: React.FC = () => {
               type="text"
               value={driverPhone}
               onChange={(e) => setDriverPhone(e.target.value)}
-              className="w-full h-9 px-2.5 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:border-[var(--color-primary)]   font-semibold text-black"
+              className="w-full h-9 px-2.5 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:border-[var(--color-primary)] font-semibold text-black"
               placeholder="017xxxxxxxx"
-            />
-          </div>
-        )}
-
-        {/* Optional PO Number */}
-        {challanSettings.showPoNumber && (
-          <div>
-            <label className="text-[11px] font-bold text-black uppercase tracking-wider block mb-1">
-              PO Number
-            </label>
-            <input
-              type="text"
-              value={poNumber}
-              onChange={(e) => setPoNumber(e.target.value)}
-              className="w-full h-9 px-2.5 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:border-[var(--color-primary)]   font-semibold text-black"
-              placeholder="e.g. PO-2026-001"
             />
           </div>
         )}
@@ -1855,6 +1975,19 @@ const CreatePurchaseForm: React.FC = () => {
                 onChange={(e) => setNotes(e.target.value)}
                 placeholder="Add special terms, batch notes, or delivery remarks..."
                 className="w-full p-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:border-[var(--color-primary)] resize-none text-black font-medium"
+              />
+            </div>
+          )}
+
+          {/* Challan / Invoice Document & Image Attachment */}
+          {(challanSettings.enableAttachments || challanSettings.showAttachments) && (
+            <div className="mt-1 pt-2 border-t border-gray-100">
+              <label className="text-[10px] font-bold text-black uppercase tracking-wider block mb-1">
+                Challan / Invoice Attachment (চালানের ছবি/ডকুমেন্ট)
+              </label>
+              <ImageUpload
+                value={attachment}
+                onChange={handleAttachmentChange}
               />
             </div>
           )}
