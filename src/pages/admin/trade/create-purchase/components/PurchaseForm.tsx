@@ -1254,63 +1254,103 @@ const CreatePurchaseForm: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-col gap-2.5 px-3 py-2 sm:px-4 sm:py-2.5 max-w-[1600px] mx-auto w-full">
+    <div className="flex flex-col gap-2.5 px-2.5 py-2 sm:px-4 sm:py-2.5 max-w-[1600px] mx-auto w-full">
       {/* Top Header Bar */}
-      <div className="sticky top-0 z-30 bg-[#F6F6F6] py-2 sm:py-2.5 -mt-2 sm:-mt-2.5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 border-b border-gray-200">
-        <div className="flex items-center gap-2">
-          <h1 className="text-base sm:text-lg font-bold text-black flex items-center gap-2">
-            <FaCalculator className="text-[var(--color-primary)]" size={18} />
-            {isEditMode ? "Edit Purchase Invoice" : "Create New Purchase"}
-          </h1>
-          <span className="text-xs px-2 py-0.5 rounded-full bg-sky-100 text-sky-800   font-semibold">
-            {invoiceNo || "INV"}
-          </span>
+      <div className="sticky top-0 z-30 bg-[#F6F6F6] py-2 sm:py-2.5 -mt-2 sm:-mt-2.5 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-2.5 border-b border-gray-200">
+        {/* Left Side: Title & Invoice Badge (Stacked on Mobile, Inline on LG) */}
+        <div className="flex items-center justify-between gap-2 w-full lg:w-auto">
+          <div className="flex flex-col lg:flex-row lg:items-center gap-1 lg:gap-2.5 min-w-0">
+            <h1 className="text-sm sm:text-base lg:text-lg font-bold text-black flex items-center gap-1.5 shrink-0">
+              <FaCalculator className="text-[var(--color-primary)] shrink-0" size={18} />
+              <span className="truncate">{isEditMode ? "Edit Purchase Invoice" : "Create New Purchase"}</span>
+            </h1>
+            <span className="text-[10px] sm:text-xs px-2.5 py-0.5 rounded-full bg-sky-100 text-sky-800 font-semibold w-fit">
+              {invoiceNo || "INV"}
+            </span>
+          </div>
+
+          {/* Quick Settings, Reset, Cancel - visible on top right on Mobile (< lg) */}
+          <div className="flex lg:hidden items-center gap-1 shrink-0">
+            <button
+              type="button"
+              onClick={() => setIsChallanSettingsOpen(true)}
+              className="flex items-center gap-1 px-2 py-1.5 text-xs font-medium text-gray-700 bg-white hover:bg-gray-50 border border-gray-200 rounded-lg shadow-xs transition-colors cursor-pointer"
+              title="Challan Settings"
+            >
+              <FaSlidersH className="text-black" size={12} />
+              <span className="hidden sm:inline">Challan Settings</span>
+            </button>
+            <button
+              type="button"
+              onClick={handleReset}
+              className="px-2.5 py-1.5 text-xs font-medium text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors cursor-pointer"
+            >
+              Reset
+            </button>
+            <button
+              type="button"
+              onClick={() => navigate("/admin/purchases")}
+              className="px-2.5 py-1.5 text-xs font-medium text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors cursor-pointer"
+            >
+              Cancel
+            </button>
+          </div>
         </div>
 
-        <div className="flex items-center gap-2 self-end sm:self-auto">
-          <button
-            type="button"
-            onClick={() => setIsChallanSettingsOpen(true)}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-gray-700 bg-white hover:bg-gray-50 border border-gray-200 rounded-lg shadow-xs transition-colors cursor-pointer"
-          >
-            <FaSlidersH className="text-black" size={12} />
-            <span className="hidden sm:inline">Challan Settings</span>
-          </button>
-          <button
-            type="button"
-            onClick={handleReset}
-            className="px-3 py-1.5 text-xs font-medium text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors cursor-pointer"
-          >
-            Reset
-          </button>
-          <button
-            type="button"
-            onClick={() => navigate("/admin/purchases")}
-            className="px-3 py-1.5 text-xs font-medium text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors cursor-pointer"
-          >
-            Cancel
-          </button>
-          <Button
-            label={isSubmitting ? "Saving..." : isEditMode ? "Update Purchase" : "Save Purchase"}
-            onClick={() => handlePreSubmit(false)}
-            color="#009fe3"
-            hoverColor="#0085be"
-            disabled={isSubmitting}
-            icon={<FaCheck className="text-white text-xs" />}
-          />
-          <Button
-            label="Save & Print"
-            onClick={() => handlePreSubmit(true)}
-            color="#059669"
-            hoverColor="#047857"
-            disabled={isSubmitting}
-            icon={<FaPrint className="text-white text-xs" />}
-          />
+        {/* Action Controls for LG & Mobile */}
+        <div className="flex flex-col lg:flex-row lg:items-center gap-2 w-full lg:w-auto">
+          {/* Controls visible inline on Desktop (lg:) */}
+          <div className="hidden lg:flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setIsChallanSettingsOpen(true)}
+              className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-gray-700 bg-white hover:bg-gray-50 border border-gray-200 rounded-lg shadow-xs transition-colors cursor-pointer"
+            >
+              <FaSlidersH className="text-black" size={12} />
+              <span>Challan Settings</span>
+            </button>
+            <button
+              type="button"
+              onClick={handleReset}
+              className="px-3 py-1.5 text-xs font-medium text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors cursor-pointer"
+            >
+              Reset
+            </button>
+            <button
+              type="button"
+              onClick={() => navigate("/admin/purchases")}
+              className="px-3 py-1.5 text-xs font-medium text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors cursor-pointer"
+            >
+              Cancel
+            </button>
+          </div>
+
+          {/* Save & Save & Print Buttons (2 in 1 line on mobile, auto width on LG) */}
+          <div className="grid grid-cols-2 lg:flex lg:items-center gap-2 w-full lg:w-auto">
+            <Button
+              label={isSubmitting ? "Saving..." : isEditMode ? "Update Purchase" : "Save Purchase"}
+              onClick={() => handlePreSubmit(false)}
+              color="#009fe3"
+              hoverColor="#0085be"
+              disabled={isSubmitting}
+              icon={<FaCheck className="text-white text-xs" />}
+              buttonClass="!text-xs !py-1.5 !w-full lg:!w-fit justify-center font-bold"
+            />
+            <Button
+              label="Save & Print"
+              onClick={() => handlePreSubmit(true)}
+              color="#059669"
+              hoverColor="#047857"
+              disabled={isSubmitting}
+              icon={<FaPrint className="text-white text-xs" />}
+              buttonClass="!text-xs !py-1.5 !w-full lg:!w-fit justify-center font-bold"
+            />
+          </div>
         </div>
       </div>
 
       {/* Grid: Supplier & Meta Details */}
-      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-2.5 bg-white p-3 rounded-xl border border-gray-200 shadow-xs">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 bg-white p-2.5 sm:p-3 rounded-xl border border-gray-200 shadow-xs">
         {/* Supplier Selector */}
         <div className="relative" ref={supplierRef}>
           <div className="flex items-center justify-between mb-1">
@@ -1354,7 +1394,7 @@ const CreatePurchaseForm: React.FC = () => {
 
           {/* Supplier Dropdown Panel */}
           {isSupplierDropdownOpen && (
-            <div className="absolute left-0 mt-1 w-80 sm:w-96 bg-white rounded-lg shadow-xl border border-gray-200 p-2 z-20">
+            <div className="absolute left-0 right-0 sm:right-auto sm:w-96 max-w-[calc(100vw-32px)] mt-1 bg-white rounded-lg shadow-xl border border-gray-200 p-2 z-30">
               <div className="relative mb-2">
                 <FaSearch className="absolute left-2.5 top-2.5 text-gray-400 text-xs" />
                 <input
@@ -1447,20 +1487,6 @@ const CreatePurchaseForm: React.FC = () => {
             />
           </div>
         )}
-
-        {/* PO Number (UI / Design Only) */}
-        <div>
-          <label className="text-[11px] font-bold text-black uppercase tracking-wider block mb-1">
-            PO Number
-          </label>
-          <input
-            type="text"
-            value={poNumber}
-            onChange={(e) => setPoNumber(e.target.value)}
-            className="w-full h-9 px-2.5 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:border-[var(--color-primary)] font-semibold text-black"
-            placeholder="e.g. PO-98234"
-          />
-        </div>
 
         {/* Optional VAT Challan No */}
         {challanSettings.showVatChallan && (
@@ -1556,6 +1582,20 @@ const CreatePurchaseForm: React.FC = () => {
             />
           </div>
         )}
+
+        {/* PO Number (UI / Design Only) */}
+        <div>
+          <label className="text-[11px] font-bold text-black uppercase tracking-wider block mb-1">
+            PO Number
+          </label>
+          <input
+            type="text"
+            value={poNumber}
+            onChange={(e) => setPoNumber(e.target.value)}
+            className="w-full h-9 px-2.5 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:border-[var(--color-primary)] font-semibold text-black"
+            placeholder="e.g. PO-2026-001"
+          />
+        </div>
       </div>
 
       {/* Product Live Search & Add Bar */}
@@ -1581,9 +1621,9 @@ const CreatePurchaseForm: React.FC = () => {
           <button
             type="button"
             onClick={selectedProductCount > 0 ? handleDoneSelectProducts : () => setIsProductDropdownOpen(true)}
-            className={`px-3.5 h-9 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all shadow-xs shrink-0 cursor-pointer ${
+            className={`px-3 sm:px-3.5 h-9 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all shadow-xs shrink-0 cursor-pointer ${
               selectedProductCount > 0
-                ? "bg-[var(--color-primary)] text-white   ring-2 ring-[var(--color-primary)]/20"
+                ? "bg-[var(--color-primary)] text-white ring-2 ring-[var(--color-primary)]/20"
                 : "bg-[#0F365C] text-white border-gray-200"
             }`}
           >
@@ -1595,7 +1635,8 @@ const CreatePurchaseForm: React.FC = () => {
             ) : (
               <>
                 <FaPlus size={10} className="text-white" />
-                <span>Add Your Product</span>
+                <span className="hidden sm:inline">Add Your Product</span>
+                <span className="sm:hidden">Add</span>
               </>
             )}
           </button>
@@ -1734,7 +1775,7 @@ const CreatePurchaseForm: React.FC = () => {
         </div>
 
         <div className="overflow-x-auto w-full">
-          <table className="w-full text-xs text-left border-collapse">
+          <table className="w-full min-w-[720px] text-xs text-left border-collapse">
             <thead>
               <tr className="bg-[#41bef3] border-b border-gray-200 text-[11px] font-semibold text-black shadow-md">
                 <th className="py-2 px-2 text-center w-8 whitespace-nowrap">SL</th>
@@ -2079,13 +2120,13 @@ const CreatePurchaseForm: React.FC = () => {
               </div>
 
               <div
-                className={`flex items-center h-7 rounded-md border bg-white overflow-hidden w-28 sm:w-36 shrink-0 transition-colors ${
+                className={`flex items-center h-7 rounded-md border bg-white overflow-hidden w-24 xs:w-28 sm:w-36 shrink-0 transition-colors ${
                   Number(cashAmount) > 0
                     ? "border-emerald-500 ring-1 ring-emerald-500/50"
                     : "border-gray-300 focus-within:border-emerald-500 focus-within:ring-1 focus-within:ring-emerald-500"
                 }`}
               >
-                <span className="text-[11px] text-black font-bold px-2 bg-gray-50 h-full flex items-center border-r border-gray-200   select-none">
+                <span className="text-[11px] text-black font-bold px-1.5 sm:px-2 bg-gray-50 h-full flex items-center border-r border-gray-200 select-none">
                   ৳
                 </span>
                 <input
@@ -2095,7 +2136,7 @@ const CreatePurchaseForm: React.FC = () => {
                   value={cashAmount}
                   onWheel={(e) => e.currentTarget.blur()}
                   onChange={(e) => setCashAmount(e.target.value)}
-                  className="w-full text-right px-1.5 text-xs   font-bold text-black outline-none bg-transparent placeholder:text-gray-600"
+                  className="w-full text-right px-1.5 text-xs font-bold text-black outline-none bg-transparent placeholder:text-gray-600"
                 />
               </div>
             </div>
@@ -2114,11 +2155,11 @@ const CreatePurchaseForm: React.FC = () => {
             )}
 
             {showCashGivenCalc && numCash > 0 && (
-              <div className="flex items-center justify-between gap-2 bg-emerald-50/60 px-2.5 py-1.5 rounded-lg border border-emerald-200 -mt-0.5">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 bg-emerald-50/60 px-2.5 py-1.5 rounded-lg border border-emerald-200 -mt-0.5">
                 <span className="text-[11px] text-black font-semibold">Cash Tendered:</span>
                 <div className="flex items-center gap-2">
-                  <div className="relative w-28 sm:w-32">
-                    <span className="absolute left-2 top-0.5 text-black text-xs font-bold  ">৳</span>
+                  <div className="relative w-24 xs:w-28 sm:w-32">
+                    <span className="absolute left-2 top-0.5 text-black text-xs font-bold">৳</span>
                     <input
                       type="number"
                       step="0.01"
@@ -2126,11 +2167,11 @@ const CreatePurchaseForm: React.FC = () => {
                       value={cashGiven}
                       onWheel={(e) => e.currentTarget.blur()}
                       onChange={(e) => setCashGiven(e.target.value)}
-                      className="w-full pl-5 pr-1.5 py-0.5 text-xs border border-gray-300 rounded text-right   font-bold text-black bg-white outline-none focus:border-emerald-500"
+                      className="w-full pl-5 pr-1.5 py-0.5 text-xs border border-gray-300 rounded text-right font-bold text-black bg-white outline-none focus:border-emerald-500"
                     />
                   </div>
                   {changeReturnAmount > 0 && (
-                    <span className="text-[11px] text-black   font-bold">
+                    <span className="text-[11px] text-black font-bold whitespace-nowrap">
                       Return: ৳{formatMoney(changeReturnAmount)}
                     </span>
                   )}
@@ -2146,7 +2187,7 @@ const CreatePurchaseForm: React.FC = () => {
                   : "border-gray-200 bg-gray-50/50 hover:bg-white"
               }`}
             >
-              <div className="flex items-center gap-2 flex-1 min-w-0 mr-1 sm:mr-2">
+              <div className="flex items-center gap-1.5 sm:gap-2 flex-1 min-w-0 mr-1 sm:mr-2">
                 <div className="w-7 h-7 rounded-md bg-sky-100/90 text-sky-700 flex items-center justify-center shrink-0">
                   <FaCreditCard size={13} />
                 </div>
@@ -2154,7 +2195,7 @@ const CreatePurchaseForm: React.FC = () => {
                 <select
                   value={selectedBankId}
                   onChange={(e) => handleSelectRegisteredBank(e.target.value)}
-                  className="h-6.5 w-full max-w-[150px] sm:max-w-[220px] px-2 text-[11px] border border-gray-300 rounded-md bg-white text-black font-medium focus:outline-none focus:border-sky-500 cursor-pointer truncate"
+                  className="h-6.5 w-full max-w-[110px] xs:max-w-[150px] sm:max-w-[220px] px-1.5 text-[11px] border border-gray-300 rounded-md bg-white text-black font-medium focus:outline-none focus:border-sky-500 cursor-pointer truncate"
                 >
                   <option value="" className="text-black">
                     {registeredBankAccounts.length ? "Select Bank..." : "No bank registered"}
@@ -2171,13 +2212,13 @@ const CreatePurchaseForm: React.FC = () => {
               </div>
 
               <div
-                className={`flex items-center h-7 rounded-md border bg-white overflow-hidden w-28 sm:w-36 shrink-0 transition-colors ${
+                className={`flex items-center h-7 rounded-md border bg-white overflow-hidden w-24 xs:w-28 sm:w-36 shrink-0 transition-colors ${
                   Number(bankAmount) > 0
                     ? "border-sky-500 ring-1 ring-sky-500/50"
                     : "border-gray-300 focus-within:border-sky-500 focus-within:ring-1 focus-within:ring-sky-500"
                 }`}
               >
-                <span className="text-[11px] text-black font-bold px-2 bg-gray-50 h-full flex items-center border-r border-gray-200   select-none">
+                <span className="text-[11px] text-black font-bold px-1.5 sm:px-2 bg-gray-50 h-full flex items-center border-r border-gray-200 select-none">
                   ৳
                 </span>
                 <input
@@ -2187,7 +2228,7 @@ const CreatePurchaseForm: React.FC = () => {
                   value={bankAmount}
                   onWheel={(e) => e.currentTarget.blur()}
                   onChange={(e) => setBankAmount(e.target.value)}
-                  className="w-full text-right px-1.5 text-xs   font-bold text-black outline-none bg-transparent placeholder:text-gray-600"
+                  className="w-full text-right px-1.5 text-xs font-bold text-black outline-none bg-transparent placeholder:text-gray-600"
                 />
               </div>
             </div>
@@ -2200,7 +2241,7 @@ const CreatePurchaseForm: React.FC = () => {
                   : "border-gray-200 bg-gray-50/50 hover:bg-white"
               }`}
             >
-              <div className="flex items-center gap-2 flex-1 min-w-0 mr-1 sm:mr-2">
+              <div className="flex items-center gap-1.5 sm:gap-2 flex-1 min-w-0 mr-1 sm:mr-2">
                 <div className="w-7 h-7 rounded-md bg-amber-100/90 text-amber-700 flex items-center justify-center shrink-0">
                   <FaWallet size={13} />
                 </div>
@@ -2208,7 +2249,7 @@ const CreatePurchaseForm: React.FC = () => {
                 <select
                   value={selectedMfsId}
                   onChange={(e) => handleSelectRegisteredMfs(e.target.value)}
-                  className="h-6.5 w-full max-w-[150px] sm:max-w-[220px] px-2 text-[11px] border border-gray-300 rounded-md bg-white text-black font-medium focus:outline-none focus:border-amber-500 cursor-pointer truncate"
+                  className="h-6.5 w-full max-w-[110px] xs:max-w-[150px] sm:max-w-[220px] px-1.5 text-[11px] border border-gray-300 rounded-md bg-white text-black font-medium focus:outline-none focus:border-amber-500 cursor-pointer truncate"
                 >
                   <option value="" className="text-black">
                     {registeredMfsAccounts.length ? "Select MFS..." : "No MFS registered"}
@@ -2225,13 +2266,13 @@ const CreatePurchaseForm: React.FC = () => {
               </div>
 
               <div
-                className={`flex items-center h-7 rounded-md border bg-white overflow-hidden w-28 sm:w-36 shrink-0 transition-colors ${
+                className={`flex items-center h-7 rounded-md border bg-white overflow-hidden w-24 xs:w-28 sm:w-36 shrink-0 transition-colors ${
                   Number(mfsAmount) > 0
                     ? "border-amber-500 ring-1 ring-amber-500/50"
                     : "border-gray-300 focus-within:border-amber-500 focus-within:ring-1 focus-within:ring-amber-500"
                 }`}
               >
-                <span className="text-[11px] text-black font-bold px-2 bg-gray-50 h-full flex items-center border-r border-gray-200   select-none">
+                <span className="text-[11px] text-black font-bold px-1.5 sm:px-2 bg-gray-50 h-full flex items-center border-r border-gray-200 select-none">
                   ৳
                 </span>
                 <input
@@ -2241,19 +2282,19 @@ const CreatePurchaseForm: React.FC = () => {
                   value={mfsAmount}
                   onWheel={(e) => e.currentTarget.blur()}
                   onChange={(e) => setMfsAmount(e.target.value)}
-                  className="w-full text-right px-1.5 text-xs   font-bold text-black outline-none bg-transparent placeholder:text-gray-600"
+                  className="w-full text-right px-1.5 text-xs font-bold text-black outline-none bg-transparent placeholder:text-gray-600"
                 />
               </div>
             </div>
           </div>
 
           {/* Bottom Totals: Total Paid & Due Balance */}
-          <div className="grid grid-cols-2 gap-2 border-t border-gray-200 pt-1.5 items-center">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 border-t border-gray-200 pt-1.5 items-center">
             <div className="bg-emerald-50/80 px-2.5 py-1.5 rounded-lg border border-emerald-200 flex items-center justify-between">
               <span className="text-[10px] font-bold text-black uppercase tracking-wide">
                 Total Paid (৳)
               </span>
-              <span className="text-xs sm:text-sm font-extrabold   text-emerald-800">
+              <span className="text-xs sm:text-sm font-extrabold text-emerald-800">
                 ৳ {formatMoney(totalPaid)}
               </span>
             </div>
@@ -2271,7 +2312,7 @@ const CreatePurchaseForm: React.FC = () => {
                 Due Balance (৳)
               </span>
               <span
-                className={`text-xs sm:text-sm font-extrabold   ${
+                className={`text-xs sm:text-sm font-extrabold ${
                   dueAmount > 0 ? "text-rose-600" : "text-black"
                 }`}
               >

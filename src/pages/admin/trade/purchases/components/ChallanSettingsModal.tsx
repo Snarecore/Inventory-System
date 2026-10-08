@@ -254,14 +254,14 @@ const ChallanSettingsModal: React.FC<ChallanSettingsModalProps> = ({
             return (
               <label
                 key={opt.key}
-                className="flex items-center justify-between py-2 px-2 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors select-none"
+                className="flex items-center justify-between py-2 px-1 sm:px-2 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors select-none"
               >
-                <div className="flex items-start gap-2.5">
-                  <div className="p-1.5 rounded-md bg-sky-50 text-[var(--color-primary)] mt-0.5">
+                <div className="flex items-start gap-2 sm:gap-2.5 min-w-0 pr-2">
+                  <div className="p-1.5 rounded-md bg-sky-50 text-[var(--color-primary)] mt-0.5 shrink-0">
                     <Icon size={14} />
                   </div>
-                  <div>
-                    <span className="text-xs font-semibold text-gray-800 block">
+                  <div className="min-w-0">
+                    <span className="text-xs font-semibold text-gray-800 block truncate">
                       {opt.label}
                     </span>
                     <span className="text-[11px] text-gray-500 leading-tight block">
@@ -270,7 +270,7 @@ const ChallanSettingsModal: React.FC<ChallanSettingsModalProps> = ({
                   </div>
                 </div>
 
-                <div className="relative inline-flex items-center cursor-pointer ml-3 shrink-0">
+                <div className="relative inline-flex items-center cursor-pointer ml-1.5 sm:ml-3 shrink-0">
                   <input
                     type="checkbox"
                     checked={isChecked}
