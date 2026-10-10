@@ -2054,12 +2054,16 @@ export const CreateSaleForm: React.FC = () => {
       <DeleteModal
         isOpen={isDeleteLineModalOpen}
         title="Remove Item from Cart"
-        message="Are you sure you want to remove this item from the sales list?"
+        message={
+          itemIndexToDelete !== null && lineItems[itemIndexToDelete]
+            ? `Are you sure you want to remove "${lineItems[itemIndexToDelete]?.productName || 'this item'}" from the sales list?`
+            : "Are you sure you want to remove this item from the sales list?"
+        }
         onClose={() => {
           setIsDeleteLineModalOpen(false);
           setItemIndexToDelete(null);
         }}
-        onConfirm={handleConfirmDeleteLineItem}
+        onDelete={handleConfirmDeleteLineItem}
       />
 
       {/* Customer Quick Add Modal */}
