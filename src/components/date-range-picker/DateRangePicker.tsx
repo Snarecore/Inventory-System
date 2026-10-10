@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useMemo } from "react";
 import moment from "moment";
-import { FaCalendarAlt, FaChevronLeft, FaChevronRight } from "react-icons/fa";
+import { FaCalendarAlt, FaChevronLeft, FaChevronRight, FaTimes } from "react-icons/fa";
 import { FiChevronDown } from "react-icons/fi";
 
 export interface DateRange {
@@ -38,7 +38,7 @@ export const DateRangePicker: React.FC<DateRangePickerProps> = ({
   className = "",
   align = "left",
   disabled = false,
-  size = "md",
+  size = "sm",
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -119,8 +119,18 @@ export const DateRangePicker: React.FC<DateRangePickerProps> = ({
     { value: "this_week", label: "This Week" },
     { value: "this_month", label: "This Month" },
     { value: "last_month", label: "Last Month" },
+    { value: "30_days", label: "30 Days" },
     { value: "this_year", label: "This Year" },
   ];
+
+  const emitChange = (start: string, end: string, label: string) => {
+    if (onDateChange) {
+      onDateChange(start ? moment(start).toDate() : "", end ? moment(end).toDate() : "", label);
+    }
+    if (onChange) {
+      onChange({ startDate: start, endDate: end, label });
+    }
+  };
 
   const handleSelectPreset = (presetKey: string) => {
     setActivePreset(presetKey);
@@ -155,6 +165,11 @@ export const DateRangePicker: React.FC<DateRangePickerProps> = ({
         start = today.clone().subtract(1, "month").startOf("month").format("YYYY-MM-DD");
         end = today.clone().subtract(1, "month").endOf("month").format("YYYY-MM-DD");
         break;
+      case "30_days":
+      case "last_30_days":
+        start = today.clone().subtract(30, "days").format("YYYY-MM-DD");
+        end = today.format("YYYY-MM-DD");
+        break;
       case "this_year":
         start = today.clone().startOf("year").format("YYYY-MM-DD");
         end = today.clone().endOf("year").format("YYYY-MM-DD");
@@ -173,13 +188,7 @@ export const DateRangePicker: React.FC<DateRangePickerProps> = ({
       setViewDate(moment(start));
     }
 
-    if (onDateChange) {
-      onDateChange(start ? moment(start).toDate() : "", end ? moment(end).toDate() : "", presetKey);
-    }
-    if (onChange) {
-      onChange({ startDate: start, endDate: end, label: presetKey });
-    }
-
+    emitChange(start, end, presetKey);
     setIsOpen(false);
   };
 
@@ -192,6 +201,7 @@ export const DateRangePicker: React.FC<DateRangePickerProps> = ({
       // Start a new range
       setRangeStart(dayStr);
       setRangeEnd("");
+      emitChange(dayStr, "", "custom");
     } else if (rangeStart && !rangeEnd) {
       // Complete range
       if (dayStr < rangeStart) {
@@ -206,17 +216,8 @@ export const DateRangePicker: React.FC<DateRangePickerProps> = ({
     }
   };
 
-  const emitChange = (start: string, end: string, label: string) => {
-    if (onDateChange) {
-      onDateChange(start ? moment(start).toDate() : "", end ? moment(end).toDate() : "", label);
-    }
-    if (onChange) {
-      onChange({ startDate: start, endDate: end, label });
-    }
-  };
-
-  const handleClear = (e: React.MouseEvent) => {
-    e.stopPropagation();
+  const handleClear = (e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
     setRangeStart("");
     setRangeEnd("");
     setActivePreset("all");
@@ -333,26 +334,37 @@ export const DateRangePicker: React.FC<DateRangePickerProps> = ({
         <div
           className={`absolute ${
             align === "right" ? "right-0" : "left-0"
-          } top-full mt-1 w-64 bg-white rounded-xl shadow-xl border border-gray-200 p-2.5 z-[99999] animate-in fade-in zoom-in-95 duration-150 select-none`}
+          } top-full mt-1 w-72 bg-white rounded-xl shadow-2xl border border-gray-200 p-3 z-[99999] animate-in fade-in zoom-in-95 duration-150 select-none`}
         >
-          {/* Presets Header */}
-          <div className="text-[10px] font-bold text-black uppercase tracking-wider mb-1.5 px-0.5">
-            Quick Filters
+          {/* Quick Filters Header */}
+          <div className="flex items-center justify-between mb-1.5 px-0.5">
+            <span className="text-[10px] font-bold text-black uppercase tracking-wider">
+              Quick Filters
+            </span>
+            {isFiltered && (
+              <button
+                type="button"
+                onClick={handleClear}
+                className="text-[10px] font-semibold text-rose-600 hover:text-rose-700 cursor-pointer"
+              >
+                Reset
+              </button>
+            )}
           </div>
 
-          {/* Presets Grid */}
-          <div className="grid grid-cols-2 gap-1 mb-2">
+          {/* Quick Filters Grid */}
+          <div className="grid grid-cols-3 gap-1 mb-2.5">
             {presets.map((p) => {
-              const isSelected = activePreset === p.value;
+              const isSelected = activePreset === p.value && !rangeStart && !rangeEnd;
               return (
                 <button
                   key={p.value}
                   type="button"
                   onClick={() => handleSelectPreset(p.value)}
-                  className={`px-2 py-1 text-[11px] rounded-md text-left transition-all cursor-pointer font-semibold ${
+                  className={`px-1.5 py-1 text-[10.5px] rounded-md text-center transition-all cursor-pointer font-medium truncate ${
                     isSelected
-                      ? "bg-sky-50 text-[var(--color-primary)] border border-[var(--color-primary)]"
-                      : "bg-gray-50/80 hover:bg-sky-50/60 text-black border border-gray-200 hover:border-sky-300 hover:text-[var(--color-primary)]"
+                      ? "bg-sky-50 text-[var(--color-primary)] border border-[var(--color-primary)] font-bold"
+                      : "bg-gray-50/90 hover:bg-sky-50 text-black border border-gray-200 hover:border-sky-300"
                   }`}
                 >
                   {p.label}
@@ -361,8 +373,56 @@ export const DateRangePicker: React.FC<DateRangePickerProps> = ({
             })}
           </div>
 
-          {/* Calendar Picker Section */}
-          <div className="pt-2 border-t border-gray-200">
+          {/* Dedicated Start Date & End Date Inputs Section */}
+          <div className="pt-2 border-t border-gray-100 mb-2.5">
+            <div className="text-[10px] font-bold text-black uppercase tracking-wider mb-1.5 px-0.5">
+              Custom Date Range
+            </div>
+            <div className="grid grid-cols-2 gap-1.5">
+              <div>
+                <label className="text-[10px] font-medium text-black block mb-0.5">
+                  Start Date
+                </label>
+                <input
+                  type="date"
+                  value={rangeStart}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setRangeStart(val);
+                    setActivePreset("custom");
+                    if (val && moment(val).isValid()) {
+                      setViewDate(moment(val));
+                    }
+                    emitChange(val, rangeEnd, "custom");
+                  }}
+                  className="w-full px-2 py-1 text-xs border border-gray-300 rounded-md focus:outline-none focus:border-[var(--color-primary)] text-black font-normal bg-white"
+                />
+              </div>
+              <div>
+                <label className="text-[10px] font-medium text-black block mb-0.5">
+                  End Date
+                </label>
+                <input
+                  type="date"
+                  value={rangeEnd}
+                  min={rangeStart || undefined}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setRangeEnd(val);
+                    setActivePreset("custom");
+                    if (val && moment(val).isValid()) {
+                      setViewDate(moment(val));
+                    }
+                    emitChange(rangeStart, val, "custom");
+                  }}
+                  className="w-full px-2 py-1 text-xs border border-gray-300 rounded-md focus:outline-none focus:border-[var(--color-primary)] text-black font-normal bg-white"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Interactive Calendar Picker Section */}
+          <div className="pt-2 border-t border-gray-100">
             <div className="flex items-center justify-between mb-1.5 px-0.5">
               <span className="text-xs font-bold text-black">
                 {viewDate.format("MMMM YYYY")}
@@ -375,7 +435,7 @@ export const DateRangePicker: React.FC<DateRangePickerProps> = ({
                   className="p-1 text-black hover:bg-gray-100 rounded transition-colors cursor-pointer"
                   title="Previous Month"
                 >
-                  <FaChevronLeft size={8} />
+                  <FaChevronLeft size={9} />
                 </button>
                 <button
                   type="button"
@@ -383,7 +443,7 @@ export const DateRangePicker: React.FC<DateRangePickerProps> = ({
                   className="p-1 text-black hover:bg-gray-100 rounded transition-colors cursor-pointer"
                   title="Next Month"
                 >
-                  <FaChevronRight size={8} />
+                  <FaChevronRight size={9} />
                 </button>
               </div>
             </div>
@@ -417,13 +477,13 @@ export const DateRangePicker: React.FC<DateRangePickerProps> = ({
                       onMouseEnter={() => rangeStart && !rangeEnd && setHoverDate(dateStr)}
                       className={`w-6 h-6 flex items-center justify-center rounded-md text-[11px] font-medium transition-all cursor-pointer ${
                         isStart || isEnd
-                          ? "bg-[#0F365C] text-white font-bold shadow-xs z-10"
+                          ? "bg-[var(--color-primary)] text-white font-bold shadow-xs z-10"
                           : isInRange
                           ? "text-black font-semibold"
                           : isToday
-                          ? "border border-[#0F365C] text-black font-bold hover:bg-sky-50"
+                          ? "border border-[var(--color-primary)] text-black font-bold hover:bg-sky-50"
                           : isCurrentMonth
-                          ? "text-black font-semibold hover:bg-gray-100"
+                          ? "text-black font-normal hover:bg-gray-100"
                           : "text-gray-300 hover:bg-gray-50"
                       }`}
                     >
@@ -435,18 +495,25 @@ export const DateRangePicker: React.FC<DateRangePickerProps> = ({
             </div>
           </div>
 
-          {/* Footer: Clear & Selected status */}
-          <div className="flex items-center justify-between pt-2 mt-2 border-t border-gray-200 text-xs font-semibold px-0.5">
+          {/* Footer: Clear & Apply buttons */}
+          <div className="flex items-center justify-between pt-2.5 mt-2 border-t border-gray-100 text-xs font-semibold px-0.5">
             <button
               type="button"
               onClick={handleClear}
-              className="text-[11px] text-gray-700 hover:text-rose-600 transition-colors cursor-pointer py-0.5"
+              className="text-[11px] text-gray-500 hover:text-black transition-colors cursor-pointer py-0.5 font-medium"
             >
-              Clear
+              Clear All
             </button>
-            <span className="text-[11px] text-black font-bold truncate max-w-[150px]">
-              {rangeStart && !rangeEnd ? "Select end date" : displayLabel}
-            </span>
+            <button
+              type="button"
+              onClick={() => {
+                emitChange(rangeStart, rangeEnd, activePreset || "custom");
+                setIsOpen(false);
+              }}
+              className="px-3 py-1 text-xs bg-[#41BEF3] hover:bg-[#28b3f0] text-black rounded-lg font-semibold transition-all cursor-pointer shadow-2xs active:scale-95"
+            >
+              Apply
+            </button>
           </div>
         </div>
       )}

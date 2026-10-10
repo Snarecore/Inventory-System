@@ -182,8 +182,8 @@ export const PurchaseTable: React.FC<PurchaseTableProps> = ({
             />
           </div>
 
-          {/* Date Filter Dropdown */}
-          <div className="w-[calc(50%-4px)] sm:w-36 shrink-0 z-50">
+          {/* Date Filter Dropdown with Quick Filters + Start/End Date Inputs */}
+          <div className="w-[calc(50%-4px)] sm:w-40 lg:w-44 shrink-0 z-50">
             <DateRangePicker
               startDate={customStartDate}
               endDate={customEndDate}

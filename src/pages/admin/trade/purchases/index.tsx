@@ -360,8 +360,13 @@ const Purchases: React.FC = () => {
         }
       }
 
-      // 5. Date Filter
-      if (dateFilter && dateFilter !== "all") {
+      // 5. Date Filter (Custom Start/End Date Range or Presets)
+      if (customStartDate || customEndDate) {
+        const purchaseDateStr = getPurchaseDateString(purchase);
+        if (!purchaseDateStr) return false;
+        if (customStartDate && purchaseDateStr < customStartDate) return false;
+        if (customEndDate && purchaseDateStr > customEndDate) return false;
+      } else if (dateFilter && dateFilter !== "all") {
         const purchaseDateStr = getPurchaseDateString(purchase);
         if (!purchaseDateStr) return false;
 
@@ -391,9 +396,6 @@ const Purchases: React.FC = () => {
           const startOfYear = moment().startOf("year").format("YYYY-MM-DD");
           const endOfYear = moment().endOf("year").format("YYYY-MM-DD");
           if (purchaseDateStr < startOfYear || purchaseDateStr > endOfYear) return false;
-        } else if (dateFilter === "custom") {
-          if (customStartDate && purchaseDateStr < customStartDate) return false;
-          if (customEndDate && purchaseDateStr > customEndDate) return false;
         }
       }
 
