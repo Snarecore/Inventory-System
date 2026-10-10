@@ -442,10 +442,10 @@ export const CreateSaleForm: React.FC = () => {
     const q = productSearchQuery.toLowerCase().trim();
     return allProducts
       .filter((p) => {
-        const name = (p.name || p.productName || p.product_name || "").toLowerCase();
-        const code = (p.pcode || p.productCode || p.product_code || p.sku || "").toLowerCase();
+        const name = (p.name || "").toLowerCase();
+        const pcode = (p.pcode || "").toLowerCase();
         const barcode = (p.barcode || "").toLowerCase();
-        return name.includes(q) || code.includes(q) || barcode.includes(q);
+        return name.includes(q) || pcode.includes(q) || barcode.includes(q);
       })
       .slice(0, 25);
   }, [allProducts, productSearchQuery]);
@@ -455,9 +455,9 @@ export const CreateSaleForm: React.FC = () => {
     if (!customerSearchQuery.trim()) return customerList.slice(0, 15);
     const q = customerSearchQuery.toLowerCase().trim();
     return customerList.filter((c) => {
-      const name = (c.name || c.partyName || (c as any).customerName || "").toLowerCase();
-      const phone = (c.phone || c.partyPhone || (c as any).customerPhone || (c as any).mobile || "").toLowerCase();
-      const address = (c.address || c.partyAddress || (c as any).customerAddress || (c as any).city || "").toLowerCase();
+      const name = (c.name || c.partyName || "").toLowerCase();
+      const phone = (c.phone || c.partyPhone || "").toLowerCase();
+      const address = (c.address || c.partyAddress || "").toLowerCase();
       return name.includes(q) || phone.includes(q) || address.includes(q);
     });
   }, [customerList, customerSearchQuery]);
@@ -505,13 +505,13 @@ export const CreateSaleForm: React.FC = () => {
 
   // Handle Add Product to Line Items
   const handleAddProduct = (p: ProductItem) => {
-    const pId = String(p.id ?? p.productId ?? (p as any).product_id ?? "");
-    const pCode = p.pcode || p.productCode || (p as any).product_code || (p as any).sku || "";
-    const pName = p.name || p.productName || (p as any).product_name || "Product";
+    const pId = String(p.id ?? "");
+    const pCode = p.pcode || "";
+    const pName = p.name || "Product";
     const unit = p.unit || "pcs";
-    const sellPrice = Number(p.sellPrice ?? p.sell_price ?? p.buyPrice ?? (p as any).buy_price ?? 0);
-    const buyPrice = Number(p.buyPrice ?? (p as any).buy_price ?? 0);
-    const stock = Number(p.quantity ?? p.stock ?? (p as any).qty ?? 0);
+    const sellPrice = Number(p.sellPrice ?? p.buyPrice ?? 0);
+    const buyPrice = Number(p.buyPrice ?? 0);
+    const stock = Number(p.quantity ?? 0);
 
     if (stock <= 0) {
       showErrorToast(`"${pName}" is out of stock (Stock: 0)`);
@@ -570,32 +570,86 @@ export const CreateSaleForm: React.FC = () => {
     setIsProductDropdownOpen(false);
   };
 
-  // Barcode Scanning Handler
+  // Find Product STRICTLY By barcode or pcode
+  const findProductByBarcode = (query: string): ProductItem | undefined => {
+    const code = query.trim().toLowerCase();
+    if (!code) return undefined;
+
+    return allProducts.find((p) => {
+      const barcode = String(p.barcode || "").trim().toLowerCase();
+      const pcode = String(p.pcode || "").trim().toLowerCase();
+      return Boolean((barcode && barcode === code) || (pcode && pcode === code));
+    });
+  };
+
+  const processBarcodeMatch = (codeToSearch: string) => {
+    const trimmed = codeToSearch.trim();
+    if (!trimmed) return false;
+
+    const found = findProductByBarcode(trimmed);
+    if (found) {
+      const stock = Number(found.quantity ?? found.stock ?? 0);
+      if (stock <= 0) {
+        showErrorToast(`Product "${found.name || found.productName || "Product"}" is out of stock (Stock: 0)`);
+        setBarcodeInput("");
+        return true;
+      }
+      handleAddProduct(found);
+      setBarcodeInput("");
+      return true;
+    }
+    return false;
+  };
+
+  // Barcode Input Change Handler (Auto-detects exact barcode or pcode match)
+  const handleBarcodeChange = (val: string) => {
+    setBarcodeInput(val);
+    const trimmed = val.trim();
+    if (!trimmed) return;
+
+    // Check if the input is an exact barcode or pcode match
+    const matched = allProducts.find((p) => {
+      const barcode = String(p.barcode || "").trim().toLowerCase();
+      const pcode = String(p.pcode || "").trim().toLowerCase();
+      return Boolean(
+        (barcode && barcode === trimmed.toLowerCase()) ||
+        (pcode && pcode === trimmed.toLowerCase())
+      );
+    });
+
+    if (matched) {
+      const stock = Number(matched.quantity ?? matched.stock ?? 0);
+      if (stock <= 0) {
+        showErrorToast(`Product "${matched.name || matched.productName || "Product"}" is out of stock (Stock: 0)`);
+        setBarcodeInput("");
+        return;
+      }
+      handleAddProduct(matched);
+      setBarcodeInput("");
+    }
+  };
+
+  // Barcode Scanning Handler (On Enter key)
   const handleBarcodeScan = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") {
       e.preventDefault();
-      const code = barcodeInput.trim().toLowerCase();
+      const code = barcodeInput.trim();
       if (!code) return;
 
-      const found = allProducts.find(
-        (p) =>
-          (p.barcode && p.barcode.toLowerCase() === code) ||
-          (p.pcode && p.pcode.toLowerCase() === code) ||
-          (p.productCode && p.productCode.toLowerCase() === code) ||
-          ((p as any).product_code && (p as any).product_code.toLowerCase() === code)
-      );
-
-      if (found) {
-        const stock = Number(found.quantity ?? found.stock ?? (found as any).qty ?? 0);
-        if (stock <= 0) {
-          showErrorToast(`Product "${found.name || found.productName}" is out of stock (Stock: 0)`);
-          return;
-        }
-        handleAddProduct(found);
-        setBarcodeInput("");
-      } else {
+      const success = processBarcodeMatch(code);
+      if (!success) {
         showErrorToast(`Product with barcode "${barcodeInput}" not found`);
       }
+    }
+  };
+
+  // Barcode Paste Handler (Paste full barcode)
+  const handleBarcodePaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
+    const pasted = e.clipboardData.getData("text").trim();
+    if (!pasted) return;
+    const success = processBarcodeMatch(pasted);
+    if (success) {
+      e.preventDefault();
     }
   };
 
@@ -1299,8 +1353,9 @@ export const CreateSaleForm: React.FC = () => {
               type="text"
               placeholder="Scan barcode..."
               value={barcodeInput}
-              onChange={(e) => setBarcodeInput(e.target.value)}
+              onChange={(e) => handleBarcodeChange(e.target.value)}
               onKeyDown={handleBarcodeScan}
+              onPaste={handleBarcodePaste}
               className="w-full pl-7 pr-2.5 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:border-[var(--color-primary)] font-medium text-black h-9 bg-gray-50/50"
             />
           </div>
