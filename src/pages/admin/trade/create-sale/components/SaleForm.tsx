@@ -481,9 +481,7 @@ export const CreateSaleForm: React.FC = () => {
     return (base * v) / 100;
   }, [rawSubtotal, totalDiscount, vatPercent]);
 
-  const calculatedDelivery = useMemo(() => {
-    return Number(deliveryCharge) || 0;
-  }, [deliveryCharge]);
+  const calculatedDelivery = Number(deliveryCharge) || 0;
 
   const grandTotal = useMemo(() => {
     return Math.max(0, rawSubtotal - totalDiscount + totalVat + calculatedDelivery);
@@ -495,13 +493,8 @@ export const CreateSaleForm: React.FC = () => {
   const totalPaid = numCash + numBank + numMfs;
   const dueAmount = Math.max(0, grandTotal - totalPaid);
 
-  const changeReturnAmount = useMemo(() => {
-    const given = Number(cashGiven) || 0;
-    if (given > numCash) {
-      return given - numCash;
-    }
-    return 0;
-  }, [cashGiven, numCash]);
+  const numCashGiven = Number(cashGiven) || 0;
+  const changeReturnAmount = numCashGiven > numCash ? numCashGiven - numCash : 0;
 
   // Handle Add Product to Line Items
   const handleAddProduct = (p: ProductItem) => {
