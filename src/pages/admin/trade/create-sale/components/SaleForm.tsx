@@ -56,19 +56,16 @@ interface FormLineItem {
   stock?: number | string;
 }
 
-const mockDefaultProducts: ProductItem[] = [
-  { id: "1", productId: "1", productCode: "P-1001", productName: "Premium Basmati Rice 25kg", name: "Premium Basmati Rice 25kg", unit: "bag", sellPrice: 3200, buyPrice: 2800, stock: 45 },
-  { id: "2", productId: "2", productCode: "P-1002", productName: "Soyabean Oil 5L", name: "Soyabean Oil 5L", unit: "can", sellPrice: 850, buyPrice: 760, stock: 80 },
-  { id: "3", productId: "3", productCode: "P-1003", productName: "Aroma Tea Pack 500g", name: "Aroma Tea Pack 500g", unit: "pcs", sellPrice: 310, buyPrice: 250, stock: 120 },
-  { id: "4", productId: "4", productCode: "P-1004", productName: "Dell 24-inch IPS Monitor", name: "Dell 24-inch IPS Monitor", unit: "pcs", sellPrice: 18500, buyPrice: 15500, stock: 12 },
-  { id: "5", productId: "5", productCode: "P-1005", productName: "Logitech MX Master 3S Mouse", name: "Logitech MX Master 3S Mouse", unit: "pcs", sellPrice: 9500, buyPrice: 7500, stock: 25 },
-];
-
-const mockDefaultCustomers: PartyItem[] = [
-  { id: "1", partyId: "1", name: "Rahim Traders", partyName: "Rahim Traders", phone: "01711223344", address: "Mirpur 10, Dhaka", type: "CUSTOMER" },
-  { id: "2", partyId: "2", name: "Karim Enterprises", partyName: "Karim Enterprises", phone: "01822334455", address: "Dhanmondi, Dhaka", type: "CUSTOMER" },
-  { id: "3", partyId: "3", name: "Bismillah General Store", partyName: "Bismillah General Store", phone: "01933445566", address: "Chawkbazar, Chittagong", type: "CUSTOMER" },
-];
+export const WALK_IN_CUSTOMER: PartyItem = {
+  id: 0,
+  partyId: 0,
+  name: "Walk-in Customer",
+  partyName: "Walk-in Customer",
+  phone: "",
+  partyPhone: "",
+  address: "Counter Sale",
+  type: "CUSTOMER",
+};
 
 export const CreateSaleForm: React.FC = () => {
   const navigate = useNavigate();
@@ -87,6 +84,8 @@ export const CreateSaleForm: React.FC = () => {
 
   // Customer State
   const [selectedCustomer, setSelectedCustomer] = useState<PartyItem | null>(null);
+  const [walkInName, setWalkInName] = useState<string>("");
+  const [walkInPhone, setWalkInPhone] = useState<string>("");
   const [customerSearchQuery, setCustomerSearchQuery] = useState<string>("");
   const [isCustomerDropdownOpen, setIsCustomerDropdownOpen] = useState<boolean>(false);
   const [isPartyModalOpen, setIsPartyModalOpen] = useState<boolean>(false);
@@ -138,76 +137,168 @@ export const CreateSaleForm: React.FC = () => {
   const [pendingSavePrint, setPendingSavePrint] = useState<boolean>(false);
 
   // 1. Fetch Customers
-  const { data: customersData } = useQuery({
+  const { data: rawPartyData } = useQuery({
     queryKey: [partyListQueryKey, "CUSTOMER"],
     queryFn: async () => {
       const accessUser = buildAccessUser();
       const res: any = await postData({
         url: apiConfig.party?.partyListUrl || "get-party-info-list",
-        body: { accessUser, type: "CUSTOMER" },
-      });
-      const list = res?.partyList || res?.data || res?.parties || [];
-      return Array.isArray(list) && list.length > 0 ? list : mockDefaultCustomers;
-    },
-    staleTime: 5 * 60 * 1000,
-  });
-  const customerList: PartyItem[] = useMemo(() => {
-    if (Array.isArray(customersData) && customersData.length > 0) return customersData;
-    return mockDefaultCustomers;
-  }, [customersData]);
-
-  // 2. Fetch Products
-  const { data: productsData } = useQuery({
-    queryKey: [productListQueryKey],
-    queryFn: async () => {
-      const accessUser = buildAccessUser();
-      const res: any = await postData({
-        url: apiConfig.productList?.productListUrl || "get-product-list",
         body: { accessUser },
       });
-      const list = res?.productList || res?.data || res?.products || [];
-      return Array.isArray(list) && list.length > 0 ? list : mockDefaultProducts;
+      return res;
     },
     staleTime: 5 * 60 * 1000,
   });
+
+  const customerList: PartyItem[] = useMemo(() => {
+    if (!rawPartyData) return [];
+    let list: any[] = [];
+    if (Array.isArray(rawPartyData)) list = rawPartyData;
+    else if (rawPartyData && typeof rawPartyData === "object") {
+      const raw = rawPartyData as any;
+      if (Array.isArray(raw.customerList)) list = raw.customerList;
+      else if (Array.isArray(raw.partyList)) list = raw.partyList;
+      else if (Array.isArray(raw.partyInfoList)) list = raw.partyInfoList;
+      else if (Array.isArray(raw.data)) list = raw.data;
+    }
+
+    return list.filter((p: any) => {
+      const isDel = String(p.isDeleted || p.is_deleted || "").trim().toUpperCase();
+      if (isDel === "Y" || isDel === "YES" || isDel === "TRUE" || isDel === "1") return false;
+      const type = String(p.type || p.partyType || p.party_type || p.party_type_name || p.role || "").toUpperCase();
+      if (type.includes("SUPPLIER") || type.includes("VENDOR")) return false;
+      return type.includes("CUSTOMER") || !type;
+    });
+  }, [rawPartyData]);
+
+  // 2. Fetch Products
+  const productListUrl = apiConfig.productList?.productListUrl || "get-product-list";
+  const { data: rawProductData } = useQuery({
+    queryKey: [productListQueryKey],
+    queryFn: async () => {
+      try {
+        const res = await postData<any>({
+          url: productListUrl,
+          body: { accessUser: buildAccessUser() },
+        });
+        return res;
+      } catch {
+        return null;
+      }
+    },
+    staleTime: 60 * 1000,
+  });
+
   const allProducts: ProductItem[] = useMemo(() => {
-    if (Array.isArray(productsData) && productsData.length > 0) return productsData;
-    return mockDefaultProducts;
-  }, [productsData]);
+    if (!rawProductData) return [];
+    let list: any[] = [];
+    if (Array.isArray(rawProductData)) list = rawProductData;
+    else if (rawProductData && typeof rawProductData === "object") {
+      const raw = rawProductData as any;
+      if (Array.isArray(raw.productList)) list = raw.productList;
+      else if (Array.isArray(raw.productsList)) list = raw.productsList;
+      else if (Array.isArray(raw.product_list)) list = raw.product_list;
+      else if (Array.isArray(raw.products)) list = raw.products;
+      else if (Array.isArray(raw.data)) list = raw.data;
+      else if (raw.data && typeof raw.data === "object") {
+        if (Array.isArray(raw.data.productList)) list = raw.data.productList;
+        else if (Array.isArray(raw.data.productsList)) list = raw.data.productsList;
+        else if (Array.isArray(raw.data.products)) list = raw.data.products;
+      }
+    }
+
+    return list.filter((p: any) => {
+      const isDel = String(p.isDeleted || p.is_deleted || "").trim().toUpperCase();
+      return isDel !== "Y" && isDel !== "YES" && isDel !== "TRUE" && isDel !== "1";
+    });
+  }, [rawProductData]);
 
   // 3. Fetch Registered Banks
+  const bankInfoListUrl = apiConfig.bank?.bankInfoListUrl || "get-bank-info-list";
   const { data: banksData } = useQuery({
     queryKey: [bankInfoListQueryKey],
     queryFn: async () => {
       const accessUser = buildAccessUser();
       const res: any = await postData({
-        url: apiConfig.bankInfo?.bankInfoListUrl || "get-bank-info-list",
+        url: bankInfoListUrl,
         body: { accessUser },
       });
-      return res?.bankList || res?.bankInfoList || res?.data || [];
+      return res;
     },
     staleTime: 5 * 60 * 1000,
   });
   const registeredBankAccounts: any[] = useMemo(() => {
-    return Array.isArray(banksData) ? banksData : [];
+    if (!banksData) return [];
+    if (Array.isArray(banksData)) return banksData;
+    const raw = banksData as any;
+    if (Array.isArray(raw.bankAccounts)) return raw.bankAccounts;
+    if (Array.isArray(raw.bankInfoList)) return raw.bankInfoList;
+    if (Array.isArray(raw.bankList)) return raw.bankList;
+    if (Array.isArray(raw.data)) return raw.data;
+    if (raw.data && typeof raw.data === "object") {
+      if (Array.isArray(raw.data.bankAccounts)) return raw.data.bankAccounts;
+      if (Array.isArray(raw.data.bankInfoList)) return raw.data.bankInfoList;
+      if (Array.isArray(raw.data.bankList)) return raw.data.bankList;
+    }
+    return [];
   }, [banksData]);
 
   // 4. Fetch Registered MFS Accounts
+  const mfsUserListUrl = apiConfig.mfs?.mfsUserListUrl || "mfs-user-list";
   const { data: mfsData } = useQuery({
     queryKey: [mfsUserListQueryKey],
     queryFn: async () => {
       const accessUser = buildAccessUser();
       const res: any = await postData({
-        url: apiConfig.mfsUser?.mfsUserListUrl || "get-mfs-user-list",
+        url: mfsUserListUrl,
         body: { accessUser },
       });
-      return res?.mfsUserList || res?.mfsList || res?.data || [];
+      return res;
     },
     staleTime: 5 * 60 * 1000,
   });
   const registeredMfsAccounts: any[] = useMemo(() => {
-    return Array.isArray(mfsData) ? mfsData : [];
+    if (!mfsData) return [];
+    if (Array.isArray(mfsData)) return mfsData;
+    const raw = mfsData as any;
+    if (Array.isArray(raw.mfsUsers)) return raw.mfsUsers;
+    if (Array.isArray(raw.mfsUserList)) return raw.mfsUserList;
+    if (Array.isArray(raw.mfsList)) return raw.mfsList;
+    if (Array.isArray(raw.data)) return raw.data;
+    if (raw.data && typeof raw.data === "object") {
+      if (Array.isArray(raw.data.mfsUsers)) return raw.data.mfsUsers;
+      if (Array.isArray(raw.data.mfsUserList)) return raw.data.mfsUserList;
+      if (Array.isArray(raw.data.mfsList)) return raw.data.mfsList;
+    }
+    return [];
   }, [mfsData]);
+
+  // 5. Fetch Sales List if in edit mode without state
+  const { data: salesListData } = useQuery({
+    queryKey: [salesListQueryKey],
+    queryFn: async () => {
+      const accessUser = buildAccessUser();
+      const res: any = await postData({
+        url: apiConfig.sales?.salesListUrl || "get-sale-list",
+        body: { accessUser },
+      });
+      return res?.saleList || res?.salesList || res?.data || res?.sales || [];
+    },
+    enabled: isEditMode && !stateEditData,
+    staleTime: 60 * 1000,
+  });
+
+  const effectiveEditData: SaleItem | undefined = useMemo(() => {
+    if (stateEditData) return stateEditData;
+    if (isEditMode && routeId && Array.isArray(salesListData)) {
+      return salesListData.find(
+        (s: any) =>
+          String(s.id ?? s.saleId ?? "") === String(routeId) ||
+          String(s.invoiceNo ?? s.invoice_no ?? "") === String(routeId)
+      );
+    }
+    return undefined;
+  }, [stateEditData, isEditMode, routeId, salesListData]);
 
   // Auto-generate invoice number if create mode
   useEffect(() => {
@@ -236,8 +327,8 @@ export const CreateSaleForm: React.FC = () => {
 
   // Hydrate edit data if in edit mode
   useEffect(() => {
-    if (isEditMode && stateEditData) {
-      const data = stateEditData;
+    if (isEditMode && effectiveEditData) {
+      const data = effectiveEditData;
       setInvoiceNo(data.invoiceNo || data.invoice_no || "");
       if (data.salesDate || data.saleDate || data.date) {
         setSalesDate(String(data.salesDate || data.saleDate || data.date).substring(0, 10));
@@ -322,7 +413,7 @@ export const CreateSaleForm: React.FC = () => {
         setLineItems(loaded);
       }
     }
-  }, [isEditMode, stateEditData, customerList]);
+  }, [isEditMode, effectiveEditData, customerList]);
 
   // Sync live stock from products
   useEffect(() => {
@@ -348,26 +439,26 @@ export const CreateSaleForm: React.FC = () => {
 
   // Filtered Products for Search Dropdown
   const filteredProducts = useMemo(() => {
-    if (!productSearchQuery.trim()) return allProducts.slice(0, 8);
+    if (!productSearchQuery.trim()) return allProducts.slice(0, 15);
     const q = productSearchQuery.toLowerCase().trim();
     return allProducts
       .filter((p) => {
-        const name = (p.name || p.productName || "").toLowerCase();
-        const code = (p.pcode || p.productCode || "").toLowerCase();
+        const name = (p.name || p.productName || p.product_name || "").toLowerCase();
+        const code = (p.pcode || p.productCode || p.product_code || p.sku || "").toLowerCase();
         const barcode = (p.barcode || "").toLowerCase();
         return name.includes(q) || code.includes(q) || barcode.includes(q);
       })
-      .slice(0, 10);
+      .slice(0, 25);
   }, [allProducts, productSearchQuery]);
 
   // Filtered Customers
   const filteredCustomers = useMemo(() => {
-    if (!customerSearchQuery.trim()) return customerList.slice(0, 10);
+    if (!customerSearchQuery.trim()) return customerList.slice(0, 15);
     const q = customerSearchQuery.toLowerCase().trim();
     return customerList.filter((c) => {
-      const name = (c.name || c.partyName || "").toLowerCase();
-      const phone = (c.phone || c.partyPhone || "").toLowerCase();
-      const address = (c.address || c.partyAddress || "").toLowerCase();
+      const name = (c.name || c.partyName || (c as any).customerName || "").toLowerCase();
+      const phone = (c.phone || c.partyPhone || (c as any).customerPhone || (c as any).mobile || "").toLowerCase();
+      const address = (c.address || c.partyAddress || (c as any).customerAddress || (c as any).city || "").toLowerCase();
       return name.includes(q) || phone.includes(q) || address.includes(q);
     });
   }, [customerList, customerSearchQuery]);
@@ -415,13 +506,18 @@ export const CreateSaleForm: React.FC = () => {
 
   // Handle Add Product to Line Items
   const handleAddProduct = (p: ProductItem) => {
-    const pId = String(p.id ?? p.productId ?? "");
-    const pCode = p.pcode || p.productCode || "";
-    const pName = p.name || p.productName || "Product";
+    const pId = String(p.id ?? p.productId ?? (p as any).product_id ?? "");
+    const pCode = p.pcode || p.productCode || (p as any).product_code || (p as any).sku || "";
+    const pName = p.name || p.productName || (p as any).product_name || "Product";
     const unit = p.unit || "pcs";
-    const sellPrice = Number(p.sellPrice ?? p.sell_price ?? p.buyPrice ?? 0);
-    const buyPrice = Number(p.buyPrice ?? p.buy_price ?? 0);
-    const stock = Number(p.quantity ?? p.stock ?? 50);
+    const sellPrice = Number(p.sellPrice ?? p.sell_price ?? p.buyPrice ?? (p as any).buy_price ?? 0);
+    const buyPrice = Number(p.buyPrice ?? (p as any).buy_price ?? 0);
+    const stock = Number(p.quantity ?? p.stock ?? (p as any).qty ?? 0);
+
+    if (stock <= 0) {
+      showErrorToast(`"${pName}" is out of stock (Stock: 0)`);
+      return;
+    }
 
     const existingIndex = lineItems.findIndex(
       (item) =>
@@ -433,6 +529,12 @@ export const CreateSaleForm: React.FC = () => {
       const updated = [...lineItems];
       const curQty = Number(updated[existingIndex].quantity) || 1;
       const newQty = curQty + 1;
+
+      if (newQty > stock) {
+        showErrorToast(`Stock limit reached (${stock} ${unit}) for "${pName}"`);
+        return;
+      }
+
       const unitPrice = Number(updated[existingIndex].sellPrice) || sellPrice;
       const disc = Number(updated[existingIndex].discount) || 0;
       const vat = Number(updated[existingIndex].vat) || 0;
@@ -480,10 +582,16 @@ export const CreateSaleForm: React.FC = () => {
         (p) =>
           (p.barcode && p.barcode.toLowerCase() === code) ||
           (p.pcode && p.pcode.toLowerCase() === code) ||
-          (p.productCode && p.productCode.toLowerCase() === code)
+          (p.productCode && p.productCode.toLowerCase() === code) ||
+          ((p as any).product_code && (p as any).product_code.toLowerCase() === code)
       );
 
       if (found) {
+        const stock = Number(found.quantity ?? found.stock ?? (found as any).qty ?? 0);
+        if (stock <= 0) {
+          showErrorToast(`Product "${found.name || found.productName}" is out of stock (Stock: 0)`);
+          return;
+        }
         handleAddProduct(found);
         setBarcodeInput("");
       } else {
@@ -496,7 +604,15 @@ export const CreateSaleForm: React.FC = () => {
     const updated = [...lineItems];
     const target = { ...updated[index], [field]: val };
 
-    const q = Number(field === "quantity" ? val : target.quantity) || 0;
+    let q = Number(field === "quantity" ? val : target.quantity) || 0;
+    const itemStock = Number(target.stock ?? 0);
+
+    if (field === "quantity" && itemStock > 0 && q > itemStock) {
+      showErrorToast(`Quantity cannot exceed available stock (${itemStock})`);
+      q = itemStock;
+      target.quantity = String(itemStock);
+    }
+
     const p = Number(field === "sellPrice" ? val : target.sellPrice) || 0;
     const d = Number(field === "discount" ? val : target.discount) || 0;
     const v = Number(field === "vat" ? val : target.vat) || 0;
@@ -517,35 +633,112 @@ export const CreateSaleForm: React.FC = () => {
     }
   };
 
-  // Quick Payment buttons
+  // Payment normalizer & capping helper (exact amount cannot be exceeded)
+  const normalizePaymentValue = (val: string, max: number): string => {
+    if (val === "" || val === undefined || val === null) return "";
+    if (val === ".") return "0.";
+    const num = Number(val);
+    if (isNaN(num)) return "";
+    if (num < 0) return "0";
+    if (num > max) return String(max);
+    return val;
+  };
+
+  // Card Amount Change: cannot enter if bank not selected; auto deducts from cash; caps to max
+  const handleCardAmountChange = (rawVal: string) => {
+    if (!selectedBankId) {
+      showErrorToast("Please select a bank first before entering card amount");
+      return;
+    }
+    const currentMfs = Number(mfsAmount) || 0;
+    const maxForCard = Math.max(0, grandTotal - currentMfs);
+    const normalized = normalizePaymentValue(rawVal, maxForCard);
+    setBankAmount(normalized);
+
+    const numCard = Number(normalized) || 0;
+    const remainingCash = Math.max(0, grandTotal - numCard - currentMfs);
+    setCashAmount(remainingCash > 0 ? String(Math.round(remainingCash * 100) / 100) : "0");
+  };
+
+  // MFS Amount Change: cannot enter if MFS not selected; auto deducts from cash; caps to max
+  const handleMfsAmountChange = (rawVal: string) => {
+    if (!selectedMfsId) {
+      showErrorToast("Please select an MFS provider first before entering MFS amount");
+      return;
+    }
+    const currentCard = Number(bankAmount) || 0;
+    const maxForMfs = Math.max(0, grandTotal - currentCard);
+    const normalized = normalizePaymentValue(rawVal, maxForMfs);
+    setMfsAmount(normalized);
+
+    const numMfsVal = Number(normalized) || 0;
+    const remainingCash = Math.max(0, grandTotal - currentCard - numMfsVal);
+    setCashAmount(remainingCash > 0 ? String(Math.round(remainingCash * 100) / 100) : "0");
+  };
+
+  // Cash Amount Change: cannot exceed remaining amount
+  const handleCashAmountChange = (rawVal: string) => {
+    const currentCard = Number(bankAmount) || 0;
+    const currentMfs = Number(mfsAmount) || 0;
+    const maxForCash = Math.max(0, grandTotal - currentCard - currentMfs);
+    const normalized = normalizePaymentValue(rawVal, maxForCash);
+    setCashAmount(normalized);
+  };
+
+  // Auto-sync initial cash amount with grandTotal when grandTotal changes
+  useEffect(() => {
+    const currentCard = Number(bankAmount) || 0;
+    const currentMfs = Number(mfsAmount) || 0;
+
+    if (currentCard === 0 && currentMfs === 0) {
+      if (grandTotal > 0) {
+        setCashAmount(String(grandTotal));
+      } else {
+        setCashAmount("");
+      }
+    } else {
+      const remainingCash = Math.max(0, grandTotal - currentCard - currentMfs);
+      setCashAmount(remainingCash > 0 ? String(Math.round(remainingCash * 100) / 100) : "0");
+    }
+  }, [grandTotal]);
+
+  // Quick Payment presets
   const handlePayFullCash = () => {
-    setCashAmount(String(grandTotal));
+    setCashAmount(grandTotal > 0 ? String(grandTotal) : "");
     setBankAmount("");
     setMfsAmount("");
   };
 
   const handlePayFullBank = () => {
-    setBankAmount(String(grandTotal));
-    setCashAmount("");
-    setMfsAmount("");
-    if (!selectedBankId && registeredBankAccounts.length > 0) {
-      const first = registeredBankAccounts[0];
-      setSelectedBankId(String(first.id || first.bankId));
-      setBankName(first.bankName || first.name);
-      setAccountNo(first.accountNo || "");
+    if (!selectedBankId) {
+      if (registeredBankAccounts.length > 0) {
+        const firstBank = registeredBankAccounts[0];
+        const bId = String(firstBank.id || firstBank.bankId || firstBank._id || "");
+        handleSelectBank(bId);
+      } else {
+        showErrorToast("Please select / register a bank account first");
+        return;
+      }
     }
+    setBankAmount(grandTotal > 0 ? String(grandTotal) : "");
+    setCashAmount("0");
+    setMfsAmount("");
   };
 
   const handlePayFullMfs = () => {
-    setMfsAmount(String(grandTotal));
-    setCashAmount("");
-    setBankAmount("");
-    if (!selectedMfsId && registeredMfsAccounts.length > 0) {
-      const first = registeredMfsAccounts[0];
-      setSelectedMfsId(String(first.id || first.mfsId));
-      setMfsName(first.mfsName || first.name || "bKash");
-      setMfsPhone(first.mfsPhone || first.phone || "");
+    if (!selectedMfsId) {
+      if (registeredMfsAccounts.length > 0) {
+        const firstMfs = registeredMfsAccounts[0];
+        const mId = String(firstMfs.id || firstMfs.mfsId || firstMfs._id || "");
+        handleSelectMfs(mId);
+      } else {
+        showErrorToast("Please select / register an MFS account first");
+        return;
+      }
     }
+    setMfsAmount(grandTotal > 0 ? String(grandTotal) : "");
+    setCashAmount("0");
+    setBankAmount("");
   };
 
   const handlePayFullCredit = () => {
@@ -557,20 +750,27 @@ export const CreateSaleForm: React.FC = () => {
 
   const handleSelectBank = (id: string) => {
     setSelectedBankId(id);
-    const found = registeredBankAccounts.find((b) => String(b.id || b.bankId) === String(id));
+    const found = registeredBankAccounts.find((b) => String(b.id || b.bankId || b._id) === String(id));
     if (found) {
       setBankName(found.bankName || found.name || "");
-      setAccountNo(found.accountNo || "");
-      setBankRef(found.bankAccountName || "");
+      setAccountNo(found.accountNo || found.bankAccountNumber || found.bankAccountNo || "");
+      setBankRef(found.bankAccountName || found.accountName || found.branchName || "");
+    } else {
+      setBankName("");
+      setAccountNo("");
+      setBankRef("");
     }
   };
 
   const handleSelectMfs = (id: string) => {
     setSelectedMfsId(id);
-    const found = registeredMfsAccounts.find((m) => String(m.id || m.mfsId) === String(id));
+    const found = registeredMfsAccounts.find((m) => String(m.id || m.mfsId || m._id) === String(id));
     if (found) {
-      setMfsName(found.mfsName || found.name || "bKash");
-      setMfsPhone(found.mfsPhone || found.phone || "");
+      setMfsName(found.mfsName || found.name || found.method || "bKash");
+      setMfsPhone(found.mfsPhone || found.phone || found.mobileNo || found.accountNo || "");
+    } else {
+      setMfsName("bKash");
+      setMfsPhone("");
     }
   };
 
@@ -594,6 +794,19 @@ export const CreateSaleForm: React.FC = () => {
         showErrorToast(`Please enter a valid quantity for "${item.productName}"`);
         return;
       }
+    }
+
+    const isWalkIn = Boolean(
+      selectedCustomer &&
+      (selectedCustomer.id === 0 ||
+       selectedCustomer.partyId === 0 ||
+       String(selectedCustomer.name || selectedCustomer.partyName).toLowerCase().includes("walk-in") ||
+       String(selectedCustomer.name || selectedCustomer.partyName).toLowerCase().includes("walking"))
+    );
+
+    if (isWalkIn && dueAmount > 0) {
+      showErrorToast("Credit / Due sale is not allowed for Walk-in Customer. Please collect full payment or register the customer.");
+      return;
     }
 
     if (numBank > 0 && !selectedBankId) {
@@ -623,6 +836,27 @@ export const CreateSaleForm: React.FC = () => {
       const paymentType = totalPaid > 0 ? "CASH" : "CREDIT";
       const paymentStatus = dueAmount <= 0 ? "Paid" : totalPaid > 0 ? "PARTIAL" : "Pending";
 
+      const isWalkIn = Boolean(
+        selectedCustomer &&
+        (selectedCustomer.id === 0 ||
+         selectedCustomer.partyId === 0 ||
+         String(selectedCustomer.name || selectedCustomer.partyName).toLowerCase().includes("walk-in") ||
+         String(selectedCustomer.name || selectedCustomer.partyName).toLowerCase().includes("walking"))
+      );
+
+      const finalCustomerName = isWalkIn
+        ? (walkInName.trim() || "Walk-in Customer")
+        : (selectedCustomer.name || selectedCustomer.partyName || "Walk-in Customer");
+      const finalCustomerPhone = isWalkIn
+        ? walkInPhone.trim()
+        : (selectedCustomer.phone || selectedCustomer.partyPhone || "");
+      const finalCustomerId = isWalkIn
+        ? 0
+        : (selectedCustomer.id ?? selectedCustomer.partyId ?? 0);
+      const finalCustomerAddress = isWalkIn
+        ? "Counter Sale"
+        : (selectedCustomer.address || selectedCustomer.partyAddress || "");
+
       const salesDetails = lineItems.map((item) => {
         const q = Number(item.quantity) || 1;
         const p = Number(item.sellPrice) || 0;
@@ -636,62 +870,51 @@ export const CreateSaleForm: React.FC = () => {
           unit: item.unit || "pcs",
           quantity: q,
           sellPrice: p,
-          buyPrice: Number(item.buyPrice || 0),
           discount: d,
-          vat: v,
           total: Number(item.total),
+          status: "PENDING",
+          advenType: "SALE",
+          vat: v,
           delivery_charge: 0,
-          status: "SUCCESS",
-          addedBy: accessUser.phone || "",
         };
       });
 
       const payload: any = {
         accessUser,
-        orgId: accessUser.orgId,
-        branchId: accessUser.branchId,
         invoiceNo: invoiceNo.trim() || makeInvoiceNo("INV"),
-        invoice_no: invoiceNo.trim() || makeInvoiceNo("INV"),
+        customerId: finalCustomerId,
+        customerName: finalCustomerName,
+        customerPhone: finalCustomerPhone,
+        customerAddress: finalCustomerAddress,
         salesDate,
-        date: salesDate,
-        customerId: String(selectedCustomer.id || selectedCustomer.partyId || "1"),
-        customerName: selectedCustomer.name || selectedCustomer.partyName || "Walk-in Customer",
-        customerPhone: selectedCustomer.phone || selectedCustomer.partyPhone || "",
-        customerAddress: selectedCustomer.address || selectedCustomer.partyAddress || "",
         totalAmount: rawSubtotal,
         discount: totalDiscount,
-        discountType,
-        vat: totalVat,
-        delivery_charge: calculatedDelivery,
-        deliveryCharge: calculatedDelivery,
         grandTotal,
         paidAmount: totalPaid,
         dueAmount,
-        paymentType,
+        paymentType: paymentType.toLowerCase(),
+        inv_type: "SINGLE",
         status: paymentStatus,
+        note: notes.trim() || "",
+        vat: totalVat,
         osType: "WEB",
-        note: notes.trim() || null,
-        remarks: notes.trim() || null,
-        attachments: attachment || null,
-        poNumber: poNumber.trim() || null,
+        delivery_charge: calculatedDelivery,
         cashReceived: numCash,
         cardReceived: numBank,
+        posName: null,
         mfsReceived: numMfs,
+        mfsId: numMfs > 0 ? selectedMfsId : null,
+        mfsDetails: null,
+        mfsName: numMfs > 0 ? mfsName : null,
+        mfsMethod: numMfs > 0 ? mfsName : null,
+        mfsPhone: numMfs > 0 ? mfsPhone : null,
+        customerPaid: Number(cashGiven) || (numCash > 0 ? numCash : totalPaid),
+        returnAmount: changeReturnAmount,
         bankId: numBank > 0 ? selectedBankId : null,
         bankName: numBank > 0 ? bankName : null,
         accountNo: numBank > 0 ? accountNo : null,
         bankAccountName: numBank > 0 ? bankRef : null,
-        mfsId: numMfs > 0 ? selectedMfsId : null,
-        mfsName: numMfs > 0 ? mfsName : null,
-        mfsMethod: numMfs > 0 ? mfsName : null,
-        mfsPhone: numMfs > 0 ? mfsPhone : null,
-        customerPaid: Number(cashGiven) || totalPaid,
-        returnAmount: changeReturnAmount,
         salesDetails,
-        details: salesDetails,
-        itemCount: lineItems.length,
-        totalItems: lineItems.length,
-        totalQty: lineItems.reduce((sum, item) => sum + (Number(item.quantity) || 0), 0),
       };
 
       const editId =
@@ -840,33 +1063,62 @@ export const CreateSaleForm: React.FC = () => {
             <label className="text-[11px] font-bold text-black uppercase tracking-wider">
               Customer <span className="text-rose-500">*</span>
             </label>
-            <button
-              type="button"
-              onClick={() => setIsPartyModalOpen(true)}
-              className="text-[11px] font-bold text-[var(--color-primary)] hover:underline flex items-center gap-1 cursor-pointer"
-            >
-              <FaUserPlus size={10} /> + New
-            </button>
+            <div className="flex items-center gap-1.5">
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedCustomer(WALK_IN_CUSTOMER);
+                  setIsCustomerDropdownOpen(false);
+                }}
+                className={`text-[10px] font-bold px-1.5 py-0.5 rounded border transition-colors flex items-center gap-1 cursor-pointer ${
+                  selectedCustomer?.id === 0 || selectedCustomer?.name === "Walk-in Customer"
+                    ? "bg-emerald-600 text-white border-emerald-600"
+                    : "text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border-emerald-200"
+                }`}
+                title="Quick 1-click counter / walk-in customer"
+              >
+                <span>⚡ Walk-in</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setIsPartyModalOpen(true)}
+                className="text-[11px] font-bold text-[var(--color-primary)] hover:underline flex items-center gap-1 cursor-pointer"
+              >
+                <FaUserPlus size={10} /> + New
+              </button>
+            </div>
           </div>
 
           <div
             onClick={() => setIsCustomerDropdownOpen(!isCustomerDropdownOpen)}
-            className="flex items-center justify-between h-9 px-2.5 py-1.5 border border-gray-300 rounded-lg bg-gray-50/50 hover:bg-white cursor-pointer text-xs"
+            className={`flex items-center justify-between h-9 px-2.5 py-1.5 border rounded-lg bg-gray-50/50 hover:bg-white cursor-pointer text-xs transition-colors ${
+              selectedCustomer?.id === 0 || selectedCustomer?.name === "Walk-in Customer"
+                ? "border-emerald-400 bg-emerald-50/30"
+                : "border-gray-300"
+            }`}
           >
             {selectedCustomer ? (
               <div className="flex items-center gap-1.5 min-w-0 truncate">
-                <span className="font-bold text-black truncate">
-                  {selectedCustomer.name || selectedCustomer.partyName}
-                </span>
-                {(selectedCustomer.phone || selectedCustomer.partyPhone) && (
-                  <span className="text-[11px] text-gray-700 shrink-0">
-                    ({selectedCustomer.phone || selectedCustomer.partyPhone})
+                {selectedCustomer.id === 0 || selectedCustomer.name === "Walk-in Customer" ? (
+                  <span className="font-bold text-emerald-800 flex items-center gap-1 truncate">
+                    ⚡ Walk-in Customer {walkInName ? `(${walkInName})` : "(Counter Sale)"}
                   </span>
-                )}
-                {(selectedCustomer.address || selectedCustomer.partyAddress) && (
-                  <span className="text-[11px] text-black truncate">
-                    - {selectedCustomer.address || selectedCustomer.partyAddress}
-                  </span>
+                ) : (
+                  <>
+                    <span className="font-bold text-black truncate">
+                      {selectedCustomer.name || selectedCustomer.partyName}
+                    </span>
+                    {(selectedCustomer.phone || selectedCustomer.partyPhone) && (
+                      <span className="text-[11px] text-gray-700 shrink-0">
+                        ({selectedCustomer.phone || selectedCustomer.partyPhone})
+                      </span>
+                    )}
+                    {(selectedCustomer.address || selectedCustomer.partyAddress) && (
+                      <span className="text-[11px] text-black truncate">
+                        - {selectedCustomer.address || selectedCustomer.partyAddress}
+                      </span>
+                    )}
+                  </>
                 )}
               </div>
             ) : (
@@ -874,6 +1126,26 @@ export const CreateSaleForm: React.FC = () => {
             )}
             <FiChevronDown className="text-gray-500 text-xs ml-1 shrink-0" size={14} />
           </div>
+
+          {/* Optional Walk-in Inputs */}
+          {(selectedCustomer?.id === 0 || selectedCustomer?.name === "Walk-in Customer") && (
+            <div className="mt-1.5 grid grid-cols-2 gap-1.5 p-1.5 bg-emerald-50/70 border border-emerald-200 rounded-lg">
+              <input
+                type="text"
+                placeholder="Name (Optional)"
+                value={walkInName}
+                onChange={(e) => setWalkInName(e.target.value)}
+                className="w-full px-2 py-1 text-xs border border-gray-300 rounded bg-white font-medium text-black focus:outline-none focus:border-emerald-500"
+              />
+              <input
+                type="text"
+                placeholder="Phone (Optional)"
+                value={walkInPhone}
+                onChange={(e) => setWalkInPhone(e.target.value)}
+                className="w-full px-2 py-1 text-xs border border-gray-300 rounded bg-white font-medium text-black focus:outline-none focus:border-emerald-500"
+              />
+            </div>
+          )}
 
           {/* Customer Dropdown Panel */}
           {isCustomerDropdownOpen && (
@@ -888,6 +1160,28 @@ export const CreateSaleForm: React.FC = () => {
                   className="w-full pl-7 pr-2 py-1.5 text-xs border border-gray-200 rounded-md focus:outline-none focus:border-[var(--color-primary)] text-black"
                   autoFocus
                 />
+              </div>
+
+              {/* Quick Walk-in Option */}
+              <div
+                onClick={() => {
+                  setSelectedCustomer(WALK_IN_CUSTOMER);
+                  setIsCustomerDropdownOpen(false);
+                }}
+                className="p-2 mb-1.5 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-md cursor-pointer transition-colors flex items-center justify-between"
+              >
+                <div className="flex items-center gap-2">
+                  <div className="w-5 h-5 rounded-full bg-emerald-600 text-white flex items-center justify-center text-[10px] font-black">
+                    ⚡
+                  </div>
+                  <div>
+                    <span className="font-bold text-emerald-900 text-xs block">Walk-in Customer</span>
+                    <span className="text-[10px] text-emerald-700">Quick counter sale / সাধারণ ক্রেতা</span>
+                  </div>
+                </div>
+                <span className="text-[10px] font-bold text-emerald-800 bg-white px-1.5 py-0.5 rounded border border-emerald-300">
+                  Select
+                </span>
               </div>
 
               <div className="max-h-48 overflow-y-auto divide-y divide-gray-100">
@@ -920,6 +1214,24 @@ export const CreateSaleForm: React.FC = () => {
                   <div className="p-3 text-center text-gray-400 text-xs">No customer found</div>
                 )}
               </div>
+
+              {/* Add New Customer Action Button */}
+              {customerSearchQuery.trim() && (
+                <div
+                  onClick={() => {
+                    setIsPartyModalOpen(true);
+                    setIsCustomerDropdownOpen(false);
+                  }}
+                  className="mt-2 p-2 bg-sky-50 hover:bg-sky-100 border border-sky-200 rounded-md cursor-pointer text-xs flex items-center justify-between text-[var(--color-primary)] font-bold transition-colors"
+                >
+                  <span className="flex items-center gap-1.5 truncate">
+                    <FaUserPlus size={11} /> Add "{customerSearchQuery}" as New Customer
+                  </span>
+                  <span className="text-[10px] bg-white px-1.5 py-0.5 rounded border border-sky-300 shrink-0">
+                    + Add
+                  </span>
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -1028,59 +1340,110 @@ export const CreateSaleForm: React.FC = () => {
           <div className="absolute left-2.5 right-2.5 mt-1 bg-white rounded-lg shadow-xl border border-gray-200 max-h-64 overflow-y-auto z-20 divide-y divide-gray-100">
             {filteredProducts.length > 0 ? (
               filteredProducts.map((p) => {
-                const prodKey = String(p.id ?? p.productId ?? p.pcode ?? p.productCode ?? "");
-                const isAlreadyInList = lineItems.some(
-                  (i) => (p.id && String(i.productId) === String(p.id)) || (p.productCode && i.productCode === p.productCode)
+                const prodKey = String(p.id ?? p.productId ?? (p as any).product_id ?? p.pcode ?? p.productCode ?? "");
+                const cartItem = lineItems.find(
+                  (i) =>
+                    (p.id && String(i.productId) === String(p.id)) ||
+                    (p.productCode && i.productCode === p.productCode) ||
+                    (p.pcode && i.productCode === p.pcode)
                 );
-                const defaultSellPrice = Number(p.sellPrice ?? p.sell_price ?? p.buyPrice ?? 0);
-                const stock = Number(p.stock ?? p.quantity ?? 50);
+                const cartQty = Number(cartItem?.quantity || 0);
+                const totalStock = Number(p.quantity ?? p.stock ?? (p as any).qty ?? 0);
+                const remainingStock = Math.max(0, totalStock - cartQty);
+                const isOutOfStock = totalStock <= 0 || (cartQty > 0 && remainingStock <= 0);
+                const isAlreadyInList = cartQty > 0;
+                const defaultSellPrice = Number(p.sellPrice ?? p.sell_price ?? p.buyPrice ?? (p as any).buy_price ?? 0);
+                const prodName = p.name || p.productName || (p as any).product_name || "Product";
+                const prodCode = p.pcode || p.productCode || (p as any).product_code || (p as any).sku || "N/A";
+                const prodUnit = p.unit || "pcs";
 
                 return (
                   <div
                     key={prodKey}
-                    onClick={() => handleAddProduct(p)}
-                    className={`p-2 sm:p-2.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs transition-colors select-none cursor-pointer ${
-                      isAlreadyInList
-                        ? "bg-sky-50/70 hover:bg-sky-100/70 border-l-4 border-l-[var(--color-primary)]"
-                        : "hover:bg-gray-50 border-l-4 border-l-transparent"
+                    onClick={() => {
+                      if (isOutOfStock && remainingStock <= 0) {
+                        showErrorToast(
+                          totalStock <= 0
+                            ? `"${prodName}" is out of stock`
+                            : `All stock (${totalStock} ${prodUnit}) of "${prodName}" is already in cart`
+                        );
+                        return;
+                      }
+                      handleAddProduct(p);
+                    }}
+                    className={`p-2 sm:p-2.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs transition-colors select-none ${
+                      isOutOfStock
+                        ? "opacity-60 bg-gray-50/90 cursor-not-allowed border-l-4 border-l-rose-300"
+                        : isAlreadyInList
+                        ? "bg-sky-50/70 hover:bg-sky-100/70 border-l-4 border-l-[var(--color-primary)] cursor-pointer"
+                        : "hover:bg-gray-50 border-l-4 border-l-transparent cursor-pointer"
                     }`}
                   >
                     <div className="flex items-center gap-2.5 min-w-0">
+                      {/* Checkbox box */}
                       <div
-                        className={`w-4 h-4 rounded border flex items-center justify-center transition-colors shrink-0 cursor-pointer ${
-                          isAlreadyInList
+                        className={`w-4 h-4 rounded border flex items-center justify-center transition-colors shrink-0 ${
+                          isOutOfStock
+                            ? "border-gray-300 bg-gray-100 text-gray-400 cursor-not-allowed"
+                            : isAlreadyInList
                             ? "bg-[var(--color-primary)] border-[var(--color-primary)] text-white"
-                            : "border-gray-300 bg-white hover:border-[var(--color-primary)]"
+                            : "border-gray-300 bg-white hover:border-[var(--color-primary)] cursor-pointer"
                         }`}
                       >
-                        {isAlreadyInList && <FaCheck size={9} />}
+                        {isAlreadyInList && !isOutOfStock && <FaCheck size={9} />}
+                        {isOutOfStock && <span className="text-[10px] text-rose-500 font-bold">✕</span>}
                       </div>
 
                       <div className="flex flex-col min-w-0">
                         <div className="flex items-center gap-1.5 flex-wrap">
                           <span
                             className={`font-bold truncate ${
-                              isAlreadyInList ? "text-[var(--color-primary)]" : "text-black"
+                              isOutOfStock
+                                ? "text-gray-500 line-through decoration-rose-400"
+                                : isAlreadyInList
+                                ? "text-[var(--color-primary)]"
+                                : "text-black"
                             }`}
                           >
-                            {p.name || p.productName}
+                            {prodName}
                           </span>
-                          {isAlreadyInList && (
+                          {isAlreadyInList && remainingStock > 0 && (
                             <span className="text-[10px] bg-emerald-100 text-emerald-800 border border-emerald-300 px-1.5 py-0.2 rounded font-semibold whitespace-nowrap">
-                              In cart
+                              In cart ({cartQty})
+                            </span>
+                          )}
+                          {isOutOfStock && (
+                            <span className="text-[10px] bg-rose-100 text-rose-700 border border-rose-300 px-1.5 py-0.2 rounded font-bold whitespace-nowrap">
+                              {totalStock <= 0 ? "Stock Out / স্টক নেই" : "Max stock reached"}
                             </span>
                           )}
                         </div>
                         <span className="text-[10px] text-gray-500">
-                          Code: <span className="text-black font-medium">{p.pcode || p.productCode || "N/A"}</span> | Unit: <span className="text-black font-medium">{p.unit || "pcs"}</span>
+                          Code: <span className="text-black font-medium">{prodCode}</span> | Unit:{" "}
+                          <span className="text-black font-medium">{prodUnit}</span>
                         </span>
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-3 shrink-0">
-                      <span className="text-[11px] px-2 py-0.5 rounded bg-gray-100 text-gray-700">
-                        Stock: <span className="font-semibold text-black">{stock}</span>
-                      </span>
+                    <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+                      {totalStock <= 0 ? (
+                        <span className="text-[10px] font-bold text-rose-600 bg-rose-50 border border-rose-200 px-2 py-0.5 rounded">
+                          Stock: 0
+                        </span>
+                      ) : remainingStock <= 0 ? (
+                        <span className="text-[10px] font-bold text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded">
+                          Remaining: 0 ({cartQty}/{totalStock})
+                        </span>
+                      ) : (
+                        <span className="text-[11px] px-2 py-0.5 rounded bg-gray-100 text-gray-700">
+                          Stock: <span className="font-bold text-black">{remainingStock}</span>
+                          {cartQty > 0 && (
+                            <span className="text-emerald-700 text-[10px] ml-1 font-semibold">
+                              ({cartQty} in cart)
+                            </span>
+                          )}
+                        </span>
+                      )}
                       <span className="font-bold text-black text-right min-w-[70px]">
                         ৳ {formatMoney(defaultSellPrice)}
                       </span>
@@ -1500,7 +1863,7 @@ export const CreateSaleForm: React.FC = () => {
                   placeholder="0"
                   value={cashAmount}
                   onWheel={(e) => e.currentTarget.blur()}
-                  onChange={(e) => setCashAmount(e.target.value)}
+                  onChange={(e) => handleCashAmountChange(e.target.value)}
                   className="w-full text-right px-1.5 text-xs font-bold text-black outline-none bg-transparent placeholder:text-gray-400 h-full"
                 />
               </div>
@@ -1566,9 +1929,11 @@ export const CreateSaleForm: React.FC = () => {
                     {registeredBankAccounts.length ? "Select Bank..." : "No bank registered"}
                   </option>
                   {registeredBankAccounts.map((b) => (
-                    <option key={b.id || b.bankId} value={b.id || b.bankId} className="text-black">
+                    <option key={b.id || b.bankId || b._id} value={b.id || b.bankId || b._id} className="text-black">
                       {b.bankName || b.name}
-                      {b.accountNo ? ` – ${b.accountNo}` : ""}
+                      {b.accountNo || b.bankAccountNumber || b.bankAccountNo
+                        ? ` – ${b.accountNo || b.bankAccountNumber || b.bankAccountNo}`
+                        : ""}
                     </option>
                   ))}
                 </select>
@@ -1593,7 +1958,7 @@ export const CreateSaleForm: React.FC = () => {
                   disabled={!selectedBankId}
                   value={bankAmount}
                   onWheel={(e) => e.currentTarget.blur()}
-                  onChange={(e) => setBankAmount(e.target.value)}
+                  onChange={(e) => handleCardAmountChange(e.target.value)}
                   className="w-full text-right px-1.5 text-xs font-bold text-black outline-none bg-transparent placeholder:text-gray-400 h-full"
                 />
               </div>
@@ -1621,8 +1986,11 @@ export const CreateSaleForm: React.FC = () => {
                     {registeredMfsAccounts.length ? "Select MFS..." : "No MFS registered"}
                   </option>
                   {registeredMfsAccounts.map((m) => (
-                    <option key={m.id || m.mfsId} value={m.id || m.mfsId} className="text-black">
-                      {m.mfsName || m.name} ({m.mfsPhone || m.phone || "Personal"})
+                    <option key={m.id || m.mfsId || m._id} value={m.id || m.mfsId || m._id} className="text-black">
+                      {m.mfsName || m.name}
+                      {m.method || m.mfsMethod || m.mobileNo || m.phone
+                        ? ` – ${m.method || m.mfsMethod || m.mobileNo || m.phone}`
+                        : ""}
                     </option>
                   ))}
                 </select>
@@ -1647,7 +2015,7 @@ export const CreateSaleForm: React.FC = () => {
                   disabled={!selectedMfsId}
                   value={mfsAmount}
                   onWheel={(e) => e.currentTarget.blur()}
-                  onChange={(e) => setMfsAmount(e.target.value)}
+                  onChange={(e) => handleMfsAmountChange(e.target.value)}
                   className="w-full text-right px-1.5 text-xs font-bold text-black outline-none bg-transparent placeholder:text-gray-400 h-full"
                 />
               </div>

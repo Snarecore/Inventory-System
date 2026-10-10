@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useMemo } from "react";
-import { FiEye, FiEdit, FiPrinter, FiChevronDown, FiTrash2 } from "react-icons/fi";
+import { FiEye, FiEdit, FiPrinter, FiChevronDown } from "react-icons/fi";
 import { BsFilterRight } from "react-icons/bs";
 import moment from "moment";
 import Search from "@/components/table-components/Search";
@@ -45,7 +45,6 @@ interface SaleTableProps {
   onEdit: (sale: SaleItem) => void;
   onView: (sale: SaleItem) => void;
   onPrint: (sale: SaleItem) => void;
-  onDelete?: (sale: SaleItem) => void;
   onExport?: () => void;
 }
 
@@ -539,16 +538,6 @@ export const SaleTable: React.FC<SaleTableProps> = ({
                         >
                           <FiPrinter size={14} />
                         </button>
-                        {onDelete && (
-                          <button
-                            type="button"
-                            onClick={() => onDelete(sale)}
-                            title="Delete Sale"
-                            className="p-1.5 text-rose-600 hover:bg-rose-50 rounded-md transition-colors cursor-pointer"
-                          >
-                            <FiTrash2 size={14} />
-                          </button>
-                        )}
                       </div>
                     </td>
                   </tr>

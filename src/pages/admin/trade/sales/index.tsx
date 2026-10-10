@@ -6,7 +6,6 @@ import { FaPlus, FaShoppingCart } from "react-icons/fa";
 import PageHeader from "@/components/page-header/PageHeader";
 import Button from "@/components/button/Button";
 import RefreshButton from "@/components/table-components/RefreshButton";
-import DeleteModal from "@/components/modal/DeleteModal";
 import SaleStats from "./components/SaleStats";
 import SaleTable from "./components/SaleTable";
 import SaleInvoiceModal from "./components/SaleInvoiceModal";
@@ -17,110 +16,6 @@ import { buildAccessUser } from "@/utils/access-user";
 import { postData } from "@/services/api-service";
 import { showSuccessToast, showErrorToast } from "@/utils/toast-utils";
 import type { SaleItem, PartyItem } from "@/types";
-
-// Mock Fallback Data
-const initialMockSales: SaleItem[] = [
-  {
-    id: "SALE-101",
-    saleId: "SALE-101",
-    invoiceNo: "INV-20261010-0001",
-    salesDate: "2026-10-10",
-    customerId: "1",
-    customerName: "Rahim Traders",
-    customerPhone: "01711223344",
-    customerAddress: "Mirpur 10, Dhaka",
-    totalAmount: 15400,
-    discount: 400,
-    vat: 0,
-    delivery_charge: 100,
-    grandTotal: 15100,
-    paidAmount: 15100,
-    dueAmount: 0,
-    paymentType: "CASH",
-    status: "PAID",
-    itemCount: 3,
-    salesDetails: [
-      { id: "1", productId: "1", productCode: "P-1001", productName: "Premium Basmati Rice 25kg", unit: "bag", quantity: 2, sellPrice: 3200, discount: 0, vat: 0, total: 6400 },
-      { id: "2", productId: "2", productCode: "P-1002", productName: "Soyabean Oil 5L", unit: "can", quantity: 5, sellPrice: 850, discount: 0, vat: 0, total: 4250 },
-      { id: "3", productId: "3", productCode: "P-1003", productName: "Aroma Tea Pack 500g", unit: "pcs", quantity: 15, sellPrice: 310, discount: 0, vat: 0, total: 4650 },
-    ],
-  },
-  {
-    id: "SALE-102",
-    saleId: "SALE-102",
-    invoiceNo: "INV-20261010-0002",
-    salesDate: "2026-10-10",
-    customerId: "2",
-    customerName: "Karim Enterprises",
-    customerPhone: "01822334455",
-    customerAddress: "Dhanmondi, Dhaka",
-    totalAmount: 28000,
-    discount: 1000,
-    vat: 500,
-    delivery_charge: 200,
-    grandTotal: 27700,
-    paidAmount: 15000,
-    dueAmount: 12700,
-    paymentType: "MFS",
-    mfsName: "bKash",
-    mfsPhone: "01822334455",
-    status: "PARTIAL",
-    itemCount: 2,
-    salesDetails: [
-      { id: "4", productId: "4", productCode: "P-1004", productName: "Dell 24-inch IPS Monitor", unit: "pcs", quantity: 1, sellPrice: 18500, discount: 500, vat: 500, total: 18500 },
-      { id: "5", productId: "5", productCode: "P-1005", productName: "Logitech MX Master 3S Mouse", unit: "pcs", quantity: 1, sellPrice: 9500, discount: 500, vat: 0, total: 9000 },
-    ],
-  },
-  {
-    id: "SALE-103",
-    saleId: "SALE-103",
-    invoiceNo: "INV-20261009-0003",
-    salesDate: "2026-10-09",
-    customerId: "3",
-    customerName: "Bismillah General Store",
-    customerPhone: "01933445566",
-    customerAddress: "Chawkbazar, Chittagong",
-    totalAmount: 42000,
-    discount: 2000,
-    vat: 0,
-    delivery_charge: 500,
-    grandTotal: 40500,
-    paidAmount: 0,
-    dueAmount: 40500,
-    paymentType: "CREDIT",
-    status: "PENDING",
-    itemCount: 4,
-    salesDetails: [
-      { id: "6", productId: "6", productCode: "P-1006", productName: "Sugar White 50kg Sack", unit: "bag", quantity: 5, sellPrice: 6500, discount: 1000, vat: 0, total: 31500 },
-      { id: "7", productId: "7", productCode: "P-1007", productName: "Red Lentils 25kg", unit: "bag", quantity: 3, sellPrice: 3500, discount: 1000, vat: 0, total: 9500 },
-    ],
-  },
-  {
-    id: "SALE-104",
-    saleId: "SALE-104",
-    invoiceNo: "INV-20261008-0004",
-    salesDate: "2026-10-08",
-    customerId: "4",
-    customerName: "Shahjalal Traders",
-    customerPhone: "01644556677",
-    customerAddress: "Zindabazar, Sylhet",
-    totalAmount: 64000,
-    discount: 3000,
-    vat: 1200,
-    delivery_charge: 800,
-    grandTotal: 63000,
-    paidAmount: 63000,
-    dueAmount: 0,
-    paymentType: "BANK",
-    bankName: "City Bank PLC",
-    accountNo: "1102938495001",
-    status: "PAID",
-    itemCount: 2,
-    salesDetails: [
-      { id: "8", productId: "8", productCode: "P-1008", productName: "HP LaserJet Pro MFP Printer", unit: "pcs", quantity: 2, sellPrice: 32000, discount: 3000, vat: 1200, total: 62200 },
-    ],
-  },
-];
 
 const Sales: React.FC = () => {
   const navigate = useNavigate();
@@ -142,26 +37,40 @@ const Sales: React.FC = () => {
   const [isInvoiceModalOpen, setIsInvoiceModalOpen] = useState<boolean>(false);
   const [selectedSaleForInvoice, setSelectedSaleForInvoice] = useState<SaleItem | null>(null);
 
-  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState<boolean>(false);
-  const [saleToDelete, setSaleToDelete] = useState<SaleItem | null>(null);
-
   // 1. Fetch Customers
-  const { data: customerData } = useQuery({
+  const { data: rawCustomerData } = useQuery({
     queryKey: [partyListQueryKey, "CUSTOMER"],
     queryFn: async () => {
       const accessUser = buildAccessUser();
       const res: any = await postData({
         url: apiConfig.party?.partyListUrl || "get-party-info-list",
-        body: { accessUser, type: "CUSTOMER" },
+        body: { accessUser },
       });
-      return res?.partyList || res?.data || res?.parties || [];
+      return res;
     },
     staleTime: 5 * 60 * 1000,
   });
 
   const customersList: PartyItem[] = useMemo(() => {
-    return Array.isArray(customerData) ? customerData : [];
-  }, [customerData]);
+    if (!rawCustomerData) return [];
+    let list: any[] = [];
+    if (Array.isArray(rawCustomerData)) list = rawCustomerData;
+    else if (rawCustomerData && typeof rawCustomerData === "object") {
+      const raw = rawCustomerData as any;
+      if (Array.isArray(raw.customerList)) list = raw.customerList;
+      else if (Array.isArray(raw.partyList)) list = raw.partyList;
+      else if (Array.isArray(raw.partyInfoList)) list = raw.partyInfoList;
+      else if (Array.isArray(raw.data)) list = raw.data;
+    }
+
+    return list.filter((p: any) => {
+      const isDel = String(p.isDeleted || p.is_deleted || "").trim().toUpperCase();
+      if (isDel === "Y" || isDel === "YES" || isDel === "TRUE" || isDel === "1") return false;
+      const type = String(p.type || p.partyType || p.party_type || p.party_type_name || p.role || "").toUpperCase();
+      if (type.includes("SUPPLIER") || type.includes("VENDOR")) return false;
+      return type.includes("CUSTOMER") || !type;
+    });
+  }, [rawCustomerData]);
 
   // 2. Fetch Sales from Backend API
   const {
@@ -189,14 +98,14 @@ const Sales: React.FC = () => {
         res?.sale_list ||
         [];
 
-      return Array.isArray(list) && list.length > 0 ? list : initialMockSales;
+      return Array.isArray(list) ? list : [];
     },
     staleTime: 60 * 1000,
   });
 
   const rawSales: SaleItem[] = useMemo(() => {
-    if (Array.isArray(salesData) && salesData.length > 0) return salesData;
-    return initialMockSales;
+    if (Array.isArray(salesData)) return salesData;
+    return [];
   }, [salesData]);
 
   // Filtering & Sorting
@@ -345,18 +254,6 @@ const Sales: React.FC = () => {
     });
   };
 
-  const handleDeletePrompt = (sale: SaleItem) => {
-    setSaleToDelete(sale);
-    setIsDeleteModalOpen(true);
-  };
-
-  const handleConfirmDelete = () => {
-    if (!saleToDelete) return;
-    showSuccessToast(`Sale invoice ${saleToDelete.invoiceNo || saleToDelete.id} removed`);
-    setIsDeleteModalOpen(false);
-    setSaleToDelete(null);
-  };
-
   return (
     <div className="flex flex-col gap-2.5 px-3 py-2 sm:px-4 sm:py-2.5 max-w-[1600px] mx-auto w-full">
       {/* Top Header */}
@@ -377,7 +274,6 @@ const Sales: React.FC = () => {
           />
         </div>
       </div>
-
 
       {/* KPI Cards */}
       <SaleStats
@@ -420,7 +316,6 @@ const Sales: React.FC = () => {
         onEdit={handleEdit}
         onView={handleView}
         onPrint={handlePrint}
-        onDelete={handleDeletePrompt}
       />
 
       {/* Printable Invoice Modal */}
@@ -431,18 +326,6 @@ const Sales: React.FC = () => {
           setSelectedSaleForInvoice(null);
         }}
         sale={selectedSaleForInvoice}
-      />
-
-      {/* Delete Confirmation Modal */}
-      <DeleteModal
-        isOpen={isDeleteModalOpen}
-        onClose={() => {
-          setIsDeleteModalOpen(false);
-          setSaleToDelete(null);
-        }}
-        onConfirm={handleConfirmDelete}
-        title="Delete Sale Invoice"
-        description={`Are you sure you want to delete invoice "${saleToDelete?.invoiceNo || saleToDelete?.id}"? This action cannot be undone.`}
       />
     </div>
   );

@@ -4,6 +4,7 @@ import Button from "@/components/button/Button";
 import type { SaleItem } from "@/types";
 import { FaPrint, FaPhone, FaMapMarkerAlt, FaFileInvoice, FaCalendarAlt, FaUser, FaCheckCircle, FaClock, FaExclamationCircle } from "react-icons/fa";
 import { getUserInfo } from "@/utils/auth-storage";
+import { formatMoney } from "@/utils/formatters";
 import moment from "moment";
 
 interface SaleInvoiceModalProps {
