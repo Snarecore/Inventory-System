@@ -14,9 +14,7 @@ import {
   FaUserTie,
   FaPhoneAlt,
   FaCalendarAlt,
-  FaStickyNote,
   FaFileInvoice,
-  FaPaperclip,
   FaReceipt,
   FaCalendarCheck,
   FaCubes,
@@ -179,12 +177,6 @@ const ChallanSettingsModal: React.FC<ChallanSettingsModalProps> = ({
       icon: FaCalendarCheck,
     },
     {
-      key: "attachments" as keyof PurchaseChallanSettings,
-      label: "Enable Attachments",
-      description: "Upload challan, invoice document or photo / ফাইল আপলোড সুবিধা (attachments)",
-      icon: FaPaperclip,
-    },
-    {
       key: "vehicleNumber" as keyof PurchaseChallanSettings,
       label: "Vehicle / Truck No",
       description: "Record carrier vehicle or transport truck license plate number (vehicleNumber)",
@@ -207,12 +199,6 @@ const ChallanSettingsModal: React.FC<ChallanSettingsModalProps> = ({
       label: "Driver Phone",
       description: "Contact phone number of the carrier or driver (driverPhone)",
       icon: FaPhoneAlt,
-    },
-    {
-      key: "remarks" as keyof PurchaseChallanSettings,
-      label: "Remarks / Notes",
-      description: "Extra instructions, terms, and challan delivery notes (remarks)",
-      icon: FaStickyNote,
     },
   ];
 
