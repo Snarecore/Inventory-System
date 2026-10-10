@@ -11,6 +11,7 @@ import type { PurchaseItem, PartyItem } from "@/types";
 import { FaPhone, FaCalendarAlt, FaSearch, FaFileExcel } from "react-icons/fa";
 import { exportPurchasesToExcel } from "@/utils/excel-export";
 import { showSuccessToast, showErrorToast } from "@/utils/toast-utils";
+import { formatMoney } from "@/utils/formatters";
 
 interface PurchaseTableProps {
   purchases: PurchaseItem[];
@@ -119,14 +120,6 @@ export const PurchaseTable: React.FC<PurchaseTableProps> = ({
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
-
-  const formatMoney = (amount: number | string | undefined) => {
-    const num = Number(amount) || 0;
-    return new Intl.NumberFormat("en-IN", {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    }).format(num);
-  };
 
   // Filtered suppliers for searchable dropdown
   const filteredSupplierOptions = useMemo(() => {

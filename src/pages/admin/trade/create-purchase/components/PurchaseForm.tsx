@@ -38,6 +38,8 @@ import { buildAccessUser } from "@/utils/access-user";
 import { getBusinessCode, setBusinessCode, getUserInfo, setUserInfo, getStoredUser } from "@/utils/auth-storage";
 import { makeInvoiceNo } from "@/utils/invoiceNo";
 import { postData } from "@/services/api-service";
+import { useAPI } from "@/hooks/useApi";
+import { formatMoney } from "@/utils/formatters";
 import { showSuccessToast, showErrorToast, showDeleteToast } from "@/utils/toast-utils";
 import type { PurchaseItem, PurchaseDetailItem, ProductItem, PartyItem, PurchaseChallanSettings } from "@/types";
 
@@ -89,6 +91,7 @@ const CreatePurchaseForm: React.FC = () => {
   const location = useLocation();
   const { id: routeId } = useParams();
   const queryClient = useQueryClient();
+  const { postFormMutation, postMutation, handleApiMutation } = useAPI();
 
   const stateEditData: PurchaseItem | undefined = (location.state as any)?.editData;
   const isEditMode = Boolean(routeId || stateEditData);
@@ -117,7 +120,7 @@ const CreatePurchaseForm: React.FC = () => {
   const [notes, setNotes] = useState<string>("");
   const [isNotesDropdownOpen, setIsNotesDropdownOpen] = useState<boolean>(false);
   const notesDropdownRef = useRef<HTMLDivElement>(null);
-  const [attachment, setAttachment] = useState<string | null>(null);
+  const [attachment, setAttachment] = useState<File | string | null>(null);
 
   // Product Selection & Line Items
   const [lineItems, setLineItems] = useState<FormLineItem[]>([]);
@@ -498,8 +501,42 @@ const CreatePurchaseForm: React.FC = () => {
       setDriverName(data.driverName || data.driver_name || "");
       setDriverPhone(data.driverPhone || data.driver_phone || "");
 
-      const existingAttach = data.attachments || data.attachment || data.attachmentUrl || data.challanImage || data.documentUrl || null;
-      setAttachment(existingAttach);
+      let rawAttach =
+        data.attachments ??
+        data.attachment ??
+        data.image ??
+        data.attachmentUrl ??
+        data.file ??
+        null;
+
+      if (typeof rawAttach === "string" && (rawAttach.startsWith("[") || rawAttach.startsWith("{"))) {
+        try {
+          rawAttach = JSON.parse(rawAttach);
+        } catch {
+          // ignore parse error and retain as string
+        }
+      }
+
+      let cleanAttach: string | File | null = null;
+      if (rawAttach instanceof File) {
+        cleanAttach = rawAttach;
+      } else if (Array.isArray(rawAttach)) {
+        if (rawAttach.length > 0) {
+          const first = rawAttach[0];
+          cleanAttach =
+            first instanceof File
+              ? first
+              : typeof first === "string"
+              ? first
+              : (first?.url || first?.path || first?.image || null);
+        }
+      } else if (typeof rawAttach === "object" && rawAttach !== null) {
+        cleanAttach = rawAttach.url || rawAttach.path || rawAttach.image || null;
+      } else if (typeof rawAttach === "string" && rawAttach.trim() !== "" && rawAttach !== "null" && rawAttach !== "undefined") {
+        cleanAttach = rawAttach.trim();
+      }
+
+      setAttachment(cleanAttach);
 
       const transport = data.transportCost ?? data.transport_cost ?? data.delivery_charge ?? data.deliveryCharge ?? "";
       setTransportCost(transport !== "" && transport !== null && Number(transport) > 0 ? String(transport) : "");
@@ -569,15 +606,19 @@ const CreatePurchaseForm: React.FC = () => {
 
       // Line Items (Purchase Details)
       const rawDetails =
-        data.purchaseDetails ||
-        data.purchasesDetails ||
-        data.purchase_details ||
-        data.details ||
-        data.items ||
-        data.products ||
-        data.purchaseListDetails ||
-        data.salesDetails ||
-        [];
+        (Array.isArray(data.details) && data.details.length > 0)
+          ? data.details
+          : (Array.isArray(data.purchaseDetails) && data.purchaseDetails.length > 0)
+          ? data.purchaseDetails
+          : (Array.isArray(data.purchasesDetails) && data.purchasesDetails.length > 0)
+          ? data.purchasesDetails
+          : (Array.isArray(data.purchase_details) && data.purchase_details.length > 0)
+          ? data.purchase_details
+          : (Array.isArray(data.items) && data.items.length > 0)
+          ? data.items
+          : (Array.isArray(data.purchaseListDetails) && data.purchaseListDetails.length > 0)
+          ? data.purchaseListDetails
+          : [];
 
       if (Array.isArray(rawDetails) && rawDetails.length > 0) {
         const seenProductKeys = new Set<string>();
@@ -586,22 +627,11 @@ const CreatePurchaseForm: React.FC = () => {
         rawDetails.forEach((item: any) => {
           const pId = item.productId ?? item.product_id ?? item.id ?? item.prodId ?? "";
           const pCode = item.productCode || item.product_code || item.pcode || item.code || "";
-          const key = String(pId || pCode || "").trim().toLowerCase();
+          const pName = item.productName || item.product_name || item.name || item.title || "";
+          const key = String(pId || pCode || pName || "").trim().toLowerCase();
 
-          // Deduplicate if backend returned duplicate items in purchaseDetails
+          // Deduplicate: If product was already processed in this invoice, skip duplicate without summing
           if (key && seenProductKeys.has(key)) {
-            const existingIdx = loadedItems.findIndex((it) => {
-              if (pId && it.productId && String(it.productId) === String(pId)) return true;
-              if (pCode && it.productCode && String(it.productCode).trim().toLowerCase() === String(pCode).trim().toLowerCase()) return true;
-              return false;
-            });
-            if (existingIdx >= 0) {
-              const prev = loadedItems[existingIdx];
-              const q = Number(item.quantity ?? item.qty ?? 1) || 1;
-              const newQty = String((Number(prev.quantity) || 0) + q);
-              const tot = computeLineTotal(prev.buyPrice, newQty, prev.vat);
-              loadedItems[existingIdx] = { ...prev, quantity: newQty, total: tot };
-            }
             return;
           }
 
@@ -627,10 +657,20 @@ const CreatePurchaseForm: React.FC = () => {
 
           // Match with allProducts to get current stock and fallback name/code
           const matchedProd = allProducts.find((p) => {
-            const idMatch = pId && (String(p.id) === String(pId) || String(p.productId) === String(pId));
-            const codeMatch = pCode && (String(p.pcode).toLowerCase() === String(pCode).toLowerCase() || String(p.productCode).toLowerCase() === String(pCode).toLowerCase());
-            return idMatch || codeMatch;
+            const pIdStr = String(pId ?? "").trim().toLowerCase();
+            const pCodeStr = String(pCode ?? "").trim().toLowerCase();
+            const pNameStr = String(item.productName || item.product_name || item.name || "").trim().toLowerCase();
+
+            const idMatch = Boolean(pIdStr && (String(p.id ?? "").toLowerCase() === pIdStr || String(p.productId ?? "").toLowerCase() === pIdStr || String((p as any).product_id ?? "").toLowerCase() === pIdStr));
+            const codeMatch = Boolean(pCodeStr && (String(p.pcode || p.productCode || (p as any).code || "").trim().toLowerCase() === pCodeStr));
+            const nameMatch = Boolean(pNameStr && (String(p.name || p.productName || "").trim().toLowerCase() === pNameStr));
+
+            return idMatch || codeMatch || nameMatch;
           });
+
+          const currentLiveStock = matchedProd
+            ? Number(matchedProd.quantity ?? matchedProd.stock ?? (matchedProd as any).stockQuantity ?? (matchedProd as any).currentStock ?? (matchedProd as any).current_stock ?? (matchedProd as any).totalQuantity ?? (matchedProd as any).qty ?? 0)
+            : Number(item.stock ?? 0);
 
           const detailId = item.id ?? item.purchaseDetailId ?? item.purchase_detail_id ?? item.detailId ?? item.detail_id;
 
@@ -638,15 +678,15 @@ const CreatePurchaseForm: React.FC = () => {
             id: detailId,
             purchaseDetailId: detailId,
             purchase_detail_id: detailId,
-            productId: pId || (matchedProd?.id ?? matchedProd?.productId ?? ""),
-            productCode: pCode || matchedProd?.pcode || matchedProd?.productCode || "",
+            productId: pId || (matchedProd?.id ?? matchedProd?.productId ?? (matchedProd as any)?.product_id ?? ""),
+            productCode: pCode || matchedProd?.pcode || matchedProd?.productCode || (matchedProd as any)?.code || "",
             productName: item.productName || item.product_name || item.name || item.title || matchedProd?.name || matchedProd?.productName || "Product",
             unit: item.unit || item.unitName || matchedProd?.unit || "pcs",
             buyPrice: String(buyP),
             quantity: String(q),
             vat: v ? String(v) : "",
             total: Number(tot),
-            stock: item.stock ?? item.quantity ?? matchedProd?.stock ?? matchedProd?.quantity ?? 0,
+            stock: currentLiveStock,
           });
         });
 
@@ -654,6 +694,38 @@ const CreatePurchaseForm: React.FC = () => {
       }
     }
   }, [effectiveEditData, suppliersList, allProducts, routeId]);
+
+  // Synchronize live stock for lineItems whenever allProducts is loaded or updated
+  useEffect(() => {
+    if (allProducts.length > 0 && lineItems.length > 0) {
+      setLineItems((prevItems) => {
+        let changed = false;
+        const updated = prevItems.map((item) => {
+          const matchedProd = allProducts.find((p) => {
+            const pIdStr = String(item.productId ?? "").trim().toLowerCase();
+            const pCodeStr = String(item.productCode ?? "").trim().toLowerCase();
+            const pNameStr = String(item.productName ?? "").trim().toLowerCase();
+
+            const idMatch = Boolean(pIdStr && (String(p.id ?? "").toLowerCase() === pIdStr || String(p.productId ?? "").toLowerCase() === pIdStr || String((p as any).product_id ?? "").toLowerCase() === pIdStr));
+            const codeMatch = Boolean(pCodeStr && (String(p.pcode || p.productCode || (p as any).code || "").trim().toLowerCase() === pCodeStr));
+            const nameMatch = Boolean(pNameStr && (String(p.name || p.productName || "").trim().toLowerCase() === pNameStr));
+
+            return idMatch || codeMatch || nameMatch;
+          });
+
+          if (matchedProd) {
+            const liveStock = Number(matchedProd.quantity ?? matchedProd.stock ?? (matchedProd as any).stockQuantity ?? (matchedProd as any).currentStock ?? (matchedProd as any).current_stock ?? 0);
+            if (item.stock !== liveStock) {
+              changed = true;
+              return { ...item, stock: liveStock };
+            }
+          }
+          return item;
+        });
+        return changed ? updated : prevItems;
+      });
+    }
+  }, [allProducts]);
 
   // Filtered Products for Search Dropdown
   const filteredProducts = useMemo(() => {
@@ -955,14 +1027,6 @@ const CreatePurchaseForm: React.FC = () => {
     return 0;
   }, [cashGiven, numCash]);
 
-  const formatMoney = (amount: number | string | undefined) => {
-    const num = Number(amount) || 0;
-    return new Intl.NumberFormat("en-IN", {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    }).format(num);
-  };
-
   // Quick Payment presets
   const handlePayFullCash = () => {
     setCashAmount(String(grandTotal));
@@ -1094,7 +1158,7 @@ const CreatePurchaseForm: React.FC = () => {
       const paymentType = totalPaid > 0 ? "CASH" : "CREDIT";
       const paymentStatus = dueAmount <= 0 ? "Paid" : totalPaid > 0 ? "PARTIAL" : "Pending";
 
-      const purchaseDetailsPayload: PurchaseDetailItem[] = lineItems.map((item) => {
+      const purchaseDetailsPayload = lineItems.map((item) => {
         const p = Number(item.buyPrice) || 0;
         const q = Number(item.quantity) || 0;
         const v = Number(item.vat) || 0;
@@ -1102,31 +1166,23 @@ const CreatePurchaseForm: React.FC = () => {
         const lineVat = (base * v) / 100;
 
         return {
-          ...(item.id ? { id: item.id, purchaseDetailId: item.id, purchase_detail_id: item.id, detailId: item.id } : {}),
-          productId: item.productId,
-          product_id: item.productId,
-          productCode: item.productCode,
-          pcode: item.productCode,
-          product_code: item.productCode,
-          productName: item.productName,
-          product_name: item.productName,
+          productId: String(item.productId || ""),
+          productCode: String(item.productCode || ""),
+          productName: item.productName || "",
+          packSize: null,
           unit: item.unit || "pcs",
+          expiryDate: null,
           quantity: q,
-          qty: q,
           buyPrice: p,
-          buy_price: p,
-          rate: p,
-          price: p,
           discount: 0,
+          total: Number(item.total),
           vat: lineVat,
           delivery_charge: 0,
-          total: Number(item.total),
           status: "PENDING",
           advenType: "PURCHASE",
+          addedBy: accessUser.phone || "",
         };
       });
-
-      const isAttachmentsEnabled = Boolean(challanSettings.enableAttachments || challanSettings.showAttachments);
 
       const purchasePayload: any = {
         accessUser,
@@ -1184,11 +1240,7 @@ const CreatePurchaseForm: React.FC = () => {
         osType: "WEB",
         remarks: (challanSettings.remarks ?? challanSettings.showNotes) ? (notes.trim() || null) : null,
         note: (challanSettings.remarks ?? challanSettings.showNotes) ? (notes.trim() || null) : null,
-        attachments: isAttachmentsEnabled ? (attachment || null) : null,
-        attachment: isAttachmentsEnabled ? (attachment || null) : null,
-        attachmentUrl: isAttachmentsEnabled ? (attachment || null) : null,
-        challanImage: isAttachmentsEnabled ? (attachment || null) : null,
-        documentUrl: isAttachmentsEnabled ? (attachment || null) : null,
+        attachments: attachment || null,
         createdAt: isEditMode ? (effectiveEditData?.createdAt || effectiveEditData?.created_at || new Date().toISOString()) : new Date().toISOString(),
         created_at: isEditMode ? (effectiveEditData?.createdAt || effectiveEditData?.created_at || new Date().toISOString()) : new Date().toISOString(),
         updatedAt: new Date().toISOString(),
@@ -1207,11 +1259,8 @@ const CreatePurchaseForm: React.FC = () => {
         mfsPhone: numMfs > 0 ? mfsPhone : null,
         customerPaid: Number(cashGiven) || totalPaid,
         returnAmount: changeReturnAmount,
-        purchaseDetails: purchaseDetailsPayload,
         details: purchaseDetailsPayload,
-        purchasesDetails: purchaseDetailsPayload,
-        purchase_details: purchaseDetailsPayload,
-        items: purchaseDetailsPayload,
+        purchaseDetails: purchaseDetailsPayload,
         itemCount: lineItems.length,
         totalItems: lineItems.length,
         itemsCount: lineItems.length,
@@ -1233,78 +1282,77 @@ const CreatePurchaseForm: React.FC = () => {
         purchasePayload.purchase_no = editId;
       }
 
-      console.log("Submitting purchase payload to backend:", purchasePayload);
+      // Both insert-purchases and update-purchases endpoints in ERP backend are JSON HTTP POST
+      const mutation = postMutation;
 
-      const res = await postData<any>({
+      const result = await handleApiMutation({
+        mutation,
         url: targetUrl,
         body: purchasePayload,
+        invalidateQueryKey: [purchaseListQueryKey, productListQueryKey],
+        showSuccessMessage: true,
+        showErrorMessage: true,
       });
 
-      console.log("Response from server:", res);
+      if (result?.success) {
+        const res: any = (result.data as any)?.data !== undefined ? (result.data as any).data : result.data;
+        const savedId = res?.id || res?.purchaseId || res?.purchase_id || editId || invoiceNo;
 
-      if (res && (res.error || res.status === "Error")) {
-        const errorMsg = res.msg || res.message || "Failed to save purchase";
-        showErrorToast(errorMsg);
-        setIsSubmitting(false);
-        return;
-      }
+        const savedItem: any = {
+          ...purchasePayload,
+          id: savedId,
+          attachments: attachment || purchasePayload.attachments,
+          attachment: attachment || purchasePayload.attachments,
+          createdAt: new Date().toISOString(),
+        };
 
-      showSuccessToast(isEditMode ? "Purchase updated successfully!" : "Purchase recorded successfully!");
-      
-      const savedItem: any = {
-        ...purchasePayload,
-        id: res?.id || res?.purchaseId || res?.purchase_id || editId || invoiceNo,
-        createdAt: new Date().toISOString(),
-      };
-
-      queryClient.setQueryData([purchaseListQueryKey], (oldData: any) => {
-        if (!oldData) return { status: "Success", purchaseList: [savedItem] };
-        if (Array.isArray(oldData)) {
-          if (isEditMode) {
-            return oldData.map((item: any) => {
-              const itemId = String(item.id ?? item.purchaseId ?? item.invoiceNo ?? "");
-              const targetId = String(savedItem.id ?? savedItem.purchaseId ?? savedItem.invoiceNo ?? "");
-              return itemId === targetId || String(item.invoiceNo) === String(savedItem.invoiceNo) ? { ...item, ...savedItem } : item;
-            });
-          }
-          return [savedItem, ...oldData];
-        }
-        if (oldData && typeof oldData === "object") {
-          const listKey = Array.isArray(oldData.purchaseList)
-            ? "purchaseList"
-            : Array.isArray(oldData.purchaseInfoList)
-            ? "purchaseInfoList"
-            : Array.isArray(oldData.purchasesList)
-            ? "purchasesList"
-            : Array.isArray(oldData.data)
-            ? "data"
-            : "purchaseList";
-          const currentList = Array.isArray(oldData[listKey]) ? oldData[listKey] : [];
-          const updatedList = isEditMode
-            ? currentList.map((item: any) => {
+        queryClient.setQueryData([purchaseListQueryKey], (oldData: any) => {
+          if (!oldData) return { status: "Success", purchaseList: [savedItem] };
+          if (Array.isArray(oldData)) {
+            if (isEditMode) {
+              return oldData.map((item: any) => {
                 const itemId = String(item.id ?? item.purchaseId ?? item.invoiceNo ?? "");
                 const targetId = String(savedItem.id ?? savedItem.purchaseId ?? savedItem.invoiceNo ?? "");
                 return itemId === targetId || String(item.invoiceNo) === String(savedItem.invoiceNo) ? { ...item, ...savedItem } : item;
-              })
-            : [savedItem, ...currentList];
-          return {
-            ...oldData,
-            [listKey]: updatedList,
-          };
-        }
-        return oldData;
-      });
+              });
+            }
+            return [savedItem, ...oldData];
+          }
+          if (oldData && typeof oldData === "object") {
+            const listKey = Array.isArray(oldData.purchaseList)
+              ? "purchaseList"
+              : Array.isArray(oldData.purchaseInfoList)
+              ? "purchaseInfoList"
+              : Array.isArray(oldData.purchasesList)
+              ? "purchasesList"
+              : Array.isArray(oldData.data)
+              ? "data"
+              : "purchaseList";
+            const currentList = Array.isArray(oldData[listKey]) ? oldData[listKey] : [];
+            const updatedList = isEditMode
+              ? currentList.map((item: any) => {
+                  const itemId = String(item.id ?? item.purchaseId ?? item.invoiceNo ?? "");
+                  const targetId = String(savedItem.id ?? savedItem.purchaseId ?? savedItem.invoiceNo ?? "");
+                  return itemId === targetId || String(item.invoiceNo) === String(savedItem.invoiceNo) ? { ...item, ...savedItem } : item;
+                })
+              : [savedItem, ...currentList];
+            return {
+              ...oldData,
+              [listKey]: updatedList,
+            };
+          }
+          return oldData;
+        });
 
-      queryClient.invalidateQueries({ queryKey: [purchaseListQueryKey] });
-      queryClient.invalidateQueries({ queryKey: [productListQueryKey] });
-
-      // Always open Invoice Modal after save so user can view/print invoice
-      setShouldAutoPrint(shouldPrint);
-      setSavedPurchaseForPrint({
-        ...purchasePayload,
-        id: res?.id || invoiceNo,
-      });
-      setIsPrintModalOpen(true);
+        // Always open Invoice Modal after save so user can view/print invoice
+        setShouldAutoPrint(shouldPrint);
+        setSavedPurchaseForPrint({
+          ...purchasePayload,
+          id: savedId,
+          attachments: attachment || purchasePayload.attachments,
+        });
+        setIsPrintModalOpen(true);
+      }
     } catch (err: any) {
       console.error("Save purchase exception:", err);
       showErrorToast(err?.message || "An error occurred while saving purchase");
@@ -1861,7 +1909,7 @@ const CreatePurchaseForm: React.FC = () => {
                             type="number"
                             step="0.01"
                             value={selectedEntry.buyPrice}
-                            placeholder="0.00"
+                            placeholder="0"
                             onWheel={(e) => e.currentTarget.blur()}
                             onChange={(e) => handleUpdateDropdownItem(prodKey, "buyPrice", e.target.value)}
                             className="w-full pl-4 pr-1.5 py-1 text-xs border border-gray-300 rounded-md bg-white text-right font-bold text-black focus:outline-none focus:border-[var(--color-primary)] h-7 shadow-2xs"
@@ -1904,14 +1952,13 @@ const CreatePurchaseForm: React.FC = () => {
           <table className="w-full min-w-[720px] text-xs text-left border-collapse">
             <thead>
               <tr className="bg-[#41bef3] border-b border-gray-200 text-[11px] font-semibold text-black shadow-md">
-                <th className="py-2 px-2 text-center w-8 whitespace-nowrap">SL</th>
-                <th className="py-2 px-3 min-w-[170px]">Product</th>
-                <th className="py-2 px-2 text-center w-14 whitespace-nowrap">Unit</th>
+                <th className="py-2 px-2 text-center w-10 whitespace-nowrap">SL</th>
+                <th className="py-2 px-3 w-auto min-w-[200px]">Product</th>
+                <th className="py-2 px-2 text-center w-16 whitespace-nowrap">Unit</th>
                 <th className="py-2 px-2 text-center w-20 whitespace-nowrap">Stock</th>
                 <th className="py-2 px-2 text-right w-28 min-w-[100px] whitespace-nowrap">Buy Price (৳)</th>
                 <th className="py-2 px-2 text-center w-28 min-w-[110px] whitespace-nowrap">Quantity</th>
-                <th className="py-2 px-2 text-right w-20 min-w-[70px] whitespace-nowrap">VAT (%)</th>
-                <th className="py-2 px-3 text-right w-32 min-w-[120px] whitespace-nowrap">Total (৳)</th>
+                <th className="py-2 px-3 text-right w-28 min-w-[100px] whitespace-nowrap">Total (৳)</th>
                 <th className="py-2 px-2 text-center w-10 whitespace-nowrap"></th>
               </tr>
             </thead>
@@ -1954,7 +2001,7 @@ const CreatePurchaseForm: React.FC = () => {
                           type="number"
                           step="0.01"
                           value={item.buyPrice}
-                          placeholder="0.00"
+                          placeholder="0"
                           onWheel={(e) => e.currentTarget.blur()}
                           onChange={(e) => handleUpdateLineItem(idx, "buyPrice", e.target.value)}
                           className="w-full pl-5 pr-1.5 py-1 text-xs border border-gray-300 rounded text-right   font-bold text-black focus:outline-none focus:border-[var(--color-primary)]"
@@ -1997,21 +2044,8 @@ const CreatePurchaseForm: React.FC = () => {
                       </div>
                     </td>
 
-                    {/* Line VAT % */}
-                    <td className="py-2 px-2 text-right whitespace-nowrap">
-                      <input
-                        type="number"
-                        step="0.01"
-                        value={item.vat}
-                        placeholder="0"
-                        onWheel={(e) => e.currentTarget.blur()}
-                        onChange={(e) => handleUpdateLineItem(idx, "vat", e.target.value)}
-                        className="w-full px-1.5 py-1 text-xs border border-gray-300 rounded text-right   font-bold text-black focus:outline-none focus:border-[var(--color-primary)]"
-                      />
-                    </td>
-
                     {/* Total (Right Aligned Display) */}
-                    <td className="py-2 px-3 text-right font-bold text-black   whitespace-nowrap">
+                    <td className="py-2 px-3 text-right font-bold text-black whitespace-nowrap">
                       ৳ {formatMoney(item.total)}
                     </td>
 
@@ -2033,7 +2067,7 @@ const CreatePurchaseForm: React.FC = () => {
                 ))
               ) : (
                 <tr>
-                  <td colSpan={9} className="py-8 text-center text-gray-400">
+                  <td colSpan={8} className="py-8 text-center text-gray-400">
                     No items in purchase. Search and add products above.
                   </td>
                 </tr>
@@ -2120,7 +2154,7 @@ const CreatePurchaseForm: React.FC = () => {
                     type="number"
                     step="0.01"
                     value={transportCost}
-                    placeholder="0.00"
+                    placeholder="0"
                     onWheel={(e) => e.currentTarget.blur()}
                     onChange={(e) => setTransportCost(e.target.value)}
                     className="w-full pl-5 pr-2 py-1 text-xs border border-gray-300 rounded text-right   text-black font-bold focus:outline-none focus:border-[var(--color-primary)]"
@@ -2133,37 +2167,34 @@ const CreatePurchaseForm: React.FC = () => {
           {/* Bottom of Left Box: Invoice Attachment & Purchase Notes Side by Side */}
           <div className="mt-2 pt-2.5 border-t border-gray-200/90 flex flex-col sm:flex-row items-start gap-3">
             {/* Invoice Attachment (Fixed compact upload box) */}
-            {(challanSettings.enableAttachments || challanSettings.showAttachments) && (
-              <div className="shrink-0">
-                <label className="text-[11px] font-bold text-black uppercase tracking-wider block mb-1">
-                  Attachment
-                </label>
-                <ImageUpload
-                  value={attachment}
-                  onChange={handleAttachmentChange}
-                />
-              </div>
-            )}
+            <div className="shrink-0">
+              <label className="text-[11px] font-bold text-black uppercase tracking-wider block mb-1">
+                Attachment
+              </label>
+              <ImageUpload
+                value={attachment}
+                onChange={handleAttachmentChange}
+              />
+            </div>
 
             {/* Purchase Notes / Remarks (Fills the remaining width seamlessly) */}
-            {challanSettings.showNotes && (
-              <div className="relative flex-1 min-w-0 w-full flex flex-col" ref={notesDropdownRef}>
-                <div className="flex items-center justify-between gap-1 mb-1">
-                  <label className="text-[11px] font-bold text-black uppercase tracking-wider truncate">
-                    Notes / Remarks
-                  </label>
-                  <button
-                    type="button"
-                    onClick={() => setIsNotesDropdownOpen(!isNotesDropdownOpen)}
-                    className="text-[10px] font-bold text-black hover:text-[var(--color-primary)] flex items-center gap-1 cursor-pointer bg-sky-50 hover:bg-sky-100 px-2 py-0.5 rounded-md border border-sky-200 transition-all shrink-0 shadow-2xs"
-                  >
-                    <span>+ Presets</span>
-                    <FiChevronDown
-                      size={11}
-                      className={`transition-transform duration-200 ${isNotesDropdownOpen ? "rotate-180" : ""}`}
-                    />
-                  </button>
-                </div>
+            <div className="relative flex-1 min-w-0 w-full flex flex-col" ref={notesDropdownRef}>
+              <div className="flex items-center justify-between gap-1 mb-1">
+                <label className="text-[11px] font-bold text-black uppercase tracking-wider truncate">
+                  Notes / Remarks
+                </label>
+                <button
+                  type="button"
+                  onClick={() => setIsNotesDropdownOpen(!isNotesDropdownOpen)}
+                  className="text-[10px] font-bold text-black hover:text-[var(--color-primary)] flex items-center gap-1 cursor-pointer bg-sky-50 hover:bg-sky-100 px-2 py-0.5 rounded-md border border-sky-200 transition-all shrink-0 shadow-2xs"
+                >
+                  <span>+ Presets</span>
+                  <FiChevronDown
+                    size={11}
+                    className={`transition-transform duration-200 ${isNotesDropdownOpen ? "rotate-180" : ""}`}
+                  />
+                </button>
+              </div>
 
                 {/* Textarea Input with matched height to ImageUpload */}
                 <div className="relative mt-1">
@@ -2233,7 +2264,6 @@ const CreatePurchaseForm: React.FC = () => {
                   )}
                 </div>
               </div>
-            )}
           </div>
         </div>
 
@@ -2335,7 +2365,7 @@ const CreatePurchaseForm: React.FC = () => {
                 <input
                   type="number"
                   step="0.01"
-                  placeholder="0.00"
+                  placeholder="0"
                   value={cashAmount}
                   onWheel={(e) => e.currentTarget.blur()}
                   onChange={(e) => setCashAmount(e.target.value)}
@@ -2427,7 +2457,7 @@ const CreatePurchaseForm: React.FC = () => {
                 <input
                   type="number"
                   step="0.01"
-                  placeholder="0.00"
+                  placeholder="0"
                   value={bankAmount}
                   onWheel={(e) => e.currentTarget.blur()}
                   onChange={(e) => setBankAmount(e.target.value)}
@@ -2481,7 +2511,7 @@ const CreatePurchaseForm: React.FC = () => {
                 <input
                   type="number"
                   step="0.01"
-                  placeholder="0.00"
+                  placeholder="0"
                   value={mfsAmount}
                   onWheel={(e) => e.currentTarget.blur()}
                   onChange={(e) => setMfsAmount(e.target.value)}

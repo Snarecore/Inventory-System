@@ -144,6 +144,9 @@ export const useAPI = () => {
             const formData = new FormData();
 
             for (const [key, value] of Object.entries(body)) {
+                if (value === undefined || value === null) {
+                    continue;
+                }
                 if (value instanceof File) {
                     formData.append(key, value);
                 } else if (Array.isArray(value)) {

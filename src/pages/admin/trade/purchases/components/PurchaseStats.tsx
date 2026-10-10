@@ -1,5 +1,6 @@
 import React from "react";
 import { FaShoppingBag, FaMoneyBillWave, FaExclamationCircle, FaReceipt } from "react-icons/fa";
+import { formatMoney } from "@/utils/formatters";
 
 interface PurchaseStatsProps {
   totalCount: number;
@@ -14,12 +15,6 @@ const PurchaseStats: React.FC<PurchaseStatsProps> = ({
   totalPaid,
   totalDue,
 }) => {
-  const formatMoney = (amount: number) => {
-    return new Intl.NumberFormat("en-IN", {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    }).format(amount || 0);
-  };
 
   const cards = [
     {

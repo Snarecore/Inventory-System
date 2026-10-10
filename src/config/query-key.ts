@@ -37,3 +37,5 @@ export const insertOrUpdatePurchaseChallanSettingsQueryKey = "insert-or-update-p
 export const bankInfoListQueryKey = "get-bank-info-list";
 export const bankNameListQueryKey = "get-bank-name-list";
 export const mfsUserListQueryKey = "mfs-user-list";
+export const salesAndReturnQueryKey = "get-sales-and-return";
+export const insertSalesReturnQueryKey = "insert-sales-return";

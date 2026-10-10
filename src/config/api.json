@@ -86,5 +86,9 @@
     },
     "pageMeta": {
         "pageMetaUrl": "page-meta"
+    },
+    "salesReturn": {
+        "getSalesAndReturnUrl": "get-sales-and-return",
+        "insertSalesReturnUrl": "insert-sales-return"
     }
 }

@@ -2,6 +2,7 @@ import React, { useRef, useEffect } from "react";
 import Modal from "@/components/modal/Modal";
 import Button from "@/components/button/Button";
 import type { PurchaseItem } from "@/types";
+import { formatMoney } from "@/utils/formatters";
 import { FaPrint, FaDownload, FaBuilding, FaUserTie, FaPhone, FaMapMarkerAlt, FaFileInvoice, FaTruck, FaCalendarAlt } from "react-icons/fa";
 import { getUserInfo } from "@/utils/auth-storage";
 
@@ -22,6 +23,49 @@ const PurchaseInvoiceModal: React.FC<PurchaseInvoiceModalProps> = ({
   const userInfo = getUserInfo();
 
   const p: any = purchase || {};
+
+  const resolvedAttachment =
+    p.attachments ||
+    p.attachment ||
+    p.image ||
+    p.file ||
+    p.attachmentUrl ||
+    p.documentUrl ||
+    null;
+
+  const getAttachmentDisplayUrl = (raw: any): string | null => {
+    let url = raw ?? resolvedAttachment;
+    if (!url) return null;
+
+    if (typeof url === "string" && (url.startsWith("[") || url.startsWith("{"))) {
+      try {
+        url = JSON.parse(url);
+      } catch {
+        // ignore
+      }
+    }
+
+    if (Array.isArray(url) && url.length > 0) {
+      const first = url[0];
+      url = typeof first === "string" ? first : (first?.url || first?.path || first?.image || null);
+    } else if (typeof url === "object" && url !== null) {
+      url = url.url || url.path || url.image || null;
+    }
+
+    if (!url || typeof url !== "string") return null;
+    const clean = url.trim();
+    if (clean === "" || clean === "1" || clean === "true" || clean === "null" || clean === "undefined") {
+      return null;
+    }
+    if (clean.startsWith("data:") || clean.startsWith("blob:") || clean.startsWith("http://") || clean.startsWith("https://")) {
+      return clean;
+    }
+    const rawBaseUrl = import.meta.env.VITE_API_BASE_URL || "https://itouch.stepserp.com/cash-boi-v4/api";
+    const serverHost = rawBaseUrl.replace(/\/api\/?$/, "");
+    const path = clean.startsWith("/") ? clean.slice(1) : clean;
+    return `${serverHost}/${path}`;
+  };
+
   const rawDetails =
     p.purchaseDetails ||
     p.purchasesDetails ||
@@ -62,14 +106,6 @@ const PurchaseInvoiceModal: React.FC<PurchaseInvoiceModalProps> = ({
   const challanNo = p.challanNo || p.challan_no || p.challanRefNo;
   const invoiceNo = p.invoiceNo || p.invoice_no || p.billNo || "N/A";
   const invoiceDate = p.purchaseDate || p.salesDate || p.date || p.created_at || p.createdAt || "N/A";
-
-  const formatMoney = (amount: number | string | undefined) => {
-    const num = Number(amount) || 0;
-    return new Intl.NumberFormat("en-IN", {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    }).format(num);
-  };
 
   const handlePrint = () => {
     const printWindow = window.open("", "_blank");
@@ -334,10 +370,10 @@ const PurchaseInvoiceModal: React.FC<PurchaseInvoiceModalProps> = ({
             <div class="bottom-section">
               <div style="max-width: 350px; font-size: 11px; color: #475569; display: flex; flex-direction: column; gap: 8px;">
                 ${p.note ? `<div style="background: #fffbeb; border: 1px solid #fde68a; border-radius: 6px; padding: 6px 10px;"><strong>Note:</strong> ${p.note}</div>` : ""}
-                ${p.attachment || p.attachmentUrl || p.challanImage ? `
+                ${getAttachmentDisplayUrl(p.attachments) ? `
                   <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 6px 10px;">
                     <div style="font-weight: 600; color: #1e293b; margin-bottom: 4px;">Challan Attachment:</div>
-                    <img src="${p.attachment || p.attachmentUrl || p.challanImage}" alt="Challan Attachment" style="max-height: 120px; max-width: 200px; object-fit: contain; border-radius: 4px; border: 1px solid #cbd5e1;" />
+                    <img src="${getAttachmentDisplayUrl(p.attachments)}" alt="Challan Attachment" style="max-height: 120px; max-width: 200px; object-fit: contain; border-radius: 4px; border: 1px solid #cbd5e1;" />
                   </div>
                 ` : ""}
               </div>
@@ -597,11 +633,11 @@ const PurchaseInvoiceModal: React.FC<PurchaseInvoiceModalProps> = ({
                   <p className="text-black mt-0.5">{purchase.note}</p>
                 </div>
               )}
-              {(p.attachment || p.attachmentUrl || p.challanImage) && (
+              {getAttachmentDisplayUrl(p.attachments) && (
                 <div className="bg-gray-50 p-2 rounded border border-gray-200">
                   <span className="font-semibold text-black block mb-1">Challan / Invoice Attachment:</span>
                   <img
-                    src={p.attachment || p.attachmentUrl || p.challanImage}
+                    src={getAttachmentDisplayUrl(p.attachments)!}
                     alt="Challan Attachment"
                     className="max-h-28 max-w-[200px] object-contain rounded border border-gray-300"
                   />

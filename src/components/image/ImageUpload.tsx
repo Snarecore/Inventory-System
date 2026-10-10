@@ -1,8 +1,8 @@
 import React, { useEffect, useState, useId } from "react";
-import { IoCloseSharp, IoCloudUploadOutline } from "react-icons/io5";
+import { IoCloseSharp, IoCloudUploadOutline, IoDocumentTextOutline } from "react-icons/io5";
 
 interface ImageUploadProps {
-	value: string | null;
+	value: string | File | null;
 	onChange: (file: File | null) => void;
 	size?: "sm" | "md" | "lg";
 	className?: string;
@@ -11,18 +11,45 @@ interface ImageUploadProps {
 const ImageUpload: React.FC<ImageUploadProps> = ({ value, onChange, size = "sm", className = "" }) => {
 	const id = useId();
 	const [selectedFile, setSelectedFile] = useState<File | null>(null);
-	const [preview, setPreview] = useState<string | null>(value);
+	const [preview, setPreview] = useState<string | null>(null);
+	const [hasImgError, setHasImgError] = useState<boolean>(false);
+
+	const getDisplayUrl = (url: string | null) => {
+		if (!url) return "";
+		if (url.startsWith("blob:") || url.startsWith("data:") || url.startsWith("http://") || url.startsWith("https://")) {
+			return url;
+		}
+		const rawBaseUrl = import.meta.env.VITE_API_BASE_URL || "https://itouch.stepserp.com/cash-boi-v4/api";
+		const serverHost = rawBaseUrl.replace(/\/api\/?$/, "");
+		const cleanUrl = url.startsWith("/") ? url.slice(1) : url;
+		return `${serverHost}/${cleanUrl}`;
+	};
 
 	useEffect(() => {
-		if (!selectedFile) {
-			setPreview(value || null);
+		setHasImgError(false);
+		if (!value) {
+			setPreview(null);
 			return;
 		}
-		const objectUrl = URL.createObjectURL(selectedFile);
-		setPreview(objectUrl);
 
-		return () => URL.revokeObjectURL(objectUrl);
-	}, [selectedFile, value]);
+		if (value instanceof File) {
+			const reader = new FileReader();
+			reader.onloadend = () => {
+				setPreview(reader.result as string);
+			};
+			reader.readAsDataURL(value);
+			return;
+		}
+
+		if (typeof value === "string") {
+			const clean = value.trim();
+			if (clean === "" || clean === "null" || clean === "undefined" || clean === "1") {
+				setPreview(null);
+			} else {
+				setPreview(clean);
+			}
+		}
+	}, [value]);
 
 	const onSelectFile = (e: React.ChangeEvent<HTMLInputElement>) => {
 		if (!e.target.files || e.target.files.length === 0) {
@@ -31,12 +58,14 @@ const ImageUpload: React.FC<ImageUploadProps> = ({ value, onChange, size = "sm",
 		}
 		const file = e.target.files[0];
 		setSelectedFile(file);
+		setHasImgError(false);
 		onChange(file);
 	};
 
 	const removeImage = () => {
 		setSelectedFile(null);
 		setPreview(null);
+		setHasImgError(false);
 		onChange(null);
 	};
 
@@ -60,12 +89,19 @@ const ImageUpload: React.FC<ImageUploadProps> = ({ value, onChange, size = "sm",
 			/>
 			{preview && (
 				<div className={`relative ${dimensionClass} mt-1`}>
-					<img
-						src={preview}
-						alt="Uploaded File"
-						className="w-full h-full object-cover rounded-lg border border-gray-300"
-						onError={() => setPreview(null)}
-					/>
+					{!hasImgError ? (
+						<img
+							src={getDisplayUrl(preview)}
+							alt="Uploaded File"
+							className="w-full h-full object-cover rounded-lg border border-gray-300 bg-white"
+							onError={() => setHasImgError(true)}
+						/>
+					) : (
+						<div className="w-full h-full flex flex-col items-center justify-center bg-gray-100 border border-gray-300 rounded-lg p-1 text-center">
+							<IoDocumentTextOutline size={22} className="text-gray-500 mb-1" />
+							<span className="text-[9px] font-medium text-gray-600 truncate max-w-full px-1">Attached</span>
+						</div>
+					)}
 					<button
 						type="button"
 						onClick={removeImage}
