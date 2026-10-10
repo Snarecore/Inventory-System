@@ -121,7 +121,7 @@ export const CreateSaleForm: React.FC = () => {
   const [bankRef, setBankRef] = useState<string>("");
 
   const [selectedMfsId, setSelectedMfsId] = useState<string>("");
-  const [mfsName, setMfsName] = useState<string>("bKash");
+  const [mfsName, setMfsName] = useState<string>("");
   const [mfsPhone, setMfsPhone] = useState<string>("");
 
   // Modals & Submitting
@@ -765,10 +765,10 @@ export const CreateSaleForm: React.FC = () => {
     setSelectedMfsId(id);
     const found = registeredMfsAccounts.find((m) => String(m.id || m.mfsId || m._id) === String(id));
     if (found) {
-      setMfsName(found.mfsName || found.name || found.method || "bKash");
-      setMfsPhone(found.mfsPhone || found.phone || found.mobileNo || found.accountNo || "");
+      setMfsName(found.name || found.mfsName || found.method || "");
+      setMfsPhone(found.phoneNumber || found.mfsPhone || found.phone || "");
     } else {
-      setMfsName("bKash");
+      setMfsName("");
       setMfsPhone("");
     }
   };
@@ -832,7 +832,9 @@ export const CreateSaleForm: React.FC = () => {
       const updateUrl = apiConfig.sales?.updateSalesUrl || "update-sales";
       const targetUrl = isEditMode ? updateUrl : insertUrl;
 
-      const paymentType = totalPaid > 0 ? "CASH" : "CREDIT";
+      const methodsUsed = [numCash > 0, numBank > 0, numMfs > 0].filter(Boolean).length;
+      const invType = methodsUsed > 1 ? "MULTI" : "SINGLE";
+      const paymentType = totalPaid <= 0 ? "credit" : methodsUsed > 1 ? "multi" : numBank > 0 ? "bank" : numMfs > 0 ? "mfs" : "cash";
       const paymentStatus = dueAmount <= 0 ? "Paid" : totalPaid > 0 ? "PARTIAL" : "Pending";
 
       const isWalkIn = Boolean(
@@ -877,6 +879,19 @@ export const CreateSaleForm: React.FC = () => {
         };
       });
 
+      const selectedMfsObj = registeredMfsAccounts.find(
+        (m) => String(m.id || m.mfsId || m._id) === String(selectedMfsId)
+      );
+      const finalMfsName = mfsName || selectedMfsObj?.name || selectedMfsObj?.mfsName || selectedMfsObj?.method || "";
+      const finalMfsPhone = mfsPhone || selectedMfsObj?.phoneNumber || selectedMfsObj?.mfsPhone || selectedMfsObj?.phone || "";
+
+      const selectedBankObj = registeredBankAccounts.find(
+        (b) => String(b.id || b.bankId || b._id) === String(selectedBankId)
+      );
+      const finalBankName = bankName || selectedBankObj?.bankName || selectedBankObj?.name || "";
+      const finalAccountNo = accountNo || selectedBankObj?.accountNo || selectedBankObj?.bankAccountNumber || "";
+      const finalBankRef = bankRef || selectedBankObj?.bankAccountName || selectedBankObj?.accountName || "";
+
       const payload: any = {
         accessUser,
         invoiceNo: invoiceNo.trim() || makeInvoiceNo("INV"),
@@ -891,7 +906,7 @@ export const CreateSaleForm: React.FC = () => {
         paidAmount: totalPaid,
         dueAmount,
         paymentType: paymentType.toLowerCase(),
-        inv_type: "SINGLE",
+        inv_type: invType,
         status: paymentStatus,
         note: notes.trim() || "",
         vat: totalVat,
@@ -902,16 +917,14 @@ export const CreateSaleForm: React.FC = () => {
         posName: null,
         mfsReceived: numMfs,
         mfsId: numMfs > 0 ? selectedMfsId : null,
-        mfsDetails: null,
-        mfsName: numMfs > 0 ? mfsName : null,
-        mfsMethod: numMfs > 0 ? mfsName : null,
-        mfsPhone: numMfs > 0 ? mfsPhone : null,
+        mfsName: numMfs > 0 ? (finalMfsName || null) : null,
+        mfsPhone: numMfs > 0 ? (finalMfsPhone || null) : null,
         customerPaid: Number(cashGiven) || (numCash > 0 ? numCash : totalPaid),
         returnAmount: changeReturnAmount,
         bankId: numBank > 0 ? selectedBankId : null,
-        bankName: numBank > 0 ? bankName : null,
-        accountNo: numBank > 0 ? accountNo : null,
-        bankAccountName: numBank > 0 ? bankRef : null,
+        bankName: numBank > 0 ? (finalBankName || null) : null,
+        accountNo: numBank > 0 ? (finalAccountNo || null) : null,
+        bankAccountName: numBank > 0 ? (finalBankRef || null) : null,
         salesDetails,
       };
 
@@ -1968,14 +1981,16 @@ export const CreateSaleForm: React.FC = () => {
                   <option value="" className="text-black">
                     {registeredMfsAccounts.length ? "Select MFS..." : "No MFS registered"}
                   </option>
-                  {registeredMfsAccounts.map((m) => (
-                    <option key={m.id || m.mfsId || m._id} value={m.id || m.mfsId || m._id} className="text-black">
-                      {m.mfsName || m.name}
-                      {m.method || m.mfsMethod || m.mobileNo || m.phone
-                        ? ` – ${m.method || m.mfsMethod || m.mobileNo || m.phone}`
-                        : ""}
-                    </option>
-                  ))}
+                  {registeredMfsAccounts.map((m) => {
+                    const nameVal = m.name || m.mfsName || m.method || "MFS";
+                    const phoneVal = m.phoneNumber || m.mfsPhone || m.phone || "";
+                    return (
+                      <option key={m.id || m.mfsId || m._id} value={m.id || m.mfsId || m._id} className="text-black">
+                        {nameVal}
+                        {phoneVal ? ` – ${phoneVal}` : ""}
+                      </option>
+                    );
+                  })}
                 </select>
               </div>
 

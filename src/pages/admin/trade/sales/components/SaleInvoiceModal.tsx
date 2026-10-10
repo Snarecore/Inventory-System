@@ -190,17 +190,25 @@ export const SaleInvoiceModal: React.FC<SaleInvoiceModalProps> = ({
               <p className="font-semibold text-gray-800 text-xs">
                 Method:{" "}
                 <span className="text-primary font-black uppercase">
-                  {s.paymentType || s.payment_type || "CASH"}
+                  {s.inv_type === "MULTI" || s.invType === "MULTI" || String(s.paymentType || s.payment_type).toLowerCase() === "multi"
+                    ? "MULTI (SPLIT)"
+                    : s.paymentType || s.payment_type || "CASH"}
                 </span>
               </p>
+              {Number(s.cashReceived || s.cash_amount) > 0 && (
+                <p className="text-gray-600 text-[11px]">
+                  Cash: ৳{formatMoney(Number(s.cashReceived || s.cash_amount))}
+                </p>
+              )}
               {s.bankName && (
                 <p className="text-gray-600 text-[11px]">
-                  Bank: {s.bankName} ({s.accountNo || ""})
+                  Bank: {s.bankName} {Number(s.cardReceived || s.bankAmount || s.bank_amount) > 0 ? `(৳${formatMoney(Number(s.cardReceived || s.bankAmount || s.bank_amount))})` : `(${s.accountNo || ""})`}
                 </p>
               )}
               {s.mfsName && (
                 <p className="text-gray-600 text-[11px]">
-                  MFS: {s.mfsName} ({s.mfsPhone || ""})
+                  MFS: {s.mfsName} {Number(s.mfsReceived || s.mfsAmount || s.mfs_amount) > 0 ? `(৳${formatMoney(Number(s.mfsReceived || s.mfsAmount || s.mfs_amount))})` : ""}
+                  {(s.mfsPhone || s.mfsPhoneNumber) ? ` – ${s.mfsPhone || s.mfsPhoneNumber}` : ""}
                 </p>
               )}
             </div>
@@ -275,10 +283,10 @@ export const SaleInvoiceModal: React.FC<SaleInvoiceModalProps> = ({
           {/* Summary Calculation */}
           <div className="flex flex-col sm:flex-row justify-between items-start gap-3 pt-1">
             <div className="text-[11px] text-gray-500 max-w-xs">
-              {s.note || s.remarks ? (
+              {s.note || s.notes || s.remarks ? (
                 <div className="p-2 bg-gray-50 rounded-lg border border-gray-200">
-                  <span className="font-bold text-gray-700 block mb-0.5">Notes:</span>
-                  <p>{s.note || s.remarks}</p>
+                  <span className="font-bold text-gray-700 block mb-0.5">Notes / Remarks:</span>
+                  <p className="text-gray-800 font-medium whitespace-pre-wrap">{s.note || s.notes || s.remarks}</p>
                 </div>
               ) : null}
               <div className="mt-2 text-[10px] text-gray-400">
