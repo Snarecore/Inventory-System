@@ -10,6 +10,7 @@ import {
   FaSlidersH,
   FaCheck,
   FaPlus,
+  FaTimes,
   FaPrint,
   FaCalculator,
   FaMoneyBillWave,
@@ -56,12 +57,6 @@ interface FormLineItem {
   vat: string;
   total: number;
   stock?: number | string;
-}
-
-interface SelectedProductEntry {
-  product: ProductItem;
-  quantity: string;
-  buyPrice: string;
 }
 
 const defaultChallanSettings: PurchaseChallanSettings = {
@@ -126,7 +121,6 @@ const CreatePurchaseForm: React.FC = () => {
   const [lineItems, setLineItems] = useState<FormLineItem[]>([]);
   const [productSearchQuery, setProductSearchQuery] = useState<string>("");
   const [isProductDropdownOpen, setIsProductDropdownOpen] = useState<boolean>(false);
-  const [selectedProductsMap, setSelectedProductsMap] = useState<Record<string, SelectedProductEntry>>({});
   const productSearchRef = useRef<HTMLDivElement>(null);
 
   // Invoice-level Financials
@@ -769,11 +763,6 @@ const CreatePurchaseForm: React.FC = () => {
     return Math.round((baseAmount + vatAmount) * 100) / 100;
   };
 
-  const selectedProductCount = useMemo(
-    () => Object.keys(selectedProductsMap).length,
-    [selectedProductsMap]
-  );
-
   // Helper to check if a product is already added in the purchase line items list
   const isProductAlreadyInList = (product: ProductItem) => {
     const pId = product.id ?? product.productId;
@@ -790,144 +779,46 @@ const CreatePurchaseForm: React.FC = () => {
     });
   };
 
-  // Toggle selection for a product in dropdown
-  const handleToggleSelectProduct = (product: ProductItem) => {
-    if (isProductAlreadyInList(product)) {
-      showErrorToast("This product is already added to the purchase list.");
-      return;
-    }
-    const key = String(product.id ?? product.productId ?? product.pcode ?? product.productCode ?? "");
-    if (!key) return;
-    setSelectedProductsMap((prev) => {
-      const copy = { ...prev };
-      if (copy[key]) {
-        delete copy[key];
-      } else {
-        const bp = Number(product.buy_price ?? product.buyPrice ?? 0);
-        copy[key] = {
-          product,
-          quantity: "1",
-          buyPrice: bp > 0 ? String(bp) : "",
-        };
-      }
-      return copy;
-    });
-  };
+  // Toggle adding or removing a product from line items directly
+  const handleToggleProductInList = (product: ProductItem) => {
+    const pId = product.id ?? product.productId ?? "";
+    const pCode = product.pcode || product.productCode || "";
+    const isAlreadyIn = isProductAlreadyInList(product);
 
-  // Inline update for selected product in dropdown
-  const handleUpdateDropdownItem = (key: string, field: "quantity" | "buyPrice", value: string) => {
-    setSelectedProductsMap((prev) => {
-      if (!prev[key]) return prev;
-      return {
-        ...prev,
-        [key]: {
-          ...prev[key],
-          [field]: value,
-        },
+    if (isAlreadyIn) {
+      setLineItems((prev) =>
+        prev.filter((item) => {
+          if (pId && item.productId && String(item.productId) === String(pId)) return false;
+          if (pCode && item.productCode && String(item.productCode).trim().toLowerCase() === String(pCode).trim().toLowerCase()) return false;
+          return true;
+        })
+      );
+    } else {
+      const prodName = product.name || product.productName || "Product";
+      const prodUnit = product.unit || "pcs";
+      const buyPrice = Number(product.buy_price ?? product.buyPrice ?? 0);
+      const currentStock = Number(product.stock ?? product.quantity ?? 0);
+
+      const newLine: FormLineItem = {
+        productId: pId,
+        productCode: pCode,
+        productName: prodName,
+        unit: prodUnit,
+        buyPrice: buyPrice > 0 ? String(buyPrice) : "",
+        quantity: "1",
+        vat: "",
+        total: buyPrice,
+        stock: currentStock,
       };
-    });
-  };
-
-  // Done button handler: Add all selected / checked products to line items
-  const handleDoneSelectProducts = () => {
-    const selectedEntries = Object.values(selectedProductsMap);
-    if (selectedEntries.length === 0) {
-      setIsProductDropdownOpen(false);
-      return;
+      setLineItems((prev) => [...prev, newLine]);
     }
-
-    setLineItems((prev) => {
-      const updated = [...prev];
-
-      selectedEntries.forEach(({ product, quantity, buyPrice }) => {
-        const prodId = product.id ?? product.productId ?? "";
-        const prodCode = product.pcode || product.productCode || "";
-        const prodName = product.name || product.productName || "Product";
-        const prodUnit = product.unit || "pcs";
-        const currentStock = Number(product.stock ?? product.quantity ?? 0);
-        const addQty = Number(quantity) || 1;
-        const numBuyPrice = Number(buyPrice) || 0;
-
-        const existingIdx = updated.findIndex((item) => {
-          if (prodId && item.productId && String(item.productId) === String(prodId)) return true;
-          if (prodCode && item.productCode && String(item.productCode).trim().toLowerCase() === String(prodCode).trim().toLowerCase()) return true;
-          return false;
-        });
-
-        if (existingIdx >= 0) {
-          const item = updated[existingIdx];
-          const existingQty = Number(item.quantity) || 0;
-          const newQty = String(existingQty + addQty);
-          const finalBuyPrice = buyPrice || item.buyPrice;
-          const total = computeLineTotal(finalBuyPrice, newQty, item.vat);
-          updated[existingIdx] = { ...item, buyPrice: finalBuyPrice, quantity: newQty, total };
-        } else {
-          const finalBuyPrice = buyPrice || (numBuyPrice > 0 ? String(numBuyPrice) : "");
-          const newLine: FormLineItem = {
-            productId: prodId,
-            productCode: prodCode,
-            productName: prodName,
-            unit: prodUnit,
-            buyPrice: finalBuyPrice,
-            quantity: String(addQty),
-            vat: "",
-            total: computeLineTotal(finalBuyPrice, String(addQty), ""),
-            stock: currentStock,
-          };
-          updated.push(newLine);
-        }
-      });
-
-      return updated;
-    });
-
-    setSelectedProductsMap({});
-    setProductSearchQuery("");
-    setIsProductDropdownOpen(false);
-  };
-
-  // Add Single Product to line items (or toggle)
-  const handleAddProduct = (product: ProductItem) => {
-    if (isProductAlreadyInList(product)) {
-      showErrorToast("This product is already added to the purchase list.");
-      return;
-    }
-    const prodId = product.id ?? product.productId ?? "";
-    const prodCode = product.pcode || product.productCode || "";
-    const prodName = product.name || product.productName || "Product";
-    const prodUnit = product.unit || "pcs";
-    const buyPrice = Number(product.buy_price ?? product.buyPrice ?? 0);
-    const currentStock = Number(product.stock ?? product.quantity ?? 0);
-
-    const newLine: FormLineItem = {
-      productId: prodId,
-      productCode: prodCode,
-      productName: prodName,
-      unit: prodUnit,
-      buyPrice: buyPrice > 0 ? String(buyPrice) : "",
-      quantity: "1",
-      vat: "",
-      total: buyPrice,
-      stock: currentStock,
-    };
-    setLineItems((prev) => [...prev, newLine]);
-
-    setProductSearchQuery("");
-    setIsProductDropdownOpen(false);
   };
 
   const handleKeyDownSearch = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") {
       e.preventDefault();
-      const selectedList = Object.values(selectedProductsMap);
-      if (selectedList.length > 0) {
-        handleDoneSelectProducts();
-      } else if (filteredProducts.length === 1) {
-        if (!isProductAlreadyInList(filteredProducts[0])) {
-          handleAddProduct(filteredProducts[0]);
-        } else {
-          showErrorToast("This product is already added to the purchase list.");
-        }
+      if (filteredProducts.length === 1) {
+        handleToggleProductInList(filteredProducts[0]);
       }
     }
   };
@@ -1758,29 +1649,30 @@ const CreatePurchaseForm: React.FC = () => {
             />
           </div>
 
-          {/* Dynamic Button: Add Your Product (when 0) / Done (when >0) */}
-          <button
-            type="button"
-            onClick={selectedProductCount > 0 ? handleDoneSelectProducts : () => setIsProductDropdownOpen(true)}
-            className={`px-3 sm:px-3.5 h-9 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all shadow-xs shrink-0 cursor-pointer ${
-              selectedProductCount > 0
-                ? "bg-[var(--color-primary)] text-white ring-2 ring-[var(--color-primary)]/20"
-                : "bg-[#0F365C] text-white border-gray-200"
-            }`}
-          >
-            {selectedProductCount > 0 ? (
-              <>
-                <FaCheck size={11} />
-                <span>Done ({selectedProductCount})</span>
-              </>
-            ) : (
-              <>
-                <FaPlus size={10} className="text-white" />
-                <span className="hidden sm:inline">Add Your Product</span>
-                <span className="sm:hidden">Add</span>
-              </>
-            )}
-          </button>
+          {/* Dynamic Button: Cancel (when open) / Add Your Product (when closed) */}
+          {isProductDropdownOpen ? (
+            <button
+              type="button"
+              onClick={() => {
+                setIsProductDropdownOpen(false);
+                setProductSearchQuery("");
+              }}
+              className="px-3 sm:px-3.5 h-9 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all shadow-xs shrink-0 cursor-pointer bg-gray-100 hover:bg-gray-200 text-black border border-gray-300"
+            >
+              <FaTimes size={11} className="text-gray-600" />
+              <span>Cancel</span>
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setIsProductDropdownOpen(true)}
+              className="px-3 sm:px-3.5 h-9 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all shadow-xs shrink-0 cursor-pointer bg-[#0F365C] hover:bg-[#0a2540] text-white"
+            >
+              <FaPlus size={10} className="text-white" />
+              <span className="hidden sm:inline">Add Your Product</span>
+              <span className="sm:hidden">Add</span>
+            </button>
+          )}
         </div>
 
         {/* Product Search Results Dropdown */}
@@ -1790,57 +1682,37 @@ const CreatePurchaseForm: React.FC = () => {
               filteredProducts.map((p) => {
                 const prodKey = String(p.id ?? p.productId ?? p.pcode ?? p.productCode ?? "");
                 const isAlreadyInList = isProductAlreadyInList(p);
-                const selectedEntry = selectedProductsMap[prodKey];
-                const isSelected = Boolean(selectedEntry);
                 const defaultBuyPrice = Number(p.buy_price ?? p.buyPrice ?? 0);
                 const stock = Number(p.stock ?? p.quantity ?? 0);
 
                 return (
                   <div
                     key={prodKey}
-                    onClick={() => {
-                      if (isAlreadyInList) {
-                        showErrorToast("This product is already in the purchase list.");
-                        return;
-                      }
-                      handleToggleSelectProduct(p);
-                    }}
-                    className={`p-2 sm:p-2.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs transition-colors select-none ${
+                    onClick={() => handleToggleProductInList(p)}
+                    className={`p-2 sm:p-2.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs transition-colors select-none cursor-pointer ${
                       isAlreadyInList
-                        ? "bg-gray-100/80 cursor-not-allowed opacity-75 border-l-4 border-l-gray-300"
-                        : isSelected
-                        ? "bg-sky-50/90 border-l-4 border-l-[var(--color-primary)] cursor-pointer"
-                        : "hover:bg-gray-50 border-l-4 border-l-transparent cursor-pointer"
+                        ? "bg-sky-50/70 hover:bg-sky-100/70 border-l-4 border-l-[var(--color-primary)]"
+                        : "hover:bg-gray-50 border-l-4 border-l-transparent"
                     }`}
                   >
                     <div className="flex items-center gap-2.5 min-w-0">
                       {/* Checkbox */}
                       <div
-                        className={`w-4 h-4 rounded border flex items-center justify-center transition-colors shrink-0 ${
+                        className={`w-4 h-4 rounded border flex items-center justify-center transition-colors shrink-0 cursor-pointer ${
                           isAlreadyInList
-                            ? "bg-gray-200 border-gray-400 text-gray-600 cursor-not-allowed"
-                            : isSelected
                             ? "bg-[var(--color-primary)] border-[var(--color-primary)] text-white"
                             : "border-gray-300 bg-white hover:border-[var(--color-primary)]"
                         }`}
-                        title={isAlreadyInList ? "Already added to purchase list" : undefined}
+                        title={isAlreadyInList ? "Click to remove from list" : "Click to add to list"}
                       >
-                        {isAlreadyInList ? (
-                          <FaCheck size={9} className="text-gray-600" />
-                        ) : isSelected ? (
-                          <FaCheck size={9} />
-                        ) : null}
+                        {isAlreadyInList && <FaCheck size={9} />}
                       </div>
 
                       <div className="flex flex-col min-w-0">
                         <div className="flex items-center gap-1.5 flex-wrap">
                           <span
                             className={`font-bold truncate ${
-                              isAlreadyInList
-                                ? "text-gray-700"
-                                : isSelected
-                                ? "text-[var(--color-primary)]"
-                                : "text-black"
+                              isAlreadyInList ? "text-[var(--color-primary)]" : "text-black"
                             }`}
                           >
                             {p.name || p.productName}
@@ -1857,76 +1729,15 @@ const CreatePurchaseForm: React.FC = () => {
                       </div>
                     </div>
 
-                    {/* Interactive inputs if selected, or read-only summary if not */}
-                    {!isAlreadyInList && isSelected ? (
-                      <div
-                        className="flex items-center gap-2 flex-wrap sm:flex-nowrap shrink-0"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        {/* Current Stock Badge */}
-                        <span className="text-[11px] px-2 py-1 rounded-md bg-gray-100 border border-gray-200 text-gray-700 font-medium">
-                          Stock: <span className="font-bold text-black">{stock}</span>
-                        </span>
-
-                        {/* Quantity Stepper Input */}
-                        <div className="flex items-center border border-gray-300 rounded-md overflow-hidden bg-white h-7 shadow-2xs">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              const q = Math.max(1, (Number(selectedEntry.quantity) || 1) - 1);
-                              handleUpdateDropdownItem(prodKey, "quantity", String(q));
-                            }}
-                            className="px-2 bg-gray-100 hover:bg-gray-200 text-black font-bold text-xs h-full flex items-center justify-center cursor-pointer"
-                          >
-                            -
-                          </button>
-                          <input
-                            type="number"
-                            min="1"
-                            value={selectedEntry.quantity}
-                            onWheel={(e) => e.currentTarget.blur()}
-                            onChange={(e) => handleUpdateDropdownItem(prodKey, "quantity", e.target.value)}
-                            className="w-12 text-center font-bold text-xs text-black focus:outline-none h-full border-x border-gray-200"
-                            title="Purchase Quantity"
-                            placeholder="Qty"
-                          />
-                          <button
-                            type="button"
-                            onClick={() => {
-                              const q = (Number(selectedEntry.quantity) || 0) + 1;
-                              handleUpdateDropdownItem(prodKey, "quantity", String(q));
-                            }}
-                            className="px-2 bg-gray-100 hover:bg-gray-200 text-black font-bold text-xs h-full flex items-center justify-center cursor-pointer"
-                          >
-                            +
-                          </button>
-                        </div>
-
-                        {/* Editable Buy Price Input */}
-                        <div className="relative inline-block w-24">
-                          <span className="absolute left-1.5 top-1.5 text-black font-bold text-[11px]">৳</span>
-                          <input
-                            type="number"
-                            step="0.01"
-                            value={selectedEntry.buyPrice}
-                            placeholder="0"
-                            onWheel={(e) => e.currentTarget.blur()}
-                            onChange={(e) => handleUpdateDropdownItem(prodKey, "buyPrice", e.target.value)}
-                            className="w-full pl-4 pr-1.5 py-1 text-xs border border-gray-300 rounded-md bg-white text-right font-bold text-black focus:outline-none focus:border-[var(--color-primary)] h-7 shadow-2xs"
-                            title="Buy Price for this purchase"
-                          />
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="flex items-center gap-3 shrink-0">
-                        <span className="text-[11px] px-2 py-0.5 rounded bg-gray-100 text-gray-700">
-                          Stock: <span className="font-semibold">{stock}</span>
-                        </span>
-                        <span className="font-bold text-black text-right min-w-[70px]">
-                          ৳ {formatMoney(defaultBuyPrice)}
-                        </span>
-                      </div>
-                    )}
+                    {/* Stock & Buy Price summary */}
+                    <div className="flex items-center gap-3 shrink-0">
+                      <span className="text-[11px] px-2 py-0.5 rounded bg-gray-100 text-gray-700">
+                        Stock: <span className="font-semibold text-black">{stock}</span>
+                      </span>
+                      <span className="font-bold text-black text-right min-w-[70px]">
+                        ৳ {formatMoney(defaultBuyPrice)}
+                      </span>
+                    </div>
                   </div>
                 );
               })
