@@ -918,27 +918,116 @@ const CreatePurchaseForm: React.FC = () => {
     return 0;
   }, [cashGiven, numCash]);
 
+  // Payment normalizer & capping helper (exact amount cannot be exceeded)
+  const normalizePaymentValue = (val: string, max: number): string => {
+    if (val === "" || val === undefined || val === null) return "";
+    if (val === ".") return "0.";
+    const num = Number(val);
+    if (isNaN(num)) return "";
+    if (num < 0) return "0";
+    if (num > max) return String(max);
+    return val;
+  };
+
+  // Card Amount Change: cannot enter if bank not selected; auto deducts from cash; caps to max
+  const handleCardAmountChange = (rawVal: string) => {
+    if (!selectedBankId) {
+      showErrorToast("Please select a bank first before entering card amount");
+      return;
+    }
+    const currentMfs = Number(mfsAmount) || 0;
+    const maxForCard = Math.max(0, grandTotal - currentMfs);
+    const normalized = normalizePaymentValue(rawVal, maxForCard);
+    setBankAmount(normalized);
+
+    const numCard = Number(normalized) || 0;
+    const remainingCash = Math.max(0, grandTotal - numCard - currentMfs);
+    setCashAmount(remainingCash > 0 ? String(Math.round(remainingCash * 100) / 100) : "0");
+  };
+
+  // MFS Amount Change: cannot enter if MFS not selected; auto deducts from cash; caps to max
+  const handleMfsAmountChange = (rawVal: string) => {
+    if (!selectedMfsId) {
+      showErrorToast("Please select an MFS provider first before entering MFS amount");
+      return;
+    }
+    const currentCard = Number(bankAmount) || 0;
+    const maxForMfs = Math.max(0, grandTotal - currentCard);
+    const normalized = normalizePaymentValue(rawVal, maxForMfs);
+    setMfsAmount(normalized);
+
+    const numMfsVal = Number(normalized) || 0;
+    const remainingCash = Math.max(0, grandTotal - currentCard - numMfsVal);
+    setCashAmount(remainingCash > 0 ? String(Math.round(remainingCash * 100) / 100) : "0");
+  };
+
+  // Cash Amount Change: cannot exceed remaining amount
+  const handleCashAmountChange = (rawVal: string) => {
+    const currentCard = Number(bankAmount) || 0;
+    const currentMfs = Number(mfsAmount) || 0;
+    const maxForCash = Math.max(0, grandTotal - currentCard - currentMfs);
+    const normalized = normalizePaymentValue(rawVal, maxForCash);
+    setCashAmount(normalized);
+  };
+
+  // Auto-sync initial cash amount with grandTotal when grandTotal changes
+  useEffect(() => {
+    const currentCard = Number(bankAmount) || 0;
+    const currentMfs = Number(mfsAmount) || 0;
+
+    if (currentCard === 0 && currentMfs === 0) {
+      if (grandTotal > 0) {
+        setCashAmount(String(grandTotal));
+      } else {
+        setCashAmount("");
+      }
+    } else {
+      const remainingCash = Math.max(0, grandTotal - currentCard - currentMfs);
+      setCashAmount(remainingCash > 0 ? String(Math.round(remainingCash * 100) / 100) : "0");
+    }
+  }, [grandTotal]);
+
   // Quick Payment presets
   const handlePayFullCash = () => {
-    setCashAmount(String(grandTotal));
+    setCashAmount(grandTotal > 0 ? String(grandTotal) : "");
     setBankAmount("");
     setMfsAmount("");
   };
 
   const handlePayFullBank = () => {
-    setBankAmount(String(grandTotal));
-    setCashAmount("");
+    if (!selectedBankId) {
+      if (registeredBankAccounts.length > 0) {
+        const firstBank = registeredBankAccounts[0];
+        const bId = String(firstBank.id || firstBank.bankId || firstBank._id || "");
+        handleSelectRegisteredBank(bId);
+      } else {
+        showErrorToast("Please select / register a bank account first");
+        return;
+      }
+    }
+    setBankAmount(grandTotal > 0 ? String(grandTotal) : "");
+    setCashAmount("0");
     setMfsAmount("");
   };
 
   const handlePayFullMfs = () => {
-    setMfsAmount(String(grandTotal));
-    setCashAmount("");
+    if (!selectedMfsId) {
+      if (registeredMfsAccounts.length > 0) {
+        const firstMfs = registeredMfsAccounts[0];
+        const mId = String(firstMfs.id || firstMfs.mfsId || firstMfs._id || "");
+        handleSelectRegisteredMfs(mId);
+      } else {
+        showErrorToast("Please select / register an MFS account first");
+        return;
+      }
+    }
+    setMfsAmount(grandTotal > 0 ? String(grandTotal) : "");
+    setCashAmount("0");
     setBankAmount("");
   };
 
   const handlePayFullCredit = () => {
-    setCashAmount("");
+    setCashAmount("0");
     setBankAmount("");
     setMfsAmount("");
   };
@@ -957,6 +1046,11 @@ const CreatePurchaseForm: React.FC = () => {
       setBankName("");
       setAccountNo("");
       setBankRef("");
+      if (bankAmount) {
+        setBankAmount("");
+        const remCash = Math.max(0, grandTotal - (Number(mfsAmount) || 0));
+        setCashAmount(remCash > 0 ? String(remCash) : "");
+      }
     }
   };
 
@@ -972,6 +1066,11 @@ const CreatePurchaseForm: React.FC = () => {
     } else {
       setMfsName("bKash");
       setMfsPhone("");
+      if (mfsAmount) {
+        setMfsAmount("");
+        const remCash = Math.max(0, grandTotal - (Number(bankAmount) || 0));
+        setCashAmount(remCash > 0 ? String(remCash) : "");
+      }
     }
   };
 
@@ -1010,6 +1109,16 @@ const CreatePurchaseForm: React.FC = () => {
       }
     }
 
+    // Validate Bank & MFS selection if amount entered
+    if (Number(bankAmount) > 0 && !selectedBankId) {
+      showErrorToast("Please select a bank account for Card / Bank payment");
+      return;
+    }
+    if (Number(mfsAmount) > 0 && !selectedMfsId) {
+      showErrorToast("Please select an MFS provider for MFS payment");
+      return;
+    }
+
     setPendingSavePrint(shouldPrint);
     setIsSaveConfirmModalOpen(true);
   };
@@ -1035,6 +1144,16 @@ const CreatePurchaseForm: React.FC = () => {
         showErrorToast(`Please enter a valid quantity for "${item.productName}"`);
         return;
       }
+    }
+
+    // Validate Bank & MFS selection if amount entered
+    if (Number(bankAmount) > 0 && !selectedBankId) {
+      showErrorToast("Please select a bank account for Card / Bank payment");
+      return;
+    }
+    if (Number(mfsAmount) > 0 && !selectedMfsId) {
+      showErrorToast("Please select an MFS provider for MFS payment");
+      return;
     }
 
     setIsSubmitting(true);
@@ -2166,7 +2285,7 @@ const CreatePurchaseForm: React.FC = () => {
                   placeholder="0"
                   value={cashAmount}
                   onWheel={(e) => e.currentTarget.blur()}
-                  onChange={(e) => setCashAmount(e.target.value)}
+                  onChange={(e) => handleCashAmountChange(e.target.value)}
                   className="w-full text-right px-1.5 text-xs font-bold text-black outline-none bg-transparent placeholder:text-gray-400 h-full"
                 />
               </div>
@@ -2243,23 +2362,39 @@ const CreatePurchaseForm: React.FC = () => {
               </div>
 
               <div
-                className={`flex items-center h-6.5 rounded border bg-white overflow-hidden w-26 xs:w-30 sm:w-34 shrink-0 transition-colors shadow-2xs ${
-                  Number(bankAmount) > 0
-                    ? "border-sky-500 ring-1 ring-sky-500/50"
-                    : "border-gray-300 focus-within:border-sky-500 focus-within:ring-1 focus-within:ring-sky-500"
+                onClick={() => {
+                  if (!selectedBankId) {
+                    showErrorToast("Please select a bank first");
+                  }
+                }}
+                className={`flex items-center h-6.5 rounded border overflow-hidden w-26 xs:w-30 sm:w-34 shrink-0 transition-colors shadow-2xs ${
+                  !selectedBankId
+                    ? "border-gray-200 bg-gray-100 opacity-60 cursor-not-allowed"
+                    : Number(bankAmount) > 0
+                    ? "border-sky-500 bg-white ring-1 ring-sky-500/50"
+                    : "border-gray-300 bg-white focus-within:border-sky-500 focus-within:ring-1 focus-within:ring-sky-500"
                 }`}
               >
-                <span className="text-[11px] text-gray-600 font-bold px-1.5 bg-gray-50 h-full flex items-center border-r border-gray-200 select-none">
+                <span
+                  className={`text-[11px] font-bold px-1.5 h-full flex items-center border-r border-gray-200 select-none ${
+                    !selectedBankId ? "text-gray-400 bg-gray-100" : "text-gray-600 bg-gray-50"
+                  }`}
+                >
                   ৳
                 </span>
                 <input
                   type="number"
                   step="0.01"
                   placeholder="0"
+                  disabled={!selectedBankId}
                   value={bankAmount}
                   onWheel={(e) => e.currentTarget.blur()}
-                  onChange={(e) => setBankAmount(e.target.value)}
-                  className="w-full text-right px-1.5 text-xs font-bold text-black outline-none bg-transparent placeholder:text-gray-400 h-full"
+                  onChange={(e) => handleCardAmountChange(e.target.value)}
+                  className={`w-full text-right px-1.5 text-xs font-bold outline-none bg-transparent h-full ${
+                    !selectedBankId
+                      ? "text-gray-400 cursor-not-allowed placeholder:text-gray-300"
+                      : "text-black placeholder:text-gray-400"
+                  }`}
                 />
               </div>
             </div>
@@ -2297,23 +2432,39 @@ const CreatePurchaseForm: React.FC = () => {
               </div>
 
               <div
-                className={`flex items-center h-6.5 rounded border bg-white overflow-hidden w-26 xs:w-30 sm:w-34 shrink-0 transition-colors shadow-2xs ${
-                  Number(mfsAmount) > 0
-                    ? "border-purple-500 ring-1 ring-purple-500/50"
-                    : "border-gray-300 focus-within:border-purple-500 focus-within:ring-1 focus-within:ring-purple-500"
+                onClick={() => {
+                  if (!selectedMfsId) {
+                    showErrorToast("Please select an MFS provider first");
+                  }
+                }}
+                className={`flex items-center h-6.5 rounded border overflow-hidden w-26 xs:w-30 sm:w-34 shrink-0 transition-colors shadow-2xs ${
+                  !selectedMfsId
+                    ? "border-gray-200 bg-gray-100 opacity-60 cursor-not-allowed"
+                    : Number(mfsAmount) > 0
+                    ? "border-purple-500 bg-white ring-1 ring-purple-500/50"
+                    : "border-gray-300 bg-white focus-within:border-purple-500 focus-within:ring-1 focus-within:ring-purple-500"
                 }`}
               >
-                <span className="text-[11px] text-gray-600 font-bold px-1.5 bg-gray-50 h-full flex items-center border-r border-gray-200 select-none">
+                <span
+                  className={`text-[11px] font-bold px-1.5 h-full flex items-center border-r border-gray-200 select-none ${
+                    !selectedMfsId ? "text-gray-400 bg-gray-100" : "text-gray-600 bg-gray-50"
+                  }`}
+                >
                   ৳
                 </span>
                 <input
                   type="number"
                   step="0.01"
                   placeholder="0"
+                  disabled={!selectedMfsId}
                   value={mfsAmount}
                   onWheel={(e) => e.currentTarget.blur()}
-                  onChange={(e) => setMfsAmount(e.target.value)}
-                  className="w-full text-right px-1.5 text-xs font-bold text-black outline-none bg-transparent placeholder:text-gray-400 h-full"
+                  onChange={(e) => handleMfsAmountChange(e.target.value)}
+                  className={`w-full text-right px-1.5 text-xs font-bold outline-none bg-transparent h-full ${
+                    !selectedMfsId
+                      ? "text-gray-400 cursor-not-allowed placeholder:text-gray-300"
+                      : "text-black placeholder:text-gray-400"
+                  }`}
                 />
               </div>
             </div>

@@ -36,7 +36,6 @@ const Blogs = React.lazy(() => import('@/pages/admin/blog'))
 const BlogCreation = React.lazy(() => import('@/pages/admin/blog-creation'))
 const Purchases = React.lazy(() => import('@/pages/admin/trade/purchases'))
 const CreatePurchase = React.lazy(() => import('@/pages/admin/trade/create-purchase'))
-const PurchaseOrders = React.lazy(() => import('@/pages/admin/trade/purchase-orders'))
 
 const LoadingFallback = () => (
   <div className="flex h-64 w-full items-center justify-center">
@@ -74,7 +73,7 @@ export const router = createBrowserRouter([
   },
   {
     path: '/purchase/orders',
-    element: <Navigate to="/admin/purchase-orders" replace />,
+    element: <Navigate to="/admin/purchases" replace />,
   },
   {
     path: '/purchase/invoices',
@@ -175,10 +174,6 @@ export const router = createBrowserRouter([
       {
         path: 'edit-purchase/:id',
         element: withSuspense(CreatePurchase),
-      },
-      {
-        path: 'purchase-orders',
-        element: withSuspense(PurchaseOrders),
       },
       {
         path: 'customers',
