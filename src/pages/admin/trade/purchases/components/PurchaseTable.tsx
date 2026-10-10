@@ -374,7 +374,7 @@ export const PurchaseTable: React.FC<PurchaseTableProps> = ({
       {/* Main Table Content */}
       <div className="overflow-x-auto w-full relative z-10">
         {isLoading ? (
-          <TableSkeleton columnCount={9} rowCount={8} />
+          <TableSkeleton columnCount={11} rowCount={8} />
         ) : purchases.length === 0 ? (
           <EmptyState
             title="No Purchases Found"
@@ -386,6 +386,7 @@ export const PurchaseTable: React.FC<PurchaseTableProps> = ({
               <tr className="bg-[#41BEF3] text-black text-xs font-semibold">
                 <th className="py-2.5 px-3 text-center w-10">SL</th>
                 <th className="py-2.5 px-3">Supplier</th>
+                <th className="py-2.5 px-3">Phone</th>
                 <th className="py-2.5 px-3">Date</th>
                 <th className="py-2.5 px-3 text-center">Items</th>
                 <th className="py-2.5 px-3 text-right">Total (৳)</th>
@@ -447,53 +448,52 @@ export const PurchaseTable: React.FC<PurchaseTableProps> = ({
                     className="hover:bg-sky-50/40 transition-colors group"
                   >
                     {/* SL */}
-                    <td className="py-2.5 px-3 text-center text-black text-[11px]">
+                    <td className="py-2.5 px-3 text-center text-black text-xs font-normal">
                       {serialNumber}
                     </td>
 
                     {/* Supplier */}
-                    <td className="py-2.5 px-3">
-                      <span className="font-medium text-black block truncate max-w-[170px]">
-                        {purchase.supplierName || "Direct Supplier"}
-                      </span>
+                    <td className="py-2.5 px-3 text-black text-xs font-normal whitespace-nowrap">
+                      {purchase.supplierName || "Direct Supplier"}
+                    </td>
+
+                    {/* Phone */}
+                    <td className="py-2.5 px-3 text-black text-xs font-normal whitespace-nowrap">
+                      {purchase.supplierPhone || "-"}
                     </td>
 
                     {/* Date */}
-                    <td className="py-2.5 px-3 text-black whitespace-nowrap">
-                      <span className="flex items-center gap-1 text-[11px]">
+                    <td className="py-2.5 px-3 text-black text-xs font-normal whitespace-nowrap">
+                      <span className="flex items-center gap-1 text-[11px] text-black font-normal">
                         {purchase.purchaseDate || (purchase.createdAt ? purchase.createdAt.substring(0, 10) : "N/A")}
                       </span>
                     </td>
 
                     {/* Items */}
                     <td className="py-2.5 px-3 text-center">
-                      <span className="inline-block px-1.5 py-0.5 bg-gray-100 text-black rounded text-[11px] font-medium">
+                      <span className="inline-block px-1.5 py-0.5 bg-gray-100 text-black rounded text-[11px] font-normal">
                         {itemsCount}
                       </span>
                     </td>
 
                     {/* Grand Total */}
-                    <td className="py-2.5 px-3 text-right font-semibold text-black">
+                    <td className="py-2.5 px-3 text-right text-black text-xs font-normal">
                       ৳ {formatMoney(grandTotal)}
                     </td>
 
                     {/* Paid */}
-                    <td className="py-2.5 px-3 text-right font-medium text-emerald-700">
+                    <td className="py-2.5 px-3 text-right text-black text-xs font-normal">
                       ৳ {formatMoney(paidAmount)}
                     </td>
 
                     {/* Due */}
-                    <td
-                      className={`py-2.5 px-3 text-right font-medium  ${
-                        dueAmount > 0 ? "text-rose-700" : "text-black"
-                      }`}
-                    >
+                    <td className="py-2.5 px-3 text-right text-black text-xs font-normal">
                       ৳ {formatMoney(dueAmount)}
                     </td>
 
                     {/* Method */}
                     <td className="py-2.5 px-3 text-center">
-                      <span className="inline-block px-2 py-0.5 rounded text-[10px] font-medium bg-sky-50 text-sky-800 border border-sky-200">
+                      <span className="inline-block px-2 py-0.5 rounded text-[10px] font-normal bg-sky-50 text-black border border-sky-200">
                         {paymentType}
                       </span>
                     </td>
@@ -501,7 +501,7 @@ export const PurchaseTable: React.FC<PurchaseTableProps> = ({
                     {/* Status */}
                     <td className="py-2.5 px-3 text-center">
                       <span
-                        className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-semibold border ${statusBg}`}
+                        className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-normal border ${statusBg}`}
                       >
                         {statusBadge}
                       </span>
