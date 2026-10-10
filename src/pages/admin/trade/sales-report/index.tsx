@@ -14,85 +14,6 @@ import { buildAccessUser } from "@/utils/access-user";
 import { postData } from "@/services/api-service";
 import type { SaleItem } from "@/types";
 
-const mockReportData: SaleItem[] = [
-  {
-    id: "REP-1",
-    invoiceNo: "INV-20261010-0001",
-    salesDate: "2026-10-10",
-    customerName: "Rahim Traders",
-    customerPhone: "01711223344",
-    totalAmount: 15400,
-    discount: 400,
-    vat: 0,
-    delivery_charge: 100,
-    grandTotal: 15100,
-    paidAmount: 15100,
-    dueAmount: 0,
-    paymentType: "CASH",
-    salesDetails: [
-      { productId: "1", productName: "Premium Basmati Rice 25kg", quantity: 2, sellPrice: 3200, total: 6400 },
-      { productId: "2", productName: "Soyabean Oil 5L", quantity: 5, sellPrice: 850, total: 4250 },
-      { productId: "3", productName: "Aroma Tea Pack 500g", quantity: 15, sellPrice: 310, total: 4650 },
-    ],
-  },
-  {
-    id: "REP-2",
-    invoiceNo: "INV-20261010-0002",
-    salesDate: "2026-10-10",
-    customerName: "Karim Enterprises",
-    customerPhone: "01822334455",
-    totalAmount: 28000,
-    discount: 1000,
-    vat: 500,
-    delivery_charge: 200,
-    grandTotal: 27700,
-    paidAmount: 15000,
-    dueAmount: 12700,
-    paymentType: "MFS",
-    salesDetails: [
-      { productId: "4", productName: "Dell 24-inch IPS Monitor", quantity: 1, sellPrice: 18500, total: 18500 },
-      { productId: "5", productName: "Logitech MX Master 3S Mouse", quantity: 1, sellPrice: 9500, total: 9000 },
-    ],
-  },
-  {
-    id: "REP-3",
-    invoiceNo: "INV-20261009-0003",
-    salesDate: "2026-10-09",
-    customerName: "Bismillah General Store",
-    customerPhone: "01933445566",
-    totalAmount: 42000,
-    discount: 2000,
-    vat: 0,
-    delivery_charge: 500,
-    grandTotal: 40500,
-    paidAmount: 0,
-    dueAmount: 40500,
-    paymentType: "CREDIT",
-    salesDetails: [
-      { productId: "6", productName: "Sugar White 50kg Sack", quantity: 5, sellPrice: 6500, total: 31500 },
-      { productId: "7", productName: "Red Lentils 25kg", quantity: 3, sellPrice: 3500, total: 9500 },
-    ],
-  },
-  {
-    id: "REP-4",
-    invoiceNo: "INV-20261008-0004",
-    salesDate: "2026-10-08",
-    customerName: "Shahjalal Traders",
-    customerPhone: "01644556677",
-    totalAmount: 64000,
-    discount: 3000,
-    vat: 1200,
-    delivery_charge: 800,
-    grandTotal: 63000,
-    paidAmount: 63000,
-    dueAmount: 0,
-    paymentType: "BANK",
-    salesDetails: [
-      { productId: "8", productName: "HP LaserJet Pro MFP Printer", quantity: 2, sellPrice: 32000, total: 62200 },
-    ],
-  },
-];
-
 const SalesReportPage: React.FC = () => {
   const [dateRange, setDateRange] = useState<string>("thisMonth");
   const [customStartDate, setCustomStartDate] = useState<string>(() =>
@@ -165,14 +86,14 @@ const SalesReportPage: React.FC = () => {
         res?.data ||
         [];
 
-      return Array.isArray(list) && list.length > 0 ? list : mockReportData;
+      return Array.isArray(list) ? list : [];
     },
     staleTime: 60 * 1000,
   });
 
   const transactions: SaleItem[] = useMemo(() => {
-    if (Array.isArray(reportData) && reportData.length > 0) return reportData;
-    return mockReportData;
+    if (Array.isArray(reportData)) return reportData;
+    return [];
   }, [reportData]);
 
   // Calculate Aggregates

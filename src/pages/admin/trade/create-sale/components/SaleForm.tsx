@@ -845,9 +845,9 @@ export const CreateSaleForm: React.FC = () => {
     const isWalkIn = Boolean(
       selectedCustomer &&
       (selectedCustomer.id === 0 ||
-       selectedCustomer.partyId === 0 ||
-       String(selectedCustomer.name || selectedCustomer.partyName).toLowerCase().includes("walk-in") ||
-       String(selectedCustomer.name || selectedCustomer.partyName).toLowerCase().includes("walking"))
+        selectedCustomer.partyId === 0 ||
+        String(selectedCustomer.name || selectedCustomer.partyName).toLowerCase().includes("walk-in") ||
+        String(selectedCustomer.name || selectedCustomer.partyName).toLowerCase().includes("walking"))
     );
 
     if (isWalkIn && dueAmount > 0) {
@@ -887,8 +887,8 @@ export const CreateSaleForm: React.FC = () => {
       const isWalkIn = Boolean(
         selectedCustomer &&
         (selectedCustomer.id === 0 ||
-         selectedCustomer.partyId === 0 ||
-         String(selectedCustomer.name || selectedCustomer.partyName).toLowerCase().includes("walk-in"))
+          selectedCustomer.partyId === 0 ||
+          String(selectedCustomer.name || selectedCustomer.partyName).toLowerCase().includes("walk-in"))
       );
 
       const finalCustomerName = isWalkIn

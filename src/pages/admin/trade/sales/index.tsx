@@ -52,24 +52,44 @@ const Sales: React.FC = () => {
   });
 
   const customersList: PartyItem[] = useMemo(() => {
-    if (!rawCustomerData) return [];
     let list: any[] = [];
-    if (Array.isArray(rawCustomerData)) list = rawCustomerData;
-    else if (rawCustomerData && typeof rawCustomerData === "object") {
-      const raw = rawCustomerData as any;
-      if (Array.isArray(raw.customerList)) list = raw.customerList;
-      else if (Array.isArray(raw.partyList)) list = raw.partyList;
-      else if (Array.isArray(raw.partyInfoList)) list = raw.partyInfoList;
-      else if (Array.isArray(raw.data)) list = raw.data;
+    if (rawCustomerData) {
+      if (Array.isArray(rawCustomerData)) list = rawCustomerData;
+      else if (rawCustomerData && typeof rawCustomerData === "object") {
+        const raw = rawCustomerData as any;
+        if (Array.isArray(raw.customerList)) list = raw.customerList;
+        else if (Array.isArray(raw.partyList)) list = raw.partyList;
+        else if (Array.isArray(raw.partyInfoList)) list = raw.partyInfoList;
+        else if (Array.isArray(raw.data)) list = raw.data;
+      }
     }
 
-    return list.filter((p: any) => {
+    const filtered = list.filter((p: any) => {
       const isDel = String(p.isDeleted || p.is_deleted || "").trim().toUpperCase();
       if (isDel === "Y" || isDel === "YES" || isDel === "TRUE" || isDel === "1") return false;
       const type = String(p.type || p.partyType || p.party_type || p.party_type_name || p.role || "").toUpperCase();
       if (type.includes("SUPPLIER") || type.includes("VENDOR")) return false;
       return type.includes("CUSTOMER") || !type;
     });
+
+    const custMap = new Map<string, PartyItem>();
+    filtered.forEach((p: any) => {
+      const key = String(p.id ?? p.partyId ?? p.name ?? "").trim();
+      if (key) {
+        custMap.set(key, {
+          id: p.id ?? p.partyId,
+          partyId: p.id ?? p.partyId,
+          name: p.name || p.partyName || "Customer",
+          partyName: p.name || p.partyName || "Customer",
+          phone: p.phone || p.partyPhone || "",
+          partyPhone: p.phone || p.partyPhone || "",
+          address: p.address || p.partyAddress || "",
+          type: "CUSTOMER",
+        });
+      }
+    });
+
+    return Array.from(custMap.values());
   }, [rawCustomerData]);
 
   // 2. Fetch Sales from Backend API
@@ -82,7 +102,6 @@ const Sales: React.FC = () => {
     queryKey: [salesListQueryKey],
     queryFn: async () => {
       const accessUser = buildAccessUser();
-      // Call /get-sale-list or fallback /get-sales-and-return
       const endpoint = apiConfig.sales?.salesListUrl || "get-sale-list";
       const res: any = await postData({
         url: endpoint,
@@ -146,8 +165,15 @@ const Sales: React.FC = () => {
 
       // 4. Customer Filter
       if (customerFilter !== "all") {
-        const cId = String(sale.customerId || sale.customer_id);
-        if (cId !== String(customerFilter)) return false;
+        const cId = String(sale.customerId || sale.customer_id || "");
+        const cName = String(sale.customerName || sale.customer_name || "");
+        const filterVal = String(customerFilter).trim().toLowerCase();
+        if (
+          cId.toLowerCase() !== filterVal &&
+          cName.toLowerCase() !== filterVal
+        ) {
+          return false;
+        }
       }
 
       // 5. Date Range Filter
