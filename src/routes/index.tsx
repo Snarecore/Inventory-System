@@ -36,6 +36,10 @@ const Blogs = React.lazy(() => import('@/pages/admin/blog'))
 const BlogCreation = React.lazy(() => import('@/pages/admin/blog-creation'))
 const Purchases = React.lazy(() => import('@/pages/admin/trade/purchases'))
 const CreatePurchase = React.lazy(() => import('@/pages/admin/trade/create-purchase'))
+const Sales = React.lazy(() => import('@/pages/admin/trade/sales'))
+const CreateSale = React.lazy(() => import('@/pages/admin/trade/create-sale'))
+const SalesReport = React.lazy(() => import('@/pages/admin/trade/sales-report'))
+
 
 const LoadingFallback = () => (
   <div className="flex h-64 w-full items-center justify-center">
@@ -72,6 +76,42 @@ export const router = createBrowserRouter([
     element: <Navigate to="/admin/purchases" replace />,
   },
   {
+    path: '/sales',
+    element: <Navigate to="/admin/sales" replace />,
+  },
+  {
+    path: '/sales/invoices',
+    element: <Navigate to="/admin/sales" replace />,
+  },
+  {
+    path: '/sales/create',
+    element: <Navigate to="/admin/create-sale" replace />,
+  },
+  {
+    path: '/sales/reports',
+    element: <Navigate to="/admin/sales-report" replace />,
+  },
+  {
+    path: '/sales/quotations',
+    element: <Navigate to="/admin/sales" replace />,
+  },
+  {
+    path: '/sales/orders',
+    element: <Navigate to="/admin/sales" replace />,
+  },
+  {
+    path: '/sales/delivery-challans',
+    element: <Navigate to="/admin/sales" replace />,
+  },
+  {
+    path: '/sales/returns',
+    element: <Navigate to="/admin/sales" replace />,
+  },
+  {
+    path: '/sales/payments',
+    element: <Navigate to="/admin/parties?type=CUSTOMER" replace />,
+  },
+  {
     path: '/purchase/orders',
     element: <Navigate to="/admin/purchases" replace />,
   },
@@ -83,6 +123,7 @@ export const router = createBrowserRouter([
     path: '/purchase/requisitions',
     element: <Navigate to="/admin/purchases" replace />,
   },
+
   {
     path: '/',
     element: <RootLayout />,
@@ -175,6 +216,23 @@ export const router = createBrowserRouter([
         path: 'edit-purchase/:id',
         element: withSuspense(CreatePurchase),
       },
+      {
+        path: 'sales',
+        element: withSuspense(Sales),
+      },
+      {
+        path: 'create-sale',
+        element: withSuspense(CreateSale),
+      },
+      {
+        path: 'edit-sale/:id',
+        element: withSuspense(CreateSale),
+      },
+      {
+        path: 'sales-report',
+        element: withSuspense(SalesReport),
+      },
+
       {
         path: 'customers',
         element: <Navigate to="/admin/parties?type=CUSTOMER" replace />,

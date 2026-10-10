@@ -173,3 +173,124 @@ export function exportPurchasesToExcel(
 
   XLSX.writeFile(workbook, fileName);
 }
+
+export interface ExportSalesOptions {
+  fileName?: string;
+  sheetName?: string;
+  businessName?: string;
+}
+
+/**
+ * Enterprise standard Excel export for Sales Invoices / Orders
+ */
+export function exportSalesToExcel(
+  sales: any[],
+  options?: ExportSalesOptions
+): void {
+  if (!sales || sales.length === 0) {
+    throw new Error("No sales data available to export");
+  }
+
+  const userInfo = getUserInfo();
+  const businessName =
+    options?.businessName ||
+    userInfo?.businessName ||
+    "Cash Boi ERP";
+
+  const todayStr = new Date().toISOString().substring(0, 10);
+  const fileName =
+    options?.fileName ||
+    `Sales_Report_${todayStr}.xlsx`;
+  const sheetName = options?.sheetName || "Sales";
+
+  let sumGrandTotal = 0;
+  let sumPaid = 0;
+  let sumDue = 0;
+  let sumItems = 0;
+
+  const rows = sales.map((item: any, index: number) => {
+    const grandTotal = Number(item.grandTotal ?? item.totalAmount ?? item.total_amount ?? 0);
+    const paidAmount = Number(item.paidAmount ?? item.paid_amount ?? 0);
+    const dueAmount = Number(item.dueAmount ?? item.due_amount ?? Math.max(0, grandTotal - paidAmount));
+    const itemsCount = getItemsCount(item);
+    const discount = Number(item.discount ?? 0);
+    const vat = Number(item.vat ?? 0);
+    const delivery = Number(item.delivery_charge ?? item.deliveryCharge ?? 0);
+
+    sumGrandTotal += grandTotal;
+    sumPaid += paidAmount;
+    sumDue += dueAmount;
+    sumItems += itemsCount;
+
+    let status = String(item.status || "").toUpperCase();
+    if (!status) {
+      if (dueAmount <= 0) status = "PAID";
+      else if (paidAmount > 0) status = "PARTIAL";
+      else status = "PENDING";
+    }
+
+    return {
+      "SL": index + 1,
+      "Invoice No": item.invoiceNo || item.invoice_no || `INV-${item.id || index + 1}`,
+      "Sales Date": item.salesDate || item.saleDate || item.date || todayStr,
+      "Customer Name": item.customerName || item.customer_name || "Walk-in Customer",
+      "Customer Phone": item.customerPhone || item.customer_phone || "-",
+      "Customer Address": item.customerAddress || item.customer_address || "-",
+      "Items Count": itemsCount,
+      "Subtotal (BDT)": Number((item.totalAmount ?? item.total_amount ?? grandTotal).toFixed(2)),
+      "Discount (BDT)": discount,
+      "VAT (BDT)": vat,
+      "Delivery (BDT)": delivery,
+      "Grand Total (BDT)": grandTotal,
+      "Paid Amount (BDT)": paidAmount,
+      "Due Amount (BDT)": dueAmount,
+      "Payment Type": (item.paymentType || item.payment_type || "CASH").toUpperCase(),
+      "Status": status,
+      "Notes": item.note || item.remarks || "",
+    };
+  });
+
+  const totalRow = {
+    "SL": "TOTAL",
+    "Invoice No": `Total Invoices: ${sales.length}`,
+    "Sales Date": "",
+    "Customer Name": "",
+    "Customer Phone": "",
+    "Customer Address": "",
+    "Items Count": sumItems,
+    "Subtotal (BDT)": "",
+    "Discount (BDT)": "",
+    "VAT (BDT)": "",
+    "Delivery (BDT)": "",
+    "Grand Total (BDT)": Number(sumGrandTotal.toFixed(2)),
+    "Paid Amount (BDT)": Number(sumPaid.toFixed(2)),
+    "Due Amount (BDT)": Number(sumDue.toFixed(2)),
+    "Payment Type": "",
+    "Status": "",
+    "Notes": "",
+  };
+
+  const fullData = [...rows, totalRow];
+  const worksheet = XLSX.utils.json_to_sheet(fullData, {
+    header: Object.keys(rows[0]),
+  });
+
+  const colKeys = Object.keys(rows[0]);
+  const colWidths = colKeys.map((key) => {
+    let maxLen = key.length;
+    fullData.forEach((row: any) => {
+      const val = row[key];
+      if (val !== undefined && val !== null) {
+        const len = String(val).length;
+        if (len > maxLen) maxLen = len;
+      }
+    });
+    return { wch: Math.min(Math.max(maxLen + 3, 10), 40) };
+  });
+  worksheet["!cols"] = colWidths;
+
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(workbook, worksheet, sheetName);
+  XLSX.writeFile(workbook, fileName);
+}
+

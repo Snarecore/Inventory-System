@@ -67,18 +67,16 @@ export const menu = [
 				name: "Sales",
 				title: "Sales",
 				icon: FaShoppingCart,
-				path: "/sales/quotations",
+				path: "/admin/sales",
 				permissionKey: "sales.view",
 				subItems: [
-					{ id: 19, name: "Quotations", path: "/sales/quotations", permissionKey: "sales.quotations.view" },
-					{ id: 20, name: "Sales Orders", path: "/sales/orders", permissionKey: "sales.orders.view" },
-					{ id: 21, name: "Delivery Challans", path: "/sales/delivery-challans", permissionKey: "sales.delivery_challans.view" },
-					{ id: 22, name: "Sales Invoices", path: "/sales/invoices", permissionKey: "sales.invoices.view" },
-					{ id: 23, name: "Sales Returns", path: "/sales/returns", permissionKey: "sales.returns.view" },
-					{ id: 24, name: "Customer Payments", path: "/sales/payments", permissionKey: "sales.payments.view" },
-					{ id: 25, name: "Sales Reports", path: "/sales/reports", permissionKey: "sales.reports.view" },
+					{ id: 22, name: "Sales List", path: "/admin/sales", permissionKey: "sales.list.view" },
+					{ id: 28, name: "Create Sale", path: "/admin/create-sale", permissionKey: "sales.create.view" },
+					{ id: 25, name: "Sales Reports", path: "/admin/sales-report", permissionKey: "sales.reports.view" },
 				],
 			},
+
+
 			{
 				id: 3,
 				name: "Purchase",

@@ -81,11 +81,11 @@ const Sidebar = ({ sidebarClick }: SidebarProps) => {
         </Link>
       </div>
 
-      <div className="flex-1 px-2.5 py-3 overflow-y-auto custom-scrollbar">
+      <div className="flex-1 px-2 py-2 overflow-y-auto custom-scrollbar">
         {menu.map((section) => (
-          <div key={section.sectionName} className={sidebarClick ? "mb-2" : "mb-3"}>
+          <div key={section.sectionName} className={sidebarClick ? "mb-1" : "mb-2"}>
             {!sidebarClick && section.sectionName && (
-              <p className="text-xs text-[#092c4c] font-bold px-2 mb-2">
+              <p className="text-[11px] text-[#092c4c] font-bold px-2 mb-1">
                 {section.sectionName}
               </p>
             )}
@@ -105,14 +105,14 @@ const Sidebar = ({ sidebarClick }: SidebarProps) => {
               const Icon = item.icon;
 
               return (
-                <div key={item.id} className="mb-1">
+                <div key={item.id} className="mb-0.5">
                   {item.subItems && item.subItems.length > 0 ? (
                     <div
                       onClick={() => handleParentItemClick(item)}
-                      className={`w-full group py-2 flex items-center cursor-pointer rounded-md transition-all ${
+                      className={`w-full group py-1.5 flex items-center cursor-pointer rounded-md transition-all ${
                         sidebarClick
                           ? "justify-center px-0"
-                          : "justify-between px-3"
+                          : "justify-between px-2.5"
                       } ${
                         shouldShowActive
                           ? "bg-[var(--color-primary-light)] text-[var(--color-primary)]"
@@ -122,7 +122,7 @@ const Sidebar = ({ sidebarClick }: SidebarProps) => {
                       aria-disabled={sidebarClick}
                       title={sidebarClick ? item.name : undefined}
                     >
-                      <div className={`flex items-center gap-2.5 ${sidebarClick ? "justify-center" : ""}`}>
+                      <div className={`flex items-center gap-2 ${sidebarClick ? "justify-center" : ""}`}>
                         <span
                           className={`text-base transition-all ${
                             shouldShowActive
@@ -130,11 +130,11 @@ const Sidebar = ({ sidebarClick }: SidebarProps) => {
                               : "text-[#5b6670] group-hover:text-[var(--color-primary)]"
                           }`}
                         >
-                          <Icon title={item.name} size={16} />
+                          <Icon title={item.name} size={15} />
                         </span>
                         {!sidebarClick && (
                           <span
-                            className={`text-sm font-medium transition-all ${
+                            className={`text-xs font-semibold transition-all ${
                               shouldShowActive
                                 ? "text-[var(--color-primary)]"
                                 : "text-[#212b36] group-hover:text-[var(--color-primary)]"
@@ -146,7 +146,7 @@ const Sidebar = ({ sidebarClick }: SidebarProps) => {
                       </div>
 
                       {!sidebarClick && (
-                        <span className="text-xl">
+                        <span className="text-lg">
                           {isOpen ? (
                             <RiArrowDropDownLine className="text-[var(--color-primary)]" />
                           ) : (
@@ -158,10 +158,10 @@ const Sidebar = ({ sidebarClick }: SidebarProps) => {
                   ) : (
                     <Link
                       to={item.path}
-                      className={`w-full group py-2 flex items-center rounded-md transition-all ${
+                      className={`w-full group py-1.5 flex items-center rounded-md transition-all ${
                         sidebarClick
                           ? "justify-center px-0"
-                          : "gap-2.5 px-3"
+                          : "gap-2 px-2.5"
                       } ${
                         shouldShowActive
                           ? "bg-[var(--color-primary-light)] text-[var(--color-primary)]"
@@ -176,11 +176,11 @@ const Sidebar = ({ sidebarClick }: SidebarProps) => {
                             : "text-[#5b6670] group-hover:text-[var(--color-primary)]"
                         }`}
                       >
-                        <Icon title={item.name} size={16} />
+                        <Icon title={item.name} size={15} />
                       </span>
                       {!sidebarClick && (
                         <span
-                          className={`text-sm font-medium transition-all ${
+                          className={`text-xs font-semibold transition-all ${
                             shouldShowActive
                               ? "text-[var(--color-primary)]"
                               : "text-[#212b36] group-hover:text-[var(--color-primary)]"
@@ -196,22 +196,22 @@ const Sidebar = ({ sidebarClick }: SidebarProps) => {
                     item.subItems.length > 0 &&
                     !sidebarClick &&
                     isOpen && (
-                      <ul className="mt-1 space-y-0.5">
+                      <ul className="mt-0.5 space-y-0.5">
                         {item.subItems.map((subItem) => {
                           const isActive = pathname === subItem.path;
                           return (
                             <li key={subItem.id}>
                               <Link
                                 to={subItem.path}
-                                className={`block w-full rounded-md pl-6 pr-3 py-2 cursor-pointer text-[13px] transition-all ${
+                                className={`block w-full rounded-md pl-5 pr-2.5 py-1 cursor-pointer text-xs transition-all ${
                                   isActive
-                                    ? "text-[var(--color-primary)] font-medium bg-[var(--color-primary-light)]"
+                                    ? "text-[var(--color-primary)] font-semibold bg-[var(--color-primary-light)]"
                                     : "text-[#646b72] hover:bg-gray-100 hover:text-[var(--color-primary)]"
                                 }`}
                               >
                                 <span className="flex items-center gap-2">
                                   <div
-                                    className={`w-1.5 h-1.5 shrink-0 rounded-full transition-all duration-200 ${
+                                    className={`w-1 h-1 shrink-0 rounded-full transition-all duration-200 ${
                                       isActive
                                         ? "bg-[var(--color-primary)]"
                                         : "bg-gray-400 group-hover:bg-[var(--color-primary)]"
@@ -231,6 +231,7 @@ const Sidebar = ({ sidebarClick }: SidebarProps) => {
           </div>
         ))}
       </div>
+
     </div>
   );
 };

@@ -90,5 +90,12 @@
     "salesReturn": {
         "getSalesAndReturnUrl": "get-sales-and-return",
         "insertSalesReturnUrl": "insert-sales-return"
+    },
+    "sales": {
+        "salesListUrl": "get-sale-list",
+        "insertSalesUrl": "insert-sales",
+        "updateSalesUrl": "update-sales",
+        "salesTransactionReportUrl": "get-sale-transaction-report",
+        "salesAndReturnUrl": "get-sales-and-return"
     }
 }

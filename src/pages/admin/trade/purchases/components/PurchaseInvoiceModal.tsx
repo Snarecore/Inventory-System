@@ -3,7 +3,7 @@ import Modal from "@/components/modal/Modal";
 import Button from "@/components/button/Button";
 import type { PurchaseItem } from "@/types";
 import { formatMoney } from "@/utils/formatters";
-import { FaPrint, FaDownload, FaBuilding, FaUserTie, FaPhone, FaMapMarkerAlt, FaFileInvoice, FaTruck, FaCalendarAlt } from "react-icons/fa";
+import { FaPrint, FaPhone, FaMapMarkerAlt, FaFileInvoice, FaTruck, FaCalendarAlt } from "react-icons/fa";
 import { getUserInfo } from "@/utils/auth-storage";
 
 interface PurchaseInvoiceModalProps {

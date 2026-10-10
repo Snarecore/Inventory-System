@@ -187,3 +187,113 @@ export interface PurchaseChallanSettings {
   [key: string]: any;
 }
 
+export interface SaleDetailItem {
+  id?: string | number;
+  saleDetailId?: string | number;
+  sale_detail_id?: string | number;
+  productId: string | number;
+  product_id?: string | number;
+  productCode?: string;
+  pcode?: string;
+  productName: string;
+  name?: string;
+  unit?: string;
+  quantity: number;
+  qty?: number;
+  sellPrice: number;
+  sell_price?: number;
+  unitPrice?: number;
+  buyPrice?: number;
+  discount?: number;
+  vat?: number;
+  delivery_charge?: number;
+  total: number;
+  status?: string;
+  advenType?: string;
+  stock?: number | string;
+  [key: string]: any;
+}
+
+export interface SaleItem {
+  id?: string | number;
+  saleId?: string | number;
+  sale_id?: string | number;
+  invoiceNo?: string;
+  invoice_no?: string;
+  customerId?: string | number;
+  customer_id?: string | number;
+  customerName?: string;
+  customer_name?: string;
+  customerPhone?: string;
+  customer_phone?: string;
+  customerAddress?: string;
+  customer_address?: string;
+  salesDate?: string;
+  saleDate?: string;
+  sales_date?: string;
+  date?: string;
+  totalAmount?: number;
+  total_amount?: number;
+  discount?: number;
+  discountType?: 'FLAT' | 'PERCENT';
+  vat?: number;
+  delivery_charge?: number;
+  deliveryCharge?: number;
+  grandTotal?: number;
+  grand_total?: number;
+  paidAmount?: number;
+  paid_amount?: number;
+  dueAmount?: number;
+  due_amount?: number;
+  paymentType?: 'CASH' | 'CREDIT' | 'BANK' | 'MFS' | string;
+  payment_type?: string;
+  status?: string;
+  osType?: string;
+  note?: string;
+  remarks?: string;
+  cashReceived?: number;
+  cardReceived?: number;
+  mfsReceived?: number;
+  bankId?: string | number | null;
+  bankName?: string | null;
+  accountNo?: string | null;
+  bankAccountName?: string | null;
+  mfsId?: string | number | null;
+  mfsName?: string | null;
+  mfsMethod?: string | null;
+  mfsPhone?: string | null;
+  customerPaid?: number;
+  returnAmount?: number;
+  salesDetails?: SaleDetailItem[];
+  saleDetails?: SaleDetailItem[];
+  itemCount?: number;
+  createdAt?: string;
+  created_at?: string;
+  updatedAt?: string;
+  updated_at?: string;
+  branchId?: string | number;
+  orgId?: string | number;
+  [key: string]: any;
+}
+
+export interface SaleTransactionReportItem {
+  id?: string | number;
+  invoiceNo?: string;
+  date?: string;
+  salesDate?: string;
+  customerName?: string;
+  customerPhone?: string;
+  totalAmount?: number;
+  discount?: number;
+  vat?: number;
+  deliveryCharge?: number;
+  grandTotal?: number;
+  paidAmount?: number;
+  dueAmount?: number;
+  paymentType?: string;
+  status?: string;
+  salesDetails?: SaleDetailItem[];
+  [key: string]: any;
+}
+
+
