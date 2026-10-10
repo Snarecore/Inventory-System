@@ -1893,15 +1893,15 @@ const CreatePurchaseForm: React.FC = () => {
         {/* Left Column: Overall Discounts, VAT, Transport & Remarks (5 cols) */}
         <div className="lg:col-span-5 bg-white p-2.5 sm:p-3 rounded-xl border border-gray-200 shadow-xs flex flex-col gap-2">
           <div className="flex flex-col gap-2">
-            <h3 className="text-xs font-bold text-black uppercase tracking-wider">
+            <h3 className="text-xs font-bold text-black">
               Discounts & Extra Charges
             </h3>
 
             {/* Overall Invoice Discount */}
             <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-1.5">
-                <label className="text-xs text-black font-semibold">Overall Discount:</label>
-                <div className="inline-flex rounded border border-gray-300 overflow-hidden text-[10px]">
+                <label className="text-[11px] text-black font-semibold">Overall Discount:</label>
+                <div className="inline-flex rounded border border-gray-300 overflow-hidden text-[11px]">
                   <button
                     type="button"
                     onClick={() => setInvoiceDiscountType("FLAT")}
@@ -1941,7 +1941,7 @@ const CreatePurchaseForm: React.FC = () => {
 
             {/* Invoice VAT % */}
             <div className="flex items-center justify-between gap-2">
-              <label className="text-xs text-black font-semibold">Invoice VAT (%):</label>
+              <label className="text-[11px] text-black font-semibold">Invoice VAT (%):</label>
               <div className="relative w-32 sm:w-36">
                 <input
                   type="number"
@@ -1958,7 +1958,7 @@ const CreatePurchaseForm: React.FC = () => {
             {/* Transport / Freight Charge */}
             {challanSettings.showTransportCost && (
               <div className="flex items-center justify-between gap-2">
-                <label className="text-xs text-black font-semibold">Transport (৳):</label>
+                <label className="text-[11px] text-black font-semibold">Transport (৳):</label>
                 <div className="relative w-32 sm:w-36">
                   <span className="absolute left-2 top-1 text-black text-xs font-bold  ">৳</span>
                   <input
@@ -1976,28 +1976,32 @@ const CreatePurchaseForm: React.FC = () => {
           </div>
 
           {/* Bottom of Left Box: Invoice Attachment & Purchase Notes Side by Side */}
-          <div className="mt-2 pt-2.5 border-t border-gray-200/90 flex flex-col sm:flex-row items-start gap-3">
+          <div className="mt-2.5 pt-2.5 border-t border-gray-100 flex flex-col sm:flex-row items-start gap-3">
             {/* Invoice Attachment (Fixed compact upload box) */}
-            <div className="shrink-0">
-              <label className="text-[11px] font-bold text-black uppercase tracking-wider block mb-1">
-                Attachment
-              </label>
-              <ImageUpload
-                value={attachment}
-                onChange={handleAttachmentChange}
-              />
+            <div className="shrink-0 flex flex-col">
+              <div className="h-6 flex items-center mb-1.5">
+                <span className="text-[11px] font-semibold text-black">
+                  Attachment
+                </span>
+              </div>
+              <div className="h-[84px] flex items-center">
+                <ImageUpload
+                  value={attachment}
+                  onChange={handleAttachmentChange}
+                />
+              </div>
             </div>
 
             {/* Purchase Notes / Remarks (Fills the remaining width seamlessly) */}
             <div className="relative flex-1 min-w-0 w-full flex flex-col" ref={notesDropdownRef}>
-              <div className="flex items-center justify-between gap-1 mb-1">
-                <label className="text-[11px] font-bold text-black uppercase tracking-wider truncate">
+              <div className="h-6 flex items-center justify-between gap-1 mb-1.5">
+                <span className="text-[11px] font-semibold text-black truncate">
                   Notes / Remarks
-                </label>
+                </span>
                 <button
                   type="button"
                   onClick={() => setIsNotesDropdownOpen(!isNotesDropdownOpen)}
-                  className="text-[10px] font-bold text-black hover:text-[var(--color-primary)] flex items-center gap-1 cursor-pointer bg-sky-50 hover:bg-sky-100 px-2 py-0.5 rounded-md border border-sky-200 transition-all shrink-0 shadow-2xs"
+                  className="text-[11px] font-semibold text-black bg-gray-100 hover:bg-gray-200 px-2 py-0.5 rounded-md border border-gray-300 transition-all flex items-center gap-1 cursor-pointer shadow-2xs h-6"
                 >
                   <span>+ Presets</span>
                   <FiChevronDown
@@ -2007,74 +2011,57 @@ const CreatePurchaseForm: React.FC = () => {
                 </button>
               </div>
 
-                {/* Textarea Input with matched height to ImageUpload */}
-                <div className="relative mt-1">
-                  <textarea
-                    rows={3}
-                    value={notes}
-                    onChange={(e) => setNotes(e.target.value)}
-                    placeholder="Type notes or click '+ Presets' to add..."
-                    className="w-full p-2 text-xs border border-gray-300 rounded-lg focus:outline-none focus:border-[var(--color-primary)] resize-none text-black font-medium h-[84px] bg-white placeholder:text-gray-400 focus:ring-1 focus:ring-[var(--color-primary)]/30 transition-all"
-                  />
+              {/* Textarea Input with matched height to ImageUpload */}
+              <div className="relative h-[84px]">
+                <textarea
+                  rows={3}
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  placeholder="Type notes or click '+ Presets' to add..."
+                  className="w-full h-[84px] p-2.5 text-xs border border-gray-300/80 rounded-xl focus:outline-none focus:border-[#0F365C] focus:ring-2 focus:ring-[#0F365C]/15 resize-none text-black font-medium bg-slate-50/40 hover:bg-white focus:bg-white placeholder:text-gray-400 transition-all shadow-2xs leading-relaxed"
+                />
 
-                  {/* Floating Preset Suggestions Popover Menu */}
-                  {isNotesDropdownOpen && (
-                    <div className="absolute left-0 right-0 bottom-full mb-1.5 bg-white rounded-xl shadow-2xl border border-gray-200 p-2.5 z-40 max-h-60 overflow-y-auto animate-in fade-in zoom-in-95 duration-100">
-                      <div className="flex items-center justify-between pb-1.5 mb-1.5 border-b border-gray-100">
-                        <span className="text-[10.5px] font-bold text-black">
-                          Select preset remark:
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => setIsNotesDropdownOpen(false)}
-                          className="text-[10px] text-gray-500 hover:text-black font-semibold cursor-pointer px-1"
-                        >
-                          Close ✕
-                        </button>
-                      </div>
-
-                      <div className="flex flex-col gap-1.5">
-                        {[
-                          "Goods received in good condition",
-                          "Challan verified with physical stock",
-                          "Standard order delivered",
-                          "Payment approved upon verification",
-                          "Full payment completed upon delivery",
-                          "Partial delivery received",
-                        ].map((preset) => {
-                          const isIncluded = notes.toLowerCase().includes(preset.toLowerCase());
-                          return (
-                            <button
-                              key={preset}
-                              type="button"
-                              onClick={() => {
-                                setNotes((prev) => {
-                                  if (!prev.trim()) return preset;
-                                  if (prev.includes(preset)) return prev;
-                                  return `${prev}, ${preset}`;
-                                });
-                                setIsNotesDropdownOpen(false); // Clean auto-close on selection
-                              }}
-                              className={`px-2.5 py-1.5 text-xs rounded-lg text-left transition-all flex items-center justify-between gap-2 cursor-pointer border ${
-                                isIncluded
-                                  ? "bg-emerald-50 text-black border-emerald-400 font-bold"
-                                  : "bg-gray-50/80 hover:bg-sky-50 text-black border-gray-200 hover:border-sky-300 font-medium"
-                              }`}
-                            >
-                              <span className="truncate">{preset}</span>
-                              {isIncluded ? (
-                                <FaCheck size={11} className="text-emerald-600 shrink-0" />
-                              ) : (
-                                <FaPlus size={10} className="text-gray-400 shrink-0" />
-                              )}
-                            </button>
-                          );
-                        })}
-                      </div>
+                {/* Clean 1-Click Preset Dropdown Menu */}
+                {isNotesDropdownOpen && (
+                  <div className="absolute right-0 bottom-full mb-1.5 w-full bg-white rounded-xl shadow-xl border border-gray-200 z-40 overflow-hidden divide-y divide-gray-100 animate-in fade-in zoom-in-95 duration-100">
+                    <div className="px-3 py-1.5 bg-gray-50 flex items-center justify-between">
+                      <span className="text-[11px] font-semibold text-gray-700">
+                        Choose a preset to insert:
+                      </span>
+                      <span className="text-[10px] text-gray-400">Click to add</span>
                     </div>
-                  )}
-                </div>
+
+                    <div className="flex flex-col py-1 divide-y divide-gray-50">
+                      {[
+                        "Goods received in good condition",
+                        "Challan verified with physical stock",
+                        "Standard order delivered",
+                        "Packaging and seal verified",
+                      ].map((preset) => (
+                        <button
+                          key={preset}
+                          type="button"
+                          onClick={() => {
+                            setNotes((prev) => {
+                              if (!prev.trim()) return preset;
+                              if (prev.includes(preset)) return prev;
+                              return `${prev}, ${preset}`;
+                            });
+                            setIsNotesDropdownOpen(false);
+                          }}
+                          className="px-3 py-2 text-[11px] text-left text-black hover:bg-sky-50 hover:text-[var(--color-primary)] font-medium transition-colors flex items-center justify-between cursor-pointer group"
+                        >
+                          <span className="truncate">{preset}</span>
+                          <span className="text-[10px] text-gray-400 group-hover:text-[var(--color-primary)] font-semibold shrink-0 ml-2">
+                            + Add
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
+            </div>
           </div>
         </div>
 

@@ -75,10 +75,10 @@ const ImageUpload: React.FC<ImageUploadProps> = ({ value, onChange, size = "sm",
 		<div className={`flex flex-row items-start space-x-2.5 ${className}`}>
 			<label
 				htmlFor={`${id}-file-upload`}
-				className={`${dimensionClass} flex items-center justify-center flex-col gap-1 border border-dashed border-[var(--color-primary)] bg-sky-50/40 text-[var(--color-primary)] text-xs rounded-lg cursor-pointer hover:bg-sky-50/80 transition-all ease-in-out duration-300 mt-1`}
+				className={`${dimensionClass} group flex items-center justify-center flex-col gap-1 border border-dashed border-[#0F365C] bg-sky-50/50 hover:bg-sky-100/50 text-[#0F365C] text-xs rounded-xl cursor-pointer transition-all duration-200`}
 			>
-				<IoCloudUploadOutline size={size === "sm" ? 18 : 22} className="text-[var(--color-primary)]" />
-				<p className="font-semibold text-[10px]">Upload Image</p>
+				<IoCloudUploadOutline size={size === "sm" ? 20 : 24} className="text-[#0F365C] group-hover:-translate-y-0.5 transition-all" />
+				<p className="font-semibold text-[11px] text-[#0F365C] transition-colors">Upload Image</p>
 			</label>
 			<input
 				id={`${id}-file-upload`}
@@ -88,24 +88,24 @@ const ImageUpload: React.FC<ImageUploadProps> = ({ value, onChange, size = "sm",
 				accept="image/png, image/jpeg, image/jpg"
 			/>
 			{preview && (
-				<div className={`relative ${dimensionClass} mt-1`}>
+				<div className={`relative ${dimensionClass}`}>
 					{!hasImgError ? (
 						<img
 							src={getDisplayUrl(preview)}
 							alt="Uploaded File"
-							className="w-full h-full object-cover rounded-lg border border-gray-300 bg-white"
+							className="w-full h-full object-cover rounded-xl border border-gray-200 bg-white shadow-2xs"
 							onError={() => setHasImgError(true)}
 						/>
 					) : (
-						<div className="w-full h-full flex flex-col items-center justify-center bg-gray-100 border border-gray-300 rounded-lg p-1 text-center">
-							<IoDocumentTextOutline size={22} className="text-gray-500 mb-1" />
-							<span className="text-[9px] font-medium text-gray-600 truncate max-w-full px-1">Attached</span>
+						<div className="w-full h-full flex flex-col items-center justify-center bg-gray-50 border border-gray-200 rounded-xl p-1 text-center shadow-2xs">
+							<IoDocumentTextOutline size={22} className="text-gray-400 mb-1" />
+							<span className="text-[11px] font-semibold text-gray-600 truncate max-w-full px-1">Attached</span>
 						</div>
 					)}
 					<button
 						type="button"
 						onClick={removeImage}
-						className="absolute -top-1.5 -right-1.5 bg-rose-500 text-white rounded-full p-0.5 shadow-md cursor-pointer hover:bg-rose-600 transition-all duration-300"
+						className="absolute -top-1.5 -right-1.5 bg-rose-500 text-white rounded-full p-0.5 shadow-md cursor-pointer hover:bg-rose-600 hover:scale-110 transition-all duration-200"
 					>
 						<IoCloseSharp size={13} />
 					</button>
