@@ -16,13 +16,13 @@ import {
   FaCreditCard,
   FaMobileAlt,
   FaWallet,
+  FaWalking,
 } from "react-icons/fa";
 import Button from "@/components/button/Button";
 import DeleteModal from "@/components/modal/DeleteModal";
 import ConfirmModal from "@/components/modal/ConfirmModal";
 import PartyModal from "@/pages/admin/people/parties/components/PartyModal";
 import SaleInvoiceModal from "@/pages/admin/trade/sales/components/SaleInvoiceModal";
-import ImageUpload from "@/components/image/ImageUpload";
 import apiConfig from "@/config/api.json";
 import {
   salesListQueryKey,
@@ -63,7 +63,7 @@ export const WALK_IN_CUSTOMER: PartyItem = {
   partyName: "Walk-in Customer",
   phone: "",
   partyPhone: "",
-  address: "Counter Sale",
+  address: "",
   type: "CUSTOMER",
 };
 
@@ -106,7 +106,6 @@ export const CreateSaleForm: React.FC = () => {
   const [notes, setNotes] = useState<string>("");
   const [isNotesDropdownOpen, setIsNotesDropdownOpen] = useState<boolean>(false);
   const notesDropdownRef = useRef<HTMLDivElement>(null);
-  const [attachment, setAttachment] = useState<File | string | null>(null);
 
   // Split payment amounts
   const [cashAmount, setCashAmount] = useState<string>("");
@@ -840,8 +839,7 @@ export const CreateSaleForm: React.FC = () => {
         selectedCustomer &&
         (selectedCustomer.id === 0 ||
          selectedCustomer.partyId === 0 ||
-         String(selectedCustomer.name || selectedCustomer.partyName).toLowerCase().includes("walk-in") ||
-         String(selectedCustomer.name || selectedCustomer.partyName).toLowerCase().includes("walking"))
+         String(selectedCustomer.name || selectedCustomer.partyName).toLowerCase().includes("walk-in"))
       );
 
       const finalCustomerName = isWalkIn
@@ -966,7 +964,6 @@ export const CreateSaleForm: React.FC = () => {
     setDeliveryCharge("");
     setNotes("");
     setPoNumber("");
-    setAttachment(null);
     setCashAmount("");
     setBankAmount("");
     setMfsAmount("");
@@ -1077,7 +1074,8 @@ export const CreateSaleForm: React.FC = () => {
                 }`}
                 title="Quick 1-click counter / walk-in customer"
               >
-                <span>⚡ Walk-in</span>
+                <FaWalking size={10} />
+                <span>Walk-in</span>
               </button>
               <button
                 type="button"
@@ -1101,7 +1099,8 @@ export const CreateSaleForm: React.FC = () => {
               <div className="flex items-center gap-1.5 min-w-0 truncate">
                 {selectedCustomer.id === 0 || selectedCustomer.name === "Walk-in Customer" ? (
                   <span className="font-bold text-emerald-800 flex items-center gap-1 truncate">
-                    ⚡ Walk-in Customer {walkInName ? `(${walkInName})` : "(Counter Sale)"}
+                    <FaWalking size={12} className="text-emerald-700 shrink-0" />
+                    Walk-in Customer {walkInName ? `(${walkInName})` : "(Counter Sale)"}
                   </span>
                 ) : (
                   <>
@@ -1149,15 +1148,15 @@ export const CreateSaleForm: React.FC = () => {
 
           {/* Customer Dropdown Panel */}
           {isCustomerDropdownOpen && (
-            <div className="absolute left-0 right-0 sm:right-auto sm:w-96 max-w-[calc(100vw-32px)] mt-1 bg-white rounded-lg shadow-xl border border-gray-200 p-2 z-30">
-              <div className="relative mb-2">
-                <FaSearch className="absolute left-2.5 top-2.5 text-gray-400 text-xs" />
+            <div className="absolute left-0 right-0 sm:right-auto sm:w-96 max-w-[calc(100vw-32px)] mt-1 bg-white rounded-lg shadow-xl border border-gray-200 p-1.5 z-30">
+              <div className="relative mb-1.5">
+                <FaSearch className="absolute left-2.5 top-2 text-gray-400 text-xs" />
                 <input
                   type="text"
                   placeholder="Search customer name, phone, address..."
                   value={customerSearchQuery}
                   onChange={(e) => setCustomerSearchQuery(e.target.value)}
-                  className="w-full pl-7 pr-2 py-1.5 text-xs border border-gray-200 rounded-md focus:outline-none focus:border-[var(--color-primary)] text-black"
+                  className="w-full pl-7 pr-2 py-1 text-xs border border-gray-200 rounded-md focus:outline-none focus:border-[var(--color-primary)] text-black"
                   autoFocus
                 />
               </div>
@@ -1168,18 +1167,18 @@ export const CreateSaleForm: React.FC = () => {
                   setSelectedCustomer(WALK_IN_CUSTOMER);
                   setIsCustomerDropdownOpen(false);
                 }}
-                className="p-2 mb-1.5 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-md cursor-pointer transition-colors flex items-center justify-between"
+                className="px-2 py-1 mb-1 bg-emerald-50 hover:bg-emerald-100/80 border border-emerald-200 rounded-md cursor-pointer transition-colors flex items-center justify-between"
               >
-                <div className="flex items-center gap-2">
-                  <div className="w-5 h-5 rounded-full bg-emerald-600 text-white flex items-center justify-center text-[10px] font-black">
-                    ⚡
+                <div className="flex items-center gap-1.5">
+                  <div className="w-5 h-5 rounded-full bg-emerald-600 text-white flex items-center justify-center shrink-0 text-[10px]">
+                    <FaWalking size={10} />
                   </div>
-                  <div>
-                    <span className="font-bold text-emerald-900 text-xs block">Walk-in Customer</span>
-                    <span className="text-[10px] text-emerald-700">Quick counter sale / সাধারণ ক্রেতা</span>
+                  <div className="flex flex-col">
+                    <span className="font-bold text-emerald-900 text-[11px] leading-tight">Walk-in Customer</span>
+                    <span className="text-[9.5px] text-emerald-700 leading-tight">Quick counter sale / সাধারণ ক্রেতা</span>
                   </div>
                 </div>
-                <span className="text-[10px] font-bold text-emerald-800 bg-white px-1.5 py-0.5 rounded border border-emerald-300">
+                <span className="text-[9.5px] font-bold text-emerald-800 bg-white px-1.5 py-0.5 rounded border border-emerald-300 shadow-2xs">
                   Select
                 </span>
               </div>
@@ -1675,89 +1674,73 @@ export const CreateSaleForm: React.FC = () => {
             </div>
           </div>
 
-          {/* Attachment & Notes */}
-          <div className="mt-2.5 pt-2.5 border-t border-gray-100 flex flex-col sm:flex-row items-start gap-3">
-            <div className="shrink-0 flex flex-col">
-              <div className="h-6 flex items-center mb-1.5">
-                <span className="text-[11px] font-semibold text-black">
-                  Attachment
-                </span>
-              </div>
-              <div className="h-[84px] flex items-center">
-                <ImageUpload
-                  value={attachment}
-                  onChange={(file) => setAttachment(file)}
+          {/* Notes / Remarks */}
+          <div className="mt-2.5 pt-2.5 border-t border-gray-100 flex flex-col" ref={notesDropdownRef}>
+            <div className="h-6 flex items-center justify-between gap-1 mb-1.5">
+              <span className="text-[11px] font-semibold text-black truncate">
+                Notes / Remarks
+              </span>
+              <button
+                type="button"
+                onClick={() => setIsNotesDropdownOpen(!isNotesDropdownOpen)}
+                className="text-[11px] font-semibold text-black bg-gray-100 hover:bg-gray-200 px-2 py-0.5 rounded-md border border-gray-300 transition-all flex items-center gap-1 cursor-pointer shadow-2xs h-6"
+              >
+                <span>+ Presets</span>
+                <FiChevronDown
+                  size={11}
+                  className={`transition-transform duration-200 ${isNotesDropdownOpen ? "rotate-180" : ""}`}
                 />
-              </div>
+              </button>
             </div>
 
-            <div className="relative flex-1 min-w-0 w-full flex flex-col" ref={notesDropdownRef}>
-              <div className="h-6 flex items-center justify-between gap-1 mb-1.5">
-                <span className="text-[11px] font-semibold text-black truncate">
-                  Notes / Remarks
-                </span>
-                <button
-                  type="button"
-                  onClick={() => setIsNotesDropdownOpen(!isNotesDropdownOpen)}
-                  className="text-[11px] font-semibold text-black bg-gray-100 hover:bg-gray-200 px-2 py-0.5 rounded-md border border-gray-300 transition-all flex items-center gap-1 cursor-pointer shadow-2xs h-6"
-                >
-                  <span>+ Presets</span>
-                  <FiChevronDown
-                    size={11}
-                    className={`transition-transform duration-200 ${isNotesDropdownOpen ? "rotate-180" : ""}`}
-                  />
-                </button>
-              </div>
+            <div className="relative h-[84px]">
+              <textarea
+                rows={3}
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                placeholder="Type notes or click '+ Presets' to add..."
+                className="w-full h-[84px] p-2.5 text-xs border border-gray-300/80 rounded-xl focus:outline-none focus:border-[#0F365C] focus:ring-2 focus:ring-[#0F365C]/15 resize-none text-black font-medium bg-slate-50/40 hover:bg-white focus:bg-white placeholder:text-gray-400 transition-all shadow-2xs leading-relaxed"
+              />
 
-              <div className="relative h-[84px]">
-                <textarea
-                  rows={3}
-                  value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
-                  placeholder="Type notes or click '+ Presets' to add..."
-                  className="w-full h-[84px] p-2.5 text-xs border border-gray-300/80 rounded-xl focus:outline-none focus:border-[#0F365C] focus:ring-2 focus:ring-[#0F365C]/15 resize-none text-black font-medium bg-slate-50/40 hover:bg-white focus:bg-white placeholder:text-gray-400 transition-all shadow-2xs leading-relaxed"
-                />
-
-                {isNotesDropdownOpen && (
-                  <div className="absolute right-0 bottom-full mb-1.5 w-full bg-white rounded-xl shadow-xl border border-gray-200 z-40 overflow-hidden divide-y divide-gray-100">
-                    <div className="px-3 py-1.5 bg-gray-50 flex items-center justify-between">
-                      <span className="text-[11px] font-semibold text-gray-700">
-                        Choose a preset:
-                      </span>
-                      <span className="text-[10px] text-gray-400">Click to add</span>
-                    </div>
-
-                    <div className="flex flex-col py-1 divide-y divide-gray-50">
-                      {[
-                        "Goods delivered in good condition",
-                        "Cash received on delivery",
-                        "Full payment cleared",
-                        "Standard order completed",
-                        "Warranty card issued",
-                      ].map((preset) => (
-                        <button
-                          key={preset}
-                          type="button"
-                          onClick={() => {
-                            setNotes((prev) => {
-                              if (!prev.trim()) return preset;
-                              if (prev.includes(preset)) return prev;
-                              return `${prev}, ${preset}`;
-                            });
-                            setIsNotesDropdownOpen(false);
-                          }}
-                          className="px-3 py-2 text-[11px] text-left text-black hover:bg-sky-50 hover:text-[var(--color-primary)] font-medium transition-colors flex items-center justify-between cursor-pointer group"
-                        >
-                          <span className="truncate">{preset}</span>
-                          <span className="text-[10px] text-gray-400 group-hover:text-[var(--color-primary)] font-semibold shrink-0 ml-2">
-                            + Add
-                          </span>
-                        </button>
-                      ))}
-                    </div>
+              {isNotesDropdownOpen && (
+                <div className="absolute right-0 bottom-full mb-1.5 w-full bg-white rounded-xl shadow-xl border border-gray-200 z-40 overflow-hidden divide-y divide-gray-100">
+                  <div className="px-3 py-1.5 bg-gray-50 flex items-center justify-between">
+                    <span className="text-[11px] font-semibold text-gray-700">
+                      Choose a preset:
+                    </span>
+                    <span className="text-[10px] text-gray-400">Click to add</span>
                   </div>
-                )}
-              </div>
+
+                  <div className="flex flex-col py-1 divide-y divide-gray-50">
+                    {[
+                      "Goods delivered in good condition",
+                      "Cash received on delivery",
+                      "Full payment cleared",
+                      "Standard order completed",
+                      "Warranty card issued",
+                    ].map((preset) => (
+                      <button
+                        key={preset}
+                        type="button"
+                        onClick={() => {
+                          setNotes((prev) => {
+                            if (!prev.trim()) return preset;
+                            if (prev.includes(preset)) return prev;
+                            return `${prev}, ${preset}`;
+                          });
+                          setIsNotesDropdownOpen(false);
+                        }}
+                        className="px-3 py-2 text-[11px] text-left text-black hover:bg-sky-50 hover:text-[var(--color-primary)] font-medium transition-colors flex items-center justify-between cursor-pointer group"
+                      >
+                        <span className="truncate">{preset}</span>
+                        <span className="text-[10px] text-gray-400 group-hover:text-[var(--color-primary)] font-semibold shrink-0 ml-2">
+                          + Add
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
