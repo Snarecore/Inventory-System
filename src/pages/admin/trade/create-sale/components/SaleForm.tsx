@@ -1528,7 +1528,7 @@ export const CreateSaleForm: React.FC = () => {
       {/* Dynamic Line Items Table */}
       <div className="bg-white rounded-xl border border-gray-200 shadow-xs overflow-hidden">
         <div className="p-2.5 border-b border-gray-100 flex items-center justify-between">
-          <h2 className="text-xs font-bold text-gray-800 uppercase tracking-wider">
+          <h2 className="text-xs font-bold text-black">
             Sales Items List ({lineItems.length})
           </h2>
           <span className="text-[11px] text-black font-medium">
