@@ -1,7 +1,8 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useSearchParams } from "react-router-dom";
-import { FaPlus } from "react-icons/fa";
+import { FaPlus, FaUsers, FaUserTie, FaTruck, FaMoneyBillWave } from "react-icons/fa";
+import { MotionDiv } from "@/utils/framer.motion";
 import PageHeader from "@/components/page-header/PageHeader";
 import Button from "@/components/button/Button";
 import RefreshButton from "@/components/table-components/RefreshButton";
@@ -118,6 +119,33 @@ const Parties: React.FC = () => {
     const raw = (p.type || p.partyType || p.party_type || p.party_type_name || "CUSTOMER").toUpperCase();
     return raw.includes("SUPPLIER") ? "SUPPLIER" : "CUSTOMER";
   };
+
+  // Summary Metrics
+  const metrics = useMemo(() => {
+    let customerCount = 0;
+    let supplierCount = 0;
+    let totalOpeningBalance = 0;
+    let activeCount = 0;
+
+    allParties.forEach((p) => {
+      const type = getPartyType(p);
+      if (type === "SUPPLIER") supplierCount++;
+      else customerCount++;
+
+      if (isPartyActive(p)) activeCount++;
+
+      const bal = Number(p.openingBalance ?? p.opening_balance ?? p.balance ?? p.dueAmount ?? p.due_amount ?? 0);
+      totalOpeningBalance += bal;
+    });
+
+    return {
+      total: allParties.length,
+      customerCount,
+      supplierCount,
+      activeCount,
+      totalOpeningBalance,
+    };
+  }, [allParties]);
 
   // Filtered parties based on search, type, and status
   const filteredParties = useMemo(() => {
@@ -308,7 +336,7 @@ const Parties: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-col gap-3 px-4 py-2.5 sm:px-5 sm:py-3 max-w-[1600px] mx-auto w-full">
+    <div className="flex flex-col gap-2.5 px-3 py-2 sm:px-4 sm:py-2.5 max-w-[1600px] mx-auto w-full">
       {/* Header */}
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <PageHeader
@@ -325,6 +353,77 @@ const Parties: React.FC = () => {
             icon={<FaPlus className="text-white text-xs" />}
           />
         </div>
+      </div>
+
+      {/* KPI Summary Cards */}
+      <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 w-full">
+        {/* 1. Total Parties - Blue */}
+        <MotionDiv delay={0.05}>
+          <div className="p-3 rounded-xl border bg-blue-50/60 border-blue-300 hover:border-blue-400 flex items-center justify-between gap-2.5 transition-all shadow-xs h-full">
+            <div className="flex flex-col min-w-0">
+              <span className="text-[11px] font-semibold text-black uppercase tracking-wider truncate">
+                Total Parties
+              </span>
+              <span className="text-base sm:text-lg font-bold truncate mt-0.5 text-blue-600">
+                {metrics.total}
+              </span>
+            </div>
+            <div className="p-2 rounded-lg shrink-0 bg-blue-100 text-blue-600">
+              <FaUsers size={16} />
+            </div>
+          </div>
+        </MotionDiv>
+
+        {/* 2. Customers - Emerald */}
+        <MotionDiv delay={0.1}>
+          <div className="p-3 rounded-xl border bg-emerald-50/60 border-emerald-300 hover:border-emerald-400 flex items-center justify-between gap-2.5 transition-all shadow-xs h-full">
+            <div className="flex flex-col min-w-0">
+              <span className="text-[11px] font-semibold text-black uppercase tracking-wider truncate">
+                Customers
+              </span>
+              <span className="text-base sm:text-lg font-bold truncate mt-0.5 text-emerald-600">
+                {metrics.customerCount}
+              </span>
+            </div>
+            <div className="p-2 rounded-lg shrink-0 bg-emerald-100 text-emerald-600">
+              <FaUserTie size={16} />
+            </div>
+          </div>
+        </MotionDiv>
+
+        {/* 3. Suppliers - Purple */}
+        <MotionDiv delay={0.15}>
+          <div className="p-3 rounded-xl border bg-purple-50/60 border-purple-300 hover:border-purple-400 flex items-center justify-between gap-2.5 transition-all shadow-xs h-full">
+            <div className="flex flex-col min-w-0">
+              <span className="text-[11px] font-semibold text-black uppercase tracking-wider truncate">
+                Suppliers
+              </span>
+              <span className="text-base sm:text-lg font-bold truncate mt-0.5 text-purple-600">
+                {metrics.supplierCount}
+              </span>
+            </div>
+            <div className="p-2 rounded-lg shrink-0 bg-purple-100 text-purple-600">
+              <FaTruck size={16} />
+            </div>
+          </div>
+        </MotionDiv>
+
+        {/* 4. Total Opening Balance - Amber */}
+        <MotionDiv delay={0.2}>
+          <div className="p-3 rounded-xl border bg-amber-50/60 border-amber-300 hover:border-amber-400 flex items-center justify-between gap-2.5 transition-all shadow-xs h-full">
+            <div className="flex flex-col min-w-0">
+              <span className="text-[11px] font-semibold text-black uppercase tracking-wider truncate">
+                Total Balance
+              </span>
+              <span className="text-base sm:text-lg font-bold truncate mt-0.5 text-amber-600">
+                ৳ {metrics.totalOpeningBalance.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+              </span>
+            </div>
+            <div className="p-2 rounded-lg shrink-0 bg-amber-100 text-amber-600">
+              <FaMoneyBillWave size={16} />
+            </div>
+          </div>
+        </MotionDiv>
       </div>
 
       {/* Party Table */}

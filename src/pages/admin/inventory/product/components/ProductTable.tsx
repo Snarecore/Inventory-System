@@ -217,26 +217,26 @@ export const ProductTable = ({
     };
 
     return (
-        <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+        <div className="bg-white rounded-xl shadow-xs border border-gray-200 flex flex-col relative z-20 overflow-visible">
             {/* Table Header: Search (Left) & Controls/Filters (Right) */}
-            <div className="px-4 py-2.5 border-b border-gray-200 bg-white">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="p-2 sm:p-2.5 border-b border-gray-100 flex flex-wrap items-center justify-between gap-2 relative z-40 overflow-visible">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 w-full">
                     {/* Left: Search Box */}
-                    <div className="w-full sm:w-60">
+                    <div className="w-full sm:w-56">
                         <Search
                             searchQuery={searchQuery}
                             onSearchChange={(value) => {
                                 setSearchQuery(value);
                                 setCurrentPageNumber(1);
                             }}
-                            placeholder="Search..."
+                            placeholder="Search products..."
                         />
                     </div>
 
                     {/* Right: Show Entries & Dropdown Filters */}
-                    <div className="flex flex-wrap items-center gap-2.5 sm:gap-3">
+                    <div className="flex flex-wrap items-center gap-2">
                         {/* Show Entries Card */}
-                        <div className="border border-gray-200 rounded-lg px-2.5 h-[32px] inline-flex items-center gap-1.5 bg-white text-xs text-black whitespace-nowrap shadow-2xs">
+                        <div className="border border-gray-200 rounded-lg px-2 h-8 inline-flex items-center gap-1.5 bg-gray-50/50 hover:bg-white text-xs text-black whitespace-nowrap">
                             <span>Show</span>
                             <select
                                 value={dataLimit}
@@ -244,7 +244,7 @@ export const ProductTable = ({
                                     setDataLimit(Number(e.target.value));
                                     setCurrentPageNumber(1);
                                 }}
-                                className="border border-gray-300 rounded px-1.5 py-0.5 text-xs text-black bg-white focus:outline-none focus:border-gray-400 cursor-pointer"
+                                className="border border-gray-300 rounded px-1.5 py-0.5 text-xs text-black bg-white focus:outline-none focus:border-[var(--color-primary)] cursor-pointer"
                             >
                                 {[10, 20, 50, 70, 100].map((limit) => (
                                     <option key={limit} value={limit}>
@@ -302,14 +302,14 @@ export const ProductTable = ({
             ) : (
                 <>
                     {/* Products Table */}
-                    <div className="w-full overflow-x-auto">
-                        <table className="w-full text-left border-collapse min-w-[950px]">
+                    <div className="w-full overflow-x-auto relative z-10">
+                        <table className="w-full text-left border-collapse min-w-[950px] text-xs">
                             <thead>
-                                <tr className="bg-slate-50 border-b border-gray-200 text-xs text-black ">
+                                <tr className="bg-[#41BEF3] text-black text-xs font-semibold">
                                     {tableHeaders.map(({ key, label, align }) => (
                                         <th
                                             key={key}
-                                            className={`px-4 py-[9px] ${align} ${key === "sl" ? "w-14" : ""}`}
+                                            className={`py-2 px-3 ${align} ${key === "sl" ? "w-10 text-center" : ""}`}
                                         >
                                             {label}
                                         </th>
@@ -317,7 +317,7 @@ export const ProductTable = ({
                                 </tr>
                             </thead>
 
-                            <tbody className="divide-y divide-gray-100 bg-white text-sm">
+                            <tbody className="divide-y divide-gray-100 bg-white">
                                 {products.length > 0 ? (
                                     products.map((product, index) => {
                                         const qty = getQuantity(product);
@@ -330,49 +330,42 @@ export const ProductTable = ({
                                         return (
                                             <tr
                                                 key={prodId}
-                                                className="hover:bg-blue-50/40 transition-colors duration-150 group"
+                                                className="hover:bg-sky-50/40 transition-colors duration-150 group"
                                             >
                                                 {/* SL */}
-                                                <td className="px-4 py-[9px] text-center text-xs font-normal text-black">
+                                                <td className="py-2 px-3 text-center text-xs font-normal text-black">
                                                     {rowNumber}
                                                 </td>
 
                                                 {/* Product Name */}
-                                                <td className="px-4 py-[9px]">
-                                                    <div className="flex items-center gap-3">
-                                                        <div className="min-w-0">
-                                                            <div className="font-normal text-[13px] text-black leading-tight">
-                                                                {getName(product)}
-                                                            </div>
-                                                            {product.packing_levels && (
-                                                                <div className="flex items-center gap-2 mt-0.5 text-xs text-black">
-                                                                    <span className="text-[11px] text-gray-500">
-                                                                        • {product.packing_levels}
-                                                                    </span>
-                                                                </div>
-                                                            )}
-                                                        </div>
+                                                <td className="py-2 px-3 font-normal text-xs text-black">
+                                                    <div className="min-w-0">
+                                                        <span className="font-normal text-xs text-black block truncate">
+                                                            {getName(product)}
+                                                        </span>
+                                                        {product.packing_levels && (
+                                                            <span className="text-[11px] text-gray-500 block truncate mt-0.5">
+                                                                • {product.packing_levels}
+                                                            </span>
+                                                        )}
                                                     </div>
                                                 </td>
 
                                                 {/* Category */}
-                                                <td className="px-4 py-[9px]">
-                                                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-normal bg-slate-100 text-black border border-slate-200">
+                                                <td className="py-2 px-3">
+                                                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-gray-100 text-gray-800 border border-gray-200">
                                                         {getCategory(product)}
                                                     </span>
                                                 </td>
 
                                                 {/* Stock & Unit */}
-                                                <td className="px-4 py-[9px] text-center">
-                                                    <div className="inline-flex items-center justify-center gap-2">
-                                                        <span className="font-normal text-[13px] text-black">
-                                                            {qty}{" "}
-                                                            <span className="text-[13px] text-black font-normal">
-                                                                {getUnit(product)}
-                                                            </span>
+                                                <td className="py-2 px-3 text-center">
+                                                    <div className="inline-flex items-center justify-center gap-1.5">
+                                                        <span className="font-normal text-xs text-black">
+                                                            {qty} {getUnit(product)}
                                                         </span>
                                                         {isLowStock && (
-                                                            <span className="inline-flex items-center text-[10px] font-medium text-amber-800 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded">
+                                                            <span className="inline-flex items-center text-[10px] font-medium text-amber-700 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded">
                                                                 Low Stock
                                                             </span>
                                                         )}
@@ -380,26 +373,26 @@ export const ProductTable = ({
                                                 </td>
 
                                                 {/* Buy Price */}
-                                                <td className="px-4 py-[9px] text-right font-normal text-[13px] text-black">
-                                                    ৳{getBuyPrice(product).toLocaleString()}
+                                                <td className="py-2 px-3 text-right font-normal text-xs text-black whitespace-nowrap">
+                                                    ৳{getBuyPrice(product).toLocaleString('en-IN')}
                                                 </td>
 
                                                 {/* Sell Price */}
-                                                <td className="px-4 py-[9px] text-right font-normal text-[13px] text-black">
-                                                    ৳{getSellPrice(product).toLocaleString()}
+                                                <td className="py-2 px-3 text-right font-normal text-xs text-black whitespace-nowrap">
+                                                    ৳{getSellPrice(product).toLocaleString('en-IN')}
                                                 </td>
 
                                                 {/* Status Badge */}
-                                                <td className="px-4 py-[9px] text-center" onClick={(e) => e.stopPropagation()}>
+                                                <td className="py-2 px-3 text-center" onClick={(e) => e.stopPropagation()}>
                                                     <button
                                                         type="button"
                                                         disabled={togglingId === prodId}
                                                         onClick={() => handleToggleProductStatus(product)}
                                                         title={`Click to mark as ${active ? "Inactive" : "Active"}`}
-                                                        className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold cursor-pointer transition-all duration-150 ${
+                                                        className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium border cursor-pointer transition-colors ${
                                                             active
-                                                                ? "bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100"
-                                                                : "bg-rose-50 text-rose-700 border border-rose-200 hover:bg-rose-100"
+                                                                ? "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100"
+                                                                : "bg-rose-50 text-rose-700 border-rose-200 hover:bg-rose-100"
                                                         } ${togglingId === prodId ? "opacity-50 cursor-wait" : ""}`}
                                                     >
                                                         {active ? "Active" : "Inactive"}
@@ -407,15 +400,16 @@ export const ProductTable = ({
                                                 </td>
 
                                                 {/* Actions: Eye, Edit, Delete */}
-                                                <td className="px-4 py-[9px] text-center">
+                                                <td className="py-2 px-3 text-center">
                                                     <div className="flex items-center justify-center gap-1.5">
                                                         {/* Eye / View Icon */}
                                                         <button
+                                                            type="button"
                                                             onClick={() => openQuickView(product)}
                                                             title="Quick View Details"
-                                                            className="w-7 h-7 rounded-lg flex items-center justify-center bg-sky-50 text-sky-600 hover:bg-sky-600 hover:text-white transition-colors duration-150 cursor-pointer"
+                                                            className="p-1 rounded-md hover:bg-sky-50 text-sky-600 transition-colors cursor-pointer"
                                                         >
-                                                            <FiEye className="w-3.5 h-3.5" />
+                                                            <FiEye size={14} />
                                                         </button>
 
                                                         {/* Edit Icon */}
@@ -423,18 +417,19 @@ export const ProductTable = ({
                                                             to={`/admin/edit-product/${product.id || product.pcode || ""}`}
                                                             state={{ editData: product }}
                                                             title="Edit Product"
-                                                            className="w-7 h-7 rounded-lg flex items-center justify-center bg-amber-50 text-amber-600 hover:bg-amber-600 hover:text-white transition-colors duration-150 cursor-pointer"
+                                                            className="p-1 rounded-md hover:bg-amber-50 text-amber-600 transition-colors cursor-pointer"
                                                         >
-                                                            <FiEdit className="w-3.5 h-3.5" />
+                                                            <FiEdit size={14} />
                                                         </Link>
 
                                                         {/* Delete Icon */}
                                                         <button
+                                                            type="button"
                                                             onClick={() => openDeleteModal(product)}
                                                             title="Delete Product"
-                                                            className="w-7 h-7 rounded-lg flex items-center justify-center bg-rose-50 text-rose-600 hover:bg-rose-600 hover:text-white transition-colors duration-150 cursor-pointer"
+                                                            className="p-1 rounded-md hover:bg-rose-50 text-rose-600 transition-colors cursor-pointer"
                                                         >
-                                                            <FiTrash2 className="w-3.5 h-3.5" />
+                                                            <FiTrash2 size={14} />
                                                         </button>
                                                     </div>
                                                 </td>
@@ -464,7 +459,7 @@ export const ProductTable = ({
                     </div>
 
                     {/* Pagination & Summary Footer */}
-                    <div className="px-4 py-2.5 border-t border-gray-200 bg-gray-50 flex flex-col sm:flex-row items-center justify-between gap-3">
+                    <div className="p-2.5 sm:p-3 border-t border-gray-100 bg-gray-50/50 flex flex-col sm:flex-row items-center justify-between gap-2.5">
                         <div className="text-xs text-black">
                             Showing{" "}
                             <span className="font-semibold text-black">

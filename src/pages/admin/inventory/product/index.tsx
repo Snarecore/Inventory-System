@@ -241,7 +241,7 @@ const Products = () => {
     };
 
     return (
-        <div className="flex flex-col gap-3 px-4 py-2.5 sm:px-5 sm:py-3 max-w-[1600px] mx-auto w-full">
+        <div className="flex flex-col gap-2.5 px-3 py-2 sm:px-4 sm:py-2.5 max-w-[1600px] mx-auto w-full">
             {/* Header with Title & Actions */}
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                 <PageHeader
@@ -260,79 +260,89 @@ const Products = () => {
                 </div>
             </div>
 
-            {/* Dashboard-Inspired KPI Summary Cards (5 Cards) */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 w-full">
-                {/* 1. Total Products - Sky Blue */}
+            {/* KPI Summary Cards (5 Cards matching Sales & Purchases styling) */}
+            <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2.5 w-full">
+                {/* 1. Total Products - Blue */}
                 <MotionDiv delay={0.05}>
-                    <div className="px-4 py-2.5 rounded-xl bg-[#009fe3] text-white shadow-xs">
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <p className="text-[20px] font-bold tracking-tight">{metrics.total}</p>
-                                <p className="text-[11px] font-medium text-white uppercase tracking-wider">Total Products</p>
-                            </div>
-                            <div className="text-2xl text-white">
-                                <IoCubeOutline />
-                            </div>
+                    <div className="p-3 rounded-xl border bg-blue-50/60 border-blue-300 hover:border-blue-400 flex items-center justify-between gap-2.5 transition-all shadow-xs h-full">
+                        <div className="flex flex-col min-w-0">
+                            <span className="text-[11px] font-semibold text-black uppercase tracking-wider truncate">
+                                Total Products
+                            </span>
+                            <span className="text-base sm:text-lg font-bold truncate mt-0.5 text-blue-600">
+                                {metrics.total}
+                            </span>
+                        </div>
+                        <div className="p-2 rounded-lg shrink-0 bg-blue-100 text-blue-600">
+                            <IoCubeOutline size={18} />
                         </div>
                     </div>
                 </MotionDiv>
 
-                {/* 2. Active Products - Emerald Green */}
+                {/* 2. Active Products - Emerald */}
                 <MotionDiv delay={0.1}>
-                    <div className="px-4 py-2.5 rounded-xl bg-[#28c76f] text-white shadow-xs">
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <p className="text-[20px] font-bold tracking-tight">{metrics.activeCount}</p>
-                                <p className="text-[11px] font-medium text-white uppercase tracking-wider">Active Products</p>
-                            </div>
-                            <div className="text-2xl text-white">
-                                <FiCheckCircle />
-                            </div>
+                    <div className="p-3 rounded-xl border bg-emerald-50/60 border-emerald-300 hover:border-emerald-400 flex items-center justify-between gap-2.5 transition-all shadow-xs h-full">
+                        <div className="flex flex-col min-w-0">
+                            <span className="text-[11px] font-semibold text-black uppercase tracking-wider truncate">
+                                Active Products
+                            </span>
+                            <span className="text-base sm:text-lg font-bold truncate mt-0.5 text-emerald-600">
+                                {metrics.activeCount}
+                            </span>
+                        </div>
+                        <div className="p-2 rounded-lg shrink-0 bg-emerald-100 text-emerald-600">
+                            <FiCheckCircle size={18} />
                         </div>
                     </div>
                 </MotionDiv>
 
-                {/* 3. Inactive Products - Rose / Red */}
+                {/* 3. Inactive Products - Rose */}
                 <MotionDiv delay={0.15}>
-                    <div className="px-4 py-2.5 rounded-xl bg-[#ea5455] text-white shadow-xs">
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <p className="text-[20px] font-bold tracking-tight">{metrics.inactiveCount}</p>
-                                <p className="text-[11px] font-medium text-white uppercase tracking-wider">Inactive Products</p>
-                            </div>
-                            <div className="text-2xl text-white">
-                                <FiXCircle />
-                            </div>
+                    <div className="p-3 rounded-xl border bg-rose-50/60 border-rose-300 hover:border-rose-400 flex items-center justify-between gap-2.5 transition-all shadow-xs h-full">
+                        <div className="flex flex-col min-w-0">
+                            <span className="text-[11px] font-semibold text-black uppercase tracking-wider truncate">
+                                Inactive Products
+                            </span>
+                            <span className="text-base sm:text-lg font-bold truncate mt-0.5 text-rose-600">
+                                {metrics.inactiveCount}
+                            </span>
+                        </div>
+                        <div className="p-2 rounded-lg shrink-0 bg-rose-100 text-rose-600">
+                            <FiXCircle size={18} />
                         </div>
                     </div>
                 </MotionDiv>
 
-                {/* 4. Low Stock Alert - Amber / Orange */}
+                {/* 4. Low Stock Alert - Amber */}
                 <MotionDiv delay={0.2}>
-                    <div className="px-4 py-2.5 rounded-xl bg-[#FE9F43] text-white shadow-xs">
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <p className="text-[20px] font-bold tracking-tight">{metrics.lowStockCount}</p>
-                                <p className="text-[11px] font-medium text-white uppercase tracking-wider">Low Stock Alert</p>
-                            </div>
-                            <div className="text-2xl text-white">
-                                <FiAlertTriangle />
-                            </div>
+                    <div className="p-3 rounded-xl border bg-amber-50/60 border-amber-300 hover:border-amber-400 flex items-center justify-between gap-2.5 transition-all shadow-xs h-full">
+                        <div className="flex flex-col min-w-0">
+                            <span className="text-[11px] font-semibold text-black uppercase tracking-wider truncate">
+                                Low Stock Alert
+                            </span>
+                            <span className="text-base sm:text-lg font-bold truncate mt-0.5 text-amber-600">
+                                {metrics.lowStockCount}
+                            </span>
+                        </div>
+                        <div className="p-2 rounded-lg shrink-0 bg-amber-100 text-amber-600">
+                            <FiAlertTriangle size={18} />
                         </div>
                     </div>
                 </MotionDiv>
 
-                {/* 5. Stock Valuation - Midnight Navy */}
+                {/* 5. Stock Valuation - Purple */}
                 <MotionDiv delay={0.25}>
-                    <div className="px-4 py-2.5 rounded-xl bg-[#1b2850] text-white shadow-xs">
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <p className="text-[20px] font-bold tracking-tight">৳{metrics.totalStockValue.toLocaleString('en-IN')}</p>
-                                <p className="text-[11px] font-medium text-white uppercase tracking-wider">Stock Valuation</p>
-                            </div>
-                            <div className="text-2xl text-white">
-                                <FaMoneyBillWave />
-                            </div>
+                    <div className="p-3 rounded-xl border bg-purple-50/60 border-purple-300 hover:border-purple-400 flex items-center justify-between gap-2.5 transition-all shadow-xs h-full">
+                        <div className="flex flex-col min-w-0">
+                            <span className="text-[11px] font-semibold text-black uppercase tracking-wider truncate">
+                                Stock Valuation
+                            </span>
+                            <span className="text-base sm:text-lg font-bold truncate mt-0.5 text-purple-600">
+                                ৳ {metrics.totalStockValue.toLocaleString('en-IN')}
+                            </span>
+                        </div>
+                        <div className="p-2 rounded-lg shrink-0 bg-purple-100 text-purple-600">
+                            <FaMoneyBillWave size={18} />
                         </div>
                     </div>
                 </MotionDiv>
