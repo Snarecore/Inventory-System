@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import { FiEye, FiEdit, FiPrinter, FiChevronDown } from "react-icons/fi";
 import { BsFilterRight } from "react-icons/bs";
 import moment from "moment";
@@ -8,7 +9,7 @@ import EmptyState from "@/components/empty-state/EmptyState";
 import TableSkeleton from "@/components/skeleton/TableSkeleton";
 import Pagination from "@/components/pagination";
 import type { SaleItem, PartyItem } from "@/types";
-import { FaSearch, FaFileExcel } from "react-icons/fa";
+import { FaSearch, FaFileExcel, FaUndoAlt } from "react-icons/fa";
 import { exportSalesToExcel } from "@/utils/excel-export";
 import { showSuccessToast, showErrorToast } from "@/utils/toast-utils";
 import { formatMoney } from "@/utils/formatters";
@@ -82,6 +83,7 @@ export const SaleTable: React.FC<SaleTableProps> = ({
   onDelete,
   onExport,
 }) => {
+  const navigate = useNavigate();
   const [isSortOpen, setIsSortOpen] = useState<boolean>(false);
   const [isCustomerDropdownOpen, setIsCustomerDropdownOpen] = useState<boolean>(false);
   const [customerSearchQuery, setCustomerSearchQuery] = useState<string>("");
@@ -537,6 +539,18 @@ export const SaleTable: React.FC<SaleTableProps> = ({
                           className="p-1.5 text-emerald-600 hover:bg-emerald-50 rounded-md transition-colors cursor-pointer"
                         >
                           <FiPrinter size={14} />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            navigate("/admin/create-sales-return", {
+                              state: { sale },
+                            })
+                          }
+                          title="Return Items"
+                          className="p-1.5 text-rose-600 hover:bg-rose-50 rounded-md transition-colors cursor-pointer"
+                        >
+                          <FaUndoAlt size={12} />
                         </button>
                       </div>
                     </td>

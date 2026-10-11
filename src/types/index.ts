@@ -276,6 +276,56 @@ export interface SaleItem {
   [key: string]: any;
 }
 
+export interface SalesReturnDetailItem {
+  id?: string | number;
+  returnDetailId?: string | number;
+  productId: string | number;
+  productCode?: string;
+  productName: string;
+  unit?: string;
+  soldQuantity?: number;
+  quantity: number;
+  returnQuantity?: number;
+  sellPrice: number;
+  discount?: number;
+  vat?: number;
+  deliveryCharge?: number;
+  total: number;
+  returnReason?: string;
+  packSize?: string | null;
+  expiryDate?: string | null;
+  [key: string]: any;
+}
+
+export interface SalesReturnItem {
+  id?: string | number;
+  returnId?: string | number;
+  returnNo?: string;
+  orderNo?: string;
+  salesInvoiceNo: string;
+  invoiceNo?: string;
+  customerId: string | number;
+  customerName: string;
+  customerPhone?: string;
+  customerAddress?: string;
+  returnDate: string;
+  totalAmount: number;
+  discount?: number;
+  vat?: number;
+  deliveryCharge?: number;
+  grandTotal: number;
+  refundAmount: number;
+  paymentType: "CASH" | "CREDIT" | "MFS" | "BANK" | string;
+  status: string;
+  note?: string;
+  osType?: string;
+  returnDetails?: SalesReturnDetailItem[];
+  itemsCount?: number;
+  createdAt?: string;
+  updatedAt?: string;
+  [key: string]: any;
+}
+
 export interface SaleTransactionReportItem {
   id?: string | number;
   invoiceNo?: string;

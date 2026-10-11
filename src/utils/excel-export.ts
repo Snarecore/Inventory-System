@@ -294,3 +294,89 @@ export function exportSalesToExcel(
   XLSX.writeFile(workbook, fileName);
 }
 
+/**
+ * Enterprise standard Excel export for Sales Returns
+ */
+export function exportSalesReturnToExcel(
+  returns: any[],
+  options?: { fileName?: string; sheetName?: string }
+): void {
+  if (!returns || returns.length === 0) {
+    throw new Error("No sales return data available to export");
+  }
+
+  const todayStr = new Date().toISOString().substring(0, 10);
+  const fileName = options?.fileName || `Sales_Returns_${todayStr}.xlsx`;
+  const sheetName = options?.sheetName || "Sales Returns";
+
+  let sumReturnAmount = 0;
+  let sumRefundAmount = 0;
+  let sumItems = 0;
+
+  const rows = returns.map((item: any, index: number) => {
+    const returnAmount = Number(item.returnTotalAmount ?? item.totalAmount ?? 0);
+    const refundAmount = Number(item.refundAmount ?? returnAmount);
+    const details = item.returnDetails || item.details || [];
+    const itemsCount = details.length > 0 ? details.length : Number(item.itemsCount || 1);
+
+    sumReturnAmount += returnAmount;
+    sumRefundAmount += refundAmount;
+    sumItems += itemsCount;
+
+    return {
+      "SL": index + 1,
+      "Return No": item.returnNo || `RET-${item.id || index + 1}`,
+      "Return Date": item.returnDate || item.date || todayStr,
+      "Original Invoice": item.invoiceNo || "-",
+      "Customer Name": item.customerName || item.customer_name || "Walk-in Customer",
+      "Customer Phone": item.customerPhone || item.customer_phone || "-",
+      "Items Count": itemsCount,
+      "Return Reason": item.returnReason || "Product Return",
+      "Refund Channel": (item.paymentType || "CASH").toUpperCase(),
+      "Return Value (BDT)": Number(returnAmount.toFixed(2)),
+      "Refunded Amount (BDT)": Number(refundAmount.toFixed(2)),
+      "Status": (item.status || "COMPLETED").toUpperCase(),
+      "Remarks": item.note || item.remarks || "",
+    };
+  });
+
+  const totalRow = {
+    "SL": "TOTAL",
+    "Return No": `Total Returns: ${returns.length}`,
+    "Return Date": "",
+    "Original Invoice": "",
+    "Customer Name": "",
+    "Customer Phone": "",
+    "Items Count": sumItems,
+    "Return Reason": "",
+    "Refund Channel": "",
+    "Return Value (BDT)": Number(sumReturnAmount.toFixed(2)),
+    "Refunded Amount (BDT)": Number(sumRefundAmount.toFixed(2)),
+    "Status": "",
+    "Remarks": "",
+  };
+
+  const fullData = [...rows, totalRow];
+  const worksheet = XLSX.utils.json_to_sheet(fullData, {
+    header: Object.keys(rows[0]),
+  });
+
+  const colKeys = Object.keys(rows[0]);
+  const colWidths = colKeys.map((key) => {
+    let maxLen = key.length;
+    fullData.forEach((row: any) => {
+      const val = row[key];
+      if (val !== undefined && val !== null) {
+        const len = String(val).length;
+        if (len > maxLen) maxLen = len;
+      }
+    });
+    return { wch: Math.min(Math.max(maxLen + 3, 10), 40) };
+  });
+  worksheet["!cols"] = colWidths;
+
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(workbook, worksheet, sheetName);
+  XLSX.writeFile(workbook, fileName);
+}
+

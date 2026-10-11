@@ -39,6 +39,8 @@ const CreatePurchase = React.lazy(() => import('@/pages/admin/trade/create-purch
 const Sales = React.lazy(() => import('@/pages/admin/trade/sales'))
 const CreateSale = React.lazy(() => import('@/pages/admin/trade/create-sale'))
 const SalesReport = React.lazy(() => import('@/pages/admin/trade/sales-report'))
+const SalesReturn = React.lazy(() => import('@/pages/admin/trade/sales-return'))
+const CreateSalesReturn = React.lazy(() => import('@/pages/admin/trade/create-sales-return'))
 
 
 const LoadingFallback = () => (
@@ -105,7 +107,7 @@ export const router = createBrowserRouter([
   },
   {
     path: '/sales/returns',
-    element: <Navigate to="/admin/sales" replace />,
+    element: <Navigate to="/admin/sales-return" replace />,
   },
   {
     path: '/sales/payments',
@@ -231,6 +233,14 @@ export const router = createBrowserRouter([
       {
         path: 'sales-report',
         element: withSuspense(SalesReport),
+      },
+      {
+        path: 'sales-return',
+        element: withSuspense(SalesReturn),
+      },
+      {
+        path: 'create-sales-return',
+        element: withSuspense(CreateSalesReturn),
       },
 
       {
