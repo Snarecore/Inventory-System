@@ -89,15 +89,14 @@ export const PartyTable: React.FC<PartyTableProps> = ({
   ];
 
   const tableHeaders = [
-    { key: "sl", label: "SL", align: "text-center", width: "w-12 text-center" },
-    { key: "name", label: "Party Name", align: "text-left", width: "min-w-[140px]" },
-    { key: "type", label: "Type", align: "text-center", width: "w-28 text-center" },
-    { key: "phone", label: "Phone", align: "text-left", width: "w-36" },
-    { key: "email", label: "Email", align: "text-left", width: "w-44" },
-    { key: "address", label: "Address", align: "text-left", width: "min-w-[160px]" },
-    { key: "balance", label: "Opening Balance", align: "text-right", width: "w-36 text-right" },
-    { key: "status", label: "Status", align: "text-center", width: "w-28 text-center" },
-    { key: "action", label: "Actions", align: "text-center", width: "w-24 text-center" },
+    { key: "sl", label: "SL", align: "text-left", width: "w-[4.285%]" },
+    { key: "name", label: "Names", align: "text-left", width: "w-[10.285%]" },
+    { key: "type", label: "Type", align: "text-left", width: "w-[12.285%]" },
+    { key: "contact", label: "Contact Info", align: "text-left", width: "w-[14.285%]" },
+    { key: "address", label: "Address", align: "text-center", width: "w-[14.285%]" },
+    { key: "balance", label: "Opening Balance", align: "text-right", width: "w-[14.285%]" },
+    { key: "status", label: "Status", align: "text-right", width: "w-[14.285%]" },
+    { key: "action", label: "Actions", align: "text-right", width: "w-[14.285%]" },
   ];
 
   const getPartyName = (p: PartyItem) => p.name || p.partyName || p.party_name || "Unnamed Party";
@@ -107,7 +106,10 @@ export const PartyTable: React.FC<PartyTableProps> = ({
   };
   const getPartyPhone = (p: PartyItem) => p.phone || p.partyPhone || p.phoneNumber || p.party_phone || "—";
   const getPartyEmail = (p: PartyItem) => p.email || p.partyEmail || "—";
-  const getPartyAddress = (p: PartyItem) => p.address || p.partyAddress || "—";
+  const getPartyAddress = (p: PartyItem) => {
+    const addr = (p.address || p.partyAddress || "").trim();
+    return addr || "N/A";
+  };
   const getPartyBalance = (p: PartyItem) =>
     Number(p.openingBalance ?? p.opening_balance ?? p.balance ?? p.dueAmount ?? p.due_amount ?? 0);
   const isPartyActive = (p: PartyItem) => {
@@ -246,7 +248,7 @@ export const PartyTable: React.FC<PartyTableProps> = ({
         <>
           {/* Table */}
           <div className="w-full overflow-x-auto relative z-10">
-            <table className="w-full text-left border-collapse min-w-[950px] text-xs">
+            <table className="w-full text-left border-collapse table-fixed min-w-[750px] text-xs">
               <thead>
                 <tr className="bg-[#41BEF3] text-black text-xs font-semibold">
                   {tableHeaders.map(({ key, label, align, width }) => (
@@ -279,17 +281,17 @@ export const PartyTable: React.FC<PartyTableProps> = ({
                         className="hover:bg-sky-50/40 transition-colors group"
                       >
                         {/* SL */}
-                        <td className="py-2 px-3 text-center text-xs font-normal text-black w-12">
+                        <td className="py-2 px-3.5 text-left text-xs font-normal text-black truncate">
                           {rowNumber}
                         </td>
 
-                        {/* Party Name */}
-                        <td className="py-2 px-3 font-medium text-xs text-black">
-                          <span className="block truncate">{name}</span>
+                        {/* Party Details (Name) */}
+                        <td className="py-2 px-3 text-left font-medium text-xs text-black truncate">
+                          <span className="block truncate" title={name}>{name}</span>
                         </td>
 
                         {/* Type */}
-                        <td className="py-2 px-3 text-center">
+                        <td className="py-2 px-1 text-left">
                           <span
                             className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium border ${
                               type === "SUPPLIER"
@@ -301,19 +303,14 @@ export const PartyTable: React.FC<PartyTableProps> = ({
                           </span>
                         </td>
 
-                        {/* Phone */}
-                        <td className="py-2 px-3 text-left font-normal text-xs text-black whitespace-nowrap">
-                          {phone}
-                        </td>
-
-                        {/* Email */}
-                        <td className="py-2 px-3 text-left font-normal text-xs text-black truncate max-w-[180px]">
-                          {email}
+                        {/* Contact Info (Phone) */}
+                        <td className="py-2 px-3 text-left font-normal text-xs text-black truncate">
+                          <span className="block truncate" title={phone}>{phone}</span>
                         </td>
 
                         {/* Address */}
-                        <td className="py-2 px-3 text-left font-normal text-xs text-black truncate max-w-[200px]">
-                          {address}
+                        <td className="py-2 px-3 text-center font-normal text-xs text-black truncate">
+                          <span className="block truncate" title={address}>{address}</span>
                         </td>
 
                         {/* Opening Balance */}
@@ -322,7 +319,7 @@ export const PartyTable: React.FC<PartyTableProps> = ({
                         </td>
 
                         {/* Status Badge */}
-                        <td className="py-2 px-3 text-center">
+                        <td className="py-2 text-right">
                           <span
                             className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium border ${
                               active
@@ -335,8 +332,8 @@ export const PartyTable: React.FC<PartyTableProps> = ({
                         </td>
 
                         {/* Actions: Eye, Edit */}
-                        <td className="py-2 px-3 text-center">
-                          <div className="flex items-center justify-center gap-1.5">
+                        <td className="py-2 px-3 text-right">
+                          <div className="flex items-center justify-end gap-1.5">
                             {/* Eye / View Icon */}
                             <button
                               type="button"
