@@ -796,44 +796,80 @@ export const SalesReturnForm: React.FC = () => {
 
   return (
     <div className="flex flex-col gap-2.5 px-3 py-2 sm:px-4 sm:py-2.5 max-w-[1600px] mx-auto w-full">
-      {/* Top Header & Actions */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-        <PageHeader
-          headerTitle="Create Sales Return"
-          headerDescription="Process customer return items against invoice or order number, and disburse refund"
-        />
+      {/* Top Header Bar (Matching PurchaseForm Standard) */}
+      <div className="sticky top-0 z-30 bg-[#F6F6F6] py-2 sm:py-2.5 -mt-2 sm:-mt-2.5 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-2.5 border-b border-gray-200">
+        {/* Left Side: Title & Badge */}
+        <div className="flex items-center justify-between gap-2 w-full lg:w-auto">
+          <div className="flex flex-col lg:flex-row lg:items-center gap-1 lg:gap-2.5 min-w-0">
+            <h1 className="text-sm sm:text-base lg:text-lg font-bold text-black flex items-center gap-1.5 shrink-0">
+              <FaUndoAlt className="text-[#009fe3] shrink-0" size={17} />
+              <span className="truncate">Create Sales Return</span>
+            </h1>
+            <span className="text-[10px] sm:text-xs px-2.5 py-0.5 rounded-full bg-sky-100 text-sky-800 font-semibold w-fit">
+              {salesInvoiceNo || "SR-NEW"}
+            </span>
+          </div>
 
-        <div className="flex items-center gap-2 self-end sm:self-auto">
-          <button
-            type="button"
-            onClick={handleReset}
-            className="px-3 py-1.5 text-xs font-medium text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors cursor-pointer"
-          >
-            Reset
-          </button>
-          <button
-            type="button"
-            onClick={() => navigate("/admin/sales-return")}
-            className="px-3 py-1.5 text-xs font-medium text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors cursor-pointer"
-          >
-            Cancel
-          </button>
-          <Button
-            label={isSubmitting ? "Saving..." : "Save Return"}
-            onClick={() => handlePreSubmit(false)}
-            color="#009fe3"
-            hoverColor="#0085be"
-            disabled={isSubmitting}
-            icon={<FaCheck className="text-white text-xs" />}
-          />
-          <Button
-            label="Save & Print"
-            onClick={() => handlePreSubmit(true)}
-            color="#059669"
-            hoverColor="#047857"
-            disabled={isSubmitting}
-            icon={<FaPrint className="text-white text-xs" />}
-          />
+          {/* Controls visible on top right on Mobile (< lg) */}
+          <div className="flex lg:hidden items-center gap-1 shrink-0">
+            <button
+              type="button"
+              onClick={handleReset}
+              className="px-2.5 py-1.5 text-xs font-medium text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors cursor-pointer"
+            >
+              Reset
+            </button>
+            <button
+              type="button"
+              onClick={() => navigate("/admin/sales-return")}
+              className="px-2.5 py-1.5 text-xs font-medium text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors cursor-pointer"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+
+        {/* Action Controls for LG & Mobile */}
+        <div className="flex flex-col lg:flex-row lg:items-center gap-2 w-full lg:w-auto">
+          {/* Controls visible inline on Desktop (lg:) */}
+          <div className="hidden lg:flex items-center gap-2">
+            <button
+              type="button"
+              onClick={handleReset}
+              className="px-3 py-1.5 text-xs font-medium text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors cursor-pointer"
+            >
+              Reset
+            </button>
+            <button
+              type="button"
+              onClick={() => navigate("/admin/sales-return")}
+              className="px-3 py-1.5 text-xs font-medium text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors cursor-pointer"
+            >
+              Cancel
+            </button>
+          </div>
+
+          {/* Save & Save & Print Buttons */}
+          <div className="grid grid-cols-2 lg:flex lg:items-center gap-2 w-full lg:w-auto">
+            <Button
+              label={isSubmitting ? "Saving..." : "Save Return"}
+              onClick={() => handlePreSubmit(false)}
+              color="#009fe3"
+              hoverColor="#0085be"
+              disabled={isSubmitting}
+              icon={<FaCheck className="text-white text-xs" />}
+              buttonClass="!text-xs !py-1.5 !w-full lg:!w-fit justify-center font-bold"
+            />
+            <Button
+              label="Save & Print"
+              onClick={() => handlePreSubmit(true)}
+              color="#059669"
+              hoverColor="#047857"
+              disabled={isSubmitting}
+              icon={<FaPrint className="text-white text-xs" />}
+              buttonClass="!text-xs !py-1.5 !w-full lg:!w-fit justify-center font-bold"
+            />
+          </div>
         </div>
       </div>
 
@@ -1003,38 +1039,32 @@ export const SalesReturnForm: React.FC = () => {
         </div>
       </div>
 
-      {/* Customer Original Payment Breakdown Banner */}
+      {/* Customer Original Payment Breakdown Banner (Compact Spacing & Padding) */}
       {selectedSale && (
-        <div className="bg-blue-50/50 border border-blue-200 rounded-xl p-3 flex flex-col gap-2.5 text-xs">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-blue-100">
-            <div className="flex items-center gap-2">
-              <div className="p-1.5 rounded-lg bg-blue-100 text-[#009fe3] shrink-0">
-                <FaMoneyBillWave size={14} />
+        <div className="bg-blue-50/50 border border-blue-200 rounded-xl p-2 sm:p-2.5 flex flex-col gap-1.5 text-xs">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 pb-1 border-b border-blue-100">
+            <div className="flex items-center gap-1.5">
+              <div className="p-1 rounded-md bg-blue-100 text-[#009fe3] shrink-0">
+                <FaMoneyBillWave size={12} />
               </div>
-              <div>
-                <span className="font-bold text-gray-900 block leading-tight">
-                  Customer's Original Payment Breakdown (গ্রাহকের পূর্বের পেমেন্ট বিবরণ)
-                </span>
-                <span className="text-[11px] text-gray-500 block">
-                  Original Invoice Total: <strong className=" text-gray-800">৳ {formatMoney(origGrandTotal)}</strong>
-                  {selectedSale.orderNo && ` (Order: ${selectedSale.orderNo})`}
-                </span>
-              </div>
+              <span className="font-bold text-black block text-[11px] sm:text-xs leading-tight">
+                Customer's Original Payment Breakdown
+              </span>
             </div>
 
             <div className="flex items-center gap-1.5">
-              <span className="text-[11px] text-gray-500 font-medium">Invoice Method:</span>
+              <span className="text-[10px] text-gray-500 font-medium">Invoice Method:</span>
               <span
-                className={`px-2 py-0.5 rounded font-bold text-[10px]  ${
+                className={`px-1.5 py-0.2 rounded font-bold text-[10px] ${
                   origPaymentMode === "CASH"
-                    ? "bg-emerald-100 text-emerald-800"
+                    ? "bg-emerald-100 text-emerald-800 border border-emerald-300"
                     : origPaymentMode === "CREDIT"
-                    ? "bg-rose-100 text-rose-800"
+                    ? "bg-rose-100 text-rose-800 border border-rose-300"
                     : origPaymentMode === "BANK"
-                    ? "bg-sky-100 text-sky-800"
+                    ? "bg-sky-100 text-sky-800 border border-sky-300"
                     : origPaymentMode === "MFS"
-                    ? "bg-purple-100 text-purple-800"
-                    : "bg-blue-100 text-blue-800"
+                    ? "bg-purple-100 text-purple-800 border border-purple-300"
+                    : "bg-blue-100 text-blue-800 border border-blue-300"
                 }`}
               >
                 {origPaymentMode}
@@ -1042,66 +1072,101 @@ export const SalesReturnForm: React.FC = () => {
             </div>
           </div>
 
-          {/* Cards for each channel customer paid with (Clean 2-line height alignment) */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+          {/* Cards for each channel customer paid with (Compact ERP style) */}
+          <div className="grid grid-cols-2 sm:grid-cols-5 gap-1.5">
+            {/* Total Balance / Invoice Amount */}
+            <div className="p-1.5 sm:p-2 rounded-lg border border-sky-200 bg-gradient-to-b from-sky-50/50 to-white shadow-2xs flex flex-col justify-between">
+              <div className="flex items-center justify-between text-[11px] font-medium text-black mb-0.5">
+                <span className="flex items-center gap-1 text-black">
+                  <FaFileInvoice className="text-[#009fe3] text-[10px]" />
+                  Total Balance
+                </span>
+              </div>
+              <div className="font-semibold text-black text-xs sm:text-[13px] leading-tight">
+                ৳ {formatMoney(origGrandTotal)}
+              </div>
+            </div>
+
             {/* Cash Paid */}
-            <div className={`p-2 rounded-lg border bg-white flex flex-col justify-between ${origCashPaid > 0 ? "border-gray-300" : "border-gray-200 opacity-60"}`}>
-              <div className="flex items-center justify-between text-[11px] font-normal text-black mb-1">
+            <div
+              className={`p-1.5 sm:p-2 rounded-lg border bg-gradient-to-b from-emerald-50/40 to-white shadow-2xs flex flex-col justify-between ${
+                origCashPaid > 0 ? "border-emerald-300" : "border-gray-200 opacity-60"
+              }`}
+            >
+              <div className="flex items-center justify-between text-[11px] font-medium text-black mb-0.5">
                 <span className="flex items-center gap-1 text-black">
                   <FaMoneyBillWave className="text-emerald-600 text-[10px]" />
                   Cash Paid
                 </span>
               </div>
-              <div className="font-normal text-black text-xs sm:text-sm">
+              <div className="font-semibold text-black text-xs sm:text-[13px] leading-tight">
                 ৳ {formatMoney(origCashPaid)}
               </div>
             </div>
 
             {/* Bank Paid */}
-            <div className={`p-2 rounded-lg border bg-white flex flex-col justify-between ${origBankPaid > 0 ? "border-gray-300" : "border-gray-200 opacity-60"}`}>
-              <div className="flex items-center justify-between text-[11px] font-normal text-black mb-1">
+            <div
+              className={`p-1.5 sm:p-2 rounded-lg border bg-gradient-to-b from-sky-50/40 to-white shadow-2xs flex flex-col justify-between ${
+                origBankPaid > 0 ? "border-sky-300" : "border-gray-200 opacity-60"
+              }`}
+            >
+              <div className="flex items-center justify-between text-[11px] font-medium text-black mb-0.5">
                 <span className="flex items-center gap-1 text-black">
                   <FaCreditCard className="text-sky-600 text-[10px]" />
                   Bank / Card
                 </span>
                 {selectedSale.bankName && (
-                  <span className="text-[10px] text-black font-normal truncate max-w-[100px]" title={selectedSale.bankName}>
+                  <span
+                    className="text-[9.5px] text-gray-700 bg-sky-100/70 px-1 rounded font-normal truncate max-w-[85px]"
+                    title={selectedSale.bankName}
+                  >
                     {selectedSale.bankName}
                   </span>
                 )}
               </div>
-              <div className="font-normal text-black text-xs sm:text-sm">
+              <div className="font-semibold text-black text-xs sm:text-[13px] leading-tight">
                 ৳ {formatMoney(origBankPaid)}
               </div>
             </div>
 
             {/* MFS Paid */}
-            <div className={`p-2 rounded-lg border bg-white flex flex-col justify-between ${origMfsPaid > 0 ? "border-gray-300" : "border-gray-200 opacity-60"}`}>
-              <div className="flex items-center justify-between text-[11px] font-normal text-black mb-1">
+            <div
+              className={`p-1.5 sm:p-2 rounded-lg border bg-gradient-to-b from-purple-50/40 to-white shadow-2xs flex flex-col justify-between ${
+                origMfsPaid > 0 ? "border-purple-300" : "border-gray-200 opacity-60"
+              }`}
+            >
+              <div className="flex items-center justify-between text-[11px] font-medium text-black mb-0.5">
                 <span className="flex items-center gap-1 text-black">
                   <FaMobileAlt className="text-purple-600 text-[10px]" />
                   MFS Wallet
                 </span>
                 {(selectedSale.mfsName || selectedSale.mfsPhone) && (
-                  <span className="text-[10px] text-black font-normal truncate max-w-[100px]" title={`${selectedSale.mfsName || ""} ${selectedSale.mfsPhone || ""}`}>
+                  <span
+                    className="text-[9.5px] text-gray-700 bg-purple-100/70 px-1 rounded font-normal truncate max-w-[85px]"
+                    title={`${selectedSale.mfsName || ""} ${selectedSale.mfsPhone || ""}`}
+                  >
                     {selectedSale.mfsName || selectedSale.mfsPhone}
                   </span>
                 )}
               </div>
-              <div className="font-normal text-black text-xs sm:text-sm">
+              <div className="font-semibold text-black text-xs sm:text-[13px] leading-tight">
                 ৳ {formatMoney(origMfsPaid)}
               </div>
             </div>
 
             {/* Due Balance */}
-            <div className={`p-2 rounded-lg border bg-white flex flex-col justify-between ${origDueAmount > 0 ? "border-gray-300" : "border-gray-200 opacity-60"}`}>
-              <div className="flex items-center justify-between text-[11px] font-normal text-black mb-1">
+            <div
+              className={`p-1.5 sm:p-2 rounded-lg border bg-gradient-to-b from-rose-50/40 to-white shadow-2xs flex flex-col justify-between ${
+                origDueAmount > 0 ? "border-rose-300" : "border-gray-200 opacity-60"
+              }`}
+            >
+              <div className="flex items-center justify-between text-[11px] font-medium text-black mb-0.5">
                 <span className="flex items-center gap-1 text-black">
                   <span className="w-1.5 h-1.5 rounded-full bg-rose-500 inline-block" />
                   Due Balance
                 </span>
               </div>
-              <div className="font-normal text-black text-xs sm:text-sm">
+              <div className="font-semibold text-black text-xs sm:text-[13px] leading-tight">
                 ৳ {formatMoney(origDueAmount)}
               </div>
             </div>
@@ -1333,21 +1398,6 @@ export const SalesReturnForm: React.FC = () => {
                 + {preset}
               </button>
             ))}
-          </div>
-
-          {/* Stock inventory note card */}
-          <div className="mt-1 p-2.5 rounded-lg bg-emerald-50/60 border border-emerald-200 text-xs flex items-start gap-2">
-            <div className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0 mt-0.5">
-              <FaCheck className="text-[10px]" />
-            </div>
-            <div>
-              <span className="font-bold text-emerald-900 block text-[11px]">
-                Inventory Restock Enabled
-              </span>
-              <p className="text-[11px] text-emerald-800 mt-0.5 leading-tight">
-                All selected returned items will be automatically credited back into your active warehouse inventory stock.
-              </p>
-            </div>
           </div>
         </div>
 
@@ -1686,40 +1736,6 @@ export const SalesReturnForm: React.FC = () => {
                 </div>
               </div>
             )}
-          </div>
-
-          {/* Allocation Status Indicator & Bottom Action Button */}
-          <div className="pt-2 border-t border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-            <div
-              className={`px-2.5 py-1.5 rounded-lg border text-xs flex items-center justify-between gap-3 flex-1 ${
-                Math.abs(refundDifference) <= 0.01
-                  ? "bg-emerald-50 border-emerald-200 text-emerald-800"
-                  : refundDifference > 0
-                  ? "bg-amber-50 border-amber-200 text-amber-800"
-                  : "bg-rose-50 border-rose-200 text-rose-800"
-              }`}
-            >
-              <span className="font-semibold text-[11px]">
-                {Math.abs(refundDifference) <= 0.01
-                  ? "✓ 100% Refund Allocated Properly"
-                  : refundDifference > 0
-                  ? `Remaining Unallocated: ৳${formatMoney(refundDifference)}`
-                  : `Over-allocated by: ৳${formatMoney(Math.abs(refundDifference))}`}
-              </span>
-              <span className=" text-xs font-bold shrink-0">
-                ৳{formatMoney(totalRefundAllocated)} / ৳{formatMoney(totals.refundAmount)}
-              </span>
-            </div>
-
-            <Button
-              label={isSubmitting ? "Processing..." : "Confirm & Save Return"}
-              onClick={() => handlePreSubmit(false)}
-              color="#009fe3"
-              hoverColor="#0085be"
-              disabled={isSubmitting}
-              icon={<FaCheck className="text-white text-xs" />}
-              buttonClass="!py-2 !px-5 whitespace-nowrap shrink-0"
-            />
           </div>
         </div>
       </div>
