@@ -24,7 +24,12 @@ import {
   salesAndReturnQueryKey,
   salesListQueryKey,
   bankInfoListQueryKey,
+  bankNameListQueryKey,
   mfsUserListQueryKey,
+  productListQueryKey,
+  productQueryKey,
+  partyListQueryKey,
+  dashboardQueryKey,
 } from "@/config/query-key";
 import { buildAccessUser } from "@/utils/access-user";
 import { postData } from "@/services/api-service";
@@ -203,6 +208,23 @@ export const SalesReturnForm: React.FC = () => {
     }
     return [];
   }, [apiSalesAndReturnData]);
+
+  // Keep Bank and MFS select defaults populated so user can disburse right away
+  useEffect(() => {
+    if (registeredBankAccounts.length > 0 && !selectedRefundBankId) {
+      setSelectedRefundBankId(
+        String(registeredBankAccounts[0].id || registeredBankAccounts[0].bankId || registeredBankAccounts[0]._id || "")
+      );
+    }
+  }, [registeredBankAccounts, selectedRefundBankId]);
+
+  useEffect(() => {
+    if (registeredMfsAccounts.length > 0 && !selectedRefundMfsId) {
+      setSelectedRefundMfsId(
+        String(registeredMfsAccounts[0].id || registeredMfsAccounts[0].mfsId || registeredMfsAccounts[0]._id || "")
+      );
+    }
+  }, [registeredMfsAccounts, selectedRefundMfsId]);
 
   // Load sale into form and configure customer payment & refund suggestion
   const loadInvoice = (sale: SaleItem) => {
@@ -510,6 +532,84 @@ export const SalesReturnForm: React.FC = () => {
     return Number((totals.refundAmount - totalRefundAllocated).toFixed(2));
   }, [totals.refundAmount, totalRefundAllocated]);
 
+  // Handlers when user enters amounts in refund channels
+  // Each input allows the user to enter their desired amount independently up to remaining needed refund.
+  // Neither field will forcibly re-inflate or overwrite Cash unexpectedly.
+  const handleBankAmountChange = (valStr: string) => {
+    if (valStr === "" || valStr === undefined) {
+      setRefundBankAmount("");
+      return;
+    }
+    const rawVal = parseFloat(valStr);
+    if (isNaN(rawVal) || rawVal < 0) {
+      setRefundBankAmount("");
+      return;
+    }
+
+    if (registeredBankAccounts.length > 0 && !selectedRefundBankId) {
+      setSelectedRefundBankId(
+        String(registeredBankAccounts[0].id || registeredBankAccounts[0].bankId || registeredBankAccounts[0]._id)
+      );
+    }
+
+    // Cap at total refund amount
+    const clamped = Math.min(rawVal, totals.refundAmount);
+    setRefundBankAmount(String(clamped));
+  };
+
+  const handleMfsAmountChange = (valStr: string) => {
+    if (valStr === "" || valStr === undefined) {
+      setRefundMfsAmount("");
+      return;
+    }
+    const rawVal = parseFloat(valStr);
+    if (isNaN(rawVal) || rawVal < 0) {
+      setRefundMfsAmount("");
+      return;
+    }
+
+    if (registeredMfsAccounts.length > 0 && !selectedRefundMfsId) {
+      setSelectedRefundMfsId(
+        String(registeredMfsAccounts[0].id || registeredMfsAccounts[0].mfsId || registeredMfsAccounts[0]._id)
+      );
+    }
+
+    // Cap at total refund amount
+    const clamped = Math.min(rawVal, totals.refundAmount);
+    setRefundMfsAmount(String(clamped));
+  };
+
+  const handleCashAmountChange = (valStr: string) => {
+    if (valStr === "" || valStr === undefined) {
+      setRefundCashAmount("");
+      return;
+    }
+    const rawVal = parseFloat(valStr);
+    if (isNaN(rawVal) || rawVal < 0) {
+      setRefundCashAmount("");
+      return;
+    }
+
+    // Cap at total refund amount
+    const clamped = Math.min(rawVal, totals.refundAmount);
+    setRefundCashAmount(String(clamped));
+  };
+
+  const handleDueAmountChange = (valStr: string) => {
+    if (valStr === "" || valStr === undefined) {
+      setRefundDueAmount("");
+      return;
+    }
+    const rawVal = parseFloat(valStr);
+    if (isNaN(rawVal) || rawVal < 0) {
+      setRefundDueAmount("");
+      return;
+    }
+
+    const maxAllowed = origDueAmount > 0 ? Math.min(rawVal, origDueAmount, totals.refundAmount) : Math.min(rawVal, totals.refundAmount);
+    setRefundDueAmount(String(maxAllowed));
+  };
+
   // Handlers for quick 1-click full payment allocation
   const handleRefundFullCash = () => {
     setRefundCashAmount(String(totals.refundAmount));
@@ -521,7 +621,7 @@ export const SalesReturnForm: React.FC = () => {
   const handleRefundFullBank = () => {
     if (registeredBankAccounts.length > 0 && !selectedRefundBankId) {
       setSelectedRefundBankId(
-        String(registeredBankAccounts[0].id || registeredBankAccounts[0].bankId)
+        String(registeredBankAccounts[0].id || registeredBankAccounts[0].bankId || registeredBankAccounts[0]._id)
       );
     }
     setRefundBankAmount(String(totals.refundAmount));
@@ -533,7 +633,7 @@ export const SalesReturnForm: React.FC = () => {
   const handleRefundFullMfs = () => {
     if (registeredMfsAccounts.length > 0 && !selectedRefundMfsId) {
       setSelectedRefundMfsId(
-        String(registeredMfsAccounts[0].id || registeredMfsAccounts[0].mfsId)
+        String(registeredMfsAccounts[0].id || registeredMfsAccounts[0].mfsId || registeredMfsAccounts[0]._id)
       );
     }
     setRefundMfsAmount(String(totals.refundAmount));
@@ -543,8 +643,10 @@ export const SalesReturnForm: React.FC = () => {
   };
 
   const handleRefundFullDue = () => {
-    setRefundDueAmount(String(totals.refundAmount));
-    setRefundCashAmount("");
+    const dueAlloc = origDueAmount > 0 ? Math.min(origDueAmount, totals.refundAmount) : totals.refundAmount;
+    setRefundDueAmount(String(dueAlloc));
+    const rem = Math.max(0, totals.refundAmount - dueAlloc);
+    setRefundCashAmount(rem > 0 ? String(rem) : "");
     setRefundBankAmount("");
     setRefundMfsAmount("");
   };
@@ -769,8 +871,18 @@ export const SalesReturnForm: React.FC = () => {
         createdAt: new Date().toISOString(),
       };
 
-      // Invalidate queries so lists refresh
-      queryClient.invalidateQueries({ queryKey: [salesAndReturnQueryKey] });
+      // Invalidate queries so inventory stock, account balances, and sales lists immediately update everywhere
+      await Promise.allSettled([
+        queryClient.invalidateQueries({ queryKey: [salesAndReturnQueryKey] }),
+        queryClient.invalidateQueries({ queryKey: [salesListQueryKey] }),
+        queryClient.invalidateQueries({ queryKey: [productListQueryKey] }),
+        queryClient.invalidateQueries({ queryKey: [productQueryKey] }),
+        queryClient.invalidateQueries({ queryKey: [partyListQueryKey] }),
+        queryClient.invalidateQueries({ queryKey: [bankInfoListQueryKey] }),
+        queryClient.invalidateQueries({ queryKey: [bankNameListQueryKey] }),
+        queryClient.invalidateQueries({ queryKey: [mfsUserListQueryKey] }),
+        queryClient.invalidateQueries({ queryKey: [dashboardQueryKey] }),
+      ]);
 
       showSuccessToast(
         response?.msg ||
@@ -1394,341 +1506,299 @@ export const SalesReturnForm: React.FC = () => {
           </div>
         </div>
 
-        {/* Right Column (span-7): Financial Summary Ribbon, Adjustments, and Refund Channels */}
-        <div className="lg:col-span-7 bg-white p-3 sm:p-3.5 rounded-xl border border-gray-200 shadow-xs flex flex-col gap-2.5">
-          {/* Top Calculations Ribbon (Subtotal, Discount, VAT/Delivery, Refund Amount) */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 bg-gray-50/90 p-2 rounded-lg border border-gray-200">
-            <div>
-              <span className="text-[10px] text-black font-bold block tracking-wider">
-                Items Value
-              </span>
-              <span className="text-xs sm:text-sm font-bold text-black block mt-0.5">
-                ৳ {formatMoney(totals.subtotal)}
-              </span>
-            </div>
-
-            <div>
-              <div className="flex items-center justify-between">
-                <span className="text-[10px] text-black font-bold block tracking-wider">
-                  Discount
-                </span>
-              </div>
-              <div className="flex items-center mt-0.5">
-                <span className="text-xs text-rose-500 font-bold mr-1">-</span>
-                <input
-                  type="number"
-                  min={0}
-                  step="0.01"
-                  value={invoiceDiscount}
-                  onWheel={(e) => e.currentTarget.blur()}
-                  onChange={(e) => setInvoiceDiscount(e.target.value)}
-                  placeholder="0"
-                  className="w-full h-6 text-xs text-right font-bold text-rose-600 bg-white border border-gray-200 rounded px-1.5 focus:outline-none focus:border-[#009fe3]"
-                />
-              </div>
-            </div>
-
-            <div>
-              <div className="flex items-center justify-between">
-                <span className="text-[10px] text-black font-bold block tracking-wider">
-                  VAT + Delivery
-                </span>
-              </div>
-              <div className="flex items-center gap-1 mt-0.5">
-                <input
-                  type="number"
-                  min={0}
-                  step="0.01"
-                  value={invoiceVat}
-                  onWheel={(e) => e.currentTarget.blur()}
-                  onChange={(e) => setInvoiceVat(e.target.value)}
-                  placeholder="0"
-                  title="VAT amount"
-                  className="w-1/2 h-6 text-xs text-right font-bold text-black bg-white border border-gray-200 rounded px-1 focus:outline-none focus:border-[#009fe3]"
-                />
-                <input
-                  type="number"
-                  min={0}
-                  step="0.01"
-                  value={invoiceDeliveryCharge}
-                  onWheel={(e) => e.currentTarget.blur()}
-                  onChange={(e) => setInvoiceDeliveryCharge(e.target.value)}
-                  placeholder="0"
-                  title="Delivery Charge"
-                  className="w-1/2 h-6 text-xs text-right  font-bold text-black bg-white border border-gray-200 rounded px-1 focus:outline-none focus:border-[#009fe3]"
-                />
-              </div>
-            </div>
-
-            <div className="bg-rose-50 border border-rose-200 px-2 py-1 rounded text-right flex flex-col justify-center">
-              <span className="text-[10px] text-rose-800 font-bold block tracking-wider">
-                Refund Amount
-              </span>
-              <span className="text-xs sm:text-base font-extrabold text-rose-700 block  mt-0.5 leading-tight">
-                ৳ {formatMoney(totals.refundAmount)}
-              </span>
-            </div>
-          </div>
-
-          {/* Refund Settlement Channels Header & 1-Click Buttons */}
-          <div className="flex items-center justify-between flex-wrap gap-1.5 pt-1 border-t border-gray-100">
-            <span className="text-xs font-bold text-black tracking-wider flex items-center gap-1.5">
-              <FaWallet className="text-[#009fe3]" size={12} />
-              Refund Settlement Channels (ফেরতের মাধ্যম)
+        {/* Right Column (span-7): Payment Refunded Section (Exact Match to Create New Sale) */}
+        <div className="lg:col-span-7 bg-white p-2.5 sm:p-3 rounded-xl border border-gray-200 shadow-xs flex flex-col gap-2">
+          {/* Header & Quick 1-Click Buttons */}
+          <div className="flex items-center justify-between flex-wrap gap-1">
+            <span className="text-[11px] font-bold text-gray-800 tracking-wider flex items-center gap-1.5">
+              <FaWallet size={11} className="text-gray-700" />
+              Payment Refunded
             </span>
-
-            {/* Quick 1-click full allocation pills */}
             <div className="flex items-center gap-1">
               <button
                 type="button"
                 onClick={handleRefundFullCash}
-                title="Refund 100% in Cash"
-                className="px-2 py-0.5 text-[10px] font-bold rounded bg-emerald-50 text-emerald-800 border border-emerald-300 hover:bg-emerald-100 transition-colors cursor-pointer"
+                className="px-1.5 py-0.5 text-[10px] font-bold rounded bg-emerald-50 text-emerald-800 border border-emerald-300 hover:bg-emerald-100 shadow-2xs transition-colors cursor-pointer"
               >
-                Full Cash
+                Cash
               </button>
               <button
                 type="button"
                 onClick={handleRefundFullBank}
-                title="Refund 100% via Bank"
-                className="px-2 py-0.5 text-[10px] font-bold rounded bg-sky-50 text-sky-800 border border-sky-300 hover:bg-sky-100 transition-colors cursor-pointer"
+                className="px-1.5 py-0.5 text-[10px] font-bold rounded bg-sky-50 text-sky-800 border border-sky-300 hover:bg-sky-100 shadow-2xs transition-colors cursor-pointer"
               >
-                Full Bank
+                Bank
               </button>
               <button
                 type="button"
                 onClick={handleRefundFullMfs}
-                title="Refund 100% via MFS"
-                className="px-2 py-0.5 text-[10px] font-bold rounded bg-purple-50 text-purple-800 border border-purple-300 hover:bg-purple-100 transition-colors cursor-pointer"
+                className="px-1.5 py-0.5 text-[10px] font-bold rounded bg-purple-50 text-purple-800 border border-purple-300 hover:bg-purple-100 shadow-2xs transition-colors cursor-pointer"
               >
-                Full MFS
+                MFS
               </button>
-              {origDueAmount > 0 && (
-                <button
-                  type="button"
-                  onClick={handleRefundFullDue}
-                  title="Adjust 100% against Due"
-                  className="px-2 py-0.5 text-[10px] font-bold rounded bg-rose-50 text-rose-800 border border-rose-300 hover:bg-rose-100 transition-colors cursor-pointer"
-                >
-                  Due Adjust
-                </button>
-              )}
+              <button
+                type="button"
+                onClick={handleRefundFullDue}
+                className="px-1.5 py-0.5 text-[10px] font-bold rounded bg-rose-50 text-rose-800 border border-rose-300 hover:bg-rose-100 shadow-2xs transition-colors cursor-pointer"
+              >
+                Due Adjust
+              </button>
             </div>
           </div>
 
-          {/* 4 Clean Payment Channels */}
+          {/* Payment Breakdown Cards */}
           <div className="flex flex-col gap-1.5">
-            {/* 1. Cash Refund Row */}
+            {/* 1. Cash Card */}
             <div
-              className={`px-2.5 py-1.5 rounded-lg border transition-all flex items-center justify-between gap-2 ${
+              className={`px-2.5 py-1 rounded-md border transition-all flex items-center justify-between gap-1.5 shadow-2xs ${
                 numRefundCash > 0
-                  ? "border-emerald-400 bg-emerald-50/40"
-                  : "border-gray-200 bg-gray-50/40 hover:bg-white"
+                  ? "border-emerald-400 bg-emerald-50/30"
+                  : "border-gray-200 bg-gray-50/50 hover:bg-white"
               }`}
             >
-              <div className="flex items-center gap-2 min-w-0">
+              <div className="flex items-center gap-1.5 min-w-0">
                 <div className="w-6 h-6 rounded bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0">
                   <FaMoneyBillWave size={11} />
                 </div>
-                <div className="min-w-0">
-                  <span className="font-bold text-[11px] text-gray-800 block leading-tight">
-                    CASH REFUND
-                  </span>
-                  <span className="text-[10px] text-gray-400 block leading-none mt-0.5">
-                    Deducts store cash register
-                  </span>
-                </div>
+                <span className="font-bold text-[11px] text-gray-800 tracking-wider">CASH</span>
               </div>
 
               <div
-                className={`flex items-center h-7 rounded border bg-white overflow-hidden w-32 sm:w-38 shrink-0 ${
+                className={`flex items-center h-6.5 rounded border bg-white overflow-hidden w-28 sm:w-34 shrink-0 transition-colors shadow-2xs ${
                   numRefundCash > 0
-                    ? "border-emerald-500 ring-1 ring-emerald-500/40"
-                    : "border-gray-300 focus-within:border-emerald-500"
+                    ? "border-emerald-500 ring-1 ring-emerald-500/50"
+                    : "border-gray-300 focus-within:border-emerald-500 focus-within:ring-1 focus-within:ring-emerald-500"
                 }`}
               >
-                <span className="text-[11px] text-gray-600 font-bold px-2 bg-gray-50 h-full flex items-center border-r border-gray-200 select-none">
+                <span className="text-[11px] text-gray-600 font-bold px-1.5 bg-gray-50 h-full flex items-center border-r border-gray-200 select-none">
                   ৳
                 </span>
                 <input
                   type="number"
                   step="0.01"
-                  min={0}
                   placeholder="0"
                   value={refundCashAmount}
                   onWheel={(e) => e.currentTarget.blur()}
-                  onChange={(e) => setRefundCashAmount(e.target.value)}
-                  className="w-full text-right px-2 text-xs font-bold text-black outline-none bg-transparent"
+                  onChange={(e) => handleCashAmountChange(e.target.value)}
+                  className="w-full text-right px-1.5 text-xs font-bold text-black outline-none bg-transparent placeholder:text-gray-400 h-full"
                 />
               </div>
             </div>
 
-            {/* 2. Bank / Card Refund Row */}
+            {/* 2. Bank Card */}
             <div
-              className={`px-2.5 py-1.5 rounded-lg border transition-all flex items-center justify-between gap-2 ${
+              className={`px-2.5 py-1 rounded-md border transition-all flex items-center justify-between gap-1.5 shadow-2xs ${
                 numRefundBank > 0
-                  ? "border-sky-400 bg-sky-50/40"
-                  : "border-gray-200 bg-gray-50/40 hover:bg-white"
+                  ? "border-sky-400 bg-sky-50/30"
+                  : "border-gray-200 bg-gray-50/50 hover:bg-white"
               }`}
             >
-              <div className="flex items-center gap-2 flex-1 min-w-0">
+              <div className="flex items-center gap-1.5 flex-1 min-w-0 mr-1">
                 <div className="w-6 h-6 rounded bg-sky-100 text-sky-700 flex items-center justify-center shrink-0">
                   <FaCreditCard size={11} />
                 </div>
-                <div className="flex items-center gap-2 flex-1 min-w-0">
-                  <span className="font-bold text-[11px] text-gray-800 shrink-0">
-                    BANK / CARD
-                  </span>
-                  <select
-                    value={selectedRefundBankId}
-                    onChange={(e) => setSelectedRefundBankId(e.target.value)}
-                    className="h-6 w-full max-w-[210px] sm:max-w-[260px] text-[11px] border border-gray-300 rounded bg-white text-gray-800 font-medium focus:outline-none focus:border-sky-500 cursor-pointer truncate px-1.5"
-                  >
-                    <option value="">
-                      {registeredBankAccounts.length ? "Select Bank Account..." : "No bank registered"}
+                <span className="font-bold text-[11px] text-gray-800 tracking-wider shrink-0">BANK</span>
+                <select
+                  value={selectedRefundBankId}
+                  onChange={(e) => setSelectedRefundBankId(e.target.value)}
+                  className="h-6.5 w-full max-w-[130px] sm:max-w-[215px] px-1.5 text-[11px] border border-gray-300 rounded bg-white text-black font-medium focus:outline-none focus:border-sky-500 cursor-pointer truncate"
+                >
+                  <option value="" className="text-black">
+                    {registeredBankAccounts.length ? "Select Bank..." : "No bank registered"}
+                  </option>
+                  {registeredBankAccounts.map((b) => (
+                    <option key={b.id || b.bankId || b._id} value={b.id || b.bankId || b._id} className="text-black">
+                      {b.bankName || b.name}
+                      {b.accountNo || b.bankAccountNumber || b.bankAccountNo
+                        ? ` – ${b.accountNo || b.bankAccountNumber || b.bankAccountNo}`
+                        : ""}
                     </option>
-                    {registeredBankAccounts.map((b) => (
-                      <option key={b.id || b.bankId || b._id} value={b.id || b.bankId || b._id}>
-                        {b.bankName || b.name}
-                        {b.accountNo || b.bankAccountNumber || b.bankAccountNo
-                          ? ` – ${b.accountNo || b.bankAccountNumber || b.bankAccountNo}`
-                          : ""}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                  ))}
+                </select>
               </div>
 
               <div
-                className={`flex items-center h-7 rounded border bg-white overflow-hidden w-32 sm:w-38 shrink-0 ${
+                className={`flex items-center h-6.5 rounded border bg-white overflow-hidden w-28 sm:w-34 shrink-0 transition-colors shadow-2xs ${
                   numRefundBank > 0
-                    ? "border-sky-500 ring-1 ring-sky-500/40"
-                    : "border-gray-300 focus-within:border-sky-500"
+                    ? "border-sky-500 ring-1 ring-sky-500/50"
+                    : "border-gray-300 focus-within:border-sky-500 focus-within:ring-1 focus-within:ring-sky-500"
                 }`}
               >
-                <span className="text-[11px] text-gray-600 font-bold px-2 bg-gray-50 h-full flex items-center border-r border-gray-200 select-none">
+                <span className="text-[11px] text-gray-600 font-bold px-1.5 bg-gray-50 h-full flex items-center border-r border-gray-200 select-none">
                   ৳
                 </span>
                 <input
                   type="number"
                   step="0.01"
-                  min={0}
                   placeholder="0"
                   value={refundBankAmount}
                   onWheel={(e) => e.currentTarget.blur()}
-                  onChange={(e) => setRefundBankAmount(e.target.value)}
-                  className="w-full text-right px-2 text-xs font-bold text-black outline-none bg-transparent"
+                  onChange={(e) => handleBankAmountChange(e.target.value)}
+                  className="w-full text-right px-1.5 text-xs font-bold text-black outline-none bg-transparent placeholder:text-gray-400 h-full"
                 />
               </div>
             </div>
 
-            {/* 3. MFS Refund Row */}
+            {/* 3. MFS Card */}
             <div
-              className={`px-2.5 py-1.5 rounded-lg border transition-all flex items-center justify-between gap-2 ${
+              className={`px-2.5 py-1 rounded-md border transition-all flex items-center justify-between gap-1.5 shadow-2xs ${
                 numRefundMfs > 0
-                  ? "border-purple-400 bg-purple-50/40"
-                  : "border-gray-200 bg-gray-50/40 hover:bg-white"
+                  ? "border-purple-400 bg-purple-50/30"
+                  : "border-gray-200 bg-gray-50/50 hover:bg-white"
               }`}
             >
-              <div className="flex items-center gap-2 flex-1 min-w-0">
+              <div className="flex items-center gap-1.5 flex-1 min-w-0 mr-1">
                 <div className="w-6 h-6 rounded bg-purple-100 text-purple-700 flex items-center justify-center shrink-0">
                   <FaMobileAlt size={11} />
                 </div>
-                <div className="flex items-center gap-2 flex-1 min-w-0">
-                  <span className="font-bold text-[11px] text-gray-800 shrink-0">
-                    MFS WALLET
-                  </span>
-                  <select
-                    value={selectedRefundMfsId}
-                    onChange={(e) => setSelectedRefundMfsId(e.target.value)}
-                    className="h-6 w-full max-w-[210px] sm:max-w-[260px] text-[11px] border border-gray-300 rounded bg-white text-gray-800 font-medium focus:outline-none focus:border-purple-500 cursor-pointer truncate px-1.5"
-                  >
-                    <option value="">
-                      {registeredMfsAccounts.length ? "Select MFS Wallet..." : "No MFS registered"}
-                    </option>
-                    {registeredMfsAccounts.map((m) => {
-                      const nameVal = m.name || m.mfsName || m.method || "MFS";
-                      const phoneVal = m.phoneNumber || m.mfsPhone || m.phone || "";
-                      return (
-                        <option key={m.id || m.mfsId || m._id} value={m.id || m.mfsId || m._id}>
-                          {nameVal}
-                          {phoneVal ? ` – ${phoneVal}` : ""}
-                        </option>
-                      );
-                    })}
-                  </select>
-                </div>
+                <span className="font-bold text-[11px] text-gray-800 tracking-wider shrink-0">MFS</span>
+                <select
+                  value={selectedRefundMfsId}
+                  onChange={(e) => setSelectedRefundMfsId(e.target.value)}
+                  className="h-6.5 w-full max-w-[130px] sm:max-w-[215px] px-1.5 text-[11px] border border-gray-300 rounded bg-white text-black font-medium focus:outline-none focus:border-purple-500 cursor-pointer truncate"
+                >
+                  <option value="" className="text-black">
+                    {registeredMfsAccounts.length ? "Select MFS..." : "No MFS registered"}
+                  </option>
+                  {registeredMfsAccounts.map((m) => {
+                    const nameVal = m.name || m.mfsName || m.method || "MFS";
+                    const phoneVal = m.phoneNumber || m.mfsPhone || m.phone || "";
+                    return (
+                      <option key={m.id || m.mfsId || m._id} value={m.id || m.mfsId || m._id} className="text-black">
+                        {nameVal}
+                        {phoneVal ? ` – ${phoneVal}` : ""}
+                      </option>
+                    );
+                  })}
+                </select>
               </div>
 
               <div
-                className={`flex items-center h-7 rounded border bg-white overflow-hidden w-32 sm:w-38 shrink-0 ${
+                className={`flex items-center h-6.5 rounded border bg-white overflow-hidden w-28 sm:w-34 shrink-0 transition-colors shadow-2xs ${
                   numRefundMfs > 0
-                    ? "border-purple-500 ring-1 ring-purple-500/40"
-                    : "border-gray-300 focus-within:border-purple-500"
+                    ? "border-purple-500 ring-1 ring-purple-500/50"
+                    : "border-gray-300 focus-within:border-purple-500 focus-within:ring-1 focus-within:ring-purple-500"
                 }`}
               >
-                <span className="text-[11px] text-gray-600 font-bold px-2 bg-gray-50 h-full flex items-center border-r border-gray-200 select-none">
+                <span className="text-[11px] text-gray-600 font-bold px-1.5 bg-gray-50 h-full flex items-center border-r border-gray-200 select-none">
                   ৳
                 </span>
                 <input
                   type="number"
                   step="0.01"
-                  min={0}
                   placeholder="0"
                   value={refundMfsAmount}
                   onWheel={(e) => e.currentTarget.blur()}
-                  onChange={(e) => setRefundMfsAmount(e.target.value)}
-                  className="w-full text-right px-2 text-xs font-bold text-black outline-none bg-transparent"
+                  onChange={(e) => handleMfsAmountChange(e.target.value)}
+                  className="w-full text-right px-1.5 text-xs font-bold text-black outline-none bg-transparent placeholder:text-gray-400 h-full"
                 />
               </div>
             </div>
 
-            {/* 4. Due / Credit Adjustment Row */}
+            {/* 4. Due / Credit Adjustment Row (if applicable) */}
             {(origDueAmount > 0 || numRefundDue > 0) && (
               <div
-                className={`px-2.5 py-1.5 rounded-lg border transition-all flex items-center justify-between gap-2 ${
+                className={`px-2.5 py-1 rounded-md border transition-all flex items-center justify-between gap-1.5 shadow-2xs ${
                   numRefundDue > 0
-                    ? "border-rose-400 bg-rose-50/40"
-                    : "border-gray-200 bg-gray-50/40 hover:bg-white"
+                    ? "border-rose-400 bg-rose-50/30"
+                    : "border-gray-200 bg-gray-50/50 hover:bg-white"
                 }`}
               >
-                <div className="flex items-center gap-2 min-w-0">
-                  <div className="w-6 h-6 rounded bg-rose-100 text-rose-700 flex items-center justify-center shrink-0 font-bold text-xs">
+                <div className="flex items-center gap-1.5 min-w-0">
+                  <div className="w-6 h-6 rounded bg-rose-100 text-rose-700 flex items-center justify-center shrink-0 font-bold text-[11px]">
                     ৳
                   </div>
                   <div>
-                    <span className="font-bold text-[11px] text-gray-800 block leading-tight">
-                      DUE ADJUSTMENT
+                    <span className="font-bold text-[11px] text-gray-800 tracking-wider block leading-tight">
+                      DUE ADJUST
                     </span>
-                    <span className="text-[10px] text-gray-400 block leading-none mt-0.5">
-                      Reduces customer unpaid due (Max: ৳{formatMoney(origDueAmount)})
+                    <span className="text-[9.5px] text-gray-400 block leading-none">
+                      Max: ৳{formatMoney(origDueAmount)}
                     </span>
                   </div>
                 </div>
 
                 <div
-                  className={`flex items-center h-7 rounded border bg-white overflow-hidden w-32 sm:w-38 shrink-0 ${
+                  className={`flex items-center h-6.5 rounded border bg-white overflow-hidden w-28 sm:w-34 shrink-0 transition-colors shadow-2xs ${
                     numRefundDue > 0
-                      ? "border-rose-500 ring-1 ring-rose-500/40"
-                      : "border-gray-300 focus-within:border-rose-500"
+                      ? "border-rose-500 ring-1 ring-rose-500/50"
+                      : "border-gray-300 focus-within:border-rose-500 focus-within:ring-1 focus-within:ring-rose-500"
                   }`}
                 >
-                  <span className="text-[11px] text-gray-600 font-bold px-2 bg-gray-50 h-full flex items-center border-r border-gray-200 select-none">
+                  <span className="text-[11px] text-gray-600 font-bold px-1.5 bg-gray-50 h-full flex items-center border-r border-gray-200 select-none">
                     ৳
                   </span>
                   <input
                     type="number"
                     step="0.01"
-                    min={0}
                     placeholder="0"
                     value={refundDueAmount}
                     onWheel={(e) => e.currentTarget.blur()}
-                    onChange={(e) => setRefundDueAmount(e.target.value)}
-                    className="w-full text-right px-2 text-xs font-bold text-black outline-none bg-transparent"
+                    onChange={(e) => handleDueAmountChange(e.target.value)}
+                    className="w-full text-right px-1.5 text-xs font-bold text-black outline-none bg-transparent placeholder:text-gray-400 h-full"
                   />
                 </div>
               </div>
             )}
+          </div>
+
+          {/* Financial Settlement Summary Ribbon (Matching Create New Sale Standard) */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 border-t border-gray-200/90 pt-1.5 items-center">
+            {/* Total Refunded Card with status badge */}
+            <div className="bg-emerald-50/90 px-2.5 py-1 rounded-md border border-emerald-200/90 flex items-center justify-between shadow-2xs">
+              <div className="flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 inline-block" />
+                <span className="text-[10.5px] font-bold text-emerald-950 tracking-wide">
+                  Total Refunded
+                </span>
+                <span className="text-[9.5px] font-semibold px-1 py-0.2 rounded bg-emerald-100 text-emerald-800">
+                  {totalRefundAllocated >= totals.refundAmount && totals.refundAmount > 0
+                    ? "SETTLED"
+                    : totalRefundAllocated > 0
+                    ? "PARTIAL"
+                    : "UNALLOCATED"}
+                </span>
+              </div>
+              <span className="text-xs sm:text-[13px] font-extrabold text-emerald-800">
+                ৳ {formatMoney(totalRefundAllocated)}
+              </span>
+            </div>
+
+            {/* Remaining to Refund / Due Balance Card */}
+            <div
+              className={`px-2.5 py-1 rounded-md border flex items-center justify-between transition-colors shadow-2xs ${
+                refundDifference > 0.01
+                  ? "bg-rose-50/90 border-rose-200/90"
+                  : "bg-gray-50 border-gray-200"
+              }`}
+            >
+              <div className="flex items-center gap-1.5">
+                <span
+                  className={`w-1.5 h-1.5 rounded-full inline-block ${
+                    refundDifference > 0.01 ? "bg-rose-600" : "bg-gray-400"
+                  }`}
+                />
+                <span
+                  className={`text-[10.5px] font-bold tracking-wide ${
+                    refundDifference > 0.01 ? "text-rose-950" : "text-gray-700"
+                  }`}
+                >
+                  {refundDifference > 0.01 ? "Unallocated Balance" : "Due Balance"}
+                </span>
+                {refundDifference > 0.01 && (
+                  <span className="text-[9.5px] font-semibold px-1 py-0.2 rounded bg-rose-100 text-rose-800">
+                    PENDING
+                  </span>
+                )}
+              </div>
+              <span
+                className={`text-xs sm:text-[13px] font-extrabold ${
+                  refundDifference > 0.01 ? "text-rose-600" : "text-black"
+                }`}
+              >
+                ৳ {formatMoney(refundDifference > 0.01 ? refundDifference : 0)}
+              </span>
+            </div>
           </div>
         </div>
       </div>

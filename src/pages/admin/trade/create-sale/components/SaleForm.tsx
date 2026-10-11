@@ -2038,20 +2038,71 @@ export const CreateSaleForm: React.FC = () => {
             </div>
           </div>
 
-          {/* Paid vs Due Summary Ribbon */}
-          <div className="grid grid-cols-2 gap-2 pt-2 border-t border-gray-100">
-            <div className="p-2 rounded-lg bg-emerald-50/70 border border-emerald-200">
-              <span className="text-[10px] text-emerald-800 font-bold  block">Paid Total</span>
-              <span className="text-sm font-extrabold text-emerald-900 block mt-0.5">
+          {/* Financial Settlement Summary Ribbon (Matching Professional ERP Standard) */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 border-t border-gray-200/90 pt-1.5 items-center">
+            {/* Total Paid Card with status badge */}
+            <div className="bg-emerald-50/90 px-2.5 py-1 rounded-md border border-emerald-200/90 flex items-center justify-between shadow-2xs">
+              <div className="flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 inline-block" />
+                <span className="text-[10.5px] font-bold text-emerald-950 tracking-wide">
+                  Total Paid
+                </span>
+                <span className="text-[9.5px] font-semibold px-1 py-0.2 rounded bg-emerald-100 text-emerald-800">
+                  {totalPaid >= grandTotal && grandTotal > 0 ? "PAID" : totalPaid > 0 ? "PARTIAL" : "UNPAID"}
+                </span>
+              </div>
+              <span className="text-xs sm:text-[13px] font-extrabold text-emerald-800">
                 ৳ {formatMoney(totalPaid)}
               </span>
             </div>
-            <div className="p-2 rounded-lg bg-rose-50/70 border border-rose-200">
-              <span className="text-[10px] text-rose-800 font-bold  block">Due / Balance</span>
-              <span className="text-sm font-extrabold text-rose-900 block mt-0.5">
-                ৳ {formatMoney(dueAmount)}
-              </span>
-            </div>
+
+            {/* Due Balance Card or Change Return */}
+            {changeReturnAmount > 0 ? (
+              <div className="bg-sky-50/90 px-2.5 py-1 rounded-md border border-sky-200/90 flex items-center justify-between shadow-2xs">
+                <div className="flex items-center gap-1.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-sky-600 inline-block" />
+                  <span className="text-[10.5px] font-bold text-sky-950 tracking-wide">
+                    Change / ফেরত
+                  </span>
+                </div>
+                <span className="text-xs sm:text-[13px] font-extrabold text-sky-700">
+                  ৳ {formatMoney(changeReturnAmount)}
+                </span>
+              </div>
+            ) : (
+              <div
+                className={`px-2.5 py-1 rounded-md border flex items-center justify-between transition-colors shadow-2xs ${
+                  dueAmount > 0 ? "bg-rose-50/90 border-rose-200/90" : "bg-gray-50 border-gray-200"
+                }`}
+              >
+                <div className="flex items-center gap-1.5">
+                  <span
+                    className={`w-1.5 h-1.5 rounded-full inline-block ${
+                      dueAmount > 0 ? "bg-rose-600" : "bg-gray-400"
+                    }`}
+                  />
+                  <span
+                    className={`text-[10.5px] font-bold tracking-wide ${
+                      dueAmount > 0 ? "text-rose-950" : "text-gray-700"
+                    }`}
+                  >
+                    Due Balance
+                  </span>
+                  {dueAmount > 0 && (
+                    <span className="text-[9.5px] font-semibold px-1 py-0.2 rounded bg-rose-100 text-rose-800">
+                      DUE
+                    </span>
+                  )}
+                </div>
+                <span
+                  className={`text-xs sm:text-[13px] font-extrabold ${
+                    dueAmount > 0 ? "text-rose-600" : "text-black"
+                  }`}
+                >
+                  ৳ {formatMoney(dueAmount)}
+                </span>
+              </div>
+            )}
           </div>
         </div>
       </div>
