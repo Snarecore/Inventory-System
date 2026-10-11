@@ -101,7 +101,7 @@ export const CreateSaleForm: React.FC = () => {
   // Pricing, Discounts, VAT & Extra
   const [discountType, setDiscountType] = useState<"FLAT" | "PERCENT">("FLAT");
   const [discountValue, setDiscountValue] = useState<string>("");
-  const [vatPercent, setVatPercent] = useState<string>("");
+  const [vatAmount, setVatAmount] = useState<string>("");
   const [deliveryCharge, setDeliveryCharge] = useState<string>("");
   const [notes, setNotes] = useState<string>("");
   const [isNotesDropdownOpen, setIsNotesDropdownOpen] = useState<boolean>(false);
@@ -340,7 +340,7 @@ export const CreateSaleForm: React.FC = () => {
       setDiscountType(data.discountType === "PERCENT" ? "PERCENT" : "FLAT");
 
       const v = data.vat ?? data.vatAmount ?? "";
-      setVatPercent(v !== "" && v !== null && Number(v) > 0 ? String(v) : "");
+      setVatAmount(v !== "" && v !== null && Number(v) > 0 ? String(v) : "");
 
       const del = data.delivery_charge ?? data.deliveryCharge ?? "";
       setDeliveryCharge(del !== "" && del !== null && Number(del) > 0 ? String(del) : "");
@@ -468,18 +468,12 @@ export const CreateSaleForm: React.FC = () => {
   }, [lineItems]);
 
   const totalDiscount = useMemo(() => {
-    const val = Number(discountValue) || 0;
-    if (discountType === "PERCENT") {
-      return (rawSubtotal * val) / 100;
-    }
-    return val;
-  }, [rawSubtotal, discountValue, discountType]);
+    return Number(discountValue) || 0;
+  }, [discountValue]);
 
   const totalVat = useMemo(() => {
-    const v = Number(vatPercent) || 0;
-    const base = Math.max(0, rawSubtotal - totalDiscount);
-    return (base * v) / 100;
-  }, [rawSubtotal, totalDiscount, vatPercent]);
+    return Number(vatAmount) || 0;
+  }, [vatAmount]);
 
   const calculatedDelivery = Number(deliveryCharge) || 0;
 
@@ -1020,7 +1014,7 @@ export const CreateSaleForm: React.FC = () => {
     setLineItems([]);
     setSelectedCustomer(null);
     setDiscountValue("");
-    setVatPercent("");
+    setVatAmount("");
     setDeliveryCharge("");
     setNotes("");
     setPoNumber("");
@@ -1659,36 +1653,11 @@ export const CreateSaleForm: React.FC = () => {
               Discounts & Extra Charges
             </h3>
 
-            {/* Overall Invoice Discount */}
+            {/* Overall Invoice Discount (Fixed Amount) */}
             <div className="flex items-center justify-between gap-2">
-              <div className="flex items-center gap-1.5">
-                <label className="text-[11px] text-black font-semibold">Overall Discount:</label>
-                <div className="inline-flex rounded border border-gray-300 overflow-hidden text-[11px]">
-                  <button
-                    type="button"
-                    onClick={() => setDiscountType("FLAT")}
-                    className={`px-1.5 py-0.5 font-bold cursor-pointer transition-colors ${
-                      discountType === "FLAT"
-                        ? "bg-[var(--color-primary)] text-white"
-                        : "bg-gray-100 text-black hover:bg-gray-200"
-                    }`}
-                  >
-                    ৳ Flat
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setDiscountType("PERCENT")}
-                    className={`px-1.5 py-0.5 font-bold cursor-pointer transition-colors ${
-                      discountType === "PERCENT"
-                        ? "bg-[var(--color-primary)] text-white"
-                        : "bg-gray-100 text-black hover:bg-gray-200"
-                    }`}
-                  >
-                    %
-                  </button>
-                </div>
-              </div>
+              <label className="text-[11px] text-black font-semibold">Overall Discount (৳):</label>
               <div className="relative w-32 sm:w-36">
+                <span className="absolute left-2 top-1 text-black text-xs font-bold">৳</span>
                 <input
                   type="number"
                   step="0.01"
@@ -1696,23 +1665,24 @@ export const CreateSaleForm: React.FC = () => {
                   placeholder="0"
                   onWheel={(e) => e.currentTarget.blur()}
                   onChange={(e) => setDiscountValue(e.target.value)}
-                  className="w-full px-2 py-1 text-xs border border-gray-300 rounded text-right text-black font-bold focus:outline-none focus:border-[var(--color-primary)]"
+                  className="w-full pl-5 pr-2 py-1 text-xs border border-gray-300 rounded text-right text-black font-bold focus:outline-none focus:border-[var(--color-primary)]"
                 />
               </div>
             </div>
 
-            {/* Invoice VAT % */}
+            {/* Invoice VAT (Fixed Amount) */}
             <div className="flex items-center justify-between gap-2">
-              <label className="text-[11px] text-black font-semibold">Invoice VAT (%):</label>
+              <label className="text-[11px] text-black font-semibold">Invoice VAT (৳):</label>
               <div className="relative w-32 sm:w-36">
+                <span className="absolute left-2 top-1 text-black text-xs font-bold">৳</span>
                 <input
                   type="number"
                   step="0.01"
-                  value={vatPercent}
+                  value={vatAmount}
                   placeholder="0"
                   onWheel={(e) => e.currentTarget.blur()}
-                  onChange={(e) => setVatPercent(e.target.value)}
-                  className="w-full px-2 py-1 text-xs border border-gray-300 rounded text-right text-black font-bold focus:outline-none focus:border-[var(--color-primary)]"
+                  onChange={(e) => setVatAmount(e.target.value)}
+                  className="w-full pl-5 pr-2 py-1 text-xs border border-gray-300 rounded text-right text-black font-bold focus:outline-none focus:border-[var(--color-primary)]"
                 />
               </div>
             </div>

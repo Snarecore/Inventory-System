@@ -861,26 +861,20 @@ const CreatePurchaseForm: React.FC = () => {
     }, 0);
   }, [lineItems]);
 
-  // 3. Invoice-level Overall Discount
+  // 3. Invoice-level Overall Discount (Fixed Amount)
   const calculatedInvoiceDiscount = useMemo(() => {
-    const rawDisc = Number(invoiceDiscount) || 0;
-    if (invoiceDiscountType === "PERCENT") {
-      return (rawSubtotal * rawDisc) / 100;
-    }
-    return rawDisc;
-  }, [rawSubtotal, invoiceDiscount, invoiceDiscountType]);
+    return Number(invoiceDiscount) || 0;
+  }, [invoiceDiscount]);
 
   // 4. Total Discount combined
   const totalDiscount = useMemo(() => {
     return calculatedInvoiceDiscount;
   }, [calculatedInvoiceDiscount]);
 
-  // 6. Invoice-level VAT
+  // 6. Invoice-level VAT (Fixed Amount)
   const calculatedInvoiceVat = useMemo(() => {
-    const rawVat = Number(invoiceVat) || 0;
-    const taxableBase = Math.max(0, rawSubtotal - totalDiscount);
-    return (taxableBase * rawVat) / 100;
-  }, [rawSubtotal, totalDiscount, invoiceVat]);
+    return Number(invoiceVat) || 0;
+  }, [invoiceVat]);
 
   // 7. Total VAT combined
   const totalVat = useMemo(() => {
@@ -2016,36 +2010,11 @@ const CreatePurchaseForm: React.FC = () => {
               Discounts & Extra Charges
             </h3>
 
-            {/* Overall Invoice Discount */}
+            {/* Overall Invoice Discount (Fixed Amount) */}
             <div className="flex items-center justify-between gap-2">
-              <div className="flex items-center gap-1.5">
-                <label className="text-[11px] text-black font-semibold">Overall Discount:</label>
-                <div className="inline-flex rounded border border-gray-300 overflow-hidden text-[11px]">
-                  <button
-                    type="button"
-                    onClick={() => setInvoiceDiscountType("FLAT")}
-                    className={`px-1.5 py-0.5 font-bold cursor-pointer transition-colors ${
-                      invoiceDiscountType === "FLAT"
-                        ? "bg-[var(--color-primary)] text-white"
-                        : "bg-gray-100 text-black hover:bg-gray-200"
-                    }`}
-                  >
-                    ৳ Flat
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setInvoiceDiscountType("PERCENT")}
-                    className={`px-1.5 py-0.5 font-bold cursor-pointer transition-colors ${
-                      invoiceDiscountType === "PERCENT"
-                        ? "bg-[var(--color-primary)] text-white"
-                        : "bg-gray-100 text-black hover:bg-gray-200"
-                    }`}
-                  >
-                    %
-                  </button>
-                </div>
-              </div>
+              <label className="text-[11px] text-black font-semibold">Discount (৳):</label>
               <div className="relative w-32 sm:w-36">
+                <span className="absolute left-2 top-1 text-black text-xs font-bold">৳</span>
                 <input
                   type="number"
                   step="0.01"
@@ -2053,15 +2022,16 @@ const CreatePurchaseForm: React.FC = () => {
                   placeholder="0"
                   onWheel={(e) => e.currentTarget.blur()}
                   onChange={(e) => setInvoiceDiscount(e.target.value)}
-                  className="w-full px-2 py-1 text-xs border border-gray-300 rounded text-right   text-black font-bold focus:outline-none focus:border-[var(--color-primary)]"
+                  className="w-full pl-5 pr-2 py-1 text-xs border border-gray-300 rounded text-right text-black font-bold focus:outline-none focus:border-[var(--color-primary)]"
                 />
               </div>
             </div>
 
-            {/* Invoice VAT % */}
+            {/* Invoice VAT (Fixed Amount) */}
             <div className="flex items-center justify-between gap-2">
-              <label className="text-[11px] text-black font-semibold">Invoice VAT (%):</label>
+              <label className="text-[11px] text-black font-semibold">Invoice VAT (৳):</label>
               <div className="relative w-32 sm:w-36">
+                <span className="absolute left-2 top-1 text-black text-xs font-bold">৳</span>
                 <input
                   type="number"
                   step="0.01"
@@ -2069,7 +2039,7 @@ const CreatePurchaseForm: React.FC = () => {
                   placeholder="0"
                   onWheel={(e) => e.currentTarget.blur()}
                   onChange={(e) => setInvoiceVat(e.target.value)}
-                  className="w-full px-2 py-1 text-xs border border-gray-300 rounded text-right   text-black font-bold focus:outline-none focus:border-[var(--color-primary)]"
+                  className="w-full pl-5 pr-2 py-1 text-xs border border-gray-300 rounded text-right text-black font-bold focus:outline-none focus:border-[var(--color-primary)]"
                 />
               </div>
             </div>

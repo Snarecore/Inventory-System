@@ -1179,17 +1179,17 @@ export const SalesReturnForm: React.FC = () => {
         {/* Return Mode Selection Toolbar Header */}
         <div className="p-2 sm:px-3 border-b border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
           <div className="flex items-center gap-2">
-            <FaBoxes className="text-[#009fe3] text-xs" />
-            <span className="text-xs font-bold text-black tracking-wider">
+            <FaBoxes className="text-[#0F365C] text-xs" />
+            <span className="text-xs font-normal text-black tracking-wider">
               Return Type:
             </span>
             <div className="inline-flex rounded-lg border border-gray-200 p-0.5 bg-gray-50 text-xs">
               <button
                 type="button"
                 onClick={() => handleSetReturnMode("FULL")}
-                className={`px-2.5 py-0.5 rounded-md text-[11px] font-bold transition-all cursor-pointer ${
+                className={`px-2.5 py-0.5 rounded-md text-[11px] font-normal transition-all cursor-pointer ${
                   returnMode === "FULL"
-                    ? "bg-[#009fe3] text-white shadow-xs"
+                    ? "bg-[#0F365C] text-white shadow-xs"
                     : "text-gray-600 hover:text-black"
                 }`}
               >
@@ -1198,9 +1198,9 @@ export const SalesReturnForm: React.FC = () => {
               <button
                 type="button"
                 onClick={() => handleSetReturnMode("PARTIAL")}
-                className={`px-2.5 py-0.5 rounded-md text-[11px] font-bold transition-all cursor-pointer ${
+                className={`px-2.5 py-0.5 rounded-md text-[11px] font-normal transition-all cursor-pointer ${
                   returnMode === "PARTIAL"
-                    ? "bg-[#009fe3] text-white shadow-xs"
+                    ? "bg-[#0F365C] text-white shadow-xs"
                     : "text-gray-600 hover:text-black"
                 }`}
               >
@@ -1209,19 +1209,12 @@ export const SalesReturnForm: React.FC = () => {
             </div>
           </div>
 
-          {/* Quick Buttons: Select Full / Reset */}
+          {/* Quick Buttons: Clear All & Selected Summary */}
           <div className="flex items-center gap-1.5">
             <button
               type="button"
-              onClick={handleSelectAllFullQty}
-              className="px-2 py-0.5 text-[11px] font-semibold text-[#009fe3] bg-blue-50 hover:bg-blue-100 rounded border border-blue-200 transition-colors cursor-pointer"
-            >
-              Select All Full Qty
-            </button>
-            <button
-              type="button"
               onClick={handleClearAllQty}
-              className="px-2 py-0.5 text-[11px] font-semibold text-gray-600 bg-gray-100 hover:bg-gray-200 rounded transition-colors cursor-pointer"
+              className="px-2 py-0.5 text-[11px] font-normal text-gray-600 bg-gray-100 hover:bg-gray-200 rounded transition-colors cursor-pointer"
             >
               Clear All
             </button>
