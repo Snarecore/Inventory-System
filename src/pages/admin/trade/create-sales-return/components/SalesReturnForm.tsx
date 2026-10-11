@@ -1110,57 +1110,57 @@ export const SalesReturnForm: React.FC = () => {
       )}
 
       {/* Section 2: Return Items Table with 2 Return Modes (Full vs Partial) */}
-      <div className="bg-white p-2.5 sm:p-3 rounded-xl border border-gray-200 shadow-xs flex flex-col gap-2.5">
-        {/* Return Mode Selection Toolbar (Full vs Partial) */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pb-2 border-b border-gray-100">
+      <div className="bg-white rounded-xl border border-gray-200 shadow-xs overflow-hidden">
+        {/* Return Mode Selection Toolbar Header */}
+        <div className="p-2 sm:px-3 border-b border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
           <div className="flex items-center gap-2">
-            <FaBoxes className="text-[#009fe3] text-sm" />
-            <span className="text-xs font-bold text-black  tracking-wider">
+            <FaBoxes className="text-[#009fe3] text-xs" />
+            <span className="text-xs font-bold text-black tracking-wider">
               Return Type:
             </span>
             <div className="inline-flex rounded-lg border border-gray-200 p-0.5 bg-gray-50 text-xs">
               <button
                 type="button"
                 onClick={() => handleSetReturnMode("FULL")}
-                className={`px-3 py-1 rounded-md font-bold transition-all cursor-pointer ${
+                className={`px-2.5 py-0.5 rounded-md text-[11px] font-bold transition-all cursor-pointer ${
                   returnMode === "FULL"
                     ? "bg-[#009fe3] text-white shadow-xs"
                     : "text-gray-600 hover:text-black"
                 }`}
               >
-                Full Return (সম্পূর্ণ ফেরত)
+                Full Return
               </button>
               <button
                 type="button"
                 onClick={() => handleSetReturnMode("PARTIAL")}
-                className={`px-3 py-1 rounded-md font-bold transition-all cursor-pointer ${
+                className={`px-2.5 py-0.5 rounded-md text-[11px] font-bold transition-all cursor-pointer ${
                   returnMode === "PARTIAL"
                     ? "bg-[#009fe3] text-white shadow-xs"
                     : "text-gray-600 hover:text-black"
                 }`}
               >
-                Partial Return (আংশিক ফেরত)
+                Partial Return
               </button>
             </div>
           </div>
 
           {/* Quick Buttons: Select Full / Reset */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5">
             <button
               type="button"
               onClick={handleSelectAllFullQty}
-              className="px-2.5 py-1 text-[11px] font-semibold text-[#009fe3] bg-blue-50 hover:bg-blue-100 rounded-md border border-blue-200 transition-colors cursor-pointer"
+              className="px-2 py-0.5 text-[11px] font-semibold text-[#009fe3] bg-blue-50 hover:bg-blue-100 rounded border border-blue-200 transition-colors cursor-pointer"
             >
               Select All Full Qty
             </button>
             <button
               type="button"
               onClick={handleClearAllQty}
-              className="px-2.5 py-1 text-[11px] font-semibold text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors cursor-pointer"
+              className="px-2 py-0.5 text-[11px] font-semibold text-gray-600 bg-gray-100 hover:bg-gray-200 rounded transition-colors cursor-pointer"
             >
               Clear All
             </button>
-            <span className="text-xs text-black pl-1 border-l border-gray-200">
+            <span className="text-xs text-black pl-1.5 border-l border-gray-200">
               Selected: <span className="text-black font-normal">{totals.selectedItemCount} items ({totals.totalPieces} pcs)</span>
             </span>
           </div>
@@ -1171,18 +1171,17 @@ export const SalesReturnForm: React.FC = () => {
             Please search and select a sale invoice / order number above to load items.
           </div>
         ) : (
-          <div className="overflow-x-auto border border-gray-200 rounded-lg">
-            <table className="w-full text-xs text-left border-collapse">
+          <div className="overflow-x-auto w-full">
+            <table className="w-full text-xs text-left border-collapse min-w-[720px]">
               <thead>
-                <tr className="bg-gray-50 text-black font-medium border-b border-gray-200 text-[11px] tracking-wider">
-                  <th className="py-2.5 px-3 text-center w-10 text-black font-medium">Select</th>
-                  <th className="py-2.5 px-3 text-black font-medium">Product Description</th>
-                  <th className="py-2.5 px-3 text-center text-black font-medium">Unit</th>
-                  <th className="py-2.5 px-3 text-center text-black font-medium">Sold Qty</th>
-                  <th className="py-2.5 px-3 text-center w-36 text-black font-medium">Return Qty</th>
-                  <th className="py-2.5 px-3 text-center text-black font-medium">Sell Price</th>
-                  <th className="py-2.5 px-3 w-48 text-black font-medium">Return Cause</th>
-                  <th className="py-2.5 px-3 text-right text-black font-medium">Total (৳)</th>
+                <tr className="bg-[#41bef3] text-black border-b border-gray-200 text-[11px] font-semibold shadow-xs">
+                  <th className="py-2 px-3 text-center w-10 whitespace-nowrap">Select</th>
+                  <th className="py-2 px-3 min-w-[200px]">Product Description</th>
+                  <th className="py-2 px-2 text-center w-16 whitespace-nowrap">Unit</th>
+                  <th className="py-2 px-2 text-center w-20 whitespace-nowrap">Sold Qty</th>
+                  <th className="py-2 px-2 text-center w-36 whitespace-nowrap">Return Qty</th>
+                  <th className="py-2 px-2 text-right w-28 whitespace-nowrap">Sell Price (৳)</th>
+                  <th className="py-2 px-3 text-right w-28 whitespace-nowrap">Total (৳)</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
@@ -1191,10 +1190,10 @@ export const SalesReturnForm: React.FC = () => {
                     key={idx}
                     className={`${
                       line.isSelected ? "bg-white" : "bg-gray-50/50 opacity-60"
-                    } hover:bg-blue-50/20 transition-colors`}
+                    } hover:bg-sky-50/30 transition-colors`}
                   >
                     {/* Checkbox */}
-                    <td className="py-2.5 px-3 text-center">
+                    <td className="py-2 px-3 text-center whitespace-nowrap">
                       <input
                         type="checkbox"
                         checked={line.isSelected}
@@ -1204,9 +1203,9 @@ export const SalesReturnForm: React.FC = () => {
                     </td>
 
                     {/* Product */}
-                    <td className="py-2.5 px-3">
+                    <td className="py-2 px-3">
                       <div className="flex items-center gap-1.5 font-normal text-black text-xs">
-                        <span>{line.productName}</span>
+                        <span className="font-medium">{line.productName}</span>
                         {line.productCode && (
                           <span className="text-[10px] text-gray-500 font-mono">
                             ({line.productCode})
@@ -1216,23 +1215,27 @@ export const SalesReturnForm: React.FC = () => {
                     </td>
 
                     {/* Unit */}
-                    <td className="py-2.5 px-3 text-center font-normal text-black">
-                      {line.unit}
+                    <td className="py-2 px-2 text-center whitespace-nowrap">
+                      <span className="text-black bg-gray-100 px-1.5 py-0.5 rounded text-[11px] font-normal">
+                        {line.unit || "pcs"}
+                      </span>
                     </td>
 
                     {/* Sold Qty */}
-                    <td className="py-2.5 px-3 text-center font-normal text-black">
-                      {line.soldQuantity}
+                    <td className="py-2 px-2 text-center whitespace-nowrap">
+                      <span className="text-black bg-gray-100 px-2 py-0.5 rounded text-[11px] font-normal">
+                        {line.soldQuantity}
+                      </span>
                     </td>
 
-                    {/* Return Qty with Steppers and Quick Full Button */}
-                    <td className="py-2.5 px-3 text-center">
-                      <div className="flex items-center justify-center gap-1">
+                    {/* Return Qty with Steppers and Quick Full Button (Aligned with PurchaseForm style) */}
+                    <td className="py-2 px-2 text-center whitespace-nowrap">
+                      <div className="inline-flex items-center border border-gray-300 rounded overflow-hidden">
                         <button
                           type="button"
                           onClick={() => handleQuantityChange(idx, line.quantity - 1)}
                           disabled={line.quantity <= 0}
-                          className="w-5 h-6 rounded bg-gray-100 hover:bg-gray-200 text-black font-medium disabled:opacity-40 cursor-pointer"
+                          className="px-2 py-1 bg-gray-100 hover:bg-gray-200 text-black font-normal text-xs disabled:opacity-40 cursor-pointer"
                         >
                           -
                         </button>
@@ -1245,13 +1248,13 @@ export const SalesReturnForm: React.FC = () => {
                           onChange={(e) =>
                             handleQuantityChange(idx, Number(e.target.value))
                           }
-                          className="w-14 text-center text-xs font-normal  text-black border border-gray-300 rounded py-1 focus:outline-none focus:border-[#009fe3]"
+                          className="w-12 py-1 text-center text-xs font-normal text-black focus:outline-none border-x border-gray-300"
                         />
                         <button
                           type="button"
                           onClick={() => handleQuantityChange(idx, line.quantity + 1)}
                           disabled={line.quantity >= line.soldQuantity}
-                          className="w-5 h-6 rounded bg-gray-100 hover:bg-gray-200 text-black font-medium disabled:opacity-40 cursor-pointer"
+                          className="px-2 py-1 bg-gray-100 hover:bg-gray-200 text-black font-normal text-xs disabled:opacity-40 cursor-pointer"
                         >
                           +
                         </button>
@@ -1259,10 +1262,10 @@ export const SalesReturnForm: React.FC = () => {
                           type="button"
                           onClick={() => handleSetLineFullQty(idx)}
                           title="Return 100% full sold quantity"
-                          className={`px-1.5 py-0.5 rounded text-[10px] font-medium border transition-colors cursor-pointer ${
+                          className={`px-2 py-1 text-[10px] font-medium border-l border-gray-300 transition-colors cursor-pointer ${
                             line.quantity === line.soldQuantity && line.isSelected
-                              ? "bg-emerald-50 text-emerald-800 border-emerald-400"
-                              : "bg-gray-50 text-black border-gray-300 hover:bg-gray-100"
+                              ? "bg-emerald-50 text-emerald-800"
+                              : "bg-gray-50 text-black hover:bg-gray-100"
                           }`}
                         >
                           Full
@@ -1271,28 +1274,12 @@ export const SalesReturnForm: React.FC = () => {
                     </td>
 
                     {/* Sell Price */}
-                    <td className="py-2.5 px-3 text-center  font-normal text-black">
+                    <td className="py-2 px-2 text-right whitespace-nowrap font-normal text-black text-xs">
                       ৳ {formatMoney(line.sellPrice)}
                     </td>
 
-                    {/* Cause */}
-                    <td className="py-2.5 px-3">
-                      <select
-                        disabled={!line.isSelected}
-                        value={line.returnReason}
-                        onChange={(e) => handleReasonChange(idx, e.target.value)}
-                        className="w-full text-xs font-normal text-black bg-white border border-gray-300 rounded px-2 py-1 focus:outline-none focus:border-[#009fe3]"
-                      >
-                        {RETURN_REASONS.map((r) => (
-                          <option key={r.value} value={r.value} className="text-black">
-                            {r.label}
-                          </option>
-                        ))}
-                      </select>
-                    </td>
-
                     {/* Total */}
-                    <td className="py-2.5 px-3 text-right  font-normal text-black text-xs">
+                    <td className="py-2 px-3 text-right whitespace-nowrap font-normal text-black text-xs">
                       ৳ {formatMoney(line.total)}
                     </td>
                   </tr>
