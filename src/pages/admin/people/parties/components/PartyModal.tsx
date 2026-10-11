@@ -162,7 +162,7 @@ const PartyModal: React.FC<PartyModalProps> = ({
       <form onSubmit={handleSubmit} className="flex flex-col gap-2.5 text-left">
         {/* Type Selection Tabs */}
         <div>
-          <label className="text-xs font-semibold text-gray-700 uppercase tracking-wider block mb-1">
+          <label className="text-xs font-semibold text-gray-700 tracking-wider block mb-1">
             Party Type <span className="text-red-500">*</span>
           </label>
           <div className="grid grid-cols-2 gap-1.5 p-1 bg-gray-100 rounded-lg">

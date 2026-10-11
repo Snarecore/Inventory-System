@@ -1117,7 +1117,7 @@ export const CreateSaleForm: React.FC = () => {
         {/* Customer Selector */}
         <div className="relative" ref={customerRef}>
           <div className="flex items-center justify-between mb-1">
-            <label className="text-[11px] font-bold text-black uppercase tracking-wider">
+            <label className="text-[11px] font-bold text-black  tracking-wider">
               Customer <span className="text-rose-500">*</span>
             </label>
             <div className="flex items-center gap-1.5">
@@ -1297,7 +1297,7 @@ export const CreateSaleForm: React.FC = () => {
 
         {/* Invoice No */}
         <div>
-          <label className="text-[11px] font-bold text-black uppercase tracking-wider block mb-1">
+          <label className="text-[11px] font-bold text-black  tracking-wider block mb-1">
             Invoice No <span className="text-rose-500">*</span>
           </label>
           <div
@@ -1310,7 +1310,7 @@ export const CreateSaleForm: React.FC = () => {
 
         {/* Sales Date */}
         <div>
-          <label className="text-[11px] font-bold text-black uppercase tracking-wider block mb-1">
+          <label className="text-[11px] font-bold text-black  tracking-wider block mb-1">
             Sales Date <span className="text-rose-500">*</span>
           </label>
           <input
@@ -1323,7 +1323,7 @@ export const CreateSaleForm: React.FC = () => {
 
         {/* PO / Reference No */}
         <div>
-          <label className="text-[11px] font-bold text-black uppercase tracking-wider block mb-1">
+          <label className="text-[11px] font-bold text-black  tracking-wider block mb-1">
             PO / Ref Number
           </label>
           <input
@@ -1811,25 +1811,25 @@ export const CreateSaleForm: React.FC = () => {
           {/* Detailed Financial Summary Ribbon */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 bg-gray-50/90 py-1.5 px-2.5 rounded-lg border border-gray-200/90 shadow-2xs">
             <div>
-              <span className="text-[10px] text-black uppercase font-bold block tracking-wider leading-tight">Subtotal</span>
+              <span className="text-[10px] text-black  font-bold block tracking-wider leading-tight">Subtotal</span>
               <span className="text-xs font-bold text-black block text-right leading-tight mt-0.5">
                 ৳ {formatMoney(rawSubtotal)}
               </span>
             </div>
             <div>
-              <span className="text-[10px] text-black uppercase font-bold block tracking-wider leading-tight">Discount</span>
+              <span className="text-[10px] text-black  font-bold block tracking-wider leading-tight">Discount</span>
               <span className="text-xs font-bold text-rose-600 block text-right leading-tight mt-0.5">
                 - ৳ {formatMoney(totalDiscount)}
               </span>
             </div>
             <div>
-              <span className="text-[10px] text-black uppercase font-bold block tracking-wider leading-tight">VAT + Delivery</span>
+              <span className="text-[10px] text-black  font-bold block tracking-wider leading-tight">VAT + Delivery</span>
               <span className="text-xs font-bold text-black block text-right leading-tight mt-0.5">
                 + ৳ {formatMoney(totalVat + calculatedDelivery)}
               </span>
             </div>
             <div className="bg-sky-50 border border-sky-200/80 px-1.5 py-0.5 rounded text-right flex flex-col justify-center">
-              <span className="text-[10px] text-black uppercase font-bold block tracking-wider leading-tight">Grand Total</span>
+              <span className="text-[10px] text-black  font-bold block tracking-wider leading-tight">Grand Total</span>
               <span className="text-xs sm:text-[13px] font-extrabold text-[var(--color-primary)] block leading-tight mt-0.5">
                 ৳ {formatMoney(grandTotal)}
               </span>
@@ -1838,7 +1838,7 @@ export const CreateSaleForm: React.FC = () => {
 
           {/* Payment Collected Section */}
           <div className="flex items-center justify-between flex-wrap gap-1">
-            <span className="text-[11px] font-bold text-gray-800 uppercase tracking-wider flex items-center gap-1.5">
+            <span className="text-[11px] font-bold text-gray-800  tracking-wider flex items-center gap-1.5">
               <FaWallet size={11} className="text-gray-700" />
               Payment Collected
             </span>
@@ -2071,13 +2071,13 @@ export const CreateSaleForm: React.FC = () => {
           {/* Paid vs Due Summary Ribbon */}
           <div className="grid grid-cols-2 gap-2 pt-2 border-t border-gray-100">
             <div className="p-2 rounded-lg bg-emerald-50/70 border border-emerald-200">
-              <span className="text-[10px] text-emerald-800 font-bold uppercase block">Paid Total</span>
+              <span className="text-[10px] text-emerald-800 font-bold  block">Paid Total</span>
               <span className="text-sm font-extrabold text-emerald-900 block mt-0.5">
                 ৳ {formatMoney(totalPaid)}
               </span>
             </div>
             <div className="p-2 rounded-lg bg-rose-50/70 border border-rose-200">
-              <span className="text-[10px] text-rose-800 font-bold uppercase block">Due / Balance</span>
+              <span className="text-[10px] text-rose-800 font-bold  block">Due / Balance</span>
               <span className="text-sm font-extrabold text-rose-900 block mt-0.5">
                 ৳ {formatMoney(dueAmount)}
               </span>

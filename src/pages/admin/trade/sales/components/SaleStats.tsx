@@ -33,7 +33,7 @@ const SaleStats: React.FC<SaleStatsProps> = ({
       iconBg: "bg-emerald-100 text-emerald-600",
     },
     {
-      title: "Total Due / Credit",
+      title: "Total Credit",
       value: `৳ ${formatMoney(totalDue)}`,
       icon: FaExclamationCircle,
       color: "text-rose-600",

@@ -60,7 +60,7 @@ const SalesReturnStats: React.FC<SalesReturnStatsProps> = ({
             className={`p-2.5 sm:p-3 rounded-xl border flex items-center justify-between gap-2.5 transition-all shadow-xs ${card.bg}`}
           >
             <div className="flex flex-col min-w-0">
-              <span className="text-[11px] font-semibold text-black uppercase tracking-wider truncate">
+              <span className="text-[11px] font-semibold text-black  tracking-wider truncate">
                 {card.title}
               </span>
               <span className={`text-base sm:text-lg font-bold truncate mt-0.5 ${card.color}`}>

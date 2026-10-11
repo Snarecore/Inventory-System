@@ -1505,7 +1505,7 @@ const CreatePurchaseForm: React.FC = () => {
         {/* Supplier Selector */}
         <div className="relative" ref={supplierRef}>
           <div className="flex items-center justify-between mb-1">
-            <label className="text-[11px] font-bold text-black uppercase tracking-wider">
+            <label className="text-[11px] font-bold text-black tracking-wider">
               Supplier <span className="text-rose-500">*</span>
             </label>
             <button
@@ -1599,7 +1599,7 @@ const CreatePurchaseForm: React.FC = () => {
 
         {/* Invoice No */}
         <div>
-          <label className="text-[11px] font-bold text-black uppercase tracking-wider block mb-1">
+          <label className="text-[11px] font-bold text-black tracking-wider block mb-1">
             Invoice No <span className="text-rose-500">*</span>
           </label>
           <div
@@ -1612,7 +1612,7 @@ const CreatePurchaseForm: React.FC = () => {
 
         {/* Purchase Date */}
         <div>
-          <label className="text-[11px] font-bold text-black uppercase tracking-wider block mb-1">
+          <label className="text-[11px] font-bold text-black tracking-wider block mb-1">
             Purchase Date <span className="text-rose-500">*</span>
           </label>
           <input
@@ -1626,7 +1626,7 @@ const CreatePurchaseForm: React.FC = () => {
         {/* Optional Challan Ref No */}
         {(challanSettings.showChallanRefNo ?? challanSettings.showChallanNo) && (
           <div>
-            <label className="text-[11px] font-bold text-black uppercase tracking-wider block mb-1">
+            <label className="text-[11px] font-bold text-black tracking-wider block mb-1">
               Challan Ref No
             </label>
             <input
@@ -1642,7 +1642,7 @@ const CreatePurchaseForm: React.FC = () => {
         {/* Optional VAT Challan No */}
         {challanSettings.showVatChallan && (
           <div>
-            <label className="text-[11px] font-bold text-black uppercase tracking-wider block mb-1">
+            <label className="text-[11px] font-bold text-black tracking-wider block mb-1">
               VAT Challan No
             </label>
             <input
@@ -1658,7 +1658,7 @@ const CreatePurchaseForm: React.FC = () => {
         {/* Optional VAT Challan Date */}
         {challanSettings.showVatChallanDate && (
           <div>
-            <label className="text-[11px] font-bold text-black uppercase tracking-wider block mb-1">
+            <label className="text-[11px] font-bold text-black tracking-wider block mb-1">
               VAT Challan Date
             </label>
             <input
@@ -1673,7 +1673,7 @@ const CreatePurchaseForm: React.FC = () => {
         {/* Optional Vehicle No */}
         {(challanSettings.vehicleNumber ?? challanSettings.showVehicleNo) && (
           <div>
-            <label className="text-[11px] font-bold text-black uppercase tracking-wider block mb-1">
+            <label className="text-[11px] font-bold text-black tracking-wider block mb-1">
               Vehicle / Truck No
             </label>
             <input
@@ -1689,7 +1689,7 @@ const CreatePurchaseForm: React.FC = () => {
         {/* Optional Capacity (CFT) */}
         {challanSettings.capacityCft && (
           <div>
-            <label className="text-[11px] font-bold text-black uppercase tracking-wider block mb-1">
+            <label className="text-[11px] font-bold text-black tracking-wider block mb-1">
               Capacity (CFT)
             </label>
             <input
@@ -1705,7 +1705,7 @@ const CreatePurchaseForm: React.FC = () => {
         {/* Optional Driver Name */}
         {(challanSettings.driverName ?? challanSettings.showDriverName) && (
           <div>
-            <label className="text-[11px] font-bold text-black uppercase tracking-wider block mb-1">
+            <label className="text-[11px] font-bold text-black tracking-wider block mb-1">
               Driver Name
             </label>
             <input
@@ -1721,7 +1721,7 @@ const CreatePurchaseForm: React.FC = () => {
         {/* Optional Driver Phone */}
         {(challanSettings.driverPhone ?? challanSettings.showDriverPhone) && (
           <div>
-            <label className="text-[11px] font-bold text-black uppercase tracking-wider block mb-1">
+            <label className="text-[11px] font-bold text-black tracking-wider block mb-1">
               Driver Phone
             </label>
             <input
@@ -1736,7 +1736,7 @@ const CreatePurchaseForm: React.FC = () => {
 
         {/* PO Number (UI / Design Only) */}
         <div>
-          <label className="text-[11px] font-bold text-black uppercase tracking-wider block mb-1">
+          <label className="text-[11px] font-bold text-black tracking-wider block mb-1">
             PO Number
           </label>
           <input
@@ -2189,25 +2189,25 @@ const CreatePurchaseForm: React.FC = () => {
           {/* Detailed Financial Summary Ribbon */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 bg-gray-50/90 py-1.5 px-2.5 rounded-lg border border-gray-200/90 shadow-2xs">
             <div>
-              <span className="text-[10px] text-black uppercase font-bold block tracking-wider leading-tight">Subtotal</span>
+              <span className="text-[10px] text-black font-bold block tracking-wider leading-tight">Subtotal</span>
               <span className="text-xs font-bold text-black block text-right leading-tight mt-0.5">
                 ৳ {formatMoney(rawSubtotal)}
               </span>
             </div>
             <div>
-              <span className="text-[10px] text-black uppercase font-bold block tracking-wider leading-tight">Discount</span>
+              <span className="text-[10px] text-black font-bold block tracking-wider leading-tight">Discount</span>
               <span className="text-xs font-bold text-rose-600 block text-right leading-tight mt-0.5">
                 - ৳ {formatMoney(totalDiscount)}
               </span>
             </div>
             <div>
-              <span className="text-[10px] text-black uppercase font-bold block tracking-wider leading-tight">VAT + Transport</span>
+              <span className="text-[10px] text-black font-bold block tracking-wider leading-tight">VAT + Transport</span>
               <span className="text-xs font-bold text-black block text-right leading-tight mt-0.5">
                 + ৳ {formatMoney(totalVat + calculatedTransport)}
               </span>
             </div>
             <div className="bg-sky-50 border border-sky-200/80 px-1.5 py-0.5 rounded text-right flex flex-col justify-center">
-              <span className="text-[10px] text-black uppercase font-bold block tracking-wider leading-tight">Grand Total</span>
+              <span className="text-[10px] text-black font-bold block tracking-wider leading-tight">Grand Total</span>
               <span className="text-xs sm:text-[13px] font-extrabold text-[var(--color-primary)] block leading-tight mt-0.5">
                 ৳ {formatMoney(grandTotal)}
               </span>
@@ -2216,8 +2216,8 @@ const CreatePurchaseForm: React.FC = () => {
 
           {/* Payment Collected Section */}
           <div className="flex items-center justify-between flex-wrap gap-1">
-            <span className="text-[11px] font-bold text-gray-800 uppercase tracking-wider flex items-center gap-1.5">
-              <FaWallet size={11} className="text-gray-700" />
+            <span className="text-[11px] font-bold text-black tracking-wider flex items-center gap-1.5">
+              <FaWallet size={11} className="text-black" />
               Payment Collected
             </span>
             <div className="flex items-center gap-1">
@@ -2473,7 +2473,7 @@ const CreatePurchaseForm: React.FC = () => {
           {/* Bottom Totals: Total Paid & Due Balance */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 border-t border-gray-200/90 pt-1.5 items-center">
             <div className="bg-emerald-50/90 px-2.5 py-1 rounded-md border border-emerald-200/90 flex items-center justify-between shadow-2xs">
-              <span className="text-[10.5px] font-bold text-emerald-950 uppercase tracking-wide">
+              <span className="text-[10.5px] font-bold text-emerald-950 tracking-wide">
                 Total Paid (৳)
               </span>
               <span className="text-xs sm:text-[13px] font-extrabold text-emerald-800">
@@ -2487,7 +2487,7 @@ const CreatePurchaseForm: React.FC = () => {
               }`}
             >
               <span
-                className={`text-[10.5px] font-bold uppercase tracking-wide ${
+                className={`text-[10.5px] font-bold tracking-wide ${
                   dueAmount > 0 ? "text-rose-950" : "text-gray-700"
                 }`}
               >

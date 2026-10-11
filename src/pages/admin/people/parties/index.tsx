@@ -361,7 +361,7 @@ const Parties: React.FC = () => {
         <MotionDiv delay={0.05}>
           <div className="p-3 rounded-xl border bg-blue-50/60 border-blue-300 hover:border-blue-400 flex items-center justify-between gap-2.5 transition-all shadow-xs h-full">
             <div className="flex flex-col min-w-0">
-              <span className="text-[11px] font-semibold text-black uppercase tracking-wider truncate">
+              <span className="text-[11px] font-semibold text-black tracking-wider truncate">
                 Total Parties
               </span>
               <span className="text-base sm:text-lg font-bold truncate mt-0.5 text-blue-600">
@@ -378,7 +378,7 @@ const Parties: React.FC = () => {
         <MotionDiv delay={0.1}>
           <div className="p-3 rounded-xl border bg-emerald-50/60 border-emerald-300 hover:border-emerald-400 flex items-center justify-between gap-2.5 transition-all shadow-xs h-full">
             <div className="flex flex-col min-w-0">
-              <span className="text-[11px] font-semibold text-black uppercase tracking-wider truncate">
+              <span className="text-[11px] font-semibold text-black tracking-wider truncate">
                 Customers
               </span>
               <span className="text-base sm:text-lg font-bold truncate mt-0.5 text-emerald-600">
@@ -395,7 +395,7 @@ const Parties: React.FC = () => {
         <MotionDiv delay={0.15}>
           <div className="p-3 rounded-xl border bg-purple-50/60 border-purple-300 hover:border-purple-400 flex items-center justify-between gap-2.5 transition-all shadow-xs h-full">
             <div className="flex flex-col min-w-0">
-              <span className="text-[11px] font-semibold text-black uppercase tracking-wider truncate">
+              <span className="text-[11px] font-semibold text-black tracking-wider truncate">
                 Suppliers
               </span>
               <span className="text-base sm:text-lg font-bold truncate mt-0.5 text-purple-600">
@@ -412,7 +412,7 @@ const Parties: React.FC = () => {
         <MotionDiv delay={0.2}>
           <div className="p-3 rounded-xl border bg-amber-50/60 border-amber-300 hover:border-amber-400 flex items-center justify-between gap-2.5 transition-all shadow-xs h-full">
             <div className="flex flex-col min-w-0">
-              <span className="text-[11px] font-semibold text-black uppercase tracking-wider truncate">
+              <span className="text-[11px] font-semibold text-black tracking-wider truncate">
                 Total Balance
               </span>
               <span className="text-base sm:text-lg font-bold truncate mt-0.5 text-amber-600">

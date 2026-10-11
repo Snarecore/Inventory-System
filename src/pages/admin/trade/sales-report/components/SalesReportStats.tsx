@@ -48,7 +48,7 @@ export const SalesReportStats: React.FC<SalesReportStatsProps> = ({
       <div className="bg-white rounded-xl p-3.5 border border-sky-100 shadow-xs relative overflow-hidden flex flex-col justify-between hover:shadow-md transition-shadow">
         <div className="flex items-start justify-between">
           <div>
-            <span className="text-[11px] font-bold text-gray-500 uppercase tracking-wider block">
+            <span className="text-[11px] font-bold text-gray-500  tracking-wider block">
               Total Sales Volume
             </span>
             <div className="text-xl sm:text-2xl font-black text-[#009fe3] mt-1">
@@ -77,7 +77,7 @@ export const SalesReportStats: React.FC<SalesReportStatsProps> = ({
       <div className="bg-white rounded-xl p-3.5 border border-emerald-100 shadow-xs relative overflow-hidden flex flex-col justify-between hover:shadow-md transition-shadow">
         <div className="flex items-start justify-between">
           <div>
-            <span className="text-[11px] font-bold text-gray-500 uppercase tracking-wider block">
+            <span className="text-[11px] font-bold text-gray-500  tracking-wider block">
               Net Collections
             </span>
             <div className="text-xl sm:text-2xl font-black text-emerald-600 mt-1">
@@ -110,7 +110,7 @@ export const SalesReportStats: React.FC<SalesReportStatsProps> = ({
       <div className="bg-white rounded-xl p-3.5 border border-rose-100 shadow-xs relative overflow-hidden flex flex-col justify-between hover:shadow-md transition-shadow">
         <div className="flex items-start justify-between">
           <div>
-            <span className="text-[11px] font-bold text-gray-500 uppercase tracking-wider block">
+            <span className="text-[11px] font-bold text-gray-500  tracking-wider block">
               Outstanding Due
             </span>
             <div className="text-xl sm:text-2xl font-black text-rose-600 mt-1">
@@ -143,7 +143,7 @@ export const SalesReportStats: React.FC<SalesReportStatsProps> = ({
       <div className="bg-white rounded-xl p-3.5 border border-indigo-100 shadow-xs relative overflow-hidden flex flex-col justify-between hover:shadow-md transition-shadow">
         <div className="flex items-start justify-between">
           <div>
-            <span className="text-[11px] font-bold text-gray-500 uppercase tracking-wider block">
+            <span className="text-[11px] font-bold text-gray-500  tracking-wider block">
               Invoices & Avg Value
             </span>
             <div className="text-xl sm:text-2xl font-black text-indigo-700 mt-1">

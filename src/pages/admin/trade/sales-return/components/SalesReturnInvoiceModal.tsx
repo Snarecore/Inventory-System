@@ -116,7 +116,7 @@ export const SalesReturnInvoiceModal: React.FC<SalesReturnInvoiceModalProps> = (
                 <span className="text-xl font-bold tracking-tight text-[#009fe3]">
                   {userInfo?.businessName || userInfo?.name || "Cash-Boi ERP"}
                 </span>
-                <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-rose-100 text-rose-700">
+                <span className="text-[10px]  font-bold tracking-wider px-2 py-0.5 rounded-full bg-rose-100 text-rose-700">
                   Credit Note
                 </span>
               </div>
@@ -146,7 +146,7 @@ export const SalesReturnInvoiceModal: React.FC<SalesReturnInvoiceModalProps> = (
           {/* Reference & Customer Info Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 my-4 p-3.5 bg-gray-50 rounded-lg text-xs">
             <div>
-              <p className="text-[10px] uppercase font-bold text-gray-400 tracking-wider mb-1">
+              <p className="text-[10px]  font-bold text-gray-400 tracking-wider mb-1">
                 Customer Information
               </p>
               <div className="flex items-center gap-1.5 font-bold text-gray-800 text-sm">
@@ -166,7 +166,7 @@ export const SalesReturnInvoiceModal: React.FC<SalesReturnInvoiceModalProps> = (
             </div>
 
             <div className="sm:border-l sm:border-gray-200 sm:pl-4">
-              <p className="text-[10px] uppercase font-bold text-gray-400 tracking-wider mb-1">
+              <p className="text-[10px]  font-bold text-gray-400 tracking-wider mb-1">
                 Reference & Settlement
               </p>
               <div className="flex items-center gap-1.5 font-semibold text-gray-800">
@@ -183,7 +183,7 @@ export const SalesReturnInvoiceModal: React.FC<SalesReturnInvoiceModalProps> = (
               </div>
               <div className="mt-1 text-gray-600">
                 <span>Payment / Refund Type: </span>
-                <span className="font-bold text-gray-800 uppercase">
+                <span className="font-bold text-gray-800 ">
                   {r.paymentType || "CASH"}
                 </span>
               </div>
@@ -288,6 +288,40 @@ export const SalesReturnInvoiceModal: React.FC<SalesReturnInvoiceModalProps> = (
                 <span>Refund Amount:</span>
                 <span className="font-mono">৳ {formatMoney(refundAmount)}</span>
               </div>
+
+              {/* Multi-channel Refund Disbursement Breakdown */}
+              {(Number(r.cashReceived || 0) > 0 ||
+                Number(r.cardReceived || 0) > 0 ||
+                Number(r.mfsReceived || 0) > 0 ||
+                Number(r.dueAmount || 0) > 0) && (
+                <div className="mt-1 pt-1.5 border-t border-gray-100 flex flex-col gap-0.5 text-[11px] text-gray-600">
+                  <span className="font-semibold text-gray-700">Settlement Breakdown:</span>
+                  {Number(r.cashReceived || 0) > 0 && (
+                    <div className="flex justify-between">
+                      <span>• Cash Refund:</span>
+                      <strong className="font-mono text-emerald-700">৳ {formatMoney(Number(r.cashReceived))}</strong>
+                    </div>
+                  )}
+                  {Number(r.cardReceived || 0) > 0 && (
+                    <div className="flex justify-between">
+                      <span>• Bank Refund ({r.bankName || "Bank"}):</span>
+                      <strong className="font-mono text-sky-700">৳ {formatMoney(Number(r.cardReceived))}</strong>
+                    </div>
+                  )}
+                  {Number(r.mfsReceived || 0) > 0 && (
+                    <div className="flex justify-between">
+                      <span>• MFS Refund ({r.mfsName || "MFS"}):</span>
+                      <strong className="font-mono text-purple-700">৳ {formatMoney(Number(r.mfsReceived))}</strong>
+                    </div>
+                  )}
+                  {Number(r.dueAmount || 0) > 0 && (
+                    <div className="flex justify-between">
+                      <span>• Due Adjusted:</span>
+                      <strong className="font-mono text-rose-600">৳ {formatMoney(Number(r.dueAmount))}</strong>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </div>
 

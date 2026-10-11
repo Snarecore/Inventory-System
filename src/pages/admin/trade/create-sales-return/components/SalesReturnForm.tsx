@@ -11,13 +11,21 @@ import {
   FaMoneyBillWave,
   FaUndoAlt,
   FaTimes,
+  FaCreditCard,
+  FaMobileAlt,
+  FaWallet,
 } from "react-icons/fa";
 import PageHeader from "@/components/page-header/PageHeader";
 import Button from "@/components/button/Button";
 import ConfirmModal from "@/components/modal/ConfirmModal";
 import SalesReturnInvoiceModal from "@/pages/admin/trade/sales-return/components/SalesReturnInvoiceModal";
 import apiConfig from "@/config/api.json";
-import { salesAndReturnQueryKey, salesListQueryKey } from "@/config/query-key";
+import {
+  salesAndReturnQueryKey,
+  salesListQueryKey,
+  bankInfoListQueryKey,
+  mfsUserListQueryKey,
+} from "@/config/query-key";
 import { buildAccessUser } from "@/utils/access-user";
 import { postData } from "@/services/api-service";
 import { formatMoney } from "@/utils/formatters";
@@ -67,9 +75,17 @@ export const SalesReturnForm: React.FC = () => {
   const [lines, setLines] = useState<ReturnLineFormState[]>([]);
 
   // Financials
-  const [invoiceDiscount, setInvoiceDiscount] = useState<string>("0");
-  const [invoiceVat, setInvoiceVat] = useState<string>("0");
-  const [invoiceDeliveryCharge, setInvoiceDeliveryCharge] = useState<string>("0");
+  const [invoiceDiscount, setInvoiceDiscount] = useState<string>("");
+  const [invoiceVat, setInvoiceVat] = useState<string>("");
+  const [invoiceDeliveryCharge, setInvoiceDeliveryCharge] = useState<string>("");
+
+  // Refund Settlement Breakdown State (Cash, Bank, MFS, Due Adjustment)
+  const [refundCashAmount, setRefundCashAmount] = useState<string>("");
+  const [refundBankAmount, setRefundBankAmount] = useState<string>("");
+  const [refundMfsAmount, setRefundMfsAmount] = useState<string>("");
+  const [refundDueAmount, setRefundDueAmount] = useState<string>("");
+  const [selectedRefundBankId, setSelectedRefundBankId] = useState<string>("");
+  const [selectedRefundMfsId, setSelectedRefundMfsId] = useState<string>("");
 
   // Search & Dropdown
   const [isInvoiceDropdownOpen, setIsInvoiceDropdownOpen] = useState<boolean>(false);
@@ -119,6 +135,68 @@ export const SalesReturnForm: React.FC = () => {
     staleTime: 60 * 1000,
   });
 
+  // 2. Fetch registered bank accounts for refund disbursement
+  const bankInfoListUrl = apiConfig.bank?.bankInfoListUrl || "get-bank-info-list";
+  const { data: banksData } = useQuery({
+    queryKey: [bankInfoListQueryKey],
+    queryFn: async () => {
+      const accessUser = buildAccessUser();
+      const res: any = await postData({
+        url: bankInfoListUrl,
+        body: { accessUser },
+      });
+      return res;
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const registeredBankAccounts: any[] = useMemo(() => {
+    if (!banksData) return [];
+    if (Array.isArray(banksData)) return banksData;
+    const raw = banksData as any;
+    if (Array.isArray(raw.bankAccounts)) return raw.bankAccounts;
+    if (Array.isArray(raw.bankInfoList)) return raw.bankInfoList;
+    if (Array.isArray(raw.bankList)) return raw.bankList;
+    if (Array.isArray(raw.data)) return raw.data;
+    if (raw.data && typeof raw.data === "object") {
+      if (Array.isArray(raw.data.bankAccounts)) return raw.data.bankAccounts;
+      if (Array.isArray(raw.data.bankInfoList)) return raw.data.bankInfoList;
+      if (Array.isArray(raw.data.bankList)) return raw.data.bankList;
+    }
+    return [];
+  }, [banksData]);
+
+  // 3. Fetch registered MFS accounts for refund disbursement
+  const mfsUserListUrl = apiConfig.mfs?.mfsUserListUrl || "mfs-user-list";
+  const { data: mfsData } = useQuery({
+    queryKey: [mfsUserListQueryKey],
+    queryFn: async () => {
+      const accessUser = buildAccessUser();
+      const res: any = await postData({
+        url: mfsUserListUrl,
+        body: { accessUser },
+      });
+      return res;
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const registeredMfsAccounts: any[] = useMemo(() => {
+    if (!mfsData) return [];
+    if (Array.isArray(mfsData)) return mfsData;
+    const raw = mfsData as any;
+    if (Array.isArray(raw.mfsUsers)) return raw.mfsUsers;
+    if (Array.isArray(raw.mfsUserList)) return raw.mfsUserList;
+    if (Array.isArray(raw.mfsList)) return raw.mfsList;
+    if (Array.isArray(raw.data)) return raw.data;
+    if (raw.data && typeof raw.data === "object") {
+      if (Array.isArray(raw.data.mfsUsers)) return raw.data.mfsUsers;
+      if (Array.isArray(raw.data.mfsUserList)) return raw.data.mfsUserList;
+      if (Array.isArray(raw.data.mfsList)) return raw.data.mfsList;
+    }
+    return [];
+  }, [mfsData]);
+
   const availableInvoices: SaleItem[] = useMemo(() => {
     if (Array.isArray(apiSalesAndReturnData)) {
       return apiSalesAndReturnData;
@@ -138,16 +216,12 @@ export const SalesReturnForm: React.FC = () => {
     setCustomerAddress(sale.customerAddress || sale.customer_address || "");
     setNote(`Return from invoice ${invNo}${sale.orderNo ? ` (Order: ${sale.orderNo})` : ""}`);
 
-    // Auto-suggest refund payment method matching customer's original payment
-    const origPayment = String(sale.paymentType || "CASH").toUpperCase();
-    if (origPayment === "CREDIT" || Number(sale.dueAmount || 0) > 0) {
-      setPaymentType("CREDIT");
-    } else if (origPayment === "MFS") {
-      setPaymentType("MFS");
-    } else if (origPayment === "BANK") {
-      setPaymentType("BANK");
-    } else {
-      setPaymentType("CASH");
+    // Pre-select bank or MFS if originally used
+    if (sale.bankId) {
+      setSelectedRefundBankId(String(sale.bankId));
+    }
+    if (sale.mfsId) {
+      setSelectedRefundMfsId(String(sale.mfsId));
     }
 
     const details: any[] =
@@ -342,6 +416,139 @@ export const SalesReturnForm: React.FC = () => {
     );
   };
 
+  // Original invoice payment numbers
+  const origPaymentMode = String(selectedSale?.paymentType || "CASH").toUpperCase();
+  const origGrandTotal = Number(selectedSale?.grandTotal ?? selectedSale?.totalAmount ?? 0);
+  const origCashPaid = Number(
+    selectedSale?.cashReceived ??
+      (origPaymentMode === "CASH" && !selectedSale?.bankId && !selectedSale?.mfsId
+        ? selectedSale?.paidAmount ?? origGrandTotal
+        : 0)
+  );
+  const origBankPaid = Number(
+    selectedSale?.cardReceived ??
+      (selectedSale?.bankId ? selectedSale?.paidAmount ?? origGrandTotal : 0)
+  );
+  const origMfsPaid = Number(
+    selectedSale?.mfsReceived ??
+      (selectedSale?.mfsId ? selectedSale?.paidAmount ?? origGrandTotal : 0)
+  );
+  const origDueAmount = Number(
+    selectedSale?.dueAmount ??
+      (origPaymentMode === "CREDIT"
+        ? origGrandTotal
+        : Math.max(0, origGrandTotal - (origCashPaid + origBankPaid + origMfsPaid)))
+  );
+  const origPaidAmount = Number(
+    selectedSale?.paidAmount ?? origCashPaid + origBankPaid + origMfsPaid
+  );
+
+  // Auto-distribute refund when invoice is selected or return totals change
+  useEffect(() => {
+    if (!selectedSale) {
+      setRefundCashAmount("");
+      setRefundBankAmount("");
+      setRefundMfsAmount("");
+      setRefundDueAmount("");
+      return;
+    }
+
+    const neededRefund = totals.refundAmount;
+    if (neededRefund <= 0) {
+      setRefundCashAmount("");
+      setRefundBankAmount("");
+      setRefundMfsAmount("");
+      setRefundDueAmount("");
+      return;
+    }
+
+    // Smart default distribution based on original payment method
+    if (origPaymentMode === "CREDIT" || (origDueAmount > 0 && origPaidAmount <= 0)) {
+      setRefundDueAmount(String(neededRefund));
+      setRefundCashAmount("");
+      setRefundBankAmount("");
+      setRefundMfsAmount("");
+    } else if (origBankPaid > 0 && origCashPaid <= 0 && origMfsPaid <= 0) {
+      setRefundBankAmount(String(neededRefund));
+      setRefundCashAmount("");
+      setRefundMfsAmount("");
+      setRefundDueAmount("");
+    } else if (origMfsPaid > 0 && origCashPaid <= 0 && origBankPaid <= 0) {
+      setRefundMfsAmount(String(neededRefund));
+      setRefundCashAmount("");
+      setRefundBankAmount("");
+      setRefundDueAmount("");
+    } else {
+      // Default to cash or cash + due
+      if (origDueAmount > 0 && neededRefund > origPaidAmount) {
+        const cashPart = Math.min(origPaidAmount, neededRefund);
+        const duePart = neededRefund - cashPart;
+        setRefundCashAmount(cashPart > 0 ? String(cashPart) : "");
+        setRefundDueAmount(duePart > 0 ? String(duePart) : "");
+        setRefundBankAmount("");
+        setRefundMfsAmount("");
+      } else {
+        setRefundCashAmount(String(neededRefund));
+        setRefundBankAmount("");
+        setRefundMfsAmount("");
+        setRefundDueAmount("");
+      }
+    }
+  }, [selectedSale?.id, selectedSale?.invoiceNo, totals.refundAmount]);
+
+  // Numeric refund channel values
+  const numRefundCash = Number(refundCashAmount) || 0;
+  const numRefundBank = Number(refundBankAmount) || 0;
+  const numRefundMfs = Number(refundMfsAmount) || 0;
+  const numRefundDue = Number(refundDueAmount) || 0;
+
+  const totalRefundAllocated = useMemo(() => {
+    return numRefundCash + numRefundBank + numRefundMfs + numRefundDue;
+  }, [numRefundCash, numRefundBank, numRefundMfs, numRefundDue]);
+
+  const refundDifference = useMemo(() => {
+    return Number((totals.refundAmount - totalRefundAllocated).toFixed(2));
+  }, [totals.refundAmount, totalRefundAllocated]);
+
+  // Handlers for quick 1-click full payment allocation
+  const handleRefundFullCash = () => {
+    setRefundCashAmount(String(totals.refundAmount));
+    setRefundBankAmount("");
+    setRefundMfsAmount("");
+    setRefundDueAmount("");
+  };
+
+  const handleRefundFullBank = () => {
+    if (registeredBankAccounts.length > 0 && !selectedRefundBankId) {
+      setSelectedRefundBankId(
+        String(registeredBankAccounts[0].id || registeredBankAccounts[0].bankId)
+      );
+    }
+    setRefundBankAmount(String(totals.refundAmount));
+    setRefundCashAmount("");
+    setRefundMfsAmount("");
+    setRefundDueAmount("");
+  };
+
+  const handleRefundFullMfs = () => {
+    if (registeredMfsAccounts.length > 0 && !selectedRefundMfsId) {
+      setSelectedRefundMfsId(
+        String(registeredMfsAccounts[0].id || registeredMfsAccounts[0].mfsId)
+      );
+    }
+    setRefundMfsAmount(String(totals.refundAmount));
+    setRefundCashAmount("");
+    setRefundBankAmount("");
+    setRefundDueAmount("");
+  };
+
+  const handleRefundFullDue = () => {
+    setRefundDueAmount(String(totals.refundAmount));
+    setRefundCashAmount("");
+    setRefundBankAmount("");
+    setRefundMfsAmount("");
+  };
+
   const handleReset = () => {
     if (stateSale) {
       loadInvoice(stateSale);
@@ -355,6 +562,12 @@ export const SalesReturnForm: React.FC = () => {
       setCustomerPhone("");
       setCustomerAddress("");
       setLines([]);
+      setRefundCashAmount("");
+      setRefundBankAmount("");
+      setRefundMfsAmount("");
+      setRefundDueAmount("");
+      setSelectedRefundBankId("");
+      setSelectedRefundMfsId("");
     }
   };
 
@@ -368,6 +581,35 @@ export const SalesReturnForm: React.FC = () => {
     if (totals.selectedItemCount === 0 || totals.totalPieces === 0) {
       showErrorToast("Please select at least 1 item with return quantity > 0");
       return;
+    }
+
+    if (totals.refundAmount > 0) {
+      if (Math.abs(refundDifference) > 0.01) {
+        if (refundDifference > 0) {
+          showErrorToast(
+            `Refund disbursement incomplete. Remaining ৳${formatMoney(
+              refundDifference
+            )} unallocated!`
+          );
+        } else {
+          showErrorToast(
+            `Allocated refund exceeds required refund by ৳${formatMoney(
+              Math.abs(refundDifference)
+            )}!`
+          );
+        }
+        return;
+      }
+
+      if (numRefundBank > 0 && !selectedRefundBankId) {
+        showErrorToast("Please select a Bank account for bank refund");
+        return;
+      }
+
+      if (numRefundMfs > 0 && !selectedRefundMfsId) {
+        showErrorToast("Please select an MFS wallet for MFS refund");
+        return;
+      }
     }
 
     setPendingPrintAfterSave(autoPrint);
@@ -395,6 +637,31 @@ export const SalesReturnForm: React.FC = () => {
         returnReason: l.returnReason,
       }));
 
+      // Calculate refund payment type
+      const refundMethodsUsed =
+        (numRefundCash > 0 ? 1 : 0) +
+        (numRefundBank > 0 ? 1 : 0) +
+        (numRefundMfs > 0 ? 1 : 0) +
+        (numRefundDue > 0 ? 1 : 0);
+
+      const effectivePaymentType =
+        refundMethodsUsed > 1
+          ? "MULTI"
+          : numRefundDue > 0
+          ? "CREDIT"
+          : numRefundBank > 0
+          ? "BANK"
+          : numRefundMfs > 0
+          ? "MFS"
+          : "CASH";
+
+      const matchedBank = registeredBankAccounts.find(
+        (b) => String(b.id || b.bankId || b._id) === String(selectedRefundBankId)
+      );
+      const matchedMfs = registeredMfsAccounts.find(
+        (m) => String(m.id || m.mfsId || m._id) === String(selectedRefundMfsId)
+      );
+
       // Top-level payload matching exact API schema
       const payload = {
         accessUser: buildAccessUser(),
@@ -411,10 +678,33 @@ export const SalesReturnForm: React.FC = () => {
         deliveryCharge: Number(totals.deliveryCharge.toFixed(2)),
         grandTotal: Number(totals.grandTotal.toFixed(2)),
         refundAmount: Number(totals.refundAmount.toFixed(2)),
-        paymentType,
+        paymentType: effectivePaymentType,
         status,
         note: note.trim() || `Return from invoice ${salesInvoiceNo}`,
         osType: "WEB",
+        // Multi-channel refund breakdown
+        cashReceived: numRefundCash,
+        cardReceived: numRefundBank,
+        mfsReceived: numRefundMfs,
+        dueAmount: numRefundDue,
+        bankId: numRefundBank > 0 ? selectedRefundBankId : null,
+        bankName: numRefundBank > 0 ? (matchedBank?.bankName || matchedBank?.name || null) : null,
+        accountNo:
+          numRefundBank > 0
+            ? (matchedBank?.accountNo ||
+               matchedBank?.bankAccountNumber ||
+               matchedBank?.bankAccountNo ||
+               null)
+            : null,
+        mfsId: numRefundMfs > 0 ? selectedRefundMfsId : null,
+        mfsName:
+          numRefundMfs > 0
+            ? (matchedMfs?.name || matchedMfs?.mfsName || matchedMfs?.method || null)
+            : null,
+        mfsPhone:
+          numRefundMfs > 0
+            ? (matchedMfs?.phoneNumber || matchedMfs?.mfsPhone || matchedMfs?.phone || null)
+            : null,
         returnDetails: returnDetailsPayload,
       };
 
@@ -457,7 +747,20 @@ export const SalesReturnForm: React.FC = () => {
         deliveryCharge: totals.deliveryCharge,
         grandTotal: totals.grandTotal,
         refundAmount: totals.refundAmount,
-        paymentType,
+        paymentType: effectivePaymentType,
+        cashReceived: numRefundCash,
+        cardReceived: numRefundBank,
+        mfsReceived: numRefundMfs,
+        dueAmount: numRefundDue,
+        bankId: numRefundBank > 0 ? selectedRefundBankId : undefined,
+        bankName: matchedBank?.bankName || matchedBank?.name,
+        accountNo:
+          matchedBank?.accountNo ||
+          matchedBank?.bankAccountNumber ||
+          matchedBank?.bankAccountNo,
+        mfsId: numRefundMfs > 0 ? selectedRefundMfsId : undefined,
+        mfsName: matchedMfs?.name || matchedMfs?.mfsName || matchedMfs?.method,
+        mfsPhone: matchedMfs?.phoneNumber || matchedMfs?.mfsPhone || matchedMfs?.phone,
         status,
         note,
         osType: "WEB",
@@ -490,12 +793,6 @@ export const SalesReturnForm: React.FC = () => {
       setIsSubmitting(false);
     }
   };
-
-  // Helper values for original payment display
-  const origPaymentMode = String(selectedSale?.paymentType || "CASH").toUpperCase();
-  const origGrandTotal = Number(selectedSale?.grandTotal ?? selectedSale?.totalAmount ?? 0);
-  const origPaidAmount = Number(selectedSale?.paidAmount ?? (origPaymentMode === "CREDIT" ? 0 : origGrandTotal));
-  const origDueAmount = Number(selectedSale?.dueAmount ?? Math.max(0, origGrandTotal - origPaidAmount));
 
   return (
     <div className="flex flex-col gap-2.5 px-3 py-2 sm:px-4 sm:py-2.5 max-w-[1600px] mx-auto w-full">
@@ -544,7 +841,7 @@ export const SalesReturnForm: React.FC = () => {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 bg-white p-2.5 sm:p-3 rounded-xl border border-gray-200 shadow-xs">
         {/* Invoice / Order No Search Input with placeholder */}
         <div className="relative" ref={invoiceDropdownRef}>
-          <label className="text-[11px] font-bold text-black uppercase tracking-wider block mb-1">
+          <label className="text-[11px] font-bold text-black  tracking-wider block mb-1">
             Search Order No / Invoice <span className="text-rose-500">*</span>
           </label>
           <div className="relative flex items-center">
@@ -558,7 +855,7 @@ export const SalesReturnForm: React.FC = () => {
               onFocus={() => setIsInvoiceDropdownOpen(true)}
               onClick={() => setIsInvoiceDropdownOpen(true)}
               placeholder="Search by Order No (ORD-1001), Invoice, Customer..."
-              className="w-full h-9 pl-3 pr-8 border border-gray-300 rounded-lg bg-gray-50/50 hover:bg-white focus:bg-white text-xs font-mono text-gray-900 focus:outline-none focus:border-[#009fe3]"
+              className="w-full h-9 pl-3 pr-8 border border-gray-300 rounded-lg bg-gray-50/50 hover:bg-white focus:bg-white text-xs  text-gray-900 focus:outline-none focus:border-[#009fe3]"
             />
             {invoiceSearchQuery ? (
               <button
@@ -606,11 +903,11 @@ export const SalesReturnForm: React.FC = () => {
                   >
                     <div>
                       <div className="flex items-center gap-1.5">
-                        <span className="font-bold font-mono text-[#009fe3]">
+                        <span className="font-bold  text-[#009fe3]">
                           {inv.invoiceNo}
                         </span>
                         {inv.orderNo && (
-                          <span className="px-1.5 py-0.2 rounded bg-sky-100 text-sky-800 text-[10px] font-mono font-bold">
+                          <span className="px-1.5 py-0.2 rounded bg-sky-100 text-sky-800 text-[10px]  font-bold">
                             {inv.orderNo}
                           </span>
                         )}
@@ -620,7 +917,7 @@ export const SalesReturnForm: React.FC = () => {
                       </div>
                     </div>
                     <div className="text-right">
-                      <div className="font-bold font-mono text-gray-900">
+                      <div className="font-bold  text-gray-900">
                         ৳ {formatMoney(Number(inv.grandTotal || 0))}
                       </div>
                       <div className="text-[10px] text-gray-400">
@@ -642,7 +939,7 @@ export const SalesReturnForm: React.FC = () => {
 
         {/* Return Date */}
         <div>
-          <label className="text-[11px] font-bold text-black uppercase tracking-wider block mb-1">
+          <label className="text-[11px] font-bold text-black  tracking-wider block mb-1">
             Return Date <span className="text-rose-500">*</span>
           </label>
           <input
@@ -655,7 +952,7 @@ export const SalesReturnForm: React.FC = () => {
 
         {/* Customer Details */}
         <div>
-          <label className="text-[11px] font-bold text-black uppercase tracking-wider block mb-1">
+          <label className="text-[11px] font-bold text-black  tracking-wider block mb-1">
             Customer
           </label>
           <div className="h-9 px-2.5 py-1.5 border border-gray-200 rounded-lg bg-gray-50 flex items-center justify-between text-xs">
@@ -663,7 +960,7 @@ export const SalesReturnForm: React.FC = () => {
               {customerName || "Customer"}
             </span>
             {customerPhone && (
-              <span className="text-[11px] text-gray-500 font-mono shrink-0">
+              <span className="text-[11px] text-gray-500  shrink-0">
                 {customerPhone}
               </span>
             )}
@@ -672,7 +969,7 @@ export const SalesReturnForm: React.FC = () => {
 
         {/* Refund / Settlement Type - Auto-determined by customer's original payment method */}
         <div>
-          <label className="text-[11px] font-bold text-black uppercase tracking-wider block mb-1">
+          <label className="text-[11px] font-bold text-black  tracking-wider block mb-1">
             Refund / Settlement Type <span className="text-rose-500">*</span>
           </label>
           <div className="h-9 px-2.5 py-1.5 border border-gray-200 rounded-lg bg-gray-50 flex items-center justify-between text-xs font-semibold">
@@ -693,7 +990,7 @@ export const SalesReturnForm: React.FC = () => {
                   {paymentType === "MFS" && `MFS (${selectedSale.mfsName || "bKash / Nagad"})`}
                   {paymentType === "BANK" && `Bank (${selectedSale.bankName || "Transfer"})`}
                 </span>
-                <span className="text-[10px] uppercase font-bold px-1.5 py-0.5 rounded bg-blue-100 text-blue-800 font-mono">
+                <span className="text-[10px]  font-bold px-1.5 py-0.5 rounded bg-blue-100 text-blue-800 ">
                   {paymentType}
                 </span>
               </>
@@ -708,51 +1005,106 @@ export const SalesReturnForm: React.FC = () => {
 
       {/* Customer Original Payment Breakdown Banner */}
       {selectedSale && (
-        <div className="bg-blue-50/50 border border-blue-200 rounded-xl p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
-          <div className="flex items-start gap-2.5">
-            <div className="p-2 rounded-lg bg-blue-100 text-[#009fe3] shrink-0 mt-0.5">
-              <FaMoneyBillWave size={14} />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="font-bold text-gray-900">
-                  Customer's Original Payment Breakdown
+        <div className="bg-blue-50/50 border border-blue-200 rounded-xl p-3 flex flex-col gap-2.5 text-xs">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-blue-100">
+            <div className="flex items-center gap-2">
+              <div className="p-1.5 rounded-lg bg-blue-100 text-[#009fe3] shrink-0">
+                <FaMoneyBillWave size={14} />
+              </div>
+              <div>
+                <span className="font-bold text-gray-900 block leading-tight">
+                  Customer's Original Payment Breakdown (গ্রাহকের পূর্বের পেমেন্ট বিবরণ)
                 </span>
-                <span
-                  className={`px-2 py-0.2 rounded font-bold text-[10px] ${
-                    origPaymentMode === "CASH"
-                      ? "bg-emerald-100 text-emerald-800"
-                      : origPaymentMode === "CREDIT"
-                      ? "bg-rose-100 text-rose-800"
-                      : "bg-blue-100 text-blue-800"
-                  }`}
-                >
-                  Paid via: {origPaymentMode}
+                <span className="text-[11px] text-gray-500 block">
+                  Original Invoice Total: <strong className=" text-gray-800">৳ {formatMoney(origGrandTotal)}</strong>
+                  {selectedSale.orderNo && ` (Order: ${selectedSale.orderNo})`}
                 </span>
               </div>
-              <p className="text-[11px] text-gray-600 mt-0.5">
-                {origPaymentMode === "CREDIT" || origDueAmount > 0
-                  ? `Invoice Total: ৳${formatMoney(origGrandTotal)} | Unpaid Due: ৳${formatMoney(origDueAmount)}. Returning will reduce customer due balance.`
-                  : origPaymentMode === "MFS"
-                  ? `Invoice Total: ৳${formatMoney(origGrandTotal)} paid via ${selectedSale.mfsName || "MFS"} (${selectedSale.mfsPhone || customerPhone || "Wallet"}).`
-                  : origPaymentMode === "BANK"
-                  ? `Invoice Total: ৳${formatMoney(origGrandTotal)} paid via Bank (${selectedSale.bankName || "Account"}).`
-                  : `Invoice Total: ৳${formatMoney(origGrandTotal)} paid in Cash.`}
-              </p>
+            </div>
+
+            <div className="flex items-center gap-1.5">
+              <span className="text-[11px] text-gray-500 font-medium">Invoice Method:</span>
+              <span
+                className={`px-2 py-0.5 rounded font-bold text-[10px]  ${
+                  origPaymentMode === "CASH"
+                    ? "bg-emerald-100 text-emerald-800"
+                    : origPaymentMode === "CREDIT"
+                    ? "bg-rose-100 text-rose-800"
+                    : origPaymentMode === "BANK"
+                    ? "bg-sky-100 text-sky-800"
+                    : origPaymentMode === "MFS"
+                    ? "bg-purple-100 text-purple-800"
+                    : "bg-blue-100 text-blue-800"
+                }`}
+              >
+                {origPaymentMode}
+              </span>
             </div>
           </div>
 
-          <div className="flex items-center gap-3 self-end sm:self-auto bg-white/80 px-3 py-1.5 rounded-lg border border-blue-100 font-mono text-xs">
-            <div>
-              <span className="text-[10px] text-gray-400 block">Total Paid</span>
-              <strong className="text-emerald-700">৳ {formatMoney(origPaidAmount)}</strong>
-            </div>
-            {origDueAmount > 0 && (
-              <div className="border-l border-gray-200 pl-3">
-                <span className="text-[10px] text-gray-400 block">Due Balance</span>
-                <strong className="text-rose-600">৳ {formatMoney(origDueAmount)}</strong>
+          {/* Cards for each channel customer paid with (Clean 2-line height alignment) */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            {/* Cash Paid */}
+            <div className={`p-2 rounded-lg border bg-white flex flex-col justify-between ${origCashPaid > 0 ? "border-gray-300" : "border-gray-200 opacity-60"}`}>
+              <div className="flex items-center justify-between text-[11px] font-normal text-black mb-1">
+                <span className="flex items-center gap-1 text-black">
+                  <FaMoneyBillWave className="text-emerald-600 text-[10px]" />
+                  Cash Paid
+                </span>
               </div>
-            )}
+              <div className="font-normal text-black text-xs sm:text-sm">
+                ৳ {formatMoney(origCashPaid)}
+              </div>
+            </div>
+
+            {/* Bank Paid */}
+            <div className={`p-2 rounded-lg border bg-white flex flex-col justify-between ${origBankPaid > 0 ? "border-gray-300" : "border-gray-200 opacity-60"}`}>
+              <div className="flex items-center justify-between text-[11px] font-normal text-black mb-1">
+                <span className="flex items-center gap-1 text-black">
+                  <FaCreditCard className="text-sky-600 text-[10px]" />
+                  Bank / Card
+                </span>
+                {selectedSale.bankName && (
+                  <span className="text-[10px] text-black font-normal truncate max-w-[100px]" title={selectedSale.bankName}>
+                    {selectedSale.bankName}
+                  </span>
+                )}
+              </div>
+              <div className="font-normal text-black text-xs sm:text-sm">
+                ৳ {formatMoney(origBankPaid)}
+              </div>
+            </div>
+
+            {/* MFS Paid */}
+            <div className={`p-2 rounded-lg border bg-white flex flex-col justify-between ${origMfsPaid > 0 ? "border-gray-300" : "border-gray-200 opacity-60"}`}>
+              <div className="flex items-center justify-between text-[11px] font-normal text-black mb-1">
+                <span className="flex items-center gap-1 text-black">
+                  <FaMobileAlt className="text-purple-600 text-[10px]" />
+                  MFS Wallet
+                </span>
+                {(selectedSale.mfsName || selectedSale.mfsPhone) && (
+                  <span className="text-[10px] text-black font-normal truncate max-w-[100px]" title={`${selectedSale.mfsName || ""} ${selectedSale.mfsPhone || ""}`}>
+                    {selectedSale.mfsName || selectedSale.mfsPhone}
+                  </span>
+                )}
+              </div>
+              <div className="font-normal text-black text-xs sm:text-sm">
+                ৳ {formatMoney(origMfsPaid)}
+              </div>
+            </div>
+
+            {/* Due Balance */}
+            <div className={`p-2 rounded-lg border bg-white flex flex-col justify-between ${origDueAmount > 0 ? "border-gray-300" : "border-gray-200 opacity-60"}`}>
+              <div className="flex items-center justify-between text-[11px] font-normal text-black mb-1">
+                <span className="flex items-center gap-1 text-black">
+                  <span className="w-1.5 h-1.5 rounded-full bg-rose-500 inline-block" />
+                  Due Balance
+                </span>
+              </div>
+              <div className="font-normal text-black text-xs sm:text-sm">
+                ৳ {formatMoney(origDueAmount)}
+              </div>
+            </div>
           </div>
         </div>
       )}
@@ -763,7 +1115,7 @@ export const SalesReturnForm: React.FC = () => {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pb-2 border-b border-gray-100">
           <div className="flex items-center gap-2">
             <FaBoxes className="text-[#009fe3] text-sm" />
-            <span className="text-xs font-bold text-black uppercase tracking-wider">
+            <span className="text-xs font-bold text-black  tracking-wider">
               Return Type:
             </span>
             <div className="inline-flex rounded-lg border border-gray-200 p-0.5 bg-gray-50 text-xs">
@@ -808,8 +1160,8 @@ export const SalesReturnForm: React.FC = () => {
             >
               Clear All
             </button>
-            <span className="text-xs text-gray-500 font-mono pl-1 border-l border-gray-200">
-              Selected: <strong className="text-gray-900">{totals.selectedItemCount} items ({totals.totalPieces} pcs)</strong>
+            <span className="text-xs text-black pl-1 border-l border-gray-200">
+              Selected: <span className="text-black font-normal">{totals.selectedItemCount} items ({totals.totalPieces} pcs)</span>
             </span>
           </div>
         </div>
@@ -822,15 +1174,15 @@ export const SalesReturnForm: React.FC = () => {
           <div className="overflow-x-auto border border-gray-200 rounded-lg">
             <table className="w-full text-xs text-left border-collapse">
               <thead>
-                <tr className="bg-gray-50 text-gray-700 font-bold border-b border-gray-200 uppercase text-[11px] tracking-wider">
-                  <th className="py-2 px-3 text-center w-10">Select</th>
-                  <th className="py-2 px-3">Product Description</th>
-                  <th className="py-2 px-3 text-center">Unit</th>
-                  <th className="py-2 px-3 text-center">Sold Qty</th>
-                  <th className="py-2 px-3 text-center w-36">Return Qty</th>
-                  <th className="py-2 px-3 text-center">Sell Price</th>
-                  <th className="py-2 px-3 w-48">Return Cause</th>
-                  <th className="py-2 px-3 text-right">Total (৳)</th>
+                <tr className="bg-gray-50 text-black font-medium border-b border-gray-200 text-[11px] tracking-wider">
+                  <th className="py-2.5 px-3 text-center w-10 text-black font-medium">Select</th>
+                  <th className="py-2.5 px-3 text-black font-medium">Product Description</th>
+                  <th className="py-2.5 px-3 text-center text-black font-medium">Unit</th>
+                  <th className="py-2.5 px-3 text-center text-black font-medium">Sold Qty</th>
+                  <th className="py-2.5 px-3 text-center w-36 text-black font-medium">Return Qty</th>
+                  <th className="py-2.5 px-3 text-center text-black font-medium">Sell Price</th>
+                  <th className="py-2.5 px-3 w-48 text-black font-medium">Return Cause</th>
+                  <th className="py-2.5 px-3 text-right text-black font-medium">Total (৳)</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
@@ -842,7 +1194,7 @@ export const SalesReturnForm: React.FC = () => {
                     } hover:bg-blue-50/20 transition-colors`}
                   >
                     {/* Checkbox */}
-                    <td className="py-2 px-3 text-center">
+                    <td className="py-2.5 px-3 text-center">
                       <input
                         type="checkbox"
                         checked={line.isSelected}
@@ -852,35 +1204,35 @@ export const SalesReturnForm: React.FC = () => {
                     </td>
 
                     {/* Product */}
-                    <td className="py-2 px-3">
-                      <div className="font-semibold text-gray-800">
-                        {line.productName}
+                    <td className="py-2.5 px-3">
+                      <div className="flex items-center gap-1.5 font-normal text-black text-xs">
+                        <span>{line.productName}</span>
+                        {line.productCode && (
+                          <span className="text-[10px] text-gray-500 font-mono">
+                            ({line.productCode})
+                          </span>
+                        )}
                       </div>
-                      {line.productCode && (
-                        <span className="text-[10px] text-gray-400 font-mono">
-                          {line.productCode}
-                        </span>
-                      )}
                     </td>
 
                     {/* Unit */}
-                    <td className="py-2 px-3 text-center text-gray-500">
+                    <td className="py-2.5 px-3 text-center font-normal text-black">
                       {line.unit}
                     </td>
 
                     {/* Sold Qty */}
-                    <td className="py-2 px-3 text-center font-bold text-gray-600">
+                    <td className="py-2.5 px-3 text-center font-normal text-black">
                       {line.soldQuantity}
                     </td>
 
                     {/* Return Qty with Steppers and Quick Full Button */}
-                    <td className="py-2 px-3 text-center">
+                    <td className="py-2.5 px-3 text-center">
                       <div className="flex items-center justify-center gap-1">
                         <button
                           type="button"
                           onClick={() => handleQuantityChange(idx, line.quantity - 1)}
                           disabled={line.quantity <= 0}
-                          className="w-5 h-6 rounded bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold disabled:opacity-40"
+                          className="w-5 h-6 rounded bg-gray-100 hover:bg-gray-200 text-black font-medium disabled:opacity-40 cursor-pointer"
                         >
                           -
                         </button>
@@ -889,16 +1241,17 @@ export const SalesReturnForm: React.FC = () => {
                           min={0}
                           max={line.soldQuantity}
                           value={line.quantity}
+                          onWheel={(e) => e.currentTarget.blur()}
                           onChange={(e) =>
                             handleQuantityChange(idx, Number(e.target.value))
                           }
-                          className="w-14 text-center text-xs font-bold font-mono border border-gray-300 rounded py-1 focus:outline-none focus:border-[#009fe3]"
+                          className="w-14 text-center text-xs font-normal  text-black border border-gray-300 rounded py-1 focus:outline-none focus:border-[#009fe3]"
                         />
                         <button
                           type="button"
                           onClick={() => handleQuantityChange(idx, line.quantity + 1)}
                           disabled={line.quantity >= line.soldQuantity}
-                          className="w-5 h-6 rounded bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold disabled:opacity-40"
+                          className="w-5 h-6 rounded bg-gray-100 hover:bg-gray-200 text-black font-medium disabled:opacity-40 cursor-pointer"
                         >
                           +
                         </button>
@@ -906,10 +1259,10 @@ export const SalesReturnForm: React.FC = () => {
                           type="button"
                           onClick={() => handleSetLineFullQty(idx)}
                           title="Return 100% full sold quantity"
-                          className={`px-1.5 py-0.5 rounded text-[10px] font-bold border transition-colors cursor-pointer ${
+                          className={`px-1.5 py-0.5 rounded text-[10px] font-medium border transition-colors cursor-pointer ${
                             line.quantity === line.soldQuantity && line.isSelected
-                              ? "bg-emerald-50 text-emerald-700 border-emerald-300"
-                              : "bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100"
+                              ? "bg-emerald-50 text-emerald-800 border-emerald-400"
+                              : "bg-gray-50 text-black border-gray-300 hover:bg-gray-100"
                           }`}
                         >
                           Full
@@ -918,20 +1271,20 @@ export const SalesReturnForm: React.FC = () => {
                     </td>
 
                     {/* Sell Price */}
-                    <td className="py-2 px-3 text-center font-mono">
+                    <td className="py-2.5 px-3 text-center  font-normal text-black">
                       ৳ {formatMoney(line.sellPrice)}
                     </td>
 
                     {/* Cause */}
-                    <td className="py-2 px-3">
+                    <td className="py-2.5 px-3">
                       <select
                         disabled={!line.isSelected}
                         value={line.returnReason}
                         onChange={(e) => handleReasonChange(idx, e.target.value)}
-                        className="w-full text-xs bg-gray-50 border border-gray-200 rounded px-2 py-1 focus:outline-none"
+                        className="w-full text-xs font-normal text-black bg-white border border-gray-300 rounded px-2 py-1 focus:outline-none focus:border-[#009fe3]"
                       >
                         {RETURN_REASONS.map((r) => (
-                          <option key={r.value} value={r.value}>
+                          <option key={r.value} value={r.value} className="text-black">
                             {r.label}
                           </option>
                         ))}
@@ -939,7 +1292,7 @@ export const SalesReturnForm: React.FC = () => {
                     </td>
 
                     {/* Total */}
-                    <td className="py-2 px-3 text-right font-mono font-bold text-gray-900">
+                    <td className="py-2.5 px-3 text-right  font-normal text-black text-xs">
                       ৳ {formatMoney(line.total)}
                     </td>
                   </tr>
@@ -950,76 +1303,427 @@ export const SalesReturnForm: React.FC = () => {
         )}
       </div>
 
-      {/* Section 3: Notes & Financial Summary */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-2.5">
-        {/* Left: Notes & Remarks */}
-        <div className="lg:col-span-2 bg-white p-2.5 sm:p-3 rounded-xl border border-gray-200 shadow-xs flex flex-col gap-2.5">
-          <label className="text-[11px] font-bold text-black uppercase tracking-wider block">
-            Return Note / Remarks
-          </label>
+      {/* Section 3: Notes & Financial Summary (Clean 2-Column ERP Layout) */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 items-start">
+        {/* Left Column (span-5): Return Notes, Presets & Stock Info */}
+        <div className="lg:col-span-5 bg-white p-3 sm:p-3.5 rounded-xl border border-gray-200 shadow-xs flex flex-col gap-2.5">
+          <div className="flex items-center justify-between pb-1.5 border-b border-gray-100">
+            <label className="text-[11px] font-normal text-black tracking-wider">
+              Return Note & Remarks (মন্তব্য)
+            </label>
+            <span className="text-[10px] text-black font-normal">Internal Record</span>
+          </div>
+
           <textarea
             rows={4}
             value={note}
             onChange={(e) => setNote(e.target.value)}
-            placeholder="Add internal notes about product condition, reason, or refund details..."
-            className="w-full text-xs border border-gray-300 rounded-lg p-2.5 focus:outline-none focus:border-[#009fe3] resize-none"
+            placeholder="Type notes or remarks about return reason, product condition, approval..."
+            className="w-full p-2.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:border-[#009fe3] resize-none leading-relaxed text-black placeholder:text-gray-400 bg-gray-50/30 hover:bg-white focus:bg-white transition-colors font-normal"
           />
+
+          {/* Quick preset remarks */}
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <span className="text-[10px] text-black font-normal">Quick:</span>
+            {[
+              "Damaged on delivery",
+              "Wrong item returned",
+              "Full refund approved",
+              "Due balance adjusted",
+            ].map((preset) => (
+              <button
+                key={preset}
+                type="button"
+                onClick={() => {
+                  setNote((prev) => {
+                    if (!prev.trim()) return preset;
+                    if (prev.includes(preset)) return prev;
+                    return `${prev}, ${preset}`;
+                  });
+                }}
+                className="px-2 py-0.5 text-[10px] rounded-md bg-gray-100 hover:bg-blue-50 hover:text-[#009fe3] text-black border border-gray-200 transition-colors cursor-pointer font-normal"
+              >
+                + {preset}
+              </button>
+            ))}
+          </div>
+
+          {/* Stock inventory note card */}
+          <div className="mt-1 p-2.5 rounded-lg bg-emerald-50/60 border border-emerald-200 text-xs flex items-start gap-2">
+            <div className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0 mt-0.5">
+              <FaCheck className="text-[10px]" />
+            </div>
+            <div>
+              <span className="font-bold text-emerald-900 block text-[11px]">
+                Inventory Restock Enabled
+              </span>
+              <p className="text-[11px] text-emerald-800 mt-0.5 leading-tight">
+                All selected returned items will be automatically credited back into your active warehouse inventory stock.
+              </p>
+            </div>
+          </div>
         </div>
 
-        {/* Right: Calculations Summary */}
-        <div className="bg-white p-3 rounded-xl border border-gray-200 shadow-xs flex flex-col gap-2">
-          <h4 className="text-[11px] font-bold text-black tracking-wider pb-1.5 border-b border-gray-100">
-            Return Settlement Summary
-          </h4>
+        {/* Right Column (span-7): Financial Summary Ribbon, Adjustments, and Refund Channels */}
+        <div className="lg:col-span-7 bg-white p-3 sm:p-3.5 rounded-xl border border-gray-200 shadow-xs flex flex-col gap-2.5">
+          {/* Top Calculations Ribbon (Subtotal, Discount, VAT/Delivery, Refund Amount) */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 bg-gray-50/90 p-2 rounded-lg border border-gray-200">
+            <div>
+              <span className="text-[10px] text-black font-bold block tracking-wider">
+                Items Value
+              </span>
+              <span className="text-xs sm:text-sm font-bold text-black block mt-0.5">
+                ৳ {formatMoney(totals.subtotal)}
+              </span>
+            </div>
 
-          <div className="flex items-center justify-between text-xs text-black py-0.5">
-            <span>Total Items Value:</span>
-            <span className="font-mono font-semibold text-black">
-              ৳ {formatMoney(totals.subtotal)}
+            <div>
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] text-black font-bold block tracking-wider">
+                  Discount
+                </span>
+              </div>
+              <div className="flex items-center mt-0.5">
+                <span className="text-xs text-rose-500 font-bold mr-1">-</span>
+                <input
+                  type="number"
+                  min={0}
+                  step="0.01"
+                  value={invoiceDiscount}
+                  onWheel={(e) => e.currentTarget.blur()}
+                  onChange={(e) => setInvoiceDiscount(e.target.value)}
+                  placeholder="0"
+                  className="w-full h-6 text-xs text-right font-bold text-rose-600 bg-white border border-gray-200 rounded px-1.5 focus:outline-none focus:border-[#009fe3]"
+                />
+              </div>
+            </div>
+
+            <div>
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] text-black font-bold block tracking-wider">
+                  VAT + Delivery
+                </span>
+              </div>
+              <div className="flex items-center gap-1 mt-0.5">
+                <input
+                  type="number"
+                  min={0}
+                  step="0.01"
+                  value={invoiceVat}
+                  onWheel={(e) => e.currentTarget.blur()}
+                  onChange={(e) => setInvoiceVat(e.target.value)}
+                  placeholder="0"
+                  title="VAT amount"
+                  className="w-1/2 h-6 text-xs text-right font-bold text-black bg-white border border-gray-200 rounded px-1 focus:outline-none focus:border-[#009fe3]"
+                />
+                <input
+                  type="number"
+                  min={0}
+                  step="0.01"
+                  value={invoiceDeliveryCharge}
+                  onWheel={(e) => e.currentTarget.blur()}
+                  onChange={(e) => setInvoiceDeliveryCharge(e.target.value)}
+                  placeholder="0"
+                  title="Delivery Charge"
+                  className="w-1/2 h-6 text-xs text-right  font-bold text-black bg-white border border-gray-200 rounded px-1 focus:outline-none focus:border-[#009fe3]"
+                />
+              </div>
+            </div>
+
+            <div className="bg-rose-50 border border-rose-200 px-2 py-1 rounded text-right flex flex-col justify-center">
+              <span className="text-[10px] text-rose-800 font-bold block tracking-wider">
+                Refund Amount
+              </span>
+              <span className="text-xs sm:text-base font-extrabold text-rose-700 block  mt-0.5 leading-tight">
+                ৳ {formatMoney(totals.refundAmount)}
+              </span>
+            </div>
+          </div>
+
+          {/* Refund Settlement Channels Header & 1-Click Buttons */}
+          <div className="flex items-center justify-between flex-wrap gap-1.5 pt-1 border-t border-gray-100">
+            <span className="text-xs font-bold text-black tracking-wider flex items-center gap-1.5">
+              <FaWallet className="text-[#009fe3]" size={12} />
+              Refund Settlement Channels (ফেরতের মাধ্যম)
             </span>
+
+            {/* Quick 1-click full allocation pills */}
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                onClick={handleRefundFullCash}
+                title="Refund 100% in Cash"
+                className="px-2 py-0.5 text-[10px] font-bold rounded bg-emerald-50 text-emerald-800 border border-emerald-300 hover:bg-emerald-100 transition-colors cursor-pointer"
+              >
+                Full Cash
+              </button>
+              <button
+                type="button"
+                onClick={handleRefundFullBank}
+                title="Refund 100% via Bank"
+                className="px-2 py-0.5 text-[10px] font-bold rounded bg-sky-50 text-sky-800 border border-sky-300 hover:bg-sky-100 transition-colors cursor-pointer"
+              >
+                Full Bank
+              </button>
+              <button
+                type="button"
+                onClick={handleRefundFullMfs}
+                title="Refund 100% via MFS"
+                className="px-2 py-0.5 text-[10px] font-bold rounded bg-purple-50 text-purple-800 border border-purple-300 hover:bg-purple-100 transition-colors cursor-pointer"
+              >
+                Full MFS
+              </button>
+              {origDueAmount > 0 && (
+                <button
+                  type="button"
+                  onClick={handleRefundFullDue}
+                  title="Adjust 100% against Due"
+                  className="px-2 py-0.5 text-[10px] font-bold rounded bg-rose-50 text-rose-800 border border-rose-300 hover:bg-rose-100 transition-colors cursor-pointer"
+                >
+                  Due Adjust
+                </button>
+              )}
+            </div>
           </div>
 
-          <div className="flex items-center justify-between text-xs text-black py-0.5">
-            <span>Discount:</span>
-            <input
-              type="number"
-              min={0}
-              value={invoiceDiscount}
-              onChange={(e) => setInvoiceDiscount(e.target.value)}
-              className="w-24 text-right font-mono text-xs border border-gray-200 rounded px-1.5 py-0.5"
-            />
+          {/* 4 Clean Payment Channels */}
+          <div className="flex flex-col gap-1.5">
+            {/* 1. Cash Refund Row */}
+            <div
+              className={`px-2.5 py-1.5 rounded-lg border transition-all flex items-center justify-between gap-2 ${
+                numRefundCash > 0
+                  ? "border-emerald-400 bg-emerald-50/40"
+                  : "border-gray-200 bg-gray-50/40 hover:bg-white"
+              }`}
+            >
+              <div className="flex items-center gap-2 min-w-0">
+                <div className="w-6 h-6 rounded bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0">
+                  <FaMoneyBillWave size={11} />
+                </div>
+                <div className="min-w-0">
+                  <span className="font-bold text-[11px] text-gray-800 block leading-tight">
+                    CASH REFUND
+                  </span>
+                  <span className="text-[10px] text-gray-400 block leading-none mt-0.5">
+                    Deducts store cash register
+                  </span>
+                </div>
+              </div>
+
+              <div
+                className={`flex items-center h-7 rounded border bg-white overflow-hidden w-32 sm:w-38 shrink-0 ${
+                  numRefundCash > 0
+                    ? "border-emerald-500 ring-1 ring-emerald-500/40"
+                    : "border-gray-300 focus-within:border-emerald-500"
+                }`}
+              >
+                <span className="text-[11px] text-gray-600 font-bold px-2 bg-gray-50 h-full flex items-center border-r border-gray-200 select-none">
+                  ৳
+                </span>
+                <input
+                  type="number"
+                  step="0.01"
+                  min={0}
+                  placeholder="0"
+                  value={refundCashAmount}
+                  onWheel={(e) => e.currentTarget.blur()}
+                  onChange={(e) => setRefundCashAmount(e.target.value)}
+                  className="w-full text-right px-2 text-xs font-bold text-black outline-none bg-transparent"
+                />
+              </div>
+            </div>
+
+            {/* 2. Bank / Card Refund Row */}
+            <div
+              className={`px-2.5 py-1.5 rounded-lg border transition-all flex items-center justify-between gap-2 ${
+                numRefundBank > 0
+                  ? "border-sky-400 bg-sky-50/40"
+                  : "border-gray-200 bg-gray-50/40 hover:bg-white"
+              }`}
+            >
+              <div className="flex items-center gap-2 flex-1 min-w-0">
+                <div className="w-6 h-6 rounded bg-sky-100 text-sky-700 flex items-center justify-center shrink-0">
+                  <FaCreditCard size={11} />
+                </div>
+                <div className="flex items-center gap-2 flex-1 min-w-0">
+                  <span className="font-bold text-[11px] text-gray-800 shrink-0">
+                    BANK / CARD
+                  </span>
+                  <select
+                    value={selectedRefundBankId}
+                    onChange={(e) => setSelectedRefundBankId(e.target.value)}
+                    className="h-6 w-full max-w-[210px] sm:max-w-[260px] text-[11px] border border-gray-300 rounded bg-white text-gray-800 font-medium focus:outline-none focus:border-sky-500 cursor-pointer truncate px-1.5"
+                  >
+                    <option value="">
+                      {registeredBankAccounts.length ? "Select Bank Account..." : "No bank registered"}
+                    </option>
+                    {registeredBankAccounts.map((b) => (
+                      <option key={b.id || b.bankId || b._id} value={b.id || b.bankId || b._id}>
+                        {b.bankName || b.name}
+                        {b.accountNo || b.bankAccountNumber || b.bankAccountNo
+                          ? ` – ${b.accountNo || b.bankAccountNumber || b.bankAccountNo}`
+                          : ""}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div
+                className={`flex items-center h-7 rounded border bg-white overflow-hidden w-32 sm:w-38 shrink-0 ${
+                  numRefundBank > 0
+                    ? "border-sky-500 ring-1 ring-sky-500/40"
+                    : "border-gray-300 focus-within:border-sky-500"
+                }`}
+              >
+                <span className="text-[11px] text-gray-600 font-bold px-2 bg-gray-50 h-full flex items-center border-r border-gray-200 select-none">
+                  ৳
+                </span>
+                <input
+                  type="number"
+                  step="0.01"
+                  min={0}
+                  placeholder="0"
+                  value={refundBankAmount}
+                  onWheel={(e) => e.currentTarget.blur()}
+                  onChange={(e) => setRefundBankAmount(e.target.value)}
+                  className="w-full text-right px-2 text-xs font-bold text-black outline-none bg-transparent"
+                />
+              </div>
+            </div>
+
+            {/* 3. MFS Refund Row */}
+            <div
+              className={`px-2.5 py-1.5 rounded-lg border transition-all flex items-center justify-between gap-2 ${
+                numRefundMfs > 0
+                  ? "border-purple-400 bg-purple-50/40"
+                  : "border-gray-200 bg-gray-50/40 hover:bg-white"
+              }`}
+            >
+              <div className="flex items-center gap-2 flex-1 min-w-0">
+                <div className="w-6 h-6 rounded bg-purple-100 text-purple-700 flex items-center justify-center shrink-0">
+                  <FaMobileAlt size={11} />
+                </div>
+                <div className="flex items-center gap-2 flex-1 min-w-0">
+                  <span className="font-bold text-[11px] text-gray-800 shrink-0">
+                    MFS WALLET
+                  </span>
+                  <select
+                    value={selectedRefundMfsId}
+                    onChange={(e) => setSelectedRefundMfsId(e.target.value)}
+                    className="h-6 w-full max-w-[210px] sm:max-w-[260px] text-[11px] border border-gray-300 rounded bg-white text-gray-800 font-medium focus:outline-none focus:border-purple-500 cursor-pointer truncate px-1.5"
+                  >
+                    <option value="">
+                      {registeredMfsAccounts.length ? "Select MFS Wallet..." : "No MFS registered"}
+                    </option>
+                    {registeredMfsAccounts.map((m) => {
+                      const nameVal = m.name || m.mfsName || m.method || "MFS";
+                      const phoneVal = m.phoneNumber || m.mfsPhone || m.phone || "";
+                      return (
+                        <option key={m.id || m.mfsId || m._id} value={m.id || m.mfsId || m._id}>
+                          {nameVal}
+                          {phoneVal ? ` – ${phoneVal}` : ""}
+                        </option>
+                      );
+                    })}
+                  </select>
+                </div>
+              </div>
+
+              <div
+                className={`flex items-center h-7 rounded border bg-white overflow-hidden w-32 sm:w-38 shrink-0 ${
+                  numRefundMfs > 0
+                    ? "border-purple-500 ring-1 ring-purple-500/40"
+                    : "border-gray-300 focus-within:border-purple-500"
+                }`}
+              >
+                <span className="text-[11px] text-gray-600 font-bold px-2 bg-gray-50 h-full flex items-center border-r border-gray-200 select-none">
+                  ৳
+                </span>
+                <input
+                  type="number"
+                  step="0.01"
+                  min={0}
+                  placeholder="0"
+                  value={refundMfsAmount}
+                  onWheel={(e) => e.currentTarget.blur()}
+                  onChange={(e) => setRefundMfsAmount(e.target.value)}
+                  className="w-full text-right px-2 text-xs font-bold text-black outline-none bg-transparent"
+                />
+              </div>
+            </div>
+
+            {/* 4. Due / Credit Adjustment Row */}
+            {(origDueAmount > 0 || numRefundDue > 0) && (
+              <div
+                className={`px-2.5 py-1.5 rounded-lg border transition-all flex items-center justify-between gap-2 ${
+                  numRefundDue > 0
+                    ? "border-rose-400 bg-rose-50/40"
+                    : "border-gray-200 bg-gray-50/40 hover:bg-white"
+                }`}
+              >
+                <div className="flex items-center gap-2 min-w-0">
+                  <div className="w-6 h-6 rounded bg-rose-100 text-rose-700 flex items-center justify-center shrink-0 font-bold text-xs">
+                    ৳
+                  </div>
+                  <div>
+                    <span className="font-bold text-[11px] text-gray-800 block leading-tight">
+                      DUE ADJUSTMENT
+                    </span>
+                    <span className="text-[10px] text-gray-400 block leading-none mt-0.5">
+                      Reduces customer unpaid due (Max: ৳{formatMoney(origDueAmount)})
+                    </span>
+                  </div>
+                </div>
+
+                <div
+                  className={`flex items-center h-7 rounded border bg-white overflow-hidden w-32 sm:w-38 shrink-0 ${
+                    numRefundDue > 0
+                      ? "border-rose-500 ring-1 ring-rose-500/40"
+                      : "border-gray-300 focus-within:border-rose-500"
+                  }`}
+                >
+                  <span className="text-[11px] text-gray-600 font-bold px-2 bg-gray-50 h-full flex items-center border-r border-gray-200 select-none">
+                    ৳
+                  </span>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min={0}
+                    placeholder="0"
+                    value={refundDueAmount}
+                    onWheel={(e) => e.currentTarget.blur()}
+                    onChange={(e) => setRefundDueAmount(e.target.value)}
+                    className="w-full text-right px-2 text-xs font-bold text-black outline-none bg-transparent"
+                  />
+                </div>
+              </div>
+            )}
           </div>
 
-          <div className="flex items-center justify-between text-xs text-black py-0.5">
-            <span>VAT / Tax:</span>
-            <input
-              type="number"
-              min={0}
-              value={invoiceVat}
-              onChange={(e) => setInvoiceVat(e.target.value)}
-              className="w-24 text-right font-mono text-xs border border-gray-200 rounded px-1.5 py-0.5"
-            />
-          </div>
+          {/* Allocation Status Indicator & Bottom Action Button */}
+          <div className="pt-2 border-t border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div
+              className={`px-2.5 py-1.5 rounded-lg border text-xs flex items-center justify-between gap-3 flex-1 ${
+                Math.abs(refundDifference) <= 0.01
+                  ? "bg-emerald-50 border-emerald-200 text-emerald-800"
+                  : refundDifference > 0
+                  ? "bg-amber-50 border-amber-200 text-amber-800"
+                  : "bg-rose-50 border-rose-200 text-rose-800"
+              }`}
+            >
+              <span className="font-semibold text-[11px]">
+                {Math.abs(refundDifference) <= 0.01
+                  ? "✓ 100% Refund Allocated Properly"
+                  : refundDifference > 0
+                  ? `Remaining Unallocated: ৳${formatMoney(refundDifference)}`
+                  : `Over-allocated by: ৳${formatMoney(Math.abs(refundDifference))}`}
+              </span>
+              <span className=" text-xs font-bold shrink-0">
+                ৳{formatMoney(totalRefundAllocated)} / ৳{formatMoney(totals.refundAmount)}
+              </span>
+            </div>
 
-          <div className="flex items-center justify-between text-xs text-black py-0.5">
-            <span>Delivery Charge:</span>
-            <input
-              type="number"
-              min={0}
-              value={invoiceDeliveryCharge}
-              onChange={(e) => setInvoiceDeliveryCharge(e.target.value)}
-              className="w-24 text-right font-mono text-xs border border-gray-200 rounded px-1.5 py-0.5"
-            />
-          </div>
-
-          <div className="flex items-center justify-between text-sm font-bold text-rose-700 pt-2 border-t border-gray-200 mt-1">
-            <span>Refund Amount:</span>
-            <span className="font-mono text-base">
-              ৳ {formatMoney(totals.refundAmount)}
-            </span>
-          </div>
-
-          <div className="pt-2">
             <Button
               label={isSubmitting ? "Processing..." : "Confirm & Save Return"}
               onClick={() => handlePreSubmit(false)}
@@ -1027,7 +1731,7 @@ export const SalesReturnForm: React.FC = () => {
               hoverColor="#0085be"
               disabled={isSubmitting}
               icon={<FaCheck className="text-white text-xs" />}
-              buttonClass="!w-full justify-center !py-2"
+              buttonClass="!py-2 !px-5 whitespace-nowrap shrink-0"
             />
           </div>
         </div>
@@ -1041,7 +1745,17 @@ export const SalesReturnForm: React.FC = () => {
         title="Confirm Sales Return"
         message={`Are you sure you want to process return for invoice ${salesInvoiceNo}? Total refund of ৳${formatMoney(
           totals.refundAmount
-        )} will be settled via ${paymentType}.`}
+        )} will be settled via ${
+          numRefundCash > 0 && (numRefundBank > 0 || numRefundMfs > 0 || numRefundDue > 0)
+            ? "Split / Multi-Channel"
+            : numRefundDue > 0
+            ? "Due Adjustment"
+            : numRefundBank > 0
+            ? "Bank"
+            : numRefundMfs > 0
+            ? "MFS"
+            : "Cash"
+        }.`}
         isLoading={isSubmitting}
       />
 

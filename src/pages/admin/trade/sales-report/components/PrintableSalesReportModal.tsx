@@ -70,7 +70,7 @@ export const PrintableSalesReportModal: React.FC<PrintableSalesReportModalProps>
               .badge-due { background-color: #ffe4e6; color: #9f1239; }
               .grid-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-top: 16px; margin-bottom: 20px; }
               .stat-box { border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px; background-color: #f8fafc; }
-              .stat-title { font-size: 10px; text-transform: uppercase; color: #64748b; font-weight: 700; }
+              .stat-title { font-size: 10px; text-transform: ; color: #64748b; font-weight: 700; }
               .stat-val { font-size: 16px; font-weight: 900; color: #0f172a; margin-top: 4px; }
             </style>
           </head>
@@ -137,7 +137,7 @@ export const PrintableSalesReportModal: React.FC<PrintableSalesReportModalProps>
           {/* Quick Metrics */}
           <div className="grid grid-cols-4 gap-3 my-4">
             <div className="p-3 rounded-lg border border-gray-200 bg-gray-50">
-              <span className="text-[10px] uppercase font-bold text-gray-500 block">
+              <span className="text-[10px]  font-bold text-gray-500 block">
                 Total Sales Volume
               </span>
               <span className="text-base font-black text-[#009fe3] mt-0.5 block">
@@ -145,7 +145,7 @@ export const PrintableSalesReportModal: React.FC<PrintableSalesReportModalProps>
               </span>
             </div>
             <div className="p-3 rounded-lg border border-gray-200 bg-gray-50">
-              <span className="text-[10px] uppercase font-bold text-gray-500 block">
+              <span className="text-[10px]  font-bold text-gray-500 block">
                 Total Collections
               </span>
               <span className="text-base font-black text-emerald-600 mt-0.5 block">
@@ -153,7 +153,7 @@ export const PrintableSalesReportModal: React.FC<PrintableSalesReportModalProps>
               </span>
             </div>
             <div className="p-3 rounded-lg border border-gray-200 bg-gray-50">
-              <span className="text-[10px] uppercase font-bold text-gray-500 block">
+              <span className="text-[10px]  font-bold text-gray-500 block">
                 Outstanding Due
               </span>
               <span className="text-base font-black text-rose-600 mt-0.5 block">
@@ -161,7 +161,7 @@ export const PrintableSalesReportModal: React.FC<PrintableSalesReportModalProps>
               </span>
             </div>
             <div className="p-3 rounded-lg border border-gray-200 bg-gray-50">
-              <span className="text-[10px] uppercase font-bold text-gray-500 block">
+              <span className="text-[10px]  font-bold text-gray-500 block">
                 Total Discount
               </span>
               <span className="text-base font-black text-gray-800 mt-0.5 block">
@@ -172,7 +172,7 @@ export const PrintableSalesReportModal: React.FC<PrintableSalesReportModalProps>
 
           {/* Invoices Table Summary (Top 20) */}
           <div className="mt-4">
-            <h3 className="text-xs font-bold uppercase text-gray-700 tracking-wider mb-2">
+            <h3 className="text-xs font-bold  text-gray-700 tracking-wider mb-2">
               Transaction Breakdown
             </h3>
             <table className="w-full text-left border-collapse text-xs">

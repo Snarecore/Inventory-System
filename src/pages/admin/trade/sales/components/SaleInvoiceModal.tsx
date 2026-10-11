@@ -168,7 +168,7 @@ export const SaleInvoiceModal: React.FC<SaleInvoiceModalProps> = ({
           {/* Customer and Payment Info */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 my-3 p-3 bg-gray-50/80 rounded-xl border border-gray-200/80">
             <div>
-              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-1">
+              <span className="text-[10px] font-bold text-gray-400  tracking-wider block mb-1">
                 Customer Information
               </span>
               <p className="font-bold text-gray-900 text-xs flex items-center gap-1.5">
@@ -184,12 +184,12 @@ export const SaleInvoiceModal: React.FC<SaleInvoiceModalProps> = ({
             </div>
 
             <div className="sm:text-right">
-              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-1">
+              <span className="text-[10px] font-bold text-gray-400  tracking-wider block mb-1">
                 Payment & Channel
               </span>
               <p className="font-semibold text-gray-800 text-xs">
                 Method:{" "}
-                <span className="text-primary font-black uppercase">
+                <span className="text-primary font-black ">
                   {s.inv_type === "MULTI" || s.invType === "MULTI" || String(s.paymentType || s.payment_type).toLowerCase() === "multi"
                     ? "MULTI (SPLIT)"
                     : s.paymentType || s.payment_type || "CASH"}
@@ -217,7 +217,7 @@ export const SaleInvoiceModal: React.FC<SaleInvoiceModalProps> = ({
           {/* Line Items Table */}
           <div className="overflow-x-auto border border-gray-200 rounded-xl my-3">
             <table className="w-full text-left text-xs">
-              <thead className="bg-gray-100 text-gray-700 font-bold border-b border-gray-200 text-[10px] uppercase tracking-wider">
+              <thead className="bg-gray-100 text-gray-700 font-bold border-b border-gray-200 text-[10px]  tracking-wider">
                 <tr>
                   <th className="py-2 px-2.5">#</th>
                   <th className="py-2 px-2.5">Product</th>

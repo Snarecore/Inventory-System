@@ -289,7 +289,7 @@ export const CustomerSalesReportTable: React.FC<CustomerSalesReportTableProps> =
             {/* Table Summary Footer */}
             <tfoot className="bg-gray-50/80 font-bold text-gray-800 border-t border-gray-200">
               <tr>
-                <td colSpan={2} className="py-2.5 px-3 text-right uppercase text-[11px]">
+                <td colSpan={2} className="py-2.5 px-3 text-right  text-[11px]">
                   Total Across Visible Customers:
                 </td>
                 <td className="py-2.5 px-3 text-center text-indigo-800">

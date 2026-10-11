@@ -199,7 +199,7 @@ const PurchaseInvoiceModal: React.FC<PurchaseInvoiceModalProps> = ({
               font-weight: 800;
               color: #111827;
               text-align: right;
-              text-transform: uppercase;
+              text-transform: ;
               letter-spacing: -0.5px;
             }
             .inv-meta {
@@ -224,7 +224,7 @@ const PurchaseInvoiceModal: React.FC<PurchaseInvoiceModalProps> = ({
               font-size: 10px;
               font-weight: 700;
               color: #475569;
-              text-transform: uppercase;
+              text-transform: ;
               letter-spacing: 0.5px;
               margin-bottom: 4px;
             }
@@ -506,7 +506,7 @@ const PurchaseInvoiceModal: React.FC<PurchaseInvoiceModalProps> = ({
               </p>
             </div>
             <div className="sm:text-right">
-              <h1 className="text-base sm:text-lg font-bold text-black uppercase tracking-tight">
+              <h1 className="text-base sm:text-lg font-bold text-black  tracking-tight">
                 Purchase Invoice
               </h1>
               <p className="text-xs font-medium text-black">
@@ -526,7 +526,7 @@ const PurchaseInvoiceModal: React.FC<PurchaseInvoiceModalProps> = ({
           {/* Supplier and Challan Meta Info */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 my-3">
             <div className="bg-gray-50 p-2.5 rounded-md border border-gray-200">
-              <span className="text-[10px] font-bold text-black uppercase tracking-wider block mb-1">
+              <span className="text-[10px] font-bold text-black  tracking-wider block mb-1">
                 Supplier Information
               </span>
               <p className="font-bold text-black text-xs">{supplierName}</p>
@@ -543,7 +543,7 @@ const PurchaseInvoiceModal: React.FC<PurchaseInvoiceModalProps> = ({
             </div>
 
             <div className="bg-gray-50 p-2.5 rounded-md border border-gray-200">
-              <span className="text-[10px] font-bold text-black uppercase tracking-wider block mb-1">
+              <span className="text-[10px] font-bold text-black  tracking-wider block mb-1">
                 Logistics & Transport
               </span>
               <div className="grid grid-cols-2 gap-1.5 text-[11px] text-black">

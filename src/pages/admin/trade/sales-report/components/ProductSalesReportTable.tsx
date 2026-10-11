@@ -236,7 +236,7 @@ export const ProductSalesReportTable: React.FC<ProductSalesReportTableProps> = (
                     <td className="py-2.5 px-3 text-right font-black text-indigo-700">
                       {item.totalQuantity}
                     </td>
-                    <td className="py-2.5 px-3 text-center text-gray-500 uppercase text-[11px]">
+                    <td className="py-2.5 px-3 text-center text-gray-500  text-[11px]">
                       {item.unit}
                     </td>
                     <td className="py-2.5 px-3 text-right text-gray-700">
@@ -265,7 +265,7 @@ export const ProductSalesReportTable: React.FC<ProductSalesReportTableProps> = (
             {/* Table Summary Footer */}
             <tfoot className="bg-gray-50/80 font-bold text-gray-800 border-t border-gray-200">
               <tr>
-                <td colSpan={3} className="py-2.5 px-3 text-right uppercase text-[11px]">
+                <td colSpan={3} className="py-2.5 px-3 text-right  text-[11px]">
                   Total Across Visible Products:
                 </td>
                 <td className="py-2.5 px-3 text-right text-indigo-800">

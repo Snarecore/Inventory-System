@@ -79,7 +79,7 @@ export const PartyDetailsModal: React.FC<PartyDetailsModalProps> = ({
 
         {/* Financial & Balances */}
         <div>
-          <h4 className="text-xs font-semibold uppercase tracking-wider text-black mb-1.5">
+          <h4 className="text-xs font-semibold tracking-wider text-black mb-1.5">
             Financial & Account Summary
           </h4>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
@@ -100,7 +100,7 @@ export const PartyDetailsModal: React.FC<PartyDetailsModalProps> = ({
 
         {/* Contact Information */}
         <div>
-          <h4 className="text-xs font-semibold uppercase tracking-wider text-black mb-1.5">
+          <h4 className="text-xs font-semibold tracking-wider text-black mb-1.5">
             Contact Information
           </h4>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
@@ -128,7 +128,7 @@ export const PartyDetailsModal: React.FC<PartyDetailsModalProps> = ({
         {/* Note / Remarks (if any) */}
         {note && (
           <div>
-            <h4 className="text-xs font-semibold uppercase tracking-wider text-black mb-1.5">
+            <h4 className="text-xs font-semibold tracking-wider text-black mb-1.5">
               Note / Remarks
             </h4>
             <div className="px-3 py-2 bg-gray-50 rounded-lg border border-gray-200 text-xs font-medium text-black">
