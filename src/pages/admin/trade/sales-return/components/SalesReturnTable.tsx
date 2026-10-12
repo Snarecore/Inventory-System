@@ -516,9 +516,12 @@ export const SalesReturnTable: React.FC<SalesReturnTableProps> = ({
 
                       {/* Reason */}
                       <td className="py-2.5 px-3 text-black text-xs font-normal whitespace-nowrap">
-                        {item.note || item.remarks ? (
-                          <span className="text-gray-700 text-xs truncate max-w-[150px] inline-block" title={item.note || item.remarks}>
-                            {item.note || item.remarks}
+                        {item.note ? (
+                          <span
+                            className="text-gray-700 text-xs truncate max-w-[180px] inline-block font-normal"
+                            title={item.note}
+                          >
+                            {item.note}
                           </span>
                         ) : (
                           <span className="text-gray-400">-</span>
@@ -653,7 +656,7 @@ export const SalesReturnTable: React.FC<SalesReturnTableProps> = ({
                             {/* Remarks info if available */}
                             {item.note && (
                               <div className="mt-2 pt-2 border-t border-gray-100 text-[11px] text-gray-600 flex items-center gap-1.5">
-                                <strong className="text-gray-800">Remarks:</strong> {item.note}
+                                <strong className="text-gray-800">Reason / Note:</strong> {item.note}
                               </div>
                             )}
                           </div>

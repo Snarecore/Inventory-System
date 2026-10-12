@@ -561,7 +561,7 @@ export const SaleTable: React.FC<SaleTableProps> = ({
                         </button>
                         {isAlreadyReturned ? (
                           <span
-                            title="This order has already been returned (Single-return policy)"
+                            title="This order has already been returned"
                             className="p-1.5 text-gray-300 cursor-not-allowed rounded-md opacity-40 inline-flex items-center"
                           >
                             <FaUndoAlt size={12} />

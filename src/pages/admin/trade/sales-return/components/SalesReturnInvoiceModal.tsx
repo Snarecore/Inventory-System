@@ -247,10 +247,10 @@ export const SalesReturnInvoiceModal: React.FC<SalesReturnInvoiceModalProps> = (
           {/* Notes and Amount Summary */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
             <div className="text-xs">
-              {r.note && (
+              {(r.note || r.remarks || (r as any).reason) && (
                 <div className="p-2.5 rounded-lg bg-gray-50 border border-gray-100 mb-2">
-                  <span className="font-semibold text-gray-700">Note:</span>
-                  <p className="text-gray-600 mt-0.5">{r.note}</p>
+                  <span className="font-semibold text-gray-700">Return Reason / Note:</span>
+                  <p className="text-gray-600 mt-0.5">{r.note || r.remarks || (r as any).reason}</p>
                 </div>
               )}
               <div className="flex items-center gap-1.5 text-emerald-700 text-[11px] font-medium">

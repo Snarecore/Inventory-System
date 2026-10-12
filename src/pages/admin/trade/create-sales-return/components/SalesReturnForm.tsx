@@ -105,6 +105,7 @@ export const SalesReturnForm: React.FC = () => {
   const [pendingPrintAfterSave, setPendingPrintAfterSave] = useState<boolean>(false);
   const [savedReturnRecord, setSavedReturnRecord] = useState<SalesReturnItem | null>(null);
   const [isReceiptModalOpen, setIsReceiptModalOpen] = useState<boolean>(false);
+  const hasJustSubmittedRef = useRef<boolean>(false);
 
   // 1. Fetch sales and return list using POST /get-sales-and-return (with fallback to /get-sale-list)
   const { data: apiSalesAndReturnData, isLoading: isLoadingInvoices } = useQuery({
@@ -369,6 +370,7 @@ export const SalesReturnForm: React.FC = () => {
 
   const isCurrentSaleAlreadyReturned = useMemo(() => {
     if (!selectedSale) return false;
+    if (hasJustSubmittedRef.current) return false;
     return isSaleAlreadyReturned(
       selectedSale,
       Array.isArray(apiSalesAndReturnData) ? apiSalesAndReturnData : []
@@ -377,16 +379,6 @@ export const SalesReturnForm: React.FC = () => {
 
   // Load sale into form and configure customer payment & refund suggestion
   const loadInvoice = (sale: SaleItem) => {
-    const alreadyReturned = isSaleAlreadyReturned(
-      sale,
-      Array.isArray(apiSalesAndReturnData) ? apiSalesAndReturnData : []
-    );
-    if (alreadyReturned) {
-      showErrorToast(
-        `Order #${sale.orderNo || sale.invoiceNo} has already been returned once.`
-      );
-      return;
-    }
     setSelectedSale(sale);
     const invNo = sale.invoiceNo || `INV-${sale.id}`;
     setSalesInvoiceNo(invNo);
@@ -395,7 +387,8 @@ export const SalesReturnForm: React.FC = () => {
     setCustomerName(sale.customerName || sale.customer_name || "Customer");
     setCustomerPhone(sale.customerPhone || sale.customer_phone || "");
     setCustomerAddress(sale.customerAddress || sale.customer_address || "");
-    setNote(`Return from invoice ${invNo}${sale.orderNo ? ` (Order: ${sale.orderNo})` : ""}`);
+    // Keep note empty so only user-specified reasons/remarks appear
+    setNote("");
 
     // Pre-select bank or MFS if originally used
     if (sale.bankId) {
@@ -473,7 +466,7 @@ export const SalesReturnForm: React.FC = () => {
   };
 
   useEffect(() => {
-    if (stateSale) {
+    if (stateSale && !hasJustSubmittedRef.current) {
       const alreadyReturned = isSaleAlreadyReturned(
         stateSale,
         Array.isArray(apiSalesAndReturnData) ? apiSalesAndReturnData : []
@@ -1071,8 +1064,8 @@ export const SalesReturnForm: React.FC = () => {
         refundAmount: Number(totals.refundAmount.toFixed(2)),
         paymentType: effectivePaymentType,
         status,
-        note: note.trim() || `Return from invoice ${salesInvoiceNo}`,
-        remarks: note.trim() || `Return from invoice ${salesInvoiceNo}`,
+        note: note.trim(),
+        remarks: note.trim(),
         osType: "WEB",
         // Multi-channel refund breakdown
         cashReceived: numRefundCash,
@@ -1160,6 +1153,9 @@ export const SalesReturnForm: React.FC = () => {
         itemsCount: activeLines.length,
         createdAt: new Date().toISOString(),
       };
+
+      // Mark as submitted so invalidating query does not trigger error toast on active order
+      hasJustSubmittedRef.current = true;
 
       // Invalidate queries so inventory stock, account balances, and sales lists immediately update everywhere
       await Promise.allSettled([

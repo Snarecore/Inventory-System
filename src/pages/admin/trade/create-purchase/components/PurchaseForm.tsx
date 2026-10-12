@@ -1794,13 +1794,28 @@ const CreatePurchaseForm: React.FC = () => {
 
         {/* Product Search Results Dropdown */}
         {isProductDropdownOpen && (
-          <div className="absolute left-2.5 right-2.5 mt-1 bg-white rounded-lg shadow-xl border border-gray-200 max-h-64 overflow-y-auto z-20 divide-y divide-gray-100">
+          <div className="absolute left-2.5 right-2.5 mt-1 bg-white rounded-lg shadow-xl border border-gray-200 max-h-72 overflow-y-auto z-20 divide-y divide-gray-100">
+            {/* Helpful Quick Guide Header Bar */}
+            <div className="px-3 py-1.5 bg-slate-50 border-b border-gray-200 flex items-center justify-between text-[10px] font-semibold text-gray-500 uppercase tracking-wider sticky top-0 z-10">
+              <span>Select Product</span>
+              <div className="flex items-center gap-6 pr-2">
+                <span>Stock</span>
+                <span>Buy Rate</span>
+              </div>
+            </div>
+
             {filteredProducts.length > 0 ? (
               filteredProducts.map((p) => {
                 const prodKey = String(p.id ?? p.productId ?? p.pcode ?? p.productCode ?? "");
                 const isAlreadyInList = isProductAlreadyInList(p);
                 const defaultBuyPrice = Number(p.buy_price ?? p.buyPrice ?? 0);
                 const stock = Number(p.stock ?? p.quantity ?? 0);
+                const existingLineIdx = lineItems.findIndex(
+                  (item) =>
+                    (p.id && item.productId && String(item.productId) === String(p.id)) ||
+                    (p.pcode && item.productCode && String(item.productCode).trim().toLowerCase() === String(p.pcode).trim().toLowerCase()) ||
+                    (p.productCode && item.productCode && String(item.productCode).trim().toLowerCase() === String(p.productCode).trim().toLowerCase())
+                );
 
                 return (
                   <div
@@ -1846,14 +1861,79 @@ const CreatePurchaseForm: React.FC = () => {
                       </div>
                     </div>
 
-                    {/* Stock & Buy Price summary */}
-                    <div className="flex items-center gap-3 shrink-0">
-                      <span className="text-[11px] px-2 py-0.5 rounded bg-gray-100 text-gray-700">
-                        Stock: <span className="font-semibold text-black">{stock}</span>
-                      </span>
-                      <span className="font-bold text-black text-right min-w-[70px]">
-                        ৳ {formatMoney(defaultBuyPrice)}
-                      </span>
+                    {/* Stock & Buy Price Badges - Clean Single Line (1-Line) */}
+                    <div
+                      className="flex items-center gap-2 sm:gap-2.5 shrink-0 self-start sm:self-center"
+                      onClick={(e) => {
+                        // Prevent row toggle if clicking interactive elements
+                        if (isAlreadyInList) e.stopPropagation();
+                      }}
+                    >
+                      {/* Current Stock (1 line) */}
+                      <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-slate-100 border border-slate-200">
+                        <span className="text-[10px] font-semibold text-gray-500 uppercase tracking-wider">
+                          Stock:
+                        </span>
+                        <span className="text-xs font-bold text-gray-900">
+                          {stock} <span className="text-[10px] font-normal text-gray-600">{p.unit || "pcs"}</span>
+                        </span>
+                      </div>
+
+                      {/* Buy Rate & Purchase Qty (1 line - editable when added in list) */}
+                      {isAlreadyInList && existingLineIdx !== -1 ? (
+                        <div className="flex items-center gap-2">
+                          {/* Editable Purchase Qty */}
+                          <div className="flex items-center gap-1 px-2 py-0.5 rounded-md bg-sky-50 border border-sky-300 shadow-2xs">
+                            <span className="text-[10px] font-bold text-sky-800">
+                              Qty:
+                            </span>
+                            <input
+                              type="number"
+                              min="1"
+                              step="1"
+                              value={lineItems[existingLineIdx].quantity}
+                              placeholder="1"
+                              onWheel={(e) => e.currentTarget.blur()}
+                              onChange={(e) => {
+                                handleUpdateLineItem(existingLineIdx, "quantity", e.target.value);
+                              }}
+                              className="w-12 sm:w-14 px-1 py-0.5 text-xs font-bold text-sky-950 bg-white border border-sky-300 rounded focus:outline-none focus:ring-1 focus:ring-sky-500 text-center"
+                              title="Edit Purchase Quantity"
+                            />
+                            <span className="text-[10px] text-sky-700 font-medium">
+                              {p.unit || "pcs"}
+                            </span>
+                          </div>
+
+                          {/* Editable Buy Rate */}
+                          <div className="flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-50 border border-amber-300 shadow-2xs">
+                            <span className="text-[10px] font-bold text-amber-800">
+                              Rate: ৳
+                            </span>
+                            <input
+                              type="number"
+                              step="0.01"
+                              value={lineItems[existingLineIdx].buyPrice}
+                              placeholder="0"
+                              onWheel={(e) => e.currentTarget.blur()}
+                              onChange={(e) => {
+                                handleUpdateLineItem(existingLineIdx, "buyPrice", e.target.value);
+                              }}
+                              className="w-16 sm:w-20 px-1 py-0.5 text-xs font-bold text-amber-950 bg-white border border-amber-300 rounded focus:outline-none focus:ring-1 focus:ring-amber-500 text-right"
+                              title="Edit Buy Price for purchase"
+                            />
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-amber-50 border border-amber-200">
+                          <span className="text-[10px] font-semibold text-amber-800 uppercase tracking-wider">
+                            Buy Rate:
+                          </span>
+                          <span className="text-xs font-bold text-amber-950">
+                            ৳ {formatMoney(defaultBuyPrice)}
+                          </span>
+                        </div>
+                      )}
                     </div>
                   </div>
                 );

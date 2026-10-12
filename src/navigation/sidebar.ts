@@ -15,6 +15,8 @@ import {
 	FaCheckCircle,
 	FaShieldAlt,
 	FaCog,
+	FaUndoAlt,
+	FaReply,
 } from "react-icons/fa";
 import { BiCube } from "react-icons/bi";
 import { TbTablePlus } from "react-icons/tb";
@@ -72,9 +74,20 @@ export const menu = [
 				subItems: [
 					{ id: 22, name: "Sales List", path: "/admin/sales", permissionKey: "sales.list.view" },
 					{ id: 28, name: "Create Sale", path: "/admin/create-sale", permissionKey: "sales.create.view" },
+					// { id: 25, name: "Sales Reports", path: "/admin/sales-report", permissionKey: "sales.reports.view" },
+				],
+			},
+
+			{
+				id: 290,
+				name: "Sales Return",
+				title: "Sales Return",
+				icon: FaUndoAlt,
+				path: "/admin/sales-return",
+				permissionKey: "sales.return.view",
+				subItems: [
 					{ id: 29, name: "Sales Returns List", path: "/admin/sales-return", permissionKey: "sales.return.view" },
 					{ id: 30, name: "Create Return", path: "/admin/create-sales-return", permissionKey: "sales.create_return.view" },
-					// { id: 25, name: "Sales Reports", path: "/admin/sales-report", permissionKey: "sales.reports.view" },
 				],
 			},
 
@@ -89,6 +102,19 @@ export const menu = [
 				subItems: [
 					{ id: 26, name: "Purchase List", path: "/admin/purchases", permissionKey: "purchase.list.view" },
 					{ id: 27, name: "Create Purchase", path: "/admin/create-purchase", permissionKey: "purchase.create.view" },
+				],
+			},
+
+			{
+				id: 390,
+				name: "Purchase Return",
+				title: "Purchase Return",
+				icon: FaUndoAlt,
+				path: "/admin/purchase-return",
+				permissionKey: "purchase.return.view",
+				subItems: [
+					{ id: 31, name: "Purchase Returns List", path: "/admin/purchase-return", permissionKey: "purchase.return.view" },
+					{ id: 32, name: "Create Return", path: "/admin/create-purchase-return", permissionKey: "purchase.create_return.view" },
 				],
 			},
 			{

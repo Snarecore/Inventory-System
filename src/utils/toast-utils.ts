@@ -17,11 +17,11 @@ export const showToast = (type: "success" | "error" | "loading", message: string
 };
 
 export const showSuccessToast = (message?: string) => {
-    if (message) toast.success(message);
+    if (message) toast.success(message, { id: message });
 };
 
 export const showErrorToast = (message?: string) => {
-    if (message) toast.error(message);
+    if (message) toast.error(message, { id: message });
 };
 
 export const showDeleteToast = (message?: string) => {

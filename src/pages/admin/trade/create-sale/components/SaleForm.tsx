@@ -606,8 +606,67 @@ export const CreateSaleForm: React.FC = () => {
   const numCashGiven = Number(cashGiven) || 0;
   const changeReturnAmount = numCashGiven > numCash ? numCashGiven - numCash : 0;
 
-  // Handle Add Product to Line Items
-  const handleAddProduct = (p: ProductItem) => {
+  // Helper to check if a product is already added in the sale line items list
+  const isProductAlreadyInList = (p: ProductItem) => {
+    const pId = String(p.id ?? p.productId ?? (p as any).product_id ?? "");
+    const pCode = (p.pcode || p.productCode || (p as any).product_code || "").trim().toLowerCase();
+
+    return lineItems.some((item) => {
+      if (pId && item.productId && String(item.productId) === pId) return true;
+      if (pCode && item.productCode && item.productCode.trim().toLowerCase() === pCode) return true;
+      return false;
+    });
+  };
+
+  // Toggle adding or removing a product from sale line items directly (matches PurchaseForm UX)
+  const handleToggleProductInList = (p: ProductItem) => {
+    const pId = String(p.id ?? p.productId ?? (p as any).product_id ?? "");
+    const pCode = p.pcode || p.productCode || (p as any).product_code || "";
+    const pName = p.name || p.productName || (p as any).product_name || "Product";
+    const unit = p.unit || "pcs";
+    const sellPrice = Number(p.sellPrice ?? p.sell_price ?? p.buyPrice ?? (p as any).buy_price ?? 0);
+    const buyPrice = Number(p.buyPrice ?? (p as any).buy_price ?? 0);
+    const stock = Number(p.quantity ?? p.stock ?? (p as any).qty ?? 0);
+
+    const isAlreadyIn = isProductAlreadyInList(p);
+
+    if (isAlreadyIn) {
+      // Toggle off / remove from list
+      setLineItems((prev) =>
+        prev.filter((item) => {
+          if (pId && item.productId && String(item.productId) === pId) return false;
+          if (pCode && item.productCode && item.productCode.trim().toLowerCase() === pCode.trim().toLowerCase()) return false;
+          return true;
+        })
+      );
+      showDeleteToast(`"${pName}" removed from sale list!`);
+    } else {
+      // Check stock before adding
+      if (stock <= 0) {
+        showErrorToast(`"${pName}" is out of stock (Stock: 0)`);
+        return;
+      }
+
+      const newLine: FormLineItem = {
+        productId: pId,
+        productCode: pCode,
+        productName: pName,
+        unit,
+        sellPrice: String(sellPrice),
+        buyPrice,
+        quantity: "1",
+        discount: "",
+        vat: "",
+        total: sellPrice,
+        stock,
+      };
+      setLineItems((prev) => [...prev, newLine]);
+      showSuccessToast(`Added "${pName}" to invoice`);
+    }
+  };
+
+  // Handle Add Product to Line Items (used for barcode scanning or incrementing)
+  const handleAddProduct = (p: ProductItem, keepDropdownOpen: boolean = false) => {
     const pId = String(p.id ?? "");
     const pCode = p.pcode || "";
     const pName = p.name || "Product";
@@ -669,8 +728,19 @@ export const CreateSaleForm: React.FC = () => {
       showSuccessToast(`Added "${pName}" to invoice`);
     }
 
-    setProductSearchQuery("");
-    setIsProductDropdownOpen(false);
+    if (!keepDropdownOpen) {
+      setProductSearchQuery("");
+      setIsProductDropdownOpen(false);
+    }
+  };
+
+  const handleKeyDownSearch = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      if (filteredProducts.length === 1) {
+        handleToggleProductInList(filteredProducts[0]);
+      }
+    }
   };
 
   // Find Product STRICTLY By barcode or pcode
@@ -1476,6 +1546,7 @@ export const CreateSaleForm: React.FC = () => {
                 setIsProductDropdownOpen(true);
               }}
               onFocus={() => setIsProductDropdownOpen(true)}
+              onKeyDown={handleKeyDownSearch}
               className="w-full pl-8 pr-3 py-1.5 text-xs border border-[#0F365C] rounded-lg focus:outline-none focus:border-[var(--color-primary)] focus:ring-2 focus:ring-[var(--color-primary)]/20 bg-gray-50/40 focus:bg-white font-medium text-black placeholder:text-gray-400 placeholder:text-xs h-9 transition-all"
             />
           </div>
@@ -1508,21 +1579,31 @@ export const CreateSaleForm: React.FC = () => {
 
         {/* Product Dropdown */}
         {isProductDropdownOpen && (
-          <div className="absolute left-2.5 right-2.5 mt-1 bg-white rounded-lg shadow-xl border border-gray-200 max-h-64 overflow-y-auto z-20 divide-y divide-gray-100">
+          <div className="absolute left-2.5 right-2.5 mt-1 bg-white rounded-lg shadow-xl border border-gray-200 max-h-72 overflow-y-auto z-20 divide-y divide-gray-100">
+            {/* Helpful Quick Guide Header Bar */}
+            <div className="px-3 py-1.5 bg-slate-50 border-b border-gray-200 flex items-center justify-between text-[10px] font-semibold text-gray-500 uppercase tracking-wider sticky top-0 z-10">
+              <span>Select Product</span>
+              <div className="flex items-center gap-6 pr-2">
+                <span>Stock</span>
+                <span>Sale Rate</span>
+              </div>
+            </div>
+
             {filteredProducts.length > 0 ? (
               filteredProducts.map((p) => {
                 const prodKey = String(p.id ?? p.productId ?? (p as any).product_id ?? p.pcode ?? p.productCode ?? "");
-                const cartItem = lineItems.find(
-                  (i) =>
-                    (p.id && String(i.productId) === String(p.id)) ||
-                    (p.productCode && i.productCode === p.productCode) ||
-                    (p.pcode && i.productCode === p.pcode)
+                const isAlreadyInList = isProductAlreadyInList(p);
+                const existingIndex = lineItems.findIndex(
+                  (item) =>
+                    (p.id && String(item.productId) === String(p.id)) ||
+                    (p.productCode && item.productCode.toLowerCase() === String(p.productCode).toLowerCase()) ||
+                    (p.pcode && item.productCode.toLowerCase() === String(p.pcode).toLowerCase())
                 );
+                const cartItem = existingIndex > -1 ? lineItems[existingIndex] : null;
                 const cartQty = Number(cartItem?.quantity || 0);
                 const totalStock = Number(p.quantity ?? p.stock ?? (p as any).qty ?? 0);
                 const remainingStock = Math.max(0, totalStock - cartQty);
-                const isOutOfStock = totalStock <= 0 || (cartQty > 0 && remainingStock <= 0);
-                const isAlreadyInList = cartQty > 0;
+                const isOutOfStock = totalStock <= 0;
                 const defaultSellPrice = Number(p.sellPrice ?? p.sell_price ?? p.buyPrice ?? (p as any).buy_price ?? 0);
                 const prodName = p.name || p.productName || (p as any).product_name || "Product";
                 const prodCode = p.pcode || p.productCode || (p as any).product_code || (p as any).sku || "N/A";
@@ -1532,44 +1613,41 @@ export const CreateSaleForm: React.FC = () => {
                   <div
                     key={prodKey}
                     onClick={() => {
-                      if (isOutOfStock && remainingStock <= 0) {
-                        showErrorToast(
-                          totalStock <= 0
-                            ? `"${prodName}" is out of stock`
-                            : `All stock (${totalStock} ${prodUnit}) of "${prodName}" is already in cart`
-                        );
+                      if (isOutOfStock && !isAlreadyInList) {
+                        showErrorToast(`"${prodName}" is out of stock (Stock: 0)`);
                         return;
                       }
-                      handleAddProduct(p);
+                      handleToggleProductInList(p);
                     }}
-                    className={`p-2 sm:p-2.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs transition-colors select-none ${
-                      isOutOfStock
+                    className={`p-2 sm:p-2.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs transition-colors select-none cursor-pointer ${
+                      isOutOfStock && !isAlreadyInList
                         ? "opacity-60 bg-gray-50/90 cursor-not-allowed border-l-4 border-l-rose-300"
                         : isAlreadyInList
-                        ? "bg-sky-50/70 hover:bg-sky-100/70 border-l-4 border-l-[var(--color-primary)] cursor-pointer"
-                        : "hover:bg-gray-50 border-l-4 border-l-transparent cursor-pointer"
+                        ? "bg-sky-50/70 hover:bg-sky-100/70 border-l-4 border-l-[var(--color-primary)]"
+                        : "hover:bg-gray-50 border-l-4 border-l-transparent"
                     }`}
                   >
                     <div className="flex items-center gap-2.5 min-w-0">
                       {/* Checkbox box */}
                       <div
                         className={`w-4 h-4 rounded border flex items-center justify-center transition-colors shrink-0 ${
-                          isOutOfStock
+                          isOutOfStock && !isAlreadyInList
                             ? "border-gray-300 bg-gray-100 text-gray-400 cursor-not-allowed"
                             : isAlreadyInList
                             ? "bg-[var(--color-primary)] border-[var(--color-primary)] text-white"
-                            : "border-gray-300 bg-white hover:border-[var(--color-primary)] cursor-pointer"
+                            : "border-gray-300 bg-white hover:border-[var(--color-primary)]"
                         }`}
+                        title={isAlreadyInList ? "Click to remove from list" : "Click to add to list"}
                       >
-                        {isAlreadyInList && !isOutOfStock && <FaCheck size={9} />}
-                        {isOutOfStock && <span className="text-[10px] text-rose-500 font-bold">✕</span>}
+                        {isAlreadyInList && <FaCheck size={9} />}
+                        {isOutOfStock && !isAlreadyInList && <span className="text-[10px] text-rose-500 font-bold">✕</span>}
                       </div>
 
                       <div className="flex flex-col min-w-0">
                         <div className="flex items-center gap-1.5 flex-wrap">
                           <span
                             className={`font-bold truncate ${
-                              isOutOfStock
+                              isOutOfStock && !isAlreadyInList
                                 ? "text-gray-500 line-through decoration-rose-400"
                                 : isAlreadyInList
                                 ? "text-[var(--color-primary)]"
@@ -1578,14 +1656,14 @@ export const CreateSaleForm: React.FC = () => {
                           >
                             {prodName}
                           </span>
-                          {isAlreadyInList && remainingStock > 0 && (
+                          {isAlreadyInList && (
                             <span className="text-[10px] bg-emerald-100 text-emerald-800 border border-emerald-300 px-1.5 py-0.2 rounded font-semibold whitespace-nowrap">
-                              In cart ({cartQty})
+                              Added in list
                             </span>
                           )}
-                          {isOutOfStock && (
+                          {isOutOfStock && !isAlreadyInList && (
                             <span className="text-[10px] bg-rose-100 text-rose-700 border border-rose-300 px-1.5 py-0.2 rounded font-bold whitespace-nowrap">
-                              {totalStock <= 0 ? "Stock Out / স্টক নেই" : "Max stock reached"}
+                              Stock Out / স্টক নেই
                             </span>
                           )}
                         </div>
@@ -1596,28 +1674,86 @@ export const CreateSaleForm: React.FC = () => {
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-                      {totalStock <= 0 ? (
-                        <span className="text-[10px] font-bold text-rose-600 bg-rose-50 border border-rose-200 px-2 py-0.5 rounded">
-                          Stock: 0
+                    {/* Stock & Sale Price Badges - Clean Single Line (1-Line) */}
+                    <div
+                      className="flex items-center gap-2 sm:gap-2.5 shrink-0 self-start sm:self-center"
+                      onClick={(e) => {
+                        if (isAlreadyInList) e.stopPropagation();
+                      }}
+                    >
+                      {/* Current / Available Stock */}
+                      <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-slate-100 border border-slate-200">
+                        <span className="text-[10px] font-semibold text-gray-500 uppercase tracking-wider">
+                          Stock:
                         </span>
-                      ) : remainingStock <= 0 ? (
-                        <span className="text-[10px] font-bold text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded">
-                          Remaining: 0 ({cartQty}/{totalStock})
-                        </span>
-                      ) : (
-                        <span className="text-[11px] px-2 py-0.5 rounded bg-gray-100 text-gray-700">
-                          Stock: <span className="font-bold text-black">{remainingStock}</span>
-                          {cartQty > 0 && (
-                            <span className="text-emerald-700 text-[10px] ml-1 font-semibold">
-                              ({cartQty} in cart)
-                            </span>
+                        <span className="text-xs font-bold text-gray-900">
+                          {totalStock <= 0 ? (
+                            <span className="text-rose-600">0</span>
+                          ) : (
+                            <>
+                              {remainingStock}{" "}
+                              <span className="text-[10px] font-normal text-gray-600">{prodUnit}</span>
+                            </>
                           )}
                         </span>
+                      </div>
+
+                      {/* Sell Rate & Cart Qty (1 line - editable when added in list) */}
+                      {isAlreadyInList && existingIndex !== -1 ? (
+                        <div className="flex items-center gap-2">
+                          {/* Editable Sale Qty */}
+                          <div className="flex items-center gap-1 px-2 py-0.5 rounded-md bg-sky-50 border border-sky-300 shadow-2xs">
+                            <span className="text-[10px] font-bold text-sky-800">
+                              Qty:
+                            </span>
+                            <input
+                              type="number"
+                              min="1"
+                              max={totalStock > 0 ? totalStock : undefined}
+                              step="1"
+                              value={lineItems[existingIndex].quantity}
+                              placeholder="1"
+                              onWheel={(e) => e.currentTarget.blur()}
+                              onChange={(e) => {
+                                handleUpdateLineItem(existingIndex, "quantity", e.target.value);
+                              }}
+                              className="w-12 sm:w-14 px-1 py-0.5 text-xs font-bold text-sky-950 bg-white border border-sky-300 rounded focus:outline-none focus:ring-1 focus:ring-sky-500 text-center"
+                              title={`Edit Sale Quantity (Max: ${totalStock})`}
+                            />
+                            <span className="text-[10px] text-sky-700 font-medium">
+                              {prodUnit}
+                            </span>
+                          </div>
+
+                          {/* Editable Sell Price */}
+                          <div className="flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-50 border border-emerald-300 shadow-2xs">
+                            <span className="text-[10px] font-bold text-emerald-800">
+                              Rate: ৳
+                            </span>
+                            <input
+                              type="number"
+                              step="0.01"
+                              value={lineItems[existingIndex].sellPrice}
+                              placeholder="0"
+                              onWheel={(e) => e.currentTarget.blur()}
+                              onChange={(e) => {
+                                handleUpdateLineItem(existingIndex, "sellPrice", e.target.value);
+                              }}
+                              className="w-16 sm:w-20 px-1 py-0.5 text-xs font-bold text-emerald-950 bg-white border border-emerald-300 rounded focus:outline-none focus:ring-1 focus:ring-emerald-500 text-right"
+                              title="Edit Sale Price"
+                            />
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-emerald-50 border border-emerald-200">
+                          <span className="text-[10px] font-semibold text-emerald-800 uppercase tracking-wider">
+                            Sale Rate:
+                          </span>
+                          <span className="text-xs font-bold text-emerald-950">
+                            ৳ {formatMoney(defaultSellPrice)}
+                          </span>
+                        </div>
                       )}
-                      <span className="font-bold text-black text-right min-w-[70px]">
-                        ৳ {formatMoney(defaultSellPrice)}
-                      </span>
                     </div>
                   </div>
                 );

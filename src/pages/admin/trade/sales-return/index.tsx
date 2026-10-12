@@ -127,13 +127,21 @@ const SalesReturnPage: React.FC = () => {
               (Array.isArray(item.salesReturnDetails) && item.salesReturnDetails.length > 0);
 
             if (isReturn) {
+              const rawNote = String(item.note || "").trim();
+              // Strip auto-generated "Return from invoice ...," prefix if it exists in older records
+              const noteText = rawNote
+                .replace(/^Return from invoice[^,]+,\s*/i, "")
+                .replace(/^Return from invoice[^\n]+/i, "")
+                .trim();
+
               returnsList.push({
-                id: item.id || item.returnId,
+                id: item.id || item.returnId || item.return_id,
                 returnNo: item.returnNo || (item.orderNo ? `RET-${item.orderNo}` : `RET-${item.id}`),
                 orderNo: item.orderNo || item.order_no || "",
                 salesInvoiceNo: item.salesInvoiceNo || item.invoiceNo || "-",
                 invoiceNo: item.salesInvoiceNo || item.invoiceNo || "-",
                 returnDate: item.returnDate || item.salesDate || item.saleDate || item.date || moment().format("YYYY-MM-DD"),
+                createdAt: item.createdAt || item.created_at || item.createdDate || item.date || item.returnDate,
                 customerId: item.customerId,
                 customerName: item.customerName || "Customer",
                 customerPhone: item.customerPhone,
@@ -146,7 +154,9 @@ const SalesReturnPage: React.FC = () => {
                 refundAmount: Number(item.returnRefundAmount ?? item.refundAmount ?? item.returnGrandTotal ?? item.grandTotal ?? 0),
                 paymentType: item.paymentType || "CASH",
                 status: item.status || "Completed",
-                note: item.note || item.remarks || "",
+                note: noteText,
+                remarks: noteText,
+                reason: noteText,
                 returnDetails: item.returnDetails || item.salesReturnDetails || item.details || [],
                 itemsCount: (item.returnDetails || item.salesReturnDetails || item.details)?.length || 1,
               });
@@ -246,15 +256,23 @@ const SalesReturnPage: React.FC = () => {
   // Sorting
   const sortedReturns = useMemo(() => {
     return [...filteredReturns].sort((a, b) => {
-      const dateA = new Date(a.returnDate || a.createdAt || 0).getTime();
-      const dateB = new Date(b.returnDate || b.createdAt || 0).getTime();
+      const timeA = new Date(a.createdAt || a.returnDate || 0).getTime();
+      const timeB = new Date(b.createdAt || b.returnDate || 0).getTime();
+      const idA = Number(a.id || a.returnId || 0);
+      const idB = Number(b.id || b.returnId || 0);
       const amountA = Number(a.refundAmount ?? a.grandTotal ?? 0);
       const amountB = Number(b.refundAmount ?? b.grandTotal ?? 0);
 
-      if (sortBy === "oldest") return dateA - dateB;
+      if (sortBy === "oldest") {
+        if (timeA !== timeB) return timeA - timeB;
+        return idA - idB;
+      }
       if (sortBy === "amount_high") return amountB - amountA;
       if (sortBy === "amount_low") return amountA - amountB;
-      return dateB - dateA;
+
+      // Default: Latest on top (compare timestamp first, then id)
+      if (timeB !== timeA) return timeB - timeA;
+      return idB - idA;
     });
   }, [filteredReturns, sortBy]);
 
