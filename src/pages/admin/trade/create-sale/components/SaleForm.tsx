@@ -444,7 +444,10 @@ export const CreateSaleForm: React.FC = () => {
           const q = Number(item.quantity ?? item.qty ?? 1);
           const d = Number(item.discount ?? 0);
           const v = Number(item.vat ?? 0);
-          const tot = Number(item.total ?? p * q + v - d);
+          const tot =
+            item.total !== undefined && item.total !== null && !isNaN(Number(item.total)) && Number(item.total) > 0
+              ? Number(item.total)
+              : Number(p * q + v - d);
 
           const pId = String(item.productId || item.product_id || "").trim();
           const pCode = String(item.productCode || item.product_code || item.pcode || "").trim();

@@ -643,11 +643,15 @@ const CreatePurchaseForm: React.FC = () => {
           const q = item.quantity ?? item.qty ?? item.quantity_count ?? item.count ?? 1;
           const v = item.vat ?? item.vat_percent ?? item.vatPercent ?? 0;
           const tot =
-            item.total ??
-            item.total_price ??
-            item.subtotal ??
-            item.totalAmount ??
-            Number(buyP) * Number(q);
+            item.total !== undefined && item.total !== null && !isNaN(Number(item.total)) && Number(item.total) > 0
+              ? Number(item.total)
+              : item.subtotal !== undefined && item.subtotal !== null && !isNaN(Number(item.subtotal)) && Number(item.subtotal) > 0
+              ? Number(item.subtotal)
+              : item.total_price !== undefined && item.total_price !== null && !isNaN(Number(item.total_price)) && Number(item.total_price) > 0
+              ? Number(item.total_price)
+              : item.totalAmount !== undefined && item.totalAmount !== null && !isNaN(Number(item.totalAmount)) && Number(item.totalAmount) > 0
+              ? Number(item.totalAmount)
+              : Number(buyP) * Number(q);
 
           // Match with allProducts to get current stock and fallback name/code
           const matchedProd = allProducts.find((p) => {
