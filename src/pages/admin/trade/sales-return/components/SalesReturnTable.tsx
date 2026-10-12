@@ -426,7 +426,7 @@ export const SalesReturnTable: React.FC<SalesReturnTableProps> = ({
                 const pType = String(item.paymentType || "CASH").toUpperCase();
 
                 // Payment badges
-                const paymentBg = "bg-sky-50 text-black border-sky-200";
+                const paymentBg = "bg-sky-100 text-sky-900 border-sky-300 font-semibold";
 
                 // Return items count
                 const details = Array.isArray(item.returnDetails) ? item.returnDetails : [];
@@ -435,13 +435,13 @@ export const SalesReturnTable: React.FC<SalesReturnTableProps> = ({
                 // Status badge styling
                 const statusStr = String(item.status || "Completed").trim();
                 const statusUpper = statusStr.toUpperCase();
-                let statusBg = "bg-emerald-50 text-emerald-700 border-emerald-200";
+                let statusBg = "bg-emerald-100 text-emerald-800 border-emerald-300 font-semibold";
                 if (statusUpper.includes("PENDING")) {
-                  statusBg = "bg-amber-50 text-amber-800 border-amber-300";
+                  statusBg = "bg-amber-100 text-amber-800 border-amber-300 font-semibold";
                 } else if (statusUpper.includes("CANCEL") || statusUpper.includes("REJECT")) {
-                  statusBg = "bg-rose-50 text-rose-700 border-rose-200";
+                  statusBg = "bg-rose-100 text-rose-800 border-rose-300 font-semibold";
                 } else if (statusUpper.includes("PARTIAL")) {
-                  statusBg = "bg-sky-50 text-sky-700 border-sky-200";
+                  statusBg = "bg-sky-100 text-sky-800 border-sky-300 font-semibold";
                 }
 
                 return (
@@ -528,7 +528,7 @@ export const SalesReturnTable: React.FC<SalesReturnTableProps> = ({
                       {/* Payment Type */}
                       <td className="py-2.5 px-3 text-center">
                         <span
-                          className={`inline-block px-2 py-0.5 text-[10px] font-normal border ${paymentBg}`}
+                          className={`inline-block px-2.5 py-0.5 text-[10px] border rounded-md ${paymentBg}`}
                         >
                           {pType}
                         </span>
@@ -542,7 +542,7 @@ export const SalesReturnTable: React.FC<SalesReturnTableProps> = ({
                       {/* Status */}
                       <td className="py-2.5 px-3 text-center">
                         <span
-                          className={`inline-block px-2 py-0.5 text-[10px] font-normal border ${statusBg}`}
+                          className={`inline-block px-2.5 py-0.5 text-[10px] border rounded-md ${statusBg}`}
                         >
                           {statusStr}
                         </span>

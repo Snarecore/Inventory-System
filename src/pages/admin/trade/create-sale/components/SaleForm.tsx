@@ -369,22 +369,42 @@ export const CreateSaleForm: React.FC = () => {
       setMfsPhone(data.mfsPhone || "");
 
       // Customer
-      const custId = data.customerId || data.customer_id;
-      const custName = data.customerName || data.customer_name;
-      if (custId || custName) {
+      const custId = data.customerId !== undefined && data.customerId !== null ? Number(data.customerId) : (data.customer_id !== undefined && data.customer_id !== null ? Number(data.customer_id) : undefined);
+      const custName = data.customerName || data.customer_name || "";
+      const custPhone = data.customerPhone || data.customer_phone || "";
+      const custAddress = data.customerAddress || data.customer_address || "";
+
+      const isWalkInSale =
+        custId === 0 ||
+        custAddress.toLowerCase().includes("counter") ||
+        custName.toLowerCase().includes("walk-in") ||
+        !custId;
+
+      if (isWalkInSale) {
+        setSelectedCustomer(WALK_IN_CUSTOMER);
+        // If customer was saved with a custom walk-in name (e.g. "sanim"), populate it into walkInName
+        if (custName && !custName.toLowerCase().includes("walk-in")) {
+          setWalkInName(custName);
+        } else {
+          setWalkInName("");
+        }
+        setWalkInPhone(custPhone);
+      } else {
         const found = customerList.find(
-          (c) => (custId && String(c.id || c.partyId) === String(custId)) || (custName && (c.name === custName || c.partyName === custName))
+          (c) => (custId && Number(c.id || c.partyId) === custId) || (custName && (c.name === custName || c.partyName === custName))
         );
         if (found) {
           setSelectedCustomer(found);
         } else {
           setSelectedCustomer({
             id: custId,
-            name: custName || "Walk-in Customer",
-            phone: data.customerPhone || "",
-            address: data.customerAddress || "",
+            name: custName,
+            phone: custPhone,
+            address: custAddress,
           });
         }
+        setWalkInName("");
+        setWalkInPhone("");
       }
 
       // Details - load directly from whatever backend API returns

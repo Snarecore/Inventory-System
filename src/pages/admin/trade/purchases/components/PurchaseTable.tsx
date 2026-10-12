@@ -433,13 +433,13 @@ export const PurchaseTable: React.FC<PurchaseTableProps> = ({
                 const paymentType = (purchase.paymentType || "CASH").toUpperCase();
 
                 let statusBadge = "Paid";
-                let statusBg = "bg-emerald-50 text-emerald-700 border-emerald-200";
+                let statusBg = "bg-emerald-100 text-emerald-800 border-emerald-300 font-semibold";
                 if (dueAmount > 0 && paidAmount > 0) {
                   statusBadge = "Partial";
-                  statusBg = "bg-amber-50 text-amber-700 border-amber-200";
+                  statusBg = "bg-amber-100 text-amber-800 border-amber-300 font-semibold";
                 } else if (dueAmount > 0 && paidAmount === 0) {
                   statusBadge = "Due";
-                  statusBg = "bg-rose-50 text-rose-700 border-rose-200";
+                  statusBg = "bg-rose-100 text-rose-800 border-rose-300 font-semibold";
                 }
 
                 return (
@@ -493,7 +493,7 @@ export const PurchaseTable: React.FC<PurchaseTableProps> = ({
 
                     {/* Method */}
                     <td className="py-2.5 px-3 text-center">
-                      <span className="inline-block px-2 py-0.5 text-[10px] font-normal bg-sky-50 text-black border border-sky-200">
+                      <span className="inline-block px-2.5 py-0.5 text-[10px] font-semibold bg-sky-100 text-sky-900 border border-sky-300 rounded-md">
                         {paymentType}
                       </span>
                     </td>
@@ -501,7 +501,7 @@ export const PurchaseTable: React.FC<PurchaseTableProps> = ({
                     {/* Status */}
                     <td className="py-2.5 px-3 text-center">
                       <span
-                        className={`inline-block px-2 py-0.5 text-[10px] font-normal border ${statusBg}`}
+                        className={`inline-block px-2.5 py-0.5 text-[10px] border rounded-md ${statusBg}`}
                       >
                         {statusBadge}
                       </span>
