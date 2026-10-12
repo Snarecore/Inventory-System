@@ -293,25 +293,16 @@ export const useAPI = () => {
                     const successText = (response as any)?.msg || (response as any)?.message || "Operation successful!";
                     if (showSuccessMessage) showSuccessToast(successText);
                     if (invalidateQueryKey && invalidateQueryKey.length > 0) {
-                        await queryClient.invalidateQueries({
-                            queryKey: invalidateQueryKey,
-                            exact: false,
-                            refetchType: 'all'
-                        });
-                        for (const singleKey of invalidateQueryKey) {
-                            if (typeof singleKey === 'string') {
-                                await queryClient.invalidateQueries({
-                                    queryKey: [singleKey],
-                                    exact: false,
-                                    refetchType: 'all'
-                                });
-                                await queryClient.refetchQueries({
-                                    queryKey: [singleKey],
-                                    exact: false,
-                                    type: 'all'
-                                });
-                            }
-                        }
+                        await Promise.all(
+                            invalidateQueryKey
+                                .filter(Boolean)
+                                .map((singleKey) =>
+                                    queryClient.invalidateQueries({
+                                        queryKey: Array.isArray(singleKey) ? singleKey : [singleKey],
+                                        exact: false,
+                                    })
+                                )
+                        );
                     }
                     return { success: true, data: response };
                 } else if (((response as any)?.message || (response as any)?.msg) && showErrorMessage) {
