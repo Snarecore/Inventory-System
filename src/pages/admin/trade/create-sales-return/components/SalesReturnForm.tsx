@@ -14,6 +14,8 @@ import {
   FaCreditCard,
   FaMobileAlt,
   FaWallet,
+  FaLock,
+  FaExclamationTriangle,
 } from "react-icons/fa";
 import PageHeader from "@/components/page-header/PageHeader";
 import Button from "@/components/button/Button";
@@ -346,8 +348,43 @@ export const SalesReturnForm: React.FC = () => {
     return returnedQtyMap;
   };
 
+  // Business Rule: An order / invoice can only be returned once (Organization Standard)
+  const isSaleAlreadyReturned = (
+    sale: any,
+    allSalesAndReturns: any[]
+  ): boolean => {
+    if (!sale) return false;
+    if (sale.hasReturn) return true;
+    if (sale.returnNo) return true;
+    if (Array.isArray(sale.returnDetails) && sale.returnDetails.length > 0) return true;
+    if (Array.isArray(sale.salesReturnDetails) && sale.salesReturnDetails.length > 0) return true;
+    if (Array.isArray(sale.returns) && sale.returns.length > 0) return true;
+    if (Array.isArray(sale.salesReturns) && sale.salesReturns.length > 0) return true;
+
+    const priorReturnsMap = getReturnedQuantitiesForSale(sale, allSalesAndReturns);
+    const totalReturnedPcs = Object.values(priorReturnsMap).reduce((sum, q) => sum + q, 0);
+    return totalReturnedPcs > 0;
+  };
+
+  const isCurrentSaleAlreadyReturned = useMemo(() => {
+    if (!selectedSale) return false;
+    return isSaleAlreadyReturned(
+      selectedSale,
+      Array.isArray(apiSalesAndReturnData) ? apiSalesAndReturnData : []
+    );
+  }, [selectedSale, apiSalesAndReturnData]);
+
   // Load sale into form and configure customer payment & refund suggestion
   const loadInvoice = (sale: SaleItem) => {
+    const alreadyReturned = isSaleAlreadyReturned(
+      sale,
+      Array.isArray(apiSalesAndReturnData) ? apiSalesAndReturnData : []
+    );
+    if (alreadyReturned) {
+      showErrorToast(
+        `Order #${sale.orderNo || sale.invoiceNo} has already been returned. Per store policy, an invoice can only be returned once.`
+      );
+    }
     setSelectedSale(sale);
     const invNo = sale.invoiceNo || `INV-${sale.id}`;
     setSalesInvoiceNo(invNo);
@@ -496,23 +533,33 @@ export const SalesReturnForm: React.FC = () => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Filter available invoices by orderNo, invoiceNo, or customer
+  // Filter available invoices by orderNo, invoiceNo, or customer (Eligible invoices sorted first)
   const filteredInvoices = useMemo(() => {
     const q = invoiceSearchQuery.toLowerCase().trim();
-    if (!q) return availableInvoices;
-    return availableInvoices.filter((inv) => {
-      const ordNo = String(inv.orderNo || "").toLowerCase();
-      const invNo = String(inv.invoiceNo || "").toLowerCase();
-      const cName = String(inv.customerName || "").toLowerCase();
-      const cPhone = String(inv.customerPhone || "").toLowerCase();
-      return (
-        ordNo.includes(q) ||
-        invNo.includes(q) ||
-        cName.includes(q) ||
-        cPhone.includes(q)
-      );
+    const allRecords = Array.isArray(apiSalesAndReturnData) ? apiSalesAndReturnData : [];
+
+    let list = availableInvoices;
+    if (q) {
+      list = availableInvoices.filter((inv) => {
+        const ordNo = String(inv.orderNo || "").toLowerCase();
+        const invNo = String(inv.invoiceNo || "").toLowerCase();
+        const cName = String(inv.customerName || "").toLowerCase();
+        const cPhone = String(inv.customerPhone || "").toLowerCase();
+        return (
+          ordNo.includes(q) ||
+          invNo.includes(q) ||
+          cName.includes(q) ||
+          cPhone.includes(q)
+        );
+      });
+    }
+
+    return [...list].sort((a, b) => {
+      const aRet = isSaleAlreadyReturned(a, allRecords) ? 1 : 0;
+      const bRet = isSaleAlreadyReturned(b, allRecords) ? 1 : 0;
+      return aRet - bRet;
     });
-  }, [availableInvoices, invoiceSearchQuery]);
+  }, [availableInvoices, invoiceSearchQuery, apiSalesAndReturnData]);
 
   // Recalculate totals
   const totals = useMemo(() => {
@@ -892,6 +939,13 @@ export const SalesReturnForm: React.FC = () => {
 
   // Pre-submit validation
   const handlePreSubmit = (autoPrint: boolean) => {
+    if (isCurrentSaleAlreadyReturned) {
+      showErrorToast(
+        "This order has already been returned. According to store policy, an order can only be returned once."
+      );
+      return;
+    }
+
     if (!salesInvoiceNo.trim()) {
       showErrorToast("Please select the original sale invoice / order number");
       return;
@@ -1193,26 +1247,58 @@ export const SalesReturnForm: React.FC = () => {
           {/* Save & Save & Print Buttons */}
           <div className="grid grid-cols-2 lg:flex lg:items-center gap-2 w-full lg:w-auto">
             <Button
-              label={isSubmitting ? "Saving..." : "Save Return"}
+              label={
+                isCurrentSaleAlreadyReturned
+                  ? "Already Returned"
+                  : isSubmitting
+                  ? "Saving..."
+                  : "Save Return"
+              }
               onClick={() => handlePreSubmit(false)}
-              color="#009fe3"
-              hoverColor="#0085be"
-              disabled={isSubmitting}
-              icon={<FaCheck className="text-white text-xs" />}
-              buttonClass="!text-xs !py-1.5 !w-full lg:!w-fit justify-center font-bold"
+              color={isCurrentSaleAlreadyReturned ? "#9ca3af" : "#009fe3"}
+              hoverColor={isCurrentSaleAlreadyReturned ? "#9ca3af" : "#0085be"}
+              disabled={isSubmitting || isCurrentSaleAlreadyReturned}
+              icon={isCurrentSaleAlreadyReturned ? <FaLock className="text-white text-xs" /> : <FaCheck className="text-white text-xs" />}
+              buttonClass={`!text-xs !py-1.5 !w-full lg:!w-fit justify-center font-bold ${
+                isCurrentSaleAlreadyReturned ? "opacity-60 cursor-not-allowed" : ""
+              }`}
             />
             <Button
               label="Save & Print"
               onClick={() => handlePreSubmit(true)}
-              color="#059669"
-              hoverColor="#047857"
-              disabled={isSubmitting}
-              icon={<FaPrint className="text-white text-xs" />}
-              buttonClass="!text-xs !py-1.5 !w-full lg:!w-fit justify-center font-bold"
+              color={isCurrentSaleAlreadyReturned ? "#9ca3af" : "#059669"}
+              hoverColor={isCurrentSaleAlreadyReturned ? "#9ca3af" : "#047857"}
+              disabled={isSubmitting || isCurrentSaleAlreadyReturned}
+              icon={isCurrentSaleAlreadyReturned ? <FaLock className="text-white text-xs" /> : <FaPrint className="text-white text-xs" />}
+              buttonClass={`!text-xs !py-1.5 !w-full lg:!w-fit justify-center font-bold ${
+                isCurrentSaleAlreadyReturned ? "opacity-60 cursor-not-allowed" : ""
+              }`}
             />
           </div>
         </div>
       </div>
+
+      {/* Return Policy Notice Banner when Order is already returned */}
+      {isCurrentSaleAlreadyReturned && (
+        <div className="bg-rose-50 border-2 border-rose-300 rounded-xl p-3 sm:p-4 flex items-start gap-3 shadow-xs">
+          <div className="p-2 rounded-lg bg-rose-100 text-rose-600 shrink-0 mt-0.5">
+            <FaLock size={16} />
+          </div>
+          <div className="flex-1 text-xs">
+            <div className="flex items-center gap-2">
+              <h4 className="font-bold text-sm text-rose-900">
+                Order #{selectedSale?.orderNo || salesInvoiceNo} Has Already Been Returned
+              </h4>
+              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-200 text-rose-800">
+                One-Time Return Policy Active
+              </span>
+            </div>
+            <p className="mt-1 text-rose-700 leading-relaxed">
+              According to store policy, an order can only have <strong>one return transaction</strong> (Full or Partial). This order has already been processed for return previously. Duplicate returns for the same order are strictly disabled to prevent stock discrepancies.
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Section 1: Search by Order No / Invoice No & Customer Info */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 bg-white p-2.5 sm:p-3 rounded-xl border border-gray-200 shadow-xs">
@@ -1269,11 +1355,53 @@ export const SalesReturnForm: React.FC = () => {
                 </div>
               ) : filteredInvoices.length > 0 ? (
                 filteredInvoices.map((inv) => {
-                  const priorReturnsMap = getReturnedQuantitiesForSale(
+                  const isAlreadyReturned = isSaleAlreadyReturned(
                     inv,
                     Array.isArray(apiSalesAndReturnData) ? apiSalesAndReturnData : []
                   );
-                  const totalPrevReturnedPcs = Object.values(priorReturnsMap).reduce((sum, q) => sum + q, 0);
+
+                  if (isAlreadyReturned) {
+                    return (
+                      <div
+                        key={inv.invoiceNo || inv.id}
+                        onClick={() => {
+                          showErrorToast(
+                            `Order #${inv.orderNo || inv.invoiceNo} has already been returned. Per store policy, each order can only be returned once.`
+                          );
+                        }}
+                        className="px-3 py-2.5 bg-gray-50/80 hover:bg-rose-50/50 cursor-not-allowed border-b border-gray-100 last:border-b-0 flex items-center justify-between opacity-75 transition-colors"
+                        title="This order has already been returned (Single-return policy)"
+                      >
+                        <div>
+                          <div className="flex items-center gap-1.5">
+                            <span className="font-bold text-gray-500 font-mono">
+                              {inv.invoiceNo}
+                            </span>
+                            {inv.orderNo && (
+                              <span className="px-1.5 py-0.2 rounded bg-gray-200 text-gray-700 text-[10px] font-bold font-mono">
+                                Order #{inv.orderNo}
+                              </span>
+                            )}
+                            <span className="px-1.5 py-0.5 rounded-full bg-rose-100 text-rose-800 text-[10px] font-bold border border-rose-200 inline-flex items-center gap-1">
+                              <FaLock className="text-[9px]" />
+                              Already Returned
+                            </span>
+                          </div>
+                          <div className="text-[11px] text-gray-500 mt-0.5">
+                            {inv.customerName} • <span className="text-rose-600 font-medium">Non-returnable (Single return limit)</span>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <div className="font-bold text-gray-500">
+                            ৳ {formatMoney(Number(inv.grandTotal || 0))}
+                          </div>
+                          <div className="text-[10px] text-gray-400">
+                            {inv.salesDate || inv.date}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  }
 
                   return (
                     <div
@@ -1283,39 +1411,37 @@ export const SalesReturnForm: React.FC = () => {
                         setIsInvoiceDropdownOpen(false);
                         setInvoiceSearchQuery(inv.orderNo ? `${inv.invoiceNo} (${inv.orderNo})` : (inv.invoiceNo || ""));
                       }}
-                      className="px-3 py-2 hover:bg-blue-50/60 cursor-pointer border-b border-gray-50 last:border-b-0 flex items-center justify-between"
+                      className="px-3 py-2.5 hover:bg-sky-50/70 cursor-pointer border-b border-gray-100 last:border-b-0 flex items-center justify-between transition-colors"
                     >
                       <div>
                         <div className="flex items-center gap-1.5">
-                          <span className="font-bold  text-[#009fe3]">
+                          <span className="font-bold text-[#009fe3] font-mono">
                             {inv.invoiceNo}
                           </span>
                           {inv.orderNo && (
-                            <span className="px-1.5 py-0.2 rounded bg-sky-100 text-sky-800 text-[10px]  font-bold">
-                              {inv.orderNo}
+                            <span className="px-1.5 py-0.2 rounded bg-sky-100 text-sky-800 text-[10px] font-bold font-mono">
+                              Order #{inv.orderNo}
                             </span>
                           )}
-                          {totalPrevReturnedPcs > 0 && (
-                            <span className="px-1.5 py-0.2 rounded bg-amber-100 text-amber-800 text-[10px] font-semibold">
-                              {totalPrevReturnedPcs} pcs returned
-                            </span>
-                          )}
+                          <span className="px-1.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold border border-emerald-200">
+                            Eligible for Return
+                          </span>
                         </div>
                         <div className="text-[11px] text-gray-600 mt-0.5">
                           {inv.customerName} ({inv.customerPhone || "No Phone"})
                         </div>
                       </div>
-                    <div className="text-right">
-                      <div className="font-bold  text-gray-900">
-                        ৳ {formatMoney(Number(inv.grandTotal || 0))}
-                      </div>
-                      <div className="text-[10px] text-gray-400">
-                        {inv.salesDate || inv.date}
+                      <div className="text-right">
+                        <div className="font-bold text-gray-900">
+                          ৳ {formatMoney(Number(inv.grandTotal || 0))}
+                        </div>
+                        <div className="text-[10px] text-gray-400">
+                          {inv.salesDate || inv.date}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                );
-              })
+                  );
+                })
               ) : (
                 <div className="px-3 py-4 text-center text-gray-400 text-xs">
                   {availableInvoices.length === 0
@@ -1615,7 +1741,7 @@ export const SalesReturnForm: React.FC = () => {
                       <td className="py-2 px-3 text-center whitespace-nowrap">
                         <input
                           type="checkbox"
-                          disabled={isFullyReturned}
+                          disabled={isFullyReturned || isCurrentSaleAlreadyReturned}
                           checked={line.isSelected}
                           onChange={() => handleToggleLine(idx)}
                           className="rounded text-[#009fe3] focus:ring-0 cursor-pointer disabled:cursor-not-allowed"
@@ -1678,14 +1804,16 @@ export const SalesReturnForm: React.FC = () => {
 
                       {/* Return Qty with Steppers and Quick Full Button */}
                       <td className="py-2 px-2 text-center whitespace-nowrap">
-                        {isFullyReturned ? (
-                          <span className="text-gray-400 text-xs italic">N/A</span>
+                        {isFullyReturned || isCurrentSaleAlreadyReturned ? (
+                          <span className="text-gray-400 text-xs italic">
+                            {isCurrentSaleAlreadyReturned ? "Locked" : "N/A"}
+                          </span>
                         ) : (
                           <div className="inline-flex items-center border border-gray-300 rounded overflow-hidden">
                             <button
                               type="button"
                               onClick={() => handleQuantityChange(idx, line.quantity - 1)}
-                              disabled={line.quantity <= 0}
+                              disabled={line.quantity <= 0 || isCurrentSaleAlreadyReturned}
                               className="px-2 py-1 bg-gray-100 hover:bg-gray-200 text-black font-normal text-xs disabled:opacity-40 cursor-pointer"
                             >
                               -
@@ -1695,16 +1823,17 @@ export const SalesReturnForm: React.FC = () => {
                               min={0}
                               max={line.availableQuantity}
                               value={line.quantity}
+                              disabled={isCurrentSaleAlreadyReturned}
                               onWheel={(e) => e.currentTarget.blur()}
                               onChange={(e) =>
                                 handleQuantityChange(idx, Number(e.target.value))
                               }
-                              className="w-12 py-1 text-center text-xs font-normal text-black focus:outline-none border-x border-gray-300"
+                              className="w-12 py-1 text-center text-xs font-normal text-black focus:outline-none border-x border-gray-300 disabled:bg-gray-100 disabled:text-gray-400"
                             />
                             <button
                               type="button"
                               onClick={() => handleQuantityChange(idx, line.quantity + 1)}
-                              disabled={line.quantity >= line.availableQuantity}
+                              disabled={line.quantity >= line.availableQuantity || isCurrentSaleAlreadyReturned}
                               className="px-2 py-1 bg-gray-100 hover:bg-gray-200 text-black font-normal text-xs disabled:opacity-40 cursor-pointer"
                             >
                               +
@@ -1712,12 +1841,9 @@ export const SalesReturnForm: React.FC = () => {
                             <button
                               type="button"
                               onClick={() => handleSetLineFullQty(idx)}
+                              disabled={isCurrentSaleAlreadyReturned}
+                              className="px-2 py-1 bg-sky-50 hover:bg-sky-100 text-[#009fe3] font-bold text-[10px] border-l border-gray-300 cursor-pointer disabled:opacity-40"
                               title="Return all available quantity"
-                              className={`px-2 py-1 text-[10px] font-medium border-l border-gray-300 transition-colors cursor-pointer ${
-                                line.quantity === line.availableQuantity && line.isSelected
-                                  ? "bg-emerald-50 text-emerald-800"
-                                  : "bg-gray-50 text-black hover:bg-gray-100"
-                              }`}
                             >
                               Full
                             </button>

@@ -10,16 +10,17 @@ import SalesReturnStats from "./components/SalesReturnStats";
 import SalesReturnTable from "./components/SalesReturnTable";
 import SalesReturnInvoiceModal from "./components/SalesReturnInvoiceModal";
 import apiConfig from "@/config/api.json";
-import { salesAndReturnQueryKey } from "@/config/query-key";
+import { salesAndReturnQueryKey, partyListQueryKey } from "@/config/query-key";
 import { buildAccessUser } from "@/utils/access-user";
 import { postData } from "@/services/api-service";
-import type { SalesReturnItem } from "@/types";
+import type { SalesReturnItem, PartyItem } from "@/types";
 
 const SalesReturnPage: React.FC = () => {
   const navigate = useNavigate();
 
   // Search & Filter State
   const [searchQuery, setSearchQuery] = useState<string>("");
+  const [customerFilter, setCustomerFilter] = useState<string>("all");
   const [paymentMethodFilter, setPaymentMethodFilter] = useState<string>("all");
   const [dateFilter, setDateFilter] = useState<string>("all");
   const [customStartDate, setCustomStartDate] = useState<string>("");
@@ -33,7 +34,66 @@ const SalesReturnPage: React.FC = () => {
   const [selectedReturn, setSelectedReturn] = useState<SalesReturnItem | null>(null);
   const [autoPrintModal, setAutoPrintModal] = useState<boolean>(false);
 
-  // Fetch from /get-sales-and-return API
+  // 1. Fetch Customers for filter dropdown
+  const { data: rawCustomerData } = useQuery({
+    queryKey: [partyListQueryKey, "CUSTOMER"],
+    queryFn: async () => {
+      try {
+        const accessUser = buildAccessUser();
+        const res: any = await postData({
+          url: apiConfig.party?.partyListUrl || "get-party-info-list",
+          body: { accessUser },
+        });
+        return res;
+      } catch (e) {
+        return [];
+      }
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const customersList: PartyItem[] = useMemo(() => {
+    let list: any[] = [];
+    if (rawCustomerData) {
+      if (Array.isArray(rawCustomerData)) list = rawCustomerData;
+      else if (rawCustomerData && typeof rawCustomerData === "object") {
+        const raw = rawCustomerData as any;
+        if (Array.isArray(raw.customerList)) list = raw.customerList;
+        else if (Array.isArray(raw.partyList)) list = raw.partyList;
+        else if (Array.isArray(raw.partyInfoList)) list = raw.partyInfoList;
+        else if (Array.isArray(raw.data)) list = raw.data;
+      }
+    }
+
+    const filtered = list.filter((p: any) => {
+      const isDel = String(p.isDeleted || p.is_deleted || "").trim().toUpperCase();
+      if (isDel === "Y" || isDel === "YES" || isDel === "TRUE" || isDel === "1") return false;
+      const type = String(p.type || p.partyType || p.party_type || p.party_type_name || p.role || "").toUpperCase();
+      if (type.includes("SUPPLIER") || type.includes("VENDOR")) return false;
+      return type.includes("CUSTOMER") || !type;
+    });
+
+    const custMap = new Map<string, PartyItem>();
+    filtered.forEach((p: any) => {
+      const key = String(p.id ?? p.partyId ?? p.name ?? "").trim();
+      if (key) {
+        custMap.set(key, {
+          id: p.id ?? p.partyId,
+          partyId: p.id ?? p.partyId,
+          name: p.name || p.partyName || "Customer",
+          partyName: p.name || p.partyName || "Customer",
+          phone: p.phone || p.partyPhone || "",
+          partyPhone: p.phone || p.partyPhone || "",
+          address: p.address || p.partyAddress || "",
+          type: "CUSTOMER",
+        });
+      }
+    });
+
+    return Array.from(custMap.values());
+  }, [rawCustomerData]);
+
+  // 2. Fetch from /get-sales-and-return API
   const {
     data: apiReturnsData,
     isLoading,
@@ -123,14 +183,24 @@ const SalesReturnPage: React.FC = () => {
         }
       }
 
-      // 2. Payment Method Filter
+      // 2. Customer Filter
+      if (customerFilter && customerFilter !== "all") {
+        const cId = String(item.customerId ?? "").trim().toLowerCase();
+        const cName = String(item.customerName ?? "").trim().toLowerCase();
+        const filterVal = customerFilter.toLowerCase();
+        if (cId !== filterVal && !cName.includes(filterVal)) {
+          return false;
+        }
+      }
+
+      // 3. Payment Method Filter
       if (paymentMethodFilter !== "all") {
         if (String(item.paymentType || "").toUpperCase() !== paymentMethodFilter.toUpperCase()) {
           return false;
         }
       }
 
-      // 3. Date Filter
+      // 4. Date Filter
       if (dateFilter !== "all") {
         const dateStr = item.returnDate || item.createdAt;
         if (dateStr) {
@@ -158,6 +228,7 @@ const SalesReturnPage: React.FC = () => {
   }, [
     rawReturns,
     searchQuery,
+    customerFilter,
     paymentMethodFilter,
     dateFilter,
     customStartDate,
@@ -226,10 +297,21 @@ const SalesReturnPage: React.FC = () => {
     setIsInvoiceModalOpen(true);
   };
 
+  const handleResetFilters = () => {
+    setSearchQuery("");
+    setCustomerFilter("all");
+    setPaymentMethodFilter("all");
+    setDateFilter("all");
+    setCustomStartDate("");
+    setCustomEndDate("");
+    setSortBy("latest");
+    setCurrentPageNumber(1);
+  };
+
   return (
-    <div className="flex flex-col gap-2.5 px-3 py-2 sm:px-4 sm:py-2.5 max-w-[1600px] mx-auto w-full">
+    <div className="flex flex-col gap-3 px-3 py-2 sm:px-4 sm:py-2.5 max-w-[1600px] mx-auto w-full">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5">
         <PageHeader
           headerTitle="Sales Return"
           headerDescription="Manage customer sales returns, item quantities, and refund settlements"
@@ -255,11 +337,12 @@ const SalesReturnPage: React.FC = () => {
         totalCreditAdjust={stats.totalCreditAdjust}
       />
 
-      {/* Main Table */}
+      {/* Main Table with Filters */}
       <SalesReturnTable
         returns={paginatedReturns}
         exportableReturns={sortedReturns}
         totalCount={totalCount}
+        rawCount={rawReturns.length}
         isLoading={isLoading}
         pageCount={pageCount}
         currentPageNumber={currentPageNumber}
@@ -269,6 +352,9 @@ const SalesReturnPage: React.FC = () => {
         handlePagination={handlePagination}
         searchQuery={searchQuery}
         setSearchQuery={setSearchQuery}
+        customerFilter={customerFilter}
+        setCustomerFilter={setCustomerFilter}
+        customersList={customersList}
         paymentMethodFilter={paymentMethodFilter}
         setPaymentMethodFilter={setPaymentMethodFilter}
         dateFilter={dateFilter}
@@ -279,6 +365,7 @@ const SalesReturnPage: React.FC = () => {
         setCustomEndDate={setCustomEndDate}
         sortBy={sortBy}
         setSortBy={setSortBy}
+        onResetFilters={handleResetFilters}
         onView={handleView}
         onPrint={handlePrint}
       />

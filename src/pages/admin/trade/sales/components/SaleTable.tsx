@@ -540,18 +540,35 @@ export const SaleTable: React.FC<SaleTableProps> = ({
                         >
                           <FiPrinter size={14} />
                         </button>
-                        <button
-                          type="button"
-                          onClick={() =>
-                            navigate("/admin/create-sales-return", {
-                              state: { sale },
-                            })
-                          }
-                          title="Return Items"
-                          className="p-1.5 text-rose-600 hover:bg-rose-50 rounded-md transition-colors cursor-pointer"
-                        >
-                          <FaUndoAlt size={12} />
-                        </button>
+                        {Boolean(
+                          (sale as any).hasReturn ||
+                          (sale as any).returnNo ||
+                          (sale as any).returnGrandTotal ||
+                          (Array.isArray((sale as any).returnDetails) && (sale as any).returnDetails.length > 0) ||
+                          (Array.isArray((sale as any).salesReturnDetails) && (sale as any).salesReturnDetails.length > 0)
+                        ) ? (
+                          <button
+                            type="button"
+                            disabled
+                            title="This order has already been returned (Single-return policy)"
+                            className="p-1.5 text-gray-300 cursor-not-allowed rounded-md opacity-40"
+                          >
+                            <FaUndoAlt size={12} />
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() =>
+                              navigate("/admin/create-sales-return", {
+                                state: { sale },
+                              })
+                            }
+                            title="Return Items"
+                            className="p-1.5 text-rose-600 hover:bg-rose-50 rounded-md transition-colors cursor-pointer"
+                          >
+                            <FaUndoAlt size={12} />
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>
