@@ -12,7 +12,6 @@ import { FaFileExcel, FaUndoAlt } from "react-icons/fa";
 import { exportSalesReturnToExcel } from "@/utils/excel-export";
 import { showSuccessToast, showErrorToast } from "@/utils/toast-utils";
 import { formatMoney } from "@/utils/formatters";
-import { RETURN_REASONS, getReturnReasonLabel } from "../constants/returnReasons";
 
 interface SalesReturnTableProps {
   returns: SalesReturnItem[];
@@ -29,8 +28,6 @@ interface SalesReturnTableProps {
   setSearchQuery: (query: string) => void;
   paymentMethodFilter: string;
   setPaymentMethodFilter: (method: string) => void;
-  reasonFilter: string;
-  setReasonFilter: (reason: string) => void;
   dateFilter?: string;
   setDateFilter?: (filter: string) => void;
   customStartDate?: string;
@@ -58,8 +55,6 @@ export const SalesReturnTable: React.FC<SalesReturnTableProps> = ({
   setSearchQuery,
   paymentMethodFilter,
   setPaymentMethodFilter,
-  reasonFilter,
-  setReasonFilter,
   dateFilter = "all",
   setDateFilter,
   customStartDate = "",
@@ -128,23 +123,6 @@ export const SalesReturnTable: React.FC<SalesReturnTableProps> = ({
             <option value="CREDIT">Credit / Due Adjust</option>
             <option value="MFS">MFS (bKash/Nagad)</option>
             <option value="BANK">Bank</option>
-          </select>
-
-          {/* Return Reason Filter */}
-          <select
-            value={reasonFilter}
-            onChange={(e) => {
-              setReasonFilter(e.target.value);
-              setCurrentPageNumber(1);
-            }}
-            className="text-xs bg-gray-50 border border-gray-200 rounded-lg px-2.5 py-1.5 text-gray-700 focus:outline-none focus:border-[#009fe3]"
-          >
-            <option value="all">All Return Causes</option>
-            {RETURN_REASONS.map((r) => (
-              <option key={r.value} value={r.value}>
-                {r.label}
-              </option>
-            ))}
           </select>
 
           {/* Date Range Picker */}
@@ -241,7 +219,7 @@ export const SalesReturnTable: React.FC<SalesReturnTableProps> = ({
                 <th className="py-2.5 px-3">Orig. Invoice</th>
                 <th className="py-2.5 px-3">Customer</th>
                 <th className="py-2.5 px-3">Return Date</th>
-                <th className="py-2.5 px-3">Primary Cause</th>
+                <th className="py-2.5 px-3">Note / Remarks</th>
                 <th className="py-2.5 px-3">Payment Type</th>
                 <th className="py-2.5 px-3 text-right">Refund Amount</th>
                 <th className="py-2.5 px-3 text-center">Status</th>
@@ -252,7 +230,6 @@ export const SalesReturnTable: React.FC<SalesReturnTableProps> = ({
               {returns.map((item, index) => {
                 const sl = (currentPageNumber - 1) * dataLimit + index + 1;
                 const refund = Number(item.refundAmount ?? item.grandTotal ?? item.totalAmount ?? 0);
-                const firstReason = item.returnDetails?.[0]?.returnReason;
                 const pType = String(item.paymentType || "CASH").toUpperCase();
 
                 return (
@@ -293,9 +270,9 @@ export const SalesReturnTable: React.FC<SalesReturnTableProps> = ({
                       {moment(item.returnDate || item.createdAt).format("DD-MM-YYYY")}
                     </td>
 
-                    <td className="py-2.5 px-3">
-                      <span className="text-gray-700">
-                        {getReturnReasonLabel(firstReason)}
+                    <td className="py-2.5 px-3 max-w-[180px] truncate" title={item.note || item.remarks || ""}>
+                      <span className="text-gray-700 text-xs">
+                        {item.note || item.remarks || "-"}
                       </span>
                     </td>
 

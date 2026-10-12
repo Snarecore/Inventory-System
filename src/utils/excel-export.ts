@@ -331,7 +331,6 @@ export function exportSalesReturnToExcel(
       "Customer Name": item.customerName || item.customer_name || "Walk-in Customer",
       "Customer Phone": item.customerPhone || item.customer_phone || "-",
       "Items Count": itemsCount,
-      "Return Reason": item.returnReason || "Product Return",
       "Refund Channel": (item.paymentType || "CASH").toUpperCase(),
       "Return Value (BDT)": Number(returnAmount.toFixed(2)),
       "Refunded Amount (BDT)": Number(refundAmount.toFixed(2)),

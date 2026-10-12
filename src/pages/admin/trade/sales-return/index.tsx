@@ -21,7 +21,6 @@ const SalesReturnPage: React.FC = () => {
   // Search & Filter State
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [paymentMethodFilter, setPaymentMethodFilter] = useState<string>("all");
-  const [reasonFilter, setReasonFilter] = useState<string>("all");
   const [dateFilter, setDateFilter] = useState<string>("all");
   const [customStartDate, setCustomStartDate] = useState<string>("");
   const [customEndDate, setCustomEndDate] = useState<string>("");
@@ -131,15 +130,7 @@ const SalesReturnPage: React.FC = () => {
         }
       }
 
-      // 3. Reason Filter
-      if (reasonFilter !== "all") {
-        const hasReason = item.returnDetails?.some(
-          (d) => String(d.returnReason || "").toLowerCase() === reasonFilter.toLowerCase()
-        );
-        if (!hasReason) return false;
-      }
-
-      // 4. Date Filter
+      // 3. Date Filter
       if (dateFilter !== "all") {
         const dateStr = item.returnDate || item.createdAt;
         if (dateStr) {
@@ -168,7 +159,6 @@ const SalesReturnPage: React.FC = () => {
     rawReturns,
     searchQuery,
     paymentMethodFilter,
-    reasonFilter,
     dateFilter,
     customStartDate,
     customEndDate,
@@ -281,8 +271,6 @@ const SalesReturnPage: React.FC = () => {
         setSearchQuery={setSearchQuery}
         paymentMethodFilter={paymentMethodFilter}
         setPaymentMethodFilter={setPaymentMethodFilter}
-        reasonFilter={reasonFilter}
-        setReasonFilter={setReasonFilter}
         dateFilter={dateFilter}
         setDateFilter={setDateFilter}
         customStartDate={customStartDate}

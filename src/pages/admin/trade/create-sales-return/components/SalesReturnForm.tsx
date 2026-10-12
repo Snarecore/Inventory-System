@@ -36,7 +36,6 @@ import { postData } from "@/services/api-service";
 import { formatMoney } from "@/utils/formatters";
 import { showSuccessToast, showErrorToast } from "@/utils/toast-utils";
 import type { SaleItem, SalesReturnItem } from "@/types";
-import { RETURN_REASONS } from "@/pages/admin/trade/sales-return/constants/returnReasons";
 
 interface ReturnLineFormState {
   productId: string | number;
@@ -44,13 +43,14 @@ interface ReturnLineFormState {
   productName: string;
   unit: string;
   soldQuantity: number;
+  alreadyReturnedQty: number;
+  availableQuantity: number;
   quantity: number;
   sellPrice: number;
   discount: number;
   vat: number;
   deliveryCharge: number;
   total: number;
-  returnReason: string;
   isSelected: boolean;
 }
 
@@ -120,16 +120,37 @@ export const SalesReturnForm: React.FC = () => {
           body: { accessUser },
         });
 
-        let list = res?.data || res?.sales || res?.saleList || res?.salesList || [];
+        const sales = Array.isArray(res?.data)
+          ? res.data
+          : Array.isArray(res?.saleList)
+          ? res.saleList
+          : Array.isArray(res?.sales)
+          ? res.sales
+          : Array.isArray(res?.salesList)
+          ? res.salesList
+          : [];
+
+        const returns = Array.isArray(res?.returns)
+          ? res.returns
+          : Array.isArray(res?.returnList)
+          ? res.returnList
+          : Array.isArray(res?.salesReturnList)
+          ? res.salesReturnList
+          : Array.isArray(res?.salesReturns)
+          ? res.salesReturns
+          : [];
+
+        let list = [...sales, ...returns];
 
         // If /get-sales-and-return is empty or returned no records, fallback to /get-sale-list
-        if (!Array.isArray(list) || list.length === 0) {
+        if (list.length === 0) {
           const salesListEndpoint = apiConfig.sales?.salesListUrl || "get-sale-list";
           const salesRes: any = await postData({
             url: salesListEndpoint,
             body: { accessUser },
           });
-          list = salesRes?.saleList || salesRes?.salesList || salesRes?.data || salesRes?.sales || [];
+          const fallbackSales = salesRes?.saleList || salesRes?.salesList || salesRes?.data || salesRes?.sales || [];
+          if (Array.isArray(fallbackSales)) list = fallbackSales;
         }
 
         return Array.isArray(list) && list.length > 0 ? list : [];
@@ -204,7 +225,13 @@ export const SalesReturnForm: React.FC = () => {
 
   const availableInvoices: SaleItem[] = useMemo(() => {
     if (Array.isArray(apiSalesAndReturnData)) {
-      return apiSalesAndReturnData;
+      return apiSalesAndReturnData.filter((item: any) => {
+        const hasDetails =
+          (Array.isArray(item.salesDetails) && item.salesDetails.length > 0) ||
+          (Array.isArray(item.details) && item.details.length > 0) ||
+          (Array.isArray(item.saleDetails) && item.saleDetails.length > 0);
+        return hasDetails;
+      });
     }
     return [];
   }, [apiSalesAndReturnData]);
@@ -225,6 +252,99 @@ export const SalesReturnForm: React.FC = () => {
       );
     }
   }, [registeredMfsAccounts, selectedRefundMfsId]);
+
+  // Helper to calculate already returned quantities across all sources
+  const getReturnedQuantitiesForSale = (
+    sale: SaleItem,
+    allSalesAndReturns: any[]
+  ): Record<string, number> => {
+    const cleanKey = (val: any) => String(val || "").replace(/[^a-zA-Z0-9]/g, "").toLowerCase();
+
+    const invClean = cleanKey(sale.invoiceNo || sale.salesInvoiceNo);
+    const ordClean = cleanKey(sale.orderNo || (sale as any).order_no);
+    const saleIdClean = cleanKey(sale.id || sale.saleId || (sale as any).sale_id);
+
+    const returnedQtyMap: Record<string, number> = {};
+
+    const processDetailsList = (details: any[]) => {
+      if (!Array.isArray(details)) return;
+      details.forEach((rd: any) => {
+        const pId = String(rd.productId ?? rd.product_id ?? rd.id ?? rd.itemId ?? rd.item_id ?? "").trim();
+        const pCode = String(rd.productCode ?? rd.pcode ?? rd.product_code ?? "").trim();
+        const pName = String(rd.productName ?? rd.name ?? rd.product_name ?? "").trim().toLowerCase();
+        const qty = Number(
+          rd.quantity ??
+          rd.qty ??
+          rd.returnQuantity ??
+          rd.returnQty ??
+          rd.returnedQuantity ??
+          rd.returnedQty ??
+          rd.return_quantity ??
+          rd.returned_qty ??
+          rd.return_qty ??
+          0
+        );
+
+        if (qty > 0) {
+          if (pId) returnedQtyMap[`id_${pId}`] = (returnedQtyMap[`id_${pId}`] || 0) + qty;
+          if (pCode) {
+            returnedQtyMap[`code_${pCode.toLowerCase()}`] = (returnedQtyMap[`code_${pCode.toLowerCase()}`] || 0) + qty;
+          }
+          if (pName) {
+            returnedQtyMap[`name_${pName}`] = (returnedQtyMap[`name_${pName}`] || 0) + qty;
+            const baseName = pName.split(/[\(\[\-]/)[0].trim();
+            if (baseName && baseName !== pName) {
+              returnedQtyMap[`basename_${baseName}`] = (returnedQtyMap[`basename_${baseName}`] || 0) + qty;
+            }
+          }
+        }
+      });
+    };
+
+    if (Array.isArray(allSalesAndReturns)) {
+      allSalesAndReturns.forEach((item: any) => {
+        const isReturnRecord =
+          item.hasReturn ||
+          Boolean(item.returnNo) ||
+          Boolean(item.returnGrandTotal) ||
+          (Array.isArray(item.returnDetails) && item.returnDetails.length > 0) ||
+          (Array.isArray(item.salesReturnDetails) && item.salesReturnDetails.length > 0);
+
+        const itemInv = cleanKey(item.salesInvoiceNo || item.invoiceNo || item.sales_invoice_no || item.sales_invoice || item.invoice_no);
+        const itemSalesInv = cleanKey(item.salesInvoiceNo || item.sales_invoice_no || item.saleInvoiceNo || item.sale_invoice_no);
+        const itemOrd = cleanKey(item.orderNo || item.order_no);
+        const itemSaleId = cleanKey(item.saleId || item.sale_id || item.id);
+
+        const matchesInvoice =
+          (invClean && (itemInv === invClean || (itemInv && itemInv.includes(invClean)) || (invClean && invClean.includes(itemInv)) || itemSalesInv === invClean)) ||
+          (ordClean && (itemOrd === ordClean || (itemOrd && itemOrd.includes(ordClean)) || (ordClean && ordClean.includes(itemOrd)))) ||
+          (saleIdClean && itemSaleId === saleIdClean);
+
+        if (matchesInvoice && isReturnRecord) {
+          processDetailsList(item.returnDetails || item.salesReturnDetails || item.details);
+        }
+      });
+    }
+
+    if (Array.isArray(sale.returnDetails)) {
+      processDetailsList(sale.returnDetails);
+    }
+    if (Array.isArray((sale as any).salesReturnDetails)) {
+      processDetailsList((sale as any).salesReturnDetails);
+    }
+    if (Array.isArray((sale as any).returns)) {
+      (sale as any).returns.forEach((r: any) => {
+        processDetailsList(r.returnDetails || r.salesReturnDetails || r.details);
+      });
+    }
+    if (Array.isArray((sale as any).salesReturns)) {
+      (sale as any).salesReturns.forEach((r: any) => {
+        processDetailsList(r.returnDetails || r.salesReturnDetails || r.details);
+      });
+    }
+
+    return returnedQtyMap;
+  };
 
   // Load sale into form and configure customer payment & refund suggestion
   const loadInvoice = (sale: SaleItem) => {
@@ -248,24 +368,62 @@ export const SalesReturnForm: React.FC = () => {
 
     const details: any[] =
       sale.salesDetails || sale.saleDetails || (sale as any).details || [];
+
+    const returnedMap = getReturnedQuantitiesForSale(
+      sale,
+      Array.isArray(apiSalesAndReturnData) ? apiSalesAndReturnData : []
+    );
+
     if (details.length > 0) {
       const formattedLines: ReturnLineFormState[] = details.map((d: any) => {
-        const q = Number(d.quantity ?? d.qty ?? 1);
+        const soldQty = Number(d.quantity ?? d.qty ?? 1);
         const p = Number(d.sellPrice ?? d.sell_price ?? d.price ?? d.unitPrice ?? 0);
+
+        const pId = String(d.productId ?? d.product_id ?? "").trim();
+        const pCode = String(d.productCode ?? d.pcode ?? "").trim();
+        const pName = String(d.productName ?? d.name ?? "").trim().toLowerCase();
+        const baseName = pName.split(/[\(\[\-]/)[0].trim();
+
+        const directReturned = Number(
+          d.returnedQuantity ??
+          d.returnedQty ??
+          d.returnQuantity ??
+          d.returnQty ??
+          d.alreadyReturned ??
+          d.returned_qty ??
+          d.returned_quantity ??
+          d.return_qty ??
+          0
+        );
+
+        const matchedFromReturns = Math.max(
+          pId ? (returnedMap[`id_${pId}`] || 0) : 0,
+          pCode ? (returnedMap[`code_${pCode.toLowerCase()}`] || 0) : 0,
+          pName ? (returnedMap[`name_${pName}`] || 0) : 0,
+          baseName ? (returnedMap[`basename_${baseName}`] || 0) : 0
+        );
+
+        const alreadyReturned = Math.min(soldQty, Math.max(directReturned, matchedFromReturns));
+        const availableQty = Math.max(0, soldQty - alreadyReturned);
+
+        const initialReturnQty = availableQty > 0 ? (availableQty >= 1 ? 1 : availableQty) : 0;
+        const initialSelected = availableQty > 0;
+
         return {
           productId: d.productId ?? d.product_id ?? "",
           productCode: d.productCode ?? d.pcode ?? "",
           productName: d.productName ?? d.name ?? "Product",
           unit: d.unit || "pcs",
-          soldQuantity: q,
-          quantity: 1, // default 1
+          soldQuantity: soldQty,
+          alreadyReturnedQty: alreadyReturned,
+          availableQuantity: availableQty,
+          quantity: initialReturnQty,
           sellPrice: p,
           discount: 0,
           vat: 0,
           deliveryCharge: 0,
-          total: p * 1,
-          returnReason: "damaged_product",
-          isSelected: true,
+          total: p * initialReturnQty,
+          isSelected: initialSelected,
         };
       });
       setLines(formattedLines);
@@ -280,6 +438,49 @@ export const SalesReturnForm: React.FC = () => {
       loadInvoice(stateSale);
     }
   }, [stateSale]);
+
+  // Keep line available quantities in sync if apiSalesAndReturnData updates in background
+  useEffect(() => {
+    if (selectedSale) {
+      setLines((prevLines) => {
+        if (prevLines.length === 0) return prevLines;
+        const returnedMap = getReturnedQuantitiesForSale(
+          selectedSale,
+          Array.isArray(apiSalesAndReturnData) ? apiSalesAndReturnData : []
+        );
+
+        return prevLines.map((line) => {
+          const pId = String(line.productId).trim();
+          const pCode = String(line.productCode).trim();
+          const pName = String(line.productName).trim().toLowerCase();
+          const baseName = pName.split(/[\(\[\-]/)[0].trim();
+
+          const matchedFromReturns = Math.max(
+            pId ? (returnedMap[`id_${pId}`] || 0) : 0,
+            pCode ? (returnedMap[`code_${pCode.toLowerCase()}`] || 0) : 0,
+            pName ? (returnedMap[`name_${pName}`] || 0) : 0,
+            baseName ? (returnedMap[`basename_${baseName}`] || 0) : 0
+          );
+
+          const alreadyReturned = Math.min(
+            line.soldQuantity,
+            Math.max(line.alreadyReturnedQty, matchedFromReturns)
+          );
+          const availableQty = Math.max(0, line.soldQuantity - alreadyReturned);
+          const clampedQty = Math.min(line.quantity, availableQty);
+
+          return {
+            ...line,
+            alreadyReturnedQty: alreadyReturned,
+            availableQuantity: availableQty,
+            quantity: clampedQty,
+            isSelected: availableQty > 0 && line.isSelected,
+            total: clampedQty * line.sellPrice,
+          };
+        });
+      });
+    }
+  }, [apiSalesAndReturnData, selectedSale?.id, selectedSale?.invoiceNo]);
 
   // Click outside to close dropdown
   useEffect(() => {
@@ -351,23 +552,23 @@ export const SalesReturnForm: React.FC = () => {
       setLines((prev) =>
         prev.map((l) => ({
           ...l,
-          isSelected: true,
-          quantity: l.soldQuantity,
-          total: l.soldQuantity * l.sellPrice,
+          isSelected: l.availableQuantity > 0,
+          quantity: l.availableQuantity,
+          total: l.availableQuantity * l.sellPrice,
         }))
       );
     }
   };
 
-  // Quick Action: Select All items with full quantities
+  // Quick Action: Select All items with full available quantities
   const handleSelectAllFullQty = () => {
     setReturnMode("FULL");
     setLines((prev) =>
       prev.map((l) => ({
         ...l,
-        isSelected: true,
-        quantity: l.soldQuantity,
-        total: l.soldQuantity * l.sellPrice,
+        isSelected: l.availableQuantity > 0,
+        quantity: l.availableQuantity,
+        total: l.availableQuantity * l.sellPrice,
       }))
     );
   };
@@ -385,16 +586,16 @@ export const SalesReturnForm: React.FC = () => {
     );
   };
 
-  // Quick Action: Set single line to 100% full sold quantity
+  // Quick Action: Set single line to 100% full available quantity
   const handleSetLineFullQty = (idx: number) => {
     setLines((prev) =>
       prev.map((l, i) =>
         i === idx
           ? {
               ...l,
-              isSelected: true,
-              quantity: l.soldQuantity,
-              total: l.soldQuantity * l.sellPrice,
+              isSelected: l.availableQuantity > 0,
+              quantity: l.availableQuantity,
+              total: l.availableQuantity * l.sellPrice,
             }
           : l
       )
@@ -404,11 +605,28 @@ export const SalesReturnForm: React.FC = () => {
   // Line item handlers
   const handleToggleLine = (idx: number) => {
     setLines((prev) => {
-      const updated = prev.map((item, i) =>
-        i === idx ? { ...item, isSelected: !item.isSelected } : item
-      );
-      // Check if all lines are full
-      const allFull = updated.every((l) => l.isSelected && l.quantity === l.soldQuantity);
+      const updated = prev.map((item, i) => {
+        if (i !== idx) return item;
+        if (item.availableQuantity <= 0) return item;
+        const nextSelected = !item.isSelected;
+        const nextQty = nextSelected
+          ? item.quantity > 0
+            ? item.quantity
+            : Math.min(1, item.availableQuantity)
+          : 0;
+        return {
+          ...item,
+          isSelected: nextSelected,
+          quantity: nextQty,
+          total: nextQty * item.sellPrice,
+        };
+      });
+      const anyAvail = updated.some((l) => l.availableQuantity > 0);
+      const allFull =
+        anyAvail &&
+        updated
+          .filter((l) => l.availableQuantity > 0)
+          .every((l) => l.isSelected && l.quantity === l.availableQuantity);
       setReturnMode(allFull ? "FULL" : "PARTIAL");
       return updated;
     });
@@ -418,7 +636,7 @@ export const SalesReturnForm: React.FC = () => {
     setLines((prev) => {
       const updated = prev.map((item, i) => {
         if (i !== idx) return item;
-        const bounded = Math.max(0, Math.min(item.soldQuantity, qty));
+        const bounded = Math.max(0, Math.min(item.availableQuantity, qty));
         return {
           ...item,
           quantity: bounded,
@@ -426,16 +644,15 @@ export const SalesReturnForm: React.FC = () => {
           total: bounded * item.sellPrice,
         };
       });
-      const allFull = updated.every((l) => l.isSelected && l.quantity === l.soldQuantity);
+      const anyAvail = updated.some((l) => l.availableQuantity > 0);
+      const allFull =
+        anyAvail &&
+        updated
+          .filter((l) => l.availableQuantity > 0)
+          .every((l) => l.isSelected && l.quantity === l.availableQuantity);
       setReturnMode(allFull ? "FULL" : "PARTIAL");
       return updated;
     });
-  };
-
-  const handleReasonChange = (idx: number, reason: string) => {
-    setLines((prev) =>
-      prev.map((item, i) => (i === idx ? { ...item, returnReason: reason } : item))
-    );
   };
 
   // Original invoice payment numbers
@@ -685,6 +902,16 @@ export const SalesReturnForm: React.FC = () => {
       return;
     }
 
+    const activeLines = lines.filter((l) => l.isSelected && l.quantity > 0);
+    for (const l of activeLines) {
+      if (l.quantity > l.availableQuantity) {
+        showErrorToast(
+          `Cannot return more than available quantity (${l.availableQuantity}) for ${l.productName}`
+        );
+        return;
+      }
+    }
+
     if (totals.refundAmount > 0) {
       if (Math.abs(refundDifference) > 0.01) {
         if (refundDifference > 0) {
@@ -734,9 +961,7 @@ export const SalesReturnForm: React.FC = () => {
         sellPrice: l.sellPrice,
         discount: l.discount || 0,
         vat: l.vat || 0,
-        deliveryCharge: l.deliveryCharge || 0,
         total: Number((l.quantity * l.sellPrice).toFixed(2)),
-        returnReason: l.returnReason,
       }));
 
       // Calculate refund payment type
@@ -768,21 +993,25 @@ export const SalesReturnForm: React.FC = () => {
       const payload = {
         accessUser: buildAccessUser(),
         salesInvoiceNo,
+        invoiceNo: salesInvoiceNo,
         orderNo: selectedSale?.orderNo || null,
         customerId,
         customerName,
         customerPhone,
         customerAddress,
         returnDate,
+        date: returnDate,
         totalAmount: Number(totals.subtotal.toFixed(2)),
         discount: Number(totals.discount.toFixed(2)),
         vat: Number(totals.vat.toFixed(2)),
         deliveryCharge: Number(totals.deliveryCharge.toFixed(2)),
+        delivery_charge: Number(totals.deliveryCharge.toFixed(2)),
         grandTotal: Number(totals.grandTotal.toFixed(2)),
         refundAmount: Number(totals.refundAmount.toFixed(2)),
         paymentType: effectivePaymentType,
         status,
         note: note.trim() || `Return from invoice ${salesInvoiceNo}`,
+        remarks: note.trim() || `Return from invoice ${salesInvoiceNo}`,
         osType: "WEB",
         // Multi-channel refund breakdown
         cashReceived: numRefundCash,
@@ -1039,31 +1268,43 @@ export const SalesReturnForm: React.FC = () => {
                   Loading invoices...
                 </div>
               ) : filteredInvoices.length > 0 ? (
-                filteredInvoices.map((inv) => (
-                  <div
-                    key={inv.invoiceNo || inv.id}
-                    onClick={() => {
-                      loadInvoice(inv);
-                      setIsInvoiceDropdownOpen(false);
-                      setInvoiceSearchQuery(inv.orderNo ? `${inv.invoiceNo} (${inv.orderNo})` : (inv.invoiceNo || ""));
-                    }}
-                    className="px-3 py-2 hover:bg-blue-50/60 cursor-pointer border-b border-gray-50 last:border-b-0 flex items-center justify-between"
-                  >
-                    <div>
-                      <div className="flex items-center gap-1.5">
-                        <span className="font-bold  text-[#009fe3]">
-                          {inv.invoiceNo}
-                        </span>
-                        {inv.orderNo && (
-                          <span className="px-1.5 py-0.2 rounded bg-sky-100 text-sky-800 text-[10px]  font-bold">
-                            {inv.orderNo}
+                filteredInvoices.map((inv) => {
+                  const priorReturnsMap = getReturnedQuantitiesForSale(
+                    inv,
+                    Array.isArray(apiSalesAndReturnData) ? apiSalesAndReturnData : []
+                  );
+                  const totalPrevReturnedPcs = Object.values(priorReturnsMap).reduce((sum, q) => sum + q, 0);
+
+                  return (
+                    <div
+                      key={inv.invoiceNo || inv.id}
+                      onClick={() => {
+                        loadInvoice(inv);
+                        setIsInvoiceDropdownOpen(false);
+                        setInvoiceSearchQuery(inv.orderNo ? `${inv.invoiceNo} (${inv.orderNo})` : (inv.invoiceNo || ""));
+                      }}
+                      className="px-3 py-2 hover:bg-blue-50/60 cursor-pointer border-b border-gray-50 last:border-b-0 flex items-center justify-between"
+                    >
+                      <div>
+                        <div className="flex items-center gap-1.5">
+                          <span className="font-bold  text-[#009fe3]">
+                            {inv.invoiceNo}
                           </span>
-                        )}
+                          {inv.orderNo && (
+                            <span className="px-1.5 py-0.2 rounded bg-sky-100 text-sky-800 text-[10px]  font-bold">
+                              {inv.orderNo}
+                            </span>
+                          )}
+                          {totalPrevReturnedPcs > 0 && (
+                            <span className="px-1.5 py-0.2 rounded bg-amber-100 text-amber-800 text-[10px] font-semibold">
+                              {totalPrevReturnedPcs} pcs returned
+                            </span>
+                          )}
+                        </div>
+                        <div className="text-[11px] text-gray-600 mt-0.5">
+                          {inv.customerName} ({inv.customerPhone || "No Phone"})
+                        </div>
                       </div>
-                      <div className="text-[11px] text-gray-600 mt-0.5">
-                        {inv.customerName} ({inv.customerPhone || "No Phone"})
-                      </div>
-                    </div>
                     <div className="text-right">
                       <div className="font-bold  text-gray-900">
                         ৳ {formatMoney(Number(inv.grandTotal || 0))}
@@ -1073,7 +1314,8 @@ export const SalesReturnForm: React.FC = () => {
                       </div>
                     </div>
                   </div>
-                ))
+                );
+              })
               ) : (
                 <div className="px-3 py-4 text-center text-gray-400 text-xs">
                   {availableInvoices.length === 0
@@ -1342,118 +1584,159 @@ export const SalesReturnForm: React.FC = () => {
           </div>
         ) : (
           <div className="overflow-x-auto w-full">
-            <table className="w-full text-xs text-left border-collapse min-w-[720px]">
+            <table className="w-full text-xs text-left border-collapse min-w-[760px]">
               <thead>
                 <tr className="bg-[#41bef3] text-black border-b border-gray-200 text-[11px] font-semibold shadow-xs">
                   <th className="py-2 px-3 text-center w-10 whitespace-nowrap">Select</th>
                   <th className="py-2 px-3 min-w-[200px]">Product Description</th>
                   <th className="py-2 px-2 text-center w-16 whitespace-nowrap">Unit</th>
-                  <th className="py-2 px-2 text-center w-20 whitespace-nowrap">Sold Qty</th>
+                  <th className="py-2 px-2 text-center w-24 whitespace-nowrap">Sold Qty</th>
+                  <th className="py-2 px-2 text-center w-28 whitespace-nowrap">Available Qty</th>
                   <th className="py-2 px-2 text-center w-36 whitespace-nowrap">Return Qty</th>
                   <th className="py-2 px-2 text-right w-28 whitespace-nowrap">Sell Price (৳)</th>
                   <th className="py-2 px-3 text-right w-28 whitespace-nowrap">Total (৳)</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
-                {lines.map((line, idx) => (
-                  <tr
-                    key={idx}
-                    className={`${
-                      line.isSelected ? "bg-white" : "bg-gray-50/50 opacity-60"
-                    } hover:bg-sky-50/30 transition-colors`}
-                  >
-                    {/* Checkbox */}
-                    <td className="py-2 px-3 text-center whitespace-nowrap">
-                      <input
-                        type="checkbox"
-                        checked={line.isSelected}
-                        onChange={() => handleToggleLine(idx)}
-                        className="rounded text-[#009fe3] focus:ring-0 cursor-pointer"
-                      />
-                    </td>
+                {lines.map((line, idx) => {
+                  const isFullyReturned = line.availableQuantity <= 0;
+                  return (
+                    <tr
+                      key={idx}
+                      className={`${
+                        isFullyReturned
+                          ? "bg-gray-100/70 opacity-60"
+                          : line.isSelected
+                          ? "bg-white"
+                          : "bg-gray-50/50 opacity-70"
+                      } hover:bg-sky-50/30 transition-colors`}
+                    >
+                      {/* Checkbox */}
+                      <td className="py-2 px-3 text-center whitespace-nowrap">
+                        <input
+                          type="checkbox"
+                          disabled={isFullyReturned}
+                          checked={line.isSelected}
+                          onChange={() => handleToggleLine(idx)}
+                          className="rounded text-[#009fe3] focus:ring-0 cursor-pointer disabled:cursor-not-allowed"
+                        />
+                      </td>
 
-                    {/* Product */}
-                    <td className="py-2 px-3">
-                      <div className="flex items-center gap-1.5 font-normal text-black text-xs">
-                        <span className="font-medium">{line.productName}</span>
-                        {line.productCode && (
-                          <span className="text-[10px] text-gray-500 font-mono">
-                            ({line.productCode})
+                      {/* Product */}
+                      <td className="py-2 px-3 whitespace-nowrap">
+                        <div className="inline-flex items-center gap-1.5 font-normal text-black text-xs whitespace-nowrap">
+                          <span className="font-medium">{line.productName}</span>
+                          {line.productCode && (
+                            <span className="text-[10px] text-gray-500 font-mono">
+                              ({line.productCode})
+                            </span>
+                          )}
+                          {isFullyReturned && (
+                            <span className="text-[10px] bg-rose-100 text-rose-700 border border-rose-200 px-1.5 py-0.5 rounded font-medium ml-1">
+                              Fully Returned
+                            </span>
+                          )}
+                        </div>
+                      </td>
+
+                      {/* Unit */}
+                      <td className="py-2 px-2 text-center whitespace-nowrap">
+                        <span className="text-black bg-gray-100 px-1.5 py-0.5 rounded text-[11px] font-normal">
+                          {line.unit || "pcs"}
+                        </span>
+                      </td>
+
+                      {/* Sold Qty (1-Line Compact Layout) */}
+                      <td className="py-2 px-2 text-center whitespace-nowrap">
+                        <div className="inline-flex items-center justify-center gap-1.5 whitespace-nowrap">
+                          <span className="text-black bg-gray-100 px-2 py-0.5 rounded text-[11px] font-medium">
+                            {line.soldQuantity}
+                          </span>
+                          {line.alreadyReturnedQty > 0 && (
+                            <span
+                              title={`${line.alreadyReturnedQty} pcs previously returned`}
+                              className="text-[10px] text-amber-800 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded font-medium"
+                            >
+                              ({line.alreadyReturnedQty} ret)
+                            </span>
+                          )}
+                        </div>
+                      </td>
+
+                      {/* Available Qty (1-Line Compact Layout) */}
+                      <td className="py-2 px-2 text-center whitespace-nowrap">
+                        {isFullyReturned ? (
+                          <span className="text-rose-700 bg-rose-50 border border-rose-200 px-2.5 py-0.5 rounded text-[11px] font-bold">
+                            0
+                          </span>
+                        ) : (
+                          <span className="text-emerald-800 bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded text-[11px] font-bold">
+                            {line.availableQuantity}
                           </span>
                         )}
-                      </div>
-                    </td>
+                      </td>
 
-                    {/* Unit */}
-                    <td className="py-2 px-2 text-center whitespace-nowrap">
-                      <span className="text-black bg-gray-100 px-1.5 py-0.5 rounded text-[11px] font-normal">
-                        {line.unit || "pcs"}
-                      </span>
-                    </td>
+                      {/* Return Qty with Steppers and Quick Full Button */}
+                      <td className="py-2 px-2 text-center whitespace-nowrap">
+                        {isFullyReturned ? (
+                          <span className="text-gray-400 text-xs italic">N/A</span>
+                        ) : (
+                          <div className="inline-flex items-center border border-gray-300 rounded overflow-hidden">
+                            <button
+                              type="button"
+                              onClick={() => handleQuantityChange(idx, line.quantity - 1)}
+                              disabled={line.quantity <= 0}
+                              className="px-2 py-1 bg-gray-100 hover:bg-gray-200 text-black font-normal text-xs disabled:opacity-40 cursor-pointer"
+                            >
+                              -
+                            </button>
+                            <input
+                              type="number"
+                              min={0}
+                              max={line.availableQuantity}
+                              value={line.quantity}
+                              onWheel={(e) => e.currentTarget.blur()}
+                              onChange={(e) =>
+                                handleQuantityChange(idx, Number(e.target.value))
+                              }
+                              className="w-12 py-1 text-center text-xs font-normal text-black focus:outline-none border-x border-gray-300"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => handleQuantityChange(idx, line.quantity + 1)}
+                              disabled={line.quantity >= line.availableQuantity}
+                              className="px-2 py-1 bg-gray-100 hover:bg-gray-200 text-black font-normal text-xs disabled:opacity-40 cursor-pointer"
+                            >
+                              +
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleSetLineFullQty(idx)}
+                              title="Return all available quantity"
+                              className={`px-2 py-1 text-[10px] font-medium border-l border-gray-300 transition-colors cursor-pointer ${
+                                line.quantity === line.availableQuantity && line.isSelected
+                                  ? "bg-emerald-50 text-emerald-800"
+                                  : "bg-gray-50 text-black hover:bg-gray-100"
+                              }`}
+                            >
+                              Full
+                            </button>
+                          </div>
+                        )}
+                      </td>
 
-                    {/* Sold Qty */}
-                    <td className="py-2 px-2 text-center whitespace-nowrap">
-                      <span className="text-black bg-gray-100 px-2 py-0.5 rounded text-[11px] font-normal">
-                        {line.soldQuantity}
-                      </span>
-                    </td>
+                      {/* Sell Price */}
+                      <td className="py-2 px-2 text-right whitespace-nowrap font-normal text-black text-xs">
+                        ৳ {formatMoney(line.sellPrice)}
+                      </td>
 
-                    {/* Return Qty with Steppers and Quick Full Button (Aligned with PurchaseForm style) */}
-                    <td className="py-2 px-2 text-center whitespace-nowrap">
-                      <div className="inline-flex items-center border border-gray-300 rounded overflow-hidden">
-                        <button
-                          type="button"
-                          onClick={() => handleQuantityChange(idx, line.quantity - 1)}
-                          disabled={line.quantity <= 0}
-                          className="px-2 py-1 bg-gray-100 hover:bg-gray-200 text-black font-normal text-xs disabled:opacity-40 cursor-pointer"
-                        >
-                          -
-                        </button>
-                        <input
-                          type="number"
-                          min={0}
-                          max={line.soldQuantity}
-                          value={line.quantity}
-                          onWheel={(e) => e.currentTarget.blur()}
-                          onChange={(e) =>
-                            handleQuantityChange(idx, Number(e.target.value))
-                          }
-                          className="w-12 py-1 text-center text-xs font-normal text-black focus:outline-none border-x border-gray-300"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => handleQuantityChange(idx, line.quantity + 1)}
-                          disabled={line.quantity >= line.soldQuantity}
-                          className="px-2 py-1 bg-gray-100 hover:bg-gray-200 text-black font-normal text-xs disabled:opacity-40 cursor-pointer"
-                        >
-                          +
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleSetLineFullQty(idx)}
-                          title="Return 100% full sold quantity"
-                          className={`px-2 py-1 text-[10px] font-medium border-l border-gray-300 transition-colors cursor-pointer ${
-                            line.quantity === line.soldQuantity && line.isSelected
-                              ? "bg-emerald-50 text-emerald-800"
-                              : "bg-gray-50 text-black hover:bg-gray-100"
-                          }`}
-                        >
-                          Full
-                        </button>
-                      </div>
-                    </td>
-
-                    {/* Sell Price */}
-                    <td className="py-2 px-2 text-right whitespace-nowrap font-normal text-black text-xs">
-                      ৳ {formatMoney(line.sellPrice)}
-                    </td>
-
-                    {/* Total */}
-                    <td className="py-2 px-3 text-right whitespace-nowrap font-normal text-black text-xs">
-                      ৳ {formatMoney(line.total)}
-                    </td>
-                  </tr>
-                ))}
+                      {/* Total */}
+                      <td className="py-2 px-3 text-right whitespace-nowrap font-normal text-black text-xs">
+                        ৳ {formatMoney(line.total)}
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
@@ -1466,7 +1749,7 @@ export const SalesReturnForm: React.FC = () => {
         <div className="lg:col-span-5 bg-white p-3 sm:p-3.5 rounded-xl border border-gray-200 shadow-xs flex flex-col gap-2.5">
           <div className="flex items-center justify-between pb-1.5 border-b border-gray-100">
             <label className="text-[11px] font-normal text-black tracking-wider">
-              Return Note & Remarks (মন্তব্য)
+              Return Note & Remarks
             </label>
             <span className="text-[10px] text-black font-normal">Internal Record</span>
           </div>

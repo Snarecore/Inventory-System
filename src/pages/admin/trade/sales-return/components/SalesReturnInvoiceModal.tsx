@@ -15,7 +15,6 @@ import {
 import { getUserInfo } from "@/utils/auth-storage";
 import { formatMoney } from "@/utils/formatters";
 import moment from "moment";
-import { getReturnReasonLabel } from "../constants/returnReasons";
 
 interface SalesReturnInvoiceModalProps {
   isOpen: boolean;
@@ -205,7 +204,6 @@ export const SalesReturnInvoiceModal: React.FC<SalesReturnInvoiceModalProps> = (
                   <th className="py-2 px-3">Product Description</th>
                   <th className="py-2 px-3 text-center">Unit Price</th>
                   <th className="py-2 px-3 text-center">Return Qty</th>
-                  <th className="py-2 px-3">Return Cause</th>
                   <th className="py-2 px-3 text-right">Total</th>
                 </tr>
               </thead>
@@ -235,9 +233,6 @@ export const SalesReturnInvoiceModal: React.FC<SalesReturnInvoiceModalProps> = (
                       </td>
                       <td className="py-2 px-3 text-center font-bold text-gray-900">
                         {qty} {item.unit || "pcs"}
-                      </td>
-                      <td className="py-2 px-3 text-gray-700">
-                        {getReturnReasonLabel(item.returnReason)}
                       </td>
                       <td className="py-2 px-3 text-right font-bold text-gray-900 font-mono">
                         ৳ {formatMoney(lineTotal)}

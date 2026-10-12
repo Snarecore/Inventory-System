@@ -291,7 +291,6 @@ export interface SalesReturnDetailItem {
   vat?: number;
   deliveryCharge?: number;
   total: number;
-  returnReason?: string;
   packSize?: string | null;
   expiryDate?: string | null;
   [key: string]: any;

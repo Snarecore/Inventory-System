@@ -2,22 +2,7 @@ import React, { useState, useEffect, useMemo, useRef } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { FiChevronDown } from "react-icons/fi";
-import {
-  FaTrash,
-  FaSearch,
-  FaBarcode,
-  FaUserPlus,
-  FaCheck,
-  FaPlus,
-  FaTimes,
-  FaPrint,
-  FaCalculator,
-  FaMoneyBillWave,
-  FaCreditCard,
-  FaMobileAlt,
-  FaWallet,
-  FaWalking,
-} from "react-icons/fa";
+import { FaTrash, FaSearch, FaBarcode, FaUserPlus, FaCheck, FaPlus, FaTimes, FaPrint, FaCalculator, FaMoneyBillWave, FaCreditCard, FaMobileAlt, FaWallet, FaWalking } from "react-icons/fa";
 import Button from "@/components/button/Button";
 import DeleteModal from "@/components/modal/DeleteModal";
 import ConfirmModal from "@/components/modal/ConfirmModal";
@@ -30,6 +15,7 @@ import {
   partyListQueryKey,
   bankInfoListQueryKey,
   mfsUserListQueryKey,
+  salesAndReturnQueryKey,
 } from "@/config/query-key";
 import { buildAccessUser } from "@/utils/access-user";
 import { getBusinessCode, getUserInfo } from "@/utils/auth-storage";
@@ -54,6 +40,8 @@ interface FormLineItem {
   vat: string;
   total: number;
   stock?: number | string;
+  returnedQty?: number;
+  originalQty?: number;
 }
 
 export const WALK_IN_CUSTOMER: PartyItem = {
@@ -272,32 +260,49 @@ export const CreateSaleForm: React.FC = () => {
     return [];
   }, [mfsData]);
 
-  // 5. Fetch Sales List if in edit mode without state
-  const { data: salesListData } = useQuery({
-    queryKey: [salesListQueryKey],
+  // 5. Fetch fresh sale data directly from backend API for edit mode
+  const { data: apiSalesData } = useQuery({
+    queryKey: [salesListQueryKey, "edit-mode-sale", routeId || (stateEditData as any)?.invoiceNo || (stateEditData as any)?.id],
     queryFn: async () => {
       const accessUser = buildAccessUser();
-      const res: any = await postData({
-        url: apiConfig.sales?.salesListUrl || "get-sale-list",
+      const endpoint =
+        apiConfig.salesReturn?.getSalesAndReturnUrl ||
+        apiConfig.sales?.salesAndReturnUrl ||
+        "get-sales-and-return";
+
+      let res: any = await postData({
+        url: endpoint,
         body: { accessUser },
       });
-      return res?.saleList || res?.salesList || res?.data || res?.sales || [];
+
+      let list = res?.data || res?.sales || res?.saleList || res?.salesList || [];
+
+      if (!Array.isArray(list) || list.length === 0) {
+        const salesListEndpoint = apiConfig.sales?.salesListUrl || "get-sale-list";
+        const salesRes: any = await postData({
+          url: salesListEndpoint,
+          body: { accessUser },
+        });
+        list = salesRes?.saleList || salesRes?.salesList || salesRes?.data || salesRes?.sales || [];
+      }
+
+      return Array.isArray(list) ? list : [];
     },
-    enabled: isEditMode && !stateEditData,
-    staleTime: 60 * 1000,
+    enabled: isEditMode,
   });
 
   const effectiveEditData: SaleItem | undefined = useMemo(() => {
-    if (stateEditData) return stateEditData;
-    if (isEditMode && routeId && Array.isArray(salesListData)) {
-      return salesListData.find(
+    const targetKey = String(routeId || stateEditData?.id || stateEditData?.saleId || stateEditData?.invoiceNo || "").trim();
+    if (Array.isArray(apiSalesData) && apiSalesData.length > 0 && targetKey) {
+      const matched = apiSalesData.find(
         (s: any) =>
-          String(s.id ?? s.saleId ?? "") === String(routeId) ||
-          String(s.invoiceNo ?? s.invoice_no ?? "") === String(routeId)
+          String(s.id ?? s.saleId ?? "").trim() === targetKey ||
+          String(s.invoiceNo ?? s.invoice_no ?? s.salesInvoiceNo ?? "").trim() === targetKey
       );
+      if (matched) return matched;
     }
-    return undefined;
-  }, [stateEditData, isEditMode, routeId, salesListData]);
+    return stateEditData;
+  }, [apiSalesData, routeId, stateEditData]);
 
   // Auto-generate invoice number if create mode
   useEffect(() => {
@@ -324,7 +329,7 @@ export const CreateSaleForm: React.FC = () => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Hydrate edit data if in edit mode
+  // Hydrate edit data directly from backend response
   useEffect(() => {
     if (isEditMode && effectiveEditData) {
       const data = effectiveEditData;
@@ -345,7 +350,7 @@ export const CreateSaleForm: React.FC = () => {
       const del = data.delivery_charge ?? data.deliveryCharge ?? "";
       setDeliveryCharge(del !== "" && del !== null && Number(del) > 0 ? String(del) : "");
 
-      // Split payments
+      // Split payments directly from backend data
       const cash = data.cashReceived ?? (data.paymentType === "CASH" && !data.bankId && !data.mfsId ? data.paidAmount : "");
       const bank = data.cardReceived ?? (data.bankId ? data.paidAmount : "");
       const mfs = data.mfsReceived ?? (data.mfsId ? data.paidAmount : "");
@@ -382,16 +387,97 @@ export const CreateSaleForm: React.FC = () => {
         }
       }
 
-      // Details
+      // Details - load directly from whatever backend API returns
       const rawDetails =
         data.salesDetails || data.details || data.sales_details || data.items || [];
       if (Array.isArray(rawDetails) && rawDetails.length > 0) {
+        // Extract returned quantities map for this sale (if any return records exist)
+        const invNo = String(data.invoiceNo || data.invoice_no || (data as any).salesInvoiceNo || "").trim();
+        const ordNo = String(data.orderNo || (data as any).order_no || "").trim();
+        const sId = String(data.id || (data as any).saleId || (data as any).sale_id || "").trim();
+
+        const returnedQtyMap: Record<string, number> = {};
+        const processDetails = (dList: any[]) => {
+          if (!Array.isArray(dList)) return;
+          dList.forEach((rd: any) => {
+            const pId = String(rd.productId ?? rd.product_id ?? "").trim();
+            const pCode = String(rd.productCode ?? rd.pcode ?? "").trim();
+            const pName = String(rd.productName ?? rd.name ?? "").trim().toLowerCase();
+            const qty = Number(rd.quantity ?? rd.qty ?? rd.returnQuantity ?? 0);
+            if (qty > 0) {
+              if (pId) returnedQtyMap[`id_${pId}`] = (returnedQtyMap[`id_${pId}`] || 0) + qty;
+              if (pCode) returnedQtyMap[`code_${pCode}`] = (returnedQtyMap[`code_${pCode}`] || 0) + qty;
+              if (pName) returnedQtyMap[`name_${pName}`] = (returnedQtyMap[`name_${pName}`] || 0) + qty;
+            }
+          });
+        };
+
+        if (Array.isArray(apiSalesData)) {
+          apiSalesData.forEach((item: any) => {
+            const isReturnRecord =
+              item.hasReturn ||
+              Boolean(item.returnNo) ||
+              Boolean(item.returnGrandTotal) ||
+              (Array.isArray(item.returnDetails) && item.returnDetails.length > 0);
+
+            const matchesInvoice =
+              (invNo && (String(item.salesInvoiceNo || "").trim() === invNo || String(item.invoiceNo || "").trim() === invNo)) ||
+              (ordNo && String(item.orderNo || "").trim() === ordNo) ||
+              (sId && String(item.saleId || "").trim() === sId);
+
+            if (matchesInvoice && isReturnRecord) {
+              processDetails(item.returnDetails || item.details);
+            }
+          });
+        }
+
+        if (Array.isArray(data.returnDetails)) processDetails(data.returnDetails);
+        if (Array.isArray((data as any).returns)) {
+          (data as any).returns.forEach((r: any) => processDetails(r.returnDetails || r.details));
+        }
+        if (Array.isArray((data as any).salesReturns)) {
+          (data as any).salesReturns.forEach((r: any) => processDetails(r.returnDetails || r.details));
+        }
+
         const loaded: FormLineItem[] = rawDetails.map((item: any) => {
           const p = Number(item.sellPrice ?? item.price ?? item.rate ?? 0);
           const q = Number(item.quantity ?? item.qty ?? 1);
           const d = Number(item.discount ?? 0);
           const v = Number(item.vat ?? 0);
           const tot = Number(item.total ?? p * q + v - d);
+
+          const pId = String(item.productId || item.product_id || "").trim();
+          const pCode = String(item.productCode || item.product_code || item.pcode || "").trim();
+          const pName = String(item.productName || item.product_name || "").trim().toLowerCase();
+
+          const directReturned = Number(
+            item.returnedQuantity ??
+            item.returnedQty ??
+            item.returnQuantity ??
+            item.returnQty ??
+            item.alreadyReturned ??
+            item.returned_qty ??
+            item.returned_quantity ??
+            0
+          );
+
+          const matchedFromReturns =
+            (pId && returnedQtyMap[`id_${pId}`]) ||
+            (pCode && returnedQtyMap[`code_${pCode}`]) ||
+            (pName && returnedQtyMap[`name_${pName}`]) ||
+            0;
+
+          const retQty = Math.max(directReturned, matchedFromReturns);
+
+          const matchedProd = allProducts.find(
+            (p) =>
+              (pId && String(p.id ?? p.productId ?? "").trim() === pId) ||
+              (pCode && String(p.pcode ?? p.productCode ?? "").trim().toLowerCase() === pCode.toLowerCase())
+          );
+
+          const liveStock = matchedProd
+            ? Number(matchedProd.quantity ?? matchedProd.stock ?? (matchedProd as any).qty ?? 0)
+            : Number(item.stock ?? 0);
 
           return {
             id: item.id || item.saleDetailId,
@@ -406,35 +492,42 @@ export const CreateSaleForm: React.FC = () => {
             discount: d ? String(d) : "",
             vat: v ? String(v) : "",
             total: tot,
-            stock: item.stock ?? 50,
+            stock: liveStock,
+            returnedQty: retQty > 0 ? retQty : undefined,
+            originalQty: q,
           };
         });
         setLineItems(loaded);
       }
     }
-  }, [isEditMode, effectiveEditData, customerList]);
+  }, [isEditMode, effectiveEditData, customerList, allProducts, apiSalesData]);
 
   // Sync live stock from products
   useEffect(() => {
     if (allProducts.length > 0 && lineItems.length > 0) {
-      setLineItems((prev) =>
-        prev.map((item) => {
+      setLineItems((prev) => {
+        let hasChanges = false;
+        const nextLines = prev.map((item) => {
+          const pId = String(item.productId || "").trim();
+          const pCode = String(item.productCode || "").trim();
           const matched = allProducts.find(
             (p) =>
-              (item.productId && String(p.id || p.productId) === String(item.productId)) ||
-              (item.productCode && (p.pcode === item.productCode || p.productCode === item.productCode))
+              (pId && String(p.id ?? p.productId ?? "").trim() === pId) ||
+              (pCode && String(p.pcode ?? p.productCode ?? "").trim().toLowerCase() === pCode.toLowerCase())
           );
           if (matched) {
-            const liveStock = Number(matched.quantity ?? matched.stock ?? 0);
+            const liveStock = Number(matched.quantity ?? matched.stock ?? (matched as any).qty ?? 0);
             if (item.stock !== liveStock) {
+              hasChanges = true;
               return { ...item, stock: liveStock };
             }
           }
           return item;
-        })
-      );
+        });
+        return hasChanges ? nextLines : prev;
+      });
     }
-  }, [allProducts]);
+  }, [allProducts, lineItems.length]);
 
   // Filtered Products for Search Dropdown
   const filteredProducts = useMemo(() => {
@@ -983,7 +1076,7 @@ export const CreateSaleForm: React.FC = () => {
         mutation: postMutation,
         url: targetUrl,
         body: payload,
-        invalidateQueryKey: [salesListQueryKey, productListQueryKey],
+        invalidateQueryKey: [salesListQueryKey, productListQueryKey, salesAndReturnQueryKey],
         showSuccessMessage: true,
         showErrorMessage: true,
       });
@@ -1105,6 +1198,7 @@ export const CreateSaleForm: React.FC = () => {
           </div>
         </div>
       </div>
+
 
       {/* Grid: Customer & Meta Details */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 bg-white p-2.5 sm:p-3 rounded-xl border border-gray-200 shadow-xs">
@@ -1593,9 +1687,8 @@ export const CreateSaleForm: React.FC = () => {
                         </button>
                         <input
                           type="number"
-                          min="1"
                           value={item.quantity}
-                          placeholder="1"
+                          placeholder="0"
                           onWheel={(e) => e.currentTarget.blur()}
                           onChange={(e) => handleUpdateLineItem(idx, "quantity", e.target.value)}
                           className="w-12 py-1 text-xs text-center font-bold text-black focus:outline-none border-x border-gray-300"
