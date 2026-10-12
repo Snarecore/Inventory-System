@@ -356,6 +356,7 @@ export const SalesReturnForm: React.FC = () => {
     if (!sale) return false;
     if (sale.hasReturn) return true;
     if (sale.returnNo) return true;
+    if (String(sale.returnType || "").toUpperCase() === "RETURN") return true;
     if (Array.isArray(sale.returnDetails) && sale.returnDetails.length > 0) return true;
     if (Array.isArray(sale.salesReturnDetails) && sale.salesReturnDetails.length > 0) return true;
     if (Array.isArray(sale.returns) && sale.returns.length > 0) return true;

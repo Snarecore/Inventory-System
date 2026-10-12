@@ -446,6 +446,7 @@ export const SaleTable: React.FC<SaleTableProps> = ({
                     (sale as any).hasReturn ||
                     (sale as any).returnNo ||
                     (sale as any).returnGrandTotal ||
+                    String((sale as any).returnType || "").toUpperCase() === "RETURN" ||
                     (Array.isArray((sale as any).returnDetails) && (sale as any).returnDetails.length > 0) ||
                     (Array.isArray((sale as any).salesReturnDetails) && (sale as any).salesReturnDetails.length > 0)
                   ) ||

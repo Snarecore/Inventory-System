@@ -118,14 +118,22 @@ const SalesReturnPage: React.FC = () => {
         if (Array.isArray(list) && list.length > 0) {
           const returnsList: SalesReturnItem[] = [];
           list.forEach((item: any) => {
-            if (item.hasReturn || item.returnNo || item.returnGrandTotal || (item.returnDetails && item.returnDetails.length > 0)) {
+            const isReturn =
+              Boolean(item.hasReturn) ||
+              Boolean(item.returnNo) ||
+              Boolean(item.returnGrandTotal) ||
+              String(item.returnType || "").toUpperCase() === "RETURN" ||
+              (Array.isArray(item.returnDetails) && item.returnDetails.length > 0) ||
+              (Array.isArray(item.salesReturnDetails) && item.salesReturnDetails.length > 0);
+
+            if (isReturn) {
               returnsList.push({
                 id: item.id || item.returnId,
-                returnNo: item.returnNo || `RET-${item.id}`,
+                returnNo: item.returnNo || (item.orderNo ? `RET-${item.orderNo}` : `RET-${item.id}`),
                 orderNo: item.orderNo || item.order_no || "",
                 salesInvoiceNo: item.salesInvoiceNo || item.invoiceNo || "-",
                 invoiceNo: item.salesInvoiceNo || item.invoiceNo || "-",
-                returnDate: item.returnDate || item.saleDate || item.date || moment().format("YYYY-MM-DD"),
+                returnDate: item.returnDate || item.salesDate || item.saleDate || item.date || moment().format("YYYY-MM-DD"),
                 customerId: item.customerId,
                 customerName: item.customerName || "Customer",
                 customerPhone: item.customerPhone,
@@ -139,8 +147,8 @@ const SalesReturnPage: React.FC = () => {
                 paymentType: item.paymentType || "CASH",
                 status: item.status || "Completed",
                 note: item.note || item.remarks || "",
-                returnDetails: item.returnDetails || [],
-                itemsCount: item.returnDetails?.length || 1,
+                returnDetails: item.returnDetails || item.salesReturnDetails || item.details || [],
+                itemsCount: (item.returnDetails || item.salesReturnDetails || item.details)?.length || 1,
               });
             }
           });

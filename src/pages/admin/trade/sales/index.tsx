@@ -123,6 +123,7 @@ const Sales: React.FC = () => {
           Boolean(item.hasReturn) ||
           Boolean(item.returnNo) ||
           Boolean(item.returnGrandTotal) ||
+          String(item.returnType || "").toUpperCase() === "RETURN" ||
           (Array.isArray(item.returnDetails) && item.returnDetails.length > 0) ||
           (Array.isArray(item.salesReturnDetails) && item.salesReturnDetails.length > 0);
 
