@@ -17,6 +17,7 @@ import {
   FaLock,
   FaExclamationTriangle,
 } from "react-icons/fa";
+import { FiArrowRight } from "react-icons/fi";
 import PageHeader from "@/components/page-header/PageHeader";
 import Button from "@/components/button/Button";
 import ConfirmModal from "@/components/modal/ConfirmModal";
@@ -239,22 +240,22 @@ export const SalesReturnForm: React.FC = () => {
     return [];
   }, [apiSalesAndReturnData]);
 
-  // Keep Bank and MFS select defaults populated so user can disburse right away
+  // Pre-select fallback bank or MFS only when a refund amount is allocated to that channel
   useEffect(() => {
-    if (registeredBankAccounts.length > 0 && !selectedRefundBankId) {
+    if (Number(refundBankAmount) > 0 && registeredBankAccounts.length > 0 && !selectedRefundBankId) {
       setSelectedRefundBankId(
         String(registeredBankAccounts[0].id || registeredBankAccounts[0].bankId || registeredBankAccounts[0]._id || "")
       );
     }
-  }, [registeredBankAccounts, selectedRefundBankId]);
+  }, [registeredBankAccounts, selectedRefundBankId, refundBankAmount]);
 
   useEffect(() => {
-    if (registeredMfsAccounts.length > 0 && !selectedRefundMfsId) {
+    if (Number(refundMfsAmount) > 0 && registeredMfsAccounts.length > 0 && !selectedRefundMfsId) {
       setSelectedRefundMfsId(
         String(registeredMfsAccounts[0].id || registeredMfsAccounts[0].mfsId || registeredMfsAccounts[0]._id || "")
       );
     }
-  }, [registeredMfsAccounts, selectedRefundMfsId]);
+  }, [registeredMfsAccounts, selectedRefundMfsId, refundMfsAmount]);
 
   // Helper to calculate already returned quantities across all sources
   const getReturnedQuantitiesForSale = (
@@ -390,12 +391,19 @@ export const SalesReturnForm: React.FC = () => {
     // Keep note empty so only user-specified reasons/remarks appear
     setNote("");
 
-    // Pre-select bank or MFS if originally used
-    if (sale.bankId) {
-      setSelectedRefundBankId(String(sale.bankId));
+    // Pre-select bank or MFS if originally used in the sale, else reset
+    const saleBankId = sale.bankId || (sale as any).bank_id;
+    if (saleBankId) {
+      setSelectedRefundBankId(String(saleBankId));
+    } else {
+      setSelectedRefundBankId("");
     }
-    if (sale.mfsId) {
-      setSelectedRefundMfsId(String(sale.mfsId));
+
+    const saleMfsId = sale.mfsId || (sale as any).mfs_id;
+    if (saleMfsId) {
+      setSelectedRefundMfsId(String(saleMfsId));
+    } else {
+      setSelectedRefundMfsId("");
     }
 
     const details: any[] =
@@ -635,6 +643,7 @@ export const SalesReturnForm: React.FC = () => {
 
   // Quick Action: Set single line to 100% full available quantity
   const handleSetLineFullQty = (idx: number) => {
+    if (returnMode === "FULL") return;
     setLines((prev) =>
       prev.map((l, i) =>
         i === idx
@@ -651,6 +660,7 @@ export const SalesReturnForm: React.FC = () => {
 
   // Line item handlers
   const handleToggleLine = (idx: number) => {
+    if (returnMode === "FULL") return;
     setLines((prev) => {
       const updated = prev.map((item, i) => {
         if (i !== idx) return item;
@@ -680,6 +690,7 @@ export const SalesReturnForm: React.FC = () => {
   };
 
   const handleQuantityChange = (idx: number, qty: number) => {
+    if (returnMode === "FULL") return;
     setLines((prev) => {
       const updated = prev.map((item, i) => {
         if (i !== idx) return item;
@@ -703,33 +714,45 @@ export const SalesReturnForm: React.FC = () => {
   };
 
   // Original invoice payment numbers
-  const origPaymentMode = String(selectedSale?.paymentType || "CASH").toUpperCase();
-  const origGrandTotal = Number(selectedSale?.grandTotal ?? selectedSale?.totalAmount ?? 0);
-  const origCashPaid = Number(
-    selectedSale?.cashReceived ??
-      (origPaymentMode === "CASH" && !selectedSale?.bankId && !selectedSale?.mfsId
-        ? selectedSale?.paidAmount ?? origGrandTotal
-        : 0)
-  );
-  const origBankPaid = Number(
-    selectedSale?.cardReceived ??
-      (selectedSale?.bankId ? selectedSale?.paidAmount ?? origGrandTotal : 0)
-  );
-  const origMfsPaid = Number(
-    selectedSale?.mfsReceived ??
-      (selectedSale?.mfsId ? selectedSale?.paidAmount ?? origGrandTotal : 0)
+  const origPaymentMode = String(selectedSale?.paymentType || (selectedSale as any)?.payment_type || "CASH").toUpperCase();
+  const origGrandTotal = Number(selectedSale?.grandTotal ?? (selectedSale as any)?.grand_total ?? selectedSale?.totalAmount ?? (selectedSale as any)?.total_amount ?? 0);
+  const origPaidAmount = Number(
+    selectedSale?.paidAmount ?? (selectedSale as any)?.paid_amount ?? 0
   );
   const origDueAmount = Number(
-    selectedSale?.dueAmount ??
+    selectedSale?.dueAmount ?? (selectedSale as any)?.due_amount ??
       (origPaymentMode === "CREDIT"
         ? origGrandTotal
-        : Math.max(0, origGrandTotal - (origCashPaid + origBankPaid + origMfsPaid)))
-  );
-  const origPaidAmount = Number(
-    selectedSale?.paidAmount ?? origCashPaid + origBankPaid + origMfsPaid
+        : Math.max(0, origGrandTotal - origPaidAmount))
   );
 
+  // Split amounts recorded on the sale
+  const rawCash = Number(selectedSale?.cashReceived ?? (selectedSale as any)?.cash_amount ?? (selectedSale as any)?.cashAmount ?? 0);
+  const rawBank = Number(selectedSale?.cardReceived ?? (selectedSale as any)?.bankAmount ?? (selectedSale as any)?.bank_amount ?? 0);
+  const rawMfs = Number(selectedSale?.mfsReceived ?? (selectedSale as any)?.mfsAmount ?? (selectedSale as any)?.mfs_amount ?? 0);
+
+  const hasSplitDetails = rawCash > 0 || rawBank > 0 || rawMfs > 0;
+
+  let origCashPaid = 0;
+  let origBankPaid = 0;
+  let origMfsPaid = 0;
+
+  if (hasSplitDetails) {
+    origCashPaid = rawCash;
+    origBankPaid = rawBank;
+    origMfsPaid = rawMfs;
+  } else if (origPaidAmount > 0) {
+    if (origPaymentMode === "BANK" || selectedSale?.bankId || (selectedSale as any)?.bank_id) {
+      origBankPaid = origPaidAmount;
+    } else if (origPaymentMode === "MFS" || selectedSale?.mfsId || (selectedSale as any)?.mfs_id) {
+      origMfsPaid = origPaidAmount;
+    } else {
+      origCashPaid = origPaidAmount;
+    }
+  }
+
   // Auto-distribute refund when invoice is selected or return totals change
+  // Populates exact payments from purchase time; channels with 0 remain empty
   useEffect(() => {
     if (!selectedSale) {
       setRefundCashAmount("");
@@ -748,39 +771,57 @@ export const SalesReturnForm: React.FC = () => {
       return;
     }
 
-    // Smart default distribution based on original payment method
-    if (origPaymentMode === "CREDIT" || (origDueAmount > 0 && origPaidAmount <= 0)) {
-      setRefundDueAmount(String(neededRefund));
-      setRefundCashAmount("");
-      setRefundBankAmount("");
-      setRefundMfsAmount("");
-    } else if (origBankPaid > 0 && origCashPaid <= 0 && origMfsPaid <= 0) {
-      setRefundBankAmount(String(neededRefund));
-      setRefundCashAmount("");
-      setRefundMfsAmount("");
-      setRefundDueAmount("");
-    } else if (origMfsPaid > 0 && origCashPaid <= 0 && origBankPaid <= 0) {
-      setRefundMfsAmount(String(neededRefund));
-      setRefundCashAmount("");
-      setRefundBankAmount("");
-      setRefundDueAmount("");
-    } else {
-      // Default to cash or cash + due
-      if (origDueAmount > 0 && neededRefund > origPaidAmount) {
-        const cashPart = Math.min(origPaidAmount, neededRefund);
-        const duePart = neededRefund - cashPart;
-        setRefundCashAmount(cashPart > 0 ? String(cashPart) : "");
-        setRefundDueAmount(duePart > 0 ? String(duePart) : "");
-        setRefundBankAmount("");
-        setRefundMfsAmount("");
-      } else {
-        setRefundCashAmount(String(neededRefund));
-        setRefundBankAmount("");
-        setRefundMfsAmount("");
-        setRefundDueAmount("");
+    // Full Return (or return amount matches full sale): exact match to sale payment breakdown
+    if (returnMode === "FULL" || Math.abs(neededRefund - origGrandTotal) < 0.01) {
+      setRefundCashAmount(origCashPaid > 0 ? String(origCashPaid) : "");
+      setRefundBankAmount(origBankPaid > 0 ? String(origBankPaid) : "");
+      setRefundMfsAmount(origMfsPaid > 0 ? String(origMfsPaid) : "");
+      setRefundDueAmount(origDueAmount > 0 ? String(origDueAmount) : "");
+      return;
+    }
+
+    // Partial Return: Priority sequence (Cash first -> Bank/Card if needed -> MFS if needed -> Due Adjust)
+    let remaining = neededRefund;
+
+    // 1. First deduct from Cash up to original cash paid
+    const allocCash = origCashPaid > 0 ? Math.min(remaining, origCashPaid) : 0;
+    remaining = Number((remaining - allocCash).toFixed(2));
+
+    // 2. If return amount not yet filled, deduct from Bank/Card up to original bank paid
+    const allocBank = remaining > 0 && origBankPaid > 0 ? Math.min(remaining, origBankPaid) : 0;
+    remaining = Number((remaining - allocBank).toFixed(2));
+
+    // 3. If still not filled, deduct from MFS up to original MFS paid
+    const allocMfs = remaining > 0 && origMfsPaid > 0 ? Math.min(remaining, origMfsPaid) : 0;
+    remaining = Number((remaining - allocMfs).toFixed(2));
+
+    // 4. Any remaining balance goes to Due Adjust (or fallback to cash if no original channel specified)
+    let allocDue = 0;
+    if (remaining > 0) {
+      if (origDueAmount > 0) {
+        allocDue = Math.min(remaining, origDueAmount);
+        remaining = Number((remaining - allocDue).toFixed(2));
       }
     }
-  }, [selectedSale?.id, selectedSale?.invoiceNo, totals.refundAmount]);
+
+    // Edge case safety: if all original channels were 0, put entire amount into cash
+    const finalCash = allocCash + (allocCash === 0 && allocBank === 0 && allocMfs === 0 && allocDue === 0 ? remaining : 0);
+
+    setRefundCashAmount(finalCash > 0 ? String(finalCash) : "");
+    setRefundBankAmount(allocBank > 0 ? String(allocBank) : "");
+    setRefundMfsAmount(allocMfs > 0 ? String(allocMfs) : "");
+    setRefundDueAmount(allocDue > 0 ? String(allocDue) : "");
+  }, [
+    selectedSale?.id,
+    selectedSale?.invoiceNo,
+    totals.refundAmount,
+    returnMode,
+    origCashPaid,
+    origBankPaid,
+    origMfsPaid,
+    origDueAmount,
+    origGrandTotal,
+  ]);
 
   // Numeric refund channel values
   const numRefundCash = Number(refundCashAmount) || 0;
@@ -1330,10 +1371,20 @@ export const SalesReturnForm: React.FC = () => {
           </div>
 
           {isInvoiceDropdownOpen && (
-            <div className="absolute left-0 right-0 mt-1 max-h-64 overflow-y-auto bg-white border border-gray-200 rounded-lg shadow-xl py-1 z-30 text-xs">
+            <div className="absolute left-0 w-[calc(100vw-32px)] sm:w-[480px] md:w-[560px] max-w-[600px] mt-1 max-h-72 overflow-y-auto bg-white border border-gray-200 rounded-xl shadow-2xl z-50 text-xs divide-y divide-gray-100 animate-in fade-in zoom-in-95 duration-100">
+              {/* Header */}
+              <div className="sticky top-0 bg-gray-50/95 backdrop-blur-xs px-3 py-1.5 border-b border-gray-100 flex items-center justify-between text-[11px] text-gray-500 font-medium z-10">
+                <div className="flex items-center gap-1.5">
+                  <FaFileInvoice className="text-[#009fe3]" size={11} />
+                  <span>Available Sales Orders ({filteredInvoices.length})</span>
+                </div>
+                <span className="text-[10px] text-gray-400">Select order to return</span>
+              </div>
+
               {isLoadingInvoices ? (
-                <div className="px-3 py-4 text-center text-gray-500 text-xs">
-                  Loading invoices...
+                <div className="px-4 py-5 text-center text-gray-500 text-xs flex items-center justify-center gap-2">
+                  <div className="w-3.5 h-3.5 border-2 border-sky-500 border-t-transparent rounded-full animate-spin"></div>
+                  <span>Loading sales orders...</span>
                 </div>
               ) : filteredInvoices.length > 0 ? (
                 filteredInvoices.map((inv) => (
@@ -1344,41 +1395,69 @@ export const SalesReturnForm: React.FC = () => {
                       setIsInvoiceDropdownOpen(false);
                       setInvoiceSearchQuery(inv.orderNo ? `${inv.invoiceNo} (${inv.orderNo})` : (inv.invoiceNo || ""));
                     }}
-                    className="px-3 py-2.5 hover:bg-sky-50/70 cursor-pointer border-b border-gray-100 last:border-b-0 flex items-center justify-between transition-colors"
+                    className="py-1.5 px-3 hover:bg-sky-50/70 cursor-pointer transition-all group flex items-center justify-between gap-2.5"
                   >
-                    <div>
-                      <div className="flex items-center gap-1.5">
-                        <span className="font-bold text-[#009fe3] ">
-                          {inv.invoiceNo}
-                        </span>
+                    {/* Left Details */}
+                    <div className="flex-1 min-w-0">
+                      {/* Badges / IDs */}
+                      <div className="flex items-center gap-1.5 flex-wrap mb-0.5">
                         {inv.orderNo && (
-                          <span className="px-1.5 py-0.2 rounded bg-sky-100 text-sky-800 text-[10px] font-bold ">
+                          <span className="inline-flex items-center px-1.5 py-0.2 rounded bg-sky-100 text-sky-800 text-[10px] font-bold border border-sky-200 leading-tight">
                             Order #{inv.orderNo}
                           </span>
                         )}
-                        <span className="px-1.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold border border-emerald-200">
+                        <span className="font-mono text-xs font-semibold text-gray-800 truncate" title={inv.invoiceNo}>
+                          {inv.invoiceNo}
+                        </span>
+                        <span className="inline-flex items-center gap-1 px-1.5 py-0.2 rounded-full bg-emerald-50 text-emerald-700 text-[10px] font-semibold border border-emerald-200 shrink-0 leading-tight">
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
                           Eligible for Return
                         </span>
                       </div>
-                      <div className="text-[11px] text-gray-600 mt-0.5">
-                        {inv.customerName} ({inv.customerPhone || "No Phone"})
+
+                      {/* Customer & Date Info */}
+                      <div className="flex items-center gap-1.5 text-[11px] text-gray-600 flex-wrap leading-tight">
+                        <span className="font-semibold text-gray-800">
+                          {inv.customerName || "Customer"}
+                        </span>
+                        {inv.customerPhone && (
+                          <span className="text-gray-400">
+                            • {inv.customerPhone}
+                          </span>
+                        )}
+                        {(inv.salesDate || inv.date) && (
+                          <span className="text-gray-400">
+                            • {moment(inv.salesDate || inv.date).format("DD MMM, YYYY")}
+                          </span>
+                        )}
                       </div>
                     </div>
-                    <div className="text-right">
-                      <div className="font-bold text-gray-900">
+
+                    {/* Right Price & Action */}
+                    <div className="text-right shrink-0 flex flex-col items-end justify-center">
+                      <div className="text-xs font-bold text-gray-900 leading-tight">
                         ৳ {formatMoney(Number(inv.grandTotal || 0))}
                       </div>
-                      <div className="text-[10px] text-gray-400">
-                        {inv.salesDate || inv.date}
-                      </div>
+                      <span className="text-[10px] font-semibold text-[#009fe3] group-hover:text-sky-700 inline-flex items-center gap-1 mt-0.5 transition-colors">
+                        <span>Select</span>
+                        <FiArrowRight size={10} className="transition-transform group-hover:translate-x-0.5" />
+                      </span>
                     </div>
                   </div>
                 ))
               ) : (
-                <div className="px-3 py-4 text-center text-gray-400 text-xs">
-                  {availableInvoices.length === 0
-                    ? "No invoices found in system"
-                    : "No matching invoice or order found"}
+                <div className="p-6 text-center text-gray-500">
+                  <div className="w-9 h-9 mx-auto mb-2 rounded-full bg-gray-100 flex items-center justify-center text-gray-400">
+                    <FaSearch size={13} />
+                  </div>
+                  <p className="text-xs font-medium text-gray-700">
+                    {availableInvoices.length === 0
+                      ? "No invoices found in system"
+                      : "No matching sales orders found"}
+                  </p>
+                  <p className="text-[11px] text-gray-400 mt-0.5">
+                    Search by Order No, Invoice No, or Customer Phone
+                  </p>
                 </div>
               )}
             </div>
@@ -1491,7 +1570,7 @@ export const SalesReturnForm: React.FC = () => {
               <div className="flex items-center justify-between text-[11px] font-medium text-black mb-0.5">
                 <span className="flex items-center gap-1 text-black">
                   <FaFileInvoice className="text-[#009fe3] text-[10px]" />
-                  Total Balance
+                  Total Sales
                 </span>
               </div>
               <div className="font-semibold text-black text-xs sm:text-[13px] leading-tight">
@@ -1508,7 +1587,7 @@ export const SalesReturnForm: React.FC = () => {
               <div className="flex items-center justify-between text-[11px] font-medium text-black mb-0.5">
                 <span className="flex items-center gap-1 text-black">
                   <FaMoneyBillWave className="text-emerald-600 text-[10px]" />
-                  Cash Paid
+                  Cash Collection
                 </span>
               </div>
               <div className="font-semibold text-black text-xs sm:text-[13px] leading-tight">
@@ -1525,7 +1604,7 @@ export const SalesReturnForm: React.FC = () => {
               <div className="flex items-center justify-between text-[11px] font-medium text-black mb-0.5">
                 <span className="flex items-center gap-1 text-black">
                   <FaCreditCard className="text-sky-600 text-[10px]" />
-                  Bank / Card
+                  Bank Collection
                 </span>
                 {selectedSale.bankName && (
                   <span
@@ -1550,7 +1629,7 @@ export const SalesReturnForm: React.FC = () => {
               <div className="flex items-center justify-between text-[11px] font-medium text-black mb-0.5">
                 <span className="flex items-center gap-1 text-black">
                   <FaMobileAlt className="text-purple-600 text-[10px]" />
-                  MFS Wallet
+                  MFS Collection
                 </span>
                 {(selectedSale.mfsName || selectedSale.mfsPhone) && (
                   <span
@@ -1623,13 +1702,15 @@ export const SalesReturnForm: React.FC = () => {
 
           {/* Quick Buttons: Clear All & Selected Summary */}
           <div className="flex items-center gap-1.5">
-            <button
-              type="button"
-              onClick={handleClearAllQty}
-              className="px-2 py-0.5 text-[11px] font-normal text-gray-600 bg-gray-100 hover:bg-gray-200 rounded transition-colors cursor-pointer"
-            >
-              Clear All
-            </button>
+            {returnMode === "PARTIAL" && (
+              <button
+                type="button"
+                onClick={handleClearAllQty}
+                className="px-2 py-0.5 text-[11px] font-normal text-gray-600 bg-gray-100 hover:bg-gray-200 rounded transition-colors cursor-pointer"
+              >
+                Clear All
+              </button>
+            )}
             <span className="text-xs text-black pl-1.5 border-l border-gray-200">
               Selected: <span className="text-black font-normal">{totals.selectedItemCount} items ({totals.totalPieces} pcs)</span>
             </span>
@@ -1673,9 +1754,10 @@ export const SalesReturnForm: React.FC = () => {
                       <td className="py-2 px-3 text-center whitespace-nowrap">
                         <input
                           type="checkbox"
-                          disabled={isFullyReturned || isCurrentSaleAlreadyReturned}
+                          disabled={isFullyReturned || isCurrentSaleAlreadyReturned || returnMode === "FULL"}
                           checked={line.isSelected}
                           onChange={() => handleToggleLine(idx)}
+                          title={returnMode === "FULL" ? "All items are included in Full Return mode. Select Partial Return to modify." : undefined}
                           className="rounded text-[#009fe3] focus:ring-0 cursor-pointer disabled:cursor-not-allowed"
                         />
                       </td>
@@ -1740,6 +1822,14 @@ export const SalesReturnForm: React.FC = () => {
                           <span className="text-gray-400 text-xs italic">
                             {isCurrentSaleAlreadyReturned ? "Locked" : "N/A"}
                           </span>
+                        ) : returnMode === "FULL" ? (
+                          <div
+                            className="inline-flex items-center justify-center gap-1.5 px-3 py-1 bg-gray-100 text-gray-800 border border-gray-200 rounded text-xs font-semibold cursor-not-allowed select-none"
+                            title="Full Return mode: Quantities are fixed to full available quantity. Select Partial Return to change."
+                          >
+                            <span>{line.quantity}</span>
+                            <span className="text-[10px] text-gray-500 font-normal">({line.unit || "pcs"})</span>
+                          </div>
                         ) : (
                           <div className="inline-flex items-center border border-gray-300 rounded overflow-hidden">
                             <button
@@ -1849,103 +1939,89 @@ export const SalesReturnForm: React.FC = () => {
 
         {/* Right Column (span-7): Payment Refunded Section (Exact Match to Create New Sale) */}
         <div className="lg:col-span-7 bg-white p-2.5 sm:p-3 rounded-xl border border-gray-200 shadow-xs flex flex-col gap-2">
-          {/* Header & Quick 1-Click Buttons */}
+          {/* Header & View-Only Status */}
           <div className="flex items-center justify-between flex-wrap gap-1">
             <span className="text-[11px] font-bold text-gray-800 tracking-wider flex items-center gap-1.5">
               <FaWallet size={11} className="text-gray-700" />
               Payment Refunded
             </span>
-            <div className="flex items-center gap-1">
-              <button
-                type="button"
-                onClick={handleRefundFullCash}
-                className="px-1.5 py-0.5 text-[10px] font-bold rounded bg-emerald-50 text-emerald-800 border border-emerald-300 hover:bg-emerald-100 shadow-2xs transition-colors cursor-pointer"
-              >
-                Cash
-              </button>
-              <button
-                type="button"
-                onClick={handleRefundFullBank}
-                className="px-1.5 py-0.5 text-[10px] font-bold rounded bg-sky-50 text-sky-800 border border-sky-300 hover:bg-sky-100 shadow-2xs transition-colors cursor-pointer"
-              >
-                Bank
-              </button>
-              <button
-                type="button"
-                onClick={handleRefundFullMfs}
-                className="px-1.5 py-0.5 text-[10px] font-bold rounded bg-purple-50 text-purple-800 border border-purple-300 hover:bg-purple-100 shadow-2xs transition-colors cursor-pointer"
-              >
-                MFS
-              </button>
-              <button
-                type="button"
-                onClick={handleRefundFullDue}
-                className="px-1.5 py-0.5 text-[10px] font-bold rounded bg-rose-50 text-rose-800 border border-rose-300 hover:bg-rose-100 shadow-2xs transition-colors cursor-pointer"
-              >
-                Due Adjust
-              </button>
-            </div>
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-medium bg-gray-100 text-gray-500 border border-gray-200 select-none">
+              <FaLock size={8} className="text-gray-400" />
+              Auto-filled (View Only)
+            </span>
           </div>
 
-          {/* Payment Breakdown Cards */}
+          {/* Payment Breakdown Cards - Display Only */}
           <div className="flex flex-col gap-1.5">
             {/* 1. Cash Card */}
             <div
-              className={`px-2.5 py-1 rounded-md border transition-all flex items-center justify-between gap-1.5 shadow-2xs ${
+              className={`px-2.5 py-1 rounded-md border transition-all flex items-center justify-between gap-1.5 shadow-2xs select-none ${
                 numRefundCash > 0
                   ? "border-emerald-400 bg-emerald-50/30"
-                  : "border-gray-200 bg-gray-50/50 hover:bg-white"
+                  : "border-gray-200 bg-gray-50/40 opacity-70"
               }`}
             >
               <div className="flex items-center gap-1.5 min-w-0">
-                <div className="w-6 h-6 rounded bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0">
+                <div
+                  className={`w-6 h-6 rounded flex items-center justify-center shrink-0 ${
+                    numRefundCash > 0
+                      ? "bg-emerald-100 text-emerald-700"
+                      : "bg-gray-100 text-gray-400"
+                  }`}
+                >
                   <FaMoneyBillWave size={11} />
                 </div>
                 <span className="font-bold text-[11px] text-gray-800 tracking-wider">CASH</span>
               </div>
 
               <div
-                className={`flex items-center h-6.5 rounded border bg-white overflow-hidden w-28 sm:w-34 shrink-0 transition-colors shadow-2xs ${
+                className={`flex items-center h-6.5 rounded border overflow-hidden w-28 sm:w-34 shrink-0 transition-colors shadow-2xs ${
                   numRefundCash > 0
-                    ? "border-emerald-500 ring-1 ring-emerald-500/50"
-                    : "border-gray-300 focus-within:border-emerald-500 focus-within:ring-1 focus-within:ring-emerald-500"
+                    ? "border-emerald-500 bg-white"
+                    : "border-gray-200 bg-gray-100/70"
                 }`}
               >
-                <span className="text-[11px] text-gray-600 font-bold px-1.5 bg-gray-50 h-full flex items-center border-r border-gray-200 select-none">
+                <span className="text-[11px] text-gray-500 font-bold px-1.5 bg-gray-50 h-full flex items-center border-r border-gray-200 select-none">
                   ৳
                 </span>
                 <input
-                  type="number"
-                  step="0.01"
+                  type="text"
+                  readOnly
+                  disabled
+                  tabIndex={-1}
                   placeholder="0"
-                  value={refundCashAmount}
-                  onWheel={(e) => e.currentTarget.blur()}
-                  onChange={(e) => handleCashAmountChange(e.target.value)}
-                  className="w-full text-right px-1.5 text-xs font-bold text-black outline-none bg-transparent placeholder:text-gray-400 h-full"
+                  value={numRefundCash > 0 ? numRefundCash.toString() : ""}
+                  className="w-full text-right px-1.5 text-xs font-bold text-gray-900 outline-none bg-transparent cursor-not-allowed select-none h-full placeholder:text-gray-400"
                 />
               </div>
             </div>
 
             {/* 2. Bank Card */}
             <div
-              className={`px-2.5 py-1 rounded-md border transition-all flex items-center justify-between gap-1.5 shadow-2xs ${
+              className={`px-2.5 py-1 rounded-md border transition-all flex items-center justify-between gap-1.5 shadow-2xs select-none ${
                 numRefundBank > 0
                   ? "border-sky-400 bg-sky-50/30"
-                  : "border-gray-200 bg-gray-50/50 hover:bg-white"
+                  : "border-gray-200 bg-gray-50/40 opacity-70"
               }`}
             >
               <div className="flex items-center gap-1.5 flex-1 min-w-0 mr-1">
-                <div className="w-6 h-6 rounded bg-sky-100 text-sky-700 flex items-center justify-center shrink-0">
+                <div
+                  className={`w-6 h-6 rounded flex items-center justify-center shrink-0 ${
+                    numRefundBank > 0
+                      ? "bg-sky-100 text-sky-700"
+                      : "bg-gray-100 text-gray-400"
+                  }`}
+                >
                   <FaCreditCard size={11} />
                 </div>
                 <span className="font-bold text-[11px] text-gray-800 tracking-wider shrink-0">BANK</span>
                 <select
+                  disabled
                   value={selectedRefundBankId}
-                  onChange={(e) => setSelectedRefundBankId(e.target.value)}
-                  className="h-6.5 w-full max-w-[130px] sm:max-w-[215px] px-1.5 text-[11px] border border-gray-300 rounded bg-white text-black font-medium focus:outline-none focus:border-sky-500 cursor-pointer truncate"
+                  className="h-6.5 w-full max-w-[130px] sm:max-w-[215px] px-1.5 text-[11px] border border-gray-200 rounded bg-gray-50 text-gray-700 font-medium cursor-not-allowed truncate select-none"
                 >
-                  <option value="" className="text-black">
-                    {registeredBankAccounts.length ? "Select Bank..." : "No bank registered"}
+                  <option value="" className="text-gray-500">
+                    {numRefundBank > 0 ? "Bank Account" : "No Bank Used"}
                   </option>
                   {registeredBankAccounts.map((b) => (
                     <option key={b.id || b.bankId || b._id} value={b.id || b.bankId || b._id} className="text-black">
@@ -1959,47 +2035,53 @@ export const SalesReturnForm: React.FC = () => {
               </div>
 
               <div
-                className={`flex items-center h-6.5 rounded border bg-white overflow-hidden w-28 sm:w-34 shrink-0 transition-colors shadow-2xs ${
+                className={`flex items-center h-6.5 rounded border overflow-hidden w-28 sm:w-34 shrink-0 transition-colors shadow-2xs ${
                   numRefundBank > 0
-                    ? "border-sky-500 ring-1 ring-sky-500/50"
-                    : "border-gray-300 focus-within:border-sky-500 focus-within:ring-1 focus-within:ring-sky-500"
+                    ? "border-sky-500 bg-white"
+                    : "border-gray-200 bg-gray-100/70"
                 }`}
               >
-                <span className="text-[11px] text-gray-600 font-bold px-1.5 bg-gray-50 h-full flex items-center border-r border-gray-200 select-none">
+                <span className="text-[11px] text-gray-500 font-bold px-1.5 bg-gray-50 h-full flex items-center border-r border-gray-200 select-none">
                   ৳
                 </span>
                 <input
-                  type="number"
-                  step="0.01"
+                  type="text"
+                  readOnly
+                  disabled
+                  tabIndex={-1}
                   placeholder="0"
-                  value={refundBankAmount}
-                  onWheel={(e) => e.currentTarget.blur()}
-                  onChange={(e) => handleBankAmountChange(e.target.value)}
-                  className="w-full text-right px-1.5 text-xs font-bold text-black outline-none bg-transparent placeholder:text-gray-400 h-full"
+                  value={numRefundBank > 0 ? numRefundBank.toString() : ""}
+                  className="w-full text-right px-1.5 text-xs font-bold text-gray-900 outline-none bg-transparent cursor-not-allowed select-none h-full placeholder:text-gray-400"
                 />
               </div>
             </div>
 
             {/* 3. MFS Card */}
             <div
-              className={`px-2.5 py-1 rounded-md border transition-all flex items-center justify-between gap-1.5 shadow-2xs ${
+              className={`px-2.5 py-1 rounded-md border transition-all flex items-center justify-between gap-1.5 shadow-2xs select-none ${
                 numRefundMfs > 0
                   ? "border-purple-400 bg-purple-50/30"
-                  : "border-gray-200 bg-gray-50/50 hover:bg-white"
+                  : "border-gray-200 bg-gray-50/40 opacity-70"
               }`}
             >
               <div className="flex items-center gap-1.5 flex-1 min-w-0 mr-1">
-                <div className="w-6 h-6 rounded bg-purple-100 text-purple-700 flex items-center justify-center shrink-0">
+                <div
+                  className={`w-6 h-6 rounded flex items-center justify-center shrink-0 ${
+                    numRefundMfs > 0
+                      ? "bg-purple-100 text-purple-700"
+                      : "bg-gray-100 text-gray-400"
+                  }`}
+                >
                   <FaMobileAlt size={11} />
                 </div>
                 <span className="font-bold text-[11px] text-gray-800 tracking-wider shrink-0">MFS</span>
                 <select
+                  disabled
                   value={selectedRefundMfsId}
-                  onChange={(e) => setSelectedRefundMfsId(e.target.value)}
-                  className="h-6.5 w-full max-w-[130px] sm:max-w-[215px] px-1.5 text-[11px] border border-gray-300 rounded bg-white text-black font-medium focus:outline-none focus:border-purple-500 cursor-pointer truncate"
+                  className="h-6.5 w-full max-w-[130px] sm:max-w-[215px] px-1.5 text-[11px] border border-gray-200 rounded bg-gray-50 text-gray-700 font-medium cursor-not-allowed truncate select-none"
                 >
-                  <option value="" className="text-black">
-                    {registeredMfsAccounts.length ? "Select MFS..." : "No MFS registered"}
+                  <option value="" className="text-gray-500">
+                    {numRefundMfs > 0 ? "MFS Account" : "No MFS Used"}
                   </option>
                   {registeredMfsAccounts.map((m) => {
                     const nameVal = m.name || m.mfsName || m.method || "MFS";
@@ -2015,23 +2097,23 @@ export const SalesReturnForm: React.FC = () => {
               </div>
 
               <div
-                className={`flex items-center h-6.5 rounded border bg-white overflow-hidden w-28 sm:w-34 shrink-0 transition-colors shadow-2xs ${
+                className={`flex items-center h-6.5 rounded border overflow-hidden w-28 sm:w-34 shrink-0 transition-colors shadow-2xs ${
                   numRefundMfs > 0
-                    ? "border-purple-500 ring-1 ring-purple-500/50"
-                    : "border-gray-300 focus-within:border-purple-500 focus-within:ring-1 focus-within:ring-purple-500"
+                    ? "border-purple-500 bg-white"
+                    : "border-gray-200 bg-gray-100/70"
                 }`}
               >
-                <span className="text-[11px] text-gray-600 font-bold px-1.5 bg-gray-50 h-full flex items-center border-r border-gray-200 select-none">
+                <span className="text-[11px] text-gray-500 font-bold px-1.5 bg-gray-50 h-full flex items-center border-r border-gray-200 select-none">
                   ৳
                 </span>
                 <input
-                  type="number"
-                  step="0.01"
+                  type="text"
+                  readOnly
+                  disabled
+                  tabIndex={-1}
                   placeholder="0"
-                  value={refundMfsAmount}
-                  onWheel={(e) => e.currentTarget.blur()}
-                  onChange={(e) => handleMfsAmountChange(e.target.value)}
-                  className="w-full text-right px-1.5 text-xs font-bold text-black outline-none bg-transparent placeholder:text-gray-400 h-full"
+                  value={numRefundMfs > 0 ? numRefundMfs.toString() : ""}
+                  className="w-full text-right px-1.5 text-xs font-bold text-gray-900 outline-none bg-transparent cursor-not-allowed select-none h-full placeholder:text-gray-400"
                 />
               </div>
             </div>
@@ -2039,14 +2121,20 @@ export const SalesReturnForm: React.FC = () => {
             {/* 4. Due / Credit Adjustment Row (if applicable) */}
             {(origDueAmount > 0 || numRefundDue > 0) && (
               <div
-                className={`px-2.5 py-1 rounded-md border transition-all flex items-center justify-between gap-1.5 shadow-2xs ${
+                className={`px-2.5 py-1 rounded-md border transition-all flex items-center justify-between gap-1.5 shadow-2xs select-none ${
                   numRefundDue > 0
                     ? "border-rose-400 bg-rose-50/30"
-                    : "border-gray-200 bg-gray-50/50 hover:bg-white"
+                    : "border-gray-200 bg-gray-50/40 opacity-70"
                 }`}
               >
                 <div className="flex items-center gap-1.5 min-w-0">
-                  <div className="w-6 h-6 rounded bg-rose-100 text-rose-700 flex items-center justify-center shrink-0 font-bold text-[11px]">
+                  <div
+                    className={`w-6 h-6 rounded flex items-center justify-center shrink-0 font-bold text-[11px] ${
+                      numRefundDue > 0
+                        ? "bg-rose-100 text-rose-700"
+                        : "bg-gray-100 text-gray-400"
+                    }`}
+                  >
                     ৳
                   </div>
                   <div>
@@ -2060,23 +2148,23 @@ export const SalesReturnForm: React.FC = () => {
                 </div>
 
                 <div
-                  className={`flex items-center h-6.5 rounded border bg-white overflow-hidden w-28 sm:w-34 shrink-0 transition-colors shadow-2xs ${
+                  className={`flex items-center h-6.5 rounded border overflow-hidden w-28 sm:w-34 shrink-0 transition-colors shadow-2xs ${
                     numRefundDue > 0
-                      ? "border-rose-500 ring-1 ring-rose-500/50"
-                      : "border-gray-300 focus-within:border-rose-500 focus-within:ring-1 focus-within:ring-rose-500"
+                      ? "border-rose-500 bg-white"
+                      : "border-gray-200 bg-gray-100/70"
                   }`}
                 >
-                  <span className="text-[11px] text-gray-600 font-bold px-1.5 bg-gray-50 h-full flex items-center border-r border-gray-200 select-none">
+                  <span className="text-[11px] text-gray-500 font-bold px-1.5 bg-gray-50 h-full flex items-center border-r border-gray-200 select-none">
                     ৳
                   </span>
                   <input
-                    type="number"
-                    step="0.01"
+                    type="text"
+                    readOnly
+                    disabled
+                    tabIndex={-1}
                     placeholder="0"
-                    value={refundDueAmount}
-                    onWheel={(e) => e.currentTarget.blur()}
-                    onChange={(e) => handleDueAmountChange(e.target.value)}
-                    className="w-full text-right px-1.5 text-xs font-bold text-black outline-none bg-transparent placeholder:text-gray-400 h-full"
+                    value={numRefundDue > 0 ? numRefundDue.toString() : ""}
+                    className="w-full text-right px-1.5 text-xs font-bold text-gray-900 outline-none bg-transparent cursor-not-allowed select-none h-full placeholder:text-gray-400"
                   />
                 </div>
               </div>
