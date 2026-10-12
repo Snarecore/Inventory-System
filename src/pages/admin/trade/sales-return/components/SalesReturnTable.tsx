@@ -426,14 +426,7 @@ export const SalesReturnTable: React.FC<SalesReturnTableProps> = ({
                 const pType = String(item.paymentType || "CASH").toUpperCase();
 
                 // Payment badges
-                let paymentBg = "bg-sky-50 text-black border-sky-200";
-                if (pType === "CASH") {
-                  paymentBg = "bg-emerald-50 text-emerald-800 border-emerald-200";
-                } else if (pType === "CREDIT" || pType === "DUE") {
-                  paymentBg = "bg-amber-50 text-amber-800 border-amber-200";
-                } else if (pType.includes("MULTI") || pType === "MFS") {
-                  paymentBg = "bg-purple-50 text-purple-800 border-purple-200";
-                }
+                const paymentBg = "bg-sky-50 text-black border-sky-200";
 
                 // Return items count
                 const details = Array.isArray(item.returnDetails) ? item.returnDetails : [];
@@ -535,7 +528,7 @@ export const SalesReturnTable: React.FC<SalesReturnTableProps> = ({
                       {/* Payment Type */}
                       <td className="py-2.5 px-3 text-center">
                         <span
-                          className={`inline-block px-2 py-0.5 rounded text-[10px] font-normal border ${paymentBg}`}
+                          className={`inline-block px-2 py-0.5 text-[10px] font-normal border ${paymentBg}`}
                         >
                           {pType}
                         </span>
@@ -549,7 +542,7 @@ export const SalesReturnTable: React.FC<SalesReturnTableProps> = ({
                       {/* Status */}
                       <td className="py-2.5 px-3 text-center">
                         <span
-                          className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-normal border ${statusBg}`}
+                          className={`inline-block px-2 py-0.5 text-[10px] font-normal border ${statusBg}`}
                         >
                           {statusStr}
                         </span>

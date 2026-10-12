@@ -493,7 +493,7 @@ export const PurchaseTable: React.FC<PurchaseTableProps> = ({
 
                     {/* Method */}
                     <td className="py-2.5 px-3 text-center">
-                      <span className="inline-block px-2 py-0.5 rounded text-[10px] font-normal bg-sky-50 text-black border border-sky-200">
+                      <span className="inline-block px-2 py-0.5 text-[10px] font-normal bg-sky-50 text-black border border-sky-200">
                         {paymentType}
                       </span>
                     </td>
@@ -501,7 +501,7 @@ export const PurchaseTable: React.FC<PurchaseTableProps> = ({
                     {/* Status */}
                     <td className="py-2.5 px-3 text-center">
                       <span
-                        className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-normal border ${statusBg}`}
+                        className={`inline-block px-2 py-0.5 text-[10px] font-normal border ${statusBg}`}
                       >
                         {statusBadge}
                       </span>

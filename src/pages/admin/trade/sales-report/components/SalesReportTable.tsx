@@ -287,28 +287,18 @@ export const SalesReportTable: React.FC<SalesReportTableProps> = ({
                       )}
                     </td>
                     <td className="py-2.5 px-3 text-center">
-                      <span
-                        className={`inline-block px-2 py-0.5 rounded text-[10px] font-bold tracking-wider ${
-                          pType === "CASH"
-                            ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
-                            : pType === "MFS" || pType === "BKASH" || pType === "NAGAD"
-                            ? "bg-purple-50 text-purple-700 border border-purple-200"
-                            : pType === "BANK" || pType === "CARD"
-                            ? "bg-blue-50 text-blue-700 border border-blue-200"
-                            : "bg-rose-50 text-rose-700 border border-rose-200"
-                        }`}
-                      >
+                      <span className="inline-block px-2 py-0.5 text-[10px] font-normal bg-sky-50 text-black border border-sky-200">
                         {pType}
                       </span>
                     </td>
                     <td className="py-2.5 px-3 text-center">
                       <span
-                        className={`inline-block px-2 py-0.5 rounded text-[10px] font-semibold ${
+                        className={`inline-block px-2 py-0.5 text-[10px] font-normal border ${
                           isFullyPaid
-                            ? "bg-emerald-100 text-emerald-800"
+                            ? "bg-emerald-50 text-emerald-700 border-emerald-200"
                             : isPartial
-                            ? "bg-amber-100 text-amber-800"
-                            : "bg-rose-100 text-rose-800"
+                            ? "bg-amber-50 text-amber-700 border-amber-200"
+                            : "bg-rose-50 text-rose-700 border-rose-200"
                         }`}
                       >
                         {isFullyPaid ? "Paid" : isPartial ? "Partial" : "Due"}

@@ -462,29 +462,23 @@ export const SaleTable: React.FC<SaleTableProps> = ({
                     className="hover:bg-sky-50/40 transition-colors group"
                   >
                     {/* SL */}
-                    <td className="py-2.5 px-3 text-center text-gray-700 font-semibold text-xs">
+                    <td className="py-2.5 px-3 text-center text-black text-xs font-normal">
                       {serialNumber}
                     </td>
 
                     {/* Customer */}
-                    <td className="py-2.5 px-3">
-                      <div className="font-semibold text-black">
-                        {sale.customerName || sale.customer_name || "Walk-in Customer"}
-                      </div>
+                    <td className="py-2.5 px-3 text-black text-xs font-normal whitespace-nowrap">
+                      {sale.customerName || sale.customer_name || "Walk-in Customer"}
                     </td>
 
                     {/* Phone */}
-                    <td className="py-2.5 px-3 text-black font-medium">
-                      {sale.customerPhone || sale.customer_phone ? (
-                        <span>{sale.customerPhone || sale.customer_phone}</span>
-                      ) : (
-                        <span className="text-gray-400">N/A</span>
-                      )}
+                    <td className="py-2.5 px-3 text-black text-xs font-normal whitespace-nowrap">
+                      {sale.customerPhone || sale.customer_phone || "-"}
                     </td>
 
                     {/* Date */}
-                    <td className="py-2.5 px-3 text-black font-medium whitespace-nowrap">
-                      <span>
+                    <td className="py-2.5 px-3 text-black text-xs font-normal whitespace-nowrap">
+                      <span className="flex items-center gap-1 text-[11px] text-black font-normal">
                         {sale.salesDate || sale.saleDate || sale.date
                           ? moment(sale.salesDate || sale.saleDate || sale.date).format("DD MMM, YYYY")
                           : moment().format("DD MMM, YYYY")}
@@ -493,33 +487,29 @@ export const SaleTable: React.FC<SaleTableProps> = ({
 
                     {/* Items Count */}
                     <td className="py-2.5 px-3 text-center">
-                      <span className="inline-flex items-center justify-center px-2 py-0.5 rounded-full text-[11px] font-bold bg-gray-100 text-black">
+                      <span className="inline-block px-1.5 py-0.5 bg-gray-100 text-black rounded text-[11px] font-normal">
                         {itemsCount}
                       </span>
                     </td>
 
                     {/* Total Amount */}
-                    <td className="py-2.5 px-3 text-right font-bold text-black whitespace-nowrap">
+                    <td className="py-2.5 px-3 text-right text-black text-xs font-normal whitespace-nowrap">
                       ৳ {formatMoney(grandTotal)}
                     </td>
 
                     {/* Paid Amount */}
-                    <td className="py-2.5 px-3 text-right font-bold text-emerald-600 whitespace-nowrap">
+                    <td className="py-2.5 px-3 text-right text-black text-xs font-normal whitespace-nowrap">
                       ৳ {formatMoney(paidAmount)}
                     </td>
 
                     {/* Due Amount */}
-                    <td className="py-2.5 px-3 text-right font-bold whitespace-nowrap">
-                      {dueAmount > 0 ? (
-                        <span className="text-rose-600 font-bold">৳ {formatMoney(dueAmount)}</span>
-                      ) : (
-                        <span className="text-gray-400 font-medium">৳ 0</span>
-                      )}
+                    <td className="py-2.5 px-3 text-right text-black text-xs font-normal whitespace-nowrap">
+                      ৳ {formatMoney(dueAmount)}
                     </td>
 
                     {/* Payment Method */}
                     <td className="py-2.5 px-3 text-center">
-                      <span className="inline-block px-2 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wider bg-gray-100 text-gray-800">
+                      <span className="inline-block px-2 py-0.5 text-[10px] font-normal bg-sky-50 text-black border border-sky-200">
                         {paymentType}
                       </span>
                     </td>
@@ -527,13 +517,13 @@ export const SaleTable: React.FC<SaleTableProps> = ({
                     {/* Payment Status */}
                     <td className="py-2.5 px-3 text-center">
                       <div className="flex items-center justify-center gap-1.5 flex-wrap">
-                        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold border ${statusBg}`}>
+                        <span className={`inline-block px-2 py-0.5 text-[10px] font-normal border ${statusBg}`}>
                           {statusBadge}
                         </span>
                         {isAlreadyReturned && (
                           <span
                             title="This sale has already been returned"
-                            className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-rose-50 text-rose-700 border border-rose-200"
+                            className="inline-block px-1.5 py-0.5 text-[10px] font-normal bg-rose-50 text-rose-700 border border-rose-200"
                           >
                             Returned
                           </span>
