@@ -9,19 +9,26 @@ import RefreshButton from "@/components/table-components/RefreshButton";
 import SalesReturnStats from "./components/SalesReturnStats";
 import SalesReturnTable from "./components/SalesReturnTable";
 import SalesReturnInvoiceModal from "./components/SalesReturnInvoiceModal";
+import SaleTable from "@/pages/admin/trade/sales/components/SaleTable";
+import SaleInvoiceModal from "@/pages/admin/trade/sales/components/SaleInvoiceModal";
 import apiConfig from "@/config/api.json";
-import { salesAndReturnQueryKey, partyListQueryKey } from "@/config/query-key";
+import { salesAndReturnQueryKey, partyListQueryKey, salesListQueryKey } from "@/config/query-key";
 import { buildAccessUser } from "@/utils/access-user";
 import { postData } from "@/services/api-service";
-import type { SalesReturnItem, PartyItem } from "@/types";
+import type { SalesReturnItem, PartyItem, SaleItem } from "@/types";
+import { FaShoppingCart, FaUndoAlt } from "react-icons/fa";
 
 const SalesReturnPage: React.FC = () => {
   const navigate = useNavigate();
+
+  // Active View Tab: "returns" | "sales"
+  const [activeTab, setActiveTab] = useState<"returns" | "sales">("returns");
 
   // Search & Filter State
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [customerFilter, setCustomerFilter] = useState<string>("all");
   const [paymentMethodFilter, setPaymentMethodFilter] = useState<string>("all");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
   const [dateFilter, setDateFilter] = useState<string>("all");
   const [customStartDate, setCustomStartDate] = useState<string>("");
   const [customEndDate, setCustomEndDate] = useState<string>("");
@@ -33,6 +40,10 @@ const SalesReturnPage: React.FC = () => {
   const [isInvoiceModalOpen, setIsInvoiceModalOpen] = useState<boolean>(false);
   const [selectedReturn, setSelectedReturn] = useState<SalesReturnItem | null>(null);
   const [autoPrintModal, setAutoPrintModal] = useState<boolean>(false);
+
+  // Sales View Modal
+  const [selectedSaleForInvoice, setSelectedSaleForInvoice] = useState<SaleItem | null>(null);
+  const [isSaleInvoiceModalOpen, setIsSaleInvoiceModalOpen] = useState<boolean>(false);
 
   // 1. Fetch Customers for filter dropdown
   const { data: rawCustomerData } = useQuery({
@@ -178,6 +189,176 @@ const SalesReturnPage: React.FC = () => {
     }
     return [];
   }, [apiReturnsData]);
+
+  // 3. Fetch Sales from Backend API (for Sales List view & returning)
+  const {
+    data: salesData,
+    isLoading: isSalesLoading,
+    isFetching: isSalesFetching,
+    refetch: refetchSales,
+  } = useQuery({
+    queryKey: [salesListQueryKey],
+    queryFn: async () => {
+      try {
+        const accessUser = buildAccessUser();
+        const endpoint = apiConfig.sales?.salesListUrl || "get-sale-list";
+        const res: any = await postData({
+          url: endpoint,
+          body: { accessUser },
+        });
+
+        const list =
+          res?.saleList ||
+          res?.salesList ||
+          res?.data ||
+          res?.sales ||
+          res?.saleDetailsList ||
+          res?.sale_list ||
+          [];
+
+        return Array.isArray(list) ? list : [];
+      } catch {
+        return [];
+      }
+    },
+    staleTime: 60 * 1000,
+  });
+
+  const rawSales: SaleItem[] = useMemo(() => {
+    if (Array.isArray(salesData)) return salesData;
+    return [];
+  }, [salesData]);
+
+  // Set of invoices/orders that have already been returned
+  const returnedInvoiceSet = useMemo(() => {
+    const set = new Set<string>();
+    if (Array.isArray(apiReturnsData)) {
+      apiReturnsData.forEach((item: any) => {
+        if (item.salesInvoiceNo) set.add(String(item.salesInvoiceNo).trim().toLowerCase());
+        if (item.invoiceNo) set.add(String(item.invoiceNo).trim().toLowerCase());
+        if (item.orderNo) set.add(String(item.orderNo).trim().toLowerCase());
+        if (item.id) set.add(String(item.id).trim().toLowerCase());
+      });
+    }
+    return set;
+  }, [apiReturnsData]);
+
+  // Filtering for Sales
+  const filteredSales = useMemo(() => {
+    return rawSales.filter((sale: any) => {
+      // 1. Search Query
+      if (searchQuery.trim()) {
+        const q = searchQuery.toLowerCase().trim();
+        const inv = String(sale.invoiceNo || sale.invoice_no || "").toLowerCase();
+        const cName = String(sale.customerName || sale.customer_name || "").toLowerCase();
+        const cPhone = String(sale.customerPhone || sale.customer_phone || "").toLowerCase();
+        if (!inv.includes(q) && !cName.includes(q) && !cPhone.includes(q)) {
+          return false;
+        }
+      }
+
+      // 2. Status Filter
+      if (statusFilter !== "all" && statusFilter !== "") {
+        const grandTotal = Number(sale.grandTotal ?? sale.grand_total ?? sale.totalAmount ?? 0);
+        const paidAmount = Number(sale.paidAmount ?? sale.paid_amount ?? 0);
+        const dueAmount = Number(sale.dueAmount ?? sale.due_amount ?? Math.max(0, grandTotal - paidAmount));
+        const s = String(sale.status || "").toUpperCase();
+
+        if (statusFilter === "PAID") {
+          if (s !== "PAID" && dueAmount > 0) return false;
+        } else if (statusFilter === "PARTIAL") {
+          if (s !== "PARTIAL" && !(dueAmount > 0 && paidAmount > 0)) return false;
+        } else if (statusFilter === "DUE") {
+          if (s !== "PENDING" && s !== "DUE" && !(dueAmount > 0 && paidAmount === 0)) return false;
+        }
+      }
+
+      // 3. Payment Method
+      if (paymentMethodFilter !== "all") {
+        const pMethod = String(sale.paymentType || sale.payment_type || "CASH").toUpperCase();
+        if (pMethod !== paymentMethodFilter) return false;
+      }
+
+      // 4. Customer Filter
+      if (customerFilter !== "all") {
+        const cId = String(sale.customerId || sale.customer_id || "");
+        const cName = String(sale.customerName || sale.customer_name || "");
+        const filterVal = String(customerFilter).trim().toLowerCase();
+        if (cId.toLowerCase() !== filterVal && cName.toLowerCase() !== filterVal) {
+          return false;
+        }
+      }
+
+      // 5. Date Range Filter
+      if (dateFilter !== "all") {
+        const saleDateStr = sale.salesDate || sale.saleDate || sale.date;
+        if (!saleDateStr) return true;
+        const saleDate = moment(saleDateStr);
+
+        if (dateFilter === "today") {
+          if (!saleDate.isSame(moment(), "day")) return false;
+        } else if (dateFilter === "yesterday") {
+          if (!saleDate.isSame(moment().subtract(1, "day"), "day")) return false;
+        } else if (dateFilter === "last7days") {
+          if (!saleDate.isAfter(moment().subtract(7, "days"))) return false;
+        } else if (dateFilter === "thisMonth") {
+          if (!saleDate.isSame(moment(), "month")) return false;
+        } else if (dateFilter === "lastMonth") {
+          if (!saleDate.isSame(moment().subtract(1, "month"), "month")) return false;
+        } else if (dateFilter === "custom" && customStartDate && customEndDate) {
+          if (saleDate.isBefore(moment(customStartDate)) || saleDate.isAfter(moment(customEndDate).endOf("day"))) {
+            return false;
+          }
+        }
+      }
+
+      return true;
+    });
+  }, [
+    rawSales,
+    searchQuery,
+    statusFilter,
+    paymentMethodFilter,
+    customerFilter,
+    dateFilter,
+    customStartDate,
+    customEndDate,
+  ]);
+
+  // Sorting for Sales
+  const sortedSales = useMemo(() => {
+    return [...filteredSales].sort((a: any, b: any) => {
+      if (sortBy === "latest") {
+        const dateA = a.salesDate || a.saleDate || a.date;
+        const dateB = b.salesDate || b.saleDate || b.date;
+        return moment(dateB).diff(moment(dateA));
+      }
+      if (sortBy === "oldest") {
+        const dateA = a.salesDate || a.saleDate || a.date;
+        const dateB = b.salesDate || b.saleDate || b.date;
+        return moment(dateA).diff(moment(dateB));
+      }
+      if (sortBy === "amount_high") {
+        const amtA = Number(a.grandTotal ?? a.grand_total ?? a.totalAmount ?? 0);
+        const amtB = Number(b.grandTotal ?? b.grand_total ?? b.totalAmount ?? 0);
+        return amtB - amtA;
+      }
+      if (sortBy === "amount_low") {
+        const amtA = Number(a.grandTotal ?? a.grand_total ?? a.totalAmount ?? 0);
+        const amtB = Number(b.grandTotal ?? b.grand_total ?? b.totalAmount ?? 0);
+        return amtA - amtB;
+      }
+      return 0;
+    });
+  }, [filteredSales, sortBy]);
+
+  // Sales Pagination
+  const salesTotalCount = sortedSales.length;
+  const salesPageCount = Math.ceil(salesTotalCount / dataLimit) || 1;
+  const paginatedSales = useMemo(() => {
+    const startIndex = (currentPageNumber - 1) * dataLimit;
+    return sortedSales.slice(startIndex, startIndex + dataLimit);
+  }, [sortedSales, currentPageNumber, dataLimit]);
 
   // Filtering
   const filteredReturns = useMemo(() => {
@@ -334,6 +515,23 @@ const SalesReturnPage: React.FC = () => {
     setCurrentPageNumber(1);
   };
 
+  // Actions for Sales List
+  const handleViewSale = (sale: SaleItem) => {
+    setSelectedSaleForInvoice(sale);
+    setIsSaleInvoiceModalOpen(true);
+  };
+
+  const handlePrintSale = (sale: SaleItem) => {
+    setSelectedSaleForInvoice(sale);
+    setIsSaleInvoiceModalOpen(true);
+  };
+
+  const handleEditSale = (sale: SaleItem) => {
+    navigate(`/admin/edit-sale/${sale.id || sale.saleId || sale.invoiceNo}`, {
+      state: { editData: sale },
+    });
+  };
+
   return (
     <div className="flex flex-col gap-3 px-3 py-2 sm:px-4 sm:py-2.5 max-w-[1600px] mx-auto w-full">
       {/* Header */}
@@ -344,7 +542,13 @@ const SalesReturnPage: React.FC = () => {
         />
 
         <div className="flex items-center gap-2 self-end sm:self-auto">
-          <RefreshButton onClick={() => refetch()} isLoading={isLoading || isFetching} />
+          <RefreshButton
+            onClick={() => {
+              refetch();
+              refetchSales();
+            }}
+            isLoading={isLoading || isFetching || isSalesLoading || isSalesFetching}
+          />
           <Button
             label="Create Return"
             onClick={() => navigate("/admin/create-sales-return")}
@@ -363,38 +567,111 @@ const SalesReturnPage: React.FC = () => {
         totalCreditAdjust={stats.totalCreditAdjust}
       />
 
-      {/* Main Table with Filters */}
-      <SalesReturnTable
-        returns={paginatedReturns}
-        exportableReturns={sortedReturns}
-        totalCount={totalCount}
-        rawCount={rawReturns.length}
-        isLoading={isLoading}
-        pageCount={pageCount}
-        currentPageNumber={currentPageNumber}
-        setCurrentPageNumber={setCurrentPageNumber}
-        dataLimit={dataLimit}
-        setDataLimit={setDataLimit}
-        handlePagination={handlePagination}
-        searchQuery={searchQuery}
-        setSearchQuery={setSearchQuery}
-        customerFilter={customerFilter}
-        setCustomerFilter={setCustomerFilter}
-        customersList={customersList}
-        paymentMethodFilter={paymentMethodFilter}
-        setPaymentMethodFilter={setPaymentMethodFilter}
-        dateFilter={dateFilter}
-        setDateFilter={setDateFilter}
-        customStartDate={customStartDate}
-        setCustomStartDate={setCustomStartDate}
-        customEndDate={customEndDate}
-        setCustomEndDate={setCustomEndDate}
-        sortBy={sortBy}
-        setSortBy={setSortBy}
-        onResetFilters={handleResetFilters}
-        onView={handleView}
-        onPrint={handlePrint}
-      />
+      {/* Tab Switcher: Sales List vs Sales Return List */}
+      <div className="flex items-center gap-2 border-b border-gray-200">
+        <button
+          type="button"
+          onClick={() => {
+            setActiveTab("sales");
+            setCurrentPageNumber(1);
+          }}
+          className={`flex items-center gap-2 px-4 py-2.5 text-xs font-bold transition-all border-b-2 cursor-pointer ${
+            activeTab === "sales"
+              ? "border-[var(--color-primary)] text-[var(--color-primary)] bg-sky-50/50 rounded-t-lg"
+              : "border-transparent text-gray-500 hover:text-black hover:bg-gray-50 rounded-t-lg"
+          }`}
+        >
+          <FaShoppingCart size={12} />
+          <span>Sales List ({rawSales.length})</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => {
+            setActiveTab("returns");
+            setCurrentPageNumber(1);
+          }}
+          className={`flex items-center gap-2 px-4 py-2.5 text-xs font-bold transition-all border-b-2 cursor-pointer ${
+            activeTab === "returns"
+              ? "border-[var(--color-primary)] text-[var(--color-primary)] bg-sky-50/50 rounded-t-lg"
+              : "border-transparent text-gray-500 hover:text-black hover:bg-gray-50 rounded-t-lg"
+          }`}
+        >
+          <FaUndoAlt size={12} />
+          <span>Sales Return List ({rawReturns.length})</span>
+        </button>
+      </div>
+
+      {/* Main Table: Either Returns List or Sales List based on activeTab */}
+      {activeTab === "returns" ? (
+        <SalesReturnTable
+          returns={paginatedReturns}
+          exportableReturns={sortedReturns}
+          totalCount={totalCount}
+          rawCount={rawReturns.length}
+          isLoading={isLoading}
+          pageCount={pageCount}
+          currentPageNumber={currentPageNumber}
+          setCurrentPageNumber={setCurrentPageNumber}
+          dataLimit={dataLimit}
+          setDataLimit={setDataLimit}
+          handlePagination={handlePagination}
+          searchQuery={searchQuery}
+          setSearchQuery={setSearchQuery}
+          customerFilter={customerFilter}
+          setCustomerFilter={setCustomerFilter}
+          customersList={customersList}
+          paymentMethodFilter={paymentMethodFilter}
+          setPaymentMethodFilter={setPaymentMethodFilter}
+          dateFilter={dateFilter}
+          setDateFilter={setDateFilter}
+          customStartDate={customStartDate}
+          setCustomStartDate={setCustomStartDate}
+          customEndDate={customEndDate}
+          setCustomEndDate={setCustomEndDate}
+          sortBy={sortBy}
+          setSortBy={setSortBy}
+          onResetFilters={handleResetFilters}
+          onView={handleView}
+          onPrint={handlePrint}
+        />
+      ) : (
+        <SaleTable
+          sales={paginatedSales}
+          exportableSales={sortedSales}
+          totalCount={salesTotalCount}
+          isLoading={isSalesLoading}
+          isFetching={isSalesFetching}
+          pageCount={salesPageCount}
+          currentPageNumber={currentPageNumber}
+          setCurrentPageNumber={setCurrentPageNumber}
+          dataLimit={dataLimit}
+          setDataLimit={setDataLimit}
+          handlePagination={handlePagination}
+          searchQuery={searchQuery}
+          setSearchQuery={setSearchQuery}
+          statusFilter={statusFilter}
+          setStatusFilter={setStatusFilter}
+          paymentMethodFilter={paymentMethodFilter}
+          setPaymentMethodFilter={setPaymentMethodFilter}
+          customerFilter={customerFilter}
+          setCustomerFilter={setCustomerFilter}
+          customersList={customersList}
+          dateFilter={dateFilter}
+          setDateFilter={setDateFilter}
+          customStartDate={customStartDate}
+          setCustomStartDate={setCustomStartDate}
+          customEndDate={customEndDate}
+          setCustomEndDate={setCustomEndDate}
+          sortBy={sortBy}
+          setSortBy={setSortBy}
+          returnedInvoiceSet={returnedInvoiceSet}
+          showReturnAction={true}
+          onView={handleViewSale}
+          onEdit={handleEditSale}
+          onPrint={handlePrintSale}
+        />
+      )}
 
       {/* Printable Credit Note / Return Slip Modal */}
       <SalesReturnInvoiceModal
@@ -406,6 +683,16 @@ const SalesReturnPage: React.FC = () => {
         }}
         returnData={selectedReturn}
         autoPrint={autoPrintModal}
+      />
+
+      {/* Sale Invoice Modal (when viewing a sale from the Sales List tab) */}
+      <SaleInvoiceModal
+        isOpen={isSaleInvoiceModalOpen}
+        onClose={() => {
+          setIsSaleInvoiceModalOpen(false);
+          setSelectedSaleForInvoice(null);
+        }}
+        sale={selectedSaleForInvoice}
       />
     </div>
   );

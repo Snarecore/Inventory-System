@@ -86,8 +86,9 @@ export const menu = [
 				path: "/admin/sales-return",
 				permissionKey: "sales.return.view",
 				subItems: [
-					{ id: 29, name: "Sales Returns List", path: "/admin/sales-return", permissionKey: "sales.return.view" },
+					{ id: 291, name: "Sales List", path: "/admin/sales-return-sales", permissionKey: "sales.list.view" },
 					{ id: 30, name: "Create Return", path: "/admin/create-sales-return", permissionKey: "sales.create_return.view" },
+					{ id: 29, name: "Sales Returns List", path: "/admin/sales-return", permissionKey: "sales.return.view" },
 				],
 			},
 

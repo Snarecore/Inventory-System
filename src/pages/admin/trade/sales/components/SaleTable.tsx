@@ -44,6 +44,8 @@ interface SaleTableProps {
   sortBy?: string;
   setSortBy?: (sort: string) => void;
   returnedInvoiceSet?: Set<string>;
+  showReturnAction?: boolean;
+  showMethod?: boolean;
   onEdit: (sale: SaleItem) => void;
   onView: (sale: SaleItem) => void;
   onPrint: (sale: SaleItem) => void;
@@ -80,6 +82,8 @@ export const SaleTable: React.FC<SaleTableProps> = ({
   sortBy = "latest",
   setSortBy,
   returnedInvoiceSet,
+  showReturnAction = false,
+  showMethod = !showReturnAction,
   onEdit,
   onView,
   onPrint,
@@ -378,7 +382,7 @@ export const SaleTable: React.FC<SaleTableProps> = ({
       {/* Main Table Content */}
       <div className="overflow-x-auto w-full relative z-10">
         {isLoading ? (
-          <TableSkeleton columnCount={11} rowCount={8} />
+          <TableSkeleton columnCount={showMethod ? 12 : 11} rowCount={8} />
         ) : sales.length === 0 ? (
           <EmptyState
             title="No Sales Found"
@@ -389,6 +393,7 @@ export const SaleTable: React.FC<SaleTableProps> = ({
             <thead>
               <tr className="bg-[#41BEF3] text-black text-xs font-semibold">
                 <th className="py-2.5 px-3 text-center w-10">SL</th>
+                <th className="py-2.5 px-3">Order No</th>
                 <th className="py-2.5 px-3">Customer</th>
                 <th className="py-2.5 px-3">Phone</th>
                 <th className="py-2.5 px-3">Date</th>
@@ -396,9 +401,11 @@ export const SaleTable: React.FC<SaleTableProps> = ({
                 <th className="py-2.5 px-3 text-right">Total (৳)</th>
                 <th className="py-2.5 px-3 text-right">Paid (৳)</th>
                 <th className="py-2.5 px-3 text-right">Due (৳)</th>
-                <th className="py-2.5 px-3 text-center">Method</th>
+                {showMethod && <th className="py-2.5 px-3 text-center">Method</th>}
                 <th className="py-2.5 px-3 text-center">Payment Status</th>
-                <th className="py-2.5 px-3 text-center w-28">Actions</th>
+                <th className={`py-2.5 px-3 text-center ${showReturnAction ? "w-36" : "w-28"}`}>
+                  {showReturnAction ? "Action" : "Actions"}
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
@@ -467,6 +474,13 @@ export const SaleTable: React.FC<SaleTableProps> = ({
                       {serialNumber}
                     </td>
 
+                    {/* Order No */}
+                    <td className="py-2.5 px-3 text-black text-xs font-normal whitespace-nowrap">
+                      <span className="font-medium text-gray-800">
+                        {sale.orderNo || (sale as any).order_no || sale.invoiceNo || (sale as any).invoice_no || (sale as any).salesInvoiceNo || (sale.id ? `ORD-${sale.id}` : "-")}
+                      </span>
+                    </td>
+
                     {/* Customer */}
                     <td className="py-2.5 px-3 text-black text-xs font-normal whitespace-nowrap">
                       {sale.customerName || sale.customer_name || "Walk-in Customer"}
@@ -509,78 +523,77 @@ export const SaleTable: React.FC<SaleTableProps> = ({
                     </td>
 
                     {/* Payment Method */}
-                    <td className="py-2.5 px-3 text-center">
-                      <span className="inline-block px-2 py-0.5 text-[10px] font-semibold bg-sky-100 text-sky-900 border border-sky-300 rounded-md">
-                        {paymentType}
-                      </span>
-                    </td>
+                    {showMethod && (
+                      <td className="py-2.5 px-3 text-center">
+                        <span className="inline-block px-2 py-0.5 text-[10px] font-semibold bg-sky-100 text-sky-900 border border-sky-300 rounded-md">
+                          {paymentType}
+                        </span>
+                      </td>
+                    )}
 
                     {/* Payment Status */}
                     <td className="py-2.5 px-3 text-center">
-                      <div className="flex items-center justify-center gap-1.5 flex-wrap">
-                        <span className={`inline-block px-2 py-0.5 text-[10px] border rounded-md ${statusBg}`}>
-                          {statusBadge}
-                        </span>
-                        {isAlreadyReturned && (
-                          <span
-                            title="This sale has already been returned"
-                            className="inline-block px-1.5 py-0.5 text-[10px] font-semibold bg-rose-100 text-rose-800 border border-rose-300 rounded-md"
-                          >
-                            Returned
-                          </span>
-                        )}
-                      </div>
+                      <span className={`inline-block px-2 py-0.5 text-[10px] border rounded-md ${statusBg}`}>
+                        {statusBadge}
+                      </span>
                     </td>
 
                     {/* Actions */}
                     <td className="py-2.5 px-3 text-center whitespace-nowrap">
-                      <div className="flex items-center justify-center gap-1">
-                        <button
-                          type="button"
-                          onClick={() => onView(sale)}
-                          title="View Invoice"
-                          className="p-1.5 text-sky-600 hover:bg-sky-50 rounded-md transition-colors cursor-pointer"
-                        >
-                          <FiEye size={14} />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => onEdit(sale)}
-                          title="Edit Sale"
-                          className="p-1.5 text-amber-600 hover:bg-amber-50 rounded-md transition-colors cursor-pointer"
-                        >
-                          <FiEdit size={14} />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => onPrint(sale)}
-                          title="Print Invoice"
-                          className="p-1.5 text-emerald-600 hover:bg-emerald-50 rounded-md transition-colors cursor-pointer"
-                        >
-                          <FiPrinter size={14} />
-                        </button>
-                        {isAlreadyReturned ? (
-                          <span
-                            title="This order has already been returned"
-                            className="p-1.5 text-gray-300 cursor-not-allowed rounded-md opacity-40 inline-flex items-center"
-                          >
-                            <FaUndoAlt size={12} />
-                          </span>
-                        ) : (
+                      {showReturnAction ? (
+                        <div className="flex items-center justify-center">
+                          {isAlreadyReturned ? (
+                            <span
+                              title="This sale has already been returned"
+                              className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-semibold text-gray-400 bg-gray-100 border border-gray-200 rounded-md cursor-not-allowed select-none"
+                            >
+                              <FaUndoAlt size={10} className="text-gray-400" />
+                              <span>Returned</span>
+                            </span>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() =>
+                                navigate("/admin/create-sales-return", {
+                                  state: { sale },
+                                })
+                              }
+                              title="Return Product"
+                              className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-semibold text-white bg-[var(--color-primary)] hover:opacity-90 active:scale-95 rounded-md shadow-xs transition-all cursor-pointer"
+                            >
+                              <FaUndoAlt size={10} />
+                              <span>Return Product</span>
+                            </button>
+                          )}
+                        </div>
+                      ) : (
+                        <div className="flex items-center justify-center gap-1">
                           <button
                             type="button"
-                            onClick={() =>
-                              navigate("/admin/create-sales-return", {
-                                state: { sale },
-                              })
-                            }
-                            title="Return Items"
-                            className="p-1.5 text-rose-600 hover:bg-rose-50 rounded-md transition-colors cursor-pointer"
+                            onClick={() => onView(sale)}
+                            title="View Invoice"
+                            className="p-1.5 text-sky-600 hover:bg-sky-50 rounded-md transition-colors cursor-pointer"
                           >
-                            <FaUndoAlt size={12} />
+                            <FiEye size={14} />
                           </button>
-                        )}
-                      </div>
+                          <button
+                            type="button"
+                            onClick={() => onEdit(sale)}
+                            title="Edit Sale"
+                            className="p-1.5 text-amber-600 hover:bg-amber-50 rounded-md transition-colors cursor-pointer"
+                          >
+                            <FiEdit size={14} />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => onPrint(sale)}
+                            title="Print Invoice"
+                            className="p-1.5 text-emerald-600 hover:bg-emerald-50 rounded-md transition-colors cursor-pointer"
+                          >
+                            <FiPrinter size={14} />
+                          </button>
+                        </div>
+                      )}
                     </td>
                   </tr>
                 );

@@ -40,6 +40,7 @@ const Sales = React.lazy(() => import('@/pages/admin/trade/sales'))
 const CreateSale = React.lazy(() => import('@/pages/admin/trade/create-sale'))
 const SalesReport = React.lazy(() => import('@/pages/admin/trade/sales-report'))
 const SalesReturn = React.lazy(() => import('@/pages/admin/trade/sales-return'))
+const SalesReturnSales = React.lazy(() => import('@/pages/admin/trade/sales-return/SalesReturnSalesPage'))
 const CreateSalesReturn = React.lazy(() => import('@/pages/admin/trade/create-sales-return'))
 
 
@@ -237,6 +238,10 @@ export const router = createBrowserRouter([
       {
         path: 'sales-return',
         element: withSuspense(SalesReturn),
+      },
+      {
+        path: 'sales-return-sales',
+        element: withSuspense(SalesReturnSales),
       },
       {
         path: 'create-sales-return',

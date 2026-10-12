@@ -92,52 +92,6 @@ const Sales: React.FC = () => {
     return Array.from(custMap.values());
   }, [rawCustomerData]);
 
-  // 1.5. Fetch Sales & Returns to cross-reference already returned orders
-  const { data: salesAndReturnData } = useQuery({
-    queryKey: [salesAndReturnQueryKey],
-    queryFn: async () => {
-      try {
-        const accessUser = buildAccessUser();
-        const endpoint =
-          apiConfig.salesReturn?.getSalesAndReturnUrl ||
-          apiConfig.salesReturn?.salesAndReturnUrl ||
-          apiConfig.sales?.salesAndReturnUrl ||
-          "get-sales-and-return";
-        const res: any = await postData({
-          url: endpoint,
-          body: { accessUser },
-        });
-        return res?.data || res?.returns || res?.salesAndReturnList || res?.saleList || [];
-      } catch (err) {
-        return [];
-      }
-    },
-    staleTime: 60 * 1000,
-  });
-
-  const returnedInvoiceSet = useMemo(() => {
-    const set = new Set<string>();
-    if (Array.isArray(salesAndReturnData)) {
-      salesAndReturnData.forEach((item: any) => {
-        const isReturned =
-          Boolean(item.hasReturn) ||
-          Boolean(item.returnNo) ||
-          Boolean(item.returnGrandTotal) ||
-          String(item.returnType || "").toUpperCase() === "RETURN" ||
-          (Array.isArray(item.returnDetails) && item.returnDetails.length > 0) ||
-          (Array.isArray(item.salesReturnDetails) && item.salesReturnDetails.length > 0);
-
-        if (isReturned) {
-          if (item.salesInvoiceNo) set.add(String(item.salesInvoiceNo).trim().toLowerCase());
-          if (item.invoiceNo) set.add(String(item.invoiceNo).trim().toLowerCase());
-          if (item.orderNo) set.add(String(item.orderNo).trim().toLowerCase());
-          if (item.id) set.add(String(item.id).trim().toLowerCase());
-        }
-      });
-    }
-    return set;
-  }, [salesAndReturnData]);
-
   // 2. Fetch Sales from Backend API
   const {
     data: salesData,
@@ -179,10 +133,11 @@ const Sales: React.FC = () => {
       // 1. Search Query
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase().trim();
-        const inv = String(sale.invoiceNo || sale.invoice_no || "").toLowerCase();
+        const inv = String(sale.invoiceNo || sale.invoice_no || sale.salesInvoiceNo || "").toLowerCase();
+        const ord = String(sale.orderNo || sale.order_no || "").toLowerCase();
         const cName = String(sale.customerName || sale.customer_name || "").toLowerCase();
         const cPhone = String(sale.customerPhone || sale.customer_phone || "").toLowerCase();
-        if (!inv.includes(q) && !cName.includes(q) && !cPhone.includes(q)) {
+        if (!inv.includes(q) && !ord.includes(q) && !cName.includes(q) && !cPhone.includes(q)) {
           return false;
         }
       }
@@ -385,7 +340,6 @@ const Sales: React.FC = () => {
         setCustomEndDate={setCustomEndDate}
         sortBy={sortBy}
         setSortBy={setSortBy}
-        returnedInvoiceSet={returnedInvoiceSet}
         onEdit={handleEdit}
         onView={handleView}
         onPrint={handlePrint}
