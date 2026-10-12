@@ -133,7 +133,7 @@ export const SalesReturnInvoiceModal: React.FC<SalesReturnInvoiceModalProps> = (
                 <span>SALES RETURN VOUCHER</span>
               </div>
               <p className="text-xs font-semibold text-gray-700">
-                Voucher No: <span className="font-mono text-gray-900">{r.returnNo}</span>
+                Voucher No: <span className=" text-gray-900">{r.returnNo}</span>
               </p>
               <p className="text-xs text-gray-500 flex items-center sm:justify-end gap-1 mt-0.5">
                 <FaCalendarAlt className="text-[10px]" />
@@ -171,11 +171,11 @@ export const SalesReturnInvoiceModal: React.FC<SalesReturnInvoiceModalProps> = (
               <div className="flex items-center gap-1.5 font-semibold text-gray-800">
                 <FaFileInvoice className="text-amber-500 text-xs" />
                 <span>Original Invoice: </span>
-                <span className="font-mono text-[#009fe3]">
+                <span className=" text-[#009fe3]">
                   {r.salesInvoiceNo || r.invoiceNo || "N/A"}
                 </span>
                 {r.orderNo && (
-                  <span className="ml-1 text-gray-500 font-mono text-[11px]">
+                  <span className="ml-1 text-gray-500  text-[11px]">
                     (Order: {r.orderNo})
                   </span>
                 )}
@@ -215,7 +215,7 @@ export const SalesReturnInvoiceModal: React.FC<SalesReturnInvoiceModalProps> = (
 
                   return (
                     <tr key={idx} className="hover:bg-gray-50/50">
-                      <td className="py-2 px-3 text-center font-mono text-gray-500">
+                      <td className="py-2 px-3 text-center  text-gray-500">
                         {idx + 1}
                       </td>
                       <td className="py-2 px-3">
@@ -223,18 +223,18 @@ export const SalesReturnInvoiceModal: React.FC<SalesReturnInvoiceModalProps> = (
                           {item.productName || "Product"}
                         </div>
                         {item.productCode && (
-                          <span className="text-[10px] text-gray-400 font-mono">
+                          <span className="text-[10px] text-gray-400 ">
                             Code: {item.productCode}
                           </span>
                         )}
                       </td>
-                      <td className="py-2 px-3 text-center font-mono">
+                      <td className="py-2 px-3 text-center ">
                         ৳ {formatMoney(price)}
                       </td>
                       <td className="py-2 px-3 text-center font-bold text-gray-900">
                         {qty} {item.unit || "pcs"}
                       </td>
-                      <td className="py-2 px-3 text-right font-bold text-gray-900 font-mono">
+                      <td className="py-2 px-3 text-right font-bold text-gray-900 ">
                         ৳ {formatMoney(lineTotal)}
                       </td>
                     </tr>
@@ -262,26 +262,26 @@ export const SalesReturnInvoiceModal: React.FC<SalesReturnInvoiceModalProps> = (
             <div className="flex flex-col gap-1.5 text-xs">
               <div className="flex justify-between py-1 text-gray-600 border-b border-gray-100">
                 <span>Total Amount:</span>
-                <span className="font-semibold font-mono">৳ {formatMoney(totalAmount)}</span>
+                <span className="font-semibold ">৳ {formatMoney(totalAmount)}</span>
               </div>
 
               {discount > 0 && (
                 <div className="flex justify-between py-1 text-rose-600 border-b border-gray-100">
                   <span>Discount:</span>
-                  <span className="font-semibold font-mono">- ৳ {formatMoney(discount)}</span>
+                  <span className="font-semibold ">- ৳ {formatMoney(discount)}</span>
                 </div>
               )}
 
               {vat > 0 && (
                 <div className="flex justify-between py-1 text-gray-600 border-b border-gray-100">
                   <span>VAT:</span>
-                  <span className="font-semibold font-mono">+ ৳ {formatMoney(vat)}</span>
+                  <span className="font-semibold ">+ ৳ {formatMoney(vat)}</span>
                 </div>
               )}
 
               <div className="flex justify-between py-1.5 text-sm font-bold text-rose-700 bg-rose-50 px-2.5 rounded-lg">
                 <span>Refund Amount:</span>
-                <span className="font-mono">৳ {formatMoney(refundAmount)}</span>
+                <span className="">৳ {formatMoney(refundAmount)}</span>
               </div>
 
               {/* Multi-channel Refund Disbursement Breakdown */}
@@ -294,25 +294,25 @@ export const SalesReturnInvoiceModal: React.FC<SalesReturnInvoiceModalProps> = (
                   {Number(r.cashReceived || 0) > 0 && (
                     <div className="flex justify-between">
                       <span>• Cash Refund:</span>
-                      <strong className="font-mono text-emerald-700">৳ {formatMoney(Number(r.cashReceived))}</strong>
+                      <strong className=" text-emerald-700">৳ {formatMoney(Number(r.cashReceived))}</strong>
                     </div>
                   )}
                   {Number(r.cardReceived || 0) > 0 && (
                     <div className="flex justify-between">
                       <span>• Bank Refund ({r.bankName || "Bank"}):</span>
-                      <strong className="font-mono text-sky-700">৳ {formatMoney(Number(r.cardReceived))}</strong>
+                      <strong className=" text-sky-700">৳ {formatMoney(Number(r.cardReceived))}</strong>
                     </div>
                   )}
                   {Number(r.mfsReceived || 0) > 0 && (
                     <div className="flex justify-between">
                       <span>• MFS Refund ({r.mfsName || "MFS"}):</span>
-                      <strong className="font-mono text-purple-700">৳ {formatMoney(Number(r.mfsReceived))}</strong>
+                      <strong className=" text-purple-700">৳ {formatMoney(Number(r.mfsReceived))}</strong>
                     </div>
                   )}
                   {Number(r.dueAmount || 0) > 0 && (
                     <div className="flex justify-between">
                       <span>• Due Adjusted:</span>
-                      <strong className="font-mono text-rose-600">৳ {formatMoney(Number(r.dueAmount))}</strong>
+                      <strong className=" text-rose-600">৳ {formatMoney(Number(r.dueAmount))}</strong>
                     </div>
                   )}
                 </div>

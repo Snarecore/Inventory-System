@@ -382,8 +382,9 @@ export const SalesReturnForm: React.FC = () => {
     );
     if (alreadyReturned) {
       showErrorToast(
-        `Order #${sale.orderNo || sale.invoiceNo} has already been returned. Per store policy, an invoice can only be returned once.`
+        `Order #${sale.orderNo || sale.invoiceNo} has already been returned once.`
       );
+      return;
     }
     setSelectedSale(sale);
     const invNo = sale.invoiceNo || `INV-${sale.id}`;
@@ -472,9 +473,18 @@ export const SalesReturnForm: React.FC = () => {
 
   useEffect(() => {
     if (stateSale) {
+      const alreadyReturned = isSaleAlreadyReturned(
+        stateSale,
+        Array.isArray(apiSalesAndReturnData) ? apiSalesAndReturnData : []
+      );
+      if (alreadyReturned) {
+        showErrorToast(`Order #${stateSale.orderNo || stateSale.invoiceNo} has already been returned.`);
+        navigate("/admin/sales");
+        return;
+      }
       loadInvoice(stateSale);
     }
-  }, [stateSale]);
+  }, [stateSale, apiSalesAndReturnData]);
 
   // Keep line available quantities in sync if apiSalesAndReturnData updates in background
   useEffect(() => {
@@ -533,31 +543,27 @@ export const SalesReturnForm: React.FC = () => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Filter available invoices by orderNo, invoiceNo, or customer (Eligible invoices sorted first)
+  // Filter available invoices by orderNo, invoiceNo, or customer (Exclude already returned orders)
   const filteredInvoices = useMemo(() => {
     const q = invoiceSearchQuery.toLowerCase().trim();
     const allRecords = Array.isArray(apiSalesAndReturnData) ? apiSalesAndReturnData : [];
 
-    let list = availableInvoices;
-    if (q) {
-      list = availableInvoices.filter((inv) => {
-        const ordNo = String(inv.orderNo || "").toLowerCase();
-        const invNo = String(inv.invoiceNo || "").toLowerCase();
-        const cName = String(inv.customerName || "").toLowerCase();
-        const cPhone = String(inv.customerPhone || "").toLowerCase();
-        return (
-          ordNo.includes(q) ||
-          invNo.includes(q) ||
-          cName.includes(q) ||
-          cPhone.includes(q)
-        );
-      });
-    }
-
-    return [...list].sort((a, b) => {
-      const aRet = isSaleAlreadyReturned(a, allRecords) ? 1 : 0;
-      const bRet = isSaleAlreadyReturned(b, allRecords) ? 1 : 0;
-      return aRet - bRet;
+    return availableInvoices.filter((inv) => {
+      // Exclude already returned orders
+      if (isSaleAlreadyReturned(inv, allRecords)) {
+        return false;
+      }
+      if (!q) return true;
+      const ordNo = String(inv.orderNo || "").toLowerCase();
+      const invNo = String(inv.invoiceNo || "").toLowerCase();
+      const cName = String(inv.customerName || "").toLowerCase();
+      const cPhone = String(inv.customerPhone || "").toLowerCase();
+      return (
+        ordNo.includes(q) ||
+        invNo.includes(q) ||
+        cName.includes(q) ||
+        cPhone.includes(q)
+      );
     });
   }, [availableInvoices, invoiceSearchQuery, apiSalesAndReturnData]);
 
@@ -1278,27 +1284,6 @@ export const SalesReturnForm: React.FC = () => {
         </div>
       </div>
 
-      {/* Return Policy Notice Banner when Order is already returned */}
-      {isCurrentSaleAlreadyReturned && (
-        <div className="bg-rose-50 border-2 border-rose-300 rounded-xl p-3 sm:p-4 flex items-start gap-3 shadow-xs">
-          <div className="p-2 rounded-lg bg-rose-100 text-rose-600 shrink-0 mt-0.5">
-            <FaLock size={16} />
-          </div>
-          <div className="flex-1 text-xs">
-            <div className="flex items-center gap-2">
-              <h4 className="font-bold text-sm text-rose-900">
-                Order #{selectedSale?.orderNo || salesInvoiceNo} Has Already Been Returned
-              </h4>
-              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-200 text-rose-800">
-                One-Time Return Policy Active
-              </span>
-            </div>
-            <p className="mt-1 text-rose-700 leading-relaxed">
-              According to store policy, an order can only have <strong>one return transaction</strong> (Full or Partial). This order has already been processed for return previously. Duplicate returns for the same order are strictly disabled to prevent stock discrepancies.
-            </p>
-          </div>
-        </div>
-      )}
 
       {/* Section 1: Search by Order No / Invoice No & Customer Info */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 bg-white p-2.5 sm:p-3 rounded-xl border border-gray-200 shadow-xs">
@@ -1354,94 +1339,44 @@ export const SalesReturnForm: React.FC = () => {
                   Loading invoices...
                 </div>
               ) : filteredInvoices.length > 0 ? (
-                filteredInvoices.map((inv) => {
-                  const isAlreadyReturned = isSaleAlreadyReturned(
-                    inv,
-                    Array.isArray(apiSalesAndReturnData) ? apiSalesAndReturnData : []
-                  );
-
-                  if (isAlreadyReturned) {
-                    return (
-                      <div
-                        key={inv.invoiceNo || inv.id}
-                        onClick={() => {
-                          showErrorToast(
-                            `Order #${inv.orderNo || inv.invoiceNo} has already been returned. Per store policy, each order can only be returned once.`
-                          );
-                        }}
-                        className="px-3 py-2.5 bg-gray-50/80 hover:bg-rose-50/50 cursor-not-allowed border-b border-gray-100 last:border-b-0 flex items-center justify-between opacity-75 transition-colors"
-                        title="This order has already been returned (Single-return policy)"
-                      >
-                        <div>
-                          <div className="flex items-center gap-1.5">
-                            <span className="font-bold text-gray-500 font-mono">
-                              {inv.invoiceNo}
-                            </span>
-                            {inv.orderNo && (
-                              <span className="px-1.5 py-0.2 rounded bg-gray-200 text-gray-700 text-[10px] font-bold font-mono">
-                                Order #{inv.orderNo}
-                              </span>
-                            )}
-                            <span className="px-1.5 py-0.5 rounded-full bg-rose-100 text-rose-800 text-[10px] font-bold border border-rose-200 inline-flex items-center gap-1">
-                              <FaLock className="text-[9px]" />
-                              Already Returned
-                            </span>
-                          </div>
-                          <div className="text-[11px] text-gray-500 mt-0.5">
-                            {inv.customerName} • <span className="text-rose-600 font-medium">Non-returnable (Single return limit)</span>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <div className="font-bold text-gray-500">
-                            ৳ {formatMoney(Number(inv.grandTotal || 0))}
-                          </div>
-                          <div className="text-[10px] text-gray-400">
-                            {inv.salesDate || inv.date}
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  }
-
-                  return (
-                    <div
-                      key={inv.invoiceNo || inv.id}
-                      onClick={() => {
-                        loadInvoice(inv);
-                        setIsInvoiceDropdownOpen(false);
-                        setInvoiceSearchQuery(inv.orderNo ? `${inv.invoiceNo} (${inv.orderNo})` : (inv.invoiceNo || ""));
-                      }}
-                      className="px-3 py-2.5 hover:bg-sky-50/70 cursor-pointer border-b border-gray-100 last:border-b-0 flex items-center justify-between transition-colors"
-                    >
-                      <div>
-                        <div className="flex items-center gap-1.5">
-                          <span className="font-bold text-[#009fe3] font-mono">
-                            {inv.invoiceNo}
+                filteredInvoices.map((inv) => (
+                  <div
+                    key={inv.invoiceNo || inv.id}
+                    onClick={() => {
+                      loadInvoice(inv);
+                      setIsInvoiceDropdownOpen(false);
+                      setInvoiceSearchQuery(inv.orderNo ? `${inv.invoiceNo} (${inv.orderNo})` : (inv.invoiceNo || ""));
+                    }}
+                    className="px-3 py-2.5 hover:bg-sky-50/70 cursor-pointer border-b border-gray-100 last:border-b-0 flex items-center justify-between transition-colors"
+                  >
+                    <div>
+                      <div className="flex items-center gap-1.5">
+                        <span className="font-bold text-[#009fe3] ">
+                          {inv.invoiceNo}
+                        </span>
+                        {inv.orderNo && (
+                          <span className="px-1.5 py-0.2 rounded bg-sky-100 text-sky-800 text-[10px] font-bold ">
+                            Order #{inv.orderNo}
                           </span>
-                          {inv.orderNo && (
-                            <span className="px-1.5 py-0.2 rounded bg-sky-100 text-sky-800 text-[10px] font-bold font-mono">
-                              Order #{inv.orderNo}
-                            </span>
-                          )}
-                          <span className="px-1.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold border border-emerald-200">
-                            Eligible for Return
-                          </span>
-                        </div>
-                        <div className="text-[11px] text-gray-600 mt-0.5">
-                          {inv.customerName} ({inv.customerPhone || "No Phone"})
-                        </div>
+                        )}
+                        <span className="px-1.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold border border-emerald-200">
+                          Eligible for Return
+                        </span>
                       </div>
-                      <div className="text-right">
-                        <div className="font-bold text-gray-900">
-                          ৳ {formatMoney(Number(inv.grandTotal || 0))}
-                        </div>
-                        <div className="text-[10px] text-gray-400">
-                          {inv.salesDate || inv.date}
-                        </div>
+                      <div className="text-[11px] text-gray-600 mt-0.5">
+                        {inv.customerName} ({inv.customerPhone || "No Phone"})
                       </div>
                     </div>
-                  );
-                })
+                    <div className="text-right">
+                      <div className="font-bold text-gray-900">
+                        ৳ {formatMoney(Number(inv.grandTotal || 0))}
+                      </div>
+                      <div className="text-[10px] text-gray-400">
+                        {inv.salesDate || inv.date}
+                      </div>
+                    </div>
+                  </div>
+                ))
               ) : (
                 <div className="px-3 py-4 text-center text-gray-400 text-xs">
                   {availableInvoices.length === 0
@@ -1753,7 +1688,7 @@ export const SalesReturnForm: React.FC = () => {
                         <div className="inline-flex items-center gap-1.5 font-normal text-black text-xs whitespace-nowrap">
                           <span className="font-medium">{line.productName}</span>
                           {line.productCode && (
-                            <span className="text-[10px] text-gray-500 font-mono">
+                            <span className="text-[10px] text-gray-500 ">
                               ({line.productCode})
                             </span>
                           )}

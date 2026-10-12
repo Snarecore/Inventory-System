@@ -11,7 +11,7 @@ import SaleTable from "./components/SaleTable";
 import SaleInvoiceModal from "./components/SaleInvoiceModal";
 import { useAPI } from "@/hooks/useApi";
 import apiConfig from "@/config/api.json";
-import { salesListQueryKey, partyListQueryKey, productListQueryKey } from "@/config/query-key";
+import { salesListQueryKey, partyListQueryKey, productListQueryKey, salesAndReturnQueryKey } from "@/config/query-key";
 import { buildAccessUser } from "@/utils/access-user";
 import { postData } from "@/services/api-service";
 import { showSuccessToast, showErrorToast } from "@/utils/toast-utils";
@@ -91,6 +91,51 @@ const Sales: React.FC = () => {
 
     return Array.from(custMap.values());
   }, [rawCustomerData]);
+
+  // 1.5. Fetch Sales & Returns to cross-reference already returned orders
+  const { data: salesAndReturnData } = useQuery({
+    queryKey: [salesAndReturnQueryKey],
+    queryFn: async () => {
+      try {
+        const accessUser = buildAccessUser();
+        const endpoint =
+          apiConfig.salesReturn?.getSalesAndReturnUrl ||
+          apiConfig.salesReturn?.salesAndReturnUrl ||
+          apiConfig.sales?.salesAndReturnUrl ||
+          "get-sales-and-return";
+        const res: any = await postData({
+          url: endpoint,
+          body: { accessUser },
+        });
+        return res?.data || res?.returns || res?.salesAndReturnList || res?.saleList || [];
+      } catch (err) {
+        return [];
+      }
+    },
+    staleTime: 60 * 1000,
+  });
+
+  const returnedInvoiceSet = useMemo(() => {
+    const set = new Set<string>();
+    if (Array.isArray(salesAndReturnData)) {
+      salesAndReturnData.forEach((item: any) => {
+        const isReturned =
+          Boolean(item.hasReturn) ||
+          Boolean(item.returnNo) ||
+          Boolean(item.returnGrandTotal) ||
+          (Array.isArray(item.returnDetails) && item.returnDetails.length > 0) ||
+          (Array.isArray(item.salesReturnDetails) && item.salesReturnDetails.length > 0);
+
+        if (isReturned) {
+          if (item.salesInvoiceNo) set.add(String(item.salesInvoiceNo).trim().toLowerCase());
+          if (item.invoiceNo) set.add(String(item.invoiceNo).trim().toLowerCase());
+          if (item.orderNo) set.add(String(item.orderNo).trim().toLowerCase());
+          if (item.id) set.add(String(item.id).trim().toLowerCase());
+        }
+      });
+    }
+    return set;
+  }, [salesAndReturnData]);
 
   // 2. Fetch Sales from Backend API
   const {
@@ -339,6 +384,7 @@ const Sales: React.FC = () => {
         setCustomEndDate={setCustomEndDate}
         sortBy={sortBy}
         setSortBy={setSortBy}
+        returnedInvoiceSet={returnedInvoiceSet}
         onEdit={handleEdit}
         onView={handleView}
         onPrint={handlePrint}

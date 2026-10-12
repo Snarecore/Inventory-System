@@ -197,7 +197,7 @@ export const PrintableSalesReportModal: React.FC<PrintableSalesReportModalProps>
                   return (
                     <tr key={idx}>
                       <td className="py-1.5 px-2 text-center">{idx + 1}</td>
-                      <td className="py-1.5 px-2 font-mono font-semibold">
+                      <td className="py-1.5 px-2  font-semibold">
                         {t.invoiceNo || `INV-${t.id}`}
                         <div className="text-[10px] text-gray-400 font-sans">
                           {t.salesDate || t.date}

@@ -138,7 +138,7 @@ export const SaleInvoiceModal: React.FC<SaleInvoiceModalProps> = ({
             </div>
 
             <div className="text-left sm:text-right">
-              <div className="inline-block bg-primary/10 text-primary font-mono font-bold px-2.5 py-1 rounded-md text-xs">
+              <div className="inline-block bg-primary/10 text-primary  font-bold px-2.5 py-1 rounded-md text-xs">
                 {s.invoiceNo || s.invoice_no || `INV-${s.id}`}
               </div>
               <p className="text-gray-500 mt-1 flex items-center sm:justify-end gap-1 text-[11px]">
@@ -245,7 +245,7 @@ export const SaleInvoiceModal: React.FC<SaleInvoiceModalProps> = ({
                             {item.productName || item.name || "Product"}
                           </span>
                           {(item.productCode || item.pcode) && (
-                            <span className="text-[9px] text-gray-400 font-mono">
+                            <span className="text-[9px] text-gray-400 ">
                               Code: {item.productCode || item.pcode}
                             </span>
                           )}

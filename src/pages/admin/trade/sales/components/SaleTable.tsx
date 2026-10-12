@@ -43,9 +43,11 @@ interface SaleTableProps {
   setCustomEndDate?: (date: string) => void;
   sortBy?: string;
   setSortBy?: (sort: string) => void;
+  returnedInvoiceSet?: Set<string>;
   onEdit: (sale: SaleItem) => void;
   onView: (sale: SaleItem) => void;
   onPrint: (sale: SaleItem) => void;
+  onDelete?: (sale: SaleItem) => void;
   onExport?: () => void;
 }
 
@@ -77,6 +79,7 @@ export const SaleTable: React.FC<SaleTableProps> = ({
   setCustomEndDate,
   sortBy = "latest",
   setSortBy,
+  returnedInvoiceSet,
   onEdit,
   onView,
   onPrint,
@@ -438,6 +441,21 @@ export const SaleTable: React.FC<SaleTableProps> = ({
                   statusBg = "bg-rose-50 text-rose-700 border-rose-200";
                 }
 
+                const isAlreadyReturned =
+                  Boolean(
+                    (sale as any).hasReturn ||
+                    (sale as any).returnNo ||
+                    (sale as any).returnGrandTotal ||
+                    (Array.isArray((sale as any).returnDetails) && (sale as any).returnDetails.length > 0) ||
+                    (Array.isArray((sale as any).salesReturnDetails) && (sale as any).salesReturnDetails.length > 0)
+                  ) ||
+                  (returnedInvoiceSet
+                    ? returnedInvoiceSet.has(String(sale.invoiceNo || "").trim().toLowerCase()) ||
+                      returnedInvoiceSet.has(String((sale as any).salesInvoiceNo || "").trim().toLowerCase()) ||
+                      returnedInvoiceSet.has(String((sale as any).orderNo || (sale as any).order_no || "").trim().toLowerCase()) ||
+                      returnedInvoiceSet.has(String(sale.id || (sale as any).saleId || "").trim().toLowerCase())
+                    : false);
+
                 return (
                   <tr
                     key={sale.id || sale.saleId || sale.invoiceNo || index}
@@ -508,9 +526,19 @@ export const SaleTable: React.FC<SaleTableProps> = ({
 
                     {/* Payment Status */}
                     <td className="py-2.5 px-3 text-center">
-                      <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold border ${statusBg}`}>
-                        {statusBadge}
-                      </span>
+                      <div className="flex items-center justify-center gap-1.5 flex-wrap">
+                        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold border ${statusBg}`}>
+                          {statusBadge}
+                        </span>
+                        {isAlreadyReturned && (
+                          <span
+                            title="This sale has already been returned"
+                            className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-rose-50 text-rose-700 border border-rose-200"
+                          >
+                            Returned
+                          </span>
+                        )}
+                      </div>
                     </td>
 
                     {/* Actions */}
@@ -540,21 +568,13 @@ export const SaleTable: React.FC<SaleTableProps> = ({
                         >
                           <FiPrinter size={14} />
                         </button>
-                        {Boolean(
-                          (sale as any).hasReturn ||
-                          (sale as any).returnNo ||
-                          (sale as any).returnGrandTotal ||
-                          (Array.isArray((sale as any).returnDetails) && (sale as any).returnDetails.length > 0) ||
-                          (Array.isArray((sale as any).salesReturnDetails) && (sale as any).salesReturnDetails.length > 0)
-                        ) ? (
-                          <button
-                            type="button"
-                            disabled
+                        {isAlreadyReturned ? (
+                          <span
                             title="This order has already been returned (Single-return policy)"
-                            className="p-1.5 text-gray-300 cursor-not-allowed rounded-md opacity-40"
+                            className="p-1.5 text-gray-300 cursor-not-allowed rounded-md opacity-40 inline-flex items-center"
                           >
                             <FaUndoAlt size={12} />
-                          </button>
+                          </span>
                         ) : (
                           <button
                             type="button"

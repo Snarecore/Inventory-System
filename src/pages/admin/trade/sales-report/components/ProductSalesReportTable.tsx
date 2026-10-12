@@ -227,7 +227,7 @@ export const ProductSalesReportTable: React.FC<ProductSalesReportTableProps> = (
                     <td className="py-2.5 px-3 text-center text-gray-700 font-semibold text-xs">
                       {(currentPage - 1) * pageSize + idx + 1}
                     </td>
-                    <td className="py-2.5 px-3 font-mono font-bold text-gray-800">
+                    <td className="py-2.5 px-3  font-bold text-gray-800">
                       {item.productCode}
                     </td>
                     <td className="py-2.5 px-3 font-semibold text-gray-900">

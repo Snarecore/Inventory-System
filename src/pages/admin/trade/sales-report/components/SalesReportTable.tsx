@@ -231,7 +231,7 @@ export const SalesReportTable: React.FC<SalesReportTableProps> = ({
                       {(currentPage - 1) * pageSize + idx + 1}
                     </td>
                     <td className="py-2.5 px-3">
-                      <div className="font-bold text-black font-mono">
+                      <div className="font-bold text-black">
                         {item.invoiceNo || item.invoice_no || `INV-${item.id}`}
                       </div>
                       <div className="text-[10px] text-gray-500 flex items-center gap-1 mt-0.5">
@@ -288,7 +288,7 @@ export const SalesReportTable: React.FC<SalesReportTableProps> = ({
                     </td>
                     <td className="py-2.5 px-3 text-center">
                       <span
-                        className={`inline-block px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${
+                        className={`inline-block px-2 py-0.5 rounded text-[10px] font-bold tracking-wider ${
                           pType === "CASH"
                             ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
                             : pType === "MFS" || pType === "BKASH" || pType === "NAGAD"
@@ -339,9 +339,9 @@ export const SalesReportTable: React.FC<SalesReportTableProps> = ({
               })}
             </tbody>
             {/* Summary Totals Row */}
-            <tfoot className="bg-gray-50/90 font-bold text-gray-800 border-t-2 border-gray-200">
+            <tfoot className="bg-gray-50/90 font-bold text-black border-t-2 border-gray-200">
               <tr>
-                <td colSpan={4} className="py-2.5 px-3 text-right uppercase text-[11px]">
+                <td colSpan={4} className="py-2.5 px-3 text-right text-[11px]">
                   Filtered Totals ({filtered.length} Invoices):
                 </td>
                 <td className="py-2.5 px-3 text-right text-gray-700">
