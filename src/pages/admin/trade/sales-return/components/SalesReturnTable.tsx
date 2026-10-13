@@ -402,15 +402,15 @@ export const SalesReturnTable: React.FC<SalesReturnTableProps> = ({
             <thead>
               <tr className="bg-[#41BEF3] text-black text-xs font-semibold">
                 <th className="py-2.5 px-3 text-center w-10">SL</th>
-                <th className="py-2.5 px-3">Order ID</th>
-                <th className="py-2.5 px-3">Customer</th>
-                <th className="py-2.5 px-3">Return Date</th>
-                <th className="py-2.5 px-3 text-center">Items</th>
-                <th className="py-2.5 px-3">Remarks</th>
-                <th className="py-2.5 px-3 text-center">Payment Type</th>
-                <th className="py-2.5 px-3 text-right">Refund Amount</th>
-                <th className="py-2.5 px-3 text-center">Status</th>
-                <th className="py-2.5 px-3 text-center w-28">Actions</th>
+                <th className="py-2.5 px-3 whitespace-nowrap">Order ID</th>
+                <th className="py-2.5 px-3 min-w-[120px]">Customer</th>
+                <th className="py-2.5 px-3 whitespace-nowrap">Return Date</th>
+                <th className="py-2.5 px-3 text-center w-24 whitespace-nowrap">Items</th>
+                <th className="py-2.5 px-3 w-44 min-w-[150px] max-w-[180px]">Remarks</th>
+                <th className="py-2.5 px-3 text-center w-28 whitespace-nowrap">Payment Type</th>
+                <th className="py-2.5 px-3 text-right w-32 whitespace-nowrap">Refund Amount</th>
+                <th className="py-2.5 px-3 text-center w-28 whitespace-nowrap">Status</th>
+                <th className="py-2.5 px-3 text-center w-24 whitespace-nowrap">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
@@ -474,8 +474,8 @@ export const SalesReturnTable: React.FC<SalesReturnTableProps> = ({
                       </td>
 
                       {/* Customer */}
-                      <td className="py-2.5 px-3 text-black text-xs font-normal whitespace-nowrap">
-                        <div className="truncate text-black font-normal">
+                      <td className="py-2.5 px-3 text-black text-xs font-normal min-w-[120px]">
+                        <div className="truncate text-black font-normal max-w-[150px]">
                           {item.customerName || "Walk-in Customer"}
                         </div>
                       </td>
@@ -488,7 +488,7 @@ export const SalesReturnTable: React.FC<SalesReturnTableProps> = ({
                       </td>
 
                       {/* Items */}
-                      <td className="py-2.5 px-3 text-center">
+                      <td className="py-2.5 px-3 text-center w-24">
                         <button
                           type="button"
                           onClick={() => toggleExpandRow(rowKey)}
@@ -506,21 +506,22 @@ export const SalesReturnTable: React.FC<SalesReturnTableProps> = ({
                       </td>
 
                       {/* Remarks */}
-                      <td className="py-2.5 px-3 text-black text-xs font-normal whitespace-nowrap">
+                      <td className="py-2.5 px-3 text-black text-xs font-normal w-44 min-w-[150px] max-w-[180px]">
                         {item.note || item.remarks ? (
-                          <span
-                            className="text-black text-xs truncate max-w-[200px] inline-block font-normal"
+                          <div
+                            className="inline-flex items-center px-2 py-0.5 rounded-md bg-gray-100 hover:bg-gray-200/80 border border-gray-200 text-black text-xs font-normal max-w-[160px] transition-colors cursor-pointer"
                             title={item.note || item.remarks}
+                            onClick={() => onView(item)}
                           >
-                            {item.note || item.remarks}
-                          </span>
+                            <span className="truncate">{item.note || item.remarks}</span>
+                          </div>
                         ) : (
                           <span className="text-black font-normal">N/A</span>
                         )}
                       </td>
 
                       {/* Payment Type */}
-                      <td className="py-2.5 px-3 text-center">
+                      <td className="py-2.5 px-3 text-center w-28 whitespace-nowrap">
                         <span
                           className={`inline-block px-2 py-0.5 text-[10px] border rounded-md ${paymentBg}`}
                         >
@@ -529,12 +530,12 @@ export const SalesReturnTable: React.FC<SalesReturnTableProps> = ({
                       </td>
 
                       {/* Refund Amount */}
-                      <td className="py-2.5 px-3 text-right text-black text-xs font-normal whitespace-nowrap">
+                      <td className="py-2.5 px-3 text-right text-black text-xs font-normal w-32 whitespace-nowrap">
                         ৳ {formatMoney(refund)}
                       </td>
 
                       {/* Status */}
-                      <td className="py-2.5 px-3 text-center">
+                      <td className="py-2.5 px-3 text-center w-28 whitespace-nowrap">
                         <span
                           className={`inline-block px-2 py-0.5 text-[10px] border rounded-md ${statusBg}`}
                         >
@@ -543,7 +544,7 @@ export const SalesReturnTable: React.FC<SalesReturnTableProps> = ({
                       </td>
 
                       {/* Actions */}
-                      <td className="py-2 px-3 text-center">
+                      <td className="py-2 px-3 text-center w-24 whitespace-nowrap">
                         <div className="flex items-center justify-center gap-1.5">
                           <button
                             type="button"
