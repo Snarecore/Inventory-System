@@ -2,7 +2,7 @@ import React, { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import moment from "moment";
-import { FaPlus } from "react-icons/fa";
+import { FaPlus, FaShoppingCart, FaUndoAlt } from "react-icons/fa";
 import PageHeader from "@/components/page-header/PageHeader";
 import Button from "@/components/button/Button";
 import RefreshButton from "@/components/table-components/RefreshButton";
@@ -16,7 +16,6 @@ import { salesAndReturnQueryKey, partyListQueryKey, salesListQueryKey } from "@/
 import { buildAccessUser } from "@/utils/access-user";
 import { postData } from "@/services/api-service";
 import type { SalesReturnItem, PartyItem, SaleItem } from "@/types";
-import { FaShoppingCart, FaUndoAlt } from "react-icons/fa";
 import { extractReturnRemarks } from "./constants/returnReasons";
 
 const SalesReturnPage: React.FC = () => {
@@ -578,7 +577,7 @@ const SalesReturnPage: React.FC = () => {
           className={`flex items-center gap-1.5 px-3 sm:px-3.5 py-1 text-xs font-bold transition-all border-b-2 cursor-pointer ${
             activeTab === "sales"
               ? "border-[var(--color-primary)] text-[var(--color-primary)] bg-sky-50/50 rounded-t-md"
-              : "border-transparent text-gray-500 hover:text-black hover:bg-gray-50 rounded-t-md"
+              : "border-transparent :text-black hover:bg-gray-50 rounded-t-md"
           }`}
         >
           <FaShoppingCart size={11} />
@@ -594,7 +593,7 @@ const SalesReturnPage: React.FC = () => {
           className={`flex items-center gap-1.5 px-3 sm:px-3.5 py-1 text-xs font-bold transition-all border-b-2 cursor-pointer ${
             activeTab === "returns"
               ? "border-[var(--color-primary)] text-[var(--color-primary)] bg-sky-50/50 rounded-t-md"
-              : "border-transparent text-gray-500 hover:text-black hover:bg-gray-50 rounded-t-md"
+              : "border-transparent text-black hover:bg-gray-50 rounded-t-md"
           }`}
         >
           <FaUndoAlt size={11} />

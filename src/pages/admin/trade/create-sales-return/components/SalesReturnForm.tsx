@@ -15,10 +15,8 @@ import {
   FaMobileAlt,
   FaWallet,
   FaLock,
-  FaExclamationTriangle,
 } from "react-icons/fa";
 import { FiArrowRight } from "react-icons/fi";
-import PageHeader from "@/components/page-header/PageHeader";
 import Button from "@/components/button/Button";
 import ConfirmModal from "@/components/modal/ConfirmModal";
 import SalesReturnInvoiceModal from "@/pages/admin/trade/sales-return/components/SalesReturnInvoiceModal";
@@ -387,7 +385,7 @@ export const SalesReturnForm: React.FC = () => {
     setSalesInvoiceNo(invNo);
     setInvoiceSearchQuery(sale.orderNo ? `${invNo} (${sale.orderNo})` : invNo);
     setCustomerId(sale.customerId || "");
-    setCustomerName(sale.customerName || sale.customer_name || "Customer");
+    setCustomerName(sale.customerName || sale.customer_name || "");
     setCustomerPhone(sale.customerPhone || sale.customer_phone || "");
     setCustomerAddress(sale.customerAddress || sale.customer_address || "");
     // Keep note empty so only user-specified reasons/remarks appear
@@ -1149,23 +1147,13 @@ export const SalesReturnForm: React.FC = () => {
         returnDetails: returnDetailsPayload,
       };
 
-      // CONSOLE LOG THE EXACT REQUEST PAYLOAD
-      console.log("=== [POST /insert-sales-return] Request Payload ===", payload);
-
       const endpoint =
         apiConfig.salesReturn?.insertSalesReturnUrl || "insert-sales-return";
 
-      let response: any = null;
-      try {
-        response = await postData({
-          url: endpoint,
-          body: payload,
-        });
-        // CONSOLE LOG THE EXACT RESPONSE
-        console.log("=== [POST /insert-sales-return] Response Data ===", response);
-      } catch (apiErr) {
-        console.warn("Backend API call completed with local response fallback", apiErr);
-      }
+      const response: any = await postData({
+        url: endpoint,
+        body: payload,
+      });
 
       const generatedReturnNo =
         response?.returnNo ||
@@ -1262,8 +1250,8 @@ export const SalesReturnForm: React.FC = () => {
               <FaUndoAlt className="text-[#009fe3] shrink-0" size={17} />
               <span className="truncate">Create Sales Return</span>
             </h1>
-            <span className="text-[10px] sm:text-xs px-2.5 py-0.5 rounded-full bg-sky-100 text-sky-800 font-semibold w-fit">
-              {salesInvoiceNo || "SR-NEW"}
+            <span className="text-[10px] sm:text-xs px-2.5 py-0.5 rounded-full bg-sky-100 text-sky-800 font-normal w-fit">
+              {salesInvoiceNo || "N/A"}
             </span>
           </div>
 
@@ -1497,54 +1485,50 @@ export const SalesReturnForm: React.FC = () => {
 
         {/* Customer Details */}
         <div>
-          <label className="text-[11px] font-bold text-black  tracking-wider block mb-1">
+          <label className="text-[11px] font-bold text-black tracking-wider block mb-1">
             Customer
           </label>
-          <div className="h-9 px-2.5 py-1.5 border border-gray-200 rounded-lg bg-gray-50 flex items-center justify-between text-xs">
-            <span className="font-semibold text-gray-800 truncate">
-              {customerName || "Customer"}
-            </span>
-            {customerPhone && (
-              <span className="text-[11px] text-gray-500  shrink-0">
-                {customerPhone}
-              </span>
-            )}
-          </div>
+          <input
+            type="text"
+            readOnly
+            disabled
+            value={
+              customerName
+                ? customerPhone
+                  ? `${customerName} • ${customerPhone}`
+                  : customerName
+                : "N/A"
+            }
+            placeholder="N/A"
+            className="w-full h-9 px-2.5 py-1.5 border border-gray-200 rounded-lg bg-gray-50 text-xs font-normal text-black placeholder:text-black cursor-default truncate"
+          />
         </div>
 
         {/* Refund / Settlement Type - Auto-determined by customer's original payment method */}
         <div>
-          <label className="text-[11px] font-bold text-black  tracking-wider block mb-1">
+          <label className="text-[11px] font-bold text-black tracking-wider block mb-1">
             Refund / Settlement Type <span className="text-rose-500">*</span>
           </label>
-          <div className="h-9 px-2.5 py-1.5 border border-gray-200 rounded-lg bg-gray-50 flex items-center justify-between text-xs font-semibold">
-            {selectedSale ? (
-              <>
-                <span className="text-gray-900 flex items-center gap-1.5">
-                  <span
-                    className={`inline-block w-2 h-2 rounded-full ${
-                      paymentType === "CASH"
-                        ? "bg-emerald-500"
-                        : paymentType === "CREDIT"
-                        ? "bg-rose-500"
-                        : "bg-blue-500"
-                    }`}
-                  />
-                  {paymentType === "CASH" && "Cash Refund"}
-                  {paymentType === "CREDIT" && "Credit (Due Adjustment)"}
-                  {paymentType === "MFS" && `MFS (${selectedSale.mfsName || "bKash / Nagad"})`}
-                  {paymentType === "BANK" && `Bank (${selectedSale.bankName || "Transfer"})`}
-                </span>
-                <span className="text-[10px]  font-bold px-1.5 py-0.5 rounded bg-blue-100 text-blue-800 ">
-                  {paymentType}
-                </span>
-              </>
-            ) : (
-              <span className="text-gray-400 font-normal">
-                Auto-detected after invoice selection
-              </span>
-            )}
-          </div>
+          <input
+            type="text"
+            readOnly
+            disabled
+            value={
+              selectedSale
+                ? paymentType === "CASH"
+                  ? "Cash Refund"
+                  : paymentType === "CREDIT"
+                  ? "Credit (Due Adjustment)"
+                  : paymentType === "MFS"
+                  ? `MFS (${selectedSale.mfsName || "bKash / Nagad"})`
+                  : paymentType === "BANK"
+                  ? `Bank (${selectedSale.bankName || "Transfer"})`
+                  : paymentType
+                : "N/A"
+            }
+            placeholder="N/A"
+            className="w-full h-9 px-2.5 py-1.5 border border-gray-200 rounded-lg bg-gray-50 text-xs font-normal text-black placeholder:text-black cursor-default truncate"
+          />
         </div>
       </div>
 
@@ -1608,8 +1592,8 @@ export const SalesReturnForm: React.FC = () => {
                   Cash Collection
                 </span>
               </div>
-              <div className="font-semibold text-black text-xs sm:text-[13px] leading-tight">
-                ৳ {formatMoney(origCashPaid)}
+              <div className="font-normal text-black text-xs sm:text-[13px] leading-tight">
+                {origCashPaid > 0 ? `৳ ${formatMoney(origCashPaid)}` : "N/A"}
               </div>
             </div>
 
@@ -1633,8 +1617,8 @@ export const SalesReturnForm: React.FC = () => {
                   </span>
                 )}
               </div>
-              <div className="font-semibold text-black text-xs sm:text-[13px] leading-tight">
-                ৳ {formatMoney(origBankPaid)}
+              <div className="font-normal text-black text-xs sm:text-[13px] leading-tight">
+                {origBankPaid > 0 ? `৳ ${formatMoney(origBankPaid)}` : "N/A"}
               </div>
             </div>
 
@@ -1658,8 +1642,8 @@ export const SalesReturnForm: React.FC = () => {
                   </span>
                 )}
               </div>
-              <div className="font-semibold text-black text-xs sm:text-[13px] leading-tight">
-                ৳ {formatMoney(origMfsPaid)}
+              <div className="font-normal text-black text-xs sm:text-[13px] leading-tight">
+                {origMfsPaid > 0 ? `৳ ${formatMoney(origMfsPaid)}` : "N/A"}
               </div>
             </div>
 
@@ -1675,8 +1659,8 @@ export const SalesReturnForm: React.FC = () => {
                   Due Balance
                 </span>
               </div>
-              <div className="font-semibold text-black text-xs sm:text-[13px] leading-tight">
-                ৳ {formatMoney(origDueAmount)}
+              <div className="font-normal text-black text-xs sm:text-[13px] leading-tight">
+                {origDueAmount > 0 ? `৳ ${formatMoney(origDueAmount)}` : "N/A"}
               </div>
             </div>
           </div>
@@ -1784,12 +1768,10 @@ export const SalesReturnForm: React.FC = () => {
                       {/* Product */}
                       <td className="py-2 px-3 whitespace-nowrap">
                         <div className="inline-flex items-center gap-1.5 font-normal text-black text-xs whitespace-nowrap">
-                          <span className="font-medium">{line.productName}</span>
-                          {line.productCode && (
-                            <span className="text-[10px] text-gray-500 ">
-                              ({line.productCode})
-                            </span>
-                          )}
+                          <span className="font-normal text-black">{line.productName || "N/A"}</span>
+                          <span className="text-[10px] text-black font-normal">
+                            ({line.productCode || "N/A"})
+                          </span>
                           {isFullyReturned && (
                             <span className="text-[10px] bg-rose-100 text-rose-700 border border-rose-200 px-1.5 py-0.5 rounded font-medium ml-1">
                               Fully Returned
@@ -1801,7 +1783,7 @@ export const SalesReturnForm: React.FC = () => {
                       {/* Unit */}
                       <td className="py-2 px-2 text-center whitespace-nowrap">
                         <span className="text-black bg-gray-100 px-1.5 py-0.5 rounded text-[11px] font-normal">
-                          {line.unit || "pcs"}
+                          {line.unit || "N/A"}
                         </span>
                       </td>
 
@@ -1838,16 +1820,16 @@ export const SalesReturnForm: React.FC = () => {
                       {/* Return Qty with Steppers and Quick Full Button */}
                       <td className="py-2 px-2 text-center whitespace-nowrap">
                         {isFullyReturned || isCurrentSaleAlreadyReturned ? (
-                          <span className="text-gray-400 text-xs italic">
-                            {isCurrentSaleAlreadyReturned ? "Locked" : "N/A"}
+                          <span className="text-black text-xs font-normal">
+                            N/A
                           </span>
                         ) : returnMode === "FULL" ? (
                           <div
-                            className="inline-flex items-center justify-center gap-1.5 px-3 py-1 bg-gray-100 text-gray-800 border border-gray-200 rounded text-xs font-semibold cursor-not-allowed select-none"
+                            className="inline-flex items-center justify-center gap-1.5 px-3 py-1 bg-gray-100 text-black border border-gray-200 rounded text-xs font-normal cursor-not-allowed select-none"
                             title="Full Return mode: Quantities are fixed to full available quantity. Select Partial Return to change."
                           >
                             <span>{line.quantity}</span>
-                            <span className="text-[10px] text-gray-500 font-normal">({line.unit || "pcs"})</span>
+                            <span className="text-[10px] text-black font-normal">({line.unit || "N/A"})</span>
                           </div>
                         ) : (
                           <div className="inline-flex items-center border border-gray-300 rounded overflow-hidden">
@@ -1869,7 +1851,7 @@ export const SalesReturnForm: React.FC = () => {
                               onChange={(e) =>
                                 handleQuantityChange(idx, Number(e.target.value))
                               }
-                              className="w-12 py-1 text-center text-xs font-normal text-black focus:outline-none border-x border-gray-300 disabled:bg-gray-100 disabled:text-gray-400"
+                              className="w-12 py-1 text-center text-xs font-normal text-black focus:outline-none border-x border-gray-300 disabled:bg-gray-100 disabled:text-black"
                             />
                             <button
                               type="button"
@@ -1898,10 +1880,10 @@ export const SalesReturnForm: React.FC = () => {
                           disabled={isFullyReturned || !line.isSelected || isCurrentSaleAlreadyReturned}
                           value={line.returnReason || "wrong_order"}
                           onChange={(e) => handleReturnReasonChange(idx, e.target.value)}
-                          className="w-full min-w-[175px] h-7 px-2 text-[11px] border border-gray-300 rounded bg-white text-gray-800 font-medium focus:outline-none focus:border-[#009fe3] disabled:bg-gray-100 disabled:text-gray-400 cursor-pointer disabled:cursor-not-allowed"
+                          className="w-full min-w-[175px] h-7 px-2 text-[11px] border border-gray-300 rounded bg-white text-black font-semibold focus:outline-none focus:border-[#009fe3] disabled:bg-gray-100 disabled:text-black cursor-pointer disabled:cursor-not-allowed"
                         >
                           {RETURN_REASONS.map((r) => (
-                            <option key={r.value} value={r.value}>
+                            <option key={r.value} value={r.value} className="text-black font-semibold">
                               {r.label}
                             </option>
                           ))}
@@ -1976,12 +1958,12 @@ export const SalesReturnForm: React.FC = () => {
         <div className="lg:col-span-7 bg-white p-2.5 sm:p-3 rounded-xl border border-gray-200 shadow-xs flex flex-col gap-2">
           {/* Header & View-Only Status */}
           <div className="flex items-center justify-between flex-wrap gap-1">
-            <span className="text-[11px] font-bold text-gray-800 tracking-wider flex items-center gap-1.5">
-              <FaWallet size={11} className="text-gray-700" />
+            <span className="text-[11px] font-bold text-black tracking-wider flex items-center gap-1.5">
+              <FaWallet size={11} className="text-black" />
               Payment Refunded
             </span>
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-medium bg-gray-100 text-gray-500 border border-gray-200 select-none">
-              <FaLock size={8} className="text-gray-400" />
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-gray-100 text-black border border-gray-200 select-none">
+              <FaLock size={8} className="text-black" />
               Auto-filled (View Only)
             </span>
           </div>
@@ -2001,12 +1983,12 @@ export const SalesReturnForm: React.FC = () => {
                   className={`w-6 h-6 rounded flex items-center justify-center shrink-0 ${
                     numRefundCash > 0
                       ? "bg-emerald-100 text-emerald-700"
-                      : "bg-gray-100 text-gray-400"
+                      : "bg-gray-100 text-black"
                   }`}
                 >
                   <FaMoneyBillWave size={11} />
                 </div>
-                <span className="font-bold text-[11px] text-gray-800 tracking-wider">CASH</span>
+                <span className="font-bold text-[11px] text-black tracking-wider">CASH</span>
               </div>
 
               <div
@@ -2016,17 +1998,17 @@ export const SalesReturnForm: React.FC = () => {
                     : "border-gray-200 bg-gray-100/70"
                 }`}
               >
-                <span className="text-[11px] text-gray-500 font-bold px-1.5 bg-gray-50 h-full flex items-center border-r border-gray-200 select-none">
-                  ৳
+                <span className="text-[11px] text-black font-normal px-1.5 bg-gray-50 h-full flex items-center border-r border-gray-200 select-none">
+                  {numRefundCash > 0 ? "৳" : "—"}
                 </span>
                 <input
                   type="text"
                   readOnly
                   disabled
                   tabIndex={-1}
-                  placeholder="0"
-                  value={numRefundCash > 0 ? numRefundCash.toString() : ""}
-                  className="w-full text-right px-1.5 text-xs font-bold text-gray-900 outline-none bg-transparent cursor-not-allowed select-none h-full placeholder:text-gray-400"
+                  placeholder="N/A"
+                  value={numRefundCash > 0 ? numRefundCash.toString() : "N/A"}
+                  className="w-full text-right px-1.5 text-xs font-normal text-black outline-none bg-transparent cursor-not-allowed select-none h-full placeholder:text-black"
                 />
               </div>
             </div>
@@ -2044,19 +2026,19 @@ export const SalesReturnForm: React.FC = () => {
                   className={`w-6 h-6 rounded flex items-center justify-center shrink-0 ${
                     numRefundBank > 0
                       ? "bg-sky-100 text-sky-700"
-                      : "bg-gray-100 text-gray-400"
+                      : "bg-gray-100 text-black"
                   }`}
                 >
                   <FaCreditCard size={11} />
                 </div>
-                <span className="font-bold text-[11px] text-gray-800 tracking-wider shrink-0">BANK</span>
+                <span className="font-bold text-[11px] text-black tracking-wider shrink-0">BANK</span>
                 <select
                   disabled
                   value={selectedRefundBankId}
-                  className="h-6.5 w-full max-w-[130px] sm:max-w-[215px] px-1.5 text-[11px] border border-gray-200 rounded bg-gray-50 text-gray-700 font-medium cursor-not-allowed truncate select-none"
+                  className="h-6.5 w-full max-w-[130px] sm:max-w-[215px] px-1.5 text-[11px] border border-gray-200 rounded bg-gray-50 text-black font-normal cursor-not-allowed truncate select-none"
                 >
-                  <option value="" className="text-gray-500">
-                    {numRefundBank > 0 ? "Bank Account" : "No Bank Used"}
+                  <option value="" className="text-black font-normal">
+                    {numRefundBank > 0 ? "Bank Account" : "N/A"}
                   </option>
                   {registeredBankAccounts.map((b) => (
                     <option key={b.id || b.bankId || b._id} value={b.id || b.bankId || b._id} className="text-black">
@@ -2076,17 +2058,17 @@ export const SalesReturnForm: React.FC = () => {
                     : "border-gray-200 bg-gray-100/70"
                 }`}
               >
-                <span className="text-[11px] text-gray-500 font-bold px-1.5 bg-gray-50 h-full flex items-center border-r border-gray-200 select-none">
-                  ৳
+                <span className="text-[11px] text-black font-normal px-1.5 bg-gray-50 h-full flex items-center border-r border-gray-200 select-none">
+                  {numRefundBank > 0 ? "৳" : "—"}
                 </span>
                 <input
                   type="text"
                   readOnly
                   disabled
                   tabIndex={-1}
-                  placeholder="0"
-                  value={numRefundBank > 0 ? numRefundBank.toString() : ""}
-                  className="w-full text-right px-1.5 text-xs font-bold text-gray-900 outline-none bg-transparent cursor-not-allowed select-none h-full placeholder:text-gray-400"
+                  placeholder="N/A"
+                  value={numRefundBank > 0 ? numRefundBank.toString() : "N/A"}
+                  className="w-full text-right px-1.5 text-xs font-normal text-black outline-none bg-transparent cursor-not-allowed select-none h-full placeholder:text-black"
                 />
               </div>
             </div>
@@ -2104,19 +2086,19 @@ export const SalesReturnForm: React.FC = () => {
                   className={`w-6 h-6 rounded flex items-center justify-center shrink-0 ${
                     numRefundMfs > 0
                       ? "bg-purple-100 text-purple-700"
-                      : "bg-gray-100 text-gray-400"
+                      : "bg-gray-100 text-black"
                   }`}
                 >
                   <FaMobileAlt size={11} />
                 </div>
-                <span className="font-bold text-[11px] text-gray-800 tracking-wider shrink-0">MFS</span>
+                <span className="font-bold text-[11px] text-black tracking-wider shrink-0">MFS</span>
                 <select
                   disabled
                   value={selectedRefundMfsId}
-                  className="h-6.5 w-full max-w-[130px] sm:max-w-[215px] px-1.5 text-[11px] border border-gray-200 rounded bg-gray-50 text-gray-700 font-medium cursor-not-allowed truncate select-none"
+                  className="h-6.5 w-full max-w-[130px] sm:max-w-[215px] px-1.5 text-[11px] border border-gray-200 rounded bg-gray-50 text-black font-normal cursor-not-allowed truncate select-none"
                 >
-                  <option value="" className="text-gray-500">
-                    {numRefundMfs > 0 ? "MFS Account" : "No MFS Used"}
+                  <option value="" className="text-black font-normal">
+                    {numRefundMfs > 0 ? "MFS Account" : "N/A"}
                   </option>
                   {registeredMfsAccounts.map((m) => {
                     const nameVal = m.name || m.mfsName || m.method || "MFS";
@@ -2138,17 +2120,17 @@ export const SalesReturnForm: React.FC = () => {
                     : "border-gray-200 bg-gray-100/70"
                 }`}
               >
-                <span className="text-[11px] text-gray-500 font-bold px-1.5 bg-gray-50 h-full flex items-center border-r border-gray-200 select-none">
-                  ৳
+                <span className="text-[11px] text-black font-normal px-1.5 bg-gray-50 h-full flex items-center border-r border-gray-200 select-none">
+                  {numRefundMfs > 0 ? "৳" : "—"}
                 </span>
                 <input
                   type="text"
                   readOnly
                   disabled
                   tabIndex={-1}
-                  placeholder="0"
-                  value={numRefundMfs > 0 ? numRefundMfs.toString() : ""}
-                  className="w-full text-right px-1.5 text-xs font-bold text-gray-900 outline-none bg-transparent cursor-not-allowed select-none h-full placeholder:text-gray-400"
+                  placeholder="N/A"
+                  value={numRefundMfs > 0 ? numRefundMfs.toString() : "N/A"}
+                  className="w-full text-right px-1.5 text-xs font-normal text-black outline-none bg-transparent cursor-not-allowed select-none h-full placeholder:text-black"
                 />
               </div>
             </div>
@@ -2167,16 +2149,16 @@ export const SalesReturnForm: React.FC = () => {
                     className={`w-6 h-6 rounded flex items-center justify-center shrink-0 font-bold text-[11px] ${
                       numRefundDue > 0
                         ? "bg-rose-100 text-rose-700"
-                        : "bg-gray-100 text-gray-400"
+                        : "bg-gray-100 text-black"
                     }`}
                   >
                     ৳
                   </div>
                   <div>
-                    <span className="font-bold text-[11px] text-gray-800 tracking-wider block leading-tight">
+                    <span className="font-bold text-[11px] text-black tracking-wider block leading-tight">
                       DUE ADJUST
                     </span>
-                    <span className="text-[9.5px] text-gray-400 block leading-none">
+                    <span className="text-[9.5px] text-black font-normal block leading-none">
                       Max: ৳{formatMoney(origDueAmount)}
                     </span>
                   </div>
@@ -2189,17 +2171,17 @@ export const SalesReturnForm: React.FC = () => {
                       : "border-gray-200 bg-gray-100/70"
                   }`}
                 >
-                  <span className="text-[11px] text-gray-500 font-bold px-1.5 bg-gray-50 h-full flex items-center border-r border-gray-200 select-none">
-                    ৳
+                  <span className="text-[11px] text-black font-normal px-1.5 bg-gray-50 h-full flex items-center border-r border-gray-200 select-none">
+                    {numRefundDue > 0 ? "৳" : "—"}
                   </span>
                   <input
                     type="text"
                     readOnly
                     disabled
                     tabIndex={-1}
-                    placeholder="0"
-                    value={numRefundDue > 0 ? numRefundDue.toString() : ""}
-                    className="w-full text-right px-1.5 text-xs font-bold text-gray-900 outline-none bg-transparent cursor-not-allowed select-none h-full placeholder:text-gray-400"
+                    placeholder="N/A"
+                    value={numRefundDue > 0 ? numRefundDue.toString() : "N/A"}
+                    className="w-full text-right px-1.5 text-xs font-normal text-black outline-none bg-transparent cursor-not-allowed select-none h-full placeholder:text-black"
                   />
                 </div>
               </div>

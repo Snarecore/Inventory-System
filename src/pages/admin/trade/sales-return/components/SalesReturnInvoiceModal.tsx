@@ -7,10 +7,8 @@ import {
   FaPhone,
   FaMapMarkerAlt,
   FaUndoAlt,
-  FaCalendarAlt,
   FaUser,
   FaCheckCircle,
-  FaFileInvoice,
 } from "react-icons/fa";
 import { getUserInfo } from "@/utils/auth-storage";
 import { formatMoney } from "@/utils/formatters";
@@ -42,9 +40,9 @@ export const SalesReturnInvoiceModal: React.FC<SalesReturnInvoiceModalProps> = (
   const deliveryCharge = Number(r.deliveryCharge ?? 0);
   const refundAmount = Number(r.refundAmount ?? r.grandTotal ?? (totalAmount - discount + vat + deliveryCharge));
 
-  const customerName = r.customerName || "Customer";
-  const customerPhone = r.customerPhone || "-";
-  const customerAddress = r.customerAddress || "-";
+  const customerName = r.customerName || "N/A";
+  const customerPhone = r.customerPhone || "N/A";
+  const customerAddress = r.customerAddress || "N/A";
 
   useEffect(() => {
     if (isOpen && autoPrint) {
@@ -122,7 +120,7 @@ export const SalesReturnInvoiceModal: React.FC<SalesReturnInvoiceModalProps> = (
                 </span>
               </div>
               <p className="text-[11px] text-gray-500 mt-0.5 leading-tight">
-                {userInfo?.address || "Enterprise Commercial ERP System"}
+                {userInfo?.address || ""}
               </p>
               <p className="text-[11px] text-gray-500 leading-tight">
                 Phone: {userInfo?.phone || "017XXXXXXXX"} | Business Code: {userInfo?.businessCode || "1001"}
@@ -209,7 +207,7 @@ export const SalesReturnInvoiceModal: React.FC<SalesReturnInvoiceModalProps> = (
 
                   return (
                     <tr key={idx} className="hover:bg-gray-50/50">
-                      <td className="py-1 px-2.5 text-center text-gray-500 font-medium">
+                      <td className="py-1 px-2.5 text-center text-black font-normal">
                         {idx + 1}
                       </td>
                       <td className="py-1 px-2.5">
@@ -218,7 +216,7 @@ export const SalesReturnInvoiceModal: React.FC<SalesReturnInvoiceModalProps> = (
                         </div>
                         <div className="flex items-center gap-1.5 flex-wrap">
                           {item.productCode && (
-                            <span className="text-[10px] text-gray-400">
+                            <span className="text-[10px] text-black font-normal">
                               Code: {item.productCode}
                             </span>
                           )}
@@ -229,7 +227,7 @@ export const SalesReturnInvoiceModal: React.FC<SalesReturnInvoiceModalProps> = (
                           )}
                         </div>
                       </td>
-                      <td className="py-1 px-2.5 text-center font-medium text-black">
+                      <td className="py-1 px-2.5 text-center font-normal text-black">
                         ৳ {formatMoney(price)}
                       </td>
                       <td className="py-1 px-2.5 text-center font-bold text-black">
@@ -248,14 +246,12 @@ export const SalesReturnInvoiceModal: React.FC<SalesReturnInvoiceModalProps> = (
           {/* Notes and Amount Summary */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-0.5">
             <div className="text-xs flex flex-col justify-between">
-              <div>
-                {(r.note || r.remarks || (r as any).reason) && (
-                  <div className="p-1.5 rounded-lg bg-gray-50 border border-gray-100 mb-1.5">
-                    <span className="font-semibold text-black text-[11px]">Return Reason / Note:</span>
-                    <p className="text-black text-[11px] mt-0.5 leading-snug">{r.note || r.remarks || (r as any).reason}</p>
-                  </div>
-                )}
-              </div>
+                <div className="p-1.5 rounded-lg bg-gray-50 border border-gray-100 mb-1.5">
+                  <span className="font-semibold text-black text-[11px]">Return Reason / Note:</span>
+                  <p className="text-[11px] mt-0.5 leading-snug text-black font-normal">
+                    {r.note || r.remarks || (r as any).reason || "N/A"}
+                  </p>
+                </div>
               <div className="flex items-center gap-1.5 text-emerald-700 text-[10.5px] font-medium py-0.5">
                 <FaCheckCircle className="text-xs shrink-0" />
                 <span>Returned items re-stocked into inventory.</span>

@@ -11,16 +11,6 @@ export const RETURN_REASONS = [
   { value: "other", label: "Other / Special Reason" },
 ];
 
-// Clean up any old temporary keys from browser if present
-if (typeof window !== "undefined") {
-  try {
-    window.localStorage.removeItem("cashboi_sales_return_notes_v1");
-    window.localStorage.removeItem("cashboi_sales_returns_records_v1");
-  } catch {
-    // Ignore
-  }
-}
-
 export const getReturnReasonLabel = (val?: string | null): string => {
   if (!val) return "";
   const cleanCode = String(val).split(" || ")[0].trim();

@@ -46,7 +46,7 @@ const Modal: React.FC<ModalProps> = ({
 						className="text-gray-400 hover:text-red-500 transition-colors p-0.5 rounded-lg hover:bg-gray-100 cursor-pointer"
 						title="Close Modal"
 					>
-						<TiDelete className="text-2xl text-gray-400 hover:text-red-500 transition-colors" />
+						<TiDelete className="text-2xl text-red-500 transition-colors" />
 					</button>
 				</div>
 				<div className="mt-2.5 flex-1">{children}</div>

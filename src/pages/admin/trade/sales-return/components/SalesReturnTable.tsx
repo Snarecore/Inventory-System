@@ -1,14 +1,9 @@
 import React, { useState, useRef, useEffect, useMemo } from "react";
-import { FiEye, FiPrinter, FiChevronDown, FiCopy, FiCheck, FiX, FiRotateCcw } from "react-icons/fi";
+import { FiEye, FiPrinter, FiChevronDown, FiCopy, FiCheck, FiRotateCcw } from "react-icons/fi";
 import { BsFilterRight } from "react-icons/bs";
 import {
   FaFileExcel,
-  FaFileInvoice,
-  FaUndoAlt,
-  FaPhone,
-  FaCalendarAlt,
   FaSearch,
-  FaUser,
   FaBoxOpen,
 } from "react-icons/fa";
 import moment from "moment";
@@ -320,7 +315,7 @@ export const SalesReturnTable: React.FC<SalesReturnTableProps> = ({
               <option value="MFS">MFS (bKash/Nagad)</option>
               <option value="BANK">Bank</option>
             </select>
-            <FiChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none text-xs" size={13} />
+            <FiChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 text-black pointer-events-none text-xs" size={13} />
           </div>
         </div>
 
@@ -520,7 +515,7 @@ export const SalesReturnTable: React.FC<SalesReturnTableProps> = ({
                             {item.note || item.remarks}
                           </span>
                         ) : (
-                          <span className="text-gray-400">-</span>
+                          <span className="text-black font-normal">N/A</span>
                         )}
                       </td>
 
@@ -584,7 +579,7 @@ export const SalesReturnTable: React.FC<SalesReturnTableProps> = ({
                               </div>
 
                               <div className="flex items-center gap-2 text-xs">
-                                <span className="text-gray-500">Total Refund:</span>
+                                <span className="text-black">Total Refund:</span>
                                 <span className="font-semibold text-black text-xs">
                                   ৳ {formatMoney(refund)}
                                 </span>
@@ -593,7 +588,7 @@ export const SalesReturnTable: React.FC<SalesReturnTableProps> = ({
                                   onClick={() => onView(item)}
                                   className="ml-2 text-xs text-sky-600 hover:underline font-medium cursor-pointer"
                                 >
-                                  View Full Slip →
+                                  View Full Slip
                                 </button>
                               </div>
                             </div>
@@ -602,8 +597,8 @@ export const SalesReturnTable: React.FC<SalesReturnTableProps> = ({
                               <div className="overflow-x-auto">
                                 <table className="w-full text-left text-xs border-collapse">
                                   <thead>
-                                    <tr className="bg-gray-50 text-gray-700 font-semibold border-b border-gray-200 text-[11px]">
-                                      <th className="py-1.5 px-2 text-center w-8">#</th>
+                                    <tr className="bg-gray-50 text-black font-semibold border-b border-gray-200 text-[11px]">
+                                      <th className="py-1.5 px-2 text-center w-8">SL</th>
                                       <th className="py-1.5 px-2">Product Name</th>
                                       <th className="py-1.5 px-2">Product Code</th>
                                       <th className="py-1.5 px-2 text-center">Unit Price</th>
@@ -621,16 +616,16 @@ export const SalesReturnTable: React.FC<SalesReturnTableProps> = ({
 
                                       return (
                                         <tr key={pIdx} className="hover:bg-gray-50/50">
-                                          <td className="py-1.5 px-2 text-center text-gray-400 ">
+                                          <td className="py-1.5 px-2 text-center text-black font-medium">
                                             {pIdx + 1}
                                           </td>
                                           <td className="py-1.5 px-2 font-medium text-black">
                                             {prod.productName || "Product"}
                                           </td>
-                                          <td className="py-1.5 px-2  text-gray-500 text-[11px]">
-                                            {prod.productCode || "-"}
+                                          <td className="py-1.5 px-2  text-black text-[11px]">
+                                            {prod.productCode || "N/A"}
                                           </td>
-                                          <td className="py-1.5 px-2 text-center ">
+                                          <td className="py-1.5 px-2 text-center text-black font-medium">
                                             ৳ {formatMoney(pPrice)}
                                           </td>
                                           <td className="py-1.5 px-2 text-center font-bold text-sky-700">
@@ -642,7 +637,7 @@ export const SalesReturnTable: React.FC<SalesReturnTableProps> = ({
                                                 {getReturnReasonLabel(pReason)}
                                               </span>
                                             ) : (
-                                              <span className="text-gray-400">-</span>
+                                              <span className="text-black font-normal">N/A</span>
                                             )}
                                           </td>
                                           <td className="py-1.5 px-2 text-right font-bold text-black ">
@@ -655,15 +650,15 @@ export const SalesReturnTable: React.FC<SalesReturnTableProps> = ({
                                 </table>
                               </div>
                             ) : (
-                              <div className="text-gray-500 text-xs italic py-2 text-center">
+                              <div className="text-black text-xs italic py-2 text-center">
                                 Direct voucher refund without individual item breakdown records.
                               </div>
                             )}
 
                             {/* Remarks info if available */}
                             {(item.note || item.remarks) && (
-                              <div className="mt-2 pt-2 border-t border-gray-100 text-[11px] text-gray-600 flex items-center gap-1.5">
-                                <strong className="text-gray-800">Remarks:</strong> {item.note || item.remarks}
+                              <div className="mt-2 pt-2 border-t border-gray-100 text-[11px] text-black font-normal flex items-center gap-1.5">
+                                <strong className="text-black">Remarks:</strong> {item.note || item.remarks}
                               </div>
                             )}
                           </div>

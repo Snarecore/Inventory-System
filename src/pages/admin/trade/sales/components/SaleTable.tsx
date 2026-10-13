@@ -545,9 +545,8 @@ export const SaleTable: React.FC<SaleTableProps> = ({
                           {isAlreadyReturned ? (
                             <span
                               title="This sale has already been returned"
-                              className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold text-gray-400 bg-gray-100 border border-gray-200 rounded-md cursor-not-allowed select-none"
+                              className="inline-flex items-center gap-1.5 px-1.5 py-1 text-xs font-semibold text-rose-600 bg-gray-100 border border-gray-200 rounded-md cursor-not-allowed select-none"
                             >
-                              <FaUndoAlt size={10} className="text-gray-400" />
                               <span>Returned</span>
                             </span>
                           ) : (
@@ -559,9 +558,8 @@ export const SaleTable: React.FC<SaleTableProps> = ({
                                 })
                               }
                               title="Return Product"
-                              className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold text-white bg-[var(--color-primary)] hover:opacity-90 active:scale-95 rounded-md shadow-xs transition-all cursor-pointer"
+                              className="inline-flex items-center gap-1.5 px-1.5 py-1 text-xs text-white bg-[var(--color-primary)] rounded-md shadow-xs transition-all cursor-pointer"
                             >
-                              <FaUndoAlt size={10} />
                               <span>Return Product</span>
                             </button>
                           )}
