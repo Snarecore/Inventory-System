@@ -317,6 +317,8 @@ export interface SalesReturnItem {
   paymentType: "CASH" | "CREDIT" | "MFS" | "BANK" | string;
   status: string;
   note?: string;
+  remarks?: string;
+  refNo?: string;
   osType?: string;
   returnDetails?: SalesReturnDetailItem[];
   itemsCount?: number;

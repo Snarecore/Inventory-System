@@ -39,6 +39,7 @@ import { postData } from "@/services/api-service";
 import { formatMoney } from "@/utils/formatters";
 import { showSuccessToast, showErrorToast } from "@/utils/toast-utils";
 import type { SaleItem, SalesReturnItem } from "@/types";
+import { RETURN_REASONS } from "@/pages/admin/trade/sales-return/constants/returnReasons";
 
 interface ReturnLineFormState {
   productId: string | number;
@@ -54,6 +55,7 @@ interface ReturnLineFormState {
   vat: number;
   deliveryCharge: number;
   total: number;
+  returnReason?: string;
   isSelected: boolean;
 }
 
@@ -73,7 +75,7 @@ export const SalesReturnForm: React.FC = () => {
   const [customerPhone, setCustomerPhone] = useState<string>(stateSale?.customerPhone || "");
   const [customerAddress, setCustomerAddress] = useState<string>(stateSale?.customerAddress || "");
   const [paymentType, setPaymentType] = useState<string>("CASH");
-  const [status, setStatus] = useState<string>("Completed");
+  const [status, setStatus] = useState<string>("Return");
   const [note, setNote] = useState<string>("");
 
   // Return Mode: "FULL" (all items & full qty) vs "PARTIAL" (selected items / partial qty)
@@ -463,6 +465,7 @@ export const SalesReturnForm: React.FC = () => {
           vat: 0,
           deliveryCharge: 0,
           total: p * initialReturnQty,
+          returnReason: "wrong_order",
           isSelected: initialSelected,
         };
       });
@@ -711,6 +714,14 @@ export const SalesReturnForm: React.FC = () => {
       setReturnMode(allFull ? "FULL" : "PARTIAL");
       return updated;
     });
+  };
+
+  const handleReturnReasonChange = (idx: number, reason: string) => {
+    setLines((prev) =>
+      prev.map((item, i) =>
+        i === idx ? { ...item, returnReason: reason } : item
+      )
+    );
   };
 
   // Original invoice payment numbers
@@ -1046,6 +1057,8 @@ export const SalesReturnForm: React.FC = () => {
     try {
       const activeLines = lines.filter((l) => l.isSelected && l.quantity > 0);
 
+      const finalNote = note.trim() || (salesInvoiceNo ? `Return from invoice ${salesInvoiceNo}` : "");
+
       // Return details matching exact API schema
       const returnDetailsPayload = activeLines.map((l) => ({
         productId: l.productId,
@@ -1057,6 +1070,7 @@ export const SalesReturnForm: React.FC = () => {
         discount: l.discount || 0,
         vat: l.vat || 0,
         total: Number((l.quantity * l.sellPrice).toFixed(2)),
+        returnReason: l.returnReason || "wrong_order",
       }));
 
       // Calculate refund payment type
@@ -1104,9 +1118,10 @@ export const SalesReturnForm: React.FC = () => {
         grandTotal: Number(totals.grandTotal.toFixed(2)),
         refundAmount: Number(totals.refundAmount.toFixed(2)),
         paymentType: effectivePaymentType,
-        status,
-        note: note.trim(),
-        remarks: note.trim(),
+        status: status || "Return",
+        note: finalNote,
+        remarks: finalNote,
+        refNo: `SR-${Date.now()}`,
         osType: "WEB",
         // Multi-channel refund breakdown
         cashReceived: numRefundCash,
@@ -1187,13 +1202,16 @@ export const SalesReturnForm: React.FC = () => {
         mfsId: numRefundMfs > 0 ? selectedRefundMfsId : undefined,
         mfsName: matchedMfs?.name || matchedMfs?.mfsName || matchedMfs?.method,
         mfsPhone: matchedMfs?.phoneNumber || matchedMfs?.mfsPhone || matchedMfs?.phone,
-        status,
-        note,
+        status: status || "Return",
+        note: finalNote,
+        remarks: finalNote,
+        refNo: payload.refNo,
         osType: "WEB",
         returnDetails: returnDetailsPayload as any,
         itemsCount: activeLines.length,
         createdAt: new Date().toISOString(),
       };
+
 
       // Mark as submitted so invalidating query does not trigger error toast on active order
       hasJustSubmittedRef.current = true;
@@ -1723,7 +1741,7 @@ export const SalesReturnForm: React.FC = () => {
           </div>
         ) : (
           <div className="overflow-x-auto w-full">
-            <table className="w-full text-xs text-left border-collapse min-w-[760px]">
+            <table className="w-full text-xs text-left border-collapse min-w-[960px]">
               <thead>
                 <tr className="bg-[#41bef3] text-black border-b border-gray-200 text-[11px] font-semibold shadow-xs">
                   <th className="py-2 px-3 text-center w-10 whitespace-nowrap">Select</th>
@@ -1732,6 +1750,7 @@ export const SalesReturnForm: React.FC = () => {
                   <th className="py-2 px-2 text-center w-24 whitespace-nowrap">Sold Qty</th>
                   <th className="py-2 px-2 text-center w-28 whitespace-nowrap">Available Qty</th>
                   <th className="py-2 px-2 text-center w-36 whitespace-nowrap">Return Qty</th>
+                  <th className="py-2 px-2 text-left min-w-[190px] whitespace-nowrap">Return Reason</th>
                   <th className="py-2 px-2 text-right w-28 whitespace-nowrap">Sell Price (৳)</th>
                   <th className="py-2 px-3 text-right w-28 whitespace-nowrap">Total (৳)</th>
                 </tr>
@@ -1871,6 +1890,22 @@ export const SalesReturnForm: React.FC = () => {
                             </button>
                           </div>
                         )}
+                      </td>
+
+                      {/* Return Reason */}
+                      <td className="py-2 px-2 whitespace-nowrap">
+                        <select
+                          disabled={isFullyReturned || !line.isSelected || isCurrentSaleAlreadyReturned}
+                          value={line.returnReason || "wrong_order"}
+                          onChange={(e) => handleReturnReasonChange(idx, e.target.value)}
+                          className="w-full min-w-[175px] h-7 px-2 text-[11px] border border-gray-300 rounded bg-white text-gray-800 font-medium focus:outline-none focus:border-[#009fe3] disabled:bg-gray-100 disabled:text-gray-400 cursor-pointer disabled:cursor-not-allowed"
+                        >
+                          {RETURN_REASONS.map((r) => (
+                            <option key={r.value} value={r.value}>
+                              {r.label}
+                            </option>
+                          ))}
+                        </select>
                       </td>
 
                       {/* Sell Price */}

@@ -15,6 +15,7 @@ import {
 import { getUserInfo } from "@/utils/auth-storage";
 import { formatMoney } from "@/utils/formatters";
 import moment from "moment";
+import { getReturnReasonLabel } from "../constants/returnReasons";
 
 interface SalesReturnInvoiceModalProps {
   isOpen: boolean;
@@ -215,11 +216,18 @@ export const SalesReturnInvoiceModal: React.FC<SalesReturnInvoiceModalProps> = (
                         <div className="font-semibold text-black">
                           {item.productName || "Product"}
                         </div>
-                        {item.productCode && (
-                          <span className="text-[10px] text-gray-400">
-                            Code: {item.productCode}
-                          </span>
-                        )}
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          {item.productCode && (
+                            <span className="text-[10px] text-gray-400">
+                              Code: {item.productCode}
+                            </span>
+                          )}
+                          {(item.returnReason || item.reason) && (
+                            <span className="text-[10px] text-amber-800 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded font-medium">
+                              Reason: {getReturnReasonLabel(item.returnReason || item.reason)}
+                            </span>
+                          )}
+                        </div>
                       </td>
                       <td className="py-1 px-2.5 text-center font-medium text-black">
                         ৳ {formatMoney(price)}

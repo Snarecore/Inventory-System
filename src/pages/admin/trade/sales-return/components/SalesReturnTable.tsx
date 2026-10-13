@@ -21,6 +21,7 @@ import type { SalesReturnItem, PartyItem } from "@/types";
 import { exportSalesReturnToExcel } from "@/utils/excel-export";
 import { showSuccessToast, showErrorToast } from "@/utils/toast-utils";
 import { formatMoney } from "@/utils/formatters";
+import { getReturnReasonLabel } from "../constants/returnReasons";
 
 interface SalesReturnTableProps {
   returns: SalesReturnItem[];
@@ -410,7 +411,7 @@ export const SalesReturnTable: React.FC<SalesReturnTableProps> = ({
                 <th className="py-2.5 px-3">Customer</th>
                 <th className="py-2.5 px-3">Return Date</th>
                 <th className="py-2.5 px-3 text-center">Items</th>
-                <th className="py-2.5 px-3">Reason</th>
+                <th className="py-2.5 px-3">Remarks</th>
                 <th className="py-2.5 px-3 text-center">Payment Type</th>
                 <th className="py-2.5 px-3 text-right">Refund Amount</th>
                 <th className="py-2.5 px-3 text-center">Status</th>
@@ -460,7 +461,7 @@ export const SalesReturnTable: React.FC<SalesReturnTableProps> = ({
                             title="Click to view voucher"
                             className="cursor-pointer hover:text-sky-600 transition-colors"
                           >
-                            {item.orderNo ? `Order #${item.orderNo}` : (item.returnNo || `RET-${item.id}`)}
+                            {item.orderNo ? `${item.orderNo}` : (item.returnNo || `RET-${item.id}`)}
                           </span>
                           <button
                             type="button"
@@ -482,11 +483,6 @@ export const SalesReturnTable: React.FC<SalesReturnTableProps> = ({
                         <div className="truncate text-black font-normal">
                           {item.customerName || "Walk-in Customer"}
                         </div>
-                        {item.customerPhone ? (
-                          <div className="text-[10px] text-gray-500">
-                            {item.customerPhone}
-                          </div>
-                        ) : null}
                       </td>
 
                       {/* Return Date */}
@@ -514,14 +510,14 @@ export const SalesReturnTable: React.FC<SalesReturnTableProps> = ({
                         </button>
                       </td>
 
-                      {/* Reason */}
+                      {/* Remarks */}
                       <td className="py-2.5 px-3 text-black text-xs font-normal whitespace-nowrap">
-                        {item.note ? (
+                        {item.note || item.remarks ? (
                           <span
-                            className="text-gray-700 text-xs truncate max-w-[180px] inline-block font-normal"
-                            title={item.note}
+                            className="text-black text-xs truncate max-w-[200px] inline-block font-normal"
+                            title={item.note || item.remarks}
                           >
-                            {item.note}
+                            {item.note || item.remarks}
                           </span>
                         ) : (
                           <span className="text-gray-400">-</span>
@@ -612,6 +608,7 @@ export const SalesReturnTable: React.FC<SalesReturnTableProps> = ({
                                       <th className="py-1.5 px-2">Product Code</th>
                                       <th className="py-1.5 px-2 text-center">Unit Price</th>
                                       <th className="py-1.5 px-2 text-center">Return Qty</th>
+                                      <th className="py-1.5 px-2 text-center">Return Reason</th>
                                       <th className="py-1.5 px-2 text-right">Subtotal</th>
                                     </tr>
                                   </thead>
@@ -620,6 +617,7 @@ export const SalesReturnTable: React.FC<SalesReturnTableProps> = ({
                                       const pQty = Number(prod.quantity ?? prod.returnQuantity ?? 1);
                                       const pPrice = Number(prod.sellPrice ?? 0);
                                       const pTotal = Number(prod.total ?? pQty * pPrice);
+                                      const pReason = prod.returnReason || prod.return_reason || prod.reason;
 
                                       return (
                                         <tr key={pIdx} className="hover:bg-gray-50/50">
@@ -638,6 +636,15 @@ export const SalesReturnTable: React.FC<SalesReturnTableProps> = ({
                                           <td className="py-1.5 px-2 text-center font-bold text-sky-700">
                                             {pQty} {prod.unit || "pcs"}
                                           </td>
+                                          <td className="py-1.5 px-2 text-center">
+                                            {pReason ? (
+                                              <span className="inline-block px-1.5 py-0.5 rounded text-[10px] font-medium bg-amber-50 text-amber-800 border border-amber-200">
+                                                {getReturnReasonLabel(pReason)}
+                                              </span>
+                                            ) : (
+                                              <span className="text-gray-400">-</span>
+                                            )}
+                                          </td>
                                           <td className="py-1.5 px-2 text-right font-bold text-black ">
                                             ৳ {formatMoney(pTotal)}
                                           </td>
@@ -654,9 +661,9 @@ export const SalesReturnTable: React.FC<SalesReturnTableProps> = ({
                             )}
 
                             {/* Remarks info if available */}
-                            {item.note && (
+                            {(item.note || item.remarks) && (
                               <div className="mt-2 pt-2 border-t border-gray-100 text-[11px] text-gray-600 flex items-center gap-1.5">
-                                <strong className="text-gray-800">Reason / Note:</strong> {item.note}
+                                <strong className="text-gray-800">Remarks:</strong> {item.note || item.remarks}
                               </div>
                             )}
                           </div>

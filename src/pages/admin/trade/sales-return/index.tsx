@@ -17,6 +17,7 @@ import { buildAccessUser } from "@/utils/access-user";
 import { postData } from "@/services/api-service";
 import type { SalesReturnItem, PartyItem, SaleItem } from "@/types";
 import { FaShoppingCart, FaUndoAlt } from "react-icons/fa";
+import { extractReturnRemarks } from "./constants/returnReasons";
 
 const SalesReturnPage: React.FC = () => {
   const navigate = useNavigate();
@@ -134,20 +135,17 @@ const SalesReturnPage: React.FC = () => {
               Boolean(item.returnNo) ||
               Boolean(item.returnGrandTotal) ||
               String(item.returnType || "").toUpperCase() === "RETURN" ||
+              String(item.status || "").toUpperCase() === "RETURN" ||
+              (item.refNo && String(item.refNo).startsWith("SR-")) ||
               (Array.isArray(item.returnDetails) && item.returnDetails.length > 0) ||
               (Array.isArray(item.salesReturnDetails) && item.salesReturnDetails.length > 0);
 
             if (isReturn) {
-              const rawNote = String(item.note || "").trim();
-              // Strip auto-generated "Return from invoice ...," prefix if it exists in older records
-              const noteText = rawNote
-                .replace(/^Return from invoice[^,]+,\s*/i, "")
-                .replace(/^Return from invoice[^\n]+/i, "")
-                .trim();
+              const noteText = extractReturnRemarks(item);
 
               returnsList.push({
                 id: item.id || item.returnId || item.return_id,
-                returnNo: item.returnNo || (item.orderNo ? `RET-${item.orderNo}` : `RET-${item.id}`),
+                returnNo: item.returnNo || item.refNo || (item.orderNo ? `RET-${item.orderNo}` : `RET-${item.id}`),
                 orderNo: item.orderNo || item.order_no || "",
                 salesInvoiceNo: item.salesInvoiceNo || item.invoiceNo || "-",
                 invoiceNo: item.salesInvoiceNo || item.invoiceNo || "-",
@@ -371,12 +369,14 @@ const SalesReturnPage: React.FC = () => {
         const invNo = String(item.salesInvoiceNo || item.invoiceNo || "").toLowerCase();
         const cName = String(item.customerName || "").toLowerCase();
         const cPhone = String(item.customerPhone || "").toLowerCase();
+        const remarks = String(item.note || item.remarks || "").toLowerCase();
         if (
           !ordNo.includes(q) &&
           !retNo.includes(q) &&
           !invNo.includes(q) &&
           !cName.includes(q) &&
-          !cPhone.includes(q)
+          !cPhone.includes(q) &&
+          !remarks.includes(q)
         ) {
           return false;
         }
