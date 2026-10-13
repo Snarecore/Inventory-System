@@ -210,16 +210,16 @@ export const PaymentChannelReportTable: React.FC<PaymentChannelReportTableProps>
                   key={item.channel + idx}
                   className="hover:bg-sky-50/40 transition-colors"
                 >
-                  <td className="py-3 px-3 text-center text-gray-700 font-semibold text-xs">
+                  <td className="py-2.5 px-3 text-center text-gray-700 font-semibold text-xs">
                     {idx + 1}
                   </td>
-                  <td className="py-3 px-3">
+                  <td className="py-2.5 px-3">
                     <div className="flex items-center gap-2">
-                      <div className={`p-2 rounded-lg border ${item.color}`}>
+                      <div className={`p-1.5 rounded-lg border ${item.color}`}>
                         <Icon size={14} />
                       </div>
                       <div>
-                        <div className="font-bold text-gray-900">
+                        <div className="font-bold text-gray-900 text-xs">
                           {item.channel}
                         </div>
                         <span className="text-[10px] text-gray-500">
@@ -228,13 +228,13 @@ export const PaymentChannelReportTable: React.FC<PaymentChannelReportTableProps>
                       </div>
                     </div>
                   </td>
-                  <td className="py-3 px-3 font-semibold text-gray-700">
+                  <td className="py-2.5 px-3 font-semibold text-gray-700 text-xs">
                     {item.method}
                   </td>
-                  <td className="py-3 px-3 text-center font-bold text-gray-800">
+                  <td className="py-2.5 px-3 text-center font-bold text-gray-800 text-xs">
                     {item.count}
                   </td>
-                  <td className="py-3 px-3 text-right font-black whitespace-nowrap">
+                  <td className="py-2.5 px-3 text-right font-black whitespace-nowrap text-xs">
                     <span
                       className={
                         isDue ? "text-rose-600" : "text-emerald-600"
@@ -243,7 +243,7 @@ export const PaymentChannelReportTable: React.FC<PaymentChannelReportTableProps>
                       ৳ {formatMoney(item.volume)}
                     </span>
                   </td>
-                  <td className="py-3 px-3 text-right">
+                  <td className="py-2.5 px-3 text-right">
                     {!isDue ? (
                       <div className="flex items-center justify-end gap-2">
                         <span className="font-bold text-gray-700 text-[11px]">
@@ -260,7 +260,7 @@ export const PaymentChannelReportTable: React.FC<PaymentChannelReportTableProps>
                       <span className="text-gray-400 text-[10px]">N/A (Due)</span>
                     )}
                   </td>
-                  <td className="py-3 px-3 text-center">
+                  <td className="py-2.5 px-3 text-center">
                     <span
                       className={`inline-block px-2 py-0.5 rounded text-[10px] font-bold ${
                         isDue

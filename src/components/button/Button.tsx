@@ -12,6 +12,7 @@ interface ButtonProps {
   color?: string; 
   hoverColor?: string; 
   icon?: React.ReactNode; 
+  textColor?: string;
 }
 
 const Button: React.FC<ButtonProps> = ({
@@ -25,18 +26,20 @@ const Button: React.FC<ButtonProps> = ({
   color = "#009FE3",
   hoverColor = "#0085be",
   icon,
+  textColor,
 }) => {
   return (
     <button
       type={type}
       onClick={onClick}
       disabled={disabled || isLoading}
-      className={`flex items-center justify-center sm:w-fit w-full py-[0.4rem] px-[0.85rem] text-[14px] text-white rounded-md transition-all duration-300 ease-in-out cursor-pointer hover:opacity-95 shadow-xs
+      className={`flex items-center justify-center sm:w-fit w-full py-[0.4rem] px-[0.85rem] text-[14px] ${textColor ? "" : "text-white"} rounded-md transition-all duration-300 ease-in-out cursor-pointer hover:opacity-95 shadow-xs
         ${buttonClass} ${disabled || isLoading ? "opacity-50 cursor-not-allowed" : ""}
       `}
       style={{
         backgroundColor: color,
         borderColor: color,
+        color: textColor,
       }}
       onMouseOver={(e) => {
         if (hoverColor) {

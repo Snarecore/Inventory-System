@@ -1505,7 +1505,7 @@ export const CreateSaleForm: React.FC = () => {
         {/* PO / Reference No */}
         <div>
           <label className="text-[11px] font-bold text-black  tracking-wider block mb-1">
-            PO / Ref Number
+            PO Number
           </label>
           <input
             type="text"

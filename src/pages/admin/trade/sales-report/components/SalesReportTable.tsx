@@ -304,12 +304,12 @@ export const SalesReportTable: React.FC<SalesReportTableProps> = ({
                         {isFullyPaid ? "Paid" : isPartial ? "Partial" : "Due"}
                       </span>
                     </td>
-                    <td className="py-2.5 px-3 text-center whitespace-nowrap">
-                      <div className="flex items-center justify-center gap-1">
+                    <td className="py-2 px-3 text-center whitespace-nowrap">
+                      <div className="flex items-center justify-center gap-1.5">
                         <button
                           type="button"
                           onClick={() => onView(item)}
-                          className="p-1.5 text-sky-600 hover:bg-sky-50 rounded-md transition-colors cursor-pointer"
+                          className="p-1 text-sky-600 hover:bg-sky-100 rounded transition-colors cursor-pointer"
                           title="View Invoice"
                         >
                           <FiEye size={14} />
@@ -317,7 +317,7 @@ export const SalesReportTable: React.FC<SalesReportTableProps> = ({
                         <button
                           type="button"
                           onClick={() => onPrint(item)}
-                          className="p-1.5 text-emerald-600 hover:bg-emerald-50 rounded-md transition-colors cursor-pointer"
+                          className="p-1 text-emerald-600 hover:bg-emerald-100 rounded transition-colors cursor-pointer"
                           title="Print Receipt"
                         >
                           <FiPrinter size={14} />

@@ -349,9 +349,13 @@ export const SaleInvoiceModal: React.FC<SaleInvoiceModalProps> = ({
 
         {/* Action Buttons */}
         <div className="flex justify-end gap-2 pt-1 border-t border-gray-100">
-          <Button type="button" variant="outline" onClick={onClose}>
+          <button
+            type="button"
+            onClick={onClose}
+            className="px-4 py-2 text-sm font-semibold text-gray-700 bg-gray-100 hover:bg-gray-200 border border-gray-300 rounded-lg transition-colors cursor-pointer"
+          >
             Close
-          </Button>
+          </button>
           <Button
             type="button"
             variant="primary"

@@ -97,43 +97,43 @@ const HeroSliderTable = ({
 	if (isLoading && (!dataList || dataList.length === 0)) return <TableSkeleton />;
 
 	return (
-		<div className="p-6 bg-white rounded-lg border border-gray-200 shadow-xs">
-			<div className="w-full overflow-x-auto">
-				<table className="w-full text-left border-collapse min-w-[900px]">
-					<thead className="bg-gray-100">
-						<tr className="text-gray-600 text-sm border-b border-gray-200">
+		<div className="bg-white rounded-xl shadow-xs border border-gray-200 flex flex-col relative z-20 overflow-visible">
+			<div className="w-full overflow-x-auto relative z-10">
+				<table className="w-full text-left border-collapse min-w-[900px] text-xs">
+					<thead>
+						<tr className="bg-[#41BEF3] text-black text-xs font-semibold">
 							{tableHeaders.map(({ key, label }) => (
-								<th key={key} className="px-6 py-4 text-left text-[#000000e0]">
+								<th key={key} className={`py-2.5 px-3 text-left ${key === "id" ? "w-10 text-center" : ""}`}>
 									{label}
 								</th>
 							))}
 						</tr>
 					</thead>
-					<tbody className="bg-white divide-y divide-gray-200 rounded-lg">
+					<tbody className="divide-y divide-gray-100 bg-white">
 						{dataList && dataList.length > 0 ? (
 							dataList.map((data, index) => {
 								const isActive = Boolean(data.status);
 								return (
 									<tr
 										key={data.id || index}
-										className="border-b border-gray-100 text-gray-700 hover:bg-gray-50 transition duration-300"
+										className="hover:bg-sky-50/40 transition-colors group"
 									>
-										<td className="px-6 py-4 font-medium text-gray-800">
+										<td className="py-2.5 px-3 text-center font-normal text-xs text-black">
 											{(currentPageNumber - 1) * 10 + index + 1}
 										</td>
-										<td className="px-6 py-4">
+										<td className="py-2.5 px-3">
 											<img
 												src={data.image || "https://images.pexels.com/photos/996329/pexels-photo-996329.jpeg"}
 												alt="image"
-												className="h-[70px] w-[70px] object-cover rounded-md shadow-sm border border-gray-200"
+												className="h-10 w-16 object-cover rounded-md shadow-xs border border-gray-100"
 											/>
 										</td>
-										<td className="px-6 py-4 text-blue-500 hover:underline cursor-pointer">
+										<td className="py-2.5 px-3 text-blue-500 hover:underline cursor-pointer">
 											<a href={data.link} target="_blank" rel="noreferrer">
 												{data.link || "N/A"}
 											</a>
 										</td>
-										<td className="px-6 py-4" onClick={(e) => e.stopPropagation()}>
+										<td className="py-2.5 px-3" onClick={(e) => e.stopPropagation()}>
 											<div className="flex items-center gap-2">
 												<label className="relative inline-flex items-center cursor-pointer">
 													<input
@@ -142,41 +142,43 @@ const HeroSliderTable = ({
 														onChange={() => handleToggleStatus(data)}
 														className="sr-only peer"
 													/>
-													<div className="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:bg-[var(--color-primary)] relative transition-all duration-200">
+													<div className="w-8 h-4.5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:bg-[var(--color-primary)] relative transition-all duration-200">
 														<div
-															className={`absolute top-[2px] left-[2px] w-4 h-4 bg-white rounded-full transition-transform duration-200 ${
-																isActive ? "translate-x-4" : "translate-x-0"
+															className={`absolute top-[2px] left-[2px] w-3.5 h-3.5 bg-white rounded-full transition-transform duration-200 ${
+																isActive ? "translate-x-3.5" : "translate-x-0"
 															}`}
 														/>
 													</div>
 												</label>
 												<span
-													className={`text-xs font-semibold px-2 py-0.5 rounded ${
+													className={`text-[11px] font-semibold px-2 py-0.5 rounded border ${
 														isActive
-															? "bg-green-100 text-green-800"
-															: "bg-red-100 text-red-800"
+															? "bg-emerald-50 text-emerald-700 border-emerald-200"
+															: "bg-rose-50 text-rose-700 border-rose-200"
 													}`}
 												>
 													{isActive ? "Active" : "Inactive"}
 												</span>
 											</div>
 										</td>
-										<td className="px-6 py-4">
-											<div className="flex items-center gap-2">
+										<td className="py-2 px-3 text-center">
+											<div className="flex items-center justify-center gap-1.5">
 												<button
+													type="button"
 													onClick={() => onEdit(data)}
-													className="border border-gray-300 text-gray-700 hover:text-[var(--color-primary)] hover:bg-gray-200 cursor-pointer p-2 rounded-md transition duration-300"
+													className="p-1 rounded text-amber-600 hover:bg-amber-100 transition-colors cursor-pointer"
 													title="Edit"
 												>
-													<FaEdit />
+													<FaEdit size={14} />
 												</button>
 
 												<button
+													type="button"
 													onClick={() => openDeleteModal(data)}
-													className="border border-gray-300 text-gray-700 hover:text-red-600 hover:bg-red-50 cursor-pointer p-2 rounded-md transition duration-300"
+													className="p-1 rounded text-rose-600 hover:bg-rose-100 transition-colors cursor-pointer"
 													title="Delete"
 												>
-													<FiTrash2 />
+													<FiTrash2 size={14} />
 												</button>
 											</div>
 										</td>
@@ -187,7 +189,7 @@ const HeroSliderTable = ({
 							<tr>
 								<td
 									colSpan={tableHeaders.length}
-									className="px-6 py-8 text-center italic"
+									className="py-12 text-center italic"
 								>
 									<EmptyState
 										title="No slider available"
@@ -213,7 +215,7 @@ const HeroSliderTable = ({
 			)}
 
 			{pageCount > 1 && (
-				<div className="flex justify-center mt-6">
+				<div className="p-2.5 sm:p-3 border-t border-gray-100 bg-gray-50/50 flex justify-end">
 					<Pagination
 						pageCount={pageCount}
 						currentPageNumber={currentPageNumber}

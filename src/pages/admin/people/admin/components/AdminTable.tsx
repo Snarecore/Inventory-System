@@ -127,9 +127,9 @@ const AdminTable = ({
     );
 
     return (
-        <div className="bg-white rounded-lg border border-gray-200 px-4">
-            <div className="space-y-4 border-b border-gray-200">
-                <div className="pt-4 pb-4 flex sm:flex-row flex-col gap-4 justify-between flex-wrap">
+        <div className="bg-white rounded-xl shadow-xs border border-gray-200 flex flex-col relative z-20 overflow-visible">
+            <div className="p-2 sm:p-2.5 border-b border-gray-100 flex flex-wrap items-center justify-between gap-2 relative z-40 overflow-visible">
+                <div className="w-full sm:w-56 shrink-0">
                     <Search
                         searchQuery={searchQuery}
                         onSearchChange={(value) => {
@@ -137,42 +137,38 @@ const AdminTable = ({
                             setCurrentPageNumber(1);
                         }}
                     />
-                    <div className="flex sm:flex-row flex-col gap-2">
-                        {(Object.entries(dropdownOptions) as [FilterKey, OptionT[]][])
-                            .map(([key, options]) => (
-                                <DropdownFilter
-                                    key={key}
-                                    title={
-                                        key === "mainCategoryId" ? "Category"
-                                            : key === "vendorId" ? "Vendor"
-                                                : "Approval"
-                                    }
-                                    options={options}
-                                    // selectedOption={selectedFilters[key]}          // ✅ typed
-                                    isOpen={openDropdown === key}
-                                    onToggle={() => setOpenDropdown(openDropdown === key ? null : key)}
-                                    onSelect={(selected) => {
-                                        setSelectedFilters(prev => ({ ...prev, [key]: selected })); // ✅ typed
-                                        setCurrentPageNumber(1);
-                                        setOpenDropdown(null);
-                                    }}
-                                />
-                            ))}
-                        {/* <RefreshButton onClick={handleRefreshButton} /> */}
-                    </div>
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                    {(Object.entries(dropdownOptions) as [FilterKey, OptionT[]][])
+                        .map(([key, options]) => (
+                            <DropdownFilter
+                                key={key}
+                                title={
+                                    key === "mainCategoryId" ? "Category"
+                                        : key === "vendorId" ? "Vendor"
+                                            : "Approval"
+                                }
+                                options={options}
+                                isOpen={openDropdown === key}
+                                onToggle={() => setOpenDropdown(openDropdown === key ? null : key)}
+                                onSelect={(selected) => {
+                                    setSelectedFilters(prev => ({ ...prev, [key]: selected }));
+                                    setCurrentPageNumber(1);
+                                    setOpenDropdown(null);
+                                }}
+                            />
+                        ))}
                 </div>
             </div>
             
-            <div className="pt-2 pb-4 mt-4 w-full overflow-x-auto">
-                <table className="w-full text-left border-collapse min-w-[900px] border border-gray-200">
-                    <thead className="bg-[var(--primary-color-light)]">
-                        <tr className="text-sm border-b border-gray-200">
+            <div className="w-full overflow-x-auto relative z-10">
+                <table className="w-full text-left border-collapse min-w-[900px] text-xs">
+                    <thead>
+                        <tr className="bg-[#41BEF3] text-black text-xs font-semibold">
                             {tableHeaders.map(({ key, label }, i) => (
                                 <th
                                     key={key}
-                                    className={`px-6 py-3 border-r border-gray-200 text-center text-[#000000e0] last:border-r-0 ${
-                                        i === 0 ? "w-14 px-3 text-center" : ""
-                                    }`}
+                                    className={`py-2.5 px-3 text-left ${i === 0 ? "w-10 text-center" : ""}`}
                                 >
                                     {label}
                                 </th>
@@ -180,43 +176,44 @@ const AdminTable = ({
                         </tr>
                     </thead>
 
-                    <tbody className="bg-white text-[14px]">
+                    <tbody className="divide-y divide-gray-100 bg-white">
                         {rows.length > 0 ? (
                             rows.map((data, rowIndex) => (
                                 <tr
                                     key={data.id}
-                                    className="border-b border-gray-100 text-gray-700 hover:bg-gray-50 transition duration-300"
+                                    className="hover:bg-sky-50/40 transition-colors group"
                                 >
                                     {/* SL */}
-                                    <td className="w-14 px-3 py-3 text-center font-medium text-gray-800 border-r border-gray-200">
+                                    <td className="py-2.5 px-3 text-center font-normal text-xs text-black">
                                         {rowIndex + 1}
                                     </td>
 
                                     {/* Name */}
-                                    <td className="px-6 py-3 font-medium text-gray-800 border-r border-gray-200">
+                                    <td className="py-2.5 px-3 font-normal text-xs text-black">
                                         {data.name}
                                     </td>
 
                                     {/* Email */}
-                                    <td className="px-6 py-3 font-medium text-gray-800 border-r border-gray-200">
+                                    <td className="py-2.5 px-3 font-normal text-xs text-black">
                                         {data.email}
                                     </td>
 
                                     {/* Phone */}
-                                    <td className="px-6 py-3 font-medium text-gray-800 border-r border-gray-200">
+                                    <td className="py-2.5 px-3 font-normal text-xs text-black">
                                         {data.phone}
                                     </td>
 
                                     {/* Actions */}
-                                    <td className="px-6 py-3">
-                                        <div className="flex items-center justify-center gap-2">
+                                    <td className="py-2 px-3 text-center">
+                                        <div className="flex items-center justify-center gap-1.5">
                                             <button
+                                                type="button"
                                                 onClick={() => openDeleteModal(data)}
-                                                className={`border border-gray-300 text-gray-700 hover:text-[var(--color-primary)] hover:bg-gray-200 p-2 rounded-md transition duration-300 cursor-pointer ${user.id === data.id ? "opacity-50 cursor-not-allowed" : ""
-                                                    }`}
+                                                className={`p-1 rounded text-rose-600 hover:bg-rose-100 transition-colors cursor-pointer ${user.id === data.id ? "opacity-50 cursor-not-allowed" : ""}`}
                                                 disabled={user.id === data.id}
+                                                title="Delete"
                                             >
-                                                <FiTrash2 />
+                                                <FiTrash2 size={14} />
                                             </button>
                                         </div>
                                     </td>

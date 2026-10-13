@@ -309,7 +309,7 @@ export const ProductTable = ({
                                     {tableHeaders.map(({ key, label, align }) => (
                                         <th
                                             key={key}
-                                            className={`py-2 px-3 ${align} ${key === "sl" ? "w-10 text-center" : ""}`}
+                                            className={`py-2.5 px-3 ${align} ${key === "sl" ? "w-10 text-center" : ""}`}
                                         >
                                             {label}
                                         </th>
@@ -333,12 +333,12 @@ export const ProductTable = ({
                                                 className="hover:bg-sky-50/40 transition-colors duration-150 group"
                                             >
                                                 {/* SL */}
-                                                <td className="py-2 px-3 text-center text-xs font-normal text-black">
+                                                <td className="py-2.5 px-3 text-center text-xs font-normal text-black">
                                                     {rowNumber}
                                                 </td>
 
                                                 {/* Product Name */}
-                                                <td className="py-2 px-3 font-normal text-xs text-black">
+                                                <td className="py-2.5 px-3 font-normal text-xs text-black">
                                                     <div className="min-w-0">
                                                         <span className="font-normal text-xs text-black block truncate">
                                                             {getName(product)}
@@ -352,14 +352,14 @@ export const ProductTable = ({
                                                 </td>
 
                                                 {/* Category */}
-                                                <td className="py-2 px-3">
+                                                <td className="py-2.5 px-3">
                                                     <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-gray-100 text-gray-800 border border-gray-200">
                                                         {getCategory(product)}
                                                     </span>
                                                 </td>
 
                                                 {/* Stock & Unit */}
-                                                <td className="py-2 px-3 text-center">
+                                                <td className="py-2.5 px-3 text-center">
                                                     <div className="inline-flex items-center justify-center gap-1.5">
                                                         <span className="font-normal text-xs text-black">
                                                             {qty} {getUnit(product)}
@@ -373,17 +373,17 @@ export const ProductTable = ({
                                                 </td>
 
                                                 {/* Buy Price */}
-                                                <td className="py-2 px-3 text-right font-normal text-xs text-black whitespace-nowrap">
+                                                <td className="py-2.5 px-3 text-right font-normal text-xs text-black whitespace-nowrap">
                                                     ৳{getBuyPrice(product).toLocaleString('en-IN')}
                                                 </td>
 
                                                 {/* Sell Price */}
-                                                <td className="py-2 px-3 text-right font-normal text-xs text-black whitespace-nowrap">
+                                                <td className="py-2.5 px-3 text-right font-normal text-xs text-black whitespace-nowrap">
                                                     ৳{getSellPrice(product).toLocaleString('en-IN')}
                                                 </td>
 
                                                 {/* Status Badge */}
-                                                <td className="py-2 px-3 text-center" onClick={(e) => e.stopPropagation()}>
+                                                <td className="py-2.5 px-3 text-center" onClick={(e) => e.stopPropagation()}>
                                                     <button
                                                         type="button"
                                                         disabled={togglingId === prodId}

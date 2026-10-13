@@ -539,13 +539,13 @@ export const SaleTable: React.FC<SaleTableProps> = ({
                     </td>
 
                     {/* Actions */}
-                    <td className="py-2.5 px-3 text-center whitespace-nowrap">
+                    <td className="py-2 px-3 text-center whitespace-nowrap">
                       {showReturnAction ? (
                         <div className="flex items-center justify-center">
                           {isAlreadyReturned ? (
                             <span
                               title="This sale has already been returned"
-                              className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-semibold text-gray-400 bg-gray-100 border border-gray-200 rounded-md cursor-not-allowed select-none"
+                              className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold text-gray-400 bg-gray-100 border border-gray-200 rounded-md cursor-not-allowed select-none"
                             >
                               <FaUndoAlt size={10} className="text-gray-400" />
                               <span>Returned</span>
@@ -559,7 +559,7 @@ export const SaleTable: React.FC<SaleTableProps> = ({
                                 })
                               }
                               title="Return Product"
-                              className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-semibold text-white bg-[var(--color-primary)] hover:opacity-90 active:scale-95 rounded-md shadow-xs transition-all cursor-pointer"
+                              className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold text-white bg-[var(--color-primary)] hover:opacity-90 active:scale-95 rounded-md shadow-xs transition-all cursor-pointer"
                             >
                               <FaUndoAlt size={10} />
                               <span>Return Product</span>
@@ -567,30 +567,30 @@ export const SaleTable: React.FC<SaleTableProps> = ({
                           )}
                         </div>
                       ) : (
-                        <div className="flex items-center justify-center gap-1">
+                        <div className="flex items-center justify-center gap-1.5">
                           <button
                             type="button"
                             onClick={() => onView(sale)}
                             title="View Invoice"
-                            className="p-1.5 text-sky-600 hover:bg-sky-50 rounded-md transition-colors cursor-pointer"
+                            className="p-1 rounded text-sky-600 hover:bg-sky-100 transition-colors cursor-pointer"
                           >
                             <FiEye size={14} />
                           </button>
                           <button
                             type="button"
-                            onClick={() => onEdit(sale)}
-                            title="Edit Sale"
-                            className="p-1.5 text-amber-600 hover:bg-amber-50 rounded-md transition-colors cursor-pointer"
+                            onClick={() => onPrint(sale)}
+                            title="Print Invoice"
+                            className="p-1 rounded text-gray-600 hover:bg-gray-100 transition-colors cursor-pointer"
                           >
-                            <FiEdit size={14} />
+                            <FiPrinter size={14} />
                           </button>
                           <button
                             type="button"
-                            onClick={() => onPrint(sale)}
-                            title="Print Invoice"
-                            className="p-1.5 text-emerald-600 hover:bg-emerald-50 rounded-md transition-colors cursor-pointer"
+                            onClick={() => onEdit(sale)}
+                            title="Edit Sale"
+                            className="p-1 rounded text-amber-600 hover:bg-amber-100 transition-colors cursor-pointer"
                           >
-                            <FiPrinter size={14} />
+                            <FiEdit size={14} />
                           </button>
                         </div>
                       )}

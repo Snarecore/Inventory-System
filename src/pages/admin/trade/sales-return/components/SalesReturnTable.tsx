@@ -189,7 +189,7 @@ export const SalesReturnTable: React.FC<SalesReturnTableProps> = ({
       {/* Filters Toolbar */}
       <div className="p-2 sm:p-2.5 border-b border-gray-100 flex flex-wrap items-center justify-between gap-2 relative z-40 overflow-visible">
         {/* Left Section: Search & Dropdown Filters in uniform height */}
-        <div className="flex flex-wrap lg:flex-nowrap items-center gap-2 flex-1 min-w-0">
+        <div className="flex flex-wrap items-center gap-2 flex-1 min-w-0">
           {/* Search Box */}
           <div className="w-full sm:w-44 md:w-48 lg:w-52 shrink-0">
             <Search
@@ -202,7 +202,7 @@ export const SalesReturnTable: React.FC<SalesReturnTableProps> = ({
 
           {/* Date Range Picker (wrapped in fixed shrink-0 container) */}
           {setDateFilter && setCustomStartDate && setCustomEndDate && (
-            <div className="w-[calc(50%-4px)] sm:w-36 lg:w-40 shrink-0 z-50">
+            <div className="w-[calc(50%-4px)] sm:w-40 lg:w-44 shrink-0 z-50">
               <DateRangePicker
                 startDate={customStartDate}
                 endDate={customEndDate}
@@ -577,8 +577,8 @@ export const SalesReturnTable: React.FC<SalesReturnTableProps> = ({
                     {/* Expandable Accordion Drawer for Items Breakdown */}
                     {isExpanded && (
                       <tr className="bg-sky-50/40 border-y border-sky-100">
-                        <td colSpan={10} className="p-3 sm:p-4">
-                          <div className="bg-white rounded-lg border border-sky-200 shadow-xs p-3">
+                        <td colSpan={10} className="p-2.5 sm:p-3">
+                          <div className="bg-white rounded-lg border border-sky-200 shadow-xs p-2.5 sm:p-3">
                             <div className="flex flex-wrap items-center justify-between gap-2 mb-2.5 pb-2 border-b border-gray-100">
                               <div className="flex items-center gap-2">
                                 <FaBoxOpen className="text-sky-600 text-sm" />

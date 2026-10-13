@@ -56,54 +56,58 @@ const SocialTable = ({
 
 
 	return (
-		<div className="p-6 bg-white rounded-lg border border-gray-200">
-			<div className="mt-4 w-full overflow-x-auto">
-				<table className="w-full text-left border-collapse min-w-[900px]">
-					<thead className="bg-gray-100">
-						<tr className="text-gray-600 text-sm border-b border-gray-200">
+		<div className="bg-white rounded-xl shadow-xs border border-gray-200 flex flex-col relative z-20 overflow-visible">
+			<div className="w-full overflow-x-auto relative z-10">
+				<table className="w-full text-left border-collapse min-w-[900px] text-xs">
+					<thead>
+						<tr className="bg-[#41BEF3] text-black text-xs font-semibold">
 							{tableHeaders.map(({ key, label }) => (
-								<th key={key} className="px-6 py-4 text-left text-[#000000e0]">
+								<th key={key} className={`py-2.5 px-3 text-left ${key === "id" ? "w-10 text-center" : ""}`}>
 									{label}
 								</th>
 							))}
 						</tr>
 					</thead>
-					<tbody className="bg-white divide-y divide-gray-200 rounded-lg">
+					<tbody className="divide-y divide-gray-100 bg-white">
 						{dataList?.length > 0 ? (
 							dataList?.map((data, index) => (
 								<tr
 									key={data.id}
-									className="border-b border-gray-100 text-gray-700 hover:bg-gray-50 transition duration-300"
+									className="hover:bg-sky-50/40 transition-colors group"
 								>
-									<td className="px-6 py-4 font-medium text-gray-800">
+									<td className="py-2.5 px-3 text-center font-normal text-xs text-black">
 										{index + 1}
 									</td>
-									<td className="px-6 py-4">
+									<td className="py-2.5 px-3">
 										<img
 											src={data.icon}
 											alt={data.link}
-											height={70}
-											width={70}
-											className="rounded-md shadow-sm border border-gray-200"
+											className="h-8 w-8 object-cover rounded-md shadow-xs border border-gray-100"
 										/>
 									</td>
-									<td className="px-6 py-4 text-blue-500 hover:underline cursor-pointer p-4">
-										{data.link}
+									<td className="py-2.5 px-3 text-blue-500 hover:underline cursor-pointer font-normal text-xs">
+										<a href={data.link} target="_blank" rel="noreferrer">
+											{data.link}
+										</a>
 									</td>
-									<td className="px-6 py-4">
-										<div className="flex items-center gap-2">
+									<td className="py-2 px-3 text-center">
+										<div className="flex items-center justify-center gap-1.5">
 											<button
+												type="button"
 												onClick={() => onEdit(data)}
-												className="border border-gray-300 text-gray-700 hover:text-[var(--color-primary)] hover:bg-gray-200 cursor-pointer p-2 rounded-md transition duration-300"
+												className="p-1 rounded text-amber-600 hover:bg-amber-100 transition-colors cursor-pointer"
+												title="Edit"
 											>
-												<FaEdit />
+												<FaEdit size={14} />
 											</button>
 
 											<button
+												type="button"
 												onClick={() => openDeleteModal(data)}
-												className="border border-gray-300 text-gray-700 hover:text-[var(--color-primary)] hover:bg-gray-200 cursor-pointer p-2 rounded-md transition duration-300"
+												className="p-1 rounded text-rose-600 hover:bg-rose-100 transition-colors cursor-pointer"
+												title="Delete"
 											>
-												<FiTrash2 />
+												<FiTrash2 size={14} />
 											</button>
 										</div>
 									</td>
@@ -113,7 +117,7 @@ const SocialTable = ({
 							<tr>
 								<td
 									colSpan={tableHeaders.length}
-									className="px-6 py-4 text-center italic"
+									className="py-12 text-center italic"
 								>
 									<EmptyState title="No social links available" description="Click below to add your first social links!" buttonText="+ Add New Social Links" onButtonClick={() => onEdit()} />
 								</td>

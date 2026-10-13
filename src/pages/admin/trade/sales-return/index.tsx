@@ -533,9 +533,9 @@ const SalesReturnPage: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-col gap-3 px-3 py-2 sm:px-4 sm:py-2.5 max-w-[1600px] mx-auto w-full">
+    <div className="flex flex-col gap-2 sm:gap-2.5 px-3 py-1.5 sm:px-4 sm:py-2 max-w-[1600px] mx-auto w-full">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
         <PageHeader
           headerTitle="Sales Return"
           headerDescription="Manage customer sales returns, item quantities, and refund settlements"
@@ -567,21 +567,21 @@ const SalesReturnPage: React.FC = () => {
         totalCreditAdjust={stats.totalCreditAdjust}
       />
 
-      {/* Tab Switcher: Sales List vs Sales Return List */}
-      <div className="flex items-center gap-2 border-b border-gray-200">
+      {/* Tab Switcher: Sales List vs Sales Return List (Compact Y-axis) */}
+      <div className="flex items-center gap-1.5 border-b border-gray-200/90 -my-0.5">
         <button
           type="button"
           onClick={() => {
             setActiveTab("sales");
             setCurrentPageNumber(1);
           }}
-          className={`flex items-center gap-2 px-4 py-2.5 text-xs font-bold transition-all border-b-2 cursor-pointer ${
+          className={`flex items-center gap-1.5 px-3 sm:px-3.5 py-1 text-xs font-bold transition-all border-b-2 cursor-pointer ${
             activeTab === "sales"
-              ? "border-[var(--color-primary)] text-[var(--color-primary)] bg-sky-50/50 rounded-t-lg"
-              : "border-transparent text-gray-500 hover:text-black hover:bg-gray-50 rounded-t-lg"
+              ? "border-[var(--color-primary)] text-[var(--color-primary)] bg-sky-50/50 rounded-t-md"
+              : "border-transparent text-gray-500 hover:text-black hover:bg-gray-50 rounded-t-md"
           }`}
         >
-          <FaShoppingCart size={12} />
+          <FaShoppingCart size={11} />
           <span>Sales List ({rawSales.length})</span>
         </button>
 
@@ -591,13 +591,13 @@ const SalesReturnPage: React.FC = () => {
             setActiveTab("returns");
             setCurrentPageNumber(1);
           }}
-          className={`flex items-center gap-2 px-4 py-2.5 text-xs font-bold transition-all border-b-2 cursor-pointer ${
+          className={`flex items-center gap-1.5 px-3 sm:px-3.5 py-1 text-xs font-bold transition-all border-b-2 cursor-pointer ${
             activeTab === "returns"
-              ? "border-[var(--color-primary)] text-[var(--color-primary)] bg-sky-50/50 rounded-t-lg"
-              : "border-transparent text-gray-500 hover:text-black hover:bg-gray-50 rounded-t-lg"
+              ? "border-[var(--color-primary)] text-[var(--color-primary)] bg-sky-50/50 rounded-t-md"
+              : "border-transparent text-gray-500 hover:text-black hover:bg-gray-50 rounded-t-md"
           }`}
         >
-          <FaUndoAlt size={12} />
+          <FaUndoAlt size={11} />
           <span>Sales Return List ({rawReturns.length})</span>
         </button>
       </div>

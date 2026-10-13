@@ -254,7 +254,7 @@ export const PartyTable: React.FC<PartyTableProps> = ({
                   {tableHeaders.map(({ key, label, align, width }) => (
                     <th
                       key={key}
-                      className={`py-2 px-3 ${align} ${width || ""}`}
+                      className={`py-2.5 px-3 ${align} ${width || ""}`}
                     >
                       {label}
                     </th>
@@ -281,17 +281,17 @@ export const PartyTable: React.FC<PartyTableProps> = ({
                         className="hover:bg-sky-50/40 transition-colors group"
                       >
                         {/* SL */}
-                        <td className="py-2 px-3.5 text-left text-xs font-normal text-black truncate">
+                        <td className="py-2.5 px-3 text-left text-xs font-normal text-black truncate">
                           {rowNumber}
                         </td>
 
                         {/* Party Details (Name) */}
-                        <td className="py-2 px-3 text-left font-medium text-xs text-black truncate">
+                        <td className="py-2.5 px-3 text-left font-medium text-xs text-black truncate">
                           <span className="block truncate" title={name}>{name}</span>
                         </td>
 
                         {/* Type */}
-                        <td className="py-2 px-1 text-left">
+                        <td className="py-2.5 px-2 text-left">
                           <span
                             className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium border ${
                               type === "SUPPLIER"
@@ -304,22 +304,22 @@ export const PartyTable: React.FC<PartyTableProps> = ({
                         </td>
 
                         {/* Contact Info (Phone) */}
-                        <td className="py-2 px-3 text-left font-normal text-xs text-black truncate">
+                        <td className="py-2.5 px-3 text-left font-normal text-xs text-black truncate">
                           <span className="block truncate" title={phone}>{phone}</span>
                         </td>
 
                         {/* Address */}
-                        <td className="py-2 px-3 text-center font-normal text-xs text-black truncate">
+                        <td className="py-2.5 px-3 text-center font-normal text-xs text-black truncate">
                           <span className="block truncate" title={address}>{address}</span>
                         </td>
 
                         {/* Opening Balance */}
-                        <td className="py-2 px-3 text-right font-normal text-xs text-black whitespace-nowrap">
+                        <td className="py-2.5 px-3 text-right font-normal text-xs text-black whitespace-nowrap">
                           ৳{balance.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
                         </td>
 
                         {/* Status Badge */}
-                        <td className="py-2 text-right">
+                        <td className="py-2.5 px-2.5 text-right">
                           <span
                             className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium border ${
                               active
