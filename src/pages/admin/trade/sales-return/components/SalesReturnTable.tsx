@@ -1,6 +1,5 @@
 import React, { useState, useRef, useEffect, useMemo } from "react";
 import { FiEye, FiPrinter, FiChevronDown, FiCopy, FiCheck, FiRotateCcw } from "react-icons/fi";
-import { BsFilterRight } from "react-icons/bs";
 import {
   FaFileExcel,
   FaSearch,
@@ -82,13 +81,11 @@ export const SalesReturnTable: React.FC<SalesReturnTableProps> = ({
   onView,
   onPrint,
 }) => {
-  const [isSortOpen, setIsSortOpen] = useState<boolean>(false);
   const [isCustomerDropdownOpen, setIsCustomerDropdownOpen] = useState<boolean>(false);
   const [customerSearchQuery, setCustomerSearchQuery] = useState<string>("");
   const [copiedId, setCopiedId] = useState<string | number | null>(null);
   const [expandedRows, setExpandedRows] = useState<Set<string | number>>(new Set());
 
-  const sortRef = useRef<HTMLDivElement>(null);
   const customerRef = useRef<HTMLDivElement>(null);
 
   // Toggle expanded row
@@ -132,9 +129,6 @@ export const SalesReturnTable: React.FC<SalesReturnTableProps> = ({
   // Click outside handling for dropdowns
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (sortRef.current && !sortRef.current.contains(event.target as Node)) {
-        setIsSortOpen(false);
-      }
       if (customerRef.current && !customerRef.current.contains(event.target as Node)) {
         setIsCustomerDropdownOpen(false);
       }
@@ -174,12 +168,47 @@ export const SalesReturnTable: React.FC<SalesReturnTableProps> = ({
     dateFilter !== "all" ||
     sortBy !== "latest";
 
-  const sortOptions = [
-    { value: "latest", label: "Latest Returns" },
-    { value: "oldest", label: "Oldest Returns" },
-    { value: "amount_high", label: "Amount: High to Low" },
-    { value: "amount_low", label: "Amount: Low to High" },
-  ];
+  const SortHeader = ({
+    label,
+    activeKey,
+  }: {
+    label: string;
+    activeKey: "customer" | "amount";
+  }) => {
+    const isAsc =
+      sortBy === (activeKey === "customer" ? "customer_a_to_z" : "amount_low_to_high") ||
+      (activeKey === "amount" && sortBy === "amount_low");
+    const isDesc =
+      sortBy === (activeKey === "customer" ? "customer_z_to_a" : "amount_high_to_low") ||
+      (activeKey === "amount" && sortBy === "amount_high");
+
+    const handleClick = () => {
+      if (!setSortBy) return;
+      if (activeKey === "customer") {
+        setSortBy(isAsc ? "customer_z_to_a" : isDesc ? "latest" : "customer_a_to_z");
+      } else {
+        setSortBy(isAsc ? "amount_high_to_low" : isDesc ? "latest" : "amount_low_to_high");
+      }
+      setCurrentPageNumber(1);
+    };
+
+    return (
+      <span
+        onClick={setSortBy ? handleClick : undefined}
+        className={`inline-flex items-center gap-1 select-none text-black ${
+          setSortBy ? "cursor-pointer" : ""
+        }`}
+      >
+        <span>{label}</span>
+        <FiChevronDown
+          size={11}
+          className={`text-black transition-transform duration-200 ${
+            isAsc ? "rotate-180" : ""
+          }`}
+        />
+      </span>
+    );
+  };
 
   // Column Visibility Configuration
   const availableColumns: ColumnItem[] = [
@@ -296,7 +325,7 @@ export const SalesReturnTable: React.FC<SalesReturnTableProps> = ({
                       placeholder="Search customer name, phone..."
                       value={customerSearchQuery}
                       onChange={(e) => setCustomerSearchQuery(e.target.value)}
-                      className="w-full pl-7 pr-2 py-1.5 text-xs border border-gray-200 rounded-md focus:outline-none focus:border-[var(--color-primary)] text-black"
+                      className="w-full pl-7 pr-2 py-1.5 text-xs border border-[var(--color-primary)] rounded-md focus:outline-none focus:border-[var(--color-primary)] text-black"
                       autoFocus
                     />
                   </div>
@@ -376,47 +405,8 @@ export const SalesReturnTable: React.FC<SalesReturnTableProps> = ({
           </div>
         </div>
 
-        {/* Right Actions: Sort Menu, Reset & Excel Export Button */}
+        {/* Right Actions: Reset & Excel Export Button */}
         <div className="flex items-center justify-end gap-1.5 sm:gap-2 shrink-0 w-full sm:w-auto pt-1 sm:pt-0 border-t sm:border-t-0 border-gray-100">
-          {/* Sort Dropdown */}
-          {setSortBy && (
-            <div className="relative shrink-0 z-50 flex-1 sm:flex-none" ref={sortRef}>
-              <button
-                type="button"
-                onClick={() => setIsSortOpen(!isSortOpen)}
-                className="w-full sm:w-auto flex items-center justify-center gap-1 px-2.5 h-8 text-[11px] sm:text-xs font-medium text-black bg-gray-50/80 hover:bg-gray-100 border border-gray-200 rounded-lg transition-colors cursor-pointer"
-              >
-                <BsFilterRight className="text-black text-sm shrink-0" />
-                <span className="truncate">
-                  {sortBy === "latest" ? "Latest" : sortOptions.find((s) => s.value === sortBy)?.label || "Sort"}
-                </span>
-              </button>
-
-              {isSortOpen && (
-                <div className="absolute right-0 top-full mt-1 w-48 bg-white rounded-lg shadow-2xl border border-gray-100 py-1 z-[99999]">
-                  {sortOptions.map((opt) => (
-                    <button
-                      key={opt.value}
-                      type="button"
-                      onClick={() => {
-                        setSortBy(opt.value);
-                        setIsSortOpen(false);
-                        setCurrentPageNumber(1);
-                      }}
-                      className={`w-full text-left px-3 py-1.5 text-xs transition-colors cursor-pointer ${
-                        sortBy === opt.value
-                          ? "bg-sky-50 text-[var(--color-primary)] font-semibold"
-                          : "text-black hover:bg-gray-50"
-                      }`}
-                    >
-                      {opt.label}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
-
           {/* Reset Filters button when active */}
           {isAnyFilterActive && onResetFilters && (
             <button
@@ -468,12 +458,22 @@ export const SalesReturnTable: React.FC<SalesReturnTableProps> = ({
               <tr className="bg-[#41BEF3] text-black text-xs font-semibold">
                 {isColVisible("sl") && <th className="py-2.5 px-3 text-center w-10">SL</th>}
                 {isColVisible("orderId") && <th className="py-2.5 px-3 whitespace-nowrap">Order ID</th>}
-                {isColVisible("customer") && <th className="py-2.5 px-3 min-w-[120px]">Customer</th>}
+                {isColVisible("customer") && (
+                  <th className="py-2.5 px-3 min-w-[120px]">
+                    <SortHeader label="Customer" activeKey="customer" />
+                  </th>
+                )}
                 {isColVisible("returnDate") && <th className="py-2.5 px-3 whitespace-nowrap">Return Date</th>}
                 {isColVisible("items") && <th className="py-2.5 px-3 text-center w-24 whitespace-nowrap">Items</th>}
                 {isColVisible("remarks") && <th className="py-2.5 px-3 text-center w-44 min-w-[150px] max-w-[180px]">Remarks</th>}
                 {isColVisible("paymentType") && <th className="py-2.5 px-3 text-center w-28 whitespace-nowrap">Payment Type</th>}
-                {isColVisible("refundAmount") && <th className="py-2.5 px-3 text-right w-32 whitespace-nowrap">Refund Amount</th>}
+                {isColVisible("refundAmount") && (
+                  <th className="py-2.5 px-3 text-right w-32 whitespace-nowrap">
+                    <div className="flex justify-end">
+                      <SortHeader label="Refund Amount" activeKey="amount" />
+                    </div>
+                  </th>
+                )}
                 {isColVisible("status") && <th className="py-2.5 px-3 text-center w-28 whitespace-nowrap">Status</th>}
                 {isColVisible("actions") && <th className="py-2.5 px-3 text-center w-24 whitespace-nowrap">Actions</th>}
               </tr>

@@ -279,28 +279,8 @@ export const ProductTable = ({
                         />
                     </div>
 
-                    {/* Right: Show Entries & Dropdown Filters */}
+                    {/* Right: Dropdown Filters & Column Visibility */}
                     <div className="flex flex-wrap items-center gap-2">
-                        {/* Show Entries Card */}
-                        <div className="border border-gray-200 rounded-lg px-2 h-8 inline-flex items-center gap-1.5 bg-gray-50/50 hover:bg-white text-xs text-black whitespace-nowrap">
-                            <span>Show</span>
-                            <select
-                                value={dataLimit}
-                                onChange={(e) => {
-                                    setDataLimit(Number(e.target.value));
-                                    setCurrentPageNumber(1);
-                                }}
-                                className="border border-gray-300 rounded px-1.5 py-0.5 text-xs text-black bg-white focus:outline-none focus:border-[var(--color-primary)] cursor-pointer"
-                            >
-                                {[10, 20, 50, 70, 100].map((limit) => (
-                                    <option key={limit} value={limit}>
-                                        {limit}
-                                    </option>
-                                ))}
-                            </select>
-                            <span>entries</span>
-                        </div>
-
                         {/* Category Dropdown */}
                         <DropdownFilter
                             title="Category"
@@ -528,28 +508,34 @@ export const ProductTable = ({
                         </table>
                     </div>
 
-                    {/* Pagination & Summary Footer */}
-                    <div className="p-2.5 sm:p-3 border-t border-gray-100 bg-gray-50/50 flex flex-col sm:flex-row items-center justify-between gap-2.5">
-                        <div className="text-xs text-black">
-                            Showing{" "}
-                            <span className="font-semibold text-black">
-                                {products.length > 0 ? (currentPageNumber - 1) * dataLimit + 1 : 0}
-                            </span>{" "}
-                            to{" "}
-                            <span className="font-semibold text-black">
-                                {Math.min(currentPageNumber * dataLimit, totalCount)}
-                            </span>{" "}
-                            of <span className="font-semibold text-black">{totalCount}</span> products
-                        </div>
+                    {/* Pagination Footer */}
+                    {!isLoading && products.length > 0 && (
+                        <div className="p-2.5 sm:p-3 border-t border-gray-100 bg-gray-50/50 flex flex-col sm:flex-row items-center justify-between gap-2.5">
+                            <div className="flex items-center gap-2 text-xs text-gray-500">
+                                <span>Show</span>
+                                <select
+                                    value={dataLimit}
+                                    onChange={(e) => {
+                                        setDataLimit(Number(e.target.value));
+                                        setCurrentPageNumber(1);
+                                    }}
+                                    className="border border-gray-300 rounded px-1.5 py-0.5 text-xs bg-white text-gray-700 focus:outline-none focus:border-[var(--color-primary)] cursor-pointer"
+                                >
+                                    <option value={10}>10</option>
+                                    <option value={20}>20</option>
+                                    <option value={50}>50</option>
+                                    <option value={100}>100</option>
+                                </select>
+                                <span>entries per page (Total {totalCount} products)</span>
+                            </div>
 
-                        {pageCount > 1 && (
                             <Pagination
                                 pageCount={pageCount}
                                 currentPageNumber={currentPageNumber}
                                 handlePagination={handlePagination}
                             />
-                        )}
-                    </div>
+                        </div>
+                    )}
                 </>
             )}
 

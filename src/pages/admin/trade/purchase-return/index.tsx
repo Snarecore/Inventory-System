@@ -408,6 +408,18 @@ const PurchaseReturnPage: React.FC = () => {
       }
       if (sortBy === "amount_high" || sortBy === "amount_high_to_low") return amountB - amountA;
       if (sortBy === "amount_low" || sortBy === "amount_low_to_high") return amountA - amountB;
+      if (sortBy === "supplier_a_to_z") {
+        const nameA = String(a.supplierName || "").trim().toLowerCase();
+        const nameB = String(b.supplierName || "").trim().toLowerCase();
+        const cmp = nameA.localeCompare(nameB);
+        return cmp !== 0 ? cmp : timeB - timeA;
+      }
+      if (sortBy === "supplier_z_to_a") {
+        const nameA = String(a.supplierName || "").trim().toLowerCase();
+        const nameB = String(b.supplierName || "").trim().toLowerCase();
+        const cmp = nameB.localeCompare(nameA);
+        return cmp !== 0 ? cmp : timeB - timeA;
+      }
 
       // Default: Latest on top (compare timestamp first, then id)
       if (timeB !== timeA) return timeB - timeA;

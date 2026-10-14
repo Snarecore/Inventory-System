@@ -460,8 +460,20 @@ const SalesReturnPage: React.FC = () => {
         if (timeA !== timeB) return timeA - timeB;
         return idA - idB;
       }
-      if (sortBy === "amount_high") return amountB - amountA;
-      if (sortBy === "amount_low") return amountA - amountB;
+      if (sortBy === "amount_high" || sortBy === "amount_high_to_low") return amountB - amountA;
+      if (sortBy === "amount_low" || sortBy === "amount_low_to_high") return amountA - amountB;
+      if (sortBy === "customer_a_to_z") {
+        const nameA = String(a.customerName || "").trim().toLowerCase();
+        const nameB = String(b.customerName || "").trim().toLowerCase();
+        const cmp = nameA.localeCompare(nameB);
+        return cmp !== 0 ? cmp : timeB - timeA;
+      }
+      if (sortBy === "customer_z_to_a") {
+        const nameA = String(a.customerName || "").trim().toLowerCase();
+        const nameB = String(b.customerName || "").trim().toLowerCase();
+        const cmp = nameB.localeCompare(nameA);
+        return cmp !== 0 ? cmp : timeB - timeA;
+      }
 
       // Default: Latest on top (compare timestamp first, then id)
       if (timeB !== timeA) return timeB - timeA;

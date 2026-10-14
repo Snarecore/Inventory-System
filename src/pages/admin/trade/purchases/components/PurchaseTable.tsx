@@ -314,7 +314,7 @@ export const PurchaseTable: React.FC<PurchaseTableProps> = ({
                       placeholder="Search supplier name, phone..."
                       value={supplierSearchQuery}
                       onChange={(e) => setSupplierSearchQuery(e.target.value)}
-                      className="w-full pl-7 pr-2 py-1.5 text-xs border border-gray-200 rounded-md focus:outline-none focus:border-[var(--color-primary)] text-black"
+                      className="w-full pl-7 pr-2 py-1.5 text-xs border border-[var(--color-primary)] rounded-md focus:outline-none focus:border-[var(--color-primary)] text-black"
                       autoFocus
                     />
                   </div>

@@ -1,6 +1,5 @@
-import React, { useState, useRef, useEffect, useMemo } from "react";
-import { FiEye, FiEdit } from "react-icons/fi";
-import { BsFilterRight } from "react-icons/bs";
+import React, { useState, useMemo } from "react";
+import { FiEye, FiEdit, FiChevronDown } from "react-icons/fi";
 import Search from "@/components/table-components/Search";
 import DropdownFilter from "@/components/table-components/DropdownFilter";
 import EmptyState from "@/components/empty-state/EmptyState";
@@ -55,19 +54,6 @@ export const PartyTable: React.FC<PartyTableProps> = ({
   onView,
 }) => {
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
-  const [isSortOpen, setIsSortOpen] = useState<boolean>(false);
-  const sortRef = useRef<HTMLDivElement>(null);
-
-  // Close sort dropdown when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (sortRef.current && !sortRef.current.contains(event.target as Node)) {
-        setIsSortOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
 
   const typeOptions = [
     { label: "All Parties", value: "" },
@@ -81,21 +67,75 @@ export const PartyTable: React.FC<PartyTableProps> = ({
     { label: "Inactive", value: "inactive" },
   ];
 
-  const sortOptions = [
-    { label: "Latest", value: "latest" },
-    { label: "Amount: High to Low", value: "amount_high_to_low" },
-    { label: "Amount: Low to High", value: "amount_low_to_high" },
-    { label: "Name: A to Z", value: "name_a_to_z" },
-    { label: "Name: Z to A", value: "name_z_to_a" },
-  ];
+  const SortHeader = ({
+    label,
+    activeKey,
+  }: {
+    label: string;
+    activeKey: "name" | "amount";
+  }) => {
+    const isAsc =
+      sortBy === (activeKey === "name" ? "name_a_to_z" : "amount_low_to_high");
+    const isDesc =
+      sortBy === (activeKey === "name" ? "name_z_to_a" : "amount_high_to_low");
 
-  const tableHeaders = [
+    const handleClick = () => {
+      if (!setSortBy) return;
+      if (activeKey === "name") {
+        setSortBy(isAsc ? "name_z_to_a" : isDesc ? "latest" : "name_a_to_z");
+      } else {
+        setSortBy(isAsc ? "amount_high_to_low" : isDesc ? "latest" : "amount_low_to_high");
+      }
+      setCurrentPageNumber(1);
+    };
+
+    return (
+      <span
+        onClick={setSortBy ? handleClick : undefined}
+        className={`inline-flex items-center gap-1 select-none text-black ${
+          setSortBy ? "cursor-pointer" : ""
+        }`}
+      >
+        <span>{label}</span>
+        <FiChevronDown
+          size={11}
+          className={`text-black transition-transform duration-200 ${
+            isAsc ? "rotate-180" : ""
+          }`}
+        />
+      </span>
+    );
+  };
+
+  const tableHeaders: {
+    key: string;
+    label: string;
+    headerNode?: React.ReactNode;
+    align: string;
+    width: string;
+  }[] = [
     { key: "sl", label: "SL", align: "text-left", width: "w-[4.285%]" },
-    { key: "name", label: "Names", align: "text-left", width: "w-[10.285%]" },
+    {
+      key: "name",
+      label: "Names",
+      headerNode: <SortHeader label="Names" activeKey="name" />,
+      align: "text-left",
+      width: "w-[10.285%]",
+    },
     { key: "type", label: "Type", align: "text-left", width: "w-[12.285%]" },
     { key: "contact", label: "Contact Info", align: "text-left", width: "w-[14.285%]" },
     { key: "address", label: "Address", align: "text-center", width: "w-[14.285%]" },
-    { key: "balance", label: "Opening Balance", align: "text-right", width: "w-[14.285%]" },
+    {
+      key: "balance",
+      label: "Opening Balance",
+      headerNode: (
+        <div className="flex justify-end">
+          <SortHeader label="Opening Balance" activeKey="amount" />
+        </div>
+      ),
+      align: "text-right",
+      width: "w-[14.285%]",
+    },
     { key: "status", label: "Status", align: "text-right", width: "w-[14.285%]" },
     { key: "action", label: "Actions", align: "text-right", width: "w-[14.285%]" },
   ];
@@ -173,7 +213,7 @@ export const PartyTable: React.FC<PartyTableProps> = ({
       {/* Table Header: Search (Left) & Controls/Filters (Right) */}
       <div className="p-2 sm:p-2.5 border-b border-gray-100 flex flex-wrap items-center justify-between gap-2 relative z-40 overflow-visible">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 w-full">
-          {/* Left: Search Box & Sort Button */}
+          {/* Left: Search Box */}
           <div className="flex items-center gap-2 w-full sm:w-auto">
             <div className="w-full sm:w-56">
               <Search
@@ -185,76 +225,10 @@ export const PartyTable: React.FC<PartyTableProps> = ({
                 placeholder="Search parties..."
               />
             </div>
-
-            {/* Sort Dropdown Button */}
-            <div className="relative z-50" ref={sortRef}>
-              <button
-                type="button"
-                onClick={() => setIsSortOpen((prev) => !prev)}
-                title="Sort By"
-                className={`h-8 px-2.5 border rounded-lg flex items-center gap-1 text-xs font-medium transition-colors cursor-pointer ${
-                  isSortOpen
-                    ? "border-[var(--color-primary,#009fe3)] text-[var(--color-primary,#009fe3)] bg-sky-50"
-                    : "border-gray-200 text-black bg-gray-50/50 hover:bg-white"
-                }`}
-              >
-                <BsFilterRight className="text-sm" />
-                <span className="truncate">
-                  {sortBy === "latest" ? "Latest" : sortOptions.find((s) => s.value === sortBy)?.label || "Sort"}
-                </span>
-              </button>
-
-              {/* Sort Menu Popup */}
-              {isSortOpen && (
-                <div className="absolute left-0 top-full mt-1 w-52 bg-white rounded-lg shadow-2xl border border-gray-100 py-1 z-[99999]">
-                  {sortOptions.map((opt) => {
-                    const isSelected = sortBy === opt.value;
-                    return (
-                      <button
-                        key={opt.value}
-                        type="button"
-                        onClick={() => {
-                          if (setSortBy) setSortBy(opt.value);
-                          setCurrentPageNumber(1);
-                          setIsSortOpen(false);
-                        }}
-                        className={`w-full px-3 py-1.5 text-left text-xs transition-colors cursor-pointer ${
-                          isSelected
-                            ? "bg-sky-50 text-[var(--color-primary,#009fe3)] font-semibold"
-                            : "text-black hover:bg-gray-50"
-                        }`}
-                      >
-                        {opt.label}
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
           </div>
 
-          {/* Right: Show Entries & Dropdown Filters */}
+          {/* Right: Dropdown Filters & Column Visibility */}
           <div className="flex flex-wrap items-center gap-2">
-            {/* Show Entries Card */}
-            <div className="border border-gray-200 rounded-lg px-2 h-8 inline-flex items-center gap-1.5 bg-gray-50/50 hover:bg-white text-xs text-black whitespace-nowrap">
-              <span>Show</span>
-              <select
-                value={dataLimit}
-                onChange={(e) => {
-                  setDataLimit(Number(e.target.value));
-                  setCurrentPageNumber(1);
-                }}
-                className="border border-gray-300 rounded px-1.5 py-0.5 text-xs text-black bg-white focus:outline-none focus:border-[var(--color-primary)] cursor-pointer"
-              >
-                {[10, 20, 50, 70, 100].map((limit) => (
-                  <option key={limit} value={limit}>
-                    {limit}
-                  </option>
-                ))}
-              </select>
-              <span>entries</span>
-            </div>
-
             {/* Quick Type Pills / Dropdown */}
             <DropdownFilter
               title="Party Type"
@@ -310,12 +284,12 @@ export const PartyTable: React.FC<PartyTableProps> = ({
             <table className="w-full text-left border-collapse table-fixed min-w-[750px] text-xs">
               <thead>
                 <tr className="bg-[#41BEF3] text-black text-xs font-semibold">
-                  {tableHeaders.filter((h) => isColVisible(h.key)).map(({ key, label, align, width }) => (
+                  {tableHeaders.filter((h) => isColVisible(h.key)).map(({ key, label, headerNode, align, width }) => (
                     <th
                       key={key}
                       className={`py-2.5 px-3 ${align} ${width || ""}`}
                     >
-                      {label}
+                      {headerNode || label}
                     </th>
                   ))}
                 </tr>
@@ -455,28 +429,34 @@ export const PartyTable: React.FC<PartyTableProps> = ({
             </table>
           </div>
 
-          {/* Pagination & Summary Footer */}
-          <div className="p-2.5 sm:p-3 border-t border-gray-100 bg-gray-50/50 flex flex-col sm:flex-row items-center justify-between gap-2.5">
-            <div className="text-xs text-black">
-              Showing{" "}
-              <span className="font-semibold text-black">
-                {parties.length > 0 ? (currentPageNumber - 1) * dataLimit + 1 : 0}
-              </span>{" "}
-              to{" "}
-              <span className="font-semibold text-black">
-                {Math.min(currentPageNumber * dataLimit, totalCount)}
-              </span>{" "}
-              of <span className="font-semibold text-black">{totalCount}</span> entries
-            </div>
+          {/* Pagination Footer */}
+          {!isLoading && parties.length > 0 && (
+            <div className="p-2.5 sm:p-3 border-t border-gray-100 bg-gray-50/50 flex flex-col sm:flex-row items-center justify-between gap-2.5">
+              <div className="flex items-center gap-2 text-xs text-gray-500">
+                <span>Show</span>
+                <select
+                  value={dataLimit}
+                  onChange={(e) => {
+                    setDataLimit(Number(e.target.value));
+                    setCurrentPageNumber(1);
+                  }}
+                  className="border border-gray-300 rounded px-1.5 py-0.5 text-xs bg-white text-gray-700 focus:outline-none focus:border-[var(--color-primary)] cursor-pointer"
+                >
+                  <option value={10}>10</option>
+                  <option value={20}>20</option>
+                  <option value={50}>50</option>
+                  <option value={100}>100</option>
+                </select>
+                <span>entries per page (Total {totalCount} parties)</span>
+              </div>
 
-            {pageCount > 1 && (
               <Pagination
                 pageCount={pageCount}
                 currentPageNumber={currentPageNumber}
                 handlePagination={handlePagination}
               />
-            )}
-          </div>
+            </div>
+          )}
         </>
       )}
     </div>

@@ -36,7 +36,7 @@ const Search = React.memo(({
 				placeholder={placeholder}
 				value={searchQuery}
 				onChange={handleChange}
-				className={`w-full pl-8 ${searchQuery ? "pr-7" : "pr-3"} h-[32px] text-xs text-black border border-gray-300 rounded-md bg-white placeholder:text-gray-400 focus:outline-none focus:border-gray-400 transition-colors`}
+				className={`w-full pl-8 ${searchQuery ? "pr-7" : "pr-3"} h-[32px] text-xs text-black border border-[var(--color-primary)] rounded-md bg-white placeholder:text-gray-400 focus:outline-none focus:border-[var(--color-primary)] focus:ring-1 focus:ring-[var(--color-primary)] transition-colors`}
 			/>
 			{searchQuery && (
 				<button
