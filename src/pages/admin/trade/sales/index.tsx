@@ -222,8 +222,26 @@ const Sales: React.FC = () => {
       const amountB = Number(b.grandTotal ?? b.grand_total ?? b.totalAmount ?? 0);
 
       if (sortBy === "oldest") return dateA - dateB;
-      if (sortBy === "amount_high") return amountB - amountA;
-      if (sortBy === "amount_low") return amountA - amountB;
+      if (sortBy === "amount_high" || sortBy === "amount_high_to_low") {
+        const diff = amountB - amountA;
+        return diff !== 0 ? diff : dateB - dateA;
+      }
+      if (sortBy === "amount_low" || sortBy === "amount_low_to_high") {
+        const diff = amountA - amountB;
+        return diff !== 0 ? diff : dateB - dateA;
+      }
+      if (sortBy === "customer_a_to_z") {
+        const nameA = String(a.customerName || a.customer_name || a.customer?.name || "Walk-in Customer").trim().toLowerCase();
+        const nameB = String(b.customerName || b.customer_name || b.customer?.name || "Walk-in Customer").trim().toLowerCase();
+        const cmp = nameA.localeCompare(nameB);
+        return cmp !== 0 ? cmp : dateB - dateA;
+      }
+      if (sortBy === "customer_z_to_a") {
+        const nameA = String(a.customerName || a.customer_name || a.customer?.name || "Walk-in Customer").trim().toLowerCase();
+        const nameB = String(b.customerName || b.customer_name || b.customer?.name || "Walk-in Customer").trim().toLowerCase();
+        const cmp = nameB.localeCompare(nameA);
+        return cmp !== 0 ? cmp : dateB - dateA;
+      }
       return dateB - dateA; // latest default
     });
   }, [filteredSales, sortBy]);

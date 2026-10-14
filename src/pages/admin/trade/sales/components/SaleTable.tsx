@@ -170,11 +170,63 @@ export const SaleTable: React.FC<SaleTableProps> = ({
 
   const sortOptions = [
     { value: "latest", label: "Latest Sales" },
-    { value: "amount_high_to_low", label: "Amount: High to Low" },
     { value: "amount_low_to_high", label: "Amount: Low to High" },
+    { value: "amount_high_to_low", label: "Amount: High to Low" },
     { value: "customer_a_to_z", label: "Customer: A to Z" },
     { value: "customer_z_to_a", label: "Customer: Z to A" },
   ];
+
+  // Lightweight sort header component with small black chevron
+  const SortHeader = ({
+    label,
+    activeKey,
+  }: {
+    label: string;
+    activeKey: "customer" | "amount";
+  }) => {
+    const isAsc =
+      sortBy === (activeKey === "customer" ? "customer_a_to_z" : "amount_low_to_high") ||
+      (activeKey === "amount" && sortBy === "amount_low");
+    const isDesc =
+      sortBy === (activeKey === "customer" ? "customer_z_to_a" : "amount_high_to_low") ||
+      (activeKey === "amount" && sortBy === "amount_high");
+
+    const handleClick = () => {
+      if (!setSortBy) return;
+      if (activeKey === "customer") {
+        setSortBy(isAsc ? "customer_z_to_a" : isDesc ? "latest" : "customer_a_to_z");
+      } else {
+        setSortBy(isAsc ? "amount_high_to_low" : isDesc ? "latest" : "amount_low_to_high");
+      }
+      setCurrentPageNumber(1);
+    };
+
+    return (
+      <span
+        onClick={setSortBy ? handleClick : undefined}
+        className={`inline-flex items-center gap-1 select-none text-black ${
+          setSortBy ? "cursor-pointer" : ""
+        }`}
+      >
+        <span>{label}</span>
+        <FiChevronDown
+          size={11}
+          className={`text-black transition-transform duration-200 ${
+            isAsc ? "rotate-180" : ""
+          }`}
+        />
+      </span>
+    );
+  };
+
+  const currentSortLabel = useMemo(() => {
+    if (!sortBy || sortBy === "latest") return "Latest";
+    if (sortBy === "amount_low_to_high" || sortBy === "amount_low") return "Amount: Low to High";
+    if (sortBy === "amount_high_to_low" || sortBy === "amount_high") return "Amount: High to Low";
+    if (sortBy === "customer_a_to_z") return "Customer: A to Z";
+    if (sortBy === "customer_z_to_a") return "Customer: Z to A";
+    return sortOptions.find((s) => s.value === sortBy)?.label || "Sort";
+  }, [sortBy, sortOptions]);
 
   return (
     <div className="bg-white rounded-xl shadow-xs border border-gray-200 flex flex-col relative z-20 overflow-visible">
@@ -340,30 +392,37 @@ export const SaleTable: React.FC<SaleTableProps> = ({
             >
               <BsFilterRight className="text-black text-sm shrink-0" />
               <span className="truncate">
-                {sortBy === "latest" ? "Latest" : sortOptions.find((s) => s.value === sortBy)?.label || "Sort"}
+                {currentSortLabel}
               </span>
             </button>
 
             {isSortOpen && (
               <div className="absolute right-0 top-full mt-1 w-48 bg-white rounded-lg shadow-2xl border border-gray-100 py-1 z-[99999]">
-                {sortOptions.map((opt) => (
-                  <button
-                    key={opt.value}
-                    type="button"
-                    onClick={() => {
-                      if (setSortBy) setSortBy(opt.value);
-                      setIsSortOpen(false);
-                      setCurrentPageNumber(1);
-                    }}
-                    className={`w-full text-left px-3 py-1.5 text-xs transition-colors cursor-pointer ${
-                      sortBy === opt.value
-                        ? "bg-sky-50 text-[var(--color-primary)] font-semibold"
-                        : "text-black hover:bg-gray-50"
-                    }`}
-                  >
-                    {opt.label}
-                  </button>
-                ))}
+                {sortOptions.map((opt) => {
+                  const isActive =
+                    sortBy === opt.value ||
+                    (opt.value === "amount_low_to_high" && sortBy === "amount_low") ||
+                    (opt.value === "amount_high_to_low" && sortBy === "amount_high");
+                  return (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      onClick={() => {
+                        if (setSortBy) setSortBy(opt.value);
+                        setIsSortOpen(false);
+                        setCurrentPageNumber(1);
+                      }}
+                      className={`w-full text-left px-3 py-1.5 text-xs transition-colors cursor-pointer flex items-center justify-between ${
+                        isActive
+                          ? "bg-sky-50 text-[var(--color-primary)] font-semibold"
+                          : "text-black hover:bg-gray-50"
+                      }`}
+                    >
+                      <span>{opt.label}</span>
+                      {isActive && <span className="text-[10px]">✓</span>}
+                    </button>
+                  );
+                })}
               </div>
             )}
           </div>
@@ -396,11 +455,17 @@ export const SaleTable: React.FC<SaleTableProps> = ({
               <tr className="bg-[#41BEF3] text-black text-xs font-semibold">
                 <th className="py-2.5 px-3 text-center w-10">SL</th>
                 {showOrderId && <th className="py-2.5 px-3">Order ID</th>}
-                <th className="py-2.5 px-3">Customer</th>
+                <th className="py-2.5 px-3">
+                  <SortHeader label="Customer" activeKey="customer" />
+                </th>
                 <th className="py-2.5 px-3">Phone</th>
                 <th className="py-2.5 px-3">Date</th>
                 <th className="py-2.5 px-3 text-center">Items</th>
-                <th className="py-2.5 px-3 text-right">Total (৳)</th>
+                <th className="py-2.5 px-3 text-right">
+                  <div className="flex justify-end">
+                    <SortHeader label="Total (৳)" activeKey="amount" />
+                  </div>
+                </th>
                 <th className="py-2.5 px-3 text-right">Paid (৳)</th>
                 <th className="py-2.5 px-3 text-right">Due (৳)</th>
                 {showMethod && <th className="py-2.5 px-3 text-center">Method</th>}

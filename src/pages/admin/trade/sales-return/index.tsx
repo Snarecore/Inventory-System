@@ -326,25 +326,37 @@ const SalesReturnPage: React.FC = () => {
   // Sorting for Sales
   const sortedSales = useMemo(() => {
     return [...filteredSales].sort((a: any, b: any) => {
+      const dateA = a.salesDate || a.saleDate || a.date;
+      const dateB = b.salesDate || b.saleDate || b.date;
       if (sortBy === "latest") {
-        const dateA = a.salesDate || a.saleDate || a.date;
-        const dateB = b.salesDate || b.saleDate || b.date;
         return moment(dateB).diff(moment(dateA));
       }
       if (sortBy === "oldest") {
-        const dateA = a.salesDate || a.saleDate || a.date;
-        const dateB = b.salesDate || b.saleDate || b.date;
         return moment(dateA).diff(moment(dateB));
       }
-      if (sortBy === "amount_high") {
+      if (sortBy === "amount_high" || sortBy === "amount_high_to_low") {
         const amtA = Number(a.grandTotal ?? a.grand_total ?? a.totalAmount ?? 0);
         const amtB = Number(b.grandTotal ?? b.grand_total ?? b.totalAmount ?? 0);
-        return amtB - amtA;
+        const diff = amtB - amtA;
+        return diff !== 0 ? diff : moment(dateB).diff(moment(dateA));
       }
-      if (sortBy === "amount_low") {
+      if (sortBy === "amount_low" || sortBy === "amount_low_to_high") {
         const amtA = Number(a.grandTotal ?? a.grand_total ?? a.totalAmount ?? 0);
         const amtB = Number(b.grandTotal ?? b.grand_total ?? b.totalAmount ?? 0);
-        return amtA - amtB;
+        const diff = amtA - amtB;
+        return diff !== 0 ? diff : moment(dateB).diff(moment(dateA));
+      }
+      if (sortBy === "customer_a_to_z") {
+        const nameA = String(a.customerName || a.customer_name || a.customer?.name || "Walk-in Customer").trim().toLowerCase();
+        const nameB = String(b.customerName || b.customer_name || b.customer?.name || "Walk-in Customer").trim().toLowerCase();
+        const cmp = nameA.localeCompare(nameB);
+        return cmp !== 0 ? cmp : moment(dateB).diff(moment(dateA));
+      }
+      if (sortBy === "customer_z_to_a") {
+        const nameA = String(a.customerName || a.customer_name || a.customer?.name || "Walk-in Customer").trim().toLowerCase();
+        const nameB = String(b.customerName || b.customer_name || b.customer?.name || "Walk-in Customer").trim().toLowerCase();
+        const cmp = nameB.localeCompare(nameA);
+        return cmp !== 0 ? cmp : moment(dateB).diff(moment(dateA));
       }
       return 0;
     });
