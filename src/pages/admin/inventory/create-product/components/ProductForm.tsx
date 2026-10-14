@@ -655,19 +655,15 @@ const CreateProductForm = () => {
 
                             {/* Row 2, Col 2: Buy Price (based on Secondary Unit if selected, else Primary Unit) */}
                             <div>
-                                <div className="flex items-center justify-between mb-1">
-                                    <label htmlFor="buy_price" className="text-xs font-semibold text-gray-700">
+                                <div className="flex items-center justify-between mb-1 gap-1">
+                                    <label htmlFor="buy_price" className="text-xs font-semibold text-gray-700 truncate">
                                         Buy Price (৳) <span className="text-red-600">*</span>
                                     </label>
-                                    <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded border leading-none ${
-                                        selectedSecondaryUnit 
-                                            ? "bg-amber-50 text-amber-700 border-amber-200" 
-                                            : "bg-gray-50 text-gray-600 border-gray-200"
-                                    }`}>
-                                        {selectedSecondaryUnit 
-                                            ? `per ${selectedSecondaryUnit.label}` 
-                                            : (selectedUnit ? `per ${selectedUnit.label}` : "per Unit")}
-                                    </span>
+                                    {conversionFactor && fieldValues.buy_price && Number(fieldValues.buy_price) > 0 ? (
+                                        <span className="text-[10px] font-bold text-sky-700 bg-sky-50 border border-sky-200 px-1.5 py-0.5 rounded leading-none whitespace-nowrap shrink-0">
+                                            1 {selectedUnit?.label} = ৳{(Number(fieldValues.buy_price) * conversionFactor).toLocaleString()}
+                                        </span>
+                                    ) : null}
                                 </div>
                                 <div className="flex items-center w-full transition-all duration-200 border border-gray-200 rounded-lg px-2.5 h-9 bg-white text-black text-xs focus-within:ring-1 focus-within:ring-[var(--primary-color,#009fe3)] focus-within:border-[var(--primary-color,#009fe3)]">
                                     <input
@@ -677,32 +673,24 @@ const CreateProductForm = () => {
                                         required
                                         value={fieldValues.buy_price}
                                         onChange={handleChange}
+                                        onWheel={(e) => e.currentTarget.blur()}
                                         placeholder="0.00"
                                         className="w-full focus:outline-none placeholder:text-xs placeholder:text-gray-400 px-1 text-xs bg-transparent"
                                     />
                                 </div>
-                                {conversionFactor && fieldValues.buy_price && Number(fieldValues.buy_price) > 0 ? (
-                                    <p className="text-[10px] text-gray-500 mt-0.5 truncate">
-                                        1 {selectedUnit?.label} = ৳{(Number(fieldValues.buy_price) * conversionFactor).toLocaleString()}
-                                    </p>
-                                ) : null}
                             </div>
 
                             {/* Row 2, Col 3: Sell Price (based on Secondary Unit if selected, else Primary Unit) */}
                             <div>
-                                <div className="flex items-center justify-between mb-1">
-                                    <label htmlFor="sell_price" className="text-xs font-semibold text-gray-700">
+                                <div className="flex items-center justify-between mb-1 gap-1">
+                                    <label htmlFor="sell_price" className="text-xs font-semibold text-gray-700 truncate">
                                         Sell Price (৳) <span className="text-red-600">*</span>
                                     </label>
-                                    <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded border leading-none ${
-                                        selectedSecondaryUnit 
-                                            ? "bg-amber-50 text-amber-700 border-amber-200" 
-                                            : "bg-gray-50 text-gray-600 border-gray-200"
-                                    }`}>
-                                        {selectedSecondaryUnit 
-                                            ? `per ${selectedSecondaryUnit.label}` 
-                                            : (selectedUnit ? `per ${selectedUnit.label}` : "per Unit")}
-                                    </span>
+                                    {conversionFactor && fieldValues.sell_price && Number(fieldValues.sell_price) > 0 ? (
+                                        <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded leading-none whitespace-nowrap shrink-0">
+                                            1 {selectedUnit?.label} = ৳{(Number(fieldValues.sell_price) * conversionFactor).toLocaleString()}
+                                        </span>
+                                    ) : null}
                                 </div>
                                 <div className="flex items-center w-full transition-all duration-200 border border-gray-200 rounded-lg px-2.5 h-9 bg-white text-black text-xs focus-within:ring-1 focus-within:ring-[var(--primary-color,#009fe3)] focus-within:border-[var(--primary-color,#009fe3)]">
                                     <input
@@ -712,15 +700,11 @@ const CreateProductForm = () => {
                                         required
                                         value={fieldValues.sell_price}
                                         onChange={handleChange}
+                                        onWheel={(e) => e.currentTarget.blur()}
                                         placeholder="0.00"
                                         className="w-full focus:outline-none placeholder:text-xs placeholder:text-gray-400 px-1 text-xs bg-transparent"
                                     />
                                 </div>
-                                {conversionFactor && fieldValues.sell_price && Number(fieldValues.sell_price) > 0 ? (
-                                    <p className="text-[10px] text-emerald-600 font-medium mt-0.5 truncate">
-                                        1 {selectedUnit?.label} = ৳{(Number(fieldValues.sell_price) * conversionFactor).toLocaleString()}
-                                    </p>
-                                ) : null}
                             </div>
 
                             {/* Row 2, Col 4: Quantity */}

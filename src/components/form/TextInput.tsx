@@ -17,6 +17,7 @@ interface InputFieldProps {
   min?: string | number;
   max?: string | number;
   onKeyDown?: React.KeyboardEventHandler<HTMLInputElement>;
+  onWheel?: React.WheelEventHandler<HTMLInputElement>;
   onChange?: ((value: string) => void) | ((event: ChangeEvent<HTMLInputElement>) => void);
 }
 
@@ -36,6 +37,7 @@ const InputField: React.FC<InputFieldProps> = ({
   min,
   max,
   onKeyDown,
+  onWheel,
   placeholder = "",
   onChange,
 }) => {
@@ -47,6 +49,14 @@ const InputField: React.FC<InputFieldProps> = ({
       } else {
         (onChange as (event: ChangeEvent<HTMLInputElement>) => void)(e);
       }
+    }
+  };
+
+  const handleWheel = (e: React.WheelEvent<HTMLInputElement>) => {
+    if (onWheel) {
+      onWheel(e);
+    } else if (type === "number") {
+      e.currentTarget.blur();
     }
   };
 
@@ -79,6 +89,7 @@ const InputField: React.FC<InputFieldProps> = ({
           min={min}
           max={max}
           onKeyDown={onKeyDown}
+          onWheel={handleWheel}
           onChange={handleChange}
           className={`w-full focus:outline-none placeholder:text-xs placeholder:text-gray-400 px-1 text-xs bg-transparent
             ${inputClass}
