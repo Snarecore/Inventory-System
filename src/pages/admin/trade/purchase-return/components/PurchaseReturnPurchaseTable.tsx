@@ -1,12 +1,12 @@
 import React, { useState, useRef, useEffect, useMemo } from "react";
 import { FiChevronDown } from "react-icons/fi";
-import { BsFilterRight } from "react-icons/bs";
 import moment from "moment";
 import Search from "@/components/table-components/Search";
 import DateRangePicker from "@/components/date-range-picker/DateRangePicker";
 import EmptyState from "@/components/empty-state/EmptyState";
 import TableSkeleton from "@/components/skeleton/TableSkeleton";
 import Pagination from "@/components/pagination";
+import ColumnVisibilityDropdown, { type ColumnItem } from "@/components/table-components/ColumnVisibilityDropdown";
 import type { PurchaseItem, PartyItem } from "@/types";
 import { FaSearch, FaFileExcel } from "react-icons/fa";
 import { exportPurchasesToExcel } from "@/utils/excel-export";
@@ -82,11 +82,9 @@ export const PurchaseReturnPurchaseTable: React.FC<PurchaseReturnPurchaseTablePr
   onView,
   onExport,
 }) => {
-  const [isSortOpen, setIsSortOpen] = useState<boolean>(false);
   const [isSupplierDropdownOpen, setIsSupplierDropdownOpen] = useState<boolean>(false);
   const [supplierSearchQuery, setSupplierSearchQuery] = useState<string>("");
 
-  const sortRef = useRef<HTMLDivElement>(null);
   const supplierRef = useRef<HTMLDivElement>(null);
 
   const handleExport = () => {
@@ -109,9 +107,6 @@ export const PurchaseReturnPurchaseTable: React.FC<PurchaseReturnPurchaseTablePr
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (sortRef.current && !sortRef.current.contains(event.target as Node)) {
-        setIsSortOpen(false);
-      }
       if (supplierRef.current && !supplierRef.current.contains(event.target as Node)) {
         setIsSupplierDropdownOpen(false);
       }
@@ -157,13 +152,110 @@ export const PurchaseReturnPurchaseTable: React.FC<PurchaseReturnPurchaseTablePr
     { value: "CREDIT", label: "Credit" },
   ];
 
-  const sortOptions = [
-    { value: "latest", label: "Latest Purchases" },
-    { value: "amount_high_to_low", label: "Amount: High to Low" },
-    { value: "amount_low_to_high", label: "Amount: Low to High" },
-    { value: "supplier_a_to_z", label: "Supplier: A to Z" },
-    { value: "supplier_z_to_a", label: "Supplier: Z to A" },
-  ];
+  // Lightweight sort header component with small black chevron
+  const SortHeader = ({
+    label,
+    activeKey,
+  }: {
+    label: string;
+    activeKey: "supplier" | "amount";
+  }) => {
+    const isAsc =
+      sortBy === (activeKey === "supplier" ? "supplier_a_to_z" : "amount_low_to_high");
+    const isDesc =
+      sortBy === (activeKey === "supplier" ? "supplier_z_to_a" : "amount_high_to_low");
+
+    const handleClick = () => {
+      if (!setSortBy) return;
+      if (activeKey === "supplier") {
+        setSortBy(isAsc ? "supplier_z_to_a" : isDesc ? "latest" : "supplier_a_to_z");
+      } else {
+        setSortBy(isAsc ? "amount_high_to_low" : isDesc ? "latest" : "amount_low_to_high");
+      }
+      setCurrentPageNumber(1);
+    };
+
+    return (
+      <span
+        onClick={setSortBy ? handleClick : undefined}
+        className={`inline-flex items-center gap-1 select-none text-black ${
+          setSortBy ? "cursor-pointer" : ""
+        }`}
+      >
+        <span>{label}</span>
+        <FiChevronDown
+          size={11}
+          className={`text-black transition-transform duration-200 ${
+            isAsc ? "rotate-180" : ""
+          }`}
+        />
+      </span>
+    );
+  };
+
+  // Column Visibility Configuration
+  const availableColumns: ColumnItem[] = useMemo(
+    () => [
+      { key: "sl", label: "SL" },
+      { key: "orderNo", label: "Order No" },
+      { key: "supplier", label: "Supplier" },
+      { key: "phone", label: "Phone" },
+      { key: "date", label: "Date" },
+      { key: "items", label: "Items" },
+      { key: "total", label: "Total (৳)" },
+      { key: "paid", label: "Paid (৳)" },
+      { key: "due", label: "Due (৳)" },
+      { key: "method", label: "Method" },
+      { key: "status", label: "Payment Status" },
+      { key: "actions", label: "Action" },
+    ],
+    []
+  );
+
+  const [visibleColumns, setVisibleColumns] = useState<Record<string, boolean>>(() => {
+    try {
+      const saved = localStorage.getItem("purchase_return_purchases_table_columns");
+      if (saved) return JSON.parse(saved);
+    } catch {
+      // fallback
+    }
+    return {};
+  });
+
+  const isColVisible = (key: string) => visibleColumns[key] !== false;
+
+  const handleToggleColumn = (key: string) => {
+    setVisibleColumns((prev) => {
+      const currentlyVisible = prev[key] !== false;
+      const willBeVisible = !currentlyVisible;
+      const countAfter = availableColumns.filter((c) =>
+        c.key === key ? willBeVisible : prev[c.key] !== false
+      ).length;
+      if (countAfter === 0) return prev;
+
+      const next = { ...prev, [key]: willBeVisible };
+      try {
+        localStorage.setItem("purchase_return_purchases_table_columns", JSON.stringify(next));
+      } catch {}
+      return next;
+    });
+  };
+
+  const handleResetColumns = () => {
+    const resetState: Record<string, boolean> = {};
+    availableColumns.forEach((c) => {
+      resetState[c.key] = true;
+    });
+    setVisibleColumns(resetState);
+    try {
+      localStorage.removeItem("purchase_return_purchases_table_columns");
+    } catch {}
+  };
+
+  const activeVisibleColumnCount = useMemo(
+    () => availableColumns.filter((c) => isColVisible(c.key)).length,
+    [availableColumns, visibleColumns]
+  );
 
   return (
     <div className="bg-white rounded-xl shadow-xs border border-gray-200 flex flex-col relative z-20 overflow-visible">
@@ -315,47 +407,15 @@ export const PurchaseReturnPurchaseTable: React.FC<PurchaseReturnPurchaseTablePr
           </div>
         </div>
 
-        {/* Right Section: Sort By Dropdown & Export Button */}
+        {/* Right Section: Column Visibility & Export Button */}
         <div className="flex items-center gap-2 shrink-0 ml-auto sm:ml-0">
-          {/* Custom Sort Dropdown */}
-          <div className="relative" ref={sortRef}>
-            <button
-              type="button"
-              onClick={() => setIsSortOpen(!isSortOpen)}
-              className="h-8 px-2.5 flex items-center gap-1.5 text-xs border border-gray-200 rounded-lg bg-gray-50/50 hover:bg-white text-black font-medium focus:outline-none focus:border-[var(--color-primary)] cursor-pointer transition-colors shadow-2xs"
-            >
-              <BsFilterRight size={14} className="text-gray-500" />
-              <span className="hidden md:inline">Sort:</span>
-              <span className="font-semibold text-gray-800">
-                {sortOptions.find((o) => o.value === sortBy)?.label.replace("Purchases", "").trim() || "Latest"}
-              </span>
-              <FiChevronDown size={12} className="text-gray-400 ml-0.5" />
-            </button>
-
-            {isSortOpen && (
-              <div className="absolute right-0 top-full mt-1 w-48 bg-white rounded-lg shadow-xl border border-gray-200 py-1 z-50">
-                {sortOptions.map((opt) => (
-                  <button
-                    key={opt.value}
-                    type="button"
-                    onClick={() => {
-                      if (setSortBy) setSortBy(opt.value);
-                      setIsSortOpen(false);
-                      setCurrentPageNumber(1);
-                    }}
-                    className={`w-full px-3 py-1.5 text-left text-xs transition-colors flex items-center justify-between cursor-pointer ${
-                      sortBy === opt.value
-                        ? "bg-sky-50 text-[var(--color-primary)] font-semibold"
-                        : "text-black hover:bg-gray-50 font-normal"
-                    }`}
-                  >
-                    <span>{opt.label}</span>
-                    {sortBy === opt.value && <span className="text-[10px]">✓</span>}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
+          {/* Column Visibility Menu */}
+          <ColumnVisibilityDropdown
+            columns={availableColumns}
+            visibleColumns={visibleColumns}
+            onToggle={handleToggleColumn}
+            onReset={handleResetColumns}
+          />
 
           {/* Export to Excel */}
           <button
@@ -373,7 +433,7 @@ export const PurchaseReturnPurchaseTable: React.FC<PurchaseReturnPurchaseTablePr
       {/* Main Table Content */}
       <div className="overflow-x-auto w-full relative z-10">
         {isLoading ? (
-          <TableSkeleton />
+          <TableSkeleton columnCount={activeVisibleColumnCount} />
         ) : purchases.length === 0 ? (
           <EmptyState
             title="No Purchases Found"
@@ -383,18 +443,28 @@ export const PurchaseReturnPurchaseTable: React.FC<PurchaseReturnPurchaseTablePr
           <table className="w-full text-left border-collapse text-xs">
             <thead>
               <tr className="bg-[#41BEF3] text-black text-xs font-semibold">
-                <th className="py-2.5 px-3 text-center w-10">SL</th>
-                <th className="py-2.5 px-3">Order No</th>
-                <th className="py-2.5 px-3">Supplier</th>
-                <th className="py-2.5 px-3">Phone</th>
-                <th className="py-2.5 px-3">Date</th>
-                <th className="py-2.5 px-3 text-center">Items</th>
-                <th className="py-2.5 px-3 text-right">Total (৳)</th>
-                <th className="py-2.5 px-3 text-right">Paid (৳)</th>
-                <th className="py-2.5 px-3 text-right">Due (৳)</th>
-                <th className="py-2.5 px-3 text-center">Method</th>
-                <th className="py-2.5 px-3 text-center">Payment Status</th>
-                <th className="py-2.5 px-3 text-center w-36">Action</th>
+                {isColVisible("sl") && <th className="py-2.5 px-3 text-center w-10">SL</th>}
+                {isColVisible("orderNo") && <th className="py-2.5 px-3">Order No</th>}
+                {isColVisible("supplier") && (
+                  <th className="py-2.5 px-3">
+                    <SortHeader label="Supplier" activeKey="supplier" />
+                  </th>
+                )}
+                {isColVisible("phone") && <th className="py-2.5 px-3">Phone</th>}
+                {isColVisible("date") && <th className="py-2.5 px-3">Date</th>}
+                {isColVisible("items") && <th className="py-2.5 px-3 text-center">Items</th>}
+                {isColVisible("total") && (
+                  <th className="py-2.5 px-3 text-right">
+                    <div className="flex justify-end">
+                      <SortHeader label="Total (৳)" activeKey="amount" />
+                    </div>
+                  </th>
+                )}
+                {isColVisible("paid") && <th className="py-2.5 px-3 text-right">Paid (৳)</th>}
+                {isColVisible("due") && <th className="py-2.5 px-3 text-right">Due (৳)</th>}
+                {isColVisible("method") && <th className="py-2.5 px-3 text-center">Method</th>}
+                {isColVisible("status") && <th className="py-2.5 px-3 text-center">Payment Status</th>}
+                {isColVisible("actions") && <th className="py-2.5 px-3 text-center w-36">Action</th>}
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
@@ -465,100 +535,124 @@ export const PurchaseReturnPurchaseTable: React.FC<PurchaseReturnPurchaseTablePr
                     className="hover:bg-sky-50/40 transition-colors group"
                   >
                     {/* SL */}
-                    <td className="py-2.5 px-3 text-center text-black text-xs font-normal">
-                      {serialNumber}
-                    </td>
+                    {isColVisible("sl") && (
+                      <td className="py-2.5 px-3 text-center text-black text-xs font-normal">
+                        {serialNumber}
+                      </td>
+                    )}
 
                     {/* Order No */}
-                    <td className="py-2.5 px-3 text-black text-xs font-normal whitespace-nowrap">
-                      <span
-                        onClick={() => onView && onView(purchase)}
-                        className={`font-medium ${onView ? "cursor-pointer hover:text-sky-600 transition-colors" : "text-gray-800"}`}
-                        title={onView ? "Click to view invoice" : undefined}
-                      >
-                        {purchase.orderNo || (purchase as any).order_no || purchase.invoiceNo || (purchase as any).invoice_no || (purchase as any).purchaseInvoiceNo || purchase.challanNo || (purchase as any).challan_no || (purchase.id ? `PO-${purchase.id}` : "-")}
-                      </span>
-                    </td>
+                    {isColVisible("orderNo") && (
+                      <td className="py-2.5 px-3 text-black text-xs font-normal whitespace-nowrap">
+                        <span
+                          onClick={() => onView && onView(purchase)}
+                          className={`font-medium ${onView ? "cursor-pointer hover:text-sky-600 transition-colors" : "text-gray-800"}`}
+                          title={onView ? "Click to view invoice" : undefined}
+                        >
+                          {purchase.orderNo || (purchase as any).order_no || purchase.invoiceNo || (purchase as any).invoice_no || (purchase as any).purchaseInvoiceNo || purchase.challanNo || (purchase as any).challan_no || (purchase.id ? `PO-${purchase.id}` : "-")}
+                        </span>
+                      </td>
+                    )}
 
                     {/* Supplier */}
-                    <td className="py-2.5 px-3 text-black text-xs font-normal whitespace-nowrap">
-                      {purchase.supplierName || "Direct Supplier"}
-                    </td>
+                    {isColVisible("supplier") && (
+                      <td className="py-2.5 px-3 text-black text-xs font-normal whitespace-nowrap">
+                        {purchase.supplierName || "Direct Supplier"}
+                      </td>
+                    )}
 
                     {/* Phone */}
-                    <td className="py-2.5 px-3 text-black text-xs font-normal whitespace-nowrap">
-                      {purchase.supplierPhone || "-"}
-                    </td>
+                    {isColVisible("phone") && (
+                      <td className="py-2.5 px-3 text-black text-xs font-normal whitespace-nowrap">
+                        {purchase.supplierPhone || "-"}
+                      </td>
+                    )}
 
                     {/* Date */}
-                    <td className="py-2.5 px-3 text-black text-xs font-normal whitespace-nowrap">
-                      <span className="flex items-center gap-1 text-[11px] text-black font-normal">
-                        {purchase.purchaseDate || (purchase as any).date || purchase.createdAt
-                          ? moment(purchase.purchaseDate || (purchase as any).date || purchase.createdAt).format("DD MMM, YYYY")
-                          : moment().format("DD MMM, YYYY")}
-                      </span>
-                    </td>
+                    {isColVisible("date") && (
+                      <td className="py-2.5 px-3 text-black text-xs font-normal whitespace-nowrap">
+                        <span className="flex items-center gap-1 text-[11px] text-black font-normal">
+                          {purchase.purchaseDate || (purchase as any).date || purchase.createdAt
+                            ? moment(purchase.purchaseDate || (purchase as any).date || purchase.createdAt).format("DD MMM, YYYY")
+                            : moment().format("DD MMM, YYYY")}
+                        </span>
+                      </td>
+                    )}
 
                     {/* Items */}
-                    <td className="py-2.5 px-3 text-center">
-                      <span className="inline-block px-1.5 py-0.5 bg-gray-100 text-black rounded text-[11px] font-normal">
-                        {itemsCount}
-                      </span>
-                    </td>
+                    {isColVisible("items") && (
+                      <td className="py-2.5 px-3 text-center">
+                        <span className="inline-block px-1.5 py-0.5 bg-gray-100 text-black rounded text-[11px] font-normal">
+                          {itemsCount}
+                        </span>
+                      </td>
+                    )}
 
                     {/* Grand Total */}
-                    <td className="py-2.5 px-3 text-right text-black text-xs font-normal">
-                      ৳ {formatMoney(grandTotal)}
-                    </td>
+                    {isColVisible("total") && (
+                      <td className="py-2.5 px-3 text-right text-black text-xs font-normal">
+                        ৳ {formatMoney(grandTotal)}
+                      </td>
+                    )}
 
                     {/* Paid */}
-                    <td className="py-2.5 px-3 text-right text-black text-xs font-normal">
-                      ৳ {formatMoney(paidAmount)}
-                    </td>
+                    {isColVisible("paid") && (
+                      <td className="py-2.5 px-3 text-right text-black text-xs font-normal">
+                        ৳ {formatMoney(paidAmount)}
+                      </td>
+                    )}
 
                     {/* Due */}
-                    <td className="py-2.5 px-3 text-right text-black text-xs font-normal">
-                      ৳ {formatMoney(dueAmount)}
-                    </td>
+                    {isColVisible("due") && (
+                      <td className="py-2.5 px-3 text-right text-black text-xs font-normal">
+                        ৳ {formatMoney(dueAmount)}
+                      </td>
+                    )}
 
                     {/* Method */}
-                    <td className="py-2.5 px-3 text-center">
-                      <span className="inline-block px-1.5 py-0.5 text-[10px] font-semibold bg-sky-100 text-sky-900 border border-sky-300 rounded-md">
-                        {paymentType}
-                      </span>
-                    </td>
+                    {isColVisible("method") && (
+                      <td className="py-2.5 px-3 text-center">
+                        <span className="inline-block px-1.5 py-0.5 text-[10px] font-semibold bg-sky-100 text-sky-900 border border-sky-300 rounded-md">
+                          {paymentType}
+                        </span>
+                      </td>
+                    )}
 
                     {/* Status */}
-                    <td className="py-2.5 px-3 text-center">
-                      <span
-                        className={`inline-block px-1.5 py-0.5 text-[10px] border rounded-md ${statusBg}`}
-                      >
-                        {statusBadge}
-                      </span>
-                    </td>
+                    {isColVisible("status") && (
+                      <td className="py-2.5 px-3 text-center">
+                        <span
+                          className={`inline-block px-1.5 py-0.5 text-[10px] border rounded-md ${statusBg}`}
+                        >
+                          {statusBadge}
+                        </span>
+                      </td>
+                    )}
 
                     {/* Actions */}
-                    <td className="py-2 px-3 text-center whitespace-nowrap">
-                      <div className="flex items-center justify-center">
-                        {isAlreadyReturned ? (
-                          <span
-                            title="This purchase order has already been returned"
-                            className="inline-flex items-center gap-1.5 px-1.5 py-1 text-xs font-semibold text-rose-600 bg-gray-100 border border-gray-200 rounded-md cursor-not-allowed select-none"
-                          >
-                            <span>Returned</span>
-                          </span>
-                        ) : (
-                          <button
-                            type="button"
-                            onClick={() => onReturn(purchase)}
-                            title="Return Product"
-                            className="inline-flex items-center gap-1.5 px-1.5 py-1 text-xs text-white bg-[var(--color-primary)] rounded-md shadow-xs transition-all cursor-pointer"
-                          >
-                            <span>Return Product</span>
-                          </button>
-                        )}
-                      </div>
-                    </td>
+                    {isColVisible("actions") && (
+                      <td className="py-2 px-3 text-center whitespace-nowrap">
+                        <div className="flex items-center justify-center">
+                          {isAlreadyReturned ? (
+                            <span
+                              title="This purchase order has already been returned"
+                              className="inline-flex items-center gap-1.5 px-1.5 py-1 text-xs font-semibold text-rose-600 bg-gray-100 border border-gray-200 rounded-md cursor-not-allowed select-none"
+                            >
+                              <span>Returned</span>
+                            </span>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => onReturn(purchase)}
+                              title="Return Product"
+                              className="inline-flex items-center gap-1.5 px-1.5 py-1 text-xs text-white bg-[var(--color-primary)] rounded-md shadow-xs transition-all cursor-pointer"
+                            >
+                              <span>Return Product</span>
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    )}
                   </tr>
                 );
               })}

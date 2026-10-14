@@ -12,6 +12,7 @@ import DateRangePicker from "@/components/date-range-picker/DateRangePicker";
 import EmptyState from "@/components/empty-state/EmptyState";
 import TableSkeleton from "@/components/skeleton/TableSkeleton";
 import Pagination from "@/components/pagination";
+import ColumnVisibilityDropdown, { type ColumnItem } from "@/components/table-components/ColumnVisibilityDropdown";
 import type { SalesReturnItem, PartyItem } from "@/types";
 import { exportSalesReturnToExcel } from "@/utils/excel-export";
 import { showSuccessToast, showErrorToast } from "@/utils/toast-utils";
@@ -179,6 +180,62 @@ export const SalesReturnTable: React.FC<SalesReturnTableProps> = ({
     { value: "amount_high", label: "Amount: High to Low" },
     { value: "amount_low", label: "Amount: Low to High" },
   ];
+
+  // Column Visibility Configuration
+  const availableColumns: ColumnItem[] = [
+    { key: "sl", label: "SL" },
+    { key: "orderId", label: "Order ID" },
+    { key: "customer", label: "Customer" },
+    { key: "returnDate", label: "Return Date" },
+    { key: "items", label: "Items" },
+    { key: "remarks", label: "Remarks" },
+    { key: "paymentType", label: "Payment Type" },
+    { key: "refundAmount", label: "Refund Amount" },
+    { key: "status", label: "Status" },
+    { key: "actions", label: "Actions" },
+  ];
+
+  const [visibleColumns, setVisibleColumns] = useState<Record<string, boolean>>(() => {
+    try {
+      const saved = localStorage.getItem("sales_return_table_columns");
+      if (saved) return JSON.parse(saved);
+    } catch {
+      // fallback
+    }
+    return {};
+  });
+
+  const isColVisible = (key: string) => visibleColumns[key] !== false;
+
+  const handleToggleColumn = (key: string) => {
+    setVisibleColumns((prev) => {
+      const currentlyVisible = prev[key] !== false;
+      const willBeVisible = !currentlyVisible;
+      const countAfter = availableColumns.filter((c) =>
+        c.key === key ? willBeVisible : prev[c.key] !== false
+      ).length;
+      if (countAfter === 0) return prev;
+
+      const next = { ...prev, [key]: willBeVisible };
+      try {
+        localStorage.setItem("sales_return_table_columns", JSON.stringify(next));
+      } catch {}
+      return next;
+    });
+  };
+
+  const handleResetColumns = () => {
+    const resetState: Record<string, boolean> = {};
+    availableColumns.forEach((c) => {
+      resetState[c.key] = true;
+    });
+    setVisibleColumns(resetState);
+    try {
+      localStorage.removeItem("sales_return_table_columns");
+    } catch {}
+  };
+
+  const activeVisibleColumnCount = availableColumns.filter((c) => isColVisible(c.key)).length;
 
   return (
     <div className="bg-white rounded-xl shadow-xs border border-gray-200 flex flex-col relative z-20 overflow-visible">
@@ -373,6 +430,14 @@ export const SalesReturnTable: React.FC<SalesReturnTableProps> = ({
             </button>
           )}
 
+          {/* Column Visibility Menu */}
+          <ColumnVisibilityDropdown
+            columns={availableColumns}
+            visibleColumns={visibleColumns}
+            onToggle={handleToggleColumn}
+            onReset={handleResetColumns}
+          />
+
           {/* Excel Export Button */}
           <button
             type="button"
@@ -389,7 +454,7 @@ export const SalesReturnTable: React.FC<SalesReturnTableProps> = ({
       {/* 3. Main Table Content */}
       <div className="overflow-x-auto w-full relative z-10">
         {isLoading ? (
-          <TableSkeleton columnCount={10} rowCount={8} />
+          <TableSkeleton columnCount={activeVisibleColumnCount} rowCount={8} />
         ) : returns.length === 0 ? (
           <EmptyState
             title="No Sales Returns Found"
@@ -401,16 +466,16 @@ export const SalesReturnTable: React.FC<SalesReturnTableProps> = ({
           <table className="w-full text-left border-collapse text-xs">
             <thead>
               <tr className="bg-[#41BEF3] text-black text-xs font-semibold">
-                <th className="py-2.5 px-3 text-center w-10">SL</th>
-                <th className="py-2.5 px-3 whitespace-nowrap">Order ID</th>
-                <th className="py-2.5 px-3 min-w-[120px]">Customer</th>
-                <th className="py-2.5 px-3 whitespace-nowrap">Return Date</th>
-                <th className="py-2.5 px-3 text-center w-24 whitespace-nowrap">Items</th>
-                <th className="py-2.5 px-3 text-center w-44 min-w-[150px] max-w-[180px]">Remarks</th>
-                <th className="py-2.5 px-3 text-center w-28 whitespace-nowrap">Payment Type</th>
-                <th className="py-2.5 px-3 text-right w-32 whitespace-nowrap">Refund Amount</th>
-                <th className="py-2.5 px-3 text-center w-28 whitespace-nowrap">Status</th>
-                <th className="py-2.5 px-3 text-center w-24 whitespace-nowrap">Actions</th>
+                {isColVisible("sl") && <th className="py-2.5 px-3 text-center w-10">SL</th>}
+                {isColVisible("orderId") && <th className="py-2.5 px-3 whitespace-nowrap">Order ID</th>}
+                {isColVisible("customer") && <th className="py-2.5 px-3 min-w-[120px]">Customer</th>}
+                {isColVisible("returnDate") && <th className="py-2.5 px-3 whitespace-nowrap">Return Date</th>}
+                {isColVisible("items") && <th className="py-2.5 px-3 text-center w-24 whitespace-nowrap">Items</th>}
+                {isColVisible("remarks") && <th className="py-2.5 px-3 text-center w-44 min-w-[150px] max-w-[180px]">Remarks</th>}
+                {isColVisible("paymentType") && <th className="py-2.5 px-3 text-center w-28 whitespace-nowrap">Payment Type</th>}
+                {isColVisible("refundAmount") && <th className="py-2.5 px-3 text-right w-32 whitespace-nowrap">Refund Amount</th>}
+                {isColVisible("status") && <th className="py-2.5 px-3 text-center w-28 whitespace-nowrap">Status</th>}
+                {isColVisible("actions") && <th className="py-2.5 px-3 text-center w-24 whitespace-nowrap">Actions</th>}
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
@@ -444,132 +509,152 @@ export const SalesReturnTable: React.FC<SalesReturnTableProps> = ({
                   <React.Fragment key={rowKey}>
                     <tr className={`transition-colors group ${isExpanded ? "bg-sky-50/50" : "hover:bg-sky-50/40"}`}>
                       {/* SL */}
-                      <td className="py-2.5 px-3 text-center text-black text-xs font-normal">
-                        {sl}
-                      </td>
+                      {isColVisible("sl") && (
+                        <td className="py-2.5 px-3 text-center text-black text-xs font-normal">
+                          {sl}
+                        </td>
+                      )}
 
                       {/* Order ID */}
-                      <td className="py-2.5 px-3 text-black text-xs font-normal whitespace-nowrap">
-                        <div className="flex items-center gap-1.5 group/ord">
-                          <span
-                            onClick={() => onView(item)}
-                            title="Click to view voucher"
-                            className="cursor-pointer hover:text-sky-600 transition-colors"
-                          >
-                            {item.orderNo ? `${item.orderNo}` : (item.returnNo || `RET-${item.id}`)}
-                          </span>
-                          <button
-                            type="button"
-                            onClick={() => handleCopyReturnNo(item.orderNo ? String(item.orderNo) : String(item.returnNo || item.id), rowKey)}
-                            title="Copy Order ID"
-                            className="p-1 text-gray-400 hover:text-sky-600 transition-colors opacity-0 group-hover/ord:opacity-100 cursor-pointer"
-                          >
-                            {copiedId === rowKey ? (
-                              <FiCheck className="text-emerald-600 text-xs" />
-                            ) : (
-                              <FiCopy size={12} />
-                            )}
-                          </button>
-                        </div>
-                      </td>
+                      {isColVisible("orderId") && (
+                        <td className="py-2.5 px-3 text-black text-xs font-normal whitespace-nowrap">
+                          <div className="flex items-center gap-1.5 group/ord">
+                            <span
+                              onClick={() => onView(item)}
+                              title="Click to view voucher"
+                              className="cursor-pointer hover:text-sky-600 transition-colors"
+                            >
+                              {item.orderNo ? `${item.orderNo}` : (item.returnNo || `RET-${item.id}`)}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => handleCopyReturnNo(item.orderNo ? String(item.orderNo) : String(item.returnNo || item.id), rowKey)}
+                              title="Copy Order ID"
+                              className="p-1 text-gray-400 hover:text-sky-600 transition-colors opacity-0 group-hover/ord:opacity-100 cursor-pointer"
+                            >
+                              {copiedId === rowKey ? (
+                                <FiCheck className="text-emerald-600 text-xs" />
+                              ) : (
+                                <FiCopy size={12} />
+                              )}
+                            </button>
+                          </div>
+                        </td>
+                      )}
 
                       {/* Customer */}
-                      <td className="py-2.5 px-3 text-black text-xs font-normal min-w-[120px]">
-                        <div className="truncate text-black font-normal max-w-[150px]">
-                          {item.customerName || "Walk-in Customer"}
-                        </div>
-                      </td>
+                      {isColVisible("customer") && (
+                        <td className="py-2.5 px-3 text-black text-xs font-normal min-w-[120px]">
+                          <div className="truncate text-black font-normal max-w-[150px]">
+                            {item.customerName || "Walk-in Customer"}
+                          </div>
+                        </td>
+                      )}
 
                       {/* Return Date */}
-                      <td className="py-2.5 px-3 text-black text-xs font-normal whitespace-nowrap">
-                        <span className="flex items-center gap-1 text-[11px] text-black font-normal">
-                          {moment(item.returnDate || item.createdAt).format("DD MMM, YYYY")}
-                        </span>
-                      </td>
+                      {isColVisible("returnDate") && (
+                        <td className="py-2.5 px-3 text-black text-xs font-normal whitespace-nowrap">
+                          <span className="flex items-center gap-1 text-[11px] text-black font-normal">
+                            {moment(item.returnDate || item.createdAt).format("DD MMM, YYYY")}
+                          </span>
+                        </td>
+                      )}
 
                       {/* Items */}
-                      <td className="py-2.5 px-3 text-center w-24">
-                        <button
-                          type="button"
-                          onClick={() => toggleExpandRow(rowKey)}
-                          className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-gray-100 hover:bg-sky-100 text-black rounded text-[11px] font-normal transition-colors cursor-pointer"
-                          title="Click to view returned products"
-                        >
-                          <span>{itemsCount} {itemsCount === 1 ? "item" : "items"}</span>
-                          <FiChevronDown
-                            size={11}
-                            className={`text-gray-500 transition-transform duration-200 ${
-                              isExpanded ? "rotate-180" : ""
-                            }`}
-                          />
-                        </button>
-                      </td>
+                      {isColVisible("items") && (
+                        <td className="py-2.5 px-3 text-center w-24">
+                          <button
+                            type="button"
+                            onClick={() => toggleExpandRow(rowKey)}
+                            className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-gray-100 hover:bg-sky-100 text-black rounded text-[11px] font-normal transition-colors cursor-pointer"
+                            title="Click to view returned products"
+                          >
+                            <span>{itemsCount} {itemsCount === 1 ? "item" : "items"}</span>
+                            <FiChevronDown
+                              size={11}
+                              className={`text-gray-500 transition-transform duration-200 ${
+                                isExpanded ? "rotate-180" : ""
+                              }`}
+                            />
+                          </button>
+                        </td>
+                      )}
 
                       {/* Remarks */}
-                      <td className="py-2.5 px-3 text-center text-black text-xs font-normal w-44 min-w-[150px] max-w-[180px]">
-                        {item.note || item.remarks ? (
-                          <div
-                            className="inline-flex items-center justify-center px-1.5 py-0.5 rounded-md bg-gray-100 hover:bg-gray-200/80 border border-gray-200 text-black text-xs font-normal max-w-[160px] transition-colors cursor-pointer"
-                            title={item.note || item.remarks}
-                            onClick={() => onView(item)}
-                          >
-                            <span className="truncate">{item.note || item.remarks}</span>
-                          </div>
-                        ) : (
-                          <span className="text-black font-normal">N/A</span>
-                        )}
-                      </td>
+                      {isColVisible("remarks") && (
+                        <td className="py-2.5 px-3 text-center text-black text-xs font-normal w-44 min-w-[150px] max-w-[180px]">
+                          {item.note || item.remarks ? (
+                            <div
+                              className="inline-flex items-center justify-center px-1.5 py-0.5 rounded-md bg-gray-100 hover:bg-gray-200/80 border border-gray-200 text-black text-xs font-normal max-w-[160px] transition-colors cursor-pointer"
+                              title={item.note || item.remarks}
+                              onClick={() => onView(item)}
+                            >
+                              <span className="truncate">{item.note || item.remarks}</span>
+                            </div>
+                          ) : (
+                            <span className="text-black font-normal">N/A</span>
+                          )}
+                        </td>
+                      )}
 
                       {/* Payment Type */}
-                      <td className="py-2.5 px-3 text-center w-28 whitespace-nowrap">
-                        <span
-                          className={`inline-block px-1.5 py-0.5 text-[10px] border rounded-md ${paymentBg}`}
-                        >
-                          {pType}
-                        </span>
-                      </td>
+                      {isColVisible("paymentType") && (
+                        <td className="py-2.5 px-3 text-center w-28 whitespace-nowrap">
+                          <span
+                            className={`inline-block px-1.5 py-0.5 text-[10px] border rounded-md ${paymentBg}`}
+                          >
+                            {pType}
+                          </span>
+                        </td>
+                      )}
 
                       {/* Refund Amount */}
-                      <td className="py-2.5 px-3 text-right text-black text-xs font-normal w-32 whitespace-nowrap">
-                        ৳ {formatMoney(refund)}
-                      </td>
+                      {isColVisible("refundAmount") && (
+                        <td className="py-2.5 px-3 text-right text-black text-xs font-normal w-32 whitespace-nowrap">
+                          ৳ {formatMoney(refund)}
+                        </td>
+                      )}
 
                       {/* Status */}
-                      <td className="py-2.5 px-3 text-center w-28 whitespace-nowrap">
-                        <span
-                          className={`inline-block px-1.5 py-0.5 text-[10px] border rounded-md ${statusBg}`}
-                        >
-                          {statusStr}
-                        </span>
-                      </td>
+                      {isColVisible("status") && (
+                        <td className="py-2.5 px-3 text-center w-28 whitespace-nowrap">
+                          <span
+                            className={`inline-block px-1.5 py-0.5 text-[10px] border rounded-md ${statusBg}`}
+                          >
+                            {statusStr}
+                          </span>
+                        </td>
+                      )}
 
                       {/* Actions */}
-                      <td className="py-2 px-3 text-center w-24 whitespace-nowrap">
-                        <div className="flex items-center justify-center gap-1.5">
-                          <button
-                            type="button"
-                            onClick={() => onView(item)}
-                            className="p-1 rounded text-sky-600 hover:bg-sky-100 transition-colors cursor-pointer"
-                            title="View Return Slip"
-                          >
-                            <FiEye size={14} />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => onPrint(item)}
-                            className="p-1 rounded text-gray-600 hover:bg-gray-100 transition-colors cursor-pointer"
-                            title="Print Return Slip"
-                          >
-                            <FiPrinter size={14} />
-                          </button>
-                        </div>
-                      </td>
+                      {isColVisible("actions") && (
+                        <td className="py-2 px-3 text-center w-24 whitespace-nowrap">
+                          <div className="flex items-center justify-center gap-1.5">
+                            <button
+                              type="button"
+                              onClick={() => onView(item)}
+                              className="p-1 rounded text-sky-600 hover:bg-sky-100 transition-colors cursor-pointer"
+                              title="View Return Slip"
+                            >
+                              <FiEye size={14} />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => onPrint(item)}
+                              className="p-1 rounded text-gray-600 hover:bg-gray-100 transition-colors cursor-pointer"
+                              title="Print Return Slip"
+                            >
+                              <FiPrinter size={14} />
+                            </button>
+                          </div>
+                        </td>
+                      )}
                     </tr>
 
                     {/* Expandable Accordion Drawer for Items Breakdown */}
                     {isExpanded && (
                       <tr className="bg-sky-50/40 border-y border-sky-100">
-                        <td colSpan={10} className="p-2.5 sm:p-3">
+                        <td colSpan={activeVisibleColumnCount} className="p-2.5 sm:p-3">
                           <div className="bg-white rounded-lg border border-sky-200 shadow-xs p-2.5 sm:p-3">
                             <div className="flex flex-wrap items-center justify-between gap-2 mb-2.5 pb-2 border-b border-gray-100">
                               <div className="flex items-center gap-2">

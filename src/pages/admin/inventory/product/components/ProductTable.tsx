@@ -6,6 +6,7 @@ import DropdownFilter from "@/components/table-components/DropdownFilter";
 import EmptyState from "@/components/empty-state/EmptyState";
 import TableSkeleton from "@/components/skeleton/TableSkeleton";
 import Pagination from "@/components/pagination";
+import ColumnVisibilityDropdown, { type ColumnItem } from "@/components/table-components/ColumnVisibilityDropdown";
 import Modal from "@/components/modal/Modal";
 import DeleteModal from "@/components/modal/DeleteModal";
 import { showErrorToast } from "@/utils/toast-utils";
@@ -87,6 +88,56 @@ export const ProductTable = ({
         { key: "status", label: "Status", align: "text-center" },
         { key: "action", label: "Actions", align: "text-center" },
     ];
+
+    const availableColumns: ColumnItem[] = useMemo(
+        () => tableHeaders.map((h) => ({ key: h.key, label: h.label })),
+        []
+    );
+
+    const [visibleColumns, setVisibleColumns] = useState<Record<string, boolean>>(() => {
+        try {
+            const saved = localStorage.getItem("product_table_columns");
+            if (saved) return JSON.parse(saved);
+        } catch {
+            // fallback
+        }
+        return {};
+    });
+
+    const isColVisible = (key: string) => visibleColumns[key] !== false;
+
+    const handleToggleColumn = (key: string) => {
+        setVisibleColumns((prev) => {
+            const currentlyVisible = prev[key] !== false;
+            const willBeVisible = !currentlyVisible;
+            const countAfter = availableColumns.filter((c) =>
+                c.key === key ? willBeVisible : prev[c.key] !== false
+            ).length;
+            if (countAfter === 0) return prev;
+
+            const next = { ...prev, [key]: willBeVisible };
+            try {
+                localStorage.setItem("product_table_columns", JSON.stringify(next));
+            } catch {}
+            return next;
+        });
+    };
+
+    const handleResetColumns = () => {
+        const resetState: Record<string, boolean> = {};
+        availableColumns.forEach((c) => {
+            resetState[c.key] = true;
+        });
+        setVisibleColumns(resetState);
+        try {
+            localStorage.removeItem("product_table_columns");
+        } catch {}
+    };
+
+    const activeVisibleColumnCount = useMemo(
+        () => availableColumns.filter((c) => isColVisible(c.key)).length,
+        [availableColumns, visibleColumns]
+    );
 
     const openQuickView = (product: ProductItem) => {
         setSelectedProduct(product);
@@ -285,6 +336,14 @@ export const ProductTable = ({
                                 setOpenDropdown(null);
                             }}
                         />
+
+                        {/* Column Visibility Menu */}
+                        <ColumnVisibilityDropdown
+                            columns={availableColumns}
+                            visibleColumns={visibleColumns}
+                            onToggle={handleToggleColumn}
+                            onReset={handleResetColumns}
+                        />
                     </div>
                 </div>
             </div>
@@ -292,7 +351,7 @@ export const ProductTable = ({
             {/* Loading Skeleton */}
             {isLoading && products.length === 0 ? (
                 <div className="p-4">
-                    <TableSkeleton />
+                    <TableSkeleton columnCount={activeVisibleColumnCount} />
                 </div>
             ) : (
                 <>
@@ -301,7 +360,7 @@ export const ProductTable = ({
                         <table className="w-full text-left border-collapse min-w-[950px] text-xs">
                             <thead>
                                 <tr className="bg-[#41BEF3] text-black text-xs font-semibold">
-                                    {tableHeaders.map(({ key, label, align }) => (
+                                    {tableHeaders.filter((h) => isColVisible(h.key)).map(({ key, label, align }) => (
                                         <th
                                             key={key}
                                             className={`py-2.5 px-3 ${align} ${key === "sl" ? "w-10 text-center" : ""}`}
@@ -328,106 +387,122 @@ export const ProductTable = ({
                                                 className="hover:bg-sky-50/40 transition-colors duration-150 group"
                                             >
                                                 {/* SL */}
-                                                <td className="py-2.5 px-3 text-center text-xs font-normal text-black">
-                                                    {rowNumber}
-                                                </td>
+                                                {isColVisible("sl") && (
+                                                    <td className="py-2.5 px-3 text-center text-xs font-normal text-black">
+                                                        {rowNumber}
+                                                    </td>
+                                                )}
 
                                                 {/* Product Name */}
-                                                <td className="py-2.5 px-3 font-normal text-xs text-black">
-                                                    <div className="min-w-0">
-                                                        <span className="font-normal text-xs text-black block truncate">
-                                                            {getName(product)}
-                                                        </span>
-                                                        {product.packing_levels && (
-                                                            <span className="text-[11px] text-gray-500 block truncate mt-0.5">
-                                                                • {product.packing_levels}
+                                                {isColVisible("name") && (
+                                                    <td className="py-2.5 px-3 font-normal text-xs text-black">
+                                                        <div className="min-w-0">
+                                                            <span className="font-normal text-xs text-black block truncate">
+                                                                {getName(product)}
                                                             </span>
-                                                        )}
-                                                    </div>
-                                                </td>
+                                                            {product.packing_levels && (
+                                                                <span className="text-[11px] text-gray-500 block truncate mt-0.5">
+                                                                    • {product.packing_levels}
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                    </td>
+                                                )}
 
                                                 {/* Category */}
-                                                <td className="py-2.5 px-3">
-                                                    <span className="inline-flex items-center px-1.5 py-0.5 rounded-md text-[10px] font-semibold bg-gray-100 text-gray-800 border border-gray-300">
-                                                        {getCategory(product)}
-                                                    </span>
-                                                </td>
+                                                {isColVisible("category") && (
+                                                    <td className="py-2.5 px-3">
+                                                        <span className="inline-flex items-center px-1.5 py-0.5 rounded-md text-[10px] font-semibold bg-gray-100 text-gray-800 border border-gray-300">
+                                                            {getCategory(product)}
+                                                        </span>
+                                                    </td>
+                                                )}
 
                                                 {/* Stock & Unit */}
-                                                <td className="py-2.5 px-3 text-center">
-                                                    <div className="inline-flex items-center justify-center gap-1.5">
-                                                        <span className="font-normal text-xs text-black">
-                                                            {qty} {getUnit(product)}
-                                                        </span>
-                                                        {isLowStock && (
-                                                            <span className="inline-flex items-center text-[10px] font-semibold text-amber-800 bg-amber-100 border border-amber-300 px-1.5 py-0.5 rounded-md">
-                                                                Low Stock
+                                                {isColVisible("stock") && (
+                                                    <td className="py-2.5 px-3 text-center">
+                                                        <div className="inline-flex items-center justify-center gap-1.5">
+                                                            <span className="font-normal text-xs text-black">
+                                                                {qty} {getUnit(product)}
                                                             </span>
-                                                        )}
-                                                    </div>
-                                                </td>
+                                                            {isLowStock && (
+                                                                <span className="inline-flex items-center text-[10px] font-semibold text-amber-800 bg-amber-100 border border-amber-300 px-1.5 py-0.5 rounded-md">
+                                                                    Low Stock
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                    </td>
+                                                )}
 
                                                 {/* Buy Price */}
-                                                <td className="py-2.5 px-3 text-right font-normal text-xs text-black whitespace-nowrap">
-                                                    ৳{getBuyPrice(product).toLocaleString('en-IN')}
-                                                </td>
+                                                {isColVisible("buyPrice") && (
+                                                    <td className="py-2.5 px-3 text-right font-normal text-xs text-black whitespace-nowrap">
+                                                        ৳{getBuyPrice(product).toLocaleString('en-IN')}
+                                                    </td>
+                                                )}
 
                                                 {/* Sell Price */}
-                                                <td className="py-2.5 px-3 text-right font-normal text-xs text-black whitespace-nowrap">
-                                                    ৳{getSellPrice(product).toLocaleString('en-IN')}
-                                                </td>
+                                                {isColVisible("sellPrice") && (
+                                                    <td className="py-2.5 px-3 text-right font-normal text-xs text-black whitespace-nowrap">
+                                                        ৳{getSellPrice(product).toLocaleString('en-IN')}
+                                                    </td>
+                                                )}
 
                                                 {/* Status Badge */}
-                                                <td className="py-2.5 px-3 text-center" onClick={(e) => e.stopPropagation()}>
-                                                    <button
-                                                        type="button"
-                                                        disabled={togglingId === prodId}
-                                                        onClick={() => handleToggleProductStatus(product)}
-                                                        title={`Click to mark as ${active ? "Inactive" : "Active"}`}
-                                                        className={`inline-flex items-center px-1.5 py-0.5 rounded-md text-[10px] font-semibold border cursor-pointer transition-colors ${
-                                                            active
-                                                                ? "bg-emerald-100 text-emerald-800 border-emerald-300 hover:bg-emerald-200"
-                                                                : "bg-rose-100 text-rose-800 border-rose-300 hover:bg-rose-200"
-                                                        } ${togglingId === prodId ? "opacity-50 cursor-wait" : ""}`}
-                                                    >
-                                                        {active ? "Active" : "Inactive"}
-                                                    </button>
-                                                </td>
+                                                {isColVisible("status") && (
+                                                    <td className="py-2.5 px-3 text-center" onClick={(e) => e.stopPropagation()}>
+                                                        <button
+                                                            type="button"
+                                                            disabled={togglingId === prodId}
+                                                            onClick={() => handleToggleProductStatus(product)}
+                                                            title={`Click to mark as ${active ? "Inactive" : "Active"}`}
+                                                            className={`inline-flex items-center px-1.5 py-0.5 rounded-md text-[10px] font-semibold border cursor-pointer transition-colors ${
+                                                                active
+                                                                    ? "bg-emerald-100 text-emerald-800 border-emerald-300 hover:bg-emerald-200"
+                                                                    : "bg-rose-100 text-rose-800 border-rose-300 hover:bg-rose-200"
+                                                            } ${togglingId === prodId ? "opacity-50 cursor-wait" : ""}`}
+                                                        >
+                                                            {active ? "Active" : "Inactive"}
+                                                        </button>
+                                                    </td>
+                                                )}
 
                                                 {/* Actions: Eye, Edit, Delete */}
-                                                <td className="py-2 px-3 text-center">
-                                                    <div className="flex items-center justify-center gap-1.5">
-                                                        {/* Eye / View Icon */}
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => openQuickView(product)}
-                                                            title="Quick View Details"
-                                                            className="p-1 rounded-md hover:bg-sky-50 text-sky-600 transition-colors cursor-pointer"
-                                                        >
-                                                            <FiEye size={14} />
-                                                        </button>
+                                                {isColVisible("action") && (
+                                                    <td className="py-2 px-3 text-center">
+                                                        <div className="flex items-center justify-center gap-1.5">
+                                                            {/* Eye / View Icon */}
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => openQuickView(product)}
+                                                                title="Quick View Details"
+                                                                className="p-1 rounded-md hover:bg-sky-50 text-sky-600 transition-colors cursor-pointer"
+                                                            >
+                                                                <FiEye size={14} />
+                                                            </button>
 
-                                                        {/* Edit Icon */}
-                                                        <Link
-                                                            to={`/admin/edit-product/${product.id || product.pcode || ""}`}
-                                                            state={{ editData: product }}
-                                                            title="Edit Product"
-                                                            className="p-1 rounded-md hover:bg-amber-50 text-amber-600 transition-colors cursor-pointer"
-                                                        >
-                                                            <FiEdit size={14} />
-                                                        </Link>
+                                                            {/* Edit Icon */}
+                                                            <Link
+                                                                to={`/admin/edit-product/${product.id || product.pcode || ""}`}
+                                                                state={{ editData: product }}
+                                                                title="Edit Product"
+                                                                className="p-1 rounded-md hover:bg-amber-50 text-amber-600 transition-colors cursor-pointer"
+                                                            >
+                                                                <FiEdit size={14} />
+                                                            </Link>
 
-                                                        {/* Delete Icon */}
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => openDeleteModal(product)}
-                                                            title="Delete Product"
-                                                            className="p-1 rounded-md hover:bg-rose-50 text-rose-600 transition-colors cursor-pointer"
-                                                        >
-                                                            <FiTrash2 size={14} />
-                                                        </button>
-                                                    </div>
-                                                </td>
+                                                            {/* Delete Icon */}
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => openDeleteModal(product)}
+                                                                title="Delete Product"
+                                                                className="p-1 rounded-md hover:bg-rose-50 text-rose-600 transition-colors cursor-pointer"
+                                                            >
+                                                                <FiTrash2 size={14} />
+                                                            </button>
+                                                        </div>
+                                                    </td>
+                                                )}
                                             </tr>
                                         );
                                     })

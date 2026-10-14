@@ -1,12 +1,12 @@
 import React, { useState, useRef, useEffect, useMemo } from "react";
 import { FiEye, FiEdit, FiPrinter, FiChevronDown } from "react-icons/fi";
-import { BsFilterRight } from "react-icons/bs";
 import moment from "moment";
 import Search from "@/components/table-components/Search";
 import DateRangePicker from "@/components/date-range-picker/DateRangePicker";
 import EmptyState from "@/components/empty-state/EmptyState";
 import TableSkeleton from "@/components/skeleton/TableSkeleton";
 import Pagination from "@/components/pagination";
+import ColumnVisibilityDropdown, { type ColumnItem } from "@/components/table-components/ColumnVisibilityDropdown";
 import type { PurchaseItem, PartyItem } from "@/types";
 import { FaPhone, FaCalendarAlt, FaSearch, FaFileExcel } from "react-icons/fa";
 import { exportPurchasesToExcel } from "@/utils/excel-export";
@@ -81,11 +81,9 @@ export const PurchaseTable: React.FC<PurchaseTableProps> = ({
   onPrint,
   onExport,
 }) => {
-  const [isSortOpen, setIsSortOpen] = useState<boolean>(false);
   const [isSupplierDropdownOpen, setIsSupplierDropdownOpen] = useState<boolean>(false);
   const [supplierSearchQuery, setSupplierSearchQuery] = useState<string>("");
 
-  const sortRef = useRef<HTMLDivElement>(null);
   const supplierRef = useRef<HTMLDivElement>(null);
 
   const handleExport = () => {
@@ -108,9 +106,6 @@ export const PurchaseTable: React.FC<PurchaseTableProps> = ({
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (sortRef.current && !sortRef.current.contains(event.target as Node)) {
-        setIsSortOpen(false);
-      }
       if (supplierRef.current && !supplierRef.current.contains(event.target as Node)) {
         setIsSupplierDropdownOpen(false);
       }
@@ -156,13 +151,111 @@ export const PurchaseTable: React.FC<PurchaseTableProps> = ({
     { value: "CREDIT", label: "Credit" },
   ];
 
-  const sortOptions = [
-    { value: "latest", label: "Latest Purchases" },
-    { value: "amount_high_to_low", label: "Amount: High to Low" },
-    { value: "amount_low_to_high", label: "Amount: Low to High" },
-    { value: "supplier_a_to_z", label: "Supplier: A to Z" },
-    { value: "supplier_z_to_a", label: "Supplier: Z to A" },
-  ];
+  // Lightweight sort header component with small black chevron
+  const SortHeader = ({
+    label,
+    activeKey,
+  }: {
+    label: string;
+    activeKey: "supplier" | "amount";
+  }) => {
+    const isAsc =
+      sortBy === (activeKey === "supplier" ? "supplier_a_to_z" : "amount_low_to_high") ||
+      (activeKey === "amount" && sortBy === "amount_low");
+    const isDesc =
+      sortBy === (activeKey === "supplier" ? "supplier_z_to_a" : "amount_high_to_low") ||
+      (activeKey === "amount" && sortBy === "amount_high");
+
+    const handleClick = () => {
+      if (!setSortBy) return;
+      if (activeKey === "supplier") {
+        setSortBy(isAsc ? "supplier_z_to_a" : isDesc ? "latest" : "supplier_a_to_z");
+      } else {
+        setSortBy(isAsc ? "amount_high_to_low" : isDesc ? "latest" : "amount_low_to_high");
+      }
+      setCurrentPageNumber(1);
+    };
+
+    return (
+      <span
+        onClick={setSortBy ? handleClick : undefined}
+        className={`inline-flex items-center gap-1 select-none text-black ${
+          setSortBy ? "cursor-pointer" : ""
+        }`}
+      >
+        <span>{label}</span>
+        <FiChevronDown
+          size={11}
+          className={`text-black transition-transform duration-200 ${
+            isAsc ? "rotate-180" : ""
+          }`}
+        />
+      </span>
+    );
+  };
+
+  // Column Visibility Configuration
+  const availableColumns: ColumnItem[] = useMemo(
+    () => [
+      { key: "sl", label: "SL" },
+      { key: "supplier", label: "Supplier" },
+      { key: "phone", label: "Phone" },
+      { key: "date", label: "Date" },
+      { key: "items", label: "Items" },
+      { key: "total", label: "Total (৳)" },
+      { key: "paid", label: "Paid (৳)" },
+      { key: "due", label: "Due (৳)" },
+      { key: "method", label: "Method" },
+      { key: "status", label: "Payment Status" },
+      { key: "actions", label: "Actions" },
+    ],
+    []
+  );
+
+  const [visibleColumns, setVisibleColumns] = useState<Record<string, boolean>>(() => {
+    try {
+      const saved = localStorage.getItem("purchase_table_columns");
+      if (saved) return JSON.parse(saved);
+    } catch {
+      // fallback
+    }
+    return {};
+  });
+
+  const isColVisible = (key: string) => visibleColumns[key] !== false;
+
+  const handleToggleColumn = (key: string) => {
+    setVisibleColumns((prev) => {
+      const currentlyVisible = prev[key] !== false;
+      const willBeVisible = !currentlyVisible;
+      const countAfter = availableColumns.filter((c) =>
+        c.key === key ? willBeVisible : prev[c.key] !== false
+      ).length;
+      if (countAfter === 0) return prev;
+
+      const next = { ...prev, [key]: willBeVisible };
+      try {
+        localStorage.setItem("purchase_table_columns", JSON.stringify(next));
+      } catch {}
+      return next;
+    });
+  };
+
+  const handleResetColumns = () => {
+    const resetState: Record<string, boolean> = {};
+    availableColumns.forEach((c) => {
+      resetState[c.key] = true;
+    });
+    setVisibleColumns(resetState);
+    try {
+      localStorage.removeItem("purchase_table_columns");
+    } catch {}
+  };
+
+  const activeVisibleColumnCount = useMemo(
+    () => availableColumns.filter((c) => isColVisible(c.key)).length,
+    [availableColumns, visibleColumns]
+  );
 
   return (
     <div className="bg-white rounded-xl shadow-xs border border-gray-200 flex flex-col relative z-20 overflow-visible">
@@ -317,230 +410,233 @@ export const PurchaseTable: React.FC<PurchaseTableProps> = ({
           </div>
         </div>
 
-        {/* Right Actions: Sort, Export */}
+        {/* Right Actions: Column Visibility, Export */}
         <div className="flex items-center justify-end gap-1.5 sm:gap-2 shrink-0 w-full sm:w-auto pt-1 sm:pt-0 border-t sm:border-t-0 border-gray-100">
-          {/* Sort Menu */}
-          <div className="relative shrink-0 z-50 flex-1 sm:flex-none" ref={sortRef}>
+          {/* Column Visibility Menu */}
+          <ColumnVisibilityDropdown
+            columns={availableColumns}
+            visibleColumns={visibleColumns}
+            onToggle={handleToggleColumn}
+            onReset={handleResetColumns}
+          />
+
+            {/* Export to Excel Button */}
             <button
               type="button"
-              onClick={() => setIsSortOpen(!isSortOpen)}
-              className="w-full sm:w-auto flex items-center justify-center gap-1 px-2.5 h-8 text-[11px] sm:text-xs font-medium text-black bg-gray-50/80 hover:bg-gray-100 border border-gray-200 rounded-lg transition-colors cursor-pointer"
+              onClick={handleExport}
+              title="Download Excel Report"
+              className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3 h-8 text-[11px] sm:text-xs font-semibold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 rounded-lg transition-all shadow-xs cursor-pointer active:scale-95"
             >
-              <BsFilterRight className="text-black text-sm shrink-0" />
-              <span className="truncate">
-                {sortBy === "latest" ? "Latest" : sortOptions.find((s) => s.value === sortBy)?.label || "Sort"}
-              </span>
+              <FaFileExcel className="text-emerald-600 shrink-0" size={12} />
+              <span>Export</span>
             </button>
-
-            {isSortOpen && (
-              <div className="absolute right-0 top-full mt-1 w-48 bg-white rounded-lg shadow-2xl border border-gray-100 py-1 z-[99999]">
-                {sortOptions.map((opt) => (
-                  <button
-                    key={opt.value}
-                    type="button"
-                    onClick={() => {
-                      if (setSortBy) setSortBy(opt.value);
-                      setIsSortOpen(false);
-                      setCurrentPageNumber(1);
-                    }}
-                    className={`w-full text-left px-3 py-1.5 text-xs transition-colors cursor-pointer ${
-                      sortBy === opt.value
-                        ? "bg-sky-50 text-[var(--color-primary)] font-semibold"
-                        : "text-black hover:bg-gray-50"
-                    }`}
-                  >
-                    {opt.label}
-                  </button>
-                ))}
-              </div>
-            )}
           </div>
-
-          {/* Export to Excel Button */}
-          <button
-            type="button"
-            onClick={handleExport}
-            title="Download Excel Report"
-            className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3 h-8 text-[11px] sm:text-xs font-semibold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 rounded-lg transition-all shadow-xs cursor-pointer active:scale-95"
-          >
-            <FaFileExcel className="text-emerald-600 shrink-0" size={12} />
-            <span>Export</span>
-          </button>
         </div>
-      </div>
 
-      {/* Main Table Content */}
-      <div className="overflow-x-auto w-full relative z-10">
-        {isLoading ? (
-          <TableSkeleton columnCount={11} rowCount={8} />
-        ) : purchases.length === 0 ? (
-          <EmptyState
-            title="No Purchases Found"
-            description="There are no purchase records matching your selected search or filters."
-          />
-        ) : (
-          <table className="w-full text-left border-collapse text-xs">
-            <thead>
-              <tr className="bg-[#41BEF3] text-black text-xs font-semibold">
-                <th className="py-2.5 px-3 text-center w-10">SL</th>
-                <th className="py-2.5 px-3">Supplier</th>
-                <th className="py-2.5 px-3">Phone</th>
-                <th className="py-2.5 px-3">Date</th>
-                <th className="py-2.5 px-3 text-center">Items</th>
-                <th className="py-2.5 px-3 text-right">Total (৳)</th>
-                <th className="py-2.5 px-3 text-right">Paid (৳)</th>
-                <th className="py-2.5 px-3 text-right">Due (৳)</th>
-                <th className="py-2.5 px-3 text-center">Method</th>
-                <th className="py-2.5 px-3 text-center">Payment Status</th>
-                <th className="py-2.5 px-3 text-center w-28">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100">
-              {purchases.map((purchase, index) => {
-                const serialNumber = (currentPageNumber - 1) * dataLimit + index + 1;
-                const p: any = purchase;
-                const rawDetails =
-                  p.purchaseDetails ||
-                  p.purchasesDetails ||
-                  p.purchase_details ||
-                  p.details ||
-                  p.items ||
-                  p.products ||
-                  p.purchaseListDetails ||
-                  p.salesDetails ||
-                  p.saleDetails ||
-                  p.productList ||
-                  p.productsList;
-
-                let itemsCount = 1;
-                if (Array.isArray(rawDetails) && rawDetails.length > 0) {
-                  const uniqueKeys = new Set<string>();
-                  rawDetails.forEach((d: any) => {
-                    const k = String(d.productId ?? d.product_id ?? d.productCode ?? d.pcode ?? d.productName ?? d.name ?? "").trim().toLowerCase();
-                    if (k) uniqueKeys.add(k);
-                  });
-                  itemsCount = uniqueKeys.size > 0 ? uniqueKeys.size : rawDetails.length;
-                } else {
-                  const explicitCount = Number(p.itemCount ?? p.item_count ?? p.totalItems ?? p.total_items ?? p.itemsCount ?? p.items_count ?? p.productCount ?? p.product_count ?? 0);
-                  itemsCount = explicitCount > 0 ? explicitCount : 1;
-                }
-
-                const grandTotal = Number(purchase.grandTotal ?? purchase.totalAmount ?? 0);
-                const paidAmount = Number(purchase.paidAmount ?? 0);
-                const dueAmount = Number(purchase.dueAmount ?? Math.max(0, grandTotal - paidAmount));
-                const paymentType = (purchase.paymentType || "CASH").toUpperCase();
-
-                let statusBadge = "Paid";
-                let statusBg = "bg-emerald-100 text-emerald-800 border-emerald-300 font-semibold";
-                if (dueAmount > 0 && paidAmount > 0) {
-                  statusBadge = "Partial";
-                  statusBg = "bg-amber-100 text-amber-800 border-amber-300 font-semibold";
-                } else if (dueAmount > 0 && paidAmount === 0) {
-                  statusBadge = "Due";
-                  statusBg = "bg-rose-100 text-rose-800 border-rose-300 font-semibold";
-                }
-
-                return (
-                  <tr
-                    key={purchase.id || purchase.purchaseId || purchase.invoiceNo || index}
-                    className="hover:bg-sky-50/40 transition-colors group"
-                  >
-                    {/* SL */}
-                    <td className="py-2.5 px-3 text-center text-black text-xs font-normal">
-                      {serialNumber}
-                    </td>
-
-                    {/* Supplier */}
-                    <td className="py-2.5 px-3 text-black text-xs font-normal whitespace-nowrap">
-                      {purchase.supplierName || "Direct Supplier"}
-                    </td>
-
-                    {/* Phone */}
-                    <td className="py-2.5 px-3 text-black text-xs font-normal whitespace-nowrap">
-                      {purchase.supplierPhone || "-"}
-                    </td>
-
-                    {/* Date */}
-                    <td className="py-2.5 px-3 text-black text-xs font-normal whitespace-nowrap">
-                      <span className="flex items-center gap-1 text-[11px] text-black font-normal">
-                        {purchase.purchaseDate || (purchase.createdAt ? purchase.createdAt.substring(0, 10) : "N/A")}
-                      </span>
-                    </td>
-
-                    {/* Items */}
-                    <td className="py-2.5 px-3 text-center">
-                      <span className="inline-block px-1.5 py-0.5 bg-gray-100 text-black rounded text-[11px] font-normal">
-                        {itemsCount}
-                      </span>
-                    </td>
-
-                    {/* Grand Total */}
-                    <td className="py-2.5 px-3 text-right text-black text-xs font-normal">
-                      ৳ {formatMoney(grandTotal)}
-                    </td>
-
-                    {/* Paid */}
-                    <td className="py-2.5 px-3 text-right text-black text-xs font-normal">
-                      ৳ {formatMoney(paidAmount)}
-                    </td>
-
-                    {/* Due */}
-                    <td className="py-2.5 px-3 text-right text-black text-xs font-normal">
-                      ৳ {formatMoney(dueAmount)}
-                    </td>
-
-                    {/* Method */}
-                    <td className="py-2.5 px-3 text-center">
-                      <span className="inline-block px-1.5 py-0.5 text-[10px] font-semibold bg-sky-100 text-sky-900 border border-sky-300 rounded-md">
-                        {paymentType}
-                      </span>
-                    </td>
-
-                    {/* Status */}
-                    <td className="py-2.5 px-3 text-center">
-                      <span
-                        className={`inline-block px-1.5 py-0.5 text-[10px] border rounded-md ${statusBg}`}
-                      >
-                        {statusBadge}
-                      </span>
-                    </td>
-
-                    {/* Actions */}
-                    <td className="py-2 px-3 text-center">
-                      <div className="flex items-center justify-center gap-1.5">
-                        <button
-                          type="button"
-                          onClick={() => onView(purchase)}
-                          title="View Invoice"
-                          className="p-1 rounded text-sky-600 hover:bg-sky-100 transition-colors cursor-pointer"
-                        >
-                          <FiEye size={14} />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => onPrint(purchase)}
-                          title="Print Invoice"
-                          className="p-1 rounded text-gray-600 hover:bg-gray-100 transition-colors cursor-pointer"
-                        >
-                          <FiPrinter size={14} />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => onEdit(purchase)}
-                          title="Edit Purchase"
-                          className="p-1 rounded text-amber-600 hover:bg-amber-100 transition-colors cursor-pointer"
-                        >
-                          <FiEdit size={14} />
-                        </button>
+        {/* Main Table Content */}
+        <div className="overflow-x-auto w-full relative z-10">
+          {isLoading ? (
+            <TableSkeleton columnCount={activeVisibleColumnCount} rowCount={8} />
+          ) : purchases.length === 0 ? (
+            <EmptyState
+              title="No Purchases Found"
+              description="There are no purchase records matching your selected search or filters."
+            />
+          ) : (
+            <table className="w-full text-left border-collapse text-xs">
+              <thead>
+                <tr className="bg-[#41BEF3] text-black text-xs font-semibold">
+                  {isColVisible("sl") && <th className="py-2.5 px-3 text-center w-10">SL</th>}
+                  {isColVisible("supplier") && (
+                    <th className="py-2.5 px-3">
+                      <SortHeader label="Supplier" activeKey="supplier" />
+                    </th>
+                  )}
+                  {isColVisible("phone") && <th className="py-2.5 px-3">Phone</th>}
+                  {isColVisible("date") && <th className="py-2.5 px-3">Date</th>}
+                  {isColVisible("items") && <th className="py-2.5 px-3 text-center">Items</th>}
+                  {isColVisible("total") && (
+                    <th className="py-2.5 px-3 text-right">
+                      <div className="flex justify-end">
+                        <SortHeader label="Total (৳)" activeKey="amount" />
                       </div>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        )}
-      </div>
+                    </th>
+                  )}
+                  {isColVisible("paid") && <th className="py-2.5 px-3 text-right">Paid (৳)</th>}
+                  {isColVisible("due") && <th className="py-2.5 px-3 text-right">Due (৳)</th>}
+                  {isColVisible("method") && <th className="py-2.5 px-3 text-center">Method</th>}
+                  {isColVisible("status") && <th className="py-2.5 px-3 text-center">Payment Status</th>}
+                  {isColVisible("actions") && <th className="py-2.5 px-3 text-center w-28">Actions</th>}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {purchases.map((purchase, index) => {
+                  const serialNumber = (currentPageNumber - 1) * dataLimit + index + 1;
+                  const p: any = purchase;
+                  const rawDetails =
+                    p.purchaseDetails ||
+                    p.purchasesDetails ||
+                    p.purchase_details ||
+                    p.details ||
+                    p.items ||
+                    p.products ||
+                    p.purchaseListDetails ||
+                    p.salesDetails ||
+                    p.saleDetails ||
+                    p.productList ||
+                    p.productsList;
+
+                  let itemsCount = 1;
+                  if (Array.isArray(rawDetails) && rawDetails.length > 0) {
+                    const uniqueKeys = new Set<string>();
+                    rawDetails.forEach((d: any) => {
+                      const k = String(d.productId ?? d.product_id ?? d.productCode ?? d.pcode ?? d.productName ?? d.name ?? "").trim().toLowerCase();
+                      if (k) uniqueKeys.add(k);
+                    });
+                    itemsCount = uniqueKeys.size > 0 ? uniqueKeys.size : rawDetails.length;
+                  } else {
+                    const explicitCount = Number(p.itemCount ?? p.item_count ?? p.totalItems ?? p.total_items ?? p.itemsCount ?? p.items_count ?? p.productCount ?? p.product_count ?? 0);
+                    itemsCount = explicitCount > 0 ? explicitCount : 1;
+                  }
+
+                  const grandTotal = Number(purchase.grandTotal ?? purchase.totalAmount ?? 0);
+                  const paidAmount = Number(purchase.paidAmount ?? 0);
+                  const dueAmount = Number(purchase.dueAmount ?? Math.max(0, grandTotal - paidAmount));
+                  const paymentType = (purchase.paymentType || "CASH").toUpperCase();
+
+                  let statusBadge = "Paid";
+                  let statusBg = "bg-emerald-100 text-emerald-800 border-emerald-300 font-semibold";
+                  if (dueAmount > 0 && paidAmount > 0) {
+                    statusBadge = "Partial";
+                    statusBg = "bg-amber-100 text-amber-800 border-amber-300 font-semibold";
+                  } else if (dueAmount > 0 && paidAmount === 0) {
+                    statusBadge = "Due";
+                    statusBg = "bg-rose-100 text-rose-800 border-rose-300 font-semibold";
+                  }
+
+                  return (
+                    <tr
+                      key={purchase.id || purchase.purchaseId || purchase.invoiceNo || index}
+                      className="hover:bg-sky-50/40 transition-colors group"
+                    >
+                      {/* SL */}
+                      {isColVisible("sl") && (
+                        <td className="py-2.5 px-3 text-center text-black text-xs font-normal">
+                          {serialNumber}
+                        </td>
+                      )}
+
+                      {/* Supplier */}
+                      {isColVisible("supplier") && (
+                        <td className="py-2.5 px-3 text-black text-xs font-normal whitespace-nowrap">
+                          {purchase.supplierName || "Direct Supplier"}
+                        </td>
+                      )}
+
+                      {/* Phone */}
+                      {isColVisible("phone") && (
+                        <td className="py-2.5 px-3 text-black text-xs font-normal whitespace-nowrap">
+                          {purchase.supplierPhone || "-"}
+                        </td>
+                      )}
+
+                      {/* Date */}
+                      {isColVisible("date") && (
+                        <td className="py-2.5 px-3 text-black text-xs font-normal whitespace-nowrap">
+                          <span className="flex items-center gap-1 text-[11px] text-black font-normal">
+                            {purchase.purchaseDate || (purchase.createdAt ? purchase.createdAt.substring(0, 10) : "N/A")}
+                          </span>
+                        </td>
+                      )}
+
+                      {/* Items */}
+                      {isColVisible("items") && (
+                        <td className="py-2.5 px-3 text-center">
+                          <span className="inline-block px-1.5 py-0.5 bg-gray-100 text-black rounded text-[11px] font-normal">
+                            {itemsCount}
+                          </span>
+                        </td>
+                      )}
+
+                      {/* Grand Total */}
+                      {isColVisible("total") && (
+                        <td className="py-2.5 px-3 text-right text-black text-xs font-normal">
+                          ৳ {formatMoney(grandTotal)}
+                        </td>
+                      )}
+
+                      {/* Paid */}
+                      {isColVisible("paid") && (
+                        <td className="py-2.5 px-3 text-right text-black text-xs font-normal">
+                          ৳ {formatMoney(paidAmount)}
+                        </td>
+                      )}
+
+                      {/* Due */}
+                      {isColVisible("due") && (
+                        <td className="py-2.5 px-3 text-right text-black text-xs font-normal">
+                          ৳ {formatMoney(dueAmount)}
+                        </td>
+                      )}
+
+                      {/* Method */}
+                      {isColVisible("method") && (
+                        <td className="py-2.5 px-3 text-center">
+                          <span className="inline-block px-1.5 py-0.5 text-[10px] font-semibold bg-sky-100 text-sky-900 border border-sky-300 rounded-md">
+                            {paymentType}
+                          </span>
+                        </td>
+                      )}
+
+                      {/* Status */}
+                      {isColVisible("status") && (
+                        <td className="py-2.5 px-3 text-center">
+                          <span
+                            className={`inline-block px-1.5 py-0.5 text-[10px] border rounded-md ${statusBg}`}
+                          >
+                            {statusBadge}
+                          </span>
+                        </td>
+                      )}
+
+                      {/* Actions */}
+                      {isColVisible("actions") && (
+                        <td className="py-2 px-3 text-center">
+                          <div className="flex items-center justify-center gap-1.5">
+                            <button
+                              type="button"
+                              onClick={() => onView(purchase)}
+                              title="View Invoice"
+                              className="p-1 rounded text-sky-600 hover:bg-sky-100 transition-colors cursor-pointer"
+                            >
+                              <FiEye size={14} />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => onPrint(purchase)}
+                              title="Print Invoice"
+                              className="p-1 rounded text-gray-600 hover:bg-gray-100 transition-colors cursor-pointer"
+                            >
+                              <FiPrinter size={14} />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => onEdit(purchase)}
+                              title="Edit Purchase"
+                              className="p-1 rounded text-amber-600 hover:bg-amber-100 transition-colors cursor-pointer"
+                            >
+                              <FiEdit size={14} />
+                            </button>
+                          </div>
+                        </td>
+                      )}
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          )}
+        </div>
 
       {/* Pagination Footer */}
       {!isLoading && purchases.length > 0 && (

@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useMemo } from "react";
 import { FiEye, FiEdit } from "react-icons/fi";
 import { BsFilterRight } from "react-icons/bs";
 import Search from "@/components/table-components/Search";
@@ -6,6 +6,7 @@ import DropdownFilter from "@/components/table-components/DropdownFilter";
 import EmptyState from "@/components/empty-state/EmptyState";
 import TableSkeleton from "@/components/skeleton/TableSkeleton";
 import Pagination from "@/components/pagination";
+import ColumnVisibilityDropdown, { type ColumnItem } from "@/components/table-components/ColumnVisibilityDropdown";
 import type { PartyItem } from "@/types";
 
 interface PartyTableProps {
@@ -98,6 +99,56 @@ export const PartyTable: React.FC<PartyTableProps> = ({
     { key: "status", label: "Status", align: "text-right", width: "w-[14.285%]" },
     { key: "action", label: "Actions", align: "text-right", width: "w-[14.285%]" },
   ];
+
+  const availableColumns: ColumnItem[] = useMemo(
+    () => tableHeaders.map((h) => ({ key: h.key, label: h.label })),
+    []
+  );
+
+  const [visibleColumns, setVisibleColumns] = useState<Record<string, boolean>>(() => {
+    try {
+      const saved = localStorage.getItem("party_table_columns");
+      if (saved) return JSON.parse(saved);
+    } catch {
+      // fallback
+    }
+    return {};
+  });
+
+  const isColVisible = (key: string) => visibleColumns[key] !== false;
+
+  const handleToggleColumn = (key: string) => {
+    setVisibleColumns((prev) => {
+      const currentlyVisible = prev[key] !== false;
+      const willBeVisible = !currentlyVisible;
+      const countAfter = availableColumns.filter((c) =>
+        c.key === key ? willBeVisible : prev[c.key] !== false
+      ).length;
+      if (countAfter === 0) return prev;
+
+      const next = { ...prev, [key]: willBeVisible };
+      try {
+        localStorage.setItem("party_table_columns", JSON.stringify(next));
+      } catch {}
+      return next;
+    });
+  };
+
+  const handleResetColumns = () => {
+    const resetState: Record<string, boolean> = {};
+    availableColumns.forEach((c) => {
+      resetState[c.key] = true;
+    });
+    setVisibleColumns(resetState);
+    try {
+      localStorage.removeItem("party_table_columns");
+    } catch {}
+  };
+
+  const activeVisibleColumnCount = useMemo(
+    () => availableColumns.filter((c) => isColVisible(c.key)).length,
+    [availableColumns, visibleColumns]
+  );
 
   const getPartyName = (p: PartyItem) => p.name || p.partyName || p.party_name || "Unnamed Party";
   const getPartyType = (p: PartyItem): "CUSTOMER" | "SUPPLIER" => {
@@ -235,6 +286,14 @@ export const PartyTable: React.FC<PartyTableProps> = ({
                 setOpenDropdown(null);
               }}
             />
+
+            {/* Column Visibility Menu */}
+            <ColumnVisibilityDropdown
+              columns={availableColumns}
+              visibleColumns={visibleColumns}
+              onToggle={handleToggleColumn}
+              onReset={handleResetColumns}
+            />
           </div>
         </div>
       </div>
@@ -242,7 +301,7 @@ export const PartyTable: React.FC<PartyTableProps> = ({
       {/* Loading Skeleton */}
       {isLoading && parties.length === 0 ? (
         <div className="p-4">
-          <TableSkeleton />
+          <TableSkeleton columnCount={activeVisibleColumnCount} />
         </div>
       ) : (
         <>
@@ -251,7 +310,7 @@ export const PartyTable: React.FC<PartyTableProps> = ({
             <table className="w-full text-left border-collapse table-fixed min-w-[750px] text-xs">
               <thead>
                 <tr className="bg-[#41BEF3] text-black text-xs font-semibold">
-                  {tableHeaders.map(({ key, label, align, width }) => (
+                  {tableHeaders.filter((h) => isColVisible(h.key)).map(({ key, label, align, width }) => (
                     <th
                       key={key}
                       className={`py-2.5 px-3 ${align} ${width || ""}`}
@@ -281,86 +340,102 @@ export const PartyTable: React.FC<PartyTableProps> = ({
                         className="hover:bg-sky-50/40 transition-colors group"
                       >
                         {/* SL */}
-                        <td className="py-2.5 px-3 text-left text-xs font-normal text-black truncate">
-                          {rowNumber}
-                        </td>
+                        {isColVisible("sl") && (
+                          <td className="py-2.5 px-3 text-left text-xs font-normal text-black truncate">
+                            {rowNumber}
+                          </td>
+                        )}
 
                         {/* Party Details (Name) */}
-                        <td className="py-2.5 px-3 text-left font-medium text-xs text-black truncate">
-                          <span className="block truncate" title={name}>{name}</span>
-                        </td>
+                        {isColVisible("name") && (
+                          <td className="py-2.5 px-3 text-left font-medium text-xs text-black truncate">
+                            <span className="block truncate" title={name}>{name}</span>
+                          </td>
+                        )}
 
                         {/* Type */}
-                        <td className="py-2.5 px-2 text-left">
-                          <span
-                            className={`inline-flex items-center px-1.5 py-0.5 rounded-md text-[10px] font-semibold border ${
-                              type === "SUPPLIER"
-                                ? "bg-purple-100 text-purple-800 border-purple-300"
-                                : "bg-sky-100 text-sky-800 border-sky-300"
-                            }`}
-                          >
-                            {type}
-                          </span>
-                        </td>
+                        {isColVisible("type") && (
+                          <td className="py-2.5 px-2 text-left">
+                            <span
+                              className={`inline-flex items-center px-1.5 py-0.5 rounded-md text-[10px] font-semibold border ${
+                                type === "SUPPLIER"
+                                  ? "bg-purple-100 text-purple-800 border-purple-300"
+                                  : "bg-sky-100 text-sky-800 border-sky-300"
+                              }`}
+                            >
+                              {type}
+                            </span>
+                          </td>
+                        )}
 
                         {/* Contact Info (Phone) */}
-                        <td className="py-2.5 px-3 text-left font-normal text-xs text-black truncate">
-                          <span className="block truncate" title={phone}>{phone}</span>
-                        </td>
+                        {isColVisible("contact") && (
+                          <td className="py-2.5 px-3 text-left font-normal text-xs text-black truncate">
+                            <span className="block truncate" title={phone}>{phone}</span>
+                          </td>
+                        )}
 
                         {/* Address */}
-                        <td className="py-2.5 px-3 text-center font-normal text-xs text-black truncate">
-                          <span className="block truncate" title={address}>{address}</span>
-                        </td>
+                        {isColVisible("address") && (
+                          <td className="py-2.5 px-3 text-center font-normal text-xs text-black truncate">
+                            <span className="block truncate" title={address}>{address}</span>
+                          </td>
+                        )}
 
                         {/* Opening Balance */}
-                        <td className="py-2.5 px-3 text-right font-normal text-xs text-black whitespace-nowrap">
-                          ৳{balance.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
-                        </td>
+                        {isColVisible("balance") && (
+                          <td className="py-2.5 px-3 text-right font-normal text-xs text-black whitespace-nowrap">
+                            ৳{balance.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                          </td>
+                        )}
 
                         {/* Status Badge */}
-                        <td className="py-2.5 px-2.5 text-right">
-                          <span
-                            className={`inline-flex items-center px-1.5 py-0.5 rounded-md text-[10px] font-semibold border ${
-                              active
-                                ? "bg-emerald-100 text-emerald-800 border-emerald-300"
-                                : "bg-rose-100 text-rose-800 border-rose-300"
-                            }`}
-                          >
-                            {active ? "Active" : "Inactive"}
-                          </span>
-                        </td>
+                        {isColVisible("status") && (
+                          <td className="py-2.5 px-2.5 text-right">
+                            <span
+                              className={`inline-flex items-center px-1.5 py-0.5 rounded-md text-[10px] font-semibold border ${
+                                active
+                                  ? "bg-emerald-100 text-emerald-800 border-emerald-300"
+                                  : "bg-rose-100 text-rose-800 border-rose-300"
+                              }`}
+                            >
+                              {active ? "Active" : "Inactive"}
+                            </span>
+                          </td>
+                        )}
 
                         {/* Actions: Eye, Edit */}
-                        <td className="py-2 px-3 text-right">
-                          <div className="flex items-center justify-end gap-1.5">
-                            {/* Eye / View Icon */}
-                            <button
-                              type="button"
-                              onClick={() => onView(party)}
-                              title="Quick View Details"
-                              className="p-1 rounded-md hover:bg-sky-50 text-sky-600 transition-colors cursor-pointer"
-                            >
-                              <FiEye size={14} />
-                            </button>
+                        {isColVisible("action") && (
+                          <td className="py-2 px-3 text-right">
+                            <div className="flex items-center justify-end gap-1.5">
+                              {/* Eye / View Icon */}
+                              <button
+                                type="button"
+                                onClick={() => onView(party)}
+                                title="Quick View Details"
+                                className="p-1 rounded-md hover:bg-sky-50 text-sky-600 transition-colors cursor-pointer"
+                              >
+                                <FiEye size={14} />
+                              </button>
 
-                            {/* Edit Icon */}
-                            <button
-                              type="button"
-                              onClick={() => onEdit(party)}
-                              title="Edit Party"
-                              className="p-1 rounded-md hover:bg-amber-50 text-amber-600 transition-colors cursor-pointer"
-                            >
-                              <FiEdit size={14} />
-                            </button>
-                          </div>
-                        </td>
+                              {/* Edit Icon */}
+                              <button
+                                type="button"
+                                onClick={() => onEdit(party)}
+                                title="Edit Party"
+                                className="p-1 rounded-md hover:bg-amber-50 text-amber-600 transition-colors cursor-pointer"
+                              >
+                                <FiEdit size={14} />
+                              </button>
+                            </div>
+                          </td>
+                        )}
                       </tr>
                     );
                   })
                 ) : (
                   <tr>
-                    <td colSpan={tableHeaders.length} className="py-12 text-center">
+                    <td colSpan={activeVisibleColumnCount} className="py-12 text-center">
                       <EmptyState
                         title={
                           searchQuery || typeFilter || statusFilter

@@ -1,13 +1,13 @@
 import React, { useState, useRef, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { FiEye, FiEdit, FiPrinter, FiChevronDown } from "react-icons/fi";
-import { BsFilterRight } from "react-icons/bs";
 import moment from "moment";
 import Search from "@/components/table-components/Search";
 import DateRangePicker from "@/components/date-range-picker/DateRangePicker";
 import EmptyState from "@/components/empty-state/EmptyState";
 import TableSkeleton from "@/components/skeleton/TableSkeleton";
 import Pagination from "@/components/pagination";
+import ColumnVisibilityDropdown, { type ColumnItem } from "@/components/table-components/ColumnVisibilityDropdown";
 import type { SaleItem, PartyItem } from "@/types";
 import { FaSearch, FaFileExcel, FaUndoAlt } from "react-icons/fa";
 import { exportSalesToExcel } from "@/utils/excel-export";
@@ -93,11 +93,9 @@ export const SaleTable: React.FC<SaleTableProps> = ({
   onExport,
 }) => {
   const navigate = useNavigate();
-  const [isSortOpen, setIsSortOpen] = useState<boolean>(false);
   const [isCustomerDropdownOpen, setIsCustomerDropdownOpen] = useState<boolean>(false);
   const [customerSearchQuery, setCustomerSearchQuery] = useState<string>("");
 
-  const sortRef = useRef<HTMLDivElement>(null);
   const customerRef = useRef<HTMLDivElement>(null);
 
   const handleExport = () => {
@@ -120,9 +118,6 @@ export const SaleTable: React.FC<SaleTableProps> = ({
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (sortRef.current && !sortRef.current.contains(event.target as Node)) {
-        setIsSortOpen(false);
-      }
       if (customerRef.current && !customerRef.current.contains(event.target as Node)) {
         setIsCustomerDropdownOpen(false);
       }
@@ -168,14 +163,6 @@ export const SaleTable: React.FC<SaleTableProps> = ({
     { value: "CREDIT", label: "Credit" },
   ];
 
-  const sortOptions = [
-    { value: "latest", label: "Latest Sales" },
-    { value: "amount_low_to_high", label: "Amount: Low to High" },
-    { value: "amount_high_to_low", label: "Amount: High to Low" },
-    { value: "customer_a_to_z", label: "Customer: A to Z" },
-    { value: "customer_z_to_a", label: "Customer: Z to A" },
-  ];
-
   // Lightweight sort header component with small black chevron
   const SortHeader = ({
     label,
@@ -219,14 +206,68 @@ export const SaleTable: React.FC<SaleTableProps> = ({
     );
   };
 
-  const currentSortLabel = useMemo(() => {
-    if (!sortBy || sortBy === "latest") return "Latest";
-    if (sortBy === "amount_low_to_high" || sortBy === "amount_low") return "Amount: Low to High";
-    if (sortBy === "amount_high_to_low" || sortBy === "amount_high") return "Amount: High to Low";
-    if (sortBy === "customer_a_to_z") return "Customer: A to Z";
-    if (sortBy === "customer_z_to_a") return "Customer: Z to A";
-    return sortOptions.find((s) => s.value === sortBy)?.label || "Sort";
-  }, [sortBy, sortOptions]);
+  // Column Visibility Configuration
+  const availableColumns: ColumnItem[] = useMemo(() => {
+    const list: ColumnItem[] = [{ key: "sl", label: "SL" }];
+    if (showOrderId) list.push({ key: "orderId", label: "Order ID" });
+    list.push(
+      { key: "customer", label: "Customer" },
+      { key: "phone", label: "Phone" },
+      { key: "date", label: "Date" },
+      { key: "items", label: "Items" },
+      { key: "total", label: "Total (৳)" },
+      { key: "paid", label: "Paid (৳)" },
+      { key: "due", label: "Due (৳)" }
+    );
+    if (showMethod) list.push({ key: "method", label: "Method" });
+    list.push(
+      { key: "status", label: "Payment Status" },
+      { key: "actions", label: showReturnAction ? "Action" : "Actions" }
+    );
+    return list;
+  }, [showOrderId, showMethod, showReturnAction]);
+
+  const [visibleColumns, setVisibleColumns] = useState<Record<string, boolean>>(() => {
+    try {
+      const saved = localStorage.getItem("sale_table_columns");
+      if (saved) return JSON.parse(saved);
+    } catch {
+      // fallback
+    }
+    return {};
+  });
+
+  const isColVisible = (key: string) => visibleColumns[key] !== false;
+
+  const handleToggleColumn = (key: string) => {
+    setVisibleColumns((prev) => {
+      const currentlyVisible = prev[key] !== false;
+      const willBeVisible = !currentlyVisible;
+      const countAfter = availableColumns.filter((c) =>
+        c.key === key ? willBeVisible : prev[c.key] !== false
+      ).length;
+      if (countAfter === 0) return prev;
+
+      const next = { ...prev, [key]: willBeVisible };
+      try {
+        localStorage.setItem("sale_table_columns", JSON.stringify(next));
+      } catch {}
+      return next;
+    });
+  };
+
+  const handleResetColumns = () => {
+    const resetState: Record<string, boolean> = {};
+    availableColumns.forEach((c) => {
+      resetState[c.key] = true;
+    });
+    setVisibleColumns(resetState);
+    try {
+      localStorage.removeItem("sale_table_columns");
+    } catch {}
+  };
+
+  const activeVisibleColumnCount = availableColumns.filter((c) => isColVisible(c.key)).length;
 
   return (
     <div className="bg-white rounded-xl shadow-xs border border-gray-200 flex flex-col relative z-20 overflow-visible">
@@ -381,100 +422,70 @@ export const SaleTable: React.FC<SaleTableProps> = ({
           </div>
         </div>
 
-        {/* Right Actions: Sort, Export */}
+        {/* Right Actions: Column Visibility, Export */}
         <div className="flex items-center justify-end gap-1.5 sm:gap-2 shrink-0 w-full sm:w-auto pt-1 sm:pt-0 border-t sm:border-t-0 border-gray-100">
-          {/* Sort Menu */}
-          <div className="relative shrink-0 z-50 flex-1 sm:flex-none" ref={sortRef}>
+          {/* Column Visibility Menu */}
+          <ColumnVisibilityDropdown
+            columns={availableColumns}
+            visibleColumns={visibleColumns}
+            onToggle={handleToggleColumn}
+            onReset={handleResetColumns}
+          />
+
+            {/* Export to Excel Button */}
             <button
               type="button"
-              onClick={() => setIsSortOpen(!isSortOpen)}
-              className="w-full sm:w-auto flex items-center justify-center gap-1 px-2.5 h-8 text-[11px] sm:text-xs font-medium text-black bg-gray-50/80 hover:bg-gray-100 border border-gray-200 rounded-lg transition-colors cursor-pointer"
+              onClick={handleExport}
+              title="Download Excel Report"
+              className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3 h-8 text-[11px] sm:text-xs font-semibold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 rounded-lg transition-all shadow-xs cursor-pointer active:scale-95"
             >
-              <BsFilterRight className="text-black text-sm shrink-0" />
-              <span className="truncate">
-                {currentSortLabel}
-              </span>
+              <FaFileExcel className="text-emerald-600 shrink-0" size={12} />
+              <span>Export</span>
             </button>
-
-            {isSortOpen && (
-              <div className="absolute right-0 top-full mt-1 w-48 bg-white rounded-lg shadow-2xl border border-gray-100 py-1 z-[99999]">
-                {sortOptions.map((opt) => {
-                  const isActive =
-                    sortBy === opt.value ||
-                    (opt.value === "amount_low_to_high" && sortBy === "amount_low") ||
-                    (opt.value === "amount_high_to_low" && sortBy === "amount_high");
-                  return (
-                    <button
-                      key={opt.value}
-                      type="button"
-                      onClick={() => {
-                        if (setSortBy) setSortBy(opt.value);
-                        setIsSortOpen(false);
-                        setCurrentPageNumber(1);
-                      }}
-                      className={`w-full text-left px-3 py-1.5 text-xs transition-colors cursor-pointer flex items-center justify-between ${
-                        isActive
-                          ? "bg-sky-50 text-[var(--color-primary)] font-semibold"
-                          : "text-black hover:bg-gray-50"
-                      }`}
-                    >
-                      <span>{opt.label}</span>
-                      {isActive && <span className="text-[10px]">✓</span>}
-                    </button>
-                  );
-                })}
-              </div>
-            )}
           </div>
-
-          {/* Export to Excel Button */}
-          <button
-            type="button"
-            onClick={handleExport}
-            title="Download Excel Report"
-            className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3 h-8 text-[11px] sm:text-xs font-semibold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 rounded-lg transition-all shadow-xs cursor-pointer active:scale-95"
-          >
-            <FaFileExcel className="text-emerald-600 shrink-0" size={12} />
-            <span>Export</span>
-          </button>
         </div>
-      </div>
 
-      {/* Main Table Content */}
-      <div className="overflow-x-auto w-full relative z-10">
-        {isLoading ? (
-          <TableSkeleton columnCount={showMethod ? 12 : 11} rowCount={8} />
-        ) : sales.length === 0 ? (
-          <EmptyState
-            title="No Sales Found"
-            description="There are no sales records matching your selected search or filters."
-          />
-        ) : (
-          <table className="w-full text-left border-collapse text-xs">
-            <thead>
-              <tr className="bg-[#41BEF3] text-black text-xs font-semibold">
-                <th className="py-2.5 px-3 text-center w-10">SL</th>
-                {showOrderId && <th className="py-2.5 px-3">Order ID</th>}
-                <th className="py-2.5 px-3">
-                  <SortHeader label="Customer" activeKey="customer" />
-                </th>
-                <th className="py-2.5 px-3">Phone</th>
-                <th className="py-2.5 px-3">Date</th>
-                <th className="py-2.5 px-3 text-center">Items</th>
-                <th className="py-2.5 px-3 text-right">
-                  <div className="flex justify-end">
-                    <SortHeader label="Total (৳)" activeKey="amount" />
-                  </div>
-                </th>
-                <th className="py-2.5 px-3 text-right">Paid (৳)</th>
-                <th className="py-2.5 px-3 text-right">Due (৳)</th>
-                {showMethod && <th className="py-2.5 px-3 text-center">Method</th>}
-                <th className="py-2.5 px-3 text-center">Payment Status</th>
-                <th className={`py-2.5 px-3 text-center ${showReturnAction ? "w-36" : "w-28"}`}>
-                  {showReturnAction ? "Action" : "Actions"}
-                </th>
-              </tr>
-            </thead>
+        {/* Main Table Content */}
+        <div className="overflow-x-auto w-full relative z-10">
+          {isLoading ? (
+            <TableSkeleton columnCount={activeVisibleColumnCount} rowCount={8} />
+          ) : sales.length === 0 ? (
+            <EmptyState
+              title="No Sales Found"
+              description="There are no sales records matching your selected search or filters."
+            />
+          ) : (
+            <table className="w-full text-left border-collapse text-xs">
+              <thead>
+                <tr className="bg-[#41BEF3] text-black text-xs font-semibold">
+                  {isColVisible("sl") && <th className="py-2.5 px-3 text-center w-10">SL</th>}
+                  {showOrderId && isColVisible("orderId") && <th className="py-2.5 px-3">Order ID</th>}
+                  {isColVisible("customer") && (
+                    <th className="py-2.5 px-3">
+                      <SortHeader label="Customer" activeKey="customer" />
+                    </th>
+                  )}
+                  {isColVisible("phone") && <th className="py-2.5 px-3">Phone</th>}
+                  {isColVisible("date") && <th className="py-2.5 px-3">Date</th>}
+                  {isColVisible("items") && <th className="py-2.5 px-3 text-center">Items</th>}
+                  {isColVisible("total") && (
+                    <th className="py-2.5 px-3 text-right">
+                      <div className="flex justify-end">
+                        <SortHeader label="Total (৳)" activeKey="amount" />
+                      </div>
+                    </th>
+                  )}
+                  {isColVisible("paid") && <th className="py-2.5 px-3 text-right">Paid (৳)</th>}
+                  {isColVisible("due") && <th className="py-2.5 px-3 text-right">Due (৳)</th>}
+                  {showMethod && isColVisible("method") && <th className="py-2.5 px-3 text-center">Method</th>}
+                  {isColVisible("status") && <th className="py-2.5 px-3 text-center">Payment Status</th>}
+                  {isColVisible("actions") && (
+                    <th className={`py-2.5 px-3 text-center ${showReturnAction ? "w-36" : "w-28"}`}>
+                      {showReturnAction ? "Action" : "Actions"}
+                    </th>
+                  )}
+                </tr>
+              </thead>
             <tbody className="divide-y divide-gray-100">
               {sales.map((sale, index) => {
                 const serialNumber = (currentPageNumber - 1) * dataLimit + index + 1;
@@ -537,12 +548,14 @@ export const SaleTable: React.FC<SaleTableProps> = ({
                     className="hover:bg-sky-50/40 transition-colors group"
                   >
                     {/* SL */}
-                    <td className="py-2.5 px-3 text-center text-black text-xs font-normal">
-                      {serialNumber}
-                    </td>
+                    {isColVisible("sl") && (
+                      <td className="py-2.5 px-3 text-center text-black text-xs font-normal">
+                        {serialNumber}
+                      </td>
+                    )}
 
                     {/* Order ID (Sales Return → Sales List only) */}
-                    {showOrderId && (
+                    {showOrderId && isColVisible("orderId") && (
                       <td className="py-2.5 px-3 text-black text-xs font-normal whitespace-nowrap">
                         <span className="font-medium text-gray-800">
                           {sale.orderNo || (sale as any).order_no || sale.invoiceNo || (sale as any).invoice_no || (sale as any).salesInvoiceNo || (sale.id ? `ORD-${sale.id}` : "-")}
@@ -551,48 +564,62 @@ export const SaleTable: React.FC<SaleTableProps> = ({
                     )}
 
                     {/* Customer */}
-                    <td className="py-2.5 px-3 text-black text-xs font-normal whitespace-nowrap">
-                      {sale.customerName || sale.customer_name || "Walk-in Customer"}
-                    </td>
+                    {isColVisible("customer") && (
+                      <td className="py-2.5 px-3 text-black text-xs font-normal whitespace-nowrap">
+                        {sale.customerName || sale.customer_name || "Walk-in Customer"}
+                      </td>
+                    )}
 
                     {/* Phone */}
-                    <td className="py-2.5 px-3 text-black text-xs font-normal whitespace-nowrap">
-                      {sale.customerPhone || sale.customer_phone || "-"}
-                    </td>
+                    {isColVisible("phone") && (
+                      <td className="py-2.5 px-3 text-black text-xs font-normal whitespace-nowrap">
+                        {sale.customerPhone || sale.customer_phone || "-"}
+                      </td>
+                    )}
 
                     {/* Date */}
-                    <td className="py-2.5 px-3 text-black text-xs font-normal whitespace-nowrap">
-                      <span className="flex items-center gap-1 text-[11px] text-black font-normal">
-                        {sale.salesDate || sale.saleDate || sale.date
-                          ? moment(sale.salesDate || sale.saleDate || sale.date).format("DD MMM, YYYY")
-                          : moment().format("DD MMM, YYYY")}
-                      </span>
-                    </td>
+                    {isColVisible("date") && (
+                      <td className="py-2.5 px-3 text-black text-xs font-normal whitespace-nowrap">
+                        <span className="flex items-center gap-1 text-[11px] text-black font-normal">
+                          {sale.salesDate || sale.saleDate || sale.date
+                            ? moment(sale.salesDate || sale.saleDate || sale.date).format("DD MMM, YYYY")
+                            : moment().format("DD MMM, YYYY")}
+                        </span>
+                      </td>
+                    )}
 
                     {/* Items Count */}
-                    <td className="py-2.5 px-3 text-center">
-                      <span className="inline-block px-1.5 py-0.5 bg-gray-100 text-black rounded text-[11px] font-normal">
-                        {itemsCount}
-                      </span>
-                    </td>
+                    {isColVisible("items") && (
+                      <td className="py-2.5 px-3 text-center">
+                        <span className="inline-block px-1.5 py-0.5 bg-gray-100 text-black rounded text-[11px] font-normal">
+                          {itemsCount}
+                        </span>
+                      </td>
+                    )}
 
                     {/* Total Amount */}
-                    <td className="py-2.5 px-3 text-right text-black text-xs font-normal whitespace-nowrap">
-                      ৳ {formatMoney(grandTotal)}
-                    </td>
+                    {isColVisible("total") && (
+                      <td className="py-2.5 px-3 text-right text-black text-xs font-normal whitespace-nowrap">
+                        ৳ {formatMoney(grandTotal)}
+                      </td>
+                    )}
 
                     {/* Paid Amount */}
-                    <td className="py-2.5 px-3 text-right text-black text-xs font-normal whitespace-nowrap">
-                      ৳ {formatMoney(paidAmount)}
-                    </td>
+                    {isColVisible("paid") && (
+                      <td className="py-2.5 px-3 text-right text-black text-xs font-normal whitespace-nowrap">
+                        ৳ {formatMoney(paidAmount)}
+                      </td>
+                    )}
 
                     {/* Due Amount */}
-                    <td className="py-2.5 px-3 text-right text-black text-xs font-normal whitespace-nowrap">
-                      ৳ {formatMoney(dueAmount)}
-                    </td>
+                    {isColVisible("due") && (
+                      <td className="py-2.5 px-3 text-right text-black text-xs font-normal whitespace-nowrap">
+                        ৳ {formatMoney(dueAmount)}
+                      </td>
+                    )}
 
                     {/* Payment Method */}
-                    {showMethod && (
+                    {showMethod && isColVisible("method") && (
                       <td className="py-2.5 px-3 text-center">
                         <span className="inline-block px-1.5 py-0.5 text-[10px] font-semibold bg-sky-100 text-sky-900 border border-sky-300 rounded-md">
                           {paymentType}
@@ -601,67 +628,71 @@ export const SaleTable: React.FC<SaleTableProps> = ({
                     )}
 
                     {/* Payment Status */}
-                    <td className="py-2.5 px-3 text-center">
-                      <span className={`inline-block px-1.5 py-0.5 text-[10px] border rounded-md ${statusBg}`}>
-                        {statusBadge}
-                      </span>
-                    </td>
+                    {isColVisible("status") && (
+                      <td className="py-2.5 px-3 text-center">
+                        <span className={`inline-block px-1.5 py-0.5 text-[10px] border rounded-md ${statusBg}`}>
+                          {statusBadge}
+                        </span>
+                      </td>
+                    )}
 
                     {/* Actions */}
-                    <td className="py-2 px-3 text-center whitespace-nowrap">
-                      {showReturnAction ? (
-                        <div className="flex items-center justify-center">
-                          {isAlreadyReturned ? (
-                            <span
-                              title="This sale has already been returned"
-                              className="inline-flex items-center gap-1.5 px-1.5 py-1 text-xs font-semibold text-rose-600 bg-gray-100 border border-gray-200 rounded-md cursor-not-allowed select-none"
-                            >
-                              <span>Returned</span>
-                            </span>
-                          ) : (
+                    {isColVisible("actions") && (
+                      <td className="py-2 px-3 text-center whitespace-nowrap">
+                        {showReturnAction ? (
+                          <div className="flex items-center justify-center">
+                            {isAlreadyReturned ? (
+                              <span
+                                title="This sale has already been returned"
+                                className="inline-flex items-center gap-1.5 px-1.5 py-1 text-xs font-semibold text-rose-600 bg-gray-100 border border-gray-200 rounded-md cursor-not-allowed select-none"
+                              >
+                                <span>Returned</span>
+                              </span>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  navigate("/admin/create-sales-return", {
+                                    state: { sale },
+                                  })
+                                }
+                                title="Return Product"
+                                className="inline-flex items-center gap-1.5 px-1.5 py-1 text-xs text-white bg-[var(--color-primary)] rounded-md shadow-xs transition-all cursor-pointer"
+                              >
+                                <span>Return Product</span>
+                              </button>
+                            )}
+                          </div>
+                        ) : (
+                          <div className="flex items-center justify-center gap-1.5">
                             <button
                               type="button"
-                              onClick={() =>
-                                navigate("/admin/create-sales-return", {
-                                  state: { sale },
-                                })
-                              }
-                              title="Return Product"
-                              className="inline-flex items-center gap-1.5 px-1.5 py-1 text-xs text-white bg-[var(--color-primary)] rounded-md shadow-xs transition-all cursor-pointer"
+                              onClick={() => onView(sale)}
+                              title="View Invoice"
+                              className="p-1 rounded text-sky-600 hover:bg-sky-100 transition-colors cursor-pointer"
                             >
-                              <span>Return Product</span>
+                              <FiEye size={14} />
                             </button>
-                          )}
-                        </div>
-                      ) : (
-                        <div className="flex items-center justify-center gap-1.5">
-                          <button
-                            type="button"
-                            onClick={() => onView(sale)}
-                            title="View Invoice"
-                            className="p-1 rounded text-sky-600 hover:bg-sky-100 transition-colors cursor-pointer"
-                          >
-                            <FiEye size={14} />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => onPrint(sale)}
-                            title="Print Invoice"
-                            className="p-1 rounded text-gray-600 hover:bg-gray-100 transition-colors cursor-pointer"
-                          >
-                            <FiPrinter size={14} />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => onEdit(sale)}
-                            title="Edit Sale"
-                            className="p-1 rounded text-amber-600 hover:bg-amber-100 transition-colors cursor-pointer"
-                          >
-                            <FiEdit size={14} />
-                          </button>
-                        </div>
-                      )}
-                    </td>
+                            <button
+                              type="button"
+                              onClick={() => onPrint(sale)}
+                              title="Print Invoice"
+                              className="p-1 rounded text-gray-600 hover:bg-gray-100 transition-colors cursor-pointer"
+                            >
+                              <FiPrinter size={14} />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => onEdit(sale)}
+                              title="Edit Sale"
+                              className="p-1 rounded text-amber-600 hover:bg-amber-100 transition-colors cursor-pointer"
+                            >
+                              <FiEdit size={14} />
+                            </button>
+                          </div>
+                        )}
+                      </td>
+                    )}
                   </tr>
                 );
               })}
