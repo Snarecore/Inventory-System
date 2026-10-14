@@ -62,19 +62,24 @@ export const SalesReturnInvoiceModal: React.FC<SalesReturnInvoiceModalProps> = (
       return;
     }
 
+    const appStyles = Array.from(document.querySelectorAll("link[rel='stylesheet'], style"))
+      .map((el) => el.outerHTML)
+      .join("\n");
+
     printWindow.document.open();
     printWindow.document.write(`
       <!DOCTYPE html>
       <html>
         <head>
-          <title>title>
+          <title>Sales Return Voucher - ${r?.returnNo || ""}</title>
           <meta charset="utf-8" />
-          <script src="https://cdn.tailwindcss.com"></script>
+          ${appStyles}
           <style>
             @media print {
-              body { margin: 0; padding: 12px; font-family: system-ui, -apple-system, sans-serif; }
+              body { margin: 0; padding: 12px; font-family: system-ui, -apple-system, sans-serif; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
               @page { size: auto; margin: 8mm; }
             }
+            body { font-family: system-ui, -apple-system, sans-serif; }
           </style>
         </head>
         <body class="bg-white text-black text-sm">

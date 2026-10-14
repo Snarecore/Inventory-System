@@ -32,34 +32,48 @@ const Purchases: React.FC = () => {
   } = useQuery({
     queryKey: [purchaseListQueryKey],
     queryFn: async () => {
-      const response = await postData<any>({
-        url: apiConfig.purchase?.purchaseListUrl || "get-purchase-list",
-        body: { accessUser: buildAccessUser() },
+      const accessUser = buildAccessUser();
+      const endpoint = apiConfig.purchase?.purchaseListUrl || "get-purchase-list";
+      const res: any = await postData({
+        url: endpoint,
+        body: { accessUser },
       });
-      return response;
+
+      const list =
+        res?.purchaseList ||
+        res?.purchasesList ||
+        res?.purchases ||
+        res?.purchaseListDetails ||
+        res?.purchaseInfoList ||
+        res?.purchase_list ||
+        (Array.isArray(res?.data)
+          ? res?.data
+          : res?.data?.purchaseList || res?.data?.purchases || res?.data?.purchase_list) ||
+        [];
+
+      return Array.isArray(list) ? list : [];
     },
-    staleTime: 30000,
+    staleTime: 60 * 1000,
     refetchOnMount: "always",
   });
 
   // Extract all purchases from backend response
   const allPurchases: PurchaseItem[] = useMemo(() => {
-    if (!rawPurchaseData) return [];
-    let list: any[] = [];
-    if (Array.isArray(rawPurchaseData)) {
-      list = rawPurchaseData;
-    } else if (rawPurchaseData.data && Array.isArray(rawPurchaseData.data)) {
-      list = rawPurchaseData.data;
-    } else if (rawPurchaseData.purchaseList && Array.isArray(rawPurchaseData.purchaseList)) {
-      list = rawPurchaseData.purchaseList;
-    } else if (rawPurchaseData.purchasesList && Array.isArray(rawPurchaseData.purchasesList)) {
-      list = rawPurchaseData.purchasesList;
-    } else if (rawPurchaseData.purchaseInfoList && Array.isArray(rawPurchaseData.purchaseInfoList)) {
-      list = rawPurchaseData.purchaseInfoList;
-    } else if (rawPurchaseData.purchases && Array.isArray(rawPurchaseData.purchases)) {
-      list = rawPurchaseData.purchases;
+    if (Array.isArray(rawPurchaseData)) return rawPurchaseData;
+    if (rawPurchaseData && typeof rawPurchaseData === "object") {
+      const raw = rawPurchaseData as any;
+      const list =
+        raw.purchaseList ||
+        raw.purchasesList ||
+        raw.purchases ||
+        raw.purchaseListDetails ||
+        raw.purchaseInfoList ||
+        raw.purchase_list ||
+        (Array.isArray(raw.data) ? raw.data : raw.data?.purchaseList || raw.data?.purchases) ||
+        [];
+      if (Array.isArray(list)) return list;
     }
-    return list;
+    return [];
   }, [rawPurchaseData]);
 
   // 2. Fetch Suppliers from POST /get-party-info-list
@@ -212,7 +226,7 @@ const Purchases: React.FC = () => {
       }
 
       // 2. Status Filter
-      if (statusFilter) {
+      if (statusFilter && statusFilter !== "all") {
         const grandTotal = Number(purchase.grandTotal ?? purchase.totalAmount ?? 0);
         const paidAmount = Number(purchase.paidAmount ?? 0);
         const dueAmount = Number(purchase.dueAmount ?? Math.max(0, grandTotal - paidAmount));
@@ -230,7 +244,7 @@ const Purchases: React.FC = () => {
       }
 
       // 3. Payment Method Filter
-      if (paymentMethodFilter) {
+      if (paymentMethodFilter && paymentMethodFilter !== "all") {
         const method = (purchase.paymentType || "").toUpperCase();
         if (!method.includes(paymentMethodFilter.toUpperCase())) {
           return false;
@@ -238,7 +252,7 @@ const Purchases: React.FC = () => {
       }
 
       // 4. Supplier Filter
-      if (supplierFilter) {
+      if (supplierFilter && supplierFilter !== "all") {
         const supId = String(purchase.supplierId ?? (purchase as any).supplier_id ?? "");
         const supName = String(purchase.supplierName ?? (purchase as any).supplier_name ?? "");
         const filterVal = String(supplierFilter).trim().toLowerCase();
@@ -320,12 +334,31 @@ const Purchases: React.FC = () => {
           const nameB = (b.supplierName || "").toLowerCase();
           return nameB.localeCompare(nameA);
         });
+      case "oldest": {
+        return [...filteredPurchases].sort((a, b) => {
+          const dateA = a.createdAt || a.purchaseDate || a.date || "";
+          const dateB = b.createdAt || b.purchaseDate || b.date || "";
+          if (dateA && dateB) {
+            const diff = moment(dateA).diff(moment(dateB));
+            if (!isNaN(diff) && diff !== 0) return diff;
+          }
+          const idA = Number(a.id ?? 0);
+          const idB = Number(b.id ?? 0);
+          return idA - idB;
+        });
+      }
       case "latest":
       default: {
         return [...filteredPurchases].sort((a, b) => {
-          const dateA = new Date(a.createdAt || a.purchaseDate || "").getTime();
-          const dateB = new Date(b.createdAt || b.purchaseDate || "").getTime();
-          return dateB - dateA;
+          const dateA = a.createdAt || a.purchaseDate || a.date || "";
+          const dateB = b.createdAt || b.purchaseDate || b.date || "";
+          if (dateA && dateB) {
+            const diff = moment(dateB).diff(moment(dateA));
+            if (!isNaN(diff) && diff !== 0) return diff;
+          }
+          const idA = Number(a.id ?? 0);
+          const idB = Number(b.id ?? 0);
+          return idB - idA;
         });
       }
     }

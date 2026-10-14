@@ -347,4 +347,68 @@ export interface SaleTransactionReportItem {
   [key: string]: any;
 }
 
+export interface PurchaseReturnDetailItem {
+  id?: string | number;
+  returnDetailId?: string | number;
+  purchaseDetailId?: string | number;
+  productId: string | number;
+  productCode?: string;
+  productName: string;
+  unit?: string;
+  purchasedQuantity?: number;
+  quantity: number;
+  returnQuantity?: number;
+  buyPrice: number;
+  discount?: number;
+  vat?: number;
+  deliveryCharge?: number;
+  total: number;
+  returnReason?: string;
+  [key: string]: any;
+}
+
+export interface PurchaseReturnItem {
+  id?: string | number;
+  returnId?: string | number;
+  returnNo?: string;
+  orderNo?: string;
+  purchaseInvoiceNo: string;
+  invoiceNo?: string;
+  challanNo?: string;
+  supplierId: string | number;
+  supplierName: string;
+  supplierPhone?: string;
+  supplierAddress?: string;
+  returnDate: string;
+  totalAmount: number;
+  discount?: number;
+  vat?: number;
+  deliveryCharge?: number;
+  grandTotal: number;
+  refundAmount: number;
+  paymentType: "CASH" | "CREDIT" | "MFS" | "BANK" | string;
+  status: string;
+  note?: string;
+  remarks?: string;
+  refNo?: string;
+  osType?: string;
+  cashReceived?: number;
+  cardReceived?: number;
+  mfsReceived?: number;
+  dueAmount?: number;
+  bankId?: string | number | null;
+  bankName?: string | null;
+  accountNo?: string | null;
+  mfsId?: string | number | null;
+  mfsName?: string | null;
+  mfsPhone?: string | null;
+  returnDetails?: PurchaseReturnDetailItem[];
+  purchaseReturnDetails?: PurchaseReturnDetailItem[];
+  itemsCount?: number;
+  createdAt?: string;
+  updatedAt?: string;
+  [key: string]: any;
+}
+
+
 

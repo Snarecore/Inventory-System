@@ -1,5 +1,5 @@
 import * as XLSX from "xlsx";
-import type { PurchaseItem } from "@/types";
+import type { PurchaseItem, PurchaseReturnItem } from "@/types";
 import { getUserInfo } from "./auth-storage";
 
 export interface ExportPurchasesOptions {
@@ -378,4 +378,79 @@ export function exportSalesReturnToExcel(
   XLSX.utils.book_append_sheet(workbook, worksheet, sheetName);
   XLSX.writeFile(workbook, fileName);
 }
+
+/**
+ * Excel export for Purchase Returns (same layout as the Sales Return export, supplier instead of customer)
+ */
+export function exportPurchaseReturnToExcel(
+  returns: PurchaseReturnItem[],
+  options?: { fileName?: string; sheetName?: string }
+): void {
+  if (returns.length === 0) {
+    throw new Error("No purchase return data available to export");
+  }
+
+  const todayStr = new Date().toISOString().substring(0, 10);
+  const fileName = options?.fileName || `Purchase_Returns_${todayStr}.xlsx`;
+  const sheetName = options?.sheetName || "Purchase Returns";
+
+  let sumReturnAmount = 0;
+  let sumRefundAmount = 0;
+  let sumItems = 0;
+
+  const rows: Record<string, string | number>[] = returns.map((item, index) => {
+    const returnAmount = Number(item.totalAmount ?? 0);
+    const refundAmount = Number(item.refundAmount ?? returnAmount);
+    const details = item.returnDetails ?? [];
+    const itemsCount = details.length > 0 ? details.length : Number(item.itemsCount || 1);
+
+    sumReturnAmount += returnAmount;
+    sumRefundAmount += refundAmount;
+    sumItems += itemsCount;
+
+    return {
+      "SL": index + 1,
+      "Return No": item.returnNo || `PR-${item.id ?? index + 1}`,
+      "Return Date": item.returnDate || todayStr,
+      "Original Invoice": item.purchaseInvoiceNo || item.invoiceNo || "-",
+      "Supplier Name": item.supplierName || "-",
+      "Supplier Phone": item.supplierPhone || "-",
+      "Items Count": itemsCount,
+      "Refund Channel": (item.paymentType || "CASH").toUpperCase(),
+      "Return Value (BDT)": Number(returnAmount.toFixed(2)),
+      "Refunded Amount (BDT)": Number(refundAmount.toFixed(2)),
+      "Status": (item.status || "COMPLETED").toUpperCase(),
+      "Remarks": item.note || item.remarks || "",
+    };
+  });
+
+  const totalRow: Record<string, string | number> = {
+    "SL": "TOTAL",
+    "Return No": `Total Returns: ${returns.length}`,
+    "Return Date": "",
+    "Original Invoice": "",
+    "Supplier Name": "",
+    "Supplier Phone": "",
+    "Items Count": sumItems,
+    "Refund Channel": "",
+    "Return Value (BDT)": Number(sumReturnAmount.toFixed(2)),
+    "Refunded Amount (BDT)": Number(sumRefundAmount.toFixed(2)),
+    "Status": "",
+    "Remarks": "",
+  };
+
+  const headers = Object.keys(rows[0]);
+  const fullData = [...rows, totalRow];
+  const worksheet = XLSX.utils.json_to_sheet(fullData, { header: headers });
+
+  worksheet["!cols"] = headers.map((key) => {
+    const maxLen = fullData.reduce((max, row) => Math.max(max, String(row[key] ?? "").length), key.length);
+    return { wch: Math.min(Math.max(maxLen + 3, 10), 40) };
+  });
+
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(workbook, worksheet, sheetName);
+  XLSX.writeFile(workbook, fileName);
+}
+
 

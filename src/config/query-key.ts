@@ -43,4 +43,5 @@ export const salesListQueryKey = "get-sale-list";
 export const insertSalesQueryKey = "insert-sales";
 export const updateSalesQueryKey = "update-sales";
 export const salesTransactionReportQueryKey = "get-sale-transaction-report";
-
+export const purchaseAndReturnQueryKey = "get-purchase-and-return-list";
+export const insertPurchaseReturnQueryKey = "insert-purchase-return";

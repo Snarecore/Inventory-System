@@ -75,6 +75,10 @@
         "purchaseChallanSettingsUrl": "get-purchase-challan-settings",
         "insertOrUpdatePurchaseChallanSettingsUrl": "insert-or-update-purchase-challan-settings"
     },
+    "purchaseReturn": {
+        "getPurchaseAndReturnListUrl": "get-purchase-and-return-list",
+        "insertPurchaseReturnUrl": "insert-purchase-return"
+    },
     "bank": {
         "bankInfoListUrl": "get-bank-info-list",
         "bankNameListUrl": "get-bank-name-list",

@@ -46,6 +46,7 @@ interface SaleTableProps {
   returnedInvoiceSet?: Set<string>;
   showReturnAction?: boolean;
   showMethod?: boolean;
+  showOrderId?: boolean;
   onEdit: (sale: SaleItem) => void;
   onView: (sale: SaleItem) => void;
   onPrint: (sale: SaleItem) => void;
@@ -84,6 +85,7 @@ export const SaleTable: React.FC<SaleTableProps> = ({
   returnedInvoiceSet,
   showReturnAction = false,
   showMethod = !showReturnAction,
+  showOrderId = showReturnAction,
   onEdit,
   onView,
   onPrint,
@@ -393,7 +395,7 @@ export const SaleTable: React.FC<SaleTableProps> = ({
             <thead>
               <tr className="bg-[#41BEF3] text-black text-xs font-semibold">
                 <th className="py-2.5 px-3 text-center w-10">SL</th>
-                <th className="py-2.5 px-3">Order No</th>
+                {showOrderId && <th className="py-2.5 px-3">Order ID</th>}
                 <th className="py-2.5 px-3">Customer</th>
                 <th className="py-2.5 px-3">Phone</th>
                 <th className="py-2.5 px-3">Date</th>
@@ -474,12 +476,14 @@ export const SaleTable: React.FC<SaleTableProps> = ({
                       {serialNumber}
                     </td>
 
-                    {/* Order No */}
-                    <td className="py-2.5 px-3 text-black text-xs font-normal whitespace-nowrap">
-                      <span className="font-medium text-gray-800">
-                        {sale.orderNo || (sale as any).order_no || sale.invoiceNo || (sale as any).invoice_no || (sale as any).salesInvoiceNo || (sale.id ? `ORD-${sale.id}` : "-")}
-                      </span>
-                    </td>
+                    {/* Order ID (Sales Return → Sales List only) */}
+                    {showOrderId && (
+                      <td className="py-2.5 px-3 text-black text-xs font-normal whitespace-nowrap">
+                        <span className="font-medium text-gray-800">
+                          {sale.orderNo || (sale as any).order_no || sale.invoiceNo || (sale as any).invoice_no || (sale as any).salesInvoiceNo || (sale.id ? `ORD-${sale.id}` : "-")}
+                        </span>
+                      </td>
+                    )}
 
                     {/* Customer */}
                     <td className="py-2.5 px-3 text-black text-xs font-normal whitespace-nowrap">

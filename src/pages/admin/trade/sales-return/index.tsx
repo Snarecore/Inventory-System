@@ -234,7 +234,8 @@ const SalesReturnPage: React.FC = () => {
         if (item.salesInvoiceNo) set.add(String(item.salesInvoiceNo).trim().toLowerCase());
         if (item.invoiceNo) set.add(String(item.invoiceNo).trim().toLowerCase());
         if (item.orderNo) set.add(String(item.orderNo).trim().toLowerCase());
-        if (item.id) set.add(String(item.id).trim().toLowerCase());
+        if (item.saleId) set.add(String(item.saleId).trim().toLowerCase());
+        if (item.sale_id) set.add(String(item.sale_id).trim().toLowerCase());
       });
     }
     return set;

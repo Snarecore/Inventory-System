@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef } from "react";
+import React, { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import moment from "moment";
@@ -73,7 +73,7 @@ export const SalesReturnForm: React.FC = () => {
   const [customerPhone, setCustomerPhone] = useState<string>(stateSale?.customerPhone || "");
   const [customerAddress, setCustomerAddress] = useState<string>(stateSale?.customerAddress || "");
   const [paymentType, setPaymentType] = useState<string>("CASH");
-  const [status, setStatus] = useState<string>("Return");
+  const status = "Return";
   const [note, setNote] = useState<string>("");
 
   // Return Mode: "FULL" (all items & full qty) vs "PARTIAL" (selected items / partial qty)
@@ -106,11 +106,11 @@ export const SalesReturnForm: React.FC = () => {
   const [pendingPrintAfterSave, setPendingPrintAfterSave] = useState<boolean>(false);
   const [savedReturnRecord, setSavedReturnRecord] = useState<SalesReturnItem | null>(null);
   const [isReceiptModalOpen, setIsReceiptModalOpen] = useState<boolean>(false);
-  const hasJustSubmittedRef = useRef<boolean>(false);
+  const [hasJustSubmitted, setHasJustSubmitted] = useState<boolean>(false);
 
   // 1. Fetch sales and return list using POST /get-sales-and-return (with fallback to /get-sale-list)
   const { data: apiSalesAndReturnData, isLoading: isLoadingInvoices } = useQuery({
-    queryKey: [salesAndReturnQueryKey, "available-sales"],
+    queryKey: [salesAndReturnQueryKey],
     queryFn: async () => {
       try {
         const accessUser = buildAccessUser();
@@ -257,13 +257,85 @@ export const SalesReturnForm: React.FC = () => {
     }
   }, [registeredMfsAccounts, selectedRefundMfsId, refundMfsAmount]);
 
-  // Helper to calculate already returned quantities across all sources
-  const getReturnedQuantitiesForSale = (
-    sale: SaleItem,
-    allSalesAndReturns: any[]
-  ): Record<string, number> => {
-    const cleanKey = (val: any) => String(val || "").replace(/[^a-zA-Z0-9]/g, "").toLowerCase();
+  const cleanKey = (val: any) => String(val || "").replace(/[^a-zA-Z0-9]/g, "").toLowerCase();
 
+  // Pre-indexed returns and returned sale lookup for O(1) checks
+  const { returnedSaleKeysSet, returnsBySaleKey } = useMemo(() => {
+    const keysSet = new Set<string>();
+    const returnsMap = new Map<string, any[]>();
+    const allRecords = Array.isArray(apiSalesAndReturnData) ? apiSalesAndReturnData : [];
+
+    allRecords.forEach((item: any) => {
+      const isReturnRecord =
+        Boolean(item.hasReturn) ||
+        Boolean(item.returnNo) ||
+        Boolean(item.returnGrandTotal) ||
+        String(item.returnType || "").toUpperCase() === "RETURN" ||
+        String(item.status || "").toUpperCase() === "RETURN" ||
+        (item.refNo && String(item.refNo).startsWith("SR-")) ||
+        (Array.isArray(item.returnDetails) && item.returnDetails.length > 0) ||
+        (Array.isArray(item.salesReturnDetails) && item.salesReturnDetails.length > 0);
+
+      const addIndex = (prefix: string, keyVal: string, record: any) => {
+        if (!keyVal) return;
+        const compKey = `${prefix}:${keyVal}`;
+        keysSet.add(compKey);
+        const list = returnsMap.get(compKey) || [];
+        list.push(record);
+        returnsMap.set(compKey, list);
+      };
+
+      if (isReturnRecord) {
+        const itemInv = cleanKey(item.salesInvoiceNo || item.invoiceNo || item.sales_invoice_no || item.sales_invoice || item.invoice_no);
+        const itemOrd = cleanKey(item.orderNo || item.order_no);
+        // NOTE: Only use item.saleId / item.sale_id. NEVER use item.id because item.id is the return record ID!
+        const itemSaleId = cleanKey(item.saleId || item.sale_id);
+
+        addIndex("inv", itemInv, item);
+        addIndex("ord", itemOrd, item);
+        addIndex("sid", itemSaleId, item);
+      } else if (
+        item.hasReturn ||
+        (Array.isArray(item.returns) && item.returns.length > 0) ||
+        (Array.isArray(item.salesReturns) && item.salesReturns.length > 0)
+      ) {
+        const inv = cleanKey(item.invoiceNo || item.salesInvoiceNo);
+        const ord = cleanKey(item.orderNo || item.order_no);
+        const sid = cleanKey(item.id || item.saleId || item.sale_id);
+
+        if (inv) keysSet.add(`inv:${inv}`);
+        if (ord) keysSet.add(`ord:${ord}`);
+        if (sid) keysSet.add(`sid:${sid}`);
+      }
+    });
+
+    return { returnedSaleKeysSet: keysSet, returnsBySaleKey: returnsMap };
+  }, [apiSalesAndReturnData]);
+
+  // Fast O(1) check if a sale has already been returned
+  const isSaleAlreadyReturned = useCallback((sale: any): boolean => {
+    if (!sale) return false;
+    if (sale.hasReturn || sale.returnNo) return true;
+    if (String(sale.returnType || "").toUpperCase() === "RETURN") return true;
+    if (Array.isArray(sale.returnDetails) && sale.returnDetails.length > 0) return true;
+    if (Array.isArray(sale.salesReturnDetails) && sale.salesReturnDetails.length > 0) return true;
+    if (Array.isArray(sale.returns) && sale.returns.length > 0) return true;
+    if (Array.isArray(sale.salesReturns) && sale.salesReturns.length > 0) return true;
+
+    const inv = cleanKey(sale.invoiceNo || sale.salesInvoiceNo);
+    if (inv && returnedSaleKeysSet.has(`inv:${inv}`)) return true;
+
+    const ord = cleanKey(sale.orderNo || (sale as any).order_no);
+    if (ord && returnedSaleKeysSet.has(`ord:${ord}`)) return true;
+
+    const sid = cleanKey(sale.id || sale.saleId || (sale as any).sale_id);
+    if (sid && returnedSaleKeysSet.has(`sid:${sid}`)) return true;
+
+    return false;
+  }, [returnedSaleKeysSet]);
+
+  // Helper to calculate already returned quantities using exact-match indexing
+  const getReturnedQuantitiesForSale = useCallback((sale: SaleItem): Record<string, number> => {
     const invClean = cleanKey(sale.invoiceNo || sale.salesInvoiceNo);
     const ordClean = cleanKey(sale.orderNo || (sale as any).order_no);
     const saleIdClean = cleanKey(sale.id || sale.saleId || (sale as any).sale_id);
@@ -296,7 +368,7 @@ export const SalesReturnForm: React.FC = () => {
           }
           if (pName) {
             returnedQtyMap[`name_${pName}`] = (returnedQtyMap[`name_${pName}`] || 0) + qty;
-            const baseName = pName.split(/[\(\[\-]/)[0].trim();
+            const baseName = pName.split(/[(/[-]/)[0].trim();
             if (baseName && baseName !== pName) {
               returnedQtyMap[`basename_${baseName}`] = (returnedQtyMap[`basename_${baseName}`] || 0) + qty;
             }
@@ -305,30 +377,20 @@ export const SalesReturnForm: React.FC = () => {
       });
     };
 
-    if (Array.isArray(allSalesAndReturns)) {
-      allSalesAndReturns.forEach((item: any) => {
-        const isReturnRecord =
-          item.hasReturn ||
-          Boolean(item.returnNo) ||
-          Boolean(item.returnGrandTotal) ||
-          (Array.isArray(item.returnDetails) && item.returnDetails.length > 0) ||
-          (Array.isArray(item.salesReturnDetails) && item.salesReturnDetails.length > 0);
-
-        const itemInv = cleanKey(item.salesInvoiceNo || item.invoiceNo || item.sales_invoice_no || item.sales_invoice || item.invoice_no);
-        const itemSalesInv = cleanKey(item.salesInvoiceNo || item.sales_invoice_no || item.saleInvoiceNo || item.sale_invoice_no);
-        const itemOrd = cleanKey(item.orderNo || item.order_no);
-        const itemSaleId = cleanKey(item.saleId || item.sale_id || item.id);
-
-        const matchesInvoice =
-          (invClean && (itemInv === invClean || (itemInv && itemInv.includes(invClean)) || (invClean && invClean.includes(itemInv)) || itemSalesInv === invClean)) ||
-          (ordClean && (itemOrd === ordClean || (itemOrd && itemOrd.includes(ordClean)) || (ordClean && ordClean.includes(itemOrd)))) ||
-          (saleIdClean && itemSaleId === saleIdClean);
-
-        if (matchesInvoice && isReturnRecord) {
-          processDetailsList(item.returnDetails || item.salesReturnDetails || item.details);
-        }
-      });
+    const matchedReturns = new Set<any>();
+    if (invClean && returnsBySaleKey.has(`inv:${invClean}`)) {
+      returnsBySaleKey.get(`inv:${invClean}`)?.forEach((r) => matchedReturns.add(r));
     }
+    if (ordClean && returnsBySaleKey.has(`ord:${ordClean}`)) {
+      returnsBySaleKey.get(`ord:${ordClean}`)?.forEach((r) => matchedReturns.add(r));
+    }
+    if (saleIdClean && returnsBySaleKey.has(`sid:${saleIdClean}`)) {
+      returnsBySaleKey.get(`sid:${saleIdClean}`)?.forEach((r) => matchedReturns.add(r));
+    }
+
+    matchedReturns.forEach((r) => {
+      processDetailsList(r.returnDetails || r.salesReturnDetails || r.details);
+    });
 
     if (Array.isArray(sale.returnDetails)) {
       processDetailsList(sale.returnDetails);
@@ -348,38 +410,16 @@ export const SalesReturnForm: React.FC = () => {
     }
 
     return returnedQtyMap;
-  };
-
-  // Business Rule: An order / invoice can only be returned once (Organization Standard)
-  const isSaleAlreadyReturned = (
-    sale: any,
-    allSalesAndReturns: any[]
-  ): boolean => {
-    if (!sale) return false;
-    if (sale.hasReturn) return true;
-    if (sale.returnNo) return true;
-    if (String(sale.returnType || "").toUpperCase() === "RETURN") return true;
-    if (Array.isArray(sale.returnDetails) && sale.returnDetails.length > 0) return true;
-    if (Array.isArray(sale.salesReturnDetails) && sale.salesReturnDetails.length > 0) return true;
-    if (Array.isArray(sale.returns) && sale.returns.length > 0) return true;
-    if (Array.isArray(sale.salesReturns) && sale.salesReturns.length > 0) return true;
-
-    const priorReturnsMap = getReturnedQuantitiesForSale(sale, allSalesAndReturns);
-    const totalReturnedPcs = Object.values(priorReturnsMap).reduce((sum, q) => sum + q, 0);
-    return totalReturnedPcs > 0;
-  };
+  }, [returnsBySaleKey]);
 
   const isCurrentSaleAlreadyReturned = useMemo(() => {
     if (!selectedSale) return false;
-    if (hasJustSubmittedRef.current) return false;
-    return isSaleAlreadyReturned(
-      selectedSale,
-      Array.isArray(apiSalesAndReturnData) ? apiSalesAndReturnData : []
-    );
-  }, [selectedSale, apiSalesAndReturnData]);
+    if (hasJustSubmitted) return false;
+    return isSaleAlreadyReturned(selectedSale);
+  }, [selectedSale, hasJustSubmitted, isSaleAlreadyReturned]);
 
   // Load sale into form and configure customer payment & refund suggestion
-  const loadInvoice = (sale: SaleItem) => {
+  const loadInvoice = useCallback((sale: SaleItem) => {
     setSelectedSale(sale);
     const invNo = sale.invoiceNo || `INV-${sale.id}`;
     setSalesInvoiceNo(invNo);
@@ -409,10 +449,7 @@ export const SalesReturnForm: React.FC = () => {
     const details: any[] =
       sale.salesDetails || sale.saleDetails || (sale as any).details || [];
 
-    const returnedMap = getReturnedQuantitiesForSale(
-      sale,
-      Array.isArray(apiSalesAndReturnData) ? apiSalesAndReturnData : []
-    );
+    const returnedMap = getReturnedQuantitiesForSale(sale);
 
     if (details.length > 0) {
       const formattedLines: ReturnLineFormState[] = details.map((d: any) => {
@@ -422,7 +459,7 @@ export const SalesReturnForm: React.FC = () => {
         const pId = String(d.productId ?? d.product_id ?? "").trim();
         const pCode = String(d.productCode ?? d.pcode ?? "").trim();
         const pName = String(d.productName ?? d.name ?? "").trim().toLowerCase();
-        const baseName = pName.split(/[\(\[\-]/)[0].trim();
+        const baseName = pName.split(/[(/[-]/)[0].trim();
 
         const directReturned = Number(
           d.returnedQuantity ??
@@ -472,14 +509,11 @@ export const SalesReturnForm: React.FC = () => {
     } else {
       setLines([]);
     }
-  };
+  }, [getReturnedQuantitiesForSale]);
 
   useEffect(() => {
-    if (stateSale && !hasJustSubmittedRef.current) {
-      const alreadyReturned = isSaleAlreadyReturned(
-        stateSale,
-        Array.isArray(apiSalesAndReturnData) ? apiSalesAndReturnData : []
-      );
+    if (stateSale && !hasJustSubmitted) {
+      const alreadyReturned = isSaleAlreadyReturned(stateSale);
       if (alreadyReturned) {
         showErrorToast(`Order #${stateSale.orderNo || stateSale.invoiceNo} has already been returned.`);
         navigate("/admin/sales");
@@ -487,23 +521,20 @@ export const SalesReturnForm: React.FC = () => {
       }
       loadInvoice(stateSale);
     }
-  }, [stateSale, apiSalesAndReturnData]);
+  }, [stateSale, isSaleAlreadyReturned, loadInvoice, hasJustSubmitted, navigate]);
 
   // Keep line available quantities in sync if apiSalesAndReturnData updates in background
   useEffect(() => {
     if (selectedSale) {
       setLines((prevLines) => {
         if (prevLines.length === 0) return prevLines;
-        const returnedMap = getReturnedQuantitiesForSale(
-          selectedSale,
-          Array.isArray(apiSalesAndReturnData) ? apiSalesAndReturnData : []
-        );
+        const returnedMap = getReturnedQuantitiesForSale(selectedSale);
 
         return prevLines.map((line) => {
           const pId = String(line.productId).trim();
           const pCode = String(line.productCode).trim();
           const pName = String(line.productName).trim().toLowerCase();
-          const baseName = pName.split(/[\(\[\-]/)[0].trim();
+          const baseName = pName.split(/[(/[-]/)[0].trim();
 
           const matchedFromReturns = Math.max(
             pId ? (returnedMap[`id_${pId}`] || 0) : 0,
@@ -530,7 +561,7 @@ export const SalesReturnForm: React.FC = () => {
         });
       });
     }
-  }, [apiSalesAndReturnData, selectedSale?.id, selectedSale?.invoiceNo]);
+  }, [apiSalesAndReturnData, selectedSale, getReturnedQuantitiesForSale]);
 
   // Click outside to close dropdown
   useEffect(() => {
@@ -546,17 +577,17 @@ export const SalesReturnForm: React.FC = () => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Filter available invoices by orderNo, invoiceNo, or customer (Exclude already returned orders)
+  // Pre-filter unreturned sales once whenever availableInvoices or isSaleAlreadyReturned updates
+  const unreturnedInvoices = useMemo(() => {
+    return availableInvoices.filter((inv) => !isSaleAlreadyReturned(inv));
+  }, [availableInvoices, isSaleAlreadyReturned]);
+
+  // Instant keystroke search: O(N) single loop with zero regex or nested lookups
   const filteredInvoices = useMemo(() => {
     const q = invoiceSearchQuery.toLowerCase().trim();
-    const allRecords = Array.isArray(apiSalesAndReturnData) ? apiSalesAndReturnData : [];
+    if (!q) return unreturnedInvoices;
 
-    return availableInvoices.filter((inv) => {
-      // Exclude already returned orders
-      if (isSaleAlreadyReturned(inv, allRecords)) {
-        return false;
-      }
-      if (!q) return true;
+    return unreturnedInvoices.filter((inv) => {
       const ordNo = String(inv.orderNo || "").toLowerCase();
       const invNo = String(inv.invoiceNo || "").toLowerCase();
       const cName = String(inv.customerName || "").toLowerCase();
@@ -568,7 +599,7 @@ export const SalesReturnForm: React.FC = () => {
         cPhone.includes(q)
       );
     });
-  }, [availableInvoices, invoiceSearchQuery, apiSalesAndReturnData]);
+  }, [unreturnedInvoices, invoiceSearchQuery]);
 
   // Recalculate totals
   const totals = useMemo(() => {
@@ -821,8 +852,7 @@ export const SalesReturnForm: React.FC = () => {
     setRefundMfsAmount(allocMfs > 0 ? String(allocMfs) : "");
     setRefundDueAmount(allocDue > 0 ? String(allocDue) : "");
   }, [
-    selectedSale?.id,
-    selectedSale?.invoiceNo,
+    selectedSale,
     totals.refundAmount,
     returnMode,
     origCashPaid,
@@ -1155,8 +1185,26 @@ export const SalesReturnForm: React.FC = () => {
         body: payload,
       });
 
+      if (
+        !response ||
+        response?.error ||
+        response?.status === "Error" ||
+        response?.status === "Failed" ||
+        (typeof response?.code === "number" && response.code >= 400)
+      ) {
+        const errorMsg =
+          response?.msg ||
+          response?.message ||
+          "Failed to save sales return. Please try again.";
+        showErrorToast(errorMsg);
+        setIsSubmitting(false);
+        setIsConfirmModalOpen(false);
+        return;
+      }
+
       const generatedReturnNo =
         response?.returnNo ||
+        response?.data?.returnNo ||
         `RET-${moment().format("YYYYMMDD")}-${Math.floor(100 + Math.random() * 900)}`;
 
       const createdReturnItem: SalesReturnItem = {
@@ -1200,9 +1248,8 @@ export const SalesReturnForm: React.FC = () => {
         createdAt: new Date().toISOString(),
       };
 
-
       // Mark as submitted so invalidating query does not trigger error toast on active order
-      hasJustSubmittedRef.current = true;
+      setHasJustSubmitted(true);
 
       // Invalidate queries so inventory stock, account balances, and sales lists immediately update everywhere
       await Promise.allSettled([

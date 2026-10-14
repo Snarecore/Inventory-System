@@ -114,8 +114,9 @@ export const menu = [
 				path: "/admin/purchase-return",
 				permissionKey: "purchase.return.view",
 				subItems: [
-					{ id: 31, name: "Purchase Returns List", path: "/admin/purchase-return", permissionKey: "purchase.return.view" },
+					{ id: 391, name: "Purchase List", path: "/admin/purchase-return-purchases", permissionKey: "purchase.list.view" },
 					{ id: 32, name: "Create Return", path: "/admin/create-purchase-return", permissionKey: "purchase.create_return.view" },
+					{ id: 31, name: "Purchase Returns List", path: "/admin/purchase-return", permissionKey: "purchase.return.view" },
 				],
 			},
 			{
