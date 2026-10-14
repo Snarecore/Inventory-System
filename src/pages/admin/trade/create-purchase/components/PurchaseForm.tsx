@@ -2097,8 +2097,8 @@ const CreatePurchaseForm: React.FC = () => {
       {/* Financial Summary & Split Payment Breakdown (2 Column Dense Grid) */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-2.5 items-start">
         {/* Left Column: Overall Discounts, VAT, Transport & Remarks (5 cols) */}
-        <div className="lg:col-span-5 bg-white p-2.5 sm:p-3 rounded-xl border border-gray-200 shadow-xs flex flex-col gap-2">
-          <div className="flex flex-col gap-2">
+        <div className="lg:col-span-5 bg-white p-2.5 sm:p-3 rounded-xl border border-gray-200 shadow-xs flex flex-col gap-1.5">
+          <div className="flex flex-col gap-1.5">
             <h3 className="text-xs font-bold text-black">
               Discounts & Extra Charges
             </h3>
@@ -2158,10 +2158,10 @@ const CreatePurchaseForm: React.FC = () => {
           </div>
 
           {/* Bottom of Left Box: Invoice Attachment & Purchase Notes Side by Side */}
-          <div className="mt-2.5 pt-2.5 border-t border-gray-100 flex flex-col sm:flex-row items-start gap-3">
+          <div className="mt-1.5 pt-1.5 border-t border-gray-100 flex flex-col sm:flex-row items-start gap-2">
             {/* Invoice Attachment (Fixed compact upload box) */}
             <div className="shrink-0 flex flex-col">
-              <div className="h-6 flex items-center mb-1.5">
+              <div className="h-5 flex items-center mb-1">
                 <span className="text-[11px] font-semibold text-black">
                   Attachment
                 </span>
@@ -2176,14 +2176,14 @@ const CreatePurchaseForm: React.FC = () => {
 
             {/* Purchase Notes / Remarks (Fills the remaining width seamlessly) */}
             <div className="relative flex-1 min-w-0 w-full flex flex-col" ref={notesDropdownRef}>
-              <div className="h-6 flex items-center justify-between gap-1 mb-1.5">
+              <div className="h-5 flex items-center justify-between gap-1 mb-1">
                 <span className="text-[11px] font-semibold text-black truncate">
                   Notes / Remarks
                 </span>
                 <button
                   type="button"
                   onClick={() => setIsNotesDropdownOpen(!isNotesDropdownOpen)}
-                  className="text-[11px] font-semibold text-black bg-gray-100 hover:bg-gray-200 px-2 py-0.5 rounded-md border border-gray-300 transition-all flex items-center gap-1 cursor-pointer shadow-2xs h-6"
+                  className="text-[11px] font-semibold text-black bg-gray-100 hover:bg-gray-200 px-1.5 py-0.5 rounded-md border border-gray-300 transition-all flex items-center gap-1 cursor-pointer shadow-2xs h-5"
                 >
                   <span>+ Presets</span>
                   <FiChevronDown

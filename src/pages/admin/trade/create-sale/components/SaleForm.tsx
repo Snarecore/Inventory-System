@@ -1966,15 +1966,15 @@ export const CreateSaleForm: React.FC = () => {
           </div>
 
           {/* Notes / Remarks */}
-          <div className="mt-2.5 pt-2.5 border-t border-gray-100 flex flex-col" ref={notesDropdownRef}>
-            <div className="h-6 flex items-center justify-between gap-1 mb-1.5">
+          <div className="mt-1.5 pt-1.5 border-t border-gray-100 flex flex-col" ref={notesDropdownRef}>
+            <div className="h-5 flex items-center justify-between gap-1 mb-1">
               <span className="text-[11px] font-semibold text-black truncate">
                 Notes / Remarks
               </span>
               <button
                 type="button"
                 onClick={() => setIsNotesDropdownOpen(!isNotesDropdownOpen)}
-                className="text-[11px] font-semibold text-black bg-gray-100 hover:bg-gray-200 px-2 py-0.5 rounded-md border border-gray-300 transition-all flex items-center gap-1 cursor-pointer shadow-2xs h-6"
+                className="text-[11px] font-semibold text-black bg-gray-100 hover:bg-gray-200 px-1.5 py-0.5 rounded-md border border-gray-300 transition-all flex items-center gap-1 cursor-pointer shadow-2xs h-5"
               >
                 <span>+ Presets</span>
                 <FiChevronDown

@@ -406,7 +406,7 @@ export const SalesReturnTable: React.FC<SalesReturnTableProps> = ({
                 <th className="py-2.5 px-3 min-w-[120px]">Customer</th>
                 <th className="py-2.5 px-3 whitespace-nowrap">Return Date</th>
                 <th className="py-2.5 px-3 text-center w-24 whitespace-nowrap">Items</th>
-                <th className="py-2.5 px-3 w-44 min-w-[150px] max-w-[180px]">Remarks</th>
+                <th className="py-2.5 px-3 text-center w-44 min-w-[150px] max-w-[180px]">Remarks</th>
                 <th className="py-2.5 px-3 text-center w-28 whitespace-nowrap">Payment Type</th>
                 <th className="py-2.5 px-3 text-right w-32 whitespace-nowrap">Refund Amount</th>
                 <th className="py-2.5 px-3 text-center w-28 whitespace-nowrap">Status</th>
@@ -506,10 +506,10 @@ export const SalesReturnTable: React.FC<SalesReturnTableProps> = ({
                       </td>
 
                       {/* Remarks */}
-                      <td className="py-2.5 px-3 text-black text-xs font-normal w-44 min-w-[150px] max-w-[180px]">
+                      <td className="py-2.5 px-3 text-center text-black text-xs font-normal w-44 min-w-[150px] max-w-[180px]">
                         {item.note || item.remarks ? (
                           <div
-                            className="inline-flex items-center px-2 py-0.5 rounded-md bg-gray-100 hover:bg-gray-200/80 border border-gray-200 text-black text-xs font-normal max-w-[160px] transition-colors cursor-pointer"
+                            className="inline-flex items-center justify-center px-1.5 py-0.5 rounded-md bg-gray-100 hover:bg-gray-200/80 border border-gray-200 text-black text-xs font-normal max-w-[160px] transition-colors cursor-pointer"
                             title={item.note || item.remarks}
                             onClick={() => onView(item)}
                           >

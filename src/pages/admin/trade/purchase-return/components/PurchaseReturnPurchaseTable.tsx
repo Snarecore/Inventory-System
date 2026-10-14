@@ -569,35 +569,30 @@ export const PurchaseReturnPurchaseTable: React.FC<PurchaseReturnPurchaseTablePr
 
       {/* Pagination Footer */}
       {!isLoading && purchases.length > 0 && (
-        <div className="p-2 sm:p-2.5 border-t border-gray-100 flex flex-wrap items-center justify-between gap-2 text-xs">
-          <div className="flex items-center gap-1.5 text-black font-medium">
-            <span>Total: {totalCount} records</span>
+        <div className="p-2.5 sm:p-3 border-t border-gray-100 bg-gray-50/50 flex flex-col sm:flex-row items-center justify-between gap-2.5">
+          <div className="flex items-center gap-2 text-xs text-gray-500">
+            <span>Show</span>
+            <select
+              value={dataLimit}
+              onChange={(e) => {
+                setDataLimit(Number(e.target.value));
+                setCurrentPageNumber(1);
+              }}
+              className="border border-gray-300 rounded px-1.5 py-0.5 text-xs bg-white text-gray-700 focus:outline-none focus:border-[var(--color-primary)] cursor-pointer"
+            >
+              <option value={10}>10</option>
+              <option value={20}>20</option>
+              <option value={50}>50</option>
+              <option value={100}>100</option>
+            </select>
+            <span>entries per page (Total {totalCount} purchases)</span>
           </div>
 
-          <div className="flex items-center gap-2">
-            <div className="flex items-center gap-1.5">
-              <span className="text-black font-medium">Rows:</span>
-              <select
-                value={dataLimit}
-                onChange={(e) => {
-                  setDataLimit(Number(e.target.value));
-                  setCurrentPageNumber(1);
-                }}
-                className="h-7 px-2 text-xs border border-gray-200 rounded bg-gray-50/50 text-black focus:outline-none cursor-pointer"
-              >
-                <option value={10}>10</option>
-                <option value={20}>20</option>
-                <option value={50}>50</option>
-                <option value={100}>100</option>
-              </select>
-            </div>
-
-            <Pagination
-              pageCount={pageCount}
-              handlePagination={handlePagination}
-              currentPageNumber={currentPageNumber}
-            />
-          </div>
+          <Pagination
+            pageCount={pageCount}
+            currentPageNumber={currentPageNumber}
+            handlePagination={handlePagination}
+          />
         </div>
       )}
     </div>
