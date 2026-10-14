@@ -23,33 +23,45 @@ const Button: React.FC<ButtonProps> = ({
   buttonClass = "",
   onClick,
   children,
-  color = "#009FE3",
-  hoverColor = "#0085be",
+  color = "var(--primary-color)",
+  hoverColor,
   icon,
   textColor,
 }) => {
+  const getHoverColor = () => {
+    if (hoverColor) return hoverColor;
+    if (color === "var(--primary-color)" || color === "#01306B") return "var(--primary-color-hover)";
+    if (color === "#059669") return "#047857";
+    if (color === "#dc2626") return "#b91c1c";
+    return color;
+  };
+
+  const effectiveHoverColor = getHoverColor();
+
   return (
     <button
       type={type}
       onClick={onClick}
       disabled={disabled || isLoading}
-      className={`flex items-center justify-center sm:w-fit w-full py-[0.4rem] px-[0.85rem] text-[14px] ${textColor ? "" : "text-white"} rounded-md transition-all duration-300 ease-in-out cursor-pointer hover:opacity-95 shadow-xs
-        ${buttonClass} ${disabled || isLoading ? "opacity-50 cursor-not-allowed" : ""}
+      className={`flex items-center justify-center sm:w-fit w-full py-[0.4rem] px-2 text-[14px] font-normal text-white rounded-md transition-all duration-200 ease-in-out cursor-pointer hover:shadow-xs active:scale-[0.98]
+        ${buttonClass} ${disabled || isLoading ? "opacity-50 cursor-not-allowed active:scale-100" : ""}
       `}
       style={{
         backgroundColor: color,
         borderColor: color,
-        color: textColor,
+        color: textColor || "#ffffff",
       }}
       onMouseOver={(e) => {
-        if (hoverColor) {
-          e.currentTarget.style.backgroundColor = hoverColor;
-          e.currentTarget.style.borderColor = hoverColor;
+        if (!disabled && !isLoading && effectiveHoverColor) {
+          e.currentTarget.style.backgroundColor = effectiveHoverColor;
+          e.currentTarget.style.borderColor = effectiveHoverColor;
         }
       }}
       onMouseOut={(e) => {
-        e.currentTarget.style.backgroundColor = color;
-        e.currentTarget.style.borderColor = color;
+        if (!disabled && !isLoading) {
+          e.currentTarget.style.backgroundColor = color;
+          e.currentTarget.style.borderColor = color;
+        }
       }}
     >
       {icon && <span className="mr-2">{icon}</span>}

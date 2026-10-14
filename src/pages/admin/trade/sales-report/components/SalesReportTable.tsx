@@ -287,13 +287,13 @@ export const SalesReportTable: React.FC<SalesReportTableProps> = ({
                       )}
                     </td>
                     <td className="py-2.5 px-3 text-center">
-                      <span className="inline-block px-2 py-0.5 text-[10px] font-semibold bg-sky-100 text-sky-900 border border-sky-300 rounded-md">
+                      <span className="inline-block px-1.5 py-0.5 text-[10px] font-semibold bg-sky-100 text-sky-900 border border-sky-300 rounded-md">
                         {pType}
                       </span>
                     </td>
                     <td className="py-2.5 px-3 text-center">
                       <span
-                        className={`inline-block px-2 py-0.5 text-[10px] font-semibold border rounded-md ${
+                        className={`inline-block px-1.5 py-0.5 text-[10px] font-semibold border rounded-md ${
                           isFullyPaid
                             ? "bg-emerald-100 text-emerald-800 border-emerald-300"
                             : isPartial

@@ -262,10 +262,10 @@ export const PaymentChannelReportTable: React.FC<PaymentChannelReportTableProps>
                   </td>
                   <td className="py-2.5 px-3 text-center">
                     <span
-                      className={`inline-block px-2 py-0.5 rounded text-[10px] font-bold ${
+                      className={`inline-block px-1.5 py-0.5 rounded-md text-[10px] font-semibold ${
                         isDue
-                          ? "bg-rose-50 text-rose-700 border border-rose-200"
-                          : "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                          ? "bg-rose-100 text-rose-800 border border-rose-300"
+                          : "bg-emerald-100 text-emerald-800 border border-emerald-300"
                       }`}
                     >
                       {isDue ? "Receivable" : "Settled"}

@@ -149,15 +149,15 @@ export const SaleInvoiceModal: React.FC<SaleInvoiceModalProps> = ({
               </p>
               <div className="mt-1">
                 {isPaid ? (
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800">
+                  <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-bold bg-emerald-100 text-emerald-800">
                     <FaCheckCircle size={9} /> PAID
                   </span>
                 ) : isPartial ? (
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800">
+                  <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-bold bg-amber-100 text-amber-800">
                     <FaClock size={9} /> PARTIAL PAID
                   </span>
                 ) : (
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-rose-100 text-rose-800">
+                  <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-bold bg-rose-100 text-rose-800">
                     <FaExclamationCircle size={9} /> DUE / CREDIT
                   </span>
                 )}

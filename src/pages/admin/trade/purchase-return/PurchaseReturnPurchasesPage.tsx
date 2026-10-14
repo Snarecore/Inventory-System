@@ -465,8 +465,8 @@ const PurchaseReturnPurchasesPage: React.FC = () => {
           <Button
             label="Create Return"
             onClick={() => navigate("/admin/create-purchase-return")}
-            color="#009fe3"
-            hoverColor="#0085be"
+            color="var(--primary-color)"
+            hoverColor="var(--primary-color-hover)"
             icon={<FaUndoAlt className="text-white text-xs" />}
           />
         </div>

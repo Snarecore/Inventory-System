@@ -552,8 +552,8 @@ const SalesReturnPage: React.FC = () => {
           <Button
             label="Create Return"
             onClick={() => navigate("/admin/create-sales-return")}
-            color="#009fe3"
-            hoverColor="#0085be"
+            color="var(--primary-color)"
+            hoverColor="var(--primary-color-hover)"
             icon={<FaPlus className="text-white text-xs" />}
           />
         </div>

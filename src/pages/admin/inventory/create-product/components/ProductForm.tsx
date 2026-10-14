@@ -582,7 +582,7 @@ const CreateProductForm = () => {
                                                 onChange={(e) => handleDecimalToggle(e.target.checked)}
                                                 className="sr-only peer"
                                             />
-                                            <div className="w-5 h-3 bg-gray-300 peer-focus:outline-none rounded-full peer peer-checked:bg-[var(--color-primary,#009FE3)]">
+                                            <div className="w-5 h-3 bg-gray-300 peer-focus:outline-none rounded-full peer peer-checked:bg-[var(--primary-color)]">
                                                 <div
                                                     className={`absolute top-[1.5px] left-[1.5px] w-2 h-2 bg-white rounded-full transition-transform ${
                                                         isDecimalAllowed ? "translate-x-2" : ""
@@ -619,7 +619,7 @@ const CreateProductForm = () => {
                                     <label htmlFor="packing_levels" className="text-xs font-semibold text-black block mb-1 truncate">
                                         Conversion Ratio (1 {selectedUnit.label} = ?)
                                     </label>
-                                    <div className="flex items-center w-full transition-all duration-200 border border-gray-300 rounded-lg px-2 h-9 bg-white text-black text-xs focus-within:ring-1 focus-within:ring-[var(--primary-color,#009fe3)] focus-within:border-[var(--primary-color,#009fe3)]">
+                                    <div className="flex items-center w-full transition-all duration-200 border border-gray-300 rounded-lg px-2 h-9 bg-white text-black text-xs focus-within:ring-1 focus-within:ring-[var(--primary-color)] focus-within:border-[var(--primary-color)]">
                                         <input
                                             id="packing_levels"
                                             name="packing_levels"
@@ -630,7 +630,7 @@ const CreateProductForm = () => {
                                             className="w-full focus:outline-none placeholder:text-xs placeholder:text-gray-400 px-1 text-xs bg-transparent"
                                         />
                                         {fieldValues.packing_levels ? (
-                                            <span className="shrink-0 text-[10px] font-semibold text-sky-700 bg-sky-50 border border-sky-200 px-1.5 py-0.5 rounded ml-1 whitespace-nowrap select-none">
+                                            <span className="shrink-0 text-[10px] font-semibold text-[var(--primary-color)] bg-[var(--primary-color-light)] border border-[var(--primary-color-muted)] px-1.5 py-0.5 rounded ml-1 whitespace-nowrap select-none">
                                                 1 {selectedUnit.label} = {
                                                     fieldValues.packing_levels.toLowerCase().includes(selectedSecondaryUnit.label.toLowerCase())
                                                         ? fieldValues.packing_levels
@@ -660,12 +660,12 @@ const CreateProductForm = () => {
                                         Buy Price (৳) <span className="text-red-600">*</span>
                                     </label>
                                     {conversionFactor && fieldValues.buy_price && Number(fieldValues.buy_price) > 0 ? (
-                                        <span className="text-[10px] font-bold text-sky-700 bg-sky-50 border border-sky-200 px-1.5 py-0.5 rounded leading-none whitespace-nowrap shrink-0">
+                                        <span className="text-[10px] font-bold text-[var(--primary-color)] bg-[var(--primary-color-light)] border border-[var(--primary-color-muted)] px-1.5 py-0.5 rounded leading-none whitespace-nowrap shrink-0">
                                             1 {selectedUnit?.label} = ৳{(Number(fieldValues.buy_price) * conversionFactor).toLocaleString()}
                                         </span>
                                     ) : null}
                                 </div>
-                                <div className="flex items-center w-full transition-all duration-200 border border-gray-300 rounded-lg px-2.5 h-9 bg-white text-black text-xs focus-within:ring-1 focus-within:ring-[var(--primary-color,#009fe3)] focus-within:border-[var(--primary-color,#009fe3)]">
+                                <div className="flex items-center w-full transition-all duration-200 border border-gray-300 rounded-lg px-2.5 h-9 bg-white text-black text-xs focus-within:ring-1 focus-within:ring-[var(--primary-color)] focus-within:border-[var(--primary-color)]">
                                     <input
                                         id="buy_price"
                                         name="buy_price"
@@ -692,7 +692,7 @@ const CreateProductForm = () => {
                                         </span>
                                     ) : null}
                                 </div>
-                                <div className="flex items-center w-full transition-all duration-200 border border-gray-300 rounded-lg px-2.5 h-9 bg-white text-black text-xs focus-within:ring-1 focus-within:ring-[var(--primary-color,#009fe3)] focus-within:border-[var(--primary-color,#009fe3)]">
+                                <div className="flex items-center w-full transition-all duration-200 border border-gray-300 rounded-lg px-2.5 h-9 bg-white text-black text-xs focus-within:ring-1 focus-within:ring-[var(--primary-color)] focus-within:border-[var(--primary-color)]">
                                     <input
                                         id="sell_price"
                                         name="sell_price"
@@ -793,7 +793,7 @@ const CreateProductForm = () => {
                             onChange={(e) => handleStatusToggle(e.target.checked)}
                             className="sr-only peer"
                         />
-                        <div className="w-8 h-4 bg-gray-300 peer-focus:outline-none rounded-full peer peer-checked:bg-[var(--color-primary,#009FE3)]">
+                        <div className="w-8 h-4 bg-gray-300 peer-focus:outline-none rounded-full peer peer-checked:bg-[var(--primary-color)]">
                             <div
                                 className={`absolute top-[2px] left-[2px] w-3 h-3 bg-white rounded-full transition-transform ${
                                     fieldValues.status === "active" ? "translate-x-4" : ""
@@ -821,8 +821,8 @@ const CreateProductForm = () => {
                     <Button
                         label={isEditMode ? "Update Product" : "Save Product"}
                         onClick={handleSubmitForm}
-                        color="#009FE3"
-                        hoverColor="#0085be"
+                        color="var(--primary-color)"
+                        hoverColor="var(--primary-color-hover)"
                         isLoading={isLoading}
                         disabled={isLoading}
                         buttonClass="!text-xs !py-1.5 font-bold"

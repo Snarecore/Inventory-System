@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useMemo } from "react";
-import { FiEye, FiEdit, FiPrinter, FiChevronDown, FiTrash2 } from "react-icons/fi";
+import { FiEye, FiEdit, FiPrinter, FiChevronDown } from "react-icons/fi";
 import { BsFilterRight } from "react-icons/bs";
 import moment from "moment";
 import Search from "@/components/table-components/Search";
@@ -45,7 +45,6 @@ interface PurchaseTableProps {
   onEdit: (purchase: PurchaseItem) => void;
   onView: (purchase: PurchaseItem) => void;
   onPrint: (purchase: PurchaseItem) => void;
-  onDelete?: (purchase: PurchaseItem) => void;
   onExport?: () => void;
 }
 
@@ -80,7 +79,6 @@ export const PurchaseTable: React.FC<PurchaseTableProps> = ({
   onEdit,
   onView,
   onPrint,
-  onDelete,
   onExport,
 }) => {
   const [isSortOpen, setIsSortOpen] = useState<boolean>(false);
@@ -493,7 +491,7 @@ export const PurchaseTable: React.FC<PurchaseTableProps> = ({
 
                     {/* Method */}
                     <td className="py-2.5 px-3 text-center">
-                      <span className="inline-block px-2 py-0.5 text-[10px] font-semibold bg-sky-100 text-sky-900 border border-sky-300 rounded-md">
+                      <span className="inline-block px-1.5 py-0.5 text-[10px] font-semibold bg-sky-100 text-sky-900 border border-sky-300 rounded-md">
                         {paymentType}
                       </span>
                     </td>
@@ -501,7 +499,7 @@ export const PurchaseTable: React.FC<PurchaseTableProps> = ({
                     {/* Status */}
                     <td className="py-2.5 px-3 text-center">
                       <span
-                        className={`inline-block px-2 py-0.5 text-[10px] border rounded-md ${statusBg}`}
+                        className={`inline-block px-1.5 py-0.5 text-[10px] border rounded-md ${statusBg}`}
                       >
                         {statusBadge}
                       </span>
@@ -534,16 +532,6 @@ export const PurchaseTable: React.FC<PurchaseTableProps> = ({
                         >
                           <FiEdit size={14} />
                         </button>
-                        {onDelete && (
-                          <button
-                            type="button"
-                            onClick={() => onDelete(purchase)}
-                            title="Delete Purchase"
-                            className="p-1 rounded text-rose-600 hover:bg-rose-100 transition-colors cursor-pointer"
-                          >
-                            <FiTrash2 size={14} />
-                          </button>
-                        )}
                       </div>
                     </td>
                   </tr>

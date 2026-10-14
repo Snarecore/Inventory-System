@@ -22,8 +22,8 @@ const CreateProduct = () => {
         <Button
           label="Back to Products"
           onClick={() => {navigate("/admin/products")}}
-          color="#009FE3"
-          hoverColor="#0085be"
+          color="var(--primary-color)"
+          hoverColor="var(--primary-color-hover)"
           icon={<FaArrowLeft className="text-xs" />}
         />
       </div>

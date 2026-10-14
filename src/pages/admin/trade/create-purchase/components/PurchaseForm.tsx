@@ -1422,11 +1422,11 @@ const CreatePurchaseForm: React.FC = () => {
         {/* Left Side: Title & Invoice Badge (Stacked on Mobile, Inline on LG) */}
         <div className="flex items-center justify-between gap-2 w-full lg:w-auto">
           <div className="flex flex-col lg:flex-row lg:items-center gap-1 lg:gap-2.5 min-w-0">
-            <h1 className="text-sm sm:text-base lg:text-lg font-bold text-black flex items-center gap-1.5 shrink-0">
-              <FaCalculator className="text-[var(--color-primary)] shrink-0" size={18} />
+            <h1 className="text-sm sm:text-base lg:text-lg font-bold text-[var(--primary-color)] flex items-center gap-1.5 shrink-0">
+              <FaCalculator className="text-[var(--primary-color)] shrink-0" size={18} />
               <span className="truncate">{isEditMode ? "Edit Purchase Invoice" : "Create New Purchase"}</span>
             </h1>
-            <span className="text-[10px] sm:text-xs px-2.5 py-0.5 rounded-full bg-sky-100 text-sky-800 font-semibold w-fit">
+            <span className="text-[10px] sm:text-xs px-2.5 py-0.5 rounded-full bg-[var(--primary-color-light)] text-[var(--primary-color)] font-normal w-fit">
               {invoiceNo || "INV"}
             </span>
           </div>
@@ -1436,7 +1436,7 @@ const CreatePurchaseForm: React.FC = () => {
             <button
               type="button"
               onClick={() => setIsChallanSettingsOpen(true)}
-              className="flex items-center gap-1 px-2 py-1.5 text-xs font-medium text-gray-700 bg-white hover:bg-gray-50 border border-gray-200 rounded-lg shadow-xs transition-colors cursor-pointer"
+              className="flex items-center gap-1 px-2 py-1.5 text-xs font-normal text-gray-700 bg-white hover:bg-gray-50 border border-gray-200 rounded-lg shadow-xs transition-colors cursor-pointer"
               title="Challan Settings"
             >
               <FaSlidersH className="text-black" size={12} />
@@ -1445,14 +1445,14 @@ const CreatePurchaseForm: React.FC = () => {
             <button
               type="button"
               onClick={handleReset}
-              className="px-2.5 py-1.5 text-xs font-medium text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors cursor-pointer"
+              className="px-2.5 py-1.5 text-xs font-normal text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors cursor-pointer"
             >
               Reset
             </button>
             <button
               type="button"
               onClick={() => navigate("/admin/purchases")}
-              className="px-2.5 py-1.5 text-xs font-medium text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors cursor-pointer"
+              className="px-2.5 py-1.5 text-xs font-normal text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors cursor-pointer"
             >
               Cancel
             </button>
@@ -1466,7 +1466,7 @@ const CreatePurchaseForm: React.FC = () => {
             <button
               type="button"
               onClick={() => setIsChallanSettingsOpen(true)}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-gray-700 bg-white hover:bg-gray-50 border border-gray-200 rounded-lg shadow-xs transition-colors cursor-pointer"
+              className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-normal text-gray-700 bg-white hover:bg-gray-50 border border-gray-200 rounded-lg shadow-xs transition-colors cursor-pointer"
             >
               <FaSlidersH className="text-black" size={12} />
               <span>Challan Settings</span>
@@ -1474,14 +1474,14 @@ const CreatePurchaseForm: React.FC = () => {
             <button
               type="button"
               onClick={handleReset}
-              className="px-3 py-1.5 text-xs font-medium text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors cursor-pointer"
+              className="px-3 py-1.5 text-xs font-normal text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors cursor-pointer"
             >
               Reset
             </button>
             <button
               type="button"
               onClick={() => navigate("/admin/purchases")}
-              className="px-3 py-1.5 text-xs font-medium text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors cursor-pointer"
+              className="px-3 py-1.5 text-xs font-normal text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors cursor-pointer"
             >
               Cancel
             </button>
@@ -1492,20 +1492,16 @@ const CreatePurchaseForm: React.FC = () => {
             <Button
               label={isSubmitting ? "Saving..." : isEditMode ? "Update Purchase" : "Save Purchase"}
               onClick={() => handlePreSubmit(false)}
-              color="#009fe3"
-              hoverColor="#0085be"
+              color="var(--primary-color)"
               disabled={isSubmitting}
-              icon={<FaCheck className="text-white text-xs" />}
-              buttonClass="!text-xs !py-1.5 !w-full lg:!w-fit justify-center font-bold"
+              buttonClass="!text-xs !py-1.5 !w-full lg:!w-fit justify-center font-normal !text-white"
             />
             <Button
               label="Save & Print"
               onClick={() => handlePreSubmit(true)}
               color="#059669"
-              hoverColor="#047857"
               disabled={isSubmitting}
-              icon={<FaPrint className="text-white text-xs" />}
-              buttonClass="!text-xs !py-1.5 !w-full lg:!w-fit justify-center font-bold"
+              buttonClass="!text-xs !py-1.5 !w-full lg:!w-fit justify-center font-normal !text-white"
             />
           </div>
         </div>
@@ -1775,7 +1771,7 @@ const CreatePurchaseForm: React.FC = () => {
               }}
               onFocus={() => setIsProductDropdownOpen(true)}
               onKeyDown={handleKeyDownSearch}
-              className="w-full pl-8 pr-3 py-1.5 text-xs border border-[#0F365C] rounded-lg focus:outline-none focus:border-[var(--color-primary)] focus:ring-2 focus:ring-[var(--color-primary)]/20 bg-gray-50/40 focus:bg-white font-medium text-black placeholder:text-gray-400 placeholder:text-xs h-9 transition-all"
+              className="w-full pl-8 pr-3 py-1.5 text-xs border border-[var(--primary-color)] rounded-lg focus:outline-none focus:border-[var(--color-primary)] focus:ring-2 focus:ring-[var(--color-primary)]/20 bg-gray-50/40 focus:bg-white font-medium text-black placeholder:text-gray-400 placeholder:text-xs h-9 transition-all"
             />
           </div>
 
@@ -1796,7 +1792,7 @@ const CreatePurchaseForm: React.FC = () => {
             <button
               type="button"
               onClick={() => setIsProductDropdownOpen(true)}
-              className="px-3 sm:px-3.5 h-9 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all shadow-xs shrink-0 cursor-pointer bg-[#0F365C] hover:bg-[#0a2540] text-white"
+              className="px-3 sm:px-3.5 h-9 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all shadow-xs shrink-0 cursor-pointer bg-[var(--primary-color)] hover:bg-[var(--primary-color-hover)] text-white"
             >
               <FaPlus size={10} className="text-white" />
               <span className="hidden sm:inline">Add Your Product</span>
@@ -2204,7 +2200,7 @@ const CreatePurchaseForm: React.FC = () => {
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
                   placeholder="Type notes or click '+ Presets' to add..."
-                  className="w-full h-[84px] p-2.5 text-xs border border-gray-300/80 rounded-xl focus:outline-none focus:border-[#0F365C] focus:ring-2 focus:ring-[#0F365C]/15 resize-none text-black font-medium bg-slate-50/40 hover:bg-white focus:bg-white placeholder:text-gray-400 transition-all shadow-2xs leading-relaxed"
+                  className="w-full h-[84px] p-2.5 text-xs border border-gray-300/80 rounded-xl focus:outline-none focus:border-[var(--primary-color)] focus:ring-2 focus:ring-[var(--primary-color)]/15 resize-none text-black font-medium bg-slate-50/40 hover:bg-white focus:bg-white placeholder:text-gray-400 transition-all shadow-2xs leading-relaxed"
                 />
 
                 {/* Clean 1-Click Preset Dropdown Menu */}

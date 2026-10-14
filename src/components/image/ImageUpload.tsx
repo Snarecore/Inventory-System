@@ -75,10 +75,10 @@ const ImageUpload: React.FC<ImageUploadProps> = ({ value, onChange, size = "sm",
 		<div className={`flex flex-row items-start space-x-2.5 ${className}`}>
 			<label
 				htmlFor={`${id}-file-upload`}
-				className={`${dimensionClass} group flex items-center justify-center flex-col gap-1 border border-dashed border-[#0F365C] bg-sky-50/50 hover:bg-sky-100/50 text-[#0F365C] text-xs rounded-xl cursor-pointer transition-all duration-200`}
+				className={`${dimensionClass} group flex items-center justify-center flex-col gap-1 border border-dashed border-[var(--primary-color)] bg-[var(--primary-color-light)] hover:bg-[var(--primary-color-muted)] text-[var(--primary-color)] text-xs rounded-xl cursor-pointer transition-all duration-200`}
 			>
-				<IoCloudUploadOutline size={size === "sm" ? 20 : 24} className="text-[#0F365C] group-hover:-translate-y-0.5 transition-all" />
-				<p className="font-semibold text-[11px] text-[#0F365C] transition-colors">Upload Image</p>
+				<IoCloudUploadOutline size={size === "sm" ? 20 : 24} className="text-[var(--primary-color)] group-hover:-translate-y-0.5 transition-all" />
+				<p className="font-semibold text-[11px] text-[var(--primary-color)] transition-colors">Upload Image</p>
 			</label>
 			<input
 				id={`${id}-file-upload`}

@@ -50,10 +50,10 @@ export const PartyDetailsModal: React.FC<PartyDetailsModalProps> = ({
               {name}
             </h3>
             <span
-              className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium border ${
+              className={`inline-flex items-center px-1.5 py-0.5 rounded-md text-[10px] font-semibold border ${
                 isSupplier
-                  ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                  : "bg-sky-50 text-sky-700 border-sky-200"
+                  ? "bg-purple-100 text-purple-800 border-purple-300"
+                  : "bg-sky-100 text-sky-800 border-sky-300"
               }`}
             >
               {isSupplier ? "Supplier" : "Customer"}
@@ -66,13 +66,13 @@ export const PartyDetailsModal: React.FC<PartyDetailsModalProps> = ({
           </div>
           <div>
             <span
-              className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+              className={`inline-flex items-center px-1.5 py-0.5 rounded-md text-[10px] font-semibold border ${
                 isActive
-                  ? "bg-emerald-50 text-emerald-800 border border-emerald-200"
-                  : "bg-rose-50 text-rose-800 border border-rose-200"
+                  ? "bg-emerald-100 text-emerald-800 border-emerald-300"
+                  : "bg-rose-100 text-rose-800 border-rose-300"
               }`}
             >
-              ● {isActive ? "Active" : "Inactive"}
+              {isActive ? "Active" : "Inactive"}
             </span>
           </div>
         </div>

@@ -1172,11 +1172,11 @@ export const PurchaseReturnForm: React.FC = () => {
         {/* Left Side: Title & Badge */}
         <div className="flex items-center justify-between gap-2 w-full lg:w-auto">
           <div className="flex flex-col lg:flex-row lg:items-center gap-1 lg:gap-2.5 min-w-0">
-            <h1 className="text-sm sm:text-base lg:text-lg font-bold text-black flex items-center gap-1.5 shrink-0">
-              <FaUndoAlt className="text-[#009fe3] shrink-0" size={17} />
+            <h1 className="text-sm sm:text-base lg:text-lg font-bold text-[var(--primary-color)] flex items-center gap-1.5 shrink-0">
+              <FaUndoAlt className="text-[var(--primary-color)] shrink-0" size={17} />
               <span className="truncate">Create Purchase Return</span>
             </h1>
-            <span className="text-[10px] sm:text-xs px-2.5 py-0.5 rounded-full bg-sky-100 text-sky-800 font-normal w-fit">
+            <span className="text-[10px] sm:text-xs px-2.5 py-0.5 rounded-full bg-[var(--primary-color-light)] text-[var(--primary-color)] font-normal w-fit">
               {purchaseInvoiceNo || "N/A"}
             </span>
           </div>
@@ -1186,14 +1186,14 @@ export const PurchaseReturnForm: React.FC = () => {
             <button
               type="button"
               onClick={handleReset}
-              className="px-2.5 py-1.5 text-xs font-medium text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors cursor-pointer"
+              className="px-2.5 py-1.5 text-xs font-normal text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors cursor-pointer"
             >
               Reset
             </button>
             <button
               type="button"
               onClick={() => navigate("/admin/purchase-return")}
-              className="px-2.5 py-1.5 text-xs font-medium text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors cursor-pointer"
+              className="px-2.5 py-1.5 text-xs font-normal text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors cursor-pointer"
             >
               Cancel
             </button>
@@ -1206,14 +1206,14 @@ export const PurchaseReturnForm: React.FC = () => {
             <button
               type="button"
               onClick={handleReset}
-              className="px-3 py-1.5 text-xs font-medium text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors cursor-pointer"
+              className="px-3 py-1.5 text-xs font-normal text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors cursor-pointer"
             >
               Reset
             </button>
             <button
               type="button"
               onClick={() => navigate("/admin/purchase-return")}
-              className="px-3 py-1.5 text-xs font-medium text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors cursor-pointer"
+              className="px-3 py-1.5 text-xs font-normal text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors cursor-pointer"
             >
               Cancel
             </button>
@@ -1230,17 +1230,9 @@ export const PurchaseReturnForm: React.FC = () => {
                   : "Save Return"
               }
               onClick={() => handlePreSubmit(false)}
-              color={isCurrentPurchaseAlreadyReturned ? "#9ca3af" : "#009fe3"}
-              hoverColor={isCurrentPurchaseAlreadyReturned ? "#9ca3af" : "#0085be"}
+              color={isCurrentPurchaseAlreadyReturned ? "#9ca3af" : "var(--primary-color)"}
               disabled={isSubmitting || isCurrentPurchaseAlreadyReturned}
-              icon={
-                isCurrentPurchaseAlreadyReturned ? (
-                  <FaLock className="text-white text-xs" />
-                ) : (
-                  <FaCheck className="text-white text-xs" />
-                )
-              }
-              buttonClass={`!text-xs !py-1.5 !w-full lg:!w-fit justify-center font-bold ${
+              buttonClass={`!text-xs !py-1.5 !w-full lg:!w-fit justify-center font-normal !text-white ${
                 isCurrentPurchaseAlreadyReturned ? "opacity-60 cursor-not-allowed" : ""
               }`}
             />
@@ -1254,16 +1246,8 @@ export const PurchaseReturnForm: React.FC = () => {
               }
               onClick={() => handlePreSubmit(true)}
               color={isCurrentPurchaseAlreadyReturned ? "#9ca3af" : "#059669"}
-              hoverColor={isCurrentPurchaseAlreadyReturned ? "#9ca3af" : "#047857"}
               disabled={isSubmitting || isCurrentPurchaseAlreadyReturned}
-              icon={
-                isCurrentPurchaseAlreadyReturned ? (
-                  <FaLock className="text-white text-xs" />
-                ) : (
-                  <FaPrint className="text-white text-xs" />
-                )
-              }
-              buttonClass={`!text-xs !py-1.5 !w-full lg:!w-fit justify-center font-bold ${
+              buttonClass={`!text-xs !py-1.5 !w-full lg:!w-fit justify-center font-normal !text-white ${
                 isCurrentPurchaseAlreadyReturned ? "opacity-60 cursor-not-allowed" : ""
               }`}
             />
@@ -1306,7 +1290,7 @@ export const PurchaseReturnForm: React.FC = () => {
               onFocus={() => setIsInvoiceDropdownOpen(true)}
               onClick={() => setIsInvoiceDropdownOpen(true)}
               placeholder="Search by Invoice (PUR-1001), Challan, Supplier..."
-              className="w-full h-9 pl-3 pr-8 border border-gray-300 rounded-lg bg-gray-50/50 hover:bg-white focus:bg-white text-xs text-gray-900 focus:outline-none focus:border-[#009fe3]"
+              className="w-full h-9 pl-3 pr-8 border border-gray-300 rounded-lg bg-gray-50/50 hover:bg-white focus:bg-white text-xs text-gray-900 focus:outline-none focus:border-[var(--primary-color)]"
             />
             {invoiceSearchQuery ? (
               <button
@@ -1340,7 +1324,7 @@ export const PurchaseReturnForm: React.FC = () => {
               {/* Dropdown Header */}
               <div className="sticky top-0 bg-gray-50/95 backdrop-blur-xs px-3 py-1.5 border-b border-gray-100 flex items-center justify-between text-[11px] text-gray-500 font-medium z-10">
                 <div className="flex items-center gap-1.5">
-                  <FaFileInvoice className="text-[#009fe3]" size={11} />
+                  <FaFileInvoice className="text-[var(--primary-color)]" size={11} />
                   <span>Available Purchase Orders ({filteredInvoices.length})</span>
                 </div>
                 <span className="text-[10px] text-gray-400">Select order to return</span>
@@ -1389,7 +1373,7 @@ export const PurchaseReturnForm: React.FC = () => {
                     </div>
 
                     <div className="text-right shrink-0">
-                      <span className="font-bold text-[#009fe3] text-xs block">
+                      <span className="font-bold text-[var(--primary-color)] text-xs block">
                         ৳ {formatMoney(Number(inv.grandTotal ?? inv.totalAmount ?? 0))}
                       </span>
                       {Number(inv.dueAmount || 0) > 0 && (
@@ -1418,7 +1402,7 @@ export const PurchaseReturnForm: React.FC = () => {
             type="date"
             value={returnDate}
             onChange={(e) => setReturnDate(e.target.value)}
-            className="w-full h-9 px-2.5 py-1.5 border border-gray-300 rounded-lg bg-gray-50/50 hover:bg-white text-xs text-gray-900 focus:outline-none focus:border-[#009fe3]"
+            className="w-full h-9 px-2.5 py-1.5 border border-gray-300 rounded-lg bg-gray-50/50 hover:bg-white text-xs text-gray-900 focus:outline-none focus:border-[var(--primary-color)]"
           />
         </div>
 
@@ -1476,7 +1460,7 @@ export const PurchaseReturnForm: React.FC = () => {
         <div className="bg-blue-50/50 border border-blue-200 rounded-xl p-2 sm:p-2.5 flex flex-col gap-1.5 text-xs">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 pb-1 border-b border-blue-100">
             <div className="flex items-center gap-1.5">
-              <div className="p-1 rounded-md bg-blue-100 text-[#009fe3] shrink-0">
+              <div className="p-1 rounded-md bg-[var(--primary-color-light)] text-[var(--primary-color)] shrink-0">
                 <FaMoneyBillWave size={12} />
               </div>
               <span className="font-bold text-black block text-[11px] sm:text-xs leading-tight">
@@ -1510,7 +1494,7 @@ export const PurchaseReturnForm: React.FC = () => {
             <div className="p-1.5 sm:p-2 rounded-lg border border-sky-200 bg-gradient-to-b from-sky-50/50 to-white shadow-2xs flex flex-col justify-between">
               <div className="flex items-center justify-between text-[11px] font-medium text-black mb-0.5">
                 <span className="flex items-center gap-1 text-black">
-                  <FaFileInvoice className="text-[#009fe3] text-[10px]" />
+                  <FaFileInvoice className="text-[var(--primary-color)] text-[10px]" />
                   Total Purchase
                 </span>
               </div>
@@ -1611,7 +1595,7 @@ export const PurchaseReturnForm: React.FC = () => {
         {/* Return Mode Selection Toolbar */}
         <div className="p-2 sm:px-3 border-b border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
           <div className="flex items-center gap-2">
-            <FaBoxes className="text-[#0F365C] text-xs" />
+            <FaBoxes className="text-[var(--primary-color)] text-xs" />
             <span className="text-xs font-normal text-black tracking-wider">
               Return Type:
             </span>
@@ -1621,7 +1605,7 @@ export const PurchaseReturnForm: React.FC = () => {
                 onClick={() => handleSetReturnMode("FULL")}
                 className={`px-2.5 py-0.5 rounded-md text-[11px] font-normal transition-all cursor-pointer ${
                   returnMode === "FULL"
-                    ? "bg-[#0F365C] text-white shadow-xs"
+                    ? "bg-[var(--primary-color)] text-white shadow-xs"
                     : "text-gray-600 hover:text-black"
                 }`}
               >
@@ -1632,7 +1616,7 @@ export const PurchaseReturnForm: React.FC = () => {
                 onClick={() => handleSetReturnMode("PARTIAL")}
                 className={`px-2.5 py-0.5 rounded-md text-[11px] font-normal transition-all cursor-pointer ${
                   returnMode === "PARTIAL"
-                    ? "bg-[#0F365C] text-white shadow-xs"
+                    ? "bg-[var(--primary-color)] text-white shadow-xs"
                     : "text-gray-600 hover:text-black"
                 }`}
               >
@@ -1707,7 +1691,7 @@ export const PurchaseReturnForm: React.FC = () => {
                               ? "All items are included in Full Return mode. Select Partial Return to modify."
                               : undefined
                           }
-                          className="rounded text-[#009fe3] focus:ring-0 cursor-pointer disabled:cursor-not-allowed"
+                          className="rounded text-[var(--primary-color)] focus:ring-[var(--primary-color)] cursor-pointer disabled:cursor-not-allowed"
                         />
                       </td>
 
@@ -1811,7 +1795,7 @@ export const PurchaseReturnForm: React.FC = () => {
                               type="button"
                               onClick={() => handleSetLineFullQty(idx)}
                               disabled={isCurrentPurchaseAlreadyReturned}
-                              className="px-2 py-1 bg-sky-50 hover:bg-sky-100 text-[#009fe3] font-bold text-[10px] border-l border-gray-300 cursor-pointer disabled:opacity-40"
+                              className="px-2 py-1 bg-[var(--primary-color-light)] hover:bg-[var(--primary-color-muted)] text-[var(--primary-color)] font-bold text-[10px] border-l border-gray-300 cursor-pointer disabled:opacity-40"
                               title="Return all available quantity"
                             >
                               Full
@@ -1826,7 +1810,7 @@ export const PurchaseReturnForm: React.FC = () => {
                           disabled={isFullyReturned || !line.isSelected || isCurrentPurchaseAlreadyReturned}
                           value={line.returnReason || "damaged_product"}
                           onChange={(e) => handleReturnReasonChange(idx, e.target.value)}
-                          className="w-full min-w-[175px] h-7 px-2 text-[11px] border border-gray-300 rounded bg-white text-black font-semibold focus:outline-none focus:border-[#009fe3] disabled:bg-gray-100 disabled:text-black cursor-pointer disabled:cursor-not-allowed"
+                          className="w-full min-w-[175px] h-7 px-2 text-[11px] border border-gray-300 rounded bg-white text-black font-semibold focus:outline-none focus:border-[var(--primary-color)] disabled:bg-gray-100 disabled:text-black cursor-pointer disabled:cursor-not-allowed"
                         >
                           {PURCHASE_RETURN_REASONS.map((r) => (
                             <option key={r.value} value={r.value} className="text-black font-semibold">
@@ -1870,7 +1854,7 @@ export const PurchaseReturnForm: React.FC = () => {
             value={note}
             onChange={(e) => setNote(e.target.value)}
             placeholder="Type notes or remarks about return reason, supplier credit agreement, condition..."
-            className="w-full p-2.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:border-[#009fe3] resize-none leading-relaxed text-black placeholder:text-gray-400 bg-gray-50/30 hover:bg-white focus:bg-white transition-colors font-normal"
+            className="w-full p-2.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:border-[var(--primary-color)] resize-none leading-relaxed text-black placeholder:text-gray-400 bg-gray-50/30 hover:bg-white focus:bg-white transition-colors font-normal"
           />
 
           {/* Quick preset remarks */}
@@ -1893,7 +1877,7 @@ export const PurchaseReturnForm: React.FC = () => {
                     return `${prev}, ${preset}`;
                   });
                 }}
-                className="px-2 py-0.5 text-[10px] rounded-md bg-gray-100 hover:bg-blue-50 hover:text-[#009fe3] text-black border border-gray-200 transition-colors cursor-pointer font-normal"
+                className="px-2 py-0.5 text-[10px] rounded-md bg-gray-100 hover:bg-[var(--primary-color-light)] hover:text-[var(--primary-color)] text-black border border-gray-200 transition-colors cursor-pointer font-normal"
               >
                 + {preset}
               </button>

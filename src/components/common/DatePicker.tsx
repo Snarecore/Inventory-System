@@ -285,7 +285,7 @@ export const DatePicker: React.FC<DatePickerProps> = ({
                     }}
                     className={`py-1.5 text-xs rounded-md font-semibold transition-colors cursor-pointer ${
                       isSelectedMonth
-                        ? "bg-[#0F365C] text-white font-bold"
+                        ? "bg-[var(--primary-color)] text-white font-bold"
                         : "text-black hover:bg-sky-50 hover:text-[var(--color-primary)] border border-gray-100"
                     }`}
                   >
@@ -311,7 +311,7 @@ export const DatePicker: React.FC<DatePickerProps> = ({
                     }}
                     className={`py-1.5 text-xs rounded-md font-semibold transition-colors cursor-pointer ${
                       isSelectedYr
-                        ? "bg-[#0F365C] text-white font-bold"
+                        ? "bg-[var(--primary-color)] text-white font-bold"
                         : "text-black hover:bg-sky-50 hover:text-[var(--color-primary)] border border-gray-100"
                     }`}
                   >
@@ -349,9 +349,9 @@ export const DatePicker: React.FC<DatePickerProps> = ({
                           isDisabled
                             ? "text-gray-300 cursor-not-allowed"
                             : isSelected
-                            ? "bg-[#0F365C] text-white font-bold shadow-xs scale-105"
+                            ? "bg-[var(--primary-color)] text-white font-bold shadow-xs scale-105"
                             : isToday
-                            ? "border border-[#0F365C] text-black font-bold hover:bg-sky-50"
+                            ? "border border-[var(--primary-color)] text-black font-bold hover:bg-sky-50"
                             : isCurrentMonth
                             ? "text-black font-semibold hover:bg-gray-100 cursor-pointer"
                             : "text-gray-300 hover:bg-gray-50 cursor-pointer"

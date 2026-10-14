@@ -1,26 +1,19 @@
 @import "tailwindcss";
-
-/* ==========================================================================
-   GLOBAL COLOR CONFIGURATION (গ্লোবাল কালার কনফিগারেশন)
-   --------------------------------------------------------------------------
-   Change colors here to instantly change the theme throughout the whole site!
-   এখানে কালার কোড পরিবর্তন করলেই পুরো ওয়েবসাইটের কালার অটোমেটিক পরিবর্তন হয়ে যাবে।
-   ========================================================================== */
 :root {
-  --primary-color: #154674;
-  --primary-color-hover: #0f365c;
-  --primary-color-light: #f0f7fd;
-  --primary-color-dark: #0a2540;
-  --primary-color-muted: #e8f4fc;
-  --secondary-color: #009fe3;
-  --secondary-color-hover: #0085be;
-  --secondary-color-light: #ecfeff;
+  --primary-color: #01306B;
+  --primary-color-hover: #012452;
+  --primary-color-light: #f0f5fc;
+  --primary-color-dark: #001a3d;
+  --primary-color-muted: #e6eef7;
+  --secondary-color: #01306B;
+  --secondary-color-hover: #012452;
+  --secondary-color-light: #f0f5fc;
   --quaternary-color: #16a34a;
   --gray-color: #cac2c2;
-  --brand-primary: #154674;
-  --brand-primary-light: #f0f7fd;
-  --brand-primary-dark: #0a2540;
-  --brand-secondary: #009fe3;
+  --brand-primary: #01306B;
+  --brand-primary-light: #f0f5fc;
+  --brand-primary-dark: #001a3d;
+  --brand-secondary: #01306B;
 }
 
 @theme {
@@ -39,15 +32,15 @@
   --color-secondary: var(--secondary-color);
   --color-secondary-hover: var(--secondary-color-hover);
   --color-secondary-light: var(--secondary-color-light);
-  --color-accent: #009fe3;
-  --color-accent-hover: #0085be;
-  --color-accent-light: #ecfeff;
+  --color-accent: var(--primary-color);
+  --color-accent-hover: var(--primary-color-hover);
+  --color-accent-light: var(--primary-color-light);
   --color-quaternary: var(--quaternary-color);
   --color-gray-light: var(--gray-color);
 
   /* Gradient Colors for Banners / Logos / Hero */
-  --color-brand-from: #154674;
-  --color-brand-to: #009fe3;
+  --color-brand-from: var(--primary-color);
+  --color-brand-to: var(--primary-color);
 }
 
 @layer base {

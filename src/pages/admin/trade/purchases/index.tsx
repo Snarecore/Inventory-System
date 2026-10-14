@@ -6,7 +6,6 @@ import { FaPlus, FaSlidersH } from "react-icons/fa";
 import PageHeader from "@/components/page-header/PageHeader";
 import Button from "@/components/button/Button";
 import RefreshButton from "@/components/table-components/RefreshButton";
-import DeleteModal from "@/components/modal/DeleteModal";
 import PurchaseStats from "./components/PurchaseStats";
 import PurchaseTable from "./components/PurchaseTable";
 import PurchaseInvoiceModal from "./components/PurchaseInvoiceModal";
@@ -175,8 +174,6 @@ const Purchases: React.FC = () => {
   const [selectedPurchaseForView, setSelectedPurchaseForView] = useState<PurchaseItem | null>(null);
   const [isViewModalOpen, setIsViewModalOpen] = useState<boolean>(false);
   const [isChallanSettingsOpen, setIsChallanSettingsOpen] = useState<boolean>(false);
-  const [selectedPurchaseForDelete, setSelectedPurchaseForDelete] = useState<PurchaseItem | null>(null);
-  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState<boolean>(false);
 
   // Helper to extract clean YYYY-MM-DD from purchase
   const getPurchaseDateString = (p: any): string => {
@@ -421,38 +418,6 @@ const Purchases: React.FC = () => {
     setIsViewModalOpen(true);
   };
 
-  const handleOpenDeleteModal = (purchase: PurchaseItem) => {
-    setSelectedPurchaseForDelete(purchase);
-    setIsDeleteModalOpen(true);
-  };
-
-  const handleCloseDeleteModal = () => {
-    setIsDeleteModalOpen(false);
-    setSelectedPurchaseForDelete(null);
-  };
-
-  const handleConfirmDelete = async () => {
-    if (!selectedPurchaseForDelete) return;
-    const pId = selectedPurchaseForDelete.id ?? selectedPurchaseForDelete.purchaseId ?? selectedPurchaseForDelete.invoiceNo;
-    const invNo = selectedPurchaseForDelete.invoiceNo;
-
-    await handleApiMutation({
-      mutation: postMutation,
-      url: "delete-purchases",
-      body: {
-        accessUser: buildAccessUser(),
-        id: pId,
-        purchaseId: pId,
-        invoiceNo: invNo,
-      },
-      invalidateQueryKey: [purchaseListQueryKey, productListQueryKey],
-      showSuccessMessage: true,
-      showErrorMessage: true,
-    });
-
-    handleCloseDeleteModal();
-  };
-
   return (
     <div className="flex flex-col gap-2.5 px-3 py-2 sm:px-4 sm:py-2.5 max-w-[1600px] mx-auto w-full">
       {/* Top Header */}
@@ -475,8 +440,8 @@ const Purchases: React.FC = () => {
           <Button
             label="New Purchase"
             onClick={() => navigate("/admin/create-purchase")}
-            color="#009fe3"
-            hoverColor="#0085be"
+            color="var(--primary-color)"
+            hoverColor="var(--primary-color-hover)"
             icon={<FaPlus className="text-white text-xs" />}
           />
         </div>
@@ -523,7 +488,6 @@ const Purchases: React.FC = () => {
         onEdit={handleEdit}
         onView={handleView}
         onPrint={handlePrint}
-        onDelete={handleOpenDeleteModal}
       />
 
       {/* View / Print Invoice Modal */}
@@ -534,15 +498,6 @@ const Purchases: React.FC = () => {
           setSelectedPurchaseForView(null);
         }}
         purchase={selectedPurchaseForView}
-      />
-
-      {/* Delete Confirmation Modal */}
-      <DeleteModal
-        isOpen={isDeleteModalOpen}
-        onClose={handleCloseDeleteModal}
-        onDelete={handleConfirmDelete}
-        title="Delete Purchase Invoice"
-        message={`Are you sure you want to delete purchase invoice ${selectedPurchaseForDelete?.invoiceNo || ""}? This action cannot be undone.`}
       />
 
       {/* Challan Settings Modal */}

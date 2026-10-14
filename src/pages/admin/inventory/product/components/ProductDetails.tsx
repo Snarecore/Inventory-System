@@ -206,10 +206,10 @@ const ProductDetails = () => {
                         <div className="flex items-center justify-between">
                             <h3 className="text-base font-bold text-black">Inventory Status</h3>
                             <span
-                                className={`inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-full ${
+                                className={`inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-md ${
                                     isActive
-                                        ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
-                                        : "bg-red-50 text-red-700 border border-red-200"
+                                        ? "bg-emerald-100 text-emerald-800 border border-emerald-300"
+                                        : "bg-rose-100 text-rose-800 border border-rose-300"
                                 }`}
                             >
                                 {isActive ? (
@@ -232,7 +232,7 @@ const ProductDetails = () => {
                                 {quantity} <span className="text-base font-medium text-gray-500">{unit}</span>
                             </p>
                             {isLowStock && (
-                                <div className="inline-flex items-center gap-1.5 text-xs font-medium text-amber-700 bg-amber-100/80 px-2.5 py-1 rounded-full mt-2">
+                                <div className="inline-flex items-center gap-1.5 text-xs font-medium text-amber-800 bg-amber-100 border border-amber-300 px-2.5 py-1 rounded-md mt-2">
                                     <FiAlertTriangle className="w-3.5 h-3.5" />
                                     Low Stock Alert (Threshold: {lowThreshold})
                                 </div>

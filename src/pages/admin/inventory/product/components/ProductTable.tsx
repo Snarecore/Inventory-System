@@ -348,7 +348,7 @@ export const ProductTable = ({
 
                                                 {/* Category */}
                                                 <td className="py-2.5 px-3">
-                                                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-gray-100 text-gray-800 border border-gray-200">
+                                                    <span className="inline-flex items-center px-1.5 py-0.5 rounded-md text-[10px] font-semibold bg-gray-100 text-gray-800 border border-gray-300">
                                                         {getCategory(product)}
                                                     </span>
                                                 </td>
@@ -360,7 +360,7 @@ export const ProductTable = ({
                                                             {qty} {getUnit(product)}
                                                         </span>
                                                         {isLowStock && (
-                                                            <span className="inline-flex items-center text-[10px] font-medium text-amber-700 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded">
+                                                            <span className="inline-flex items-center text-[10px] font-semibold text-amber-800 bg-amber-100 border border-amber-300 px-1.5 py-0.5 rounded-md">
                                                                 Low Stock
                                                             </span>
                                                         )}
@@ -384,10 +384,10 @@ export const ProductTable = ({
                                                         disabled={togglingId === prodId}
                                                         onClick={() => handleToggleProductStatus(product)}
                                                         title={`Click to mark as ${active ? "Inactive" : "Active"}`}
-                                                        className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium border cursor-pointer transition-colors ${
+                                                        className={`inline-flex items-center px-1.5 py-0.5 rounded-md text-[10px] font-semibold border cursor-pointer transition-colors ${
                                                             active
-                                                                ? "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100"
-                                                                : "bg-rose-50 text-rose-700 border-rose-200 hover:bg-rose-100"
+                                                                ? "bg-emerald-100 text-emerald-800 border-emerald-300 hover:bg-emerald-200"
+                                                                : "bg-rose-100 text-rose-800 border-rose-300 hover:bg-rose-200"
                                                         } ${togglingId === prodId ? "opacity-50 cursor-wait" : ""}`}
                                                     >
                                                         {active ? "Active" : "Inactive"}
@@ -493,7 +493,7 @@ export const ProductTable = ({
                                 <h3 className="text-base font-semibold text-black">
                                     {getName(selectedProduct)}
                                 </h3>
-                                <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-black border border-gray-300">
+                                <span className="inline-flex items-center px-1.5 py-0.5 rounded-md text-[10px] font-semibold bg-gray-100 text-black border border-gray-300">
                                     {getCategory(selectedProduct)}
                                 </span>
                                 {getCode(selectedProduct) && (
@@ -504,13 +504,13 @@ export const ProductTable = ({
                             </div>
                             <div>
                                 <span
-                                    className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                                    className={`inline-flex items-center px-1.5 py-0.5 rounded-md text-[10px] font-semibold border ${
                                         isActive(selectedProduct)
-                                            ? "bg-emerald-50 text-emerald-800 border border-emerald-200"
-                                            : "bg-rose-50 text-rose-800 border border-rose-200"
+                                            ? "bg-emerald-100 text-emerald-800 border-emerald-300"
+                                            : "bg-rose-100 text-rose-800 border-rose-300"
                                     }`}
                                 >
-                                    ● {isActive(selectedProduct) ? "Active" : "Inactive"}
+                                    {isActive(selectedProduct) ? "Active" : "Inactive"}
                                 </span>
                             </div>
                         </div>

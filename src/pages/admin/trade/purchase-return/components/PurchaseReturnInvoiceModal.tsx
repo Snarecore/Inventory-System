@@ -123,7 +123,7 @@ export const PurchaseReturnInvoiceModal: React.FC<PurchaseReturnInvoiceModalProp
                 <span className="text-lg sm:text-xl font-bold tracking-tight text-[#009fe3]">
                   {userInfo?.businessName || "Cash-Boi ERP"}
                 </span>
-                <span className="text-[10px] font-bold tracking-wider px-2 py-0.5 rounded-full bg-rose-50 text-rose-700 border border-rose-200">
+                <span className="text-[10px] font-bold tracking-wider px-1.5 py-0.5 rounded-md bg-rose-50 text-rose-700 border border-rose-200">
                   Debit Note
                 </span>
               </div>

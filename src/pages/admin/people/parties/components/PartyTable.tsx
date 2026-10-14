@@ -293,10 +293,10 @@ export const PartyTable: React.FC<PartyTableProps> = ({
                         {/* Type */}
                         <td className="py-2.5 px-2 text-left">
                           <span
-                            className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium border ${
+                            className={`inline-flex items-center px-1.5 py-0.5 rounded-md text-[10px] font-semibold border ${
                               type === "SUPPLIER"
-                                ? "bg-purple-50 text-purple-700 border-purple-200"
-                                : "bg-sky-50 text-sky-700 border-sky-200"
+                                ? "bg-purple-100 text-purple-800 border-purple-300"
+                                : "bg-sky-100 text-sky-800 border-sky-300"
                             }`}
                           >
                             {type}
@@ -321,10 +321,10 @@ export const PartyTable: React.FC<PartyTableProps> = ({
                         {/* Status Badge */}
                         <td className="py-2.5 px-2.5 text-right">
                           <span
-                            className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium border ${
+                            className={`inline-flex items-center px-1.5 py-0.5 rounded-md text-[10px] font-semibold border ${
                               active
-                                ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                                : "bg-rose-50 text-rose-700 border-rose-200"
+                                ? "bg-emerald-100 text-emerald-800 border-emerald-300"
+                                : "bg-rose-100 text-rose-800 border-rose-300"
                             }`}
                           >
                             {active ? "Active" : "Inactive"}

@@ -295,8 +295,8 @@ const Sales: React.FC = () => {
           <Button
             label="New Sale"
             onClick={() => navigate("/admin/create-sale")}
-            color="#009fe3"
-            hoverColor="#0085be"
+            color="var(--primary-color)"
+            hoverColor="var(--primary-color-hover)"
             icon={<FaPlus className="text-white text-xs" />}
           />
         </div>

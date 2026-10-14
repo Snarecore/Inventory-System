@@ -273,11 +273,11 @@ export const CustomerSalesReportTable: React.FC<CustomerSalesReportTableProps> =
                     </td>
                     <td className="py-2.5 px-3 text-center">
                       {hasDue ? (
-                        <span className="inline-block px-2 py-0.5 rounded text-[10px] font-bold bg-rose-50 text-rose-700 border border-rose-200">
+                        <span className="inline-block px-1.5 py-0.5 rounded-md text-[10px] font-semibold bg-rose-100 text-rose-800 border border-rose-300">
                           Has Due
                         </span>
                       ) : (
-                        <span className="inline-block px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                        <span className="inline-block px-1.5 py-0.5 rounded-md text-[10px] font-semibold bg-emerald-100 text-emerald-800 border border-emerald-300">
                           Cleared
                         </span>
                       )}

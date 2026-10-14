@@ -172,11 +172,11 @@ const PartyModal: React.FC<PartyModalProps> = ({
               onClick={() => setPartyType("CUSTOMER")}
               className={`flex items-center justify-center gap-2 py-1.5 px-3 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                 partyType === "CUSTOMER"
-                  ? "bg-white text-sky-600 shadow-xs border border-sky-200"
+                  ? "bg-white text-[var(--primary-color)] shadow-xs border border-[var(--primary-color)]/30"
                   : "text-gray-600 hover:text-black hover:bg-white/50 border border-transparent"
               }`}
             >
-              <FaUserTie className={partyType === "CUSTOMER" ? "text-sky-500 text-xs" : "text-gray-400 text-xs"} />
+              <FaUserTie className={partyType === "CUSTOMER" ? "text-[var(--primary-color)] text-xs" : "text-gray-400 text-xs"} />
               Customer
             </button>
             <button
@@ -293,8 +293,8 @@ const PartyModal: React.FC<PartyModalProps> = ({
             onClick={() => handleSubmit()}
             disabled={isSubmitting}
             isLoading={isSubmitting}
-            color={partyType === "CUSTOMER" ? "#009fe3" : "#059669"}
-            hoverColor={partyType === "CUSTOMER" ? "#0085be" : "#047857"}
+            color={partyType === "CUSTOMER" ? "var(--primary-color)" : "#059669"}
+            hoverColor={partyType === "CUSTOMER" ? "var(--primary-color-hover)" : "#047857"}
             buttonClass="!text-xs !py-1.5 !px-4 font-bold"
           />
         </div>

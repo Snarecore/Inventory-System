@@ -523,7 +523,7 @@ export const SalesReturnTable: React.FC<SalesReturnTableProps> = ({
                       {/* Payment Type */}
                       <td className="py-2.5 px-3 text-center w-28 whitespace-nowrap">
                         <span
-                          className={`inline-block px-2 py-0.5 text-[10px] border rounded-md ${paymentBg}`}
+                          className={`inline-block px-1.5 py-0.5 text-[10px] border rounded-md ${paymentBg}`}
                         >
                           {pType}
                         </span>
@@ -537,7 +537,7 @@ export const SalesReturnTable: React.FC<SalesReturnTableProps> = ({
                       {/* Status */}
                       <td className="py-2.5 px-3 text-center w-28 whitespace-nowrap">
                         <span
-                          className={`inline-block px-2 py-0.5 text-[10px] border rounded-md ${statusBg}`}
+                          className={`inline-block px-1.5 py-0.5 text-[10px] border rounded-md ${statusBg}`}
                         >
                           {statusStr}
                         </span>

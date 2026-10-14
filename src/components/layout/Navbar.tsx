@@ -39,8 +39,8 @@ export const Navbar: React.FC = () => {
               className={({ isActive }) =>
                 `px-3.5 py-1.5 rounded-lg text-sm font-medium transition-all duration-150 ${
                   isActive
-                    ? 'bg-sky-50 text-[#154674] font-semibold'
-                    : 'text-slate-700 hover:text-[#154674] hover:bg-slate-50'
+                    ? 'bg-[var(--primary-color-light)] text-[var(--primary-color)] font-semibold'
+                    : 'text-slate-700 hover:text-[var(--primary-color)] hover:bg-slate-50'
                 }`
               }
             >
@@ -56,7 +56,7 @@ export const Navbar: React.FC = () => {
             to="/login"
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center justify-center rounded-xl border border-slate-200/90 bg-white px-4 py-2 lg:py-2.5 text-sm font-semibold text-slate-700 hover:border-[#154674] hover:text-[#154674] transition-all duration-200 shadow-xs cursor-pointer"
+            className="inline-flex items-center justify-center rounded-xl border border-slate-200/90 bg-white px-4 py-2 lg:py-2.5 text-sm font-semibold text-slate-700 hover:border-[var(--primary-color)] hover:text-[var(--primary-color)] transition-all duration-200 shadow-xs cursor-pointer"
           >
             লগইন
           </Link>
@@ -64,7 +64,7 @@ export const Navbar: React.FC = () => {
           {/* Button 2: ফ্রি ডাউনলোড */}
           <Link
             to="/download"
-            className="inline-flex items-center justify-center rounded-xl bg-[#154674] hover:bg-[#0f365c] px-4 py-2 lg:py-2.5 text-sm font-semibold text-white shadow-sm shadow-[#154674]/20 border border-[#113a60] transition-all duration-200 cursor-pointer active:scale-[0.98]"
+            className="inline-flex items-center justify-center rounded-xl bg-[var(--primary-color)] hover:bg-[var(--primary-color-hover)] px-4 py-2 lg:py-2.5 text-sm font-semibold text-white shadow-sm shadow-[var(--primary-color)]/20 border border-[var(--primary-color-dark)] transition-all duration-200 cursor-pointer active:scale-[0.98]"
           >
             ফ্রি ডাউনলোড
           </Link>
@@ -93,7 +93,7 @@ export const Navbar: React.FC = () => {
                 className={({ isActive }) =>
                   `px-4 py-2.5 rounded-xl text-base font-medium transition-colors ${
                     isActive
-                      ? 'bg-sky-50 text-[#154674] font-bold'
+                      ? 'bg-[var(--primary-color-light)] text-[var(--primary-color)] font-bold'
                       : 'text-slate-700 hover:bg-slate-50'
                   }`
                 }
@@ -117,7 +117,7 @@ export const Navbar: React.FC = () => {
             <Link
               to="/download"
               onClick={() => setMobileMenuOpen(false)}
-              className="w-full text-center rounded-lg bg-[#154674] hover:bg-[#0f365c] px-4 py-2.5 text-sm font-semibold text-white transition-colors"
+              className="w-full text-center rounded-lg bg-[var(--primary-color)] hover:bg-[var(--primary-color-hover)] px-4 py-2.5 text-sm font-semibold text-white transition-colors"
             >
               ফ্রি ডাউনলোড
             </Link>
