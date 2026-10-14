@@ -10,9 +10,9 @@ import Button from "@/components/button/Button";
 import RefreshButton from "@/components/table-components/RefreshButton";
 import ProductTable from "./components/ProductTable";
 import apiConfig from "@/config/api.json";
-import { productListQueryKey, productCategoriesListQueryKey } from "@/config/query-key";
+import { productListQueryKey } from "@/config/query-key";
 import { buildAccessUser } from "@/utils/access-user";
-import { getData, postData } from "@/services/api-service";
+import { postData } from "@/services/api-service";
 import type { ProductItem } from "@/types";
 
 const Products = () => {
@@ -30,7 +30,6 @@ const Products = () => {
     };
 
     const productListUrl = apiConfig.productList?.productListUrl || "get-product-list";
-    const categoriesUrl = apiConfig.inventory?.productCategoriesListUrl || "product-categories-list";
 
     // 1. Fetch Product List from POST /get-product-list
     const {
@@ -47,21 +46,8 @@ const Products = () => {
             });
             return response;
         },
-        staleTime: 0,
-        refetchOnMount: "always",
-    });
-
-    // 2. Fetch Categories from GET /product-categories-list
-    const { data: rawCategoryData, refetch: refetchCategories } = useQuery({
-        queryKey: [productCategoriesListQueryKey],
-        queryFn: async () => {
-            try {
-                return await getData<any>({ url: categoriesUrl });
-            } catch {
-                return null;
-            }
-        },
-        staleTime: 5 * 60 * 1000,
+        staleTime: 30 * 1000,
+        refetchOnWindowFocus: false,
     });
 
     // Normalize product list from response
@@ -81,36 +67,23 @@ const Products = () => {
         });
     }, [rawProductData]);
 
-    // Build Category dropdown options
+    // Build Category dropdown options directly from existing products (zero extra network calls)
     const categoryOptions = useMemo(() => {
         const optionMap = new Map<string, string>();
 
-        // From categories API
-        let list: any[] = [];
-        if (Array.isArray(rawCategoryData)) {
-            list = rawCategoryData;
-        } else if (rawCategoryData && typeof rawCategoryData === "object") {
-            if (Array.isArray(rawCategoryData.data)) list = rawCategoryData.data;
-            else if (Array.isArray(rawCategoryData.categories)) list = rawCategoryData.categories;
-            else if (Array.isArray(rawCategoryData.categoryList)) list = rawCategoryData.categoryList;
-        }
-
-        list.forEach((item: any) => {
-            const name = typeof item === "string" ? item : (item.name || item.categoryName || item.title || "");
-            if (name) optionMap.set(name.toLowerCase(), name);
-        });
-
-        // Also add any categories found in products
         allProducts.forEach((p) => {
             const cat = p.category || p.categoryName;
-            if (cat) optionMap.set(cat.toLowerCase(), cat);
+            if (cat && typeof cat === "string" && cat.trim()) {
+                const trimmed = cat.trim();
+                optionMap.set(trimmed.toLowerCase(), trimmed);
+            }
         });
 
         return Array.from(optionMap.values()).map((name) => ({
             label: name,
             value: name,
         }));
-    }, [rawCategoryData, allProducts]);
+    }, [allProducts]);
 
     // Helper to evaluate product status
     const isProductActive = (p: ProductItem) => {
@@ -231,7 +204,6 @@ const Products = () => {
         setStatusFilter("");
         setCurrentPageNumber(1);
         refetchProducts();
-        refetchCategories();
     };
 
     return (

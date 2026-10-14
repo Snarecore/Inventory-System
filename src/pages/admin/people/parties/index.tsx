@@ -63,9 +63,8 @@ const Parties: React.FC = () => {
       });
       return response;
     },
-    staleTime: 0,
-    refetchOnMount: "always",
-    refetchOnWindowFocus: true,
+    staleTime: 30 * 1000,
+    refetchOnWindowFocus: false,
   });
 
   // Extract all parties from backend response

@@ -143,7 +143,6 @@ export const ProductTable = ({
 
             if (result?.success) {
                 closeDeleteModal();
-                onRefresh();
             }
         } catch (error) {
             console.error("Failed to delete product:", error);
@@ -175,7 +174,7 @@ export const ProductTable = ({
                 updated_at: new Date().toISOString()
             });
 
-            const result = await handleApiMutation({
+            await handleApiMutation({
                 mutation: postMutation as any,
                 url: insertProductUrl,
                 body: {
@@ -186,10 +185,6 @@ export const ProductTable = ({
                 showSuccessMessage: true,
                 showErrorMessage: true
             });
-
-            if (result?.success) {
-                onRefresh();
-            }
         } catch (error) {
             console.error("Failed to toggle status:", error);
         } finally {

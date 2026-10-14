@@ -120,9 +120,8 @@ const CreateProductForm = () => {
                 return null;
             }
         },
-        staleTime: 0,
-        refetchOnMount: "always",
-        refetchOnWindowFocus: true,
+        staleTime: 60 * 1000,
+        refetchOnWindowFocus: false,
     });
 
     useEffect(() => {
@@ -312,6 +311,22 @@ const CreateProductForm = () => {
         );
     }, [unitOptions, selectedUnit]);
 
+    // Active pricing unit: Secondary Unit if selected, otherwise Primary Unit
+    const activePricingUnit = useMemo(() => {
+        if (selectedSecondaryUnit?.label) return selectedSecondaryUnit.label;
+        if (selectedUnit?.label) return selectedUnit.label;
+        return "";
+    }, [selectedSecondaryUnit, selectedUnit]);
+
+    // Numeric conversion ratio (1 Primary Unit = ? Secondary Units)
+    const conversionFactor = useMemo(() => {
+        if (!selectedUnit || !selectedSecondaryUnit || !fieldValues.packing_levels) return null;
+        const match = fieldValues.packing_levels.match(/\d+(\.\d+)?/);
+        if (!match) return null;
+        const num = parseFloat(match[0]);
+        return num > 0 ? num : null;
+    }, [selectedUnit, selectedSecondaryUnit, fieldValues.packing_levels]);
+
     // Sync selected category when options are loaded
     useEffect(() => {
         if (categoryOptions.length > 0) {
@@ -470,7 +485,7 @@ const CreateProductForm = () => {
                 category: fieldValues.category.trim() || "General",
                 unit: fieldValues.unit.trim() || "PCS",
                 secondary_unit: fieldValues.secondary_unit.trim() || null,
-                secondary_price: fieldValues.secondary_price ? Number(fieldValues.secondary_price) : 0,
+                secondary_price: fieldValues.secondary_unit.trim() ? (Number(fieldValues.sell_price) || Number(fieldValues.secondary_price) || 0) : 0,
                 quantity: fieldValues.quantity ? Number(fieldValues.quantity) : 0,
                 buy_price: Number(fieldValues.buy_price) || 0,
                 sell_price: Number(fieldValues.sell_price) || 0,
@@ -498,8 +513,6 @@ const CreateProductForm = () => {
             });
 
             if (result?.success) {
-                await queryClient.invalidateQueries({ queryKey: [productListQueryKey] });
-                await queryClient.refetchQueries({ queryKey: [productListQueryKey] });
                 navigate("/admin/products");
             }
         } catch (error: any) {
@@ -510,26 +523,24 @@ const CreateProductForm = () => {
     };
 
     return (
-        <form onSubmit={handleSubmitForm} className="space-y-5">
-            <div className="mx-auto bg-white shadow-sm rounded-lg border border-gray-100">
+        <form onSubmit={handleSubmitForm} className="flex flex-col gap-2.5">
+            <div className="bg-white rounded-xl border border-gray-200 shadow-xs overflow-visible">
                 <div
-                    className="flex justify-between items-center px-4 sm:px-6 py-2.5 cursor-pointer select-none transition-all duration-300 ease-in-out hover:bg-gray-50 rounded-t-lg"
+                    className="flex justify-between items-center px-3.5 sm:px-4 py-2 cursor-pointer select-none bg-gray-50/70 hover:bg-gray-100/70 rounded-t-xl transition-colors border-b border-gray-200"
                     onClick={() => setIsOpen(!isOpen)}
                 >
-                    <h2 className="text-base font-bold text-[#212b36]">
+                    <h2 className="text-xs sm:text-sm font-bold text-black flex items-center gap-1.5">
                         {isEditMode ? "Edit Product Information" : "Product Information"}
                     </h2>
                     <RiArrowDropDownLine
-                        className={`text-2xl sm:text-3xl transition-all duration-300 ease-in-out text-gray-500 ${isOpen ? "rotate-180" : ""}`}
+                        className={`text-xl sm:text-2xl text-gray-500 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`}
                     />
                 </div>
 
-                <hr className="border-gray-200" />
-
                 {isOpen && (
-                    <div className="p-3.5 sm:p-4">
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-5 gap-y-2.5">
-                            {/* Product Name */}
+                    <div className="p-2.5 sm:p-3">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-2.5">
+                            {/* Row 1, Col 1: Product Name */}
                             <div>
                                 <InputField
                                     label="Product Name"
@@ -542,7 +553,7 @@ const CreateProductForm = () => {
                                 />
                             </div>
 
-                            {/* Category */}
+                            {/* Row 1, Col 2: Category */}
                             <div className="relative z-30">
                                 <SelectInput
                                     label={`Category${isCategoriesLoading ? " (Loading...)" : ""}`}
@@ -553,17 +564,17 @@ const CreateProductForm = () => {
                                 />
                             </div>
 
-                            {/* Unit (Primary) with Allow Decimal Toggle */}
+                            {/* Row 1, Col 3: Unit (Primary) with Allow Decimal Toggle */}
                             <div className="relative z-20">
                                 <div className="flex items-center justify-between mb-1">
-                                    <label className="text-sm font-medium text-[#212b36]">
+                                    <label className="text-xs font-semibold text-gray-700">
                                         Unit{isUnitsLoading ? " (Loading...)" : ""} <span className="text-red-600 ml-0.5">*</span>
                                     </label>
                                     <label 
                                         className="flex items-center gap-1 cursor-pointer select-none"
                                         title="Allow decimal numbers in quantity"
                                     >
-                                        <span className="text-[11px] font-medium text-gray-400">Allow Decimal</span>
+                                        <span className="text-[10px] font-medium text-gray-400">Allow Decimal</span>
                                         <div className="relative inline-flex items-center flex-shrink-0">
                                             <input
                                                 type="checkbox"
@@ -571,10 +582,10 @@ const CreateProductForm = () => {
                                                 onChange={(e) => handleDecimalToggle(e.target.checked)}
                                                 className="sr-only peer"
                                             />
-                                            <div className="w-6 h-3.5 bg-gray-300 peer-focus:outline-none rounded-full peer peer-checked:bg-[var(--color-primary,#009FE3)]">
+                                            <div className="w-5 h-3 bg-gray-300 peer-focus:outline-none rounded-full peer peer-checked:bg-[var(--color-primary,#009FE3)]">
                                                 <div
-                                                    className={`absolute top-[2px] left-[2px] w-2.5 h-2.5 bg-white rounded-full transition-transform ${
-                                                        isDecimalAllowed ? "translate-x-2.5" : ""
+                                                    className={`absolute top-[1.5px] left-[1.5px] w-2 h-2 bg-white rounded-full transition-transform ${
+                                                        isDecimalAllowed ? "translate-x-2" : ""
                                                     }`}
                                                 />
                                             </div>
@@ -590,7 +601,7 @@ const CreateProductForm = () => {
                                 />
                             </div>
 
-                            {/* Secondary Unit (Optional) */}
+                            {/* Row 1, Col 4: Secondary Unit (Optional) */}
                             <div className="relative z-20">
                                 <SelectInput
                                     label="Secondary Unit (Optional)"
@@ -602,13 +613,13 @@ const CreateProductForm = () => {
                                 />
                             </div>
 
-                            {/* Conversion Rate / Packaging Ratio (When Secondary Unit is selected) */}
+                            {/* Row 2, Col 1: Conversion Ratio (if Secondary Unit is chosen) OR Packing Levels (Optional) */}
                             {selectedUnit && selectedSecondaryUnit ? (
                                 <div>
-                                    <label htmlFor="packing_levels" className="text-sm font-medium text-[#212b36] block mb-1">
-                                        Conversion Ratio (1 {selectedUnit.label} = ? {selectedSecondaryUnit.label})
+                                    <label htmlFor="packing_levels" className="text-xs font-semibold text-gray-700 block mb-1 truncate">
+                                        Conversion Ratio (1 {selectedUnit.label} = ?)
                                     </label>
-                                    <div className="flex items-center w-full transition-all duration-300 border border-gray-200 rounded-lg px-2 h-[38px] bg-white text-black text-sm focus-within:ring-1 focus-within:ring-[var(--primary-color,#009fe3)] focus-within:border-[var(--primary-color,#009fe3)]">
+                                    <div className="flex items-center w-full transition-all duration-200 border border-gray-200 rounded-lg px-2 h-9 bg-white text-black text-xs focus-within:ring-1 focus-within:ring-[var(--primary-color,#009fe3)] focus-within:border-[var(--primary-color,#009fe3)]">
                                         <input
                                             id="packing_levels"
                                             name="packing_levels"
@@ -616,10 +627,10 @@ const CreateProductForm = () => {
                                             value={fieldValues.packing_levels}
                                             onChange={handleChange}
                                             placeholder={`e.g. 10 (1 ${selectedUnit.label} = 10 ${selectedSecondaryUnit.label})`}
-                                            className="w-full focus:outline-none placeholder:text-sm px-1.5 text-sm bg-transparent"
+                                            className="w-full focus:outline-none placeholder:text-xs placeholder:text-gray-400 px-1 text-xs bg-transparent"
                                         />
                                         {fieldValues.packing_levels ? (
-                                            <span className="shrink-0 text-[11px] font-semibold text-sky-700 bg-sky-50 border border-sky-200 px-2 py-0.5 rounded ml-1 whitespace-nowrap select-none">
+                                            <span className="shrink-0 text-[10px] font-semibold text-sky-700 bg-sky-50 border border-sky-200 px-1.5 py-0.5 rounded ml-1 whitespace-nowrap select-none">
                                                 1 {selectedUnit.label} = {
                                                     fieldValues.packing_levels.toLowerCase().includes(selectedSecondaryUnit.label.toLowerCase())
                                                         ? fieldValues.packing_levels
@@ -629,35 +640,90 @@ const CreateProductForm = () => {
                                         ) : null}
                                     </div>
                                 </div>
-                            ) : null}
+                            ) : (
+                                <div>
+                                    <InputField
+                                        label="Packing Levels (Optional)"
+                                        type="text"
+                                        name="packing_levels"
+                                        value={fieldValues.packing_levels}
+                                        onChange={handleChange}
+                                        placeholder="e.g. 10 pcs/box"
+                                    />
+                                </div>
+                            )}
 
-                            {/* Buy Price */}
+                            {/* Row 2, Col 2: Buy Price (based on Secondary Unit if selected, else Primary Unit) */}
                             <div>
-                                <InputField
-                                    label="Buy Price (৳)"
-                                    type="number"
-                                    name="buy_price"
-                                    required
-                                    value={fieldValues.buy_price}
-                                    onChange={handleChange}
-                                    placeholder="0.00"
-                                />
+                                <div className="flex items-center justify-between mb-1">
+                                    <label htmlFor="buy_price" className="text-xs font-semibold text-gray-700">
+                                        Buy Price (৳) <span className="text-red-600">*</span>
+                                    </label>
+                                    <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded border leading-none ${
+                                        selectedSecondaryUnit 
+                                            ? "bg-amber-50 text-amber-700 border-amber-200" 
+                                            : "bg-gray-50 text-gray-600 border-gray-200"
+                                    }`}>
+                                        {selectedSecondaryUnit 
+                                            ? `per ${selectedSecondaryUnit.label}` 
+                                            : (selectedUnit ? `per ${selectedUnit.label}` : "per Unit")}
+                                    </span>
+                                </div>
+                                <div className="flex items-center w-full transition-all duration-200 border border-gray-200 rounded-lg px-2.5 h-9 bg-white text-black text-xs focus-within:ring-1 focus-within:ring-[var(--primary-color,#009fe3)] focus-within:border-[var(--primary-color,#009fe3)]">
+                                    <input
+                                        id="buy_price"
+                                        name="buy_price"
+                                        type="number"
+                                        required
+                                        value={fieldValues.buy_price}
+                                        onChange={handleChange}
+                                        placeholder="0.00"
+                                        className="w-full focus:outline-none placeholder:text-xs placeholder:text-gray-400 px-1 text-xs bg-transparent"
+                                    />
+                                </div>
+                                {conversionFactor && fieldValues.buy_price && Number(fieldValues.buy_price) > 0 ? (
+                                    <p className="text-[10px] text-gray-500 mt-0.5 truncate">
+                                        1 {selectedUnit?.label} = ৳{(Number(fieldValues.buy_price) * conversionFactor).toLocaleString()}
+                                    </p>
+                                ) : null}
                             </div>
 
-                            {/* Sell Price */}
+                            {/* Row 2, Col 3: Sell Price (based on Secondary Unit if selected, else Primary Unit) */}
                             <div>
-                                <InputField
-                                    label="Sell Price (৳)"
-                                    type="number"
-                                    name="sell_price"
-                                    required
-                                    value={fieldValues.sell_price}
-                                    onChange={handleChange}
-                                    placeholder="0.00"
-                                />
+                                <div className="flex items-center justify-between mb-1">
+                                    <label htmlFor="sell_price" className="text-xs font-semibold text-gray-700">
+                                        Sell Price (৳) <span className="text-red-600">*</span>
+                                    </label>
+                                    <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded border leading-none ${
+                                        selectedSecondaryUnit 
+                                            ? "bg-amber-50 text-amber-700 border-amber-200" 
+                                            : "bg-gray-50 text-gray-600 border-gray-200"
+                                    }`}>
+                                        {selectedSecondaryUnit 
+                                            ? `per ${selectedSecondaryUnit.label}` 
+                                            : (selectedUnit ? `per ${selectedUnit.label}` : "per Unit")}
+                                    </span>
+                                </div>
+                                <div className="flex items-center w-full transition-all duration-200 border border-gray-200 rounded-lg px-2.5 h-9 bg-white text-black text-xs focus-within:ring-1 focus-within:ring-[var(--primary-color,#009fe3)] focus-within:border-[var(--primary-color,#009fe3)]">
+                                    <input
+                                        id="sell_price"
+                                        name="sell_price"
+                                        type="number"
+                                        required
+                                        value={fieldValues.sell_price}
+                                        onChange={handleChange}
+                                        placeholder="0.00"
+                                        className="w-full focus:outline-none placeholder:text-xs placeholder:text-gray-400 px-1 text-xs bg-transparent"
+                                    />
+                                </div>
+                                {conversionFactor && fieldValues.sell_price && Number(fieldValues.sell_price) > 0 ? (
+                                    <p className="text-[10px] text-emerald-600 font-medium mt-0.5 truncate">
+                                        1 {selectedUnit?.label} = ৳{(Number(fieldValues.sell_price) * conversionFactor).toLocaleString()}
+                                    </p>
+                                ) : null}
                             </div>
 
-                            {/* Quantity */}
+                            {/* Row 2, Col 4: Quantity */}
                             <div>
                                 <InputField
                                     label="Quantity"
@@ -675,7 +741,7 @@ const CreateProductForm = () => {
                                 />
                             </div>
 
-                            {/* Low Stock Alert */}
+                            {/* Row 3, Col 1: Low Stock Alert */}
                             <div>
                                 <InputField
                                     label="Low Stock Alert"
@@ -687,21 +753,7 @@ const CreateProductForm = () => {
                                 />
                             </div>
 
-                            {/* Packing Levels (Only when Secondary Unit is NOT selected) */}
-                            {!selectedSecondaryUnit && (
-                                <div>
-                                    <InputField
-                                        label="Packing Levels (Optional)"
-                                        type="text"
-                                        name="packing_levels"
-                                        value={fieldValues.packing_levels}
-                                        onChange={handleChange}
-                                        placeholder="e.g. 10 pcs/box"
-                                    />
-                                </div>
-                            )}
-
-                            {/* Product Code */}
+                            {/* Row 3, Col 2: Product Code */}
                             <div>
                                 <InputField
                                     label="Product Code"
@@ -713,7 +765,7 @@ const CreateProductForm = () => {
                                 />
                             </div>
 
-                            {/* SKU */}
+                            {/* Row 3, Col 3: SKU */}
                             <div>
                                 <InputField
                                     label="SKU"
@@ -725,7 +777,7 @@ const CreateProductForm = () => {
                                 />
                             </div>
 
-                            {/* Barcode */}
+                            {/* Row 3, Col 4: Barcode */}
                             <div>
                                 <InputField
                                     label="Barcode"
@@ -743,10 +795,10 @@ const CreateProductForm = () => {
             </div>
 
             {/* Bottom Action Bar with Status and Action Buttons */}
-            <div className="bg-white shadow-sm rounded-lg border border-gray-100 p-3 sm:px-5 flex flex-wrap items-center justify-between gap-4">
+            <div className="bg-white shadow-xs rounded-xl border border-gray-200 p-2.5 sm:px-4 flex flex-wrap items-center justify-between gap-2.5">
                 {/* Status Toggle on Left */}
-                <div className="flex items-center gap-3">
-                    <span className="text-sm font-medium text-[#212b36]">
+                <div className="flex items-center gap-2.5">
+                    <span className="text-xs font-semibold text-gray-700">
                         Status
                     </span>
                     <label className="relative inline-flex items-center cursor-pointer flex-shrink-0">
@@ -757,15 +809,15 @@ const CreateProductForm = () => {
                             onChange={(e) => handleStatusToggle(e.target.checked)}
                             className="sr-only peer"
                         />
-                        <div className="w-9 h-5 bg-gray-300 peer-focus:outline-none rounded-full peer peer-checked:bg-[var(--color-primary,#009FE3)]">
+                        <div className="w-8 h-4 bg-gray-300 peer-focus:outline-none rounded-full peer peer-checked:bg-[var(--color-primary,#009FE3)]">
                             <div
-                                className={`absolute top-[2px] left-[2px] w-4 h-4 bg-white rounded-full transition-transform ${
+                                className={`absolute top-[2px] left-[2px] w-3 h-3 bg-white rounded-full transition-transform ${
                                     fieldValues.status === "active" ? "translate-x-4" : ""
                                 }`}
                             />
                         </div>
                     </label>
-                    <span className={`text-xs font-semibold px-2 py-0.5 rounded ${
+                    <span className={`text-[11px] font-semibold px-2 py-0.5 rounded ${
                         fieldValues.status === "active" ? "bg-emerald-50 text-emerald-600" : "bg-gray-100 text-gray-500"
                     }`}>
                         {fieldValues.status === "active" ? "Active" : "Inactive"}
@@ -773,13 +825,14 @@ const CreateProductForm = () => {
                 </div>
 
                 {/* Cancel & Save/Update Buttons on Right */}
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2">
                     <Button
                         label="Cancel"
                         onClick={() => navigate("/admin/products")}
                         color="#6b7280"
                         hoverColor="#4b5563"
                         disabled={isLoading}
+                        buttonClass="!text-xs !py-1.5"
                     />
                     <Button
                         label={isEditMode ? "Update Product" : "Save Product"}
@@ -788,6 +841,7 @@ const CreateProductForm = () => {
                         hoverColor="#0085be"
                         isLoading={isLoading}
                         disabled={isLoading}
+                        buttonClass="!text-xs !py-1.5 font-bold"
                     />
                 </div>
             </div>

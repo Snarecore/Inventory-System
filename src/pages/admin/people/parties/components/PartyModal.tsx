@@ -8,6 +8,7 @@ import { showSuccessToast, showErrorToast } from "@/utils/toast-utils";
 import apiConfig from "@/config/api.json";
 import type { PartyItem, PartyType } from "@/types";
 import { FaUserTie, FaTruck, FaPhone, FaEnvelope, FaMapMarkerAlt, FaMoneyBillWave } from "react-icons/fa";
+import { RiArrowDropDownLine } from "react-icons/ri";
 
 interface PartyModalProps {
   isOpen: boolean;
@@ -71,7 +72,7 @@ const PartyModal: React.FC<PartyModalProps> = ({
   const validate = () => {
     const errs: Record<string, string> = {};
     if (!partyName.trim()) {
-      errs.partyName = "Party name is required";
+      errs.partyName = `${partyType === "CUSTOMER" ? "Customer" : "Supplier"} name is required`;
     }
     if (!partyPhone.trim()) {
       errs.partyPhone = "Phone number is required";
@@ -154,61 +155,61 @@ const PartyModal: React.FC<PartyModalProps> = ({
   return (
     <Modal
       isOpen={isOpen}
-      title={isEdit ? "Edit Party" : "Add New Party"}
+      title={isEdit ? (partyType === "CUSTOMER" ? "Edit Customer" : "Edit Supplier") : (partyType === "CUSTOMER" ? "Add New Customer" : "Add New Supplier")}
       onClose={onClose}
-      maxWidth="w-full max-w-[520px]"
-      className="!py-3.5 !px-5"
+      maxWidth="w-full max-w-[560px]"
+      className="!py-3 !px-4 sm:!px-5"
     >
       <form onSubmit={handleSubmit} className="flex flex-col gap-2.5 text-left">
-        {/* Type Selection Tabs */}
+        {/* Party Type Segmented Selector */}
         <div>
-          <label className="text-xs font-semibold text-gray-700 tracking-wider block mb-1">
+          <label className="text-xs font-semibold text-gray-700 block mb-1">
             Party Type <span className="text-red-500">*</span>
           </label>
-          <div className="grid grid-cols-2 gap-1.5 p-1 bg-gray-100 rounded-lg">
+          <div className="grid grid-cols-2 gap-1.5 p-1 bg-gray-100/90 rounded-xl border border-gray-200">
             <button
               type="button"
               onClick={() => setPartyType("CUSTOMER")}
-              className={`flex items-center justify-center gap-1.5 py-1.5 px-3 rounded-md text-xs font-semibold transition-all cursor-pointer ${
+              className={`flex items-center justify-center gap-2 py-1.5 px-3 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                 partyType === "CUSTOMER"
-                  ? "bg-white text-[#009fe3] shadow-xs"
-                  : "text-gray-600 hover:text-black"
+                  ? "bg-white text-sky-600 shadow-xs border border-sky-200"
+                  : "text-gray-600 hover:text-black hover:bg-white/50 border border-transparent"
               }`}
             >
-              <FaUserTie className="text-xs" />
+              <FaUserTie className={partyType === "CUSTOMER" ? "text-sky-500 text-xs" : "text-gray-400 text-xs"} />
               Customer
             </button>
             <button
               type="button"
               onClick={() => setPartyType("SUPPLIER")}
-              className={`flex items-center justify-center gap-1.5 py-1.5 px-3 rounded-md text-xs font-semibold transition-all cursor-pointer ${
+              className={`flex items-center justify-center gap-2 py-1.5 px-3 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                 partyType === "SUPPLIER"
-                  ? "bg-white text-[#28c76f] shadow-xs"
-                  : "text-gray-600 hover:text-black"
+                  ? "bg-white text-emerald-600 shadow-xs border border-emerald-200"
+                  : "text-gray-600 hover:text-black hover:bg-white/50 border border-transparent"
               }`}
             >
-              <FaTruck className="text-xs" />
+              <FaTruck className={partyType === "SUPPLIER" ? "text-emerald-500 text-xs" : "text-gray-400 text-xs"} />
               Supplier
             </button>
           </div>
         </div>
 
-        {/* Party Name */}
-        <div>
-          <TextInput
-            label={`${partyType === "CUSTOMER" ? "Customer" : "Supplier"} Name`}
-            placeholder={`Enter ${partyType.toLowerCase()} name...`}
-            value={partyName}
-            onChange={(val: any) => setPartyName(typeof val === "string" ? val : (val?.target?.value ?? ""))}
-            required
-            message={errors.partyName}
-            wrapperClass="!h-[35px]"
-            icon={<FaUserTie className="text-gray-400 text-xs" />}
-          />
-        </div>
+        {/* 2 Fields Per Row Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-2.5">
+          {/* Row 1, Col 1: Party Name */}
+          <div>
+            <TextInput
+              label={`${partyType === "CUSTOMER" ? "Customer" : "Supplier"} Name`}
+              placeholder={`Enter ${partyType.toLowerCase()} name...`}
+              value={partyName}
+              onChange={(val: any) => setPartyName(typeof val === "string" ? val : (val?.target?.value ?? ""))}
+              required
+              message={errors.partyName}
+              icon={partyType === "CUSTOMER" ? <FaUserTie className="text-gray-400 text-xs" /> : <FaTruck className="text-gray-400 text-xs" />}
+            />
+          </div>
 
-        {/* Phone & Email in a 2-col row */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+          {/* Row 1, Col 2: Phone Number */}
           <div>
             <TextInput
               label="Phone Number"
@@ -217,10 +218,11 @@ const PartyModal: React.FC<PartyModalProps> = ({
               onChange={(val: any) => setPartyPhone(typeof val === "string" ? val : (val?.target?.value ?? ""))}
               required
               message={errors.partyPhone}
-              wrapperClass="!h-[35px]"
               icon={<FaPhone className="text-gray-400 text-xs" />}
             />
           </div>
+
+          {/* Row 2, Col 1: Email (Optional) */}
           <div>
             <TextInput
               label="Email (Optional)"
@@ -228,26 +230,22 @@ const PartyModal: React.FC<PartyModalProps> = ({
               placeholder="e.g. info@domain.com"
               value={partyEmail}
               onChange={(val: any) => setPartyEmail(typeof val === "string" ? val : (val?.target?.value ?? ""))}
-              wrapperClass="!h-[35px]"
               icon={<FaEnvelope className="text-gray-400 text-xs" />}
             />
           </div>
-        </div>
 
-        {/* Address */}
-        <div>
-          <TextInput
-            label="Address (Optional)"
-            placeholder="Street address, city, district..."
-            value={partyAddress}
-            onChange={(val: any) => setPartyAddress(typeof val === "string" ? val : (val?.target?.value ?? ""))}
-            wrapperClass="!h-[35px]"
-            icon={<FaMapMarkerAlt className="text-gray-400 text-xs" />}
-          />
-        </div>
+          {/* Row 2, Col 2: Address (Optional) */}
+          <div>
+            <TextInput
+              label="Address (Optional)"
+              placeholder="Street address, city, district..."
+              value={partyAddress}
+              onChange={(val: any) => setPartyAddress(typeof val === "string" ? val : (val?.target?.value ?? ""))}
+              icon={<FaMapMarkerAlt className="text-gray-400 text-xs" />}
+            />
+          </div>
 
-        {/* Opening Balance & Status */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+          {/* Row 3, Col 1: Opening Balance */}
           <div>
             <TextInput
               label="Opening Balance (৳)"
@@ -255,43 +253,49 @@ const PartyModal: React.FC<PartyModalProps> = ({
               placeholder="0.00"
               value={openingBalance}
               onChange={(val: any) => setOpeningBalance(typeof val === "string" ? val : (val?.target?.value ?? ""))}
-              wrapperClass="!h-[35px]"
               icon={<FaMoneyBillWave className="text-gray-400 text-xs" />}
             />
           </div>
+
+          {/* Row 3, Col 2: Status */}
           <div>
-            <label className="text-sm font-medium text-[#212b36] block mb-1">Status</label>
-            <select
-              value={status}
-              onChange={(e) => setStatus(e.target.value as "active" | "inactive")}
-              className="w-full h-[35px] px-3 text-sm bg-white border border-gray-200 rounded-lg text-black focus:outline-none focus:ring-1 focus:ring-[var(--primary-color)]"
-            >
-              <option value="active">Active</option>
-              <option value="inactive">Inactive</option>
-            </select>
+            <label className="text-xs font-semibold text-gray-700 block mb-1">Status</label>
+            <div className="relative">
+              <select
+                value={status}
+                onChange={(e) => setStatus(e.target.value as "active" | "inactive")}
+                className="w-full h-9 px-2.5 pr-8 text-xs bg-white border border-gray-200 rounded-lg text-black focus:outline-none focus:ring-1 focus:ring-[var(--primary-color,#009fe3)] focus:border-[var(--primary-color,#009fe3)] appearance-none cursor-pointer"
+              >
+                <option value="active">Active</option>
+                <option value="inactive">Inactive</option>
+              </select>
+              <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-500">
+                <RiArrowDropDownLine className="text-xl" />
+              </div>
+            </div>
           </div>
         </div>
 
         {/* Action Buttons */}
-        <div className="flex justify-end gap-2 mt-1 pt-2.5 border-t border-gray-100">
+        <div className="flex justify-end items-center gap-2 mt-1 pt-2.5 border-t border-gray-100">
           <Button
             label="Cancel"
             onClick={onClose}
             type="button"
             disabled={isSubmitting}
-            color="#f3f4f6"
-            hoverColor="#e5e7eb"
-            buttonClass="!text-gray-700 !border-gray-300 shadow-none !py-1.5 !px-3.5"
+            color="#6b7280"
+            hoverColor="#4b5563"
+            buttonClass="!text-xs !py-1.5 !px-3.5"
           />
           <Button
-            label={isSubmitting ? "Saving..." : isEdit ? "Update Party" : "Create Party"}
+            label={isSubmitting ? "Saving..." : isEdit ? "Update Party" : `Create ${partyType === "CUSTOMER" ? "Customer" : "Supplier"}`}
             type="submit"
             onClick={() => handleSubmit()}
             disabled={isSubmitting}
             isLoading={isSubmitting}
-            color="#009fe3"
-            hoverColor="#0085be"
-            buttonClass="!py-1.5 !px-4"
+            color={partyType === "CUSTOMER" ? "#009fe3" : "#059669"}
+            hoverColor={partyType === "CUSTOMER" ? "#0085be" : "#047857"}
+            buttonClass="!text-xs !py-1.5 !px-4 font-bold"
           />
         </div>
       </form>
