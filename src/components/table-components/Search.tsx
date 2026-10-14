@@ -7,9 +7,16 @@ interface SearchProps {
 	setSearchQuery?: (query: string) => void;
 	placeholder?: string;
 	className?: string;
+	debounceDelay?: number;
 }
 
-const Search = React.memo(({ searchQuery, onSearchChange, setSearchQuery, placeholder = "Search", className = "" }: SearchProps) => {
+const Search = React.memo(({
+	searchQuery,
+	onSearchChange,
+	setSearchQuery,
+	placeholder = "Search",
+	className = "",
+}: SearchProps) => {
 	const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
 		const val = e.target.value;
 		if (onSearchChange) onSearchChange(val);

@@ -161,11 +161,15 @@ const Purchases: React.FC = () => {
   const [customEndDate, setCustomEndDate] = useState<string>("");
   const [sortBy, setSortBy] = useState<string>("latest");
   const [searchQuery, setSearchQuery] = useState<string>("");
-  const [debouncedSearch, setDebouncedSearch] = useState<string>("");
 
   // Pagination State
   const [dataLimit, setDataLimit] = useState<number>(10);
   const [currentPageNumber, setCurrentPageNumber] = useState<number>(1);
+
+  const handleSearchChange = (query: string) => {
+    setSearchQuery(query);
+    setCurrentPageNumber(1);
+  };
 
   // Modals state
   const [selectedPurchaseForView, setSelectedPurchaseForView] = useState<PurchaseItem | null>(null);
@@ -173,15 +177,6 @@ const Purchases: React.FC = () => {
   const [isChallanSettingsOpen, setIsChallanSettingsOpen] = useState<boolean>(false);
   const [selectedPurchaseForDelete, setSelectedPurchaseForDelete] = useState<PurchaseItem | null>(null);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState<boolean>(false);
-
-  // Debounce search
-  useEffect(() => {
-    const handler = setTimeout(() => {
-      setDebouncedSearch(searchQuery);
-      setCurrentPageNumber(1);
-    }, 300);
-    return () => clearTimeout(handler);
-  }, [searchQuery]);
 
   // Helper to extract clean YYYY-MM-DD from purchase
   const getPurchaseDateString = (p: any): string => {
@@ -209,8 +204,8 @@ const Purchases: React.FC = () => {
   const filteredPurchases = useMemo(() => {
     return allPurchases.filter((purchase) => {
       // 1. Search Query
-      if (debouncedSearch.trim()) {
-        const q = debouncedSearch.toLowerCase().trim();
+      if (searchQuery.trim()) {
+        const q = searchQuery.toLowerCase().trim();
         const invoice = (purchase.invoiceNo || "").toLowerCase();
         const supplier = (purchase.supplierName || "").toLowerCase();
         const phone = (purchase.supplierPhone || "").toLowerCase();
@@ -305,7 +300,7 @@ const Purchases: React.FC = () => {
 
       return true;
     });
-  }, [allPurchases, debouncedSearch, statusFilter, paymentMethodFilter, supplierFilter, dateFilter, customStartDate, customEndDate]);
+  }, [allPurchases, searchQuery, statusFilter, paymentMethodFilter, supplierFilter, dateFilter, customStartDate, customEndDate]);
 
   // Sort purchases (Recent first by default)
   const sortedPurchases = useMemo(() => {
@@ -400,7 +395,6 @@ const Purchases: React.FC = () => {
 
   const handleRefresh = () => {
     setSearchQuery("");
-    setDebouncedSearch("");
     setStatusFilter("");
     setPaymentMethodFilter("");
     setSupplierFilter("");
@@ -510,7 +504,7 @@ const Purchases: React.FC = () => {
         setDataLimit={setDataLimit}
         handlePagination={handlePagination}
         searchQuery={searchQuery}
-        setSearchQuery={setSearchQuery}
+        setSearchQuery={handleSearchChange}
         statusFilter={statusFilter}
         setStatusFilter={setStatusFilter}
         paymentMethodFilter={paymentMethodFilter}

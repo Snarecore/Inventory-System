@@ -21,18 +21,13 @@ const Products = () => {
 
     const [currentPageNumber, setCurrentPageNumber] = useState(1);
     const [searchQuery, setSearchQuery] = useState("");
-    const [debouncedSearch, setDebouncedSearch] = useState("");
     const [categoryFilter, setCategoryFilter] = useState("");
     const [statusFilter, setStatusFilter] = useState("");
 
-    // Debounce search input
-    useEffect(() => {
-        const handler = setTimeout(() => {
-            setDebouncedSearch(searchQuery);
-            setCurrentPageNumber(1);
-        }, 300);
-        return () => clearTimeout(handler);
-    }, [searchQuery]);
+    const handleSearchChange = (query: string) => {
+        setSearchQuery(query);
+        setCurrentPageNumber(1);
+    };
 
     const productListUrl = apiConfig.productList?.productListUrl || "get-product-list";
     const categoriesUrl = apiConfig.inventory?.productCategoriesListUrl || "product-categories-list";
@@ -133,8 +128,8 @@ const Products = () => {
     const filteredProducts = useMemo(() => {
         return allProducts.filter((product) => {
             // Search filter
-            if (debouncedSearch.trim()) {
-                const search = debouncedSearch.toLowerCase().trim();
+            if (searchQuery.trim()) {
+                const search = searchQuery.toLowerCase().trim();
                 const name = (product.name || product.productName || "").toLowerCase();
                 const pcode = (product.pcode || product.productCode || product.code || "").toLowerCase();
                 const sku = (product.sku || "").toLowerCase();
@@ -170,7 +165,7 @@ const Products = () => {
 
             return true;
         });
-    }, [allProducts, debouncedSearch, categoryFilter, statusFilter]);
+    }, [allProducts, searchQuery, categoryFilter, statusFilter]);
 
     // Metrics
     const metrics = useMemo(() => {
@@ -232,7 +227,6 @@ const Products = () => {
 
     const handleRefresh = () => {
         setSearchQuery("");
-        setDebouncedSearch("");
         setCategoryFilter("");
         setStatusFilter("");
         setCurrentPageNumber(1);
@@ -361,7 +355,7 @@ const Products = () => {
                 setDataLimit={setDataLimit}
                 handlePagination={handlePagination}
                 searchQuery={searchQuery}
-                setSearchQuery={setSearchQuery}
+                setSearchQuery={handleSearchChange}
                 categoryFilter={categoryFilter}
                 setCategoryFilter={setCategoryFilter}
                 statusFilter={statusFilter}

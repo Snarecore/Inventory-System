@@ -725,7 +725,7 @@ const CreatePurchaseForm: React.FC = () => {
     }
   }, [allProducts]);
 
-  // Filtered Products for Search Dropdown
+  // Filtered Products for Search Dropdown (Instant O(N) in-memory filter)
   const filteredProducts = useMemo(() => {
     if (!productSearchQuery.trim()) return allProducts.slice(0, 8);
     const q = productSearchQuery.toLowerCase().trim();
@@ -740,7 +740,7 @@ const CreatePurchaseForm: React.FC = () => {
       .slice(0, 10);
   }, [allProducts, productSearchQuery]);
 
-  // Filtered Suppliers for Supplier Dropdown
+  // Filtered Suppliers for Supplier Dropdown (Instant O(N) in-memory filter)
   const filteredSuppliers = useMemo(() => {
     if (!supplierSearchQuery.trim()) return suppliersList.slice(0, 10);
     const q = supplierSearchQuery.toLowerCase().trim();
@@ -823,6 +823,19 @@ const CreatePurchaseForm: React.FC = () => {
       e.preventDefault();
       if (filteredProducts.length === 1) {
         handleToggleProductInList(filteredProducts[0]);
+        return;
+      }
+      const q = productSearchQuery.toLowerCase().trim();
+      if (!q) return;
+      const immediateMatches = allProducts.filter((p) => {
+        const name = (p.name || p.productName || "").toLowerCase();
+        const code = (p.pcode || p.productCode || "").toLowerCase();
+        const barcode = (p.barcode || "").toLowerCase();
+        const sku = (p.sku || "").toLowerCase();
+        return name.includes(q) || code.includes(q) || barcode.includes(q) || sku.includes(q);
+      });
+      if (immediateMatches.length === 1) {
+        handleToggleProductInList(immediateMatches[0]);
       }
     }
   };

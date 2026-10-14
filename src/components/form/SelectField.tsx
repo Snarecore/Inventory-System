@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { RiArrowDropDownLine } from "react-icons/ri";
 
 interface Option {
@@ -46,7 +46,11 @@ const SelectInput: React.FC<SelectInputProps> = ({ label, value, options, onChan
         setSearchTerm("");
     };
 
-    const filteredOptions = options.filter((option) => option.label && option.label.toLocaleLowerCase().includes(searchTerm.toLocaleLowerCase()));
+    const filteredOptions = useMemo(() => {
+        if (!searchTerm.trim()) return options;
+        const q = searchTerm.toLocaleLowerCase();
+        return options.filter((option) => option.label && option.label.toLocaleLowerCase().includes(q));
+    }, [options, searchTerm]);
 
     return (
         <div className={`flex flex-col items-center w-full ${openDropdown ? 'relative z-50' : ''}`}>

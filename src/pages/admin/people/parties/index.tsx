@@ -24,10 +24,14 @@ const Parties: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState<string>("");
   const [sortBy, setSortBy] = useState<string>("latest");
   const [searchQuery, setSearchQuery] = useState<string>("");
-  const [debouncedSearch, setDebouncedSearch] = useState<string>("");
 
   const [dataLimit, setDataLimit] = useState<number>(10);
   const [currentPageNumber, setCurrentPageNumber] = useState<number>(1);
+
+  const handleSearchChange = (query: string) => {
+    setSearchQuery(query);
+    setCurrentPageNumber(1);
+  };
 
   // Modals state
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
@@ -41,15 +45,6 @@ const Parties: React.FC = () => {
     const urlType = searchParams.get("type") || "";
     setTypeFilter(urlType);
   }, [searchParams]);
-
-  // Debounce search
-  useEffect(() => {
-    const handler = setTimeout(() => {
-      setDebouncedSearch(searchQuery);
-      setCurrentPageNumber(1);
-    }, 300);
-    return () => clearTimeout(handler);
-  }, [searchQuery]);
 
   const partyListUrl = apiConfig.party?.partyListUrl || "get-party-info-list";
 
@@ -151,8 +146,8 @@ const Parties: React.FC = () => {
   const filteredParties = useMemo(() => {
     return allParties.filter((party) => {
       // Search filter
-      if (debouncedSearch.trim()) {
-        const query = debouncedSearch.toLowerCase().trim();
+      if (searchQuery.trim()) {
+        const query = searchQuery.toLowerCase().trim();
         const name = (party.name || party.partyName || party.party_name || "").toLowerCase();
         const phone = (party.phone || party.partyPhone || party.phoneNumber || party.party_phone || "").toLowerCase();
         const email = (party.email || party.partyEmail || "").toLowerCase();
@@ -182,7 +177,7 @@ const Parties: React.FC = () => {
 
       return true;
     });
-  }, [allParties, debouncedSearch, typeFilter, statusFilter]);
+  }, [allParties, searchQuery, typeFilter, statusFilter]);
 
   // Sorted parties based on sortBy
   const sortedParties = useMemo(() => {
@@ -249,7 +244,6 @@ const Parties: React.FC = () => {
 
   const handleRefresh = () => {
     setSearchQuery("");
-    setDebouncedSearch("");
     setTypeFilter("");
     setStatusFilter("");
     setSortBy("latest");
@@ -439,7 +433,7 @@ const Parties: React.FC = () => {
         setDataLimit={setDataLimit}
         handlePagination={handlePagination}
         searchQuery={searchQuery}
-        setSearchQuery={setSearchQuery}
+        setSearchQuery={handleSearchChange}
         typeFilter={typeFilter}
         setTypeFilter={(t) => {
           setTypeFilter(t);

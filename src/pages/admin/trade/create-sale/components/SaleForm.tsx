@@ -552,7 +552,7 @@ export const CreateSaleForm: React.FC = () => {
     }
   }, [allProducts, lineItems.length]);
 
-  // Filtered Products for Search Dropdown
+  // Filtered Products for Search Dropdown (Instant O(N) in-memory filter)
   const filteredProducts = useMemo(() => {
     if (!productSearchQuery.trim()) return allProducts.slice(0, 15);
     const q = productSearchQuery.toLowerCase().trim();
@@ -566,7 +566,7 @@ export const CreateSaleForm: React.FC = () => {
       .slice(0, 25);
   }, [allProducts, productSearchQuery]);
 
-  // Filtered Customers
+  // Filtered Customers (Instant O(N) in-memory filter)
   const filteredCustomers = useMemo(() => {
     if (!customerSearchQuery.trim()) return customerList.slice(0, 15);
     const q = customerSearchQuery.toLowerCase().trim();
@@ -739,6 +739,18 @@ export const CreateSaleForm: React.FC = () => {
       e.preventDefault();
       if (filteredProducts.length === 1) {
         handleToggleProductInList(filteredProducts[0]);
+        return;
+      }
+      const q = productSearchQuery.toLowerCase().trim();
+      if (!q) return;
+      const immediateMatches = allProducts.filter((p) => {
+        const name = (p.name || "").toLowerCase();
+        const pcode = (p.pcode || "").toLowerCase();
+        const barcode = (p.barcode || "").toLowerCase();
+        return name.includes(q) || pcode.includes(q) || barcode.includes(q);
+      });
+      if (immediateMatches.length === 1) {
+        handleToggleProductInList(immediateMatches[0]);
       }
     }
   };
