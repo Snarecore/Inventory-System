@@ -63,15 +63,15 @@ const InputField: React.FC<InputFieldProps> = ({
   return (
     <div className="w-full">
       {label && (
-        <label htmlFor={name} className="text-xs font-semibold text-gray-700 block mb-1">
+        <label htmlFor={name} className="text-xs font-semibold text-black block mb-1">
           {label} {required && <span className="text-red-600">*</span>}
         </label>
       )}
 
       <div
         className={`flex items-center w-full transition-all duration-200 border rounded-lg px-2.5 h-9
-          ${message ? "border-red-500" : "border-gray-200"}
-          bg-white text-black text-xs focus-within:ring-1 focus-within:ring-[var(--primary-color)]
+          ${message ? "border-red-500" : "border-gray-300"}
+          bg-white text-black text-xs focus-within:ring-1 focus-within:ring-[var(--primary-color)] focus-within:border-[var(--primary-color)]
           ${wrapperClass}`}
       >
         {icon && <div className="pr-2">{icon}</div>}
@@ -91,7 +91,7 @@ const InputField: React.FC<InputFieldProps> = ({
           onKeyDown={onKeyDown}
           onWheel={handleWheel}
           onChange={handleChange}
-          className={`w-full focus:outline-none placeholder:text-xs placeholder:text-gray-400 px-1 text-xs bg-transparent
+          className={`w-full focus:outline-none placeholder:text-xs placeholder:text-gray-400 px-1 text-xs text-black bg-transparent
             ${inputClass}
             ${disabled ? "cursor-not-allowed opacity-50" : "cursor-text"}
           `}

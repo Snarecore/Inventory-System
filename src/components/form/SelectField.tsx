@@ -56,20 +56,20 @@ const SelectInput: React.FC<SelectInputProps> = ({ label, value, options, onChan
         <div className={`flex flex-col items-center w-full ${openDropdown ? 'relative z-50' : ''}`}>
             <div ref={dropdownRef} className={`relative w-full ${openDropdown ? 'z-50' : ''}`}>
                 {label && (
-                    <label className="text-xs font-semibold text-gray-700 block mb-1">
+                    <label className="text-xs font-semibold text-black block mb-1">
                         {label}
                         {required && <span className="text-red-600 ml-1">*</span>}
                     </label>
                 )}
 
                 <div
-                    className={`border px-2.5 h-9 rounded-lg cursor-pointer bg-white flex justify-between items-center w-full text-black transition-all duration-200 text-xs active:bg-gray-50 touch-manipulation ${openDropdown ? "border-[var(--primary-color)] ring-1 ring-[var(--primary-color)]" : "border-gray-200"} ${disabled ? "opacity-50 cursor-not-allowed" : ""}`}
+                    className={`border px-2.5 h-9 rounded-lg cursor-pointer bg-white flex justify-between items-center w-full text-black transition-all duration-200 text-xs active:bg-gray-50 touch-manipulation ${openDropdown ? "border-[var(--primary-color)] ring-1 ring-[var(--primary-color)]" : "border-gray-300"} ${disabled ? "opacity-50 cursor-not-allowed" : ""}`}
                     onClick={() => !disabled && setOpenDropdown(!openDropdown)}
                 >
                     <span className={`truncate ${selectedOption ? 'text-black' : 'text-gray-400 text-xs'}`}>
                         {selectedOption ? selectedOption.label : placeholder}
                     </span>
-                    <RiArrowDropDownLine className={`text-gray-500 text-lg flex-shrink-0 transition-transform duration-200 ${openDropdown ? 'rotate-180' : ''}`} />
+                    <RiArrowDropDownLine className={`text-gray-500 text-lg flex-shrink-0 transition-transform duration-200 ${openDropdown ? 'rotate-180 text-[var(--primary-color)]' : ''}`} />
                 </div>
 
                 {openDropdown && (
@@ -78,7 +78,7 @@ const SelectInput: React.FC<SelectInputProps> = ({ label, value, options, onChan
                             <input
                                 type="text"
                                 placeholder="Search..."
-                                className="w-full h-8 border border-gray-200 rounded-md focus:outline-none focus:ring-1 focus:ring-[var(--primary-color)] focus:border-[var(--primary-color)] px-2 py-1 text-xs appearance-none"
+                                className="w-full h-8 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[var(--primary-color)] focus:border-[var(--primary-color)] px-2 py-1 text-xs appearance-none"
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
                             />
@@ -89,7 +89,9 @@ const SelectInput: React.FC<SelectInputProps> = ({ label, value, options, onChan
                                 filteredOptions.map((option, index) => (
                                     <li
                                         key={index}
-                                        className={`px-2.5 py-1.5 hover:bg-[var(--primary-color)] hover:text-white active:bg-[var(--primary-color-light)] active:text-white focus:bg-[var(--primary-color)] focus:text-white cursor-pointer w-full text-xs truncate transition-colors duration-150 touch-manipulation ${selectedOption && selectedOption.value === option.value
+                                        className={`px-2.5 py-1.5 hover:bg-[var(--primary-color)] hover:text-white active:bg-[var(--primary-color-light)] active:text-white 
+                                            focus:bg-[var(--primary-color)] focus:text-white cursor-pointer w-full text-xs truncate transition-colors duration-150 touch-manipulation 
+                                            ${selectedOption && selectedOption.value === option.value
                                             ? "bg-[var(--primary-color-light)] text-[var(--primary-color)] font-medium"
                                             : "text-black"
                                             }`}

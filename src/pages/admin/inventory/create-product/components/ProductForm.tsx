@@ -567,7 +567,7 @@ const CreateProductForm = () => {
                             {/* Row 1, Col 3: Unit (Primary) with Allow Decimal Toggle */}
                             <div className="relative z-20">
                                 <div className="flex items-center justify-between mb-1">
-                                    <label className="text-xs font-semibold text-gray-700">
+                                    <label className="text-xs font-semibold text-black">
                                         Unit{isUnitsLoading ? " (Loading...)" : ""} <span className="text-red-600 ml-0.5">*</span>
                                     </label>
                                     <label 
@@ -616,10 +616,10 @@ const CreateProductForm = () => {
                             {/* Row 2, Col 1: Conversion Ratio (if Secondary Unit is chosen) OR Packing Levels (Optional) */}
                             {selectedUnit && selectedSecondaryUnit ? (
                                 <div>
-                                    <label htmlFor="packing_levels" className="text-xs font-semibold text-gray-700 block mb-1 truncate">
+                                    <label htmlFor="packing_levels" className="text-xs font-semibold text-black block mb-1 truncate">
                                         Conversion Ratio (1 {selectedUnit.label} = ?)
                                     </label>
-                                    <div className="flex items-center w-full transition-all duration-200 border border-gray-200 rounded-lg px-2 h-9 bg-white text-black text-xs focus-within:ring-1 focus-within:ring-[var(--primary-color,#009fe3)] focus-within:border-[var(--primary-color,#009fe3)]">
+                                    <div className="flex items-center w-full transition-all duration-200 border border-gray-300 rounded-lg px-2 h-9 bg-white text-black text-xs focus-within:ring-1 focus-within:ring-[var(--primary-color,#009fe3)] focus-within:border-[var(--primary-color,#009fe3)]">
                                         <input
                                             id="packing_levels"
                                             name="packing_levels"
@@ -656,7 +656,7 @@ const CreateProductForm = () => {
                             {/* Row 2, Col 2: Buy Price (based on Secondary Unit if selected, else Primary Unit) */}
                             <div>
                                 <div className="flex items-center justify-between mb-1 gap-1">
-                                    <label htmlFor="buy_price" className="text-xs font-semibold text-gray-700 truncate">
+                                    <label htmlFor="buy_price" className="text-xs font-semibold text-black truncate">
                                         Buy Price (৳) <span className="text-red-600">*</span>
                                     </label>
                                     {conversionFactor && fieldValues.buy_price && Number(fieldValues.buy_price) > 0 ? (
@@ -665,7 +665,7 @@ const CreateProductForm = () => {
                                         </span>
                                     ) : null}
                                 </div>
-                                <div className="flex items-center w-full transition-all duration-200 border border-gray-200 rounded-lg px-2.5 h-9 bg-white text-black text-xs focus-within:ring-1 focus-within:ring-[var(--primary-color,#009fe3)] focus-within:border-[var(--primary-color,#009fe3)]">
+                                <div className="flex items-center w-full transition-all duration-200 border border-gray-300 rounded-lg px-2.5 h-9 bg-white text-black text-xs focus-within:ring-1 focus-within:ring-[var(--primary-color,#009fe3)] focus-within:border-[var(--primary-color,#009fe3)]">
                                     <input
                                         id="buy_price"
                                         name="buy_price"
@@ -683,7 +683,7 @@ const CreateProductForm = () => {
                             {/* Row 2, Col 3: Sell Price (based on Secondary Unit if selected, else Primary Unit) */}
                             <div>
                                 <div className="flex items-center justify-between mb-1 gap-1">
-                                    <label htmlFor="sell_price" className="text-xs font-semibold text-gray-700 truncate">
+                                    <label htmlFor="sell_price" className="text-xs font-semibold text-black truncate">
                                         Sell Price (৳) <span className="text-red-600">*</span>
                                     </label>
                                     {conversionFactor && fieldValues.sell_price && Number(fieldValues.sell_price) > 0 ? (
@@ -692,7 +692,7 @@ const CreateProductForm = () => {
                                         </span>
                                     ) : null}
                                 </div>
-                                <div className="flex items-center w-full transition-all duration-200 border border-gray-200 rounded-lg px-2.5 h-9 bg-white text-black text-xs focus-within:ring-1 focus-within:ring-[var(--primary-color,#009fe3)] focus-within:border-[var(--primary-color,#009fe3)]">
+                                <div className="flex items-center w-full transition-all duration-200 border border-gray-300 rounded-lg px-2.5 h-9 bg-white text-black text-xs focus-within:ring-1 focus-within:ring-[var(--primary-color,#009fe3)] focus-within:border-[var(--primary-color,#009fe3)]">
                                     <input
                                         id="sell_price"
                                         name="sell_price"
@@ -782,7 +782,7 @@ const CreateProductForm = () => {
             <div className="bg-white shadow-xs rounded-xl border border-gray-200 p-2.5 sm:px-4 flex flex-wrap items-center justify-between gap-2.5">
                 {/* Status Toggle on Left */}
                 <div className="flex items-center gap-2.5">
-                    <span className="text-xs font-semibold text-gray-700">
+                    <span className="text-xs font-semibold text-black">
                         Status
                     </span>
                     <label className="relative inline-flex items-center cursor-pointer flex-shrink-0">
