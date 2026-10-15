@@ -112,9 +112,8 @@ export function setStoredUser(user: User, customExpiryMs?: number, rememberMe = 
     }
 }
 
-/**
- * Saves essential login session data
- */
+// Saves essential login session data
+
 export function saveLoginSession(data: LoginSuccessResponse, rememberMe = true): void {
     if (typeof window === "undefined" || !data) return;
 

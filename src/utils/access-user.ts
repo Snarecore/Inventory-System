@@ -8,9 +8,6 @@ export interface AccessUser {
     branchId: number | string;
 }
 
-/**
- * Builds the required accessUser payload as defined in API_DOCUMENTATION.md (§3)
- */
 export function buildAccessUser(): AccessUser {
     const userInfo = getUserInfo();
     const token = getStoredToken() || userInfo?.token || "";
