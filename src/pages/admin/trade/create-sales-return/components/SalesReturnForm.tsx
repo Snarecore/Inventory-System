@@ -652,8 +652,6 @@ export const SalesReturnForm: React.FC = () => {
       setCustomerAddress("");
       setLines([]);
       resetRefund();
-      setSelectedRefundBankId("");
-      setSelectedRefundMfsId("");
     }
   };
 
