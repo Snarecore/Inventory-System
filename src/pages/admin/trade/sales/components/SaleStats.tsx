@@ -1,6 +1,7 @@
 import React from "react";
 import { FaShoppingCart, FaMoneyBillWave, FaExclamationCircle, FaReceipt } from "react-icons/fa";
 import { formatMoney } from "@/utils/formatters";
+import TradeStatsCards from "@/components/trade/TradeStatsCards";
 
 interface SaleStatsProps {
   totalCount: number;
@@ -50,31 +51,7 @@ const SaleStats: React.FC<SaleStatsProps> = ({
     },
   ];
 
-  return (
-    <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 w-full">
-      {cards.map((card, idx) => {
-        const Icon = card.icon;
-        return (
-          <div
-            key={idx}
-            className={`p-2.5 sm:p-3 rounded-xl border flex items-center justify-between gap-2.5 transition-all shadow-xs ${card.bg}`}
-          >
-            <div className="flex flex-col min-w-0">
-              <span className="text-[11px] font-semibold text-black uppercase tracking-wider truncate">
-                {card.title}
-              </span>
-              <span className={`text-base sm:text-lg font-bold truncate mt-0.5 ${card.color}`}>
-                {card.value}
-              </span>
-            </div>
-            <div className={`p-2 rounded-lg shrink-0 ${card.iconBg}`}>
-              <Icon size={16} />
-            </div>
-          </div>
-        );
-      })}
-    </div>
-  );
+  return <TradeStatsCards cards={cards} />;
 };
 
 export default SaleStats;

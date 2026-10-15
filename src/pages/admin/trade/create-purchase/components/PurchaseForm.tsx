@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef } from "react";
+import React, { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { FiChevronDown } from "react-icons/fi";
@@ -13,11 +13,6 @@ import {
   FaTimes,
   FaPrint,
   FaCalculator,
-  FaMoneyBillWave,
-  FaCreditCard,
-  FaMobileAlt,
-  FaUniversity,
-  FaWallet,
 } from "react-icons/fa";
 import Button from "@/components/button/Button";
 import DeleteModal from "@/components/modal/DeleteModal";
@@ -41,8 +36,13 @@ import { useAPI } from "@/hooks/useApi";
 import { formatMoney } from "@/utils/formatters";
 import { showSuccessToast, showErrorToast, showDeleteToast } from "@/utils/toast-utils";
 import { isPartyActive } from "@/utils/party-utils";
-import { usePurchasesQuery } from "@/pages/admin/trade/purchase-return/hooks/usePurchaseReturnQueries";
 import { useFinancialAccounts } from "@/hooks/useFinancialAccounts";
+import { useTradePayment } from "@/hooks/useTradePayment";
+import TradePaymentSection from "@/components/trade/TradePaymentSection";
+import { useTradeProductSearch } from "@/hooks/useTradeProductSearch";
+import TradeProductSearch from "@/components/trade/TradeProductSearch";
+import TradeLineItemsTable from "@/components/trade/TradeLineItemsTable";
+import TradePartySelector from "@/components/trade/TradePartySelector";
 import type { PurchaseItem, PurchaseDetailItem, ProductItem, PartyItem, PurchaseChallanSettings } from "@/types";
 
 interface FormLineItem {
@@ -59,6 +59,20 @@ interface FormLineItem {
   total: number;
   stock?: number | string;
 }
+
+const computeLineTotal = (
+  priceStr: string,
+  qtyStr: string,
+  vatStr: string
+) => {
+  const p = Number(priceStr) || 0;
+  const q = Number(qtyStr) || 0;
+  const v = Number(vatStr) || 0;
+
+  const baseAmount = p * q;
+  const vatAmount = (baseAmount * v) / 100;
+  return Math.round((baseAmount + vatAmount) * 100) / 100;
+};
 
 const defaultChallanSettings: PurchaseChallanSettings = {
   showChallanRefNo: true,
@@ -98,10 +112,7 @@ const CreatePurchaseForm: React.FC = () => {
 
   // Supplier
   const [selectedSupplier, setSelectedSupplier] = useState<PartyItem | null>(null);
-  const [supplierSearchQuery, setSupplierSearchQuery] = useState<string>("");
-  const [isSupplierDropdownOpen, setIsSupplierDropdownOpen] = useState<boolean>(false);
   const [isPartyModalOpen, setIsPartyModalOpen] = useState<boolean>(false);
-  const supplierRef = useRef<HTMLDivElement>(null);
 
   // Challan & Logistics Info
   const [challanNo, setChallanNo] = useState<string>("");
@@ -120,33 +131,13 @@ const CreatePurchaseForm: React.FC = () => {
 
   // Product Selection & Line Items
   const [lineItems, setLineItems] = useState<FormLineItem[]>([]);
-  const [productSearchQuery, setProductSearchQuery] = useState<string>("");
-  const [isProductDropdownOpen, setIsProductDropdownOpen] = useState<boolean>(false);
-  const productSearchRef = useRef<HTMLDivElement>(null);
 
   // Invoice-level Financials
   const [invoiceDiscount, setInvoiceDiscount] = useState<string>("");
   const [invoiceDiscountType, setInvoiceDiscountType] = useState<"FLAT" | "PERCENT">("FLAT");
   const [invoiceVat, setInvoiceVat] = useState<string>("");
 
-  // Multi-Payment Breakdown (Split Payment)
-  const [cashAmount, setCashAmount] = useState<string>("");
-  const [bankAmount, setBankAmount] = useState<string>("");
-  const [mfsAmount, setMfsAmount] = useState<string>("");
-  const [cashGiven, setCashGiven] = useState<string>("");
-  const [showCashGivenCalc, setShowCashGivenCalc] = useState<boolean>(false);
 
-  // Bank details
-  const [selectedBankId, setSelectedBankId] = useState<string>("");
-  const [bankName, setBankName] = useState<string>("");
-  const [accountNo, setAccountNo] = useState<string>("");
-  const [bankRef, setBankRef] = useState<string>("");
-
-  // MFS details
-  const [selectedMfsId, setSelectedMfsId] = useState<string>("");
-  const [mfsName, setMfsName] = useState<string>("bKash");
-  const [mfsPhone, setMfsPhone] = useState<string>("");
-  const [mfsTrxId, setMfsTrxId] = useState<string>("");
 
   // Modals & Settings
   const [isChallanSettingsOpen, setIsChallanSettingsOpen] = useState<boolean>(false);
@@ -179,12 +170,6 @@ const CreatePurchaseForm: React.FC = () => {
   // Click outside to close dropdowns
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
-      if (supplierRef.current && !supplierRef.current.contains(e.target as Node)) {
-        setIsSupplierDropdownOpen(false);
-      }
-      if (productSearchRef.current && !productSearchRef.current.contains(e.target as Node)) {
-        setIsProductDropdownOpen(false);
-      }
       if (notesDropdownRef.current && !notesDropdownRef.current.contains(e.target as Node)) {
         setIsNotesDropdownOpen(false);
       }
@@ -426,18 +411,18 @@ const CreatePurchaseForm: React.FC = () => {
         data.mfsAmount ??
         (data.mfsId || data.mfs_id ? data.paidAmount : "");
 
-      setCashAmount(cash !== "" && cash !== null && Number(cash) > 0 ? String(cash) : "");
-      setBankAmount(bank !== "" && bank !== null && Number(bank) > 0 ? String(bank) : "");
-      setMfsAmount(mfs !== "" && mfs !== null && Number(mfs) > 0 ? String(mfs) : "");
-
-      if (data.bankId || data.bank_id) setSelectedBankId(String(data.bankId || data.bank_id));
-      setBankName(data.bankName || data.bank_name || "");
-      setAccountNo(data.accountNo || data.account_no || "");
-      setBankRef(data.bankAccountName || data.bank_account_name || data.branchName || "");
-
-      if (data.mfsId || data.mfs_id) setSelectedMfsId(String(data.mfsId || data.mfs_id));
-      setMfsName(data.mfsName || data.mfs_name || "bKash");
-      setMfsPhone(data.mfsPhone || data.mfs_phone || "");
+      initializePayment({
+        cashAmount: cash !== "" && cash !== null && Number(cash) > 0 ? String(cash) : "",
+        bankAmount: bank !== "" && bank !== null && Number(bank) > 0 ? String(bank) : "",
+        mfsAmount: mfs !== "" && mfs !== null && Number(mfs) > 0 ? String(mfs) : "",
+        selectedBankId: data.bankId || data.bank_id ? String(data.bankId || data.bank_id) : "",
+        bankName: data.bankName || data.bank_name || "",
+        accountNo: data.accountNo || data.account_no || "",
+        bankRef: data.bankAccountName || data.bank_account_name || data.branchName || "",
+        selectedMfsId: data.mfsId || data.mfs_id ? String(data.mfsId || data.mfs_id) : "",
+        mfsName: data.mfsName || data.mfs_name || "bKash",
+        mfsPhone: data.mfsPhone || data.mfs_phone || "",
+      });
 
       // Supplier
       const suppId = data.supplierId || data.supplier_id || data.customerId || data.customer_id;
@@ -590,137 +575,138 @@ const CreatePurchaseForm: React.FC = () => {
     }
   }, [allProducts]);
 
-  // Filtered Products for Search Dropdown (Instant O(N) in-memory filter)
-  const filteredProducts = useMemo(() => {
-    if (!productSearchQuery.trim()) return allProducts.slice(0, 8);
-    const q = productSearchQuery.toLowerCase().trim();
-    return allProducts
-      .filter((p) => {
-        const name = (p.name || p.productName || "").toLowerCase();
-        const code = (p.pcode || p.productCode || "").toLowerCase();
-        const barcode = (p.barcode || "").toLowerCase();
-        const sku = (p.sku || "").toLowerCase();
-        return name.includes(q) || code.includes(q) || barcode.includes(q) || sku.includes(q);
-      })
-      .slice(0, 10);
-  }, [allProducts, productSearchQuery]);
-
-  // Filtered Suppliers for Supplier Dropdown (Instant O(N) in-memory filter)
-  const filteredSuppliers = useMemo(() => {
-    if (!supplierSearchQuery.trim()) return suppliersList.slice(0, 10);
-    const q = supplierSearchQuery.toLowerCase().trim();
-    return suppliersList.filter((s) => {
-      const name = (s.name || s.partyName || "").toLowerCase();
-      const phone = (s.phone || s.partyPhone || "").toLowerCase();
-      const address = (s.address || s.partyAddress || s.city || "").toLowerCase();
-      return name.includes(q) || phone.includes(q) || address.includes(q);
-    });
-  }, [suppliersList, supplierSearchQuery]);
-
-  // Calculate single line item total
-  const computeLineTotal = (
-    priceStr: string,
-    qtyStr: string,
-    vatStr: string
-  ) => {
-    const p = Number(priceStr) || 0;
-    const q = Number(qtyStr) || 0;
-    const v = Number(vatStr) || 0;
-
-    const baseAmount = p * q;
-    const vatAmount = (baseAmount * v) / 100;
-    return Math.round((baseAmount + vatAmount) * 100) / 100;
-  };
 
   // Helper to check if a product is already added in the purchase line items list
-  const isProductAlreadyInList = (product: ProductItem) => {
-    const pId = product.id ?? product.productId;
-    const pCode = product.pcode || product.productCode;
+  const isProductAlreadyInList = useCallback(
+    (product: ProductItem) => {
+      const pId = product.id ?? product.productId;
+      const pCode = product.pcode || product.productCode;
 
-    return lineItems.some((item) => {
-      if (pId !== undefined && pId !== null && pId !== "" && item.productId !== undefined && item.productId !== null && item.productId !== "") {
-        if (String(item.productId) === String(pId)) return true;
-      }
-      if (pCode && item.productCode) {
-        if (String(item.productCode).trim().toLowerCase() === String(pCode).trim().toLowerCase()) return true;
-      }
-      return false;
-    });
-  };
+      return lineItems.some((item) => {
+        if (pId !== undefined && pId !== null && pId !== "" && item.productId !== undefined && item.productId !== null && item.productId !== "") {
+          if (String(item.productId) === String(pId)) return true;
+        }
+        if (pCode && item.productCode) {
+          if (String(item.productCode).trim().toLowerCase() === String(pCode).trim().toLowerCase()) return true;
+        }
+        return false;
+      });
+    },
+    [lineItems]
+  );
 
   // Toggle adding or removing a product from line items directly
-  const handleToggleProductInList = (product: ProductItem) => {
-    const pId = product.id ?? product.productId ?? "";
-    const pCode = product.pcode || product.productCode || "";
-    const isAlreadyIn = isProductAlreadyInList(product);
+  const handleToggleProductInList = useCallback(
+    (product: ProductItem) => {
+      const pId = product.id ?? product.productId ?? "";
+      const pCode = product.pcode || product.productCode || "";
+      const isAlreadyIn = isProductAlreadyInList(product);
 
-    if (isAlreadyIn) {
-      setLineItems((prev) =>
-        prev.filter((item) => {
-          if (pId && item.productId && String(item.productId) === String(pId)) return false;
-          if (pCode && item.productCode && String(item.productCode).trim().toLowerCase() === String(pCode).trim().toLowerCase()) return false;
-          return true;
-        })
-      );
-    } else {
-      const prodName = product.name || product.productName || "Product";
-      const prodUnit = product.unit || "pcs";
-      const buyPrice = Number(product.buy_price ?? product.buyPrice ?? 0);
-      const currentStock = Number(product.stock ?? product.quantity ?? 0);
+      if (isAlreadyIn) {
+        setLineItems((prev) =>
+          prev.filter((item) => {
+            if (pId && item.productId && String(item.productId) === String(pId)) return false;
+            if (pCode && item.productCode && String(item.productCode).trim().toLowerCase() === String(pCode).trim().toLowerCase()) return false;
+            return true;
+          })
+        );
+      } else {
+        const prodName = product.name || product.productName || "Product";
+        const prodUnit = product.unit || "pcs";
+        const buyPrice = Number(product.buy_price ?? product.buyPrice ?? 0);
+        const currentStock = Number(product.stock ?? product.quantity ?? 0);
 
-      const newLine: FormLineItem = {
-        productId: pId,
-        productCode: pCode,
-        productName: prodName,
-        unit: prodUnit,
-        buyPrice: buyPrice > 0 ? String(buyPrice) : "",
-        quantity: "1",
-        vat: "",
-        total: buyPrice,
-        stock: currentStock,
-      };
-      setLineItems((prev) => [...prev, newLine]);
-    }
-  };
-
-  const handleKeyDownSearch = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter") {
-      e.preventDefault();
-      if (filteredProducts.length === 1) {
-        handleToggleProductInList(filteredProducts[0]);
-        return;
+        const newLine: FormLineItem = {
+          productId: pId,
+          productCode: pCode,
+          productName: prodName,
+          unit: prodUnit,
+          buyPrice: buyPrice > 0 ? String(buyPrice) : "",
+          quantity: "1",
+          vat: "",
+          total: buyPrice,
+          stock: currentStock,
+        };
+        setLineItems((prev) => [...prev, newLine]);
       }
-      const q = productSearchQuery.toLowerCase().trim();
-      if (!q) return;
-      const immediateMatches = allProducts.filter((p) => {
-        const name = (p.name || p.productName || "").toLowerCase();
-        const code = (p.pcode || p.productCode || "").toLowerCase();
-        const barcode = (p.barcode || "").toLowerCase();
-        const sku = (p.sku || "").toLowerCase();
-        return name.includes(q) || code.includes(q) || barcode.includes(q) || sku.includes(q);
+    },
+    [isProductAlreadyInList]
+  );
+
+  const handleUpdateLineItem = useCallback(
+    (index: number, field: keyof FormLineItem, value: any) => {
+      setLineItems((prev) => {
+        if (!prev[index]) return prev;
+        const updated = [...prev];
+        const item = { ...updated[index], [field]: value };
+        item.total = computeLineTotal(item.buyPrice, item.quantity, item.vat);
+        updated[index] = item;
+        return updated;
       });
-      if (immediateMatches.length === 1) {
-        handleToggleProductInList(immediateMatches[0]);
+    },
+    []
+  );
+
+  const handleAddProduct = useCallback(
+    (product: ProductItem) => {
+      const pId = product.id ?? product.productId ?? "";
+      const pCode = product.pcode || product.productCode || "";
+      const existingIndex = lineItems.findIndex(
+        (item) =>
+          (pId && item.productId && String(item.productId) === String(pId)) ||
+          (pCode && item.productCode && String(item.productCode).trim().toLowerCase() === String(pCode).trim().toLowerCase())
+      );
+
+      if (existingIndex > -1) {
+        const curQty = Number(lineItems[existingIndex].quantity) || 1;
+        const newQty = curQty + 1;
+        handleUpdateLineItem(existingIndex, "quantity", String(newQty));
+        showSuccessToast(`Increased "${lineItems[existingIndex].productName}" quantity to ${newQty}`);
+      } else {
+        handleToggleProductInList(product);
       }
-    }
-  };
+    },
+    [lineItems, handleUpdateLineItem, handleToggleProductInList]
+  );
 
-  const handleUpdateLineItem = (index: number, field: keyof FormLineItem, value: any) => {
+  const productSearch = useTradeProductSearch({
+    allProducts,
+    mode: "purchase",
+    onAddProduct: handleAddProduct,
+    onToggleProduct: handleToggleProductInList,
+  });
+
+  const handleRemoveLineItem = useCallback((index: number) => {
     setLineItems((prev) => {
-      const updated = [...prev];
-      const item = { ...updated[index], [field]: value };
-      item.total = computeLineTotal(item.buyPrice, item.quantity, item.vat);
-      updated[index] = item;
-      return updated;
+      const item = prev[index];
+      const name = item?.productName || "Product";
+      showDeleteToast(`"${name}" removed from purchase list!`);
+      return prev.filter((_, i) => i !== index);
     });
-  };
+  }, []);
 
-  const handleRemoveLineItem = (index: number) => {
-    const item = lineItems[index];
-    const name = item?.productName || "Product";
-    setLineItems((prev) => prev.filter((_, i) => i !== index));
-    showDeleteToast(`"${name}" removed from purchase list!`);
-  };
+  const handleUpdatePrice = useCallback(
+    (idx: number, val: string) => handleUpdateLineItem(idx, "buyPrice", val),
+    [handleUpdateLineItem]
+  );
+
+  const handleUpdateQuantity = useCallback(
+    (idx: number, val: string) => handleUpdateLineItem(idx, "quantity", val),
+    [handleUpdateLineItem]
+  );
+
+  const handleRequestDelete = useCallback((idx: number) => {
+    setItemIndexToDelete(idx);
+    setIsDeleteLineModalOpen(true);
+  }, []);
+
+  const handleSelectSupplier = useCallback((supplier: PartyItem) => {
+    setSelectedSupplier(supplier);
+  }, []);
+
+  const handleOpenPartyModal = useCallback(() => {
+    setIsPartyModalOpen(true);
+  }, []);
 
   // --- Financial Calculations ---
   // 1. Raw Subtotal = sum of (buyPrice * quantity)
@@ -774,181 +760,33 @@ const CreatePurchaseForm: React.FC = () => {
     return Math.max(0, Math.round(total * 100) / 100);
   }, [rawSubtotal, totalDiscount, totalVat, calculatedTransport]);
 
-  // 10. Multi-Payment totals
-  const numCash = Number(cashAmount) || 0;
-  const numBank = Number(bankAmount) || 0;
-  const numMfs = Number(mfsAmount) || 0;
-  const totalPaid = useMemo(() => {
-    return numCash + numBank + numMfs;
-  }, [numCash, numBank, numMfs]);
+  const payment = useTradePayment({
+    grandTotal,
+    registeredBankAccounts,
+    registeredMfsAccounts,
+  });
 
-  const dueAmount = useMemo(() => {
-    return Math.max(0, grandTotal - totalPaid);
-  }, [grandTotal, totalPaid]);
-
-  const changeReturnAmount = useMemo(() => {
-    const given = Number(cashGiven) || 0;
-    if (given > numCash) {
-      return given - numCash;
-    }
-    return 0;
-  }, [cashGiven, numCash]);
-
-  // Payment normalizer & capping helper (exact amount cannot be exceeded)
-  const normalizePaymentValue = (val: string, max: number): string => {
-    if (val === "" || val === undefined || val === null) return "";
-    if (val === ".") return "0.";
-    const num = Number(val);
-    if (isNaN(num)) return "";
-    if (num < 0) return "0";
-    if (num > max) return String(max);
-    return val;
-  };
-
-  // Card Amount Change: cannot enter if bank not selected; auto deducts from cash; caps to max
-  const handleCardAmountChange = (rawVal: string) => {
-    if (!selectedBankId) {
-      showErrorToast("Please select a bank first before entering card amount");
-      return;
-    }
-    const currentMfs = Number(mfsAmount) || 0;
-    const maxForCard = Math.max(0, grandTotal - currentMfs);
-    const normalized = normalizePaymentValue(rawVal, maxForCard);
-    setBankAmount(normalized);
-
-    const numCard = Number(normalized) || 0;
-    const remainingCash = Math.max(0, grandTotal - numCard - currentMfs);
-    setCashAmount(remainingCash > 0 ? String(Math.round(remainingCash * 100) / 100) : "0");
-  };
-
-  // MFS Amount Change: cannot enter if MFS not selected; auto deducts from cash; caps to max
-  const handleMfsAmountChange = (rawVal: string) => {
-    if (!selectedMfsId) {
-      showErrorToast("Please select an MFS provider first before entering MFS amount");
-      return;
-    }
-    const currentCard = Number(bankAmount) || 0;
-    const maxForMfs = Math.max(0, grandTotal - currentCard);
-    const normalized = normalizePaymentValue(rawVal, maxForMfs);
-    setMfsAmount(normalized);
-
-    const numMfsVal = Number(normalized) || 0;
-    const remainingCash = Math.max(0, grandTotal - currentCard - numMfsVal);
-    setCashAmount(remainingCash > 0 ? String(Math.round(remainingCash * 100) / 100) : "0");
-  };
-
-  // Cash Amount Change: cannot exceed remaining amount
-  const handleCashAmountChange = (rawVal: string) => {
-    const currentCard = Number(bankAmount) || 0;
-    const currentMfs = Number(mfsAmount) || 0;
-    const maxForCash = Math.max(0, grandTotal - currentCard - currentMfs);
-    const normalized = normalizePaymentValue(rawVal, maxForCash);
-    setCashAmount(normalized);
-  };
-
-  // Auto-sync initial cash amount with grandTotal when grandTotal changes
-  useEffect(() => {
-    const currentCard = Number(bankAmount) || 0;
-    const currentMfs = Number(mfsAmount) || 0;
-
-    if (currentCard === 0 && currentMfs === 0) {
-      if (grandTotal > 0) {
-        setCashAmount(String(grandTotal));
-      } else {
-        setCashAmount("");
-      }
-    } else {
-      const remainingCash = Math.max(0, grandTotal - currentCard - currentMfs);
-      setCashAmount(remainingCash > 0 ? String(Math.round(remainingCash * 100) / 100) : "0");
-    }
-  }, [grandTotal]);
-
-  // Quick Payment presets
-  const handlePayFullCash = () => {
-    setCashAmount(grandTotal > 0 ? String(grandTotal) : "");
-    setBankAmount("");
-    setMfsAmount("");
-  };
-
-  const handlePayFullBank = () => {
-    if (!selectedBankId) {
-      if (registeredBankAccounts.length > 0) {
-        const firstBank = registeredBankAccounts[0];
-        const bId = String(firstBank.id || firstBank.bankId || firstBank._id || "");
-        handleSelectRegisteredBank(bId);
-      } else {
-        showErrorToast("Please select / register a bank account first");
-        return;
-      }
-    }
-    setBankAmount(grandTotal > 0 ? String(grandTotal) : "");
-    setCashAmount("0");
-    setMfsAmount("");
-  };
-
-  const handlePayFullMfs = () => {
-    if (!selectedMfsId) {
-      if (registeredMfsAccounts.length > 0) {
-        const firstMfs = registeredMfsAccounts[0];
-        const mId = String(firstMfs.id || firstMfs.mfsId || firstMfs._id || "");
-        handleSelectRegisteredMfs(mId);
-      } else {
-        showErrorToast("Please select / register an MFS account first");
-        return;
-      }
-    }
-    setMfsAmount(grandTotal > 0 ? String(grandTotal) : "");
-    setCashAmount("0");
-    setBankAmount("");
-  };
-
-  const handlePayFullCredit = () => {
-    setCashAmount("0");
-    setBankAmount("");
-    setMfsAmount("");
-  };
-
-  // When selecting a registered bank
-  const handleSelectRegisteredBank = (bankId: string) => {
-    setSelectedBankId(bankId);
-    const found = registeredBankAccounts.find(
-      (b) => String(b.id || b.bankId || b._id) === String(bankId)
-    );
-    if (found) {
-      setBankName(found.bankName || found.name || "");
-      setAccountNo(found.accountNo || found.bankAccountNumber || found.bankAccountNo || "");
-      setBankRef(found.accountName || found.branchName || "");
-    } else {
-      setBankName("");
-      setAccountNo("");
-      setBankRef("");
-      if (bankAmount) {
-        setBankAmount("");
-        const remCash = Math.max(0, grandTotal - (Number(mfsAmount) || 0));
-        setCashAmount(remCash > 0 ? String(remCash) : "");
-      }
-    }
-  };
-
-  // When selecting a registered MFS
-  const handleSelectRegisteredMfs = (mfsId: string) => {
-    setSelectedMfsId(mfsId);
-    const found = registeredMfsAccounts.find(
-      (m) => String(m.id || m.mfsId || m._id) === String(mfsId)
-    );
-    if (found) {
-      setMfsName(found.mfsName || found.name || found.method || "bKash");
-      setMfsPhone(found.mobileNo || found.phone || found.accountNo || "");
-    } else {
-      setMfsName("bKash");
-      setMfsPhone("");
-      if (mfsAmount) {
-        setMfsAmount("");
-        const remCash = Math.max(0, grandTotal - (Number(bankAmount) || 0));
-        setCashAmount(remCash > 0 ? String(remCash) : "");
-      }
-    }
-  };
+  const {
+    cashAmount,
+    bankAmount,
+    mfsAmount,
+    cashGiven,
+    selectedBankId,
+    selectedMfsId,
+    bankName,
+    accountNo,
+    bankRef,
+    mfsName,
+    mfsPhone,
+    numCash,
+    numBank,
+    numMfs,
+    totalPaid,
+    dueAmount,
+    changeReturnAmount,
+    resetPayment,
+    initializePayment,
+  } = payment;
 
   const handleAttachmentChange = (file: File | null) => {
     if (!file) {
@@ -1257,10 +1095,7 @@ const CreatePurchaseForm: React.FC = () => {
     setInvoiceDiscount("");
     setInvoiceVat("");
     setTransportCost("");
-    setCashAmount("");
-    setBankAmount("");
-    setMfsAmount("");
-    setCashGiven("");
+    resetPayment();
     setChallanNo("");
     setChallanDate("");
     setVatChallan("");
@@ -1378,99 +1213,16 @@ const CreatePurchaseForm: React.FC = () => {
       {/* Grid: Supplier & Meta Details */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 bg-white p-2.5 sm:p-3 rounded-xl border border-gray-200 shadow-xs">
         {/* Supplier Selector */}
-        <div className="relative" ref={supplierRef}>
-          <div className="flex items-center justify-between mb-1">
-            <label className="text-[11px] font-bold text-black tracking-wider">
-              Supplier <span className="text-rose-500">*</span>
-            </label>
-            <button
-              type="button"
-              onClick={() => setIsPartyModalOpen(true)}
-              className="text-[11px] font-bold text-[var(--color-primary)] flex items-center gap-1 cursor-pointer"
-            >
-              <FaUserPlus size={10} /> + New
-            </button>
-          </div>
-
-          <div
-            onClick={() => setIsSupplierDropdownOpen(!isSupplierDropdownOpen)}
-            className="flex items-center justify-between h-9 px-2.5 py-1.5 border border-gray-300 rounded-lg bg-gray-50/50 hover:bg-white cursor-pointer text-xs"
-          >
-            {selectedSupplier ? (
-              <div className="flex items-center gap-1.5 min-w-0 truncate">
-                <span className="font-bold text-black truncate">
-                  {selectedSupplier.name || selectedSupplier.partyName}
-                </span>
-                {(selectedSupplier.phone || selectedSupplier.partyPhone) && (
-                  <span className="text-[11px] text-gray-700 shrink-0">
-                    ({selectedSupplier.phone || selectedSupplier.partyPhone})
-                  </span>
-                )}
-                {(selectedSupplier.address || selectedSupplier.partyAddress || selectedSupplier.city) && (
-                  <span className="text-[11px] text-black truncate">
-                    - {selectedSupplier.address || selectedSupplier.partyAddress || selectedSupplier.city}
-                  </span>
-                )}
-              </div>
-            ) : (
-              <span className="text-gray-400">Select or search supplier...</span>
-            )}
-            <FiChevronDown className="text-gray-500 text-xs ml-1 shrink-0" size={14} />
-          </div>
-
-          {/* Supplier Dropdown Panel */}
-          {isSupplierDropdownOpen && (
-            <div className="absolute left-0 right-0 sm:right-auto sm:w-96 max-w-[calc(100vw-32px)] mt-1 bg-white rounded-lg shadow-xl border border-gray-200 p-2 z-30">
-              <div className="relative mb-2">
-                <FaSearch className="absolute left-2.5 top-2.5 text-gray-400 text-xs" />
-                <input
-                  type="text"
-                  placeholder="Search supplier name, phone, address..."
-                  value={supplierSearchQuery}
-                  onChange={(e) => setSupplierSearchQuery(e.target.value)}
-                  className="w-full pl-7 pr-2 py-1.5 text-xs border border-gray-200 rounded-md focus:outline-none focus:border-[var(--color-primary)] text-black"
-                  autoFocus
-                />
-              </div>
-
-              <div className="max-h-48 overflow-y-auto divide-y divide-gray-100">
-                {filteredSuppliers.length > 0 ? (
-                  filteredSuppliers.map((s) => (
-                    <div
-                      key={s.id || s.partyId || s.name}
-                      onClick={() => {
-                        setSelectedSupplier(s);
-                        setIsSupplierDropdownOpen(false);
-                      }}
-                      className="p-2 hover:bg-sky-50 cursor-pointer rounded-md transition-colors text-xs flex justify-between items-center"
-                    >
-                      <div className="flex flex-col min-w-0 pr-2">
-                        <div className="flex items-center gap-1.5 truncate">
-                          <span className="font-semibold text-black">{s.name || s.partyName}</span>
-                          {(s.phone || s.partyPhone) && (
-                            <span className="text-[11px] text-black">({s.phone || s.partyPhone})</span>
-                          )}
-                        </div>
-                        {(s.address || s.partyAddress || s.city) && (
-                          <span className="text-[10px] text-black truncate mt-0.5">
-                            {s.address || s.partyAddress || s.city}
-                          </span>
-                        )}
-                      </div>
-                      {(s.balance || s.openingBalance || s.dueAmount) && (
-                        <span className="text-[10px] text-rose-600 bg-rose-50 px-1.5 py-0.5 rounded shrink-0 ml-1">
-                          Bal: ৳{s.balance || s.openingBalance || s.dueAmount}
-                        </span>
-                      )}
-                    </div>
-                  ))
-                ) : (
-                  <div className="p-3 text-center text-gray-400 text-xs">No supplier found</div>
-                )}
-              </div>
-            </div>
-          )}
-        </div>
+        <TradePartySelector
+          partyType="supplier"
+          label="Supplier"
+          required
+          selectedParty={selectedSupplier}
+          partyList={suppliersList}
+          onSelectParty={handleSelectSupplier}
+          onOpenNewPartyModal={handleOpenPartyModal}
+          allowWalkIn={false}
+        />
 
         {/* Invoice No */}
         <div>
@@ -1625,342 +1377,27 @@ const CreatePurchaseForm: React.FC = () => {
       </div>
 
       {/* Product Live Search & Add Bar */}
-      <div className="bg-white p-2.5 rounded-xl border border-gray-200 shadow-xs relative" ref={productSearchRef}>
-        <div className="flex items-center gap-2">
-          <div className="relative flex-1">
-            <FaSearch className="absolute left-3 top-2.5 text-gray-400 text-xs" />
-            <input
-              type="text"
-              placeholder="Search product name, code, or scan barcode to add..."
-              value={productSearchQuery}
-              onChange={(e) => {
-                setProductSearchQuery(e.target.value);
-                setIsProductDropdownOpen(true);
-              }}
-              onFocus={() => setIsProductDropdownOpen(true)}
-              onKeyDown={handleKeyDownSearch}
-              className="w-full pl-8 pr-3 py-1.5 text-xs border border-[var(--primary-color)] rounded-lg focus:outline-none focus:border-[var(--color-primary)] focus:ring-2 focus:ring-[var(--color-primary)]/20 bg-gray-50/40 focus:bg-white font-medium text-black placeholder:text-gray-400 placeholder:text-xs h-9 transition-all"
-            />
-          </div>
+      <TradeProductSearch
+        search={productSearch}
+        lineItems={lineItems}
+        mode="purchase"
+        isProductAlreadyInList={isProductAlreadyInList}
+        onToggleProduct={handleToggleProductInList}
+        onUpdateLineItem={handleUpdateLineItem}
+      />
 
-          {/* Dynamic Button: Cancel (when open) / Add Your Product (when closed) */}
-          {isProductDropdownOpen ? (
-            <button
-              type="button"
-              onClick={() => {
-                setIsProductDropdownOpen(false);
-                setProductSearchQuery("");
-              }}
-              className="px-3 sm:px-3.5 h-9 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all shadow-xs shrink-0 cursor-pointer bg-gray-100 hover:bg-gray-200 text-black border border-gray-300"
-            >
-              <FaTimes size={11} className="text-gray-600" />
-              <span>Cancel</span>
-            </button>
-          ) : (
-            <button
-              type="button"
-              onClick={() => setIsProductDropdownOpen(true)}
-              className="px-3 sm:px-3.5 h-9 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all shadow-xs shrink-0 cursor-pointer bg-[var(--primary-color)] hover:bg-[var(--primary-color-hover)] text-white"
-            >
-              <FaPlus size={10} className="text-white" />
-              <span className="hidden sm:inline">Add Your Product</span>
-              <span className="sm:hidden">Add</span>
-            </button>
-          )}
-        </div>
-
-        {/* Product Search Results Dropdown */}
-        {isProductDropdownOpen && (
-          <div className="absolute left-2.5 right-2.5 mt-1 bg-white rounded-lg shadow-xl border border-gray-200 max-h-72 overflow-y-auto z-20 divide-y divide-gray-100">
-            {/* Helpful Quick Guide Header Bar */}
-            <div className="px-3 py-1.5 bg-slate-50 border-b border-gray-200 flex items-center justify-between text-[10px] font-semibold text-gray-500 uppercase tracking-wider sticky top-0 z-10">
-              <span>Select Product</span>
-              <div className="flex items-center gap-6 pr-2">
-                <span>Stock</span>
-                <span>Buy Rate</span>
-              </div>
-            </div>
-
-            {filteredProducts.length > 0 ? (
-              filteredProducts.map((p) => {
-                const prodKey = String(p.id ?? p.productId ?? p.pcode ?? p.productCode ?? "");
-                const isAlreadyInList = isProductAlreadyInList(p);
-                const defaultBuyPrice = Number(p.buy_price ?? p.buyPrice ?? 0);
-                const stock = Number(p.stock ?? p.quantity ?? 0);
-                const existingLineIdx = lineItems.findIndex(
-                  (item) =>
-                    (p.id && item.productId && String(item.productId) === String(p.id)) ||
-                    (p.pcode && item.productCode && String(item.productCode).trim().toLowerCase() === String(p.pcode).trim().toLowerCase()) ||
-                    (p.productCode && item.productCode && String(item.productCode).trim().toLowerCase() === String(p.productCode).trim().toLowerCase())
-                );
-
-                return (
-                  <div
-                    key={prodKey}
-                    onClick={() => handleToggleProductInList(p)}
-                    className={`p-2 sm:p-2.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs transition-colors select-none cursor-pointer ${
-                      isAlreadyInList
-                        ? "bg-sky-50/70 hover:bg-sky-100/70 border-l-4 border-l-[var(--color-primary)]"
-                        : "hover:bg-gray-50 border-l-4 border-l-transparent"
-                    }`}
-                  >
-                    <div className="flex items-center gap-2.5 min-w-0">
-                      {/* Checkbox */}
-                      <div
-                        className={`w-4 h-4 rounded border flex items-center justify-center transition-colors shrink-0 cursor-pointer ${
-                          isAlreadyInList
-                            ? "bg-[var(--color-primary)] border-[var(--color-primary)] text-white"
-                            : "border-gray-300 bg-white hover:border-[var(--color-primary)]"
-                        }`}
-                        title={isAlreadyInList ? "Click to remove from list" : "Click to add to list"}
-                      >
-                        {isAlreadyInList && <FaCheck size={9} />}
-                      </div>
-
-                      <div className="flex flex-col min-w-0">
-                        <div className="flex items-center gap-1.5 flex-wrap">
-                          <span
-                            className={`font-bold truncate ${
-                              isAlreadyInList ? "text-[var(--color-primary)]" : "text-black"
-                            }`}
-                          >
-                            {p.name || p.productName}
-                          </span>
-                          {isAlreadyInList && (
-                            <span className="text-[10px] bg-emerald-100 text-emerald-800 border border-emerald-300 px-1.5 py-0.2 rounded font-semibold whitespace-nowrap">
-                              Added in list
-                            </span>
-                          )}
-                        </div>
-                        <span className="text-[10px] text-gray-500">
-                          Code: <span className="text-black font-medium">{p.pcode || p.productCode || "N/A"}</span> | Unit: <span className="text-black font-medium">{p.unit || "pcs"}</span>
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Stock & Buy Price Badges - Clean Single Line (1-Line) */}
-                    <div
-                      className="flex items-center gap-2 sm:gap-2.5 shrink-0 self-start sm:self-center"
-                      onClick={(e) => {
-                        // Prevent row toggle if clicking interactive elements
-                        if (isAlreadyInList) e.stopPropagation();
-                      }}
-                    >
-                      {/* Current Stock (1 line) */}
-                      <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-slate-100 border border-slate-200">
-                        <span className="text-[10px] font-semibold text-gray-500 uppercase tracking-wider">
-                          Stock:
-                        </span>
-                        <span className="text-xs font-bold text-gray-900">
-                          {stock} <span className="text-[10px] font-normal text-gray-600">{p.unit || "pcs"}</span>
-                        </span>
-                      </div>
-
-                      {/* Buy Rate & Purchase Qty (1 line - editable when added in list) */}
-                      {isAlreadyInList && existingLineIdx !== -1 ? (
-                        <div className="flex items-center gap-2">
-                          {/* Editable Purchase Qty */}
-                          <div className="flex items-center gap-1 px-2 py-0.5 rounded-md bg-sky-50 border border-sky-300 shadow-2xs">
-                            <span className="text-[10px] font-bold text-sky-800">
-                              Qty:
-                            </span>
-                            <input
-                              type="number"
-                              min="1"
-                              step="1"
-                              value={lineItems[existingLineIdx].quantity}
-                              placeholder="1"
-                              onWheel={(e) => e.currentTarget.blur()}
-                              onChange={(e) => {
-                                handleUpdateLineItem(existingLineIdx, "quantity", e.target.value);
-                              }}
-                              className="w-12 sm:w-14 px-1 py-0.5 text-xs font-bold text-sky-950 bg-white border border-sky-300 rounded focus:outline-none focus:ring-1 focus:ring-sky-500 text-center"
-                              title="Edit Purchase Quantity"
-                            />
-                            <span className="text-[10px] text-sky-700 font-medium">
-                              {p.unit || "pcs"}
-                            </span>
-                          </div>
-
-                          {/* Editable Buy Rate */}
-                          <div className="flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-50 border border-amber-300 shadow-2xs">
-                            <span className="text-[10px] font-bold text-amber-800">
-                              Rate: ৳
-                            </span>
-                            <input
-                              type="number"
-                              step="0.01"
-                              value={lineItems[existingLineIdx].buyPrice}
-                              placeholder="0"
-                              onWheel={(e) => e.currentTarget.blur()}
-                              onChange={(e) => {
-                                handleUpdateLineItem(existingLineIdx, "buyPrice", e.target.value);
-                              }}
-                              className="w-16 sm:w-20 px-1 py-0.5 text-xs font-bold text-amber-950 bg-white border border-amber-300 rounded focus:outline-none focus:ring-1 focus:ring-amber-500 text-right"
-                              title="Edit Buy Price for purchase"
-                            />
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-amber-50 border border-amber-200">
-                          <span className="text-[10px] font-semibold text-amber-800 uppercase tracking-wider">
-                            Buy Rate:
-                          </span>
-                          <span className="text-xs font-bold text-amber-950">
-                            ৳ {formatMoney(defaultBuyPrice)}
-                          </span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                );
-              })
-            ) : (
-              <div className="p-4 text-center text-gray-400 text-xs">No products found matching query.</div>
-            )}
-          </div>
-        )}
-      </div>
-
-      {/* Dynamic Line Items Table (Dense, Right-Aligned Money Inputs, No Spinners) */}
-      <div className="bg-white rounded-xl border border-gray-200 shadow-xs overflow-hidden">
-        <div className="p-2.5 border-b border-gray-100 flex items-center justify-between">
-          <h2 className="text-xs font-bold text-black tracking-wider">
-            Purchase Items List ({lineItems.length})
-          </h2>
-          <span className="text-[11px] text-black font-medium">
-            Subtotal: <span className="  font-bold text-black">৳ {formatMoney(rawSubtotal)}</span>
-          </span>
-        </div>
-
-        <div className="overflow-x-auto w-full">
-          <table className="w-full min-w-[720px] text-xs text-left border-collapse">
-            <thead>
-              <tr className="bg-[#41bef3] border-b border-gray-200 text-[11px] font-semibold text-black shadow-md">
-                <th className="py-2 px-2 text-center w-10 whitespace-nowrap">SL</th>
-                <th className="py-2 px-3 w-auto min-w-[200px]">Product</th>
-                <th className="py-2 px-2 text-center w-16 whitespace-nowrap">Unit</th>
-                <th className="py-2 px-2 text-center w-20 whitespace-nowrap">Stock</th>
-                <th className="py-2 px-2 text-right w-28 min-w-[100px] whitespace-nowrap">Buy Price (৳)</th>
-                <th className="py-2 px-2 text-center w-28 min-w-[110px] whitespace-nowrap">Quantity</th>
-                <th className="py-2 px-3 text-right w-28 min-w-[100px] whitespace-nowrap">Total (৳)</th>
-                <th className="py-2 px-2 text-center w-10 whitespace-nowrap"></th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100">
-              {lineItems.length > 0 ? (
-                lineItems.map((item, idx) => (
-                  <tr key={idx} className="hover:bg-gray-50/70 transition-colors">
-                    {/* SL */}
-                    <td className="py-2 px-2 text-center text-gray-700   text-[11px] whitespace-nowrap">
-                      {idx + 1}
-                    </td>
-
-                    {/* Product Name & Code */}
-                    <td className="py-2 px-3">
-                      <span className="font-semibold text-black block">{item.productName}</span>
-                      {item.productCode && (
-                        <span className="text-[10px] text-black  ">Code: {item.productCode}</span>
-                      )}
-                    </td>
-
-                    {/* Unit */}
-                    <td className="py-2 px-2 text-center whitespace-nowrap">
-                      <span className="text-black font-semibold bg-gray-100 px-1.5 py-0.5 rounded text-[11px]">
-                        {item.unit || "pcs"}
-                      </span>
-                    </td>
-
-                    {/* Stock */}
-                    <td className="py-2 px-2 text-center whitespace-nowrap">
-                      <span className="text-gray-700 font-semibold bg-gray-100 px-2 py-0.5 rounded text-[11px]">
-                        {Number(item.stock) || 0}
-                      </span>
-                    </td>
-
-                    {/* Buy Price (Right Aligned Money Input, No Wheel/Spinners) */}
-                    <td className="py-2 px-2 text-right whitespace-nowrap">
-                      <div className="relative inline-block w-full">
-                        <span className="absolute left-1.5 top-1.5 text-black font-bold text-[11px]">৳</span>
-                        <input
-                          type="number"
-                          step="0.01"
-                          value={item.buyPrice}
-                          placeholder="0"
-                          onWheel={(e) => e.currentTarget.blur()}
-                          onChange={(e) => handleUpdateLineItem(idx, "buyPrice", e.target.value)}
-                          className="w-full pl-5 pr-1.5 py-1 text-xs border border-gray-300 rounded text-right   font-bold text-black focus:outline-none focus:border-[var(--color-primary)]"
-                        />
-                      </div>
-                    </td>
-
-                    {/* Quantity (Stepper) */}
-                    <td className="py-2 px-2 text-center whitespace-nowrap">
-                      <div className="inline-flex items-center border border-gray-300 rounded overflow-hidden">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            const q = Math.max(1, (Number(item.quantity) || 1) - 1);
-                            handleUpdateLineItem(idx, "quantity", String(q));
-                          }}
-                          className="px-1.5 py-1 bg-gray-100 hover:bg-gray-200 text-black font-bold text-xs cursor-pointer"
-                        >
-                          -
-                        </button>
-                        <input
-                          type="number"
-                          min="1"
-                          value={item.quantity}
-                          placeholder="1"
-                          onWheel={(e) => e.currentTarget.blur()}
-                          onChange={(e) => handleUpdateLineItem(idx, "quantity", e.target.value)}
-                          className="w-12 py-1 text-xs text-center   font-bold text-black focus:outline-none border-x border-gray-300"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => {
-                            const q = (Number(item.quantity) || 0) + 1;
-                            handleUpdateLineItem(idx, "quantity", String(q));
-                          }}
-                          className="px-1.5 py-1 bg-gray-100 hover:bg-gray-200 text-black font-bold text-xs cursor-pointer"
-                        >
-                          +
-                        </button>
-                      </div>
-                    </td>
-
-                    {/* Total (Right Aligned Display) */}
-                    <td className="py-2 px-3 text-right font-bold text-black whitespace-nowrap">
-                      ৳ {formatMoney(item.total)}
-                    </td>
-
-                    {/* Delete Action */}
-                    <td className="py-2 px-2 text-center whitespace-nowrap">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setItemIndexToDelete(idx);
-                          setIsDeleteLineModalOpen(true);
-                        }}
-                        className="p-1 text-rose-500 hover:bg-rose-50 rounded transition-colors cursor-pointer"
-                        title="Remove Item"
-                      >
-                        <FaTrash size={12} />
-                      </button>
-                    </td>
-                  </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan={8} className="py-8 text-center text-gray-400">
-                    No items in purchase. Search and add products above.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
+      {/* Dynamic Line Items Table */}
+      <TradeLineItemsTable
+        title="Purchase Items List"
+        subtotal={rawSubtotal}
+        lineItems={lineItems}
+        priceHeader="Buy Price (৳)"
+        priceField="buyPrice"
+        onUpdatePrice={handleUpdatePrice}
+        onUpdateQuantity={handleUpdateQuantity}
+        onRequestDelete={handleRequestDelete}
+        emptyMessage="No items in purchase. Search and add products above."
+      />
 
       {/* Financial Summary & Split Payment Breakdown (2 Column Dense Grid) */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-2.5 items-start">
@@ -2145,261 +1582,16 @@ const CreatePurchaseForm: React.FC = () => {
             </div>
           </div>
 
-          {/* Payment Collected Section */}
-          <div className="flex items-center justify-between flex-wrap gap-1">
-            <span className="text-[11px] font-bold text-black tracking-wider flex items-center gap-1.5">
-              <FaWallet size={11} className="text-black" />
-              Payment Collected
-            </span>
-            <div className="flex items-center gap-1">
-              <button
-                type="button"
-                onClick={handlePayFullCash}
-                className="px-1.5 py-0.5 text-[10px] font-bold rounded bg-emerald-50 text-emerald-800 border border-emerald-300 hover:bg-emerald-100 shadow-2xs transition-colors cursor-pointer"
-              >
-                Cash
-              </button>
-              <button
-                type="button"
-                onClick={handlePayFullBank}
-                className="px-1.5 py-0.5 text-[10px] font-bold rounded bg-sky-50 text-sky-800 border border-sky-300 hover:bg-sky-100 shadow-2xs transition-colors cursor-pointer"
-              >
-                Bank
-              </button>
-              <button
-                type="button"
-                onClick={handlePayFullMfs}
-                className="px-1.5 py-0.5 text-[10px] font-bold rounded bg-purple-50 text-purple-800 border border-purple-300 hover:bg-purple-100 shadow-2xs transition-colors cursor-pointer"
-              >
-                MFS
-              </button>
-              <button
-                type="button"
-                onClick={handlePayFullCredit}
-                className="px-1.5 py-0.5 text-[10px] font-bold rounded bg-rose-50 text-rose-800 border border-rose-300 hover:bg-rose-100 shadow-2xs transition-colors cursor-pointer"
-              >
-                Credit
-              </button>
-            </div>
-          </div>
-
-          {/* Payment Cards: Cash, Card, MFS */}
-          <div className="flex flex-col gap-1.5">
-            {/* 1. Cash Card */}
-            <div
-              className={`px-2.5 py-1 rounded-md border transition-all flex items-center justify-between gap-1.5 shadow-2xs ${
-                Number(cashAmount) > 0
-                  ? "border-emerald-400 bg-emerald-50/30"
-                  : "border-gray-200 bg-gray-50/50 hover:bg-white"
-              }`}
-            >
-              <div className="flex items-center gap-1.5 min-w-0">
-                <div className="w-6 h-6 rounded bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0">
-                  <FaMoneyBillWave size={11} />
-                </div>
-                <span className="font-bold text-[11px] text-gray-800 tracking-wider">CASH</span>
-              </div>
-
-              <div
-                className={`flex items-center h-6.5 rounded border bg-white overflow-hidden w-26 xs:w-30 sm:w-34 shrink-0 transition-colors shadow-2xs ${
-                  Number(cashAmount) > 0
-                    ? "border-emerald-500 ring-1 ring-emerald-500/50"
-                    : "border-gray-300 focus-within:border-emerald-500 focus-within:ring-1 focus-within:ring-emerald-500"
-                }`}
-              >
-                <span className="text-[11px] text-gray-600 font-bold px-1.5 bg-gray-50 h-full flex items-center border-r border-gray-200 select-none">
-                  ৳
-                </span>
-                <input
-                  type="number"
-                  step="0.01"
-                  placeholder="0"
-                  value={cashAmount}
-                  onWheel={(e) => e.currentTarget.blur()}
-                  onChange={(e) => handleCashAmountChange(e.target.value)}
-                  className="w-full text-right px-1.5 text-xs font-bold text-black outline-none bg-transparent placeholder:text-gray-400 h-full"
-                />
-              </div>
-            </div>
-
-            {/* Optional Change Tendered Toggle */}
-            {numCash > 0 && (
-              <div className="flex items-center justify-end gap-2 text-[10px] px-1 -my-0.5">
-                <button
-                  type="button"
-                  onClick={() => setShowCashGivenCalc(!showCashGivenCalc)}
-                  className="text-[var(--color-primary)] cursor-pointer font-bold"
-                >
-                  {showCashGivenCalc ? "- Hide Change Calculator" : "+ Calculate Cash Change / ভাংতি"}
-                </button>
-              </div>
-            )}
-
-            {showCashGivenCalc && numCash > 0 && (
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 bg-emerald-50/60 px-2 py-1 rounded-md border border-emerald-200 shadow-2xs">
-                <span className="text-[11px] text-gray-800 font-semibold">Cash Tendered:</span>
-                <div className="flex items-center gap-1.5">
-                  <div className="relative w-26 xs:w-30 sm:w-32">
-                    <span className="absolute left-1.5 top-0.5 text-gray-600 text-xs font-bold">৳</span>
-                    <input
-                      type="number"
-                      step="0.01"
-                      placeholder="e.g. 5000"
-                      value={cashGiven}
-                      onWheel={(e) => e.currentTarget.blur()}
-                      onChange={(e) => setCashGiven(e.target.value)}
-                      className="w-full pl-4.5 pr-1.5 py-0.5 text-xs border border-gray-300 rounded text-right font-bold text-black bg-white outline-none focus:border-emerald-500 h-6"
-                    />
-                  </div>
-                  {changeReturnAmount > 0 && (
-                    <span className="text-[11px] text-emerald-800 font-bold whitespace-nowrap">
-                      Return: ৳{formatMoney(changeReturnAmount)}
-                    </span>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* 2. Card / Bank Card */}
-            <div
-              className={`px-2.5 py-1 rounded-md border transition-all flex items-center justify-between gap-1.5 shadow-2xs ${
-                Number(bankAmount) > 0
-                  ? "border-sky-400 bg-sky-50/30"
-                  : "border-gray-200 bg-gray-50/50 hover:bg-white"
-              }`}
-            >
-              <div className="flex items-center gap-1.5 flex-1 min-w-0 mr-1">
-                <div className="w-6 h-6 rounded bg-sky-100 text-sky-700 flex items-center justify-center shrink-0">
-                  <FaCreditCard size={11} />
-                </div>
-                <span className="font-bold text-[11px] text-gray-800 tracking-wider shrink-0">CARD</span>
-                <select
-                  value={selectedBankId}
-                  onChange={(e) => handleSelectRegisteredBank(e.target.value)}
-                  className="h-6.5 w-full max-w-[115px] xs:max-w-[155px] sm:max-w-[215px] px-1.5 text-[11px] border border-gray-300 rounded bg-white text-black font-medium focus:outline-none focus:border-sky-500 cursor-pointer truncate"
-                >
-                  <option value="" className="text-black">
-                    {registeredBankAccounts.length ? "Select Bank..." : "No bank registered"}
-                  </option>
-                  {registeredBankAccounts.map((b) => (
-                    <option key={b.id || b.bankId || b._id} value={b.id || b.bankId || b._id} className="text-black">
-                      {b.bankName || b.name}
-                      {b.accountNo || b.bankAccountNumber || b.bankAccountNo
-                        ? ` – ${b.accountNo || b.bankAccountNumber || b.bankAccountNo}`
-                        : ""}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div
-                onClick={() => {
-                  if (!selectedBankId) {
-                    showErrorToast("Please select a bank first");
-                  }
-                }}
-                className={`flex items-center h-6.5 rounded border overflow-hidden w-26 xs:w-30 sm:w-34 shrink-0 transition-colors shadow-2xs ${
-                  !selectedBankId
-                    ? "border-gray-200 bg-gray-100 opacity-60 cursor-not-allowed"
-                    : Number(bankAmount) > 0
-                    ? "border-sky-500 bg-white ring-1 ring-sky-500/50"
-                    : "border-gray-300 bg-white focus-within:border-sky-500 focus-within:ring-1 focus-within:ring-sky-500"
-                }`}
-              >
-                <span
-                  className={`text-[11px] font-bold px-1.5 h-full flex items-center border-r border-gray-200 select-none ${
-                    !selectedBankId ? "text-gray-400 bg-gray-100" : "text-gray-600 bg-gray-50"
-                  }`}
-                >
-                  ৳
-                </span>
-                <input
-                  type="number"
-                  step="0.01"
-                  placeholder="0"
-                  disabled={!selectedBankId}
-                  value={bankAmount}
-                  onWheel={(e) => e.currentTarget.blur()}
-                  onChange={(e) => handleCardAmountChange(e.target.value)}
-                  className={`w-full text-right px-1.5 text-xs font-bold outline-none bg-transparent h-full ${
-                    !selectedBankId
-                      ? "text-gray-400 cursor-not-allowed placeholder:text-gray-300"
-                      : "text-black placeholder:text-gray-400"
-                  }`}
-                />
-              </div>
-            </div>
-
-            {/* 3. MFS Card */}
-            <div
-              className={`px-2.5 py-1 rounded-md border transition-all flex items-center justify-between gap-1.5 shadow-2xs ${
-                Number(mfsAmount) > 0
-                  ? "border-purple-400 bg-purple-50/30"
-                  : "border-gray-200 bg-gray-50/50 hover:bg-white"
-              }`}
-            >
-              <div className="flex items-center gap-1.5 flex-1 min-w-0 mr-1">
-                <div className="w-6 h-6 rounded bg-purple-100 text-purple-700 flex items-center justify-center shrink-0">
-                  <FaMobileAlt size={11} />
-                </div>
-                <span className="font-bold text-[11px] text-gray-800 tracking-wider shrink-0">MFS</span>
-                <select
-                  value={selectedMfsId}
-                  onChange={(e) => handleSelectRegisteredMfs(e.target.value)}
-                  className="h-6.5 w-full max-w-[115px] xs:max-w-[155px] sm:max-w-[215px] px-1.5 text-[11px] border border-gray-300 rounded bg-white text-black font-medium focus:outline-none focus:border-purple-500 cursor-pointer truncate"
-                >
-                  <option value="" className="text-black">
-                    {registeredMfsAccounts.length ? "Select MFS..." : "No MFS registered"}
-                  </option>
-                  {registeredMfsAccounts.map((m) => (
-                    <option key={m.id || m.mfsId || m._id} value={m.id || m.mfsId || m._id} className="text-black">
-                      {m.mfsName || m.name}
-                      {m.method || m.mfsMethod || m.mobileNo
-                        ? ` – ${m.method || m.mfsMethod || m.mobileNo}`
-                        : ""}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div
-                onClick={() => {
-                  if (!selectedMfsId) {
-                    showErrorToast("Please select an MFS provider first");
-                  }
-                }}
-                className={`flex items-center h-6.5 rounded border overflow-hidden w-26 xs:w-30 sm:w-34 shrink-0 transition-colors shadow-2xs ${
-                  !selectedMfsId
-                    ? "border-gray-200 bg-gray-100 opacity-60 cursor-not-allowed"
-                    : Number(mfsAmount) > 0
-                    ? "border-purple-500 bg-white ring-1 ring-purple-500/50"
-                    : "border-gray-300 bg-white focus-within:border-purple-500 focus-within:ring-1 focus-within:ring-purple-500"
-                }`}
-              >
-                <span
-                  className={`text-[11px] font-bold px-1.5 h-full flex items-center border-r border-gray-200 select-none ${
-                    !selectedMfsId ? "text-gray-400 bg-gray-100" : "text-gray-600 bg-gray-50"
-                  }`}
-                >
-                  ৳
-                </span>
-                <input
-                  type="number"
-                  step="0.01"
-                  placeholder="0"
-                  disabled={!selectedMfsId}
-                  value={mfsAmount}
-                  onWheel={(e) => e.currentTarget.blur()}
-                  onChange={(e) => handleMfsAmountChange(e.target.value)}
-                  className={`w-full text-right px-1.5 text-xs font-bold outline-none bg-transparent h-full ${
-                    !selectedMfsId
-                      ? "text-gray-400 cursor-not-allowed placeholder:text-gray-300"
-                      : "text-black placeholder:text-gray-400"
-                  }`}
-                />
-              </div>
-            </div>
-          </div>
+          {/* Payment Section */}
+          <TradePaymentSection
+            grandTotal={grandTotal}
+            payment={payment}
+            registeredBankAccounts={registeredBankAccounts}
+            registeredMfsAccounts={registeredMfsAccounts}
+            title="Payment Disbursed"
+            bankLabel="CARD"
+            showCashTenderedToggle={true}
+          />
 
           {/* Bottom Totals: Total Paid & Due Balance */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 border-t border-gray-200/90 pt-1.5 items-center">
@@ -2437,76 +1629,88 @@ const CreatePurchaseForm: React.FC = () => {
       </div>
 
       {/* Supplier Modal */}
-      <PartyModal
-        isOpen={isPartyModalOpen}
-        onClose={() => setIsPartyModalOpen(false)}
-        defaultType="SUPPLIER"
-        onSuccess={() => {
-          setIsPartyModalOpen(false);
-          queryClient.invalidateQueries({ queryKey: [partyListQueryKey] });
-        }}
-      />
+      {isPartyModalOpen && (
+        <PartyModal
+          isOpen={isPartyModalOpen}
+          onClose={() => setIsPartyModalOpen(false)}
+          defaultType="SUPPLIER"
+          onSuccess={() => {
+            setIsPartyModalOpen(false);
+            queryClient.invalidateQueries({ queryKey: [partyListQueryKey] });
+          }}
+        />
+      )}
 
       {/* Challan Settings Modal */}
-      <ChallanSettingsModal
-        isOpen={isChallanSettingsOpen}
-        onClose={() => setIsChallanSettingsOpen(false)}
-        onSaved={(newSettings) => setChallanSettings(newSettings)}
-      />
+      {isChallanSettingsOpen && (
+        <ChallanSettingsModal
+          isOpen={isChallanSettingsOpen}
+          onClose={() => setIsChallanSettingsOpen(false)}
+          onSaved={(newSettings) => setChallanSettings(newSettings)}
+        />
+      )}
 
       {/* Printable Invoice Modal after Save & Print */}
-      <PurchaseInvoiceModal
-        isOpen={isPrintModalOpen}
-        onClose={() => {
-          setIsPrintModalOpen(false);
-          setShouldAutoPrint(false);
-          navigate("/admin/purchases");
-        }}
-        purchase={savedPurchaseForPrint}
-        autoPrint={shouldAutoPrint}
-      />
+      {isPrintModalOpen && (
+        <PurchaseInvoiceModal
+          isOpen={isPrintModalOpen}
+          onClose={() => {
+            setIsPrintModalOpen(false);
+            setShouldAutoPrint(false);
+            navigate("/admin/purchases");
+          }}
+          purchase={savedPurchaseForPrint}
+          autoPrint={shouldAutoPrint}
+        />
+      )}
 
       {/* Delete Line Item Modal */}
-      <DeleteModal
-        isOpen={isDeleteLineModalOpen}
-        onClose={() => {
-          setIsDeleteLineModalOpen(false);
-          setItemIndexToDelete(null);
-        }}
-        onDelete={() => {
-          if (itemIndexToDelete !== null) {
-            handleRemoveLineItem(itemIndexToDelete);
-          }
-          setIsDeleteLineModalOpen(false);
-          setItemIndexToDelete(null);
-        }}
-        title="Remove Product"
-        message={`Are you sure you want to remove "${itemIndexToDelete !== null && lineItems[itemIndexToDelete] ? lineItems[itemIndexToDelete]?.productName : 'this item'}" from the purchase list?`}
-      />
+      {isDeleteLineModalOpen && (
+        <DeleteModal
+          isOpen={isDeleteLineModalOpen}
+          onClose={() => {
+            setIsDeleteLineModalOpen(false);
+            setItemIndexToDelete(null);
+          }}
+          onDelete={() => {
+            if (itemIndexToDelete !== null) {
+              handleRemoveLineItem(itemIndexToDelete);
+            }
+            setIsDeleteLineModalOpen(false);
+            setItemIndexToDelete(null);
+          }}
+          title="Remove Product"
+          message={`Are you sure you want to remove "${itemIndexToDelete !== null && lineItems[itemIndexToDelete] ? lineItems[itemIndexToDelete]?.productName : 'this item'}" from the purchase list?`}
+        />
+      )}
 
       {/* Reset Form Modal */}
-      <DeleteModal
-        isOpen={isResetModalOpen}
-        onClose={() => setIsResetModalOpen(false)}
-        onDelete={handleConfirmReset}
-        title="Reset Purchase Form"
-        message="Are you sure you want to reset the form? All unsaved data and added products will be cleared."
-      />
+      {isResetModalOpen && (
+        <DeleteModal
+          isOpen={isResetModalOpen}
+          onClose={() => setIsResetModalOpen(false)}
+          onDelete={handleConfirmReset}
+          title="Reset Purchase Form"
+          message="Are you sure you want to reset the form? All unsaved data and added products will be cleared."
+        />
+      )}
 
       {/* Save / Update Confirmation Modal */}
-      <ConfirmModal
-        isOpen={isSaveConfirmModalOpen}
-        onClose={() => setIsSaveConfirmModalOpen(false)}
-        onConfirm={async () => {
-          setIsSaveConfirmModalOpen(false);
-          await handleSubmit(pendingSavePrint);
-        }}
-        isLoading={isSubmitting}
-        title={isEditMode ? "Update Purchase Invoice" : pendingSavePrint ? "Save & Print Purchase" : "Save Purchase Invoice"}
-        message={`Are you sure you want to ${isEditMode ? "update" : "save"} this purchase invoice (${invoiceNo || "Invoice"})?`}
-        confirmText={isEditMode ? "Yes, Update" : pendingSavePrint ? "Save & Print" : "Yes, Save"}
-        confirmButtonColor={pendingSavePrint ? "bg-emerald-600 hover:bg-emerald-700" : "bg-sky-600 hover:bg-sky-700"}
-      />
+      {isSaveConfirmModalOpen && (
+        <ConfirmModal
+          isOpen={isSaveConfirmModalOpen}
+          onClose={() => setIsSaveConfirmModalOpen(false)}
+          onConfirm={async () => {
+            setIsSaveConfirmModalOpen(false);
+            await handleSubmit(pendingSavePrint);
+          }}
+          isLoading={isSubmitting}
+          title={isEditMode ? "Update Purchase Invoice" : pendingSavePrint ? "Save & Print Purchase" : "Save Purchase Invoice"}
+          message={`Are you sure you want to ${isEditMode ? "update" : "save"} this purchase invoice (${invoiceNo || "Invoice"})?`}
+          confirmText={isEditMode ? "Yes, Update" : pendingSavePrint ? "Save & Print" : "Yes, Save"}
+          confirmButtonColor={pendingSavePrint ? "bg-emerald-600 hover:bg-emerald-700" : "bg-sky-600 hover:bg-sky-700"}
+        />
+      )}
     </div>
   );
 };

@@ -8,13 +8,8 @@ import {
   FaSearch,
   FaFileInvoice,
   FaBoxes,
-  FaMoneyBillWave,
   FaUndoAlt,
   FaTimes,
-  FaCreditCard,
-  FaMobileAlt,
-  FaWallet,
-  FaLock,
 } from "react-icons/fa";
 import { FiArrowRight } from "react-icons/fi";
 import Button from "@/components/button/Button";
@@ -40,6 +35,8 @@ import {
   useSalesAndReturnsQuery,
   useSalesQuery,
 } from "@/pages/admin/trade/sales-return/hooks/useSalesReturnQueries";
+import { useTradeRefund } from "@/hooks/useTradeRefund";
+import TradeRefundSection from "@/components/trade/TradeRefundSection";
 
 interface ReturnLineFormState {
   productId: string | number;
@@ -89,13 +86,6 @@ export const SalesReturnForm: React.FC = () => {
   const [invoiceVat, setInvoiceVat] = useState<string>("");
   const [invoiceDeliveryCharge, setInvoiceDeliveryCharge] = useState<string>("");
 
-  // Refund Settlement Breakdown State (Cash, Bank, MFS, Due Adjustment)
-  const [refundCashAmount, setRefundCashAmount] = useState<string>("");
-  const [refundBankAmount, setRefundBankAmount] = useState<string>("");
-  const [refundMfsAmount, setRefundMfsAmount] = useState<string>("");
-  const [refundDueAmount, setRefundDueAmount] = useState<string>("");
-  const [selectedRefundBankId, setSelectedRefundBankId] = useState<string>("");
-  const [selectedRefundMfsId, setSelectedRefundMfsId] = useState<string>("");
 
   // Search & Dropdown
   const [isInvoiceDropdownOpen, setIsInvoiceDropdownOpen] = useState<boolean>(false);
@@ -667,247 +657,26 @@ export const SalesReturnForm: React.FC = () => {
     );
   };
 
-  // Original invoice payment numbers
-  const origPaymentMode = String(selectedSale?.paymentType || (selectedSale as any)?.payment_type || "CASH").toUpperCase();
-  const origGrandTotal = Number(selectedSale?.grandTotal ?? (selectedSale as any)?.grand_total ?? selectedSale?.totalAmount ?? (selectedSale as any)?.total_amount ?? 0);
-  const origPaidAmount = Number(
-    selectedSale?.paidAmount ?? (selectedSale as any)?.paid_amount ?? 0
-  );
-  const origDueAmount = Number(
-    selectedSale?.dueAmount ?? (selectedSale as any)?.due_amount ??
-      (origPaymentMode === "CREDIT"
-        ? origGrandTotal
-        : Math.max(0, origGrandTotal - origPaidAmount))
-  );
-
-  // Split amounts recorded on the sale
-  const rawCash = Number(selectedSale?.cashReceived ?? (selectedSale as any)?.cash_amount ?? (selectedSale as any)?.cashAmount ?? 0);
-  const rawBank = Number(selectedSale?.cardReceived ?? (selectedSale as any)?.bankAmount ?? (selectedSale as any)?.bank_amount ?? 0);
-  const rawMfs = Number(selectedSale?.mfsReceived ?? (selectedSale as any)?.mfsAmount ?? (selectedSale as any)?.mfs_amount ?? 0);
-
-  const hasSplitDetails = rawCash > 0 || rawBank > 0 || rawMfs > 0;
-
-  let origCashPaid = 0;
-  let origBankPaid = 0;
-  let origMfsPaid = 0;
-
-  if (hasSplitDetails) {
-    origCashPaid = rawCash;
-    origBankPaid = rawBank;
-    origMfsPaid = rawMfs;
-  } else if (origPaidAmount > 0) {
-    if (origPaymentMode === "BANK" || selectedSale?.bankId || (selectedSale as any)?.bank_id) {
-      origBankPaid = origPaidAmount;
-    } else if (origPaymentMode === "MFS" || selectedSale?.mfsId || (selectedSale as any)?.mfs_id) {
-      origMfsPaid = origPaidAmount;
-    } else {
-      origCashPaid = origPaidAmount;
-    }
-  }
-
-  // Auto-distribute refund when invoice is selected or return totals change
-  // Populates exact payments from purchase time; channels with 0 remain empty
-  useEffect(() => {
-    if (!selectedSale) {
-      setRefundCashAmount("");
-      setRefundBankAmount("");
-      setRefundMfsAmount("");
-      setRefundDueAmount("");
-      return;
-    }
-
-    const neededRefund = totals.refundAmount;
-    if (neededRefund <= 0) {
-      setRefundCashAmount("");
-      setRefundBankAmount("");
-      setRefundMfsAmount("");
-      setRefundDueAmount("");
-      return;
-    }
-
-    // Full Return (or return amount matches full sale): exact match to sale payment breakdown
-    if (returnMode === "FULL" || Math.abs(neededRefund - origGrandTotal) < 0.01) {
-      setRefundCashAmount(origCashPaid > 0 ? String(origCashPaid) : "");
-      setRefundBankAmount(origBankPaid > 0 ? String(origBankPaid) : "");
-      setRefundMfsAmount(origMfsPaid > 0 ? String(origMfsPaid) : "");
-      setRefundDueAmount(origDueAmount > 0 ? String(origDueAmount) : "");
-      return;
-    }
-
-    // Partial Return: Priority sequence (Cash first -> Bank/Card if needed -> MFS if needed -> Due Adjust)
-    let remaining = neededRefund;
-
-    // 1. First deduct from Cash up to original cash paid
-    const allocCash = origCashPaid > 0 ? Math.min(remaining, origCashPaid) : 0;
-    remaining = Number((remaining - allocCash).toFixed(2));
-
-    // 2. If return amount not yet filled, deduct from Bank/Card up to original bank paid
-    const allocBank = remaining > 0 && origBankPaid > 0 ? Math.min(remaining, origBankPaid) : 0;
-    remaining = Number((remaining - allocBank).toFixed(2));
-
-    // 3. If still not filled, deduct from MFS up to original MFS paid
-    const allocMfs = remaining > 0 && origMfsPaid > 0 ? Math.min(remaining, origMfsPaid) : 0;
-    remaining = Number((remaining - allocMfs).toFixed(2));
-
-    // 4. Any remaining balance goes to Due Adjust (or fallback to cash if no original channel specified)
-    let allocDue = 0;
-    if (remaining > 0) {
-      if (origDueAmount > 0) {
-        allocDue = Math.min(remaining, origDueAmount);
-        remaining = Number((remaining - allocDue).toFixed(2));
-      }
-    }
-
-    // Edge case safety: if all original channels were 0, put entire amount into cash
-    const finalCash = allocCash + (allocCash === 0 && allocBank === 0 && allocMfs === 0 && allocDue === 0 ? remaining : 0);
-
-    setRefundCashAmount(finalCash > 0 ? String(finalCash) : "");
-    setRefundBankAmount(allocBank > 0 ? String(allocBank) : "");
-    setRefundMfsAmount(allocMfs > 0 ? String(allocMfs) : "");
-    setRefundDueAmount(allocDue > 0 ? String(allocDue) : "");
-  }, [
-    selectedSale,
-    totals.refundAmount,
+  const refund = useTradeRefund({
+    selectedRecord: selectedSale,
+    refundAmount: totals.refundAmount,
     returnMode,
-    origCashPaid,
-    origBankPaid,
-    origMfsPaid,
-    origDueAmount,
-    origGrandTotal,
-  ]);
+    registeredBankAccounts,
+    registeredMfsAccounts,
+    priority: "cash_first",
+  });
 
-  // Numeric refund channel values
-  const numRefundCash = Number(refundCashAmount) || 0;
-  const numRefundBank = Number(refundBankAmount) || 0;
-  const numRefundMfs = Number(refundMfsAmount) || 0;
-  const numRefundDue = Number(refundDueAmount) || 0;
-
-  const totalRefundAllocated = useMemo(() => {
-    return numRefundCash + numRefundBank + numRefundMfs + numRefundDue;
-  }, [numRefundCash, numRefundBank, numRefundMfs, numRefundDue]);
-
-  const refundDifference = useMemo(() => {
-    return Number((totals.refundAmount - totalRefundAllocated).toFixed(2));
-  }, [totals.refundAmount, totalRefundAllocated]);
-
-  // Handlers when user enters amounts in refund channels
-  // Each input allows the user to enter their desired amount independently up to remaining needed refund.
-  // Neither field will forcibly re-inflate or overwrite Cash unexpectedly.
-  const handleBankAmountChange = (valStr: string) => {
-    if (valStr === "" || valStr === undefined) {
-      setRefundBankAmount("");
-      return;
-    }
-    const rawVal = parseFloat(valStr);
-    if (isNaN(rawVal) || rawVal < 0) {
-      setRefundBankAmount("");
-      return;
-    }
-
-    if (registeredBankAccounts.length > 0 && !selectedRefundBankId) {
-      setSelectedRefundBankId(
-        String(registeredBankAccounts[0].id || registeredBankAccounts[0].bankId || registeredBankAccounts[0]._id)
-      );
-    }
-
-    // Cap at total refund amount
-    const clamped = Math.min(rawVal, totals.refundAmount);
-    setRefundBankAmount(String(clamped));
-  };
-
-  const handleMfsAmountChange = (valStr: string) => {
-    if (valStr === "" || valStr === undefined) {
-      setRefundMfsAmount("");
-      return;
-    }
-    const rawVal = parseFloat(valStr);
-    if (isNaN(rawVal) || rawVal < 0) {
-      setRefundMfsAmount("");
-      return;
-    }
-
-    if (registeredMfsAccounts.length > 0 && !selectedRefundMfsId) {
-      setSelectedRefundMfsId(
-        String(registeredMfsAccounts[0].id || registeredMfsAccounts[0].mfsId || registeredMfsAccounts[0]._id)
-      );
-    }
-
-    // Cap at total refund amount
-    const clamped = Math.min(rawVal, totals.refundAmount);
-    setRefundMfsAmount(String(clamped));
-  };
-
-  const handleCashAmountChange = (valStr: string) => {
-    if (valStr === "" || valStr === undefined) {
-      setRefundCashAmount("");
-      return;
-    }
-    const rawVal = parseFloat(valStr);
-    if (isNaN(rawVal) || rawVal < 0) {
-      setRefundCashAmount("");
-      return;
-    }
-
-    // Cap at total refund amount
-    const clamped = Math.min(rawVal, totals.refundAmount);
-    setRefundCashAmount(String(clamped));
-  };
-
-  const handleDueAmountChange = (valStr: string) => {
-    if (valStr === "" || valStr === undefined) {
-      setRefundDueAmount("");
-      return;
-    }
-    const rawVal = parseFloat(valStr);
-    if (isNaN(rawVal) || rawVal < 0) {
-      setRefundDueAmount("");
-      return;
-    }
-
-    const maxAllowed = origDueAmount > 0 ? Math.min(rawVal, origDueAmount, totals.refundAmount) : Math.min(rawVal, totals.refundAmount);
-    setRefundDueAmount(String(maxAllowed));
-  };
-
-  // Handlers for quick 1-click full payment allocation
-  const handleRefundFullCash = () => {
-    setRefundCashAmount(String(totals.refundAmount));
-    setRefundBankAmount("");
-    setRefundMfsAmount("");
-    setRefundDueAmount("");
-  };
-
-  const handleRefundFullBank = () => {
-    if (registeredBankAccounts.length > 0 && !selectedRefundBankId) {
-      setSelectedRefundBankId(
-        String(registeredBankAccounts[0].id || registeredBankAccounts[0].bankId || registeredBankAccounts[0]._id)
-      );
-    }
-    setRefundBankAmount(String(totals.refundAmount));
-    setRefundCashAmount("");
-    setRefundMfsAmount("");
-    setRefundDueAmount("");
-  };
-
-  const handleRefundFullMfs = () => {
-    if (registeredMfsAccounts.length > 0 && !selectedRefundMfsId) {
-      setSelectedRefundMfsId(
-        String(registeredMfsAccounts[0].id || registeredMfsAccounts[0].mfsId || registeredMfsAccounts[0]._id)
-      );
-    }
-    setRefundMfsAmount(String(totals.refundAmount));
-    setRefundCashAmount("");
-    setRefundBankAmount("");
-    setRefundDueAmount("");
-  };
-
-  const handleRefundFullDue = () => {
-    const dueAlloc = origDueAmount > 0 ? Math.min(origDueAmount, totals.refundAmount) : totals.refundAmount;
-    setRefundDueAmount(String(dueAlloc));
-    const rem = Math.max(0, totals.refundAmount - dueAlloc);
-    setRefundCashAmount(rem > 0 ? String(rem) : "");
-    setRefundBankAmount("");
-    setRefundMfsAmount("");
-  };
+  const {
+    numRefundCash,
+    numRefundBank,
+    numRefundMfs,
+    numRefundDue,
+    selectedRefundBankId,
+    selectedRefundMfsId,
+    totalRefundAllocated,
+    refundDifference,
+    resetRefund,
+  } = refund;
 
   const handleReset = () => {
     if (stateSale) {
@@ -922,10 +691,7 @@ export const SalesReturnForm: React.FC = () => {
       setCustomerPhone("");
       setCustomerAddress("");
       setLines([]);
-      setRefundCashAmount("");
-      setRefundBankAmount("");
-      setRefundMfsAmount("");
-      setRefundDueAmount("");
+      resetRefund();
       setSelectedRefundBankId("");
       setSelectedRefundMfsId("");
     }
@@ -1907,296 +1673,13 @@ export const SalesReturnForm: React.FC = () => {
 
         {/* Right Column (span-7): Payment Refunded Section (Exact Match to Create New Sale) */}
         <div className="lg:col-span-7 bg-white p-2.5 sm:p-3 rounded-xl border border-gray-200 shadow-xs flex flex-col gap-2">
-          {/* Header & View-Only Status */}
-          <div className="flex items-center justify-between flex-wrap gap-1">
-            <span className="text-[11px] font-bold text-black tracking-wider flex items-center gap-1.5">
-              <FaWallet size={11} className="text-black" />
-              Payment Refunded
-            </span>
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-gray-100 text-black border border-gray-200 select-none">
-              <FaLock size={8} className="text-black" />
-              Auto-filled (View Only)
-            </span>
-          </div>
-
-          {/* Payment Breakdown Cards - Display Only */}
-          <div className="flex flex-col gap-1.5">
-            {/* 1. Cash Card */}
-            <div
-              className={`px-2.5 py-1 rounded-md border transition-all flex items-center justify-between gap-1.5 shadow-2xs select-none ${
-                numRefundCash > 0
-                  ? "border-emerald-400 bg-emerald-50/30"
-                  : "border-gray-200 bg-gray-50/40 opacity-70"
-              }`}
-            >
-              <div className="flex items-center gap-1.5 min-w-0">
-                <div
-                  className={`w-6 h-6 rounded flex items-center justify-center shrink-0 ${
-                    numRefundCash > 0
-                      ? "bg-emerald-100 text-emerald-700"
-                      : "bg-gray-100 text-black"
-                  }`}
-                >
-                  <FaMoneyBillWave size={11} />
-                </div>
-                <span className="font-bold text-[11px] text-black tracking-wider">CASH</span>
-              </div>
-
-              <div
-                className={`flex items-center h-6.5 rounded border overflow-hidden w-28 sm:w-34 shrink-0 transition-colors shadow-2xs ${
-                  numRefundCash > 0
-                    ? "border-emerald-500 bg-white"
-                    : "border-gray-200 bg-gray-100/70"
-                }`}
-              >
-                <span className="text-[11px] text-black font-normal px-1.5 bg-gray-50 h-full flex items-center border-r border-gray-200 select-none">
-                  {numRefundCash > 0 ? "৳" : "—"}
-                </span>
-                <input
-                  type="text"
-                  readOnly
-                  disabled
-                  tabIndex={-1}
-                  placeholder="N/A"
-                  value={numRefundCash > 0 ? numRefundCash.toString() : "N/A"}
-                  className="w-full text-right px-1.5 text-xs font-normal text-black outline-none bg-transparent cursor-not-allowed select-none h-full placeholder:text-black"
-                />
-              </div>
-            </div>
-
-            {/* 2. Bank Card */}
-            <div
-              className={`px-2.5 py-1 rounded-md border transition-all flex items-center justify-between gap-1.5 shadow-2xs select-none ${
-                numRefundBank > 0
-                  ? "border-sky-400 bg-sky-50/30"
-                  : "border-gray-200 bg-gray-50/40 opacity-70"
-              }`}
-            >
-              <div className="flex items-center gap-1.5 flex-1 min-w-0 mr-1">
-                <div
-                  className={`w-6 h-6 rounded flex items-center justify-center shrink-0 ${
-                    numRefundBank > 0
-                      ? "bg-sky-100 text-sky-700"
-                      : "bg-gray-100 text-black"
-                  }`}
-                >
-                  <FaCreditCard size={11} />
-                </div>
-                <span className="font-bold text-[11px] text-black tracking-wider shrink-0">BANK</span>
-                <select
-                  disabled
-                  value={selectedRefundBankId}
-                  className="h-6.5 w-full max-w-[130px] sm:max-w-[215px] px-1.5 text-[11px] border border-gray-200 rounded bg-gray-50 text-black font-normal cursor-not-allowed truncate select-none"
-                >
-                  <option value="" className="text-black font-normal">
-                    {numRefundBank > 0 ? "Bank Account" : "N/A"}
-                  </option>
-                  {registeredBankAccounts.map((b) => (
-                    <option key={b.id || b.bankId || b._id} value={b.id || b.bankId || b._id} className="text-black">
-                      {b.bankName || b.name}
-                      {b.accountNo || b.bankAccountNumber || b.bankAccountNo
-                        ? ` – ${b.accountNo || b.bankAccountNumber || b.bankAccountNo}`
-                        : ""}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div
-                className={`flex items-center h-6.5 rounded border overflow-hidden w-28 sm:w-34 shrink-0 transition-colors shadow-2xs ${
-                  numRefundBank > 0
-                    ? "border-sky-500 bg-white"
-                    : "border-gray-200 bg-gray-100/70"
-                }`}
-              >
-                <span className="text-[11px] text-black font-normal px-1.5 bg-gray-50 h-full flex items-center border-r border-gray-200 select-none">
-                  {numRefundBank > 0 ? "৳" : "—"}
-                </span>
-                <input
-                  type="text"
-                  readOnly
-                  disabled
-                  tabIndex={-1}
-                  placeholder="N/A"
-                  value={numRefundBank > 0 ? numRefundBank.toString() : "N/A"}
-                  className="w-full text-right px-1.5 text-xs font-normal text-black outline-none bg-transparent cursor-not-allowed select-none h-full placeholder:text-black"
-                />
-              </div>
-            </div>
-
-            {/* 3. MFS Card */}
-            <div
-              className={`px-2.5 py-1 rounded-md border transition-all flex items-center justify-between gap-1.5 shadow-2xs select-none ${
-                numRefundMfs > 0
-                  ? "border-purple-400 bg-purple-50/30"
-                  : "border-gray-200 bg-gray-50/40 opacity-70"
-              }`}
-            >
-              <div className="flex items-center gap-1.5 flex-1 min-w-0 mr-1">
-                <div
-                  className={`w-6 h-6 rounded flex items-center justify-center shrink-0 ${
-                    numRefundMfs > 0
-                      ? "bg-purple-100 text-purple-700"
-                      : "bg-gray-100 text-black"
-                  }`}
-                >
-                  <FaMobileAlt size={11} />
-                </div>
-                <span className="font-bold text-[11px] text-black tracking-wider shrink-0">MFS</span>
-                <select
-                  disabled
-                  value={selectedRefundMfsId}
-                  className="h-6.5 w-full max-w-[130px] sm:max-w-[215px] px-1.5 text-[11px] border border-gray-200 rounded bg-gray-50 text-black font-normal cursor-not-allowed truncate select-none"
-                >
-                  <option value="" className="text-black font-normal">
-                    {numRefundMfs > 0 ? "MFS Account" : "N/A"}
-                  </option>
-                  {registeredMfsAccounts.map((m) => {
-                    const nameVal = m.name || m.mfsName || m.method || "MFS";
-                    const phoneVal = m.phoneNumber || m.mfsPhone || m.phone || "";
-                    return (
-                      <option key={m.id || m.mfsId || m._id} value={m.id || m.mfsId || m._id} className="text-black">
-                        {nameVal}
-                        {phoneVal ? ` – ${phoneVal}` : ""}
-                      </option>
-                    );
-                  })}
-                </select>
-              </div>
-
-              <div
-                className={`flex items-center h-6.5 rounded border overflow-hidden w-28 sm:w-34 shrink-0 transition-colors shadow-2xs ${
-                  numRefundMfs > 0
-                    ? "border-purple-500 bg-white"
-                    : "border-gray-200 bg-gray-100/70"
-                }`}
-              >
-                <span className="text-[11px] text-black font-normal px-1.5 bg-gray-50 h-full flex items-center border-r border-gray-200 select-none">
-                  {numRefundMfs > 0 ? "৳" : "—"}
-                </span>
-                <input
-                  type="text"
-                  readOnly
-                  disabled
-                  tabIndex={-1}
-                  placeholder="N/A"
-                  value={numRefundMfs > 0 ? numRefundMfs.toString() : "N/A"}
-                  className="w-full text-right px-1.5 text-xs font-normal text-black outline-none bg-transparent cursor-not-allowed select-none h-full placeholder:text-black"
-                />
-              </div>
-            </div>
-
-            {/* 4. Due / Credit Adjustment Row (if applicable) */}
-            {(origDueAmount > 0 || numRefundDue > 0) && (
-              <div
-                className={`px-2.5 py-1 rounded-md border transition-all flex items-center justify-between gap-1.5 shadow-2xs select-none ${
-                  numRefundDue > 0
-                    ? "border-rose-400 bg-rose-50/30"
-                    : "border-gray-200 bg-gray-50/40 opacity-70"
-                }`}
-              >
-                <div className="flex items-center gap-1.5 min-w-0">
-                  <div
-                    className={`w-6 h-6 rounded flex items-center justify-center shrink-0 font-bold text-[11px] ${
-                      numRefundDue > 0
-                        ? "bg-rose-100 text-rose-700"
-                        : "bg-gray-100 text-black"
-                    }`}
-                  >
-                    ৳
-                  </div>
-                  <div>
-                    <span className="font-bold text-[11px] text-black tracking-wider block leading-tight">
-                      DUE ADJUST
-                    </span>
-                    <span className="text-[9.5px] text-black font-normal block leading-none">
-                      Max: ৳{formatMoney(origDueAmount)}
-                    </span>
-                  </div>
-                </div>
-
-                <div
-                  className={`flex items-center h-6.5 rounded border overflow-hidden w-28 sm:w-34 shrink-0 transition-colors shadow-2xs ${
-                    numRefundDue > 0
-                      ? "border-rose-500 bg-white"
-                      : "border-gray-200 bg-gray-100/70"
-                  }`}
-                >
-                  <span className="text-[11px] text-black font-normal px-1.5 bg-gray-50 h-full flex items-center border-r border-gray-200 select-none">
-                    {numRefundDue > 0 ? "৳" : "—"}
-                  </span>
-                  <input
-                    type="text"
-                    readOnly
-                    disabled
-                    tabIndex={-1}
-                    placeholder="N/A"
-                    value={numRefundDue > 0 ? numRefundDue.toString() : "N/A"}
-                    className="w-full text-right px-1.5 text-xs font-normal text-black outline-none bg-transparent cursor-not-allowed select-none h-full placeholder:text-black"
-                  />
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Financial Settlement Summary Ribbon (Matching Create New Sale Standard) */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 border-t border-gray-200/90 pt-1.5 items-center">
-            {/* Total Refunded Card with status badge */}
-            <div className="bg-emerald-50/90 px-2.5 py-1 rounded-md border border-emerald-200/90 flex items-center justify-between shadow-2xs">
-              <div className="flex items-center gap-1.5">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 inline-block" />
-                <span className="text-[10.5px] font-bold text-emerald-950 tracking-wide">
-                  Total Refunded
-                </span>
-                <span className="text-[9.5px] font-semibold px-1 py-0.2 rounded bg-emerald-100 text-emerald-800">
-                  {totalRefundAllocated >= totals.refundAmount && totals.refundAmount > 0
-                    ? "SETTLED"
-                    : totalRefundAllocated > 0
-                    ? "PARTIAL"
-                    : "UNALLOCATED"}
-                </span>
-              </div>
-              <span className="text-xs sm:text-[13px] font-extrabold text-emerald-800">
-                ৳ {formatMoney(totalRefundAllocated)}
-              </span>
-            </div>
-
-            {/* Remaining to Refund / Due Balance Card */}
-            <div
-              className={`px-2.5 py-1 rounded-md border flex items-center justify-between transition-colors shadow-2xs ${
-                refundDifference > 0.01
-                  ? "bg-rose-50/90 border-rose-200/90"
-                  : "bg-gray-50 border-gray-200"
-              }`}
-            >
-              <div className="flex items-center gap-1.5">
-                <span
-                  className={`w-1.5 h-1.5 rounded-full inline-block ${
-                    refundDifference > 0.01 ? "bg-rose-600" : "bg-gray-400"
-                  }`}
-                />
-                <span
-                  className={`text-[10.5px] font-bold tracking-wide ${
-                    refundDifference > 0.01 ? "text-rose-950" : "text-gray-700"
-                  }`}
-                >
-                  {refundDifference > 0.01 ? "Unallocated Balance" : "Due Balance"}
-                </span>
-                {refundDifference > 0.01 && (
-                  <span className="text-[9.5px] font-semibold px-1 py-0.2 rounded bg-rose-100 text-rose-800">
-                    PENDING
-                  </span>
-                )}
-              </div>
-              <span
-                className={`text-xs sm:text-[13px] font-extrabold ${
-                  refundDifference > 0.01 ? "text-rose-600" : "text-black"
-                }`}
-              >
-                ৳ {formatMoney(refundDifference > 0.01 ? refundDifference : 0)}
-              </span>
-            </div>
-          </div>
+          <TradeRefundSection
+            refund={refund}
+            refundAmount={totals.refundAmount}
+            registeredBankAccounts={registeredBankAccounts}
+            registeredMfsAccounts={registeredMfsAccounts}
+            title="Payment Refunded"
+          />
         </div>
       </div>
 
