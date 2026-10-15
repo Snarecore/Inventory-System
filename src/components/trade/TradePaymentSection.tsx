@@ -205,14 +205,12 @@ export const TradePaymentSection: React.FC<TradePaymentSectionProps> = ({
               </option>
               {registeredBankAccounts.map((b) => (
                 <option
-                  key={b.id || b.bankId || b._id}
-                  value={b.id || b.bankId || b._id}
+                  key={b.id}
+                  value={b.id}
                   className="text-black"
                 >
-                  {b.bankName || b.name}
-                  {b.accountNo || b.bankAccountNumber || b.bankAccountNo
-                    ? ` – ${b.accountNo || b.bankAccountNumber || b.bankAccountNo}`
-                    : ""}
+                  {b.bankName}
+                  {b.accountNo ? ` – ${b.accountNo}` : ""}
                 </option>
               ))}
             </select>
@@ -270,20 +268,16 @@ export const TradePaymentSection: React.FC<TradePaymentSectionProps> = ({
               <option value="" className="text-black">
                 {registeredMfsAccounts.length ? "Select MFS..." : "No MFS registered"}
               </option>
-              {registeredMfsAccounts.map((m) => {
-                const nameVal = m.name || m.mfsName || m.method || "MFS";
-                const phoneVal = m.phoneNumber || m.mfsPhone || m.phone || "";
-                return (
-                  <option
-                    key={m.id || m.mfsId || m._id}
-                    value={m.id || m.mfsId || m._id}
-                    className="text-black"
-                  >
-                    {nameVal}
-                    {phoneVal ? ` – ${phoneVal}` : ""}
-                  </option>
-                );
-              })}
+              {registeredMfsAccounts.map((m) => (
+                <option
+                  key={m.id}
+                  value={m.id}
+                  className="text-black"
+                >
+                  {m.mfsName}
+                  {m.mfsPhone ? ` – ${m.mfsPhone}` : ""}
+                </option>
+              ))}
             </select>
           </div>
 

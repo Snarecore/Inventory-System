@@ -98,36 +98,22 @@ const PartyModal: React.FC<PartyModalProps> = ({
         ...(isEdit && partyId ? {
           id: partyId,
           partyId: partyId,
-          party_id: partyId,
         } : {}),
         name: partyName.trim(),
         partyName: partyName.trim(),
-        party_name: partyName.trim(),
         phone: partyPhone.trim(),
         partyPhone: partyPhone.trim(),
-        phoneNumber: partyPhone.trim(),
-        party_phone: partyPhone.trim(),
         email: partyEmail.trim(),
-        partyEmail: partyEmail.trim(),
         address: partyAddress.trim(),
-        partyAddress: partyAddress.trim(),
         type: partyType,
         partyType: partyType,
-        party_type: partyType,
         openingBalance: numBalance,
-        opening_balance: numBalance,
-        balance: numBalance,
-        dueAmount: numBalance,
-        due_amount: numBalance,
         status: status === "active" ? "Active" : "Inactive",
       });
 
       const payload: Record<string, any> = {
         accessUser,
         ...partyDetails,
-        party: partyDetails,
-        partyInfo: partyDetails,
-        party_info: partyDetails,
       };
 
       const response = await postData<any>({

@@ -115,10 +115,9 @@ export const SalesReturnForm: React.FC = () => {
     const addCandidate = (item: any) => {
       if (!item) return;
       const key = String(
-        item.id ||
-        item.saleId ||
-        item.invoiceNo ||
         item.salesInvoiceNo ||
+        item.invoiceNo ||
+        item.id ||
         ""
       ).trim().toLowerCase();
       if (key && seenKeys.has(key)) return;
@@ -136,10 +135,7 @@ export const SalesReturnForm: React.FC = () => {
     return combinedCandidates.filter((item: any) => {
       const hasDetails =
         (Array.isArray(item.salesDetails) && item.salesDetails.length > 0) ||
-        (Array.isArray(item.details) && item.details.length > 0) ||
-        (Array.isArray(item.saleDetails) && item.saleDetails.length > 0) ||
-        (Array.isArray(item.items) && item.items.length > 0) ||
-        (Array.isArray(item.products) && item.products.length > 0);
+        (Array.isArray(item.saleDetails) && item.saleDetails.length > 0);
       return hasDetails;
     });
   }, [salesData, apiSalesAndReturnData]);
@@ -148,7 +144,7 @@ export const SalesReturnForm: React.FC = () => {
   useEffect(() => {
     if (Number(refundBankAmount) > 0 && registeredBankAccounts.length > 0 && !selectedRefundBankId) {
       setSelectedRefundBankId(
-        String(registeredBankAccounts[0].id || registeredBankAccounts[0].bankId || registeredBankAccounts[0]._id || "")
+        String(registeredBankAccounts[0].id || "")
       );
     }
   }, [registeredBankAccounts, selectedRefundBankId, refundBankAmount]);
@@ -156,7 +152,7 @@ export const SalesReturnForm: React.FC = () => {
   useEffect(() => {
     if (Number(refundMfsAmount) > 0 && registeredMfsAccounts.length > 0 && !selectedRefundMfsId) {
       setSelectedRefundMfsId(
-        String(registeredMfsAccounts[0].id || registeredMfsAccounts[0].mfsId || registeredMfsAccounts[0]._id || "")
+        String(registeredMfsAccounts[0].id || "")
       );
     }
   }, [registeredMfsAccounts, selectedRefundMfsId, refundMfsAmount]);
@@ -190,10 +186,10 @@ export const SalesReturnForm: React.FC = () => {
       };
 
       if (isReturnRecord) {
-        const itemInv = cleanKey(item.salesInvoiceNo || item.invoiceNo || item.sales_invoice_no || item.sales_invoice || item.invoice_no);
-        const itemOrd = cleanKey(item.orderNo || item.order_no);
-        // NOTE: Only use item.saleId / item.sale_id. NEVER use item.id because item.id is the return record ID!
-        const itemSaleId = cleanKey(item.saleId || item.sale_id);
+        const itemInv = cleanKey(item.salesInvoiceNo || item.invoiceNo);
+        const itemOrd = cleanKey(item.orderNo);
+        // NOTE: Only use item.saleId. NEVER use item.id because item.id is the return record ID!
+        const itemSaleId = cleanKey(item.saleId);
 
         addIndex("inv", itemInv, item);
         addIndex("ord", itemOrd, item);
@@ -204,8 +200,8 @@ export const SalesReturnForm: React.FC = () => {
         (Array.isArray(item.salesReturns) && item.salesReturns.length > 0)
       ) {
         const inv = cleanKey(item.invoiceNo || item.salesInvoiceNo);
-        const ord = cleanKey(item.orderNo || item.order_no);
-        const sid = cleanKey(item.id || item.saleId || item.sale_id);
+        const ord = cleanKey(item.orderNo);
+        const sid = cleanKey(item.saleId || item.id);
 
         if (inv) keysSet.add(`inv:${inv}`);
         if (ord) keysSet.add(`ord:${ord}`);
@@ -229,10 +225,10 @@ export const SalesReturnForm: React.FC = () => {
     const inv = cleanKey(sale.invoiceNo || sale.salesInvoiceNo);
     if (inv && returnedSaleKeysSet.has(`inv:${inv}`)) return true;
 
-    const ord = cleanKey(sale.orderNo || (sale as any).order_no);
+    const ord = cleanKey(sale.orderNo);
     if (ord && returnedSaleKeysSet.has(`ord:${ord}`)) return true;
 
-    const sid = cleanKey(sale.id || sale.saleId || (sale as any).sale_id);
+    const sid = cleanKey(sale.saleId || sale.id);
     if (sid && returnedSaleKeysSet.has(`sid:${sid}`)) return true;
 
     return false;
@@ -241,29 +237,18 @@ export const SalesReturnForm: React.FC = () => {
   // Helper to calculate already returned quantities using exact-match indexing
   const getReturnedQuantitiesForSale = useCallback((sale: SaleItem): Record<string, number> => {
     const invClean = cleanKey(sale.invoiceNo || sale.salesInvoiceNo);
-    const ordClean = cleanKey(sale.orderNo || (sale as any).order_no);
-    const saleIdClean = cleanKey(sale.id || sale.saleId || (sale as any).sale_id);
+    const ordClean = cleanKey(sale.orderNo);
+    const saleIdClean = cleanKey(sale.saleId || sale.id);
 
     const returnedQtyMap: Record<string, number> = {};
 
     const processDetailsList = (details: any[]) => {
       if (!Array.isArray(details)) return;
       details.forEach((rd: any) => {
-        const pId = String(rd.productId ?? rd.product_id ?? rd.id ?? rd.itemId ?? rd.item_id ?? "").trim();
-        const pCode = String(rd.productCode ?? rd.pcode ?? rd.product_code ?? "").trim();
-        const pName = String(rd.productName ?? rd.name ?? rd.product_name ?? "").trim().toLowerCase();
-        const qty = Number(
-          rd.quantity ??
-          rd.qty ??
-          rd.returnQuantity ??
-          rd.returnQty ??
-          rd.returnedQuantity ??
-          rd.returnedQty ??
-          rd.return_quantity ??
-          rd.returned_qty ??
-          rd.return_qty ??
-          0
-        );
+        const pId = String(rd.productId ?? rd.id ?? "").trim();
+        const pCode = String(rd.productCode ?? rd.pcode ?? "").trim();
+        const pName = String(rd.productName ?? rd.name ?? "").trim().toLowerCase();
+        const qty = Number(rd.quantity ?? rd.returnQuantity ?? 0);
 
         if (qty > 0) {
           if (pId) returnedQtyMap[`id_${pId}`] = (returnedQtyMap[`id_${pId}`] || 0) + qty;
@@ -343,7 +328,7 @@ export const SalesReturnForm: React.FC = () => {
       setSelectedRefundBankId("");
     }
 
-    const saleMfsId = sale.mfsId || (sale as any).mfs_id;
+    const saleMfsId = sale.mfsId;
     if (saleMfsId) {
       setSelectedRefundMfsId(String(saleMfsId));
     } else {
@@ -351,29 +336,27 @@ export const SalesReturnForm: React.FC = () => {
     }
 
     const details: any[] =
-      sale.salesDetails || sale.saleDetails || (sale as any).details || [];
+      Array.isArray(sale.salesDetails) && sale.salesDetails.length > 0
+        ? sale.salesDetails
+        : Array.isArray(sale.saleDetails)
+        ? sale.saleDetails
+        : [];
 
     const returnedMap = getReturnedQuantitiesForSale(sale);
 
     if (details.length > 0) {
       const formattedLines: ReturnLineFormState[] = details.map((d: any) => {
-        const soldQty = Number(d.quantity ?? d.qty ?? 1);
-        const p = Number(d.sellPrice ?? d.sell_price ?? d.price ?? d.unitPrice ?? 0);
+        const soldQty = Number(d.quantity ?? 1);
+        const p = Number(d.sellPrice ?? d.unitPrice ?? 0);
 
-        const pId = String(d.productId ?? d.product_id ?? "").trim();
+        const pId = String(d.productId ?? "").trim();
         const pCode = String(d.productCode ?? d.pcode ?? "").trim();
-        const pName = String(d.productName ?? d.name ?? "").trim().toLowerCase();
+        const pName = String(d.productName ?? d.name ?? "Product").trim().toLowerCase();
         const baseName = pName.split(/[(/[-]/)[0].trim();
 
         const directReturned = Number(
           d.returnedQuantity ??
-          d.returnedQty ??
           d.returnQuantity ??
-          d.returnQty ??
-          d.alreadyReturned ??
-          d.returned_qty ??
-          d.returned_quantity ??
-          d.return_qty ??
           0
         );
 
@@ -391,7 +374,7 @@ export const SalesReturnForm: React.FC = () => {
         const initialSelected = availableQty > 0;
 
         return {
-          productId: d.productId ?? d.product_id ?? "",
+          productId: d.productId ?? "",
           productCode: d.productCode ?? d.pcode ?? "",
           productName: d.productName ?? d.name ?? "Product",
           unit: d.unit || "pcs",
@@ -800,60 +783,43 @@ export const SalesReturnForm: React.FC = () => {
           : "CASH";
 
       const matchedBank = registeredBankAccounts.find(
-        (b) => String(b.id || b.bankId || b._id) === String(selectedRefundBankId)
+        (b) => String(b.id) === String(selectedRefundBankId)
       );
       const matchedMfs = registeredMfsAccounts.find(
-        (m) => String(m.id || m.mfsId || m._id) === String(selectedRefundMfsId)
+        (m) => String(m.id) === String(selectedRefundMfsId)
       );
 
       // Top-level payload matching exact API schema
       const payload = {
         accessUser: buildAccessUser(),
         salesInvoiceNo,
-        invoiceNo: salesInvoiceNo,
         orderNo: selectedSale?.orderNo || null,
         customerId,
         customerName,
         customerPhone,
         customerAddress,
         returnDate,
-        date: returnDate,
         totalAmount: Number(totals.subtotal.toFixed(2)),
         discount: Number(totals.discount.toFixed(2)),
         vat: Number(totals.vat.toFixed(2)),
         deliveryCharge: Number(totals.deliveryCharge.toFixed(2)),
-        delivery_charge: Number(totals.deliveryCharge.toFixed(2)),
         grandTotal: Number(totals.grandTotal.toFixed(2)),
         refundAmount: Number(totals.refundAmount.toFixed(2)),
         paymentType: effectivePaymentType,
         status: status || "Return",
         note: finalNote,
-        remarks: finalNote,
         refNo: `SR-${Date.now()}`,
         osType: "WEB",
-        // Multi-channel refund breakdown
         cashReceived: numRefundCash,
         cardReceived: numRefundBank,
         mfsReceived: numRefundMfs,
         dueAmount: numRefundDue,
         bankId: numRefundBank > 0 ? selectedRefundBankId : null,
-        bankName: numRefundBank > 0 ? (matchedBank?.bankName || matchedBank?.name || null) : null,
-        accountNo:
-          numRefundBank > 0
-            ? (matchedBank?.accountNo ||
-               matchedBank?.bankAccountNumber ||
-               matchedBank?.bankAccountNo ||
-               null)
-            : null,
+        bankName: numRefundBank > 0 ? (matchedBank?.bankName || null) : null,
+        accountNo: numRefundBank > 0 ? (matchedBank?.accountNo || null) : null,
         mfsId: numRefundMfs > 0 ? selectedRefundMfsId : null,
-        mfsName:
-          numRefundMfs > 0
-            ? (matchedMfs?.name || matchedMfs?.mfsName || matchedMfs?.method || null)
-            : null,
-        mfsPhone:
-          numRefundMfs > 0
-            ? (matchedMfs?.phoneNumber || matchedMfs?.mfsPhone || matchedMfs?.phone || null)
-            : null,
+        mfsName: numRefundMfs > 0 ? (matchedMfs?.mfsName || null) : null,
+        mfsPhone: numRefundMfs > 0 ? (matchedMfs?.mfsPhone || null) : null,
         returnDetails: returnDetailsPayload,
       };
 
@@ -909,14 +875,11 @@ export const SalesReturnForm: React.FC = () => {
         mfsReceived: numRefundMfs,
         dueAmount: numRefundDue,
         bankId: numRefundBank > 0 ? selectedRefundBankId : undefined,
-        bankName: matchedBank?.bankName || matchedBank?.name,
-        accountNo:
-          matchedBank?.accountNo ||
-          matchedBank?.bankAccountNumber ||
-          matchedBank?.bankAccountNo,
+        bankName: matchedBank?.bankName,
+        accountNo: matchedBank?.accountNo,
         mfsId: numRefundMfs > 0 ? selectedRefundMfsId : undefined,
-        mfsName: matchedMfs?.name || matchedMfs?.mfsName || matchedMfs?.method,
-        mfsPhone: matchedMfs?.phoneNumber || matchedMfs?.mfsPhone || matchedMfs?.phone,
+        mfsName: matchedMfs?.mfsName,
+        mfsPhone: matchedMfs?.mfsPhone,
         status: status || "Return",
         note: finalNote,
         remarks: finalNote,

@@ -39,11 +39,10 @@ export const useTradeProductSearch = ({
     const q = searchQuery.toLowerCase().trim();
     return allProducts
       .filter((p) => {
-        const name = (p.name || p.productName || "").toLowerCase();
-        const code = (p.pcode || p.productCode || (p as any).code || "").toLowerCase();
+        const name = (p.name || "").toLowerCase();
+        const code = (p.productCode || p.pcode || "").toLowerCase();
         const barcode = (p.barcode || "").toLowerCase();
-        const sku = ((p as any).sku || "").toLowerCase();
-        return name.includes(q) || code.includes(q) || barcode.includes(q) || sku.includes(q);
+        return name.includes(q) || code.includes(q) || barcode.includes(q);
       })
       .slice(0, maxResults);
   }, [allProducts, searchQuery, maxResults]);
@@ -71,9 +70,9 @@ export const useTradeProductSearch = ({
 
       const found = findProductByBarcode(trimmed);
       if (found) {
-        const stock = Number(found.quantity ?? found.stock ?? (found as any).qty ?? 0);
+        const stock = Number(found.quantity ?? found.stock ?? 0);
         if (mode === "sale" && stock <= 0) {
-          showErrorToast(`Product "${found.name || found.productName || "Product"}" is out of stock (Stock: 0)`);
+          showErrorToast(`Product "${found.name || "Product"}" is out of stock (Stock: 0)`);
           setBarcodeInput("");
           return true;
         }
@@ -95,7 +94,7 @@ export const useTradeProductSearch = ({
 
       const matched = allProducts.find((p) => {
         const barcode = String(p.barcode || "").trim().toLowerCase();
-        const pcode = String(p.pcode || p.productCode || "").trim().toLowerCase();
+        const pcode = String(p.productCode || p.pcode || "").trim().toLowerCase();
         return Boolean(
           (barcode && barcode === trimmed.toLowerCase()) ||
           (pcode && pcode === trimmed.toLowerCase())
@@ -103,9 +102,9 @@ export const useTradeProductSearch = ({
       });
 
       if (matched) {
-        const stock = Number(matched.quantity ?? matched.stock ?? (matched as any).qty ?? 0);
+        const stock = Number(matched.quantity ?? matched.stock ?? 0);
         if (mode === "sale" && stock <= 0) {
-          showErrorToast(`Product "${matched.name || matched.productName || "Product"}" is out of stock (Stock: 0)`);
+          showErrorToast(`Product "${matched.name || "Product"}" is out of stock (Stock: 0)`);
           setBarcodeInput("");
           return;
         }

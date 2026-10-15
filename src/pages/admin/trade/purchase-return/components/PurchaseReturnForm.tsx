@@ -113,10 +113,9 @@ export const PurchaseReturnForm: React.FC = () => {
     const addCandidate = (item: any) => {
       if (!item) return;
       const key = String(
-        item.id ||
-        item.purchaseId ||
-        item.invoiceNo ||
         item.purchaseInvoiceNo ||
+        item.invoiceNo ||
+        item.id ||
         ""
       ).trim().toLowerCase();
       if (key && seenKeys.has(key)) return;
@@ -134,12 +133,7 @@ export const PurchaseReturnForm: React.FC = () => {
     return combinedCandidates.filter((item: any) => {
       const hasDetails =
         (Array.isArray(item.purchaseDetails) && item.purchaseDetails.length > 0) ||
-        (Array.isArray(item.purchasesDetails) && item.purchasesDetails.length > 0) ||
-        (Array.isArray(item.purchase_details) && item.purchase_details.length > 0) ||
-        (Array.isArray(item.purchaseListDetails) && item.purchaseListDetails.length > 0) ||
-        (Array.isArray(item.details) && item.details.length > 0) ||
-        (Array.isArray(item.items) && item.items.length > 0) ||
-        (Array.isArray(item.products) && item.products.length > 0);
+        (Array.isArray(item.purchasesDetails) && item.purchasesDetails.length > 0);
       return hasDetails;
     });
   }, [purchasesData, apiPurchaseAndReturnData]);
@@ -148,7 +142,7 @@ export const PurchaseReturnForm: React.FC = () => {
   useEffect(() => {
     if (Number(refundBankAmount) > 0 && registeredBankAccounts.length > 0 && !selectedRefundBankId) {
       setSelectedRefundBankId(
-        String(registeredBankAccounts[0].id || registeredBankAccounts[0].bankId || registeredBankAccounts[0]._id || "")
+        String(registeredBankAccounts[0].id || "")
       );
     }
   }, [registeredBankAccounts, selectedRefundBankId, refundBankAmount]);
@@ -156,7 +150,7 @@ export const PurchaseReturnForm: React.FC = () => {
   useEffect(() => {
     if (Number(refundMfsAmount) > 0 && registeredMfsAccounts.length > 0 && !selectedRefundMfsId) {
       setSelectedRefundMfsId(
-        String(registeredMfsAccounts[0].id || registeredMfsAccounts[0].mfsId || registeredMfsAccounts[0]._id || "")
+        String(registeredMfsAccounts[0].id || "")
       );
     }
   }, [registeredMfsAccounts, selectedRefundMfsId, refundMfsAmount]);
@@ -190,11 +184,11 @@ export const PurchaseReturnForm: React.FC = () => {
       };
 
       if (isReturnRecord) {
-        const itemInv = cleanKey(item.purchaseInvoiceNo || item.invoiceNo || item.purchase_invoice_no || item.invoice_no);
-        const itemOrd = cleanKey(item.orderNo || item.order_no);
-        const itemChallan = cleanKey(item.challanNo || item.challan_no);
-        // NOTE: Only use item.purchaseId / item.purchase_id. NEVER use item.id because item.id is the return record ID!
-        const itemPurchaseId = cleanKey(item.purchaseId || item.purchase_id);
+        const itemInv = cleanKey(item.purchaseInvoiceNo || item.invoiceNo);
+        const itemOrd = cleanKey(item.orderNo);
+        const itemChallan = cleanKey(item.challanNo);
+        // NOTE: Only use item.purchaseId. NEVER use item.id because item.id is the return record ID!
+        const itemPurchaseId = cleanKey(item.purchaseId);
 
         addIndex("inv", itemInv, item);
         addIndex("ord", itemOrd, item);
@@ -206,9 +200,9 @@ export const PurchaseReturnForm: React.FC = () => {
         (Array.isArray(item.purchaseReturns) && item.purchaseReturns.length > 0)
       ) {
         const inv = cleanKey(item.invoiceNo || item.purchaseInvoiceNo);
-        const ord = cleanKey(item.orderNo || item.order_no);
-        const challan = cleanKey(item.challanNo || item.challan_no);
-        const pid = cleanKey(item.id || item.purchaseId || item.purchase_id);
+        const ord = cleanKey(item.orderNo);
+        const challan = cleanKey(item.challanNo);
+        const pid = cleanKey(item.purchaseId || item.id);
 
         if (inv) keysSet.add(`inv:${inv}`);
         if (ord) keysSet.add(`ord:${ord}`);
@@ -233,13 +227,13 @@ export const PurchaseReturnForm: React.FC = () => {
     const inv = cleanKey(purchase.invoiceNo || (purchase as any).purchaseInvoiceNo);
     if (inv && returnedPurchaseKeysSet.has(`inv:${inv}`)) return true;
 
-    const ord = cleanKey((purchase as any).orderNo || (purchase as any).order_no);
+    const ord = cleanKey(purchase.orderNo);
     if (ord && returnedPurchaseKeysSet.has(`ord:${ord}`)) return true;
 
-    const challan = cleanKey(purchase.challanNo || (purchase as any).challan_no);
+    const challan = cleanKey(purchase.challanNo);
     if (challan && returnedPurchaseKeysSet.has(`challan:${challan}`)) return true;
 
-    const pid = cleanKey(purchase.id || (purchase as any).purchaseId || (purchase as any).purchase_id);
+    const pid = cleanKey(purchase.purchaseId || purchase.id);
     if (pid && returnedPurchaseKeysSet.has(`pid:${pid}`)) return true;
 
     return false;
@@ -248,29 +242,19 @@ export const PurchaseReturnForm: React.FC = () => {
   // Helper to calculate already returned quantities using exact-match indexing
   const getReturnedQuantitiesForPurchase = useCallback((purchase: PurchaseItem): Record<string, number> => {
     const invClean = cleanKey(purchase.invoiceNo || (purchase as any).purchaseInvoiceNo);
-    const ordClean = cleanKey((purchase as any).orderNo || (purchase as any).order_no);
-    const challanClean = cleanKey(purchase.challanNo || (purchase as any).challan_no);
-    const purchaseIdClean = cleanKey(purchase.id || (purchase as any).purchaseId || (purchase as any).purchase_id);
+    const ordClean = cleanKey((purchase as any).orderNo);
+    const challanClean = cleanKey(purchase.challanNo);
+    const purchaseIdClean = cleanKey(purchase.purchaseId || purchase.id);
 
     const returnedQtyMap: Record<string, number> = {};
 
     const processDetailsList = (details: any[]) => {
       if (!Array.isArray(details)) return;
       details.forEach((rd: any) => {
-        const pId = String(rd.productId ?? rd.product_id ?? rd.id ?? rd.itemId ?? rd.item_id ?? "").trim();
-        const pCode = String(rd.productCode ?? rd.pcode ?? rd.product_code ?? "").trim();
-        const pName = String(rd.productName ?? rd.name ?? rd.product_name ?? "").trim().toLowerCase();
-        const qty = Number(
-          rd.quantity ??
-          rd.qty ??
-          rd.returnQuantity ??
-          rd.returnQty ??
-          rd.returnedQuantity ??
-          rd.returnedQty ??
-          rd.return_quantity ??
-          rd.returned_qty ??
-          0
-        );
+        const pId = String(rd.productId ?? rd.id ?? "").trim();
+        const pCode = String(rd.productCode ?? rd.pcode ?? "").trim();
+        const pName = String(rd.productName ?? rd.name ?? "").trim().toLowerCase();
+        const qty = Number(rd.quantity ?? rd.returnQuantity ?? 0);
 
         if (qty > 0) {
           if (pId) returnedQtyMap[`id_${pId}`] = (returnedQtyMap[`id_${pId}`] || 0) + qty;
@@ -345,14 +329,14 @@ export const PurchaseReturnForm: React.FC = () => {
     setNote("");
 
     // Pre-select bank or MFS if originally used in the purchase, else reset
-    const purchaseBankId = purchase.bankId || (purchase as any).bank_id;
+    const purchaseBankId = purchase.bankId;
     if (purchaseBankId) {
       setSelectedRefundBankId(String(purchaseBankId));
     } else {
       setSelectedRefundBankId("");
     }
 
-    const purchaseMfsId = purchase.mfsId || (purchase as any).mfs_id;
+    const purchaseMfsId = purchase.mfsId;
     if (purchaseMfsId) {
       setSelectedRefundMfsId(String(purchaseMfsId));
     } else {
@@ -360,34 +344,27 @@ export const PurchaseReturnForm: React.FC = () => {
     }
 
     const details: any[] =
-      purchase.purchaseDetails ||
-      purchase.purchasesDetails ||
-      purchase.purchase_details ||
-      purchase.purchaseListDetails ||
-      purchase.details ||
-      purchase.items ||
-      purchase.products ||
-      [];
+      Array.isArray(purchase.purchaseDetails) && purchase.purchaseDetails.length > 0
+        ? purchase.purchaseDetails
+        : Array.isArray(purchase.purchasesDetails)
+        ? purchase.purchasesDetails
+        : [];
 
     const returnedMap = getReturnedQuantitiesForPurchase(purchase);
 
     if (details.length > 0) {
       const formattedLines: ReturnLineFormState[] = details.map((d: any) => {
-        const purchasedQty = Number(d.quantity ?? d.qty ?? 1);
-        const buyPrice = Number(d.buyPrice ?? d.purchasePrice ?? d.unitPrice ?? d.price ?? 0);
+        const purchasedQty = Number(d.quantity ?? 1);
+        const buyPrice = Number(d.buyPrice ?? d.unitPrice ?? 0);
 
-        const pId = String(d.productId ?? d.product_id ?? "").trim();
-        const pCode = String(d.productCode ?? d.pcode ?? d.code ?? "").trim();
-        const pName = String(d.productName ?? d.name ?? "").trim().toLowerCase();
+        const pId = String(d.productId ?? d.id ?? "").trim();
+        const pCode = String(d.productCode ?? d.pcode ?? "").trim();
+        const pName = String(d.productName ?? d.name ?? "Product").trim().toLowerCase();
         const baseName = pName.split(/[(/[-]/)[0].trim();
 
         const directReturned = Number(
           d.alreadyReturnedQty ??
-          d.alreadyReturned ??
-          d.returnedQuantity ??
-          d.returnedQty ??
           d.returnQuantity ??
-          d.returnQty ??
           0
         );
 
@@ -405,8 +382,8 @@ export const PurchaseReturnForm: React.FC = () => {
         const initialSelected = availableQty > 0;
 
         return {
-          productId: d.productId ?? d.product_id ?? d.id ?? "",
-          productCode: d.productCode ?? d.pcode ?? d.code ?? "",
+          productId: d.productId ?? d.id ?? "",
+          productCode: d.productCode ?? d.pcode ?? "",
           productName: d.productName ?? d.name ?? "Product",
           unit: d.unit || "pcs",
           purchasedQuantity: purchasedQty,
@@ -774,34 +751,30 @@ export const PurchaseReturnForm: React.FC = () => {
           : "CASH";
 
       const matchedBank = registeredBankAccounts.find(
-        (b) => String(b.id || b.bankId || b._id) === String(selectedRefundBankId)
+        (b) => String(b.id) === String(selectedRefundBankId)
       );
       const matchedMfs = registeredMfsAccounts.find(
-        (m) => String(m.id || m.mfsId || m._id) === String(selectedRefundMfsId)
+        (m) => String(m.id) === String(selectedRefundMfsId)
       );
 
       const payload = {
         accessUser: buildAccessUser(),
         purchaseInvoiceNo,
-        invoiceNo: purchaseInvoiceNo,
         challanNo: selectedPurchase?.challanNo || "",
         supplierId,
         supplierName,
         supplierPhone,
         supplierAddress,
         returnDate,
-        date: returnDate,
         totalAmount: Number(totals.subtotal.toFixed(2)),
         discount: Number(totals.discount.toFixed(2)),
         vat: Number(totals.vat.toFixed(2)),
         deliveryCharge: 0,
-        delivery_charge: 0,
         grandTotal: Number(totals.grandTotal.toFixed(2)),
         refundAmount: Number(totals.refundAmount.toFixed(2)),
         paymentType: effectivePaymentType,
         status: status || "Return",
         note: finalNote,
-        remarks: finalNote,
         refNo: `PR-${Date.now()}`,
         osType: "WEB",
         cashReceived: numRefundCash,
@@ -809,25 +782,12 @@ export const PurchaseReturnForm: React.FC = () => {
         mfsReceived: numRefundMfs,
         dueAmount: numRefundDue,
         bankId: numRefundBank > 0 ? selectedRefundBankId : null,
-        bankName: numRefundBank > 0 ? (matchedBank?.bankName || matchedBank?.name || null) : null,
-        accountNo:
-          numRefundBank > 0
-            ? (matchedBank?.accountNo ||
-               matchedBank?.bankAccountNumber ||
-               matchedBank?.bankAccountNo ||
-               null)
-            : null,
+        bankName: numRefundBank > 0 ? (matchedBank?.bankName || null) : null,
+        accountNo: numRefundBank > 0 ? (matchedBank?.accountNo || null) : null,
         mfsId: numRefundMfs > 0 ? selectedRefundMfsId : null,
-        mfsName:
-          numRefundMfs > 0
-            ? (matchedMfs?.name || matchedMfs?.mfsName || matchedMfs?.method || null)
-            : null,
-        mfsPhone:
-          numRefundMfs > 0
-            ? (matchedMfs?.phoneNumber || matchedMfs?.mfsPhone || matchedMfs?.phone || null)
-            : null,
+        mfsName: numRefundMfs > 0 ? (matchedMfs?.mfsName || null) : null,
+        mfsPhone: numRefundMfs > 0 ? (matchedMfs?.mfsPhone || null) : null,
         returnDetails: returnDetailsPayload,
-        purchaseReturnDetails: returnDetailsPayload,
       };
 
       const endpoint = apiConfig.purchaseReturn.insertPurchaseReturnUrl;
@@ -882,14 +842,11 @@ export const PurchaseReturnForm: React.FC = () => {
         mfsReceived: numRefundMfs,
         dueAmount: numRefundDue,
         bankId: numRefundBank > 0 ? selectedRefundBankId : undefined,
-        bankName: matchedBank?.bankName || matchedBank?.name,
-        accountNo:
-          matchedBank?.accountNo ||
-          matchedBank?.bankAccountNumber ||
-          matchedBank?.bankAccountNo,
+        bankName: matchedBank?.bankName,
+        accountNo: matchedBank?.accountNo,
         mfsId: numRefundMfs > 0 ? selectedRefundMfsId : undefined,
-        mfsName: matchedMfs?.name || matchedMfs?.mfsName || matchedMfs?.method,
-        mfsPhone: matchedMfs?.phoneNumber || matchedMfs?.mfsPhone || matchedMfs?.phone,
+        mfsName: matchedMfs?.mfsName,
+        mfsPhone: matchedMfs?.mfsPhone,
         status: status || "Return",
         note: finalNote,
         remarks: finalNote,

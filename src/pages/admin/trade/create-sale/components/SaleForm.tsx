@@ -134,12 +134,20 @@ export const CreateSaleForm: React.FC = () => {
       else if (Array.isArray(raw.data)) list = raw.data;
     }
 
-    return list.filter((p: any) => {
-      if (!isPartyActive(p)) return false;
-      const type = String(p.type || p.partyType || p.party_type || p.party_type_name || p.role || "").toUpperCase();
-      if (type.includes("SUPPLIER") || type.includes("VENDOR")) return false;
-      return type.includes("CUSTOMER") || !type;
-    });
+    return list
+      .filter((p: any) => {
+        if (!isPartyActive(p)) return false;
+        const type = String(p.type || p.partyType || "").toUpperCase();
+        if (type.includes("SUPPLIER") || type.includes("VENDOR")) return false;
+        return type.includes("CUSTOMER") || !type;
+      })
+      .map((p: any) => ({
+        ...p,
+        id: p.id ?? p.partyId ?? p.party_id,
+        name: p.name || p.partyName || p.party_name || "",
+        phone: p.phone || p.partyPhone || p.phoneNumber || "",
+        address: p.address || p.partyAddress || "",
+      }));
   }, [rawPartyData]);
 
   // 2. Fetch Products
@@ -168,20 +176,25 @@ export const CreateSaleForm: React.FC = () => {
       const raw = rawProductData as any;
       if (Array.isArray(raw.productList)) list = raw.productList;
       else if (Array.isArray(raw.productsList)) list = raw.productsList;
-      else if (Array.isArray(raw.product_list)) list = raw.product_list;
-      else if (Array.isArray(raw.products)) list = raw.products;
       else if (Array.isArray(raw.data)) list = raw.data;
-      else if (raw.data && typeof raw.data === "object") {
-        if (Array.isArray(raw.data.productList)) list = raw.data.productList;
-        else if (Array.isArray(raw.data.productsList)) list = raw.data.productsList;
-        else if (Array.isArray(raw.data.products)) list = raw.data.products;
-      }
     }
 
-    return list.filter((p: any) => {
-      const isDel = String(p.isDeleted || p.is_deleted || "").trim().toUpperCase();
-      return isDel !== "Y" && isDel !== "YES" && isDel !== "TRUE" && isDel !== "1";
-    });
+    return list
+      .filter((p: any) => {
+        const isDel = String(p.isDeleted || p.is_deleted || "").trim().toUpperCase();
+        return isDel !== "Y" && isDel !== "YES" && isDel !== "TRUE" && isDel !== "1";
+      })
+      .map((p: any) => ({
+        ...p,
+        id: p.id ?? p.productId ?? p.product_id ?? p.pcode,
+        name: p.name || p.productName || "Product",
+        productCode: p.productCode || p.pcode || "",
+        pcode: p.pcode || p.productCode || "",
+        buyPrice: Number(p.buyPrice ?? p.buy_price ?? 0),
+        sellPrice: Number(p.sellPrice ?? p.sell_price ?? 0),
+        quantity: Number(p.quantity ?? p.stock ?? 0),
+        unit: p.unit || "pcs",
+      }));
   }, [rawProductData]);
 
   // 3. Fetch Registered Bank and MFS Accounts (Shared cache with 5-minute staleTime)
@@ -199,7 +212,7 @@ export const CreateSaleForm: React.FC = () => {
       const matched = apiSalesData.find(
         (s: any) =>
           String(s.id ?? s.saleId ?? "").trim() === targetKey ||
-          String(s.invoiceNo ?? s.invoice_no ?? s.salesInvoiceNo ?? "").trim() === targetKey
+          String(s.invoiceNo ?? s.salesInvoiceNo ?? "").trim() === targetKey
       );
       if (matched) return matched;
     }
@@ -231,18 +244,18 @@ export const CreateSaleForm: React.FC = () => {
   useEffect(() => {
     if (isEditMode && effectiveEditData) {
       const data = effectiveEditData;
-      setInvoiceNo(data.invoiceNo || data.invoice_no || "");
-      if (data.salesDate || data.saleDate || data.date) {
-        setSalesDate(String(data.salesDate || data.saleDate || data.date).substring(0, 10));
+      setInvoiceNo(data.invoiceNo || "");
+      if (data.salesDate) {
+        setSalesDate(String(data.salesDate).substring(0, 10));
       }
-      setNotes(data.note || data.remarks || "");
-      setPoNumber(data.poNumber || (data as any).po_number || "");
+      setNotes(data.note || "");
+      setPoNumber(data.poNumber || "");
 
-      const disc = data.discount ?? data.discountAmount ?? "";
+      const disc = data.discount ?? "";
       setDiscountValue(disc !== "" && disc !== null && Number(disc) > 0 ? String(disc) : "");
       setDiscountType(data.discountType === "PERCENT" ? "PERCENT" : "FLAT");
 
-      const v = data.vat ?? data.vatAmount ?? "";
+      const v = data.vat ?? "";
       setVatAmount(v !== "" && v !== null && Number(v) > 0 ? String(v) : "");
 
       const del = data.delivery_charge ?? data.deliveryCharge ?? "";
@@ -267,10 +280,10 @@ export const CreateSaleForm: React.FC = () => {
       });
 
       // Customer
-      const custId = data.customerId !== undefined && data.customerId !== null ? Number(data.customerId) : (data.customer_id !== undefined && data.customer_id !== null ? Number(data.customer_id) : undefined);
-      const custName = data.customerName || data.customer_name || "";
-      const custPhone = data.customerPhone || data.customer_phone || "";
-      const custAddress = data.customerAddress || data.customer_address || "";
+      const custId = data.customerId !== undefined && data.customerId !== null ? Number(data.customerId) : undefined;
+      const custName = data.customerName || "";
+      const custPhone = data.customerPhone || "";
+      const custAddress = data.customerAddress || "";
 
       const isWalkInSale =
         custId === 0 ||
@@ -289,7 +302,7 @@ export const CreateSaleForm: React.FC = () => {
         setWalkInPhone(custPhone);
       } else {
         const found = customerList.find(
-          (c) => (custId && Number(c.id || c.partyId) === custId) || (custName && (c.name === custName || c.partyName === custName))
+          (c) => (custId && Number(c.id) === custId) || (custName && c.name === custName)
         );
         if (found) {
           setSelectedCustomer(found);
@@ -305,23 +318,22 @@ export const CreateSaleForm: React.FC = () => {
         setWalkInPhone("");
       }
 
-      // Details - load directly from whatever backend API returns
-      const rawDetails =
-        data.salesDetails || data.details || data.sales_details || data.items || [];
+      // Details - load directly from salesDetails
+      const rawDetails = Array.isArray(data.salesDetails) ? data.salesDetails : [];
       if (Array.isArray(rawDetails) && rawDetails.length > 0) {
         // Extract returned quantities map for this sale (if any return records exist)
-        const invNo = String(data.invoiceNo || data.invoice_no || (data as any).salesInvoiceNo || "").trim();
-        const ordNo = String(data.orderNo || (data as any).order_no || "").trim();
-        const sId = String(data.id || (data as any).saleId || (data as any).sale_id || "").trim();
+        const invNo = String(data.invoiceNo || (data as any).salesInvoiceNo || "").trim();
+        const ordNo = String(data.orderNo || "").trim();
+        const sId = String(data.id || (data as any).saleId || "").trim();
 
         const returnedQtyMap: Record<string, number> = {};
         const processDetails = (dList: any[]) => {
           if (!Array.isArray(dList)) return;
           dList.forEach((rd: any) => {
-            const pId = String(rd.productId ?? rd.product_id ?? "").trim();
+            const pId = String(rd.productId ?? "").trim();
             const pCode = String(rd.productCode ?? rd.pcode ?? "").trim();
             const pName = String(rd.productName ?? rd.name ?? "").trim().toLowerCase();
-            const qty = Number(rd.quantity ?? rd.qty ?? rd.returnQuantity ?? 0);
+            const qty = Number(rd.quantity ?? rd.returnQuantity ?? 0);
             if (qty > 0) {
               if (pId) returnedQtyMap[`id_${pId}`] = (returnedQtyMap[`id_${pId}`] || 0) + qty;
               if (pCode) returnedQtyMap[`code_${pCode}`] = (returnedQtyMap[`code_${pCode}`] || 0) + qty;
@@ -358,8 +370,8 @@ export const CreateSaleForm: React.FC = () => {
         }
 
         const loaded: FormLineItem[] = rawDetails.map((item: any) => {
-          const p = Number(item.sellPrice ?? item.price ?? item.rate ?? 0);
-          const q = Number(item.quantity ?? item.qty ?? 1);
+          const p = Number(item.sellPrice ?? item.price ?? 0);
+          const q = Number(item.quantity ?? 1);
           const d = Number(item.discount ?? 0);
           const v = Number(item.vat ?? 0);
           const tot =
@@ -367,18 +379,13 @@ export const CreateSaleForm: React.FC = () => {
               ? Number(item.total)
               : Number(p * q + v - d);
 
-          const pId = String(item.productId || item.product_id || "").trim();
-          const pCode = String(item.productCode || item.product_code || item.pcode || "").trim();
-          const pName = String(item.productName || item.product_name || "").trim().toLowerCase();
+          const pId = String(item.productId || "").trim();
+          const pCode = String(item.productCode || item.pcode || "").trim();
+          const pName = String(item.productName || item.name || "").trim().toLowerCase();
 
           const directReturned = Number(
             item.returnedQuantity ??
-            item.returnedQty ??
             item.returnQuantity ??
-            item.returnQty ??
-            item.alreadyReturned ??
-            item.returned_qty ??
-            item.returned_quantity ??
             0
           );
 
@@ -391,21 +398,21 @@ export const CreateSaleForm: React.FC = () => {
           const retQty = Math.max(directReturned, matchedFromReturns);
 
           const matchedProd = allProducts.find(
-            (p) =>
-              (pId && String(p.id ?? p.productId ?? "").trim() === pId) ||
-              (pCode && String(p.pcode ?? p.productCode ?? "").trim().toLowerCase() === pCode.toLowerCase())
+            (prod) =>
+              (pId && String(prod.id ?? "").trim() === pId) ||
+              (pCode && String(prod.productCode || prod.pcode || "").trim().toLowerCase() === pCode.toLowerCase())
           );
 
           const liveStock = matchedProd
-            ? Number(matchedProd.quantity ?? matchedProd.stock ?? (matchedProd as any).qty ?? 0)
+            ? Number(matchedProd.quantity ?? matchedProd.stock ?? 0)
             : Number(item.stock ?? 0);
 
           return {
             id: item.id || item.saleDetailId,
             saleDetailId: item.id || item.saleDetailId,
-            productId: item.productId || item.product_id || "",
-            productCode: item.productCode || item.product_code || "",
-            productName: item.productName || item.product_name || "Product",
+            productId: item.productId || "",
+            productCode: item.productCode || item.pcode || "",
+            productName: item.productName || item.name || "Product",
             unit: item.unit || "pcs",
             sellPrice: String(p),
             buyPrice: Number(item.buyPrice || 0),
@@ -437,7 +444,7 @@ export const CreateSaleForm: React.FC = () => {
               (pCode && String(p.pcode ?? p.productCode ?? "").trim().toLowerCase() === pCode.toLowerCase())
           );
           if (matched) {
-            const liveStock = Number(matched.quantity ?? matched.stock ?? (matched as any).qty ?? 0);
+            const liveStock = Number(matched.quantity ?? matched.stock ?? 0);
             if (item.stock !== liveStock) {
               hasChanges = true;
               return { ...item, stock: liveStock };
@@ -735,9 +742,7 @@ export const CreateSaleForm: React.FC = () => {
     const isWalkIn = Boolean(
       selectedCustomer &&
       (selectedCustomer.id === 0 ||
-        selectedCustomer.partyId === 0 ||
-        String(selectedCustomer.name || selectedCustomer.partyName).toLowerCase().includes("walk-in") ||
-        String(selectedCustomer.name || selectedCustomer.partyName).toLowerCase().includes("walking"))
+        String(selectedCustomer.name).toLowerCase().includes("walk-in"))
     );
 
     if (isWalkIn && dueAmount > 0) {
@@ -777,22 +782,21 @@ export const CreateSaleForm: React.FC = () => {
       const isWalkIn = Boolean(
         selectedCustomer &&
         (selectedCustomer.id === 0 ||
-          selectedCustomer.partyId === 0 ||
-          String(selectedCustomer.name || selectedCustomer.partyName).toLowerCase().includes("walk-in"))
+          String(selectedCustomer.name).toLowerCase().includes("walk-in"))
       );
 
       const finalCustomerName = isWalkIn
         ? (walkInName.trim() || "Walk-in Customer")
-        : (selectedCustomer.name || selectedCustomer.partyName || "Walk-in Customer");
+        : (selectedCustomer.name || "Walk-in Customer");
       const finalCustomerPhone = isWalkIn
         ? walkInPhone.trim()
-        : (selectedCustomer.phone || selectedCustomer.partyPhone || "");
+        : (selectedCustomer.phone || "");
       const finalCustomerId = isWalkIn
         ? 0
-        : (selectedCustomer.id ?? selectedCustomer.partyId ?? 0);
+        : (selectedCustomer.id ?? 0);
       const finalCustomerAddress = isWalkIn
         ? "Counter Sale"
-        : (selectedCustomer.address || selectedCustomer.partyAddress || "");
+        : (selectedCustomer.address || "");
 
       const salesDetails = lineItems.map((item) => {
         const q = Number(item.quantity) || 1;
@@ -817,17 +821,17 @@ export const CreateSaleForm: React.FC = () => {
       });
 
       const selectedMfsObj = registeredMfsAccounts.find(
-        (m) => String(m.id || m.mfsId || m._id) === String(selectedMfsId)
+        (m) => String(m.id) === String(selectedMfsId)
       );
-      const finalMfsName = mfsName || selectedMfsObj?.name || selectedMfsObj?.mfsName || selectedMfsObj?.method || "";
-      const finalMfsPhone = mfsPhone || selectedMfsObj?.phoneNumber || selectedMfsObj?.mfsPhone || selectedMfsObj?.phone || "";
+      const finalMfsName = mfsName || selectedMfsObj?.mfsName || "";
+      const finalMfsPhone = mfsPhone || selectedMfsObj?.mfsPhone || "";
 
       const selectedBankObj = registeredBankAccounts.find(
-        (b) => String(b.id || b.bankId || b._id) === String(selectedBankId)
+        (b) => String(b.id) === String(selectedBankId)
       );
-      const finalBankName = bankName || selectedBankObj?.bankName || selectedBankObj?.name || "";
-      const finalAccountNo = accountNo || selectedBankObj?.accountNo || selectedBankObj?.bankAccountNumber || "";
-      const finalBankRef = bankRef || selectedBankObj?.bankAccountName || selectedBankObj?.accountName || "";
+      const finalBankName = bankName || selectedBankObj?.bankName || "";
+      const finalAccountNo = accountNo || selectedBankObj?.accountNo || "";
+      const finalBankRef = bankRef || selectedBankObj?.bankAccountName || "";
 
       const payload: any = {
         accessUser,

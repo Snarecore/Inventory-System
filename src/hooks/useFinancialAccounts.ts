@@ -8,17 +8,10 @@ import { buildAccessUser } from "@/utils/access-user";
 export interface BankAccountItem {
   id?: string | number;
   bankId?: string | number;
-  _id?: string | number;
   bankName?: string;
-  bank_name?: string;
-  name?: string;
   accountNo?: string;
-  account_no?: string;
-  accountNumber?: string;
-  bankAccountNumber?: string;
-  bankAccountNo?: string;
+  bankAccountName?: string;
   branchName?: string;
-  branch_name?: string;
   balance?: number;
   status?: string;
   [key: string]: any;
@@ -27,12 +20,8 @@ export interface BankAccountItem {
 export interface MfsAccountItem {
   id?: string | number;
   mfsId?: string | number;
-  _id?: string | number;
   mfsName?: string;
-  mfs_name?: string;
-  name?: string;
   mfsPhone?: string;
-  mfs_phone?: string;
   phone?: string;
   accountNo?: string;
   status?: string;
@@ -40,45 +29,59 @@ export interface MfsAccountItem {
 }
 
 // Standardized parser for bank accounts response.
-
 export const extractBankAccounts = (raw: any): BankAccountItem[] => {
   if (!raw) return [];
-  if (Array.isArray(raw)) return raw;
-  if (typeof raw === "object") {
-    if (Array.isArray(raw.bankAccounts)) return raw.bankAccounts;
-    if (Array.isArray(raw.bankInfoList)) return raw.bankInfoList;
-    if (Array.isArray(raw.bankList)) return raw.bankList;
-    if (Array.isArray(raw.data)) return raw.data;
-    if (raw.data && typeof raw.data === "object") {
-      if (Array.isArray(raw.data.bankAccounts)) return raw.data.bankAccounts;
-      if (Array.isArray(raw.data.bankInfoList)) return raw.data.bankInfoList;
-      if (Array.isArray(raw.data.bankList)) return raw.data.bankList;
+  let list: any[] = [];
+  if (Array.isArray(raw)) {
+    list = raw;
+  } else if (typeof raw === "object") {
+    if (Array.isArray(raw.bankAccounts)) list = raw.bankAccounts;
+    else if (Array.isArray(raw.bankInfoList)) list = raw.bankInfoList;
+    else if (Array.isArray(raw.bankList)) list = raw.bankList;
+    else if (Array.isArray(raw.data)) list = raw.data;
+    else if (raw.data && typeof raw.data === "object") {
+      if (Array.isArray(raw.data.bankAccounts)) list = raw.data.bankAccounts;
+      else if (Array.isArray(raw.data.bankInfoList)) list = raw.data.bankInfoList;
+      else if (Array.isArray(raw.data.bankList)) list = raw.data.bankList;
     }
   }
-  return [];
+
+  return list.map((b: any) => ({
+    ...b,
+    id: b.id ?? b.bankId ?? b._id,
+    bankName: b.bankName || b.name || "Bank",
+    accountNo: b.accountNo || b.accountNumber || b.bankAccountNumber || b.bankAccountNo || "",
+    bankAccountName: b.bankAccountName || b.accountName || "",
+  }));
 };
 
 // Standardized parser for MFS accounts response.
-
 export const extractMfsAccounts = (raw: any): MfsAccountItem[] => {
   if (!raw) return [];
-  if (Array.isArray(raw)) return raw;
-  if (typeof raw === "object") {
-    if (Array.isArray(raw.mfsUsers)) return raw.mfsUsers;
-    if (Array.isArray(raw.mfsUserList)) return raw.mfsUserList;
-    if (Array.isArray(raw.mfsList)) return raw.mfsList;
-    if (Array.isArray(raw.data)) return raw.data;
-    if (raw.data && typeof raw.data === "object") {
-      if (Array.isArray(raw.data.mfsUsers)) return raw.data.mfsUsers;
-      if (Array.isArray(raw.data.mfsUserList)) return raw.data.mfsUserList;
-      if (Array.isArray(raw.data.mfsList)) return raw.data.mfsList;
+  let list: any[] = [];
+  if (Array.isArray(raw)) {
+    list = raw;
+  } else if (typeof raw === "object") {
+    if (Array.isArray(raw.mfsUsers)) list = raw.mfsUsers;
+    else if (Array.isArray(raw.mfsUserList)) list = raw.mfsUserList;
+    else if (Array.isArray(raw.mfsList)) list = raw.mfsList;
+    else if (Array.isArray(raw.data)) list = raw.data;
+    else if (raw.data && typeof raw.data === "object") {
+      if (Array.isArray(raw.data.mfsUsers)) list = raw.data.mfsUsers;
+      else if (Array.isArray(raw.data.mfsUserList)) list = raw.data.mfsUserList;
+      else if (Array.isArray(raw.data.mfsList)) list = raw.data.mfsList;
     }
   }
-  return [];
+
+  return list.map((m: any) => ({
+    ...m,
+    id: m.id ?? m.mfsId ?? m._id,
+    mfsName: m.mfsName || m.name || m.method || "bKash",
+    mfsPhone: m.mfsPhone || m.phoneNumber || m.phone || m.mobileNo || "",
+  }));
 };
 
 // Centralized fetcher for registered Bank Accounts.
-
 export const fetchBankAccounts = async (): Promise<any> => {
   try {
     const bankInfoListUrl = apiConfig.bank?.bankInfoListUrl || "get-bank-info-list";

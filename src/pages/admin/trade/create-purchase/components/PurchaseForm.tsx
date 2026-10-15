@@ -207,10 +207,22 @@ const CreatePurchaseForm: React.FC = () => {
       else if (Array.isArray(raw.data)) list = raw.data;
     }
 
-    return list.filter((p: any) => {
-      const isDel = String(p.isDeleted || p.is_deleted || "").trim().toUpperCase();
-      return isDel !== "Y" && isDel !== "YES" && isDel !== "TRUE" && isDel !== "1";
-    });
+    return list
+      .filter((p: any) => {
+        const isDel = String(p.isDeleted || p.is_deleted || "").trim().toUpperCase();
+        return isDel !== "Y" && isDel !== "YES" && isDel !== "TRUE" && isDel !== "1";
+      })
+      .map((p: any) => ({
+        ...p,
+        id: p.id ?? p.productId ?? p.product_id ?? p.pcode,
+        name: p.name || p.productName || "Product",
+        productCode: p.productCode || p.pcode || "",
+        pcode: p.pcode || p.productCode || "",
+        buyPrice: Number(p.buyPrice ?? p.buy_price ?? 0),
+        sellPrice: Number(p.sellPrice ?? p.sell_price ?? 0),
+        quantity: Number(p.quantity ?? p.stock ?? 0),
+        unit: p.unit || "pcs",
+      }));
   }, [rawProductData]);
 
   // Fetch Suppliers via POST /get-party-info-list
@@ -243,11 +255,19 @@ const CreatePurchaseForm: React.FC = () => {
       else if (Array.isArray(raw.data)) list = raw.data;
     }
 
-    return list.filter((p: any) => {
-      if (!isPartyActive(p)) return false;
-      const type = (p.type || p.partyType || p.party_type || "").toUpperCase();
-      return type.includes("SUPPLIER") || !type;
-    });
+    return list
+      .filter((p: any) => {
+        if (!isPartyActive(p)) return false;
+        const type = String(p.type || p.partyType || "").toUpperCase();
+        return type.includes("SUPPLIER") || !type;
+      })
+      .map((p: any) => ({
+        ...p,
+        id: p.id ?? p.partyId ?? p.party_id,
+        name: p.name || p.partyName || p.party_name || "",
+        phone: p.phone || p.partyPhone || p.phoneNumber || "",
+        address: p.address || p.partyAddress || "",
+      }));
   }, [rawPartyData]);
 
   // Fetch Registered Bank and MFS Accounts (Shared cache with 5-minute staleTime)
@@ -277,16 +297,16 @@ const CreatePurchaseForm: React.FC = () => {
       if (typeof data === "object" && data !== null) {
         setChallanSettings({
           id: data.id ?? null,
-          showChallanRefNo: data.showChallanRefNo ?? data.show_challan_ref_no ?? data.showChallanNo ?? data.show_challan_no ?? true,
-          showChallanDate: data.showChallanDate ?? data.show_challan_date ?? data.showDeliveryDate ?? data.show_delivery_date ?? true,
-          showVatChallan: data.showVatChallan ?? data.show_vat_challan ?? false,
-          showVatChallanDate: data.showVatChallanDate ?? data.show_vat_challan_date ?? false,
-          attachments: data.attachments ?? data.enableAttachments ?? data.enable_attachments ?? data.showAttachments ?? true,
-          remarks: data.remarks ?? data.showNotes ?? data.show_notes ?? true,
-          vehicleNumber: data.vehicleNumber ?? data.showVehicleNo ?? data.show_vehicle_no ?? true,
-          capacityCft: data.capacityCft ?? data.capacity_cft ?? true,
-          driverName: data.driverName ?? data.showDriverName ?? data.show_driver_name ?? true,
-          driverPhone: data.driverPhone ?? data.showDriverPhone ?? data.show_driver_phone ?? true,
+          showChallanRefNo: data.showChallanRefNo ?? data.showChallanNo ?? true,
+          showChallanDate: data.showChallanDate ?? data.showDeliveryDate ?? true,
+          showVatChallan: data.showVatChallan ?? false,
+          showVatChallanDate: data.showVatChallanDate ?? false,
+          attachments: data.attachments ?? data.enableAttachments ?? true,
+          remarks: data.remarks ?? data.showNotes ?? true,
+          vehicleNumber: data.vehicleNumber ?? data.showVehicleNo ?? true,
+          capacityCft: data.capacityCft ?? true,
+          driverName: data.driverName ?? data.showDriverName ?? true,
+          driverPhone: data.driverPhone ?? data.showDriverPhone ?? true,
           // Aliases
           showChallanNo: data.showChallanRefNo ?? data.showChallanNo ?? true,
           showVehicleNo: data.vehicleNumber ?? data.showVehicleNo ?? true,
@@ -311,8 +331,8 @@ const CreatePurchaseForm: React.FC = () => {
     const target = String(routeId).trim();
     const found = rawPurchaseData.find((p: any) => {
       if (!p) return false;
-      const id = String(p.id ?? p.purchaseId ?? p.purchase_id ?? p.purId ?? "");
-      const inv = String(p.invoiceNo ?? p.invoice_no ?? p.billNo ?? "");
+      const id = String(p.id ?? p.purchaseId ?? "");
+      const inv = String(p.invoiceNo ?? "");
       return id === target || inv === target;
     });
 
@@ -335,23 +355,17 @@ const CreatePurchaseForm: React.FC = () => {
       initializedEditIdRef.current = currentEditId;
 
       const data: any = effectiveEditData;
-      setInvoiceNo(data.invoiceNo || data.invoice_no || data.billNo || "");
-      setPurchaseDate(data.purchaseDate || data.salesDate || data.date || new Date().toISOString().substring(0, 10));
-      setChallanNo(data.challanRefNo || data.challan_ref_no || data.challanNo || data.challan_no || "");
-      setVatChallan(data.vatChallan || data.vat_challan || data.vatChallanNo || "");
-      setVatChallanDate(data.vatChallanDate || data.vat_challan_date || "");
-      setVehicleNo(data.vehicleNumber || data.vehicle_number || data.vehicleNo || data.vehicle_no || data.truckNo || "");
-      setCapacityCft(data.capacityCft || data.capacity_cft || "");
-      setDriverName(data.driverName || data.driver_name || "");
-      setDriverPhone(data.driverPhone || data.driver_phone || "");
+      setInvoiceNo(data.invoiceNo || "");
+      setPurchaseDate(data.purchaseDate || new Date().toISOString().substring(0, 10));
+      setChallanNo(data.challanNo || data.challanRefNo || "");
+      setVatChallan(data.vatChallan || "");
+      setVatChallanDate(data.vatChallanDate || "");
+      setVehicleNo(data.vehicleNo || data.vehicleNumber || "");
+      setCapacityCft(data.capacityCft || "");
+      setDriverName(data.driverName || "");
+      setDriverPhone(data.driverPhone || "");
 
-      let rawAttach =
-        data.attachments ??
-        data.attachment ??
-        data.image ??
-        data.attachmentUrl ??
-        data.file ??
-        null;
+      let rawAttach = data.attachments ?? data.attachment ?? null;
 
       if (typeof rawAttach === "string" && (rawAttach.startsWith("[") || rawAttach.startsWith("{"))) {
         try {
@@ -372,107 +386,88 @@ const CreatePurchaseForm: React.FC = () => {
               ? first
               : typeof first === "string"
               ? first
-              : (first?.url || first?.path || first?.image || null);
+              : (first?.url || first?.path || null);
         }
       } else if (typeof rawAttach === "object" && rawAttach !== null) {
-        cleanAttach = rawAttach.url || rawAttach.path || rawAttach.image || null;
+        cleanAttach = rawAttach.url || rawAttach.path || null;
       } else if (typeof rawAttach === "string" && rawAttach.trim() !== "" && rawAttach !== "null" && rawAttach !== "undefined") {
         cleanAttach = rawAttach.trim();
       }
 
       setAttachment(cleanAttach);
 
-      const transport = data.transportCost ?? data.transport_cost ?? data.delivery_charge ?? data.deliveryCharge ?? "";
+      const transport = data.transportCost ?? "";
       setTransportCost(transport !== "" && transport !== null && Number(transport) > 0 ? String(transport) : "");
 
-      setNotes(data.remarks || data.note || data.notes || "");
+      setNotes(data.note || "");
 
-      const disc = data.discount ?? data.discountAmount ?? data.discount_amount ?? "";
+      const disc = data.discount ?? "";
       setInvoiceDiscount(disc !== "" && disc !== null && Number(disc) > 0 ? String(disc) : "");
-      setInvoiceDiscountType(data.discountType === "PERCENT" || data.discount_type === "PERCENT" ? "PERCENT" : "FLAT");
+      setInvoiceDiscountType(data.discountType === "PERCENT" ? "PERCENT" : "FLAT");
 
-      const vatVal = data.vat ?? data.vatAmount ?? data.vat_amount ?? data.invoiceVat ?? "";
+      const vatVal = data.vat ?? "";
       setInvoiceVat(vatVal !== "" && vatVal !== null && Number(vatVal) > 0 ? String(vatVal) : "");
 
       // Split payments
       const cash =
         data.cashReceived ??
-        data.cash_received ??
-        data.cashAmount ??
         (data.paymentType === "CASH" && !data.bankId && !data.mfsId ? data.paidAmount : "");
       const bank =
         data.cardReceived ??
-        data.card_received ??
-        data.bankAmount ??
-        (data.bankId || data.bank_id ? data.paidAmount : "");
+        (data.bankId ? data.paidAmount : "");
       const mfs =
         data.mfsReceived ??
-        data.mfs_received ??
-        data.mfsAmount ??
-        (data.mfsId || data.mfs_id ? data.paidAmount : "");
+        (data.mfsId ? data.paidAmount : "");
 
       initializePayment({
         cashAmount: cash !== "" && cash !== null && Number(cash) > 0 ? String(cash) : "",
         bankAmount: bank !== "" && bank !== null && Number(bank) > 0 ? String(bank) : "",
         mfsAmount: mfs !== "" && mfs !== null && Number(mfs) > 0 ? String(mfs) : "",
-        selectedBankId: data.bankId || data.bank_id ? String(data.bankId || data.bank_id) : "",
-        bankName: data.bankName || data.bank_name || "",
-        accountNo: data.accountNo || data.account_no || "",
-        bankRef: data.bankAccountName || data.bank_account_name || data.branchName || "",
-        selectedMfsId: data.mfsId || data.mfs_id ? String(data.mfsId || data.mfs_id) : "",
-        mfsName: data.mfsName || data.mfs_name || "bKash",
-        mfsPhone: data.mfsPhone || data.mfs_phone || "",
+        selectedBankId: data.bankId ? String(data.bankId) : "",
+        bankName: data.bankName || "",
+        accountNo: data.accountNo || "",
+        bankRef: data.bankAccountName || "",
+        selectedMfsId: data.mfsId ? String(data.mfsId) : "",
+        mfsName: data.mfsName || "bKash",
+        mfsPhone: data.mfsPhone || "",
       });
 
       // Supplier
-      const suppId = data.supplierId || data.supplier_id || data.customerId || data.customer_id;
-      const suppName = data.supplierName || data.supplier_name || data.customerName || data.customer_name;
-      const suppPhone = data.supplierPhone || data.supplier_phone || data.customerPhone || data.customer_phone;
-      const suppAddress = data.supplierAddress || data.supplier_address || data.customerAddress || data.customer_address;
+      const suppId = data.supplierId;
+      const suppName = data.supplierName;
+      const suppPhone = data.supplierPhone;
+      const suppAddress = data.supplierAddress;
 
       if (suppId || suppName) {
         const found = suppliersList.find(
           (s) =>
-            (suppId && (String(s.id) === String(suppId) || String(s.partyId) === String(suppId))) ||
-            (suppName && (s.name === suppName || s.partyName === suppName))
+            (suppId && String(s.id) === String(suppId)) ||
+            (suppName && s.name === suppName)
         );
         if (found) {
           setSelectedSupplier(found);
         } else {
           setSelectedSupplier({
             id: suppId,
-            name: suppName,
-            phone: suppPhone,
-            address: suppAddress,
+            name: suppName || "Supplier",
+            phone: suppPhone || "",
+            address: suppAddress || "",
           });
         }
       }
 
       // Line Items (Purchase Details)
-      const rawDetails =
-        (Array.isArray(data.details) && data.details.length > 0)
-          ? data.details
-          : (Array.isArray(data.purchaseDetails) && data.purchaseDetails.length > 0)
-          ? data.purchaseDetails
-          : (Array.isArray(data.purchasesDetails) && data.purchasesDetails.length > 0)
-          ? data.purchasesDetails
-          : (Array.isArray(data.purchase_details) && data.purchase_details.length > 0)
-          ? data.purchase_details
-          : (Array.isArray(data.items) && data.items.length > 0)
-          ? data.items
-          : (Array.isArray(data.purchaseListDetails) && data.purchaseListDetails.length > 0)
-          ? data.purchaseListDetails
-          : [];
+      const rawDetails = Array.isArray(data.purchaseDetails) ? data.purchaseDetails : [];
 
       if (Array.isArray(rawDetails) && rawDetails.length > 0) {
         const seenProductKeys = new Set<string>();
         const loadedItems: FormLineItem[] = [];
 
         rawDetails.forEach((item: any) => {
-          const pId = item.productId ?? item.product_id ?? item.id ?? item.prodId ?? "";
-          const pCode = item.productCode || item.product_code || item.pcode || item.code || "";
-          const pName = item.productName || item.product_name || item.name || item.title || "";
-          const key = String(pId || pCode || pName || "").trim().toLowerCase();
+          const pId = String(item.productId || item.id || "");
+          const pCode = String(item.productCode || item.pcode || "");
+          const pName = String(item.productName || item.name || "Product");
+          const key = (pId || pCode || pName).trim().toLowerCase();
 
           // Deduplicate: If product was already processed in this invoice, skip duplicate without summing
           if (key && seenProductKeys.has(key)) {
@@ -481,64 +476,42 @@ const CreatePurchaseForm: React.FC = () => {
 
           if (key) seenProductKeys.add(key);
 
-          const buyP =
-            item.buyPrice ??
-            item.buy_price ??
-            item.price ??
-            item.rate ??
-            item.sellPrice ??
-            item.unitPrice ??
-            item.unit_price ??
-            0;
-          const q = item.quantity ?? item.qty ?? item.quantity_count ?? item.count ?? 1;
-          const v = item.vat ?? item.vat_percent ?? item.vatPercent ?? 0;
-          const tot =
-            item.total !== undefined && item.total !== null && !isNaN(Number(item.total)) && Number(item.total) > 0
-              ? Number(item.total)
-              : item.subtotal !== undefined && item.subtotal !== null && !isNaN(Number(item.subtotal)) && Number(item.subtotal) > 0
-              ? Number(item.subtotal)
-              : item.total_price !== undefined && item.total_price !== null && !isNaN(Number(item.total_price)) && Number(item.total_price) > 0
-              ? Number(item.total_price)
-              : item.totalAmount !== undefined && item.totalAmount !== null && !isNaN(Number(item.totalAmount)) && Number(item.totalAmount) > 0
-              ? Number(item.totalAmount)
-              : Number(buyP) * Number(q);
+          const buyP = Number(item.buyPrice ?? 0);
+          const q = Number(item.quantity ?? 1);
+          const v = Number(item.vat ?? 0);
+          const tot = Number(item.total ?? (buyP * q));
 
           // Match with allProducts to get current stock and fallback name/code
           const matchedProd = allProducts.find((p) => {
-            const pIdStr = String(pId ?? "").trim().toLowerCase();
-            const pCodeStr = String(pCode ?? "").trim().toLowerCase();
-            const pNameStr = String(item.productName || item.product_name || item.name || "").trim().toLowerCase();
-
-            const idMatch = Boolean(pIdStr && (String(p.id ?? "").toLowerCase() === pIdStr || String(p.productId ?? "").toLowerCase() === pIdStr || String((p as any).product_id ?? "").toLowerCase() === pIdStr));
-            const codeMatch = Boolean(pCodeStr && (String(p.pcode || p.productCode || (p as any).code || "").trim().toLowerCase() === pCodeStr));
-            const nameMatch = Boolean(pNameStr && (String(p.name || p.productName || "").trim().toLowerCase() === pNameStr));
-
-            return idMatch || codeMatch || nameMatch;
+            const pIdStr = String(p.id ?? "");
+            const pCodeStr = String(p.productCode || p.pcode || "").toLowerCase();
+            return (pId && pIdStr === pId) || (pCode && pCodeStr === pCode.toLowerCase());
           });
 
           const currentLiveStock = matchedProd
-            ? Number(matchedProd.quantity ?? matchedProd.stock ?? (matchedProd as any).stockQuantity ?? (matchedProd as any).currentStock ?? (matchedProd as any).current_stock ?? (matchedProd as any).totalQuantity ?? (matchedProd as any).qty ?? 0)
+            ? Number(matchedProd.quantity ?? matchedProd.stock ?? 0)
             : Number(item.stock ?? 0);
 
-          const detailId = item.id ?? item.purchaseDetailId ?? item.purchase_detail_id ?? item.detailId ?? item.detail_id;
+          const detailId = item.id || item.purchaseDetailId;
 
           loadedItems.push({
             id: detailId,
             purchaseDetailId: detailId,
-            purchase_detail_id: detailId,
-            productId: pId || (matchedProd?.id ?? matchedProd?.productId ?? (matchedProd as any)?.product_id ?? ""),
-            productCode: pCode || matchedProd?.pcode || matchedProd?.productCode || (matchedProd as any)?.code || "",
-            productName: item.productName || item.product_name || item.name || item.title || matchedProd?.name || matchedProd?.productName || "Product",
-            unit: item.unit || item.unitName || matchedProd?.unit || "pcs",
+            productId: pId || (matchedProd?.id ? String(matchedProd.id) : ""),
+            productCode: pCode || matchedProd?.productCode || matchedProd?.pcode || "",
+            productName: pName !== "Product" ? pName : (matchedProd?.name || "Product"),
+            unit: item.unit || matchedProd?.unit || "pcs",
             buyPrice: String(buyP),
             quantity: String(q),
             vat: v ? String(v) : "",
-            total: Number(tot),
+            total: tot,
             stock: currentLiveStock,
           });
         });
 
-        setLineItems(loadedItems);
+        if (loadedItems.length > 0) {
+          setLineItems(loadedItems);
+        }
       }
     }
   }, [effectiveEditData, suppliersList, allProducts, routeId]);
@@ -550,19 +523,14 @@ const CreatePurchaseForm: React.FC = () => {
         let changed = false;
         const updated = prevItems.map((item) => {
           const matchedProd = allProducts.find((p) => {
-            const pIdStr = String(item.productId ?? "").trim().toLowerCase();
-            const pCodeStr = String(item.productCode ?? "").trim().toLowerCase();
-            const pNameStr = String(item.productName ?? "").trim().toLowerCase();
-
-            const idMatch = Boolean(pIdStr && (String(p.id ?? "").toLowerCase() === pIdStr || String(p.productId ?? "").toLowerCase() === pIdStr || String((p as any).product_id ?? "").toLowerCase() === pIdStr));
-            const codeMatch = Boolean(pCodeStr && (String(p.pcode || p.productCode || (p as any).code || "").trim().toLowerCase() === pCodeStr));
-            const nameMatch = Boolean(pNameStr && (String(p.name || p.productName || "").trim().toLowerCase() === pNameStr));
-
-            return idMatch || codeMatch || nameMatch;
+            const pIdStr = String(p.id ?? "");
+            const pCodeStr = String(p.productCode || p.pcode || "").toLowerCase();
+            return (item.productId && pIdStr === String(item.productId)) ||
+                   (item.productCode && pCodeStr === item.productCode.toLowerCase());
           });
 
           if (matchedProd) {
-            const liveStock = Number(matchedProd.quantity ?? matchedProd.stock ?? (matchedProd as any).stockQuantity ?? (matchedProd as any).currentStock ?? (matchedProd as any).current_stock ?? 0);
+            const liveStock = Number(matchedProd.quantity ?? matchedProd.stock ?? 0);
             if (item.stock !== liveStock) {
               changed = true;
               return { ...item, stock: liveStock };
@@ -579,8 +547,8 @@ const CreatePurchaseForm: React.FC = () => {
   // Helper to check if a product is already added in the purchase line items list
   const isProductAlreadyInList = useCallback(
     (product: ProductItem) => {
-      const pId = product.id ?? product.productId;
-      const pCode = product.pcode || product.productCode;
+      const pId = product.id;
+      const pCode = product.productCode || product.pcode;
 
       return lineItems.some((item) => {
         if (pId !== undefined && pId !== null && pId !== "" && item.productId !== undefined && item.productId !== null && item.productId !== "") {
@@ -598,8 +566,8 @@ const CreatePurchaseForm: React.FC = () => {
   // Toggle adding or removing a product from line items directly
   const handleToggleProductInList = useCallback(
     (product: ProductItem) => {
-      const pId = product.id ?? product.productId ?? "";
-      const pCode = product.pcode || product.productCode || "";
+      const pId = product.id ? String(product.id) : "";
+      const pCode = product.productCode || product.pcode || "";
       const isAlreadyIn = isProductAlreadyInList(product);
 
       if (isAlreadyIn) {
@@ -611,10 +579,10 @@ const CreatePurchaseForm: React.FC = () => {
           })
         );
       } else {
-        const prodName = product.name || product.productName || "Product";
+        const prodName = product.name || "Product";
         const prodUnit = product.unit || "pcs";
-        const buyPrice = Number(product.buy_price ?? product.buyPrice ?? 0);
-        const currentStock = Number(product.stock ?? product.quantity ?? 0);
+        const buyPrice = Number(product.buyPrice ?? 0);
+        const currentStock = Number(product.quantity ?? product.stock ?? 0);
 
         const newLine: FormLineItem = {
           productId: pId,
@@ -910,48 +878,21 @@ const CreatePurchaseForm: React.FC = () => {
 
       const purchasePayload: any = {
         accessUser,
-        orgId: accessUser.orgId,
-        branchId: accessUser.branchId,
         invoiceNo: invoiceNo.trim(),
-        invoice_no: invoiceNo.trim(),
         purchaseDate,
-        salesDate: purchaseDate, // backward compatibility with sales schema
-        date: purchaseDate,
-        supplierId: selectedSupplier.id ?? selectedSupplier.partyId ?? "",
-        customerId: selectedSupplier.id ?? selectedSupplier.partyId ?? "",
-        supplierName: selectedSupplier.name || selectedSupplier.partyName || "",
-        customerName: selectedSupplier.name || selectedSupplier.partyName || "",
-        supplierPhone: selectedSupplier.phone || selectedSupplier.partyPhone || "",
-        customerPhone: selectedSupplier.phone || selectedSupplier.partyPhone || "",
-        supplierAddress: selectedSupplier.address || selectedSupplier.partyAddress || "",
-        customerAddress: selectedSupplier.address || selectedSupplier.partyAddress || "",
-        showChallanRefNo: (challanSettings.showChallanRefNo ?? challanSettings.showChallanNo) ? true : false,
-        challanRefNo: (challanSettings.showChallanRefNo ?? challanSettings.showChallanNo) ? (challanNo.trim() || null) : null,
-        challanNo: (challanSettings.showChallanRefNo ?? challanSettings.showChallanNo) ? (challanNo.trim() || null) : null,
-        challan_no: (challanSettings.showChallanRefNo ?? challanSettings.showChallanNo) ? (challanNo.trim() || null) : null,
+        supplierId: selectedSupplier.id || "",
+        supplierName: selectedSupplier.name || "",
+        supplierPhone: selectedSupplier.phone || "",
+        supplierAddress: selectedSupplier.address || "",
+        challanNo: challanNo.trim() || null,
         challanDate: purchaseDate,
-        challan_date: purchaseDate,
-        vatChallan: challanSettings.showVatChallan ? (vatChallan.trim() || null) : null,
-        vat_challan: challanSettings.showVatChallan ? (vatChallan.trim() || null) : null,
-        vatChallanNo: challanSettings.showVatChallan ? (vatChallan.trim() || null) : null,
-        vatChallanDate: challanSettings.showVatChallanDate ? (vatChallanDate || purchaseDate) : null,
-        vat_challan_date: challanSettings.showVatChallanDate ? (vatChallanDate || purchaseDate) : null,
-        vehicleNumber: (challanSettings.vehicleNumber ?? challanSettings.showVehicleNo) ? (vehicleNo.trim() || null) : null,
-        vehicle_number: (challanSettings.vehicleNumber ?? challanSettings.showVehicleNo) ? (vehicleNo.trim() || null) : null,
-        vehicleNo: (challanSettings.vehicleNumber ?? challanSettings.showVehicleNo) ? (vehicleNo.trim() || null) : null,
-        vehicle_no: (challanSettings.vehicleNumber ?? challanSettings.showVehicleNo) ? (vehicleNo.trim() || null) : null,
-        capacityCft: challanSettings.capacityCft ? (capacityCft.trim() || null) : null,
-        capacity_cft: challanSettings.capacityCft ? (capacityCft.trim() || null) : null,
-        driverName: (challanSettings.driverName ?? challanSettings.showDriverName) ? (driverName.trim() || null) : null,
-        driver_name: (challanSettings.driverName ?? challanSettings.showDriverName) ? (driverName.trim() || null) : null,
-        driverPhone: (challanSettings.driverPhone ?? challanSettings.showDriverPhone) ? (driverPhone.trim() || null) : null,
-        driver_phone: (challanSettings.driverPhone ?? challanSettings.showDriverPhone) ? (driverPhone.trim() || null) : null,
-        deliveryDate: purchaseDate,
-        delivery_date: purchaseDate,
-        transportCost: challanSettings.showTransportCost ? calculatedTransport : 0,
-        transport_cost: challanSettings.showTransportCost ? calculatedTransport : 0,
-        delivery_charge: challanSettings.showTransportCost ? calculatedTransport : 0,
-        deliveryCharge: challanSettings.showTransportCost ? calculatedTransport : 0,
+        vatChallan: vatChallan.trim() || null,
+        vatChallanDate: vatChallanDate || null,
+        vehicleNo: vehicleNo.trim() || null,
+        capacityCft: capacityCft.trim() || null,
+        driverName: driverName.trim() || null,
+        driverPhone: driverPhone.trim() || null,
+        transportCost: calculatedTransport,
         totalAmount: rawSubtotal,
         discount: totalDiscount,
         discountType: invoiceDiscountType,
@@ -962,39 +903,27 @@ const CreatePurchaseForm: React.FC = () => {
         paymentType,
         status: paymentStatus,
         osType: "WEB",
-        remarks: notes.trim() || null,
         note: notes.trim() || null,
         attachments: attachment || null,
-        createdAt: isEditMode ? (effectiveEditData?.createdAt || effectiveEditData?.created_at || new Date().toISOString()) : new Date().toISOString(),
-        created_at: isEditMode ? (effectiveEditData?.createdAt || effectiveEditData?.created_at || new Date().toISOString()) : new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
         operation: isEditMode ? "update" : "insert",
         cashReceived: numCash,
         cardReceived: numBank,
         mfsReceived: numMfs,
-        bankId: numBank > 0 ? (selectedBankId || bankName) : null,
+        bankId: numBank > 0 ? selectedBankId : null,
         bankName: numBank > 0 ? bankName : null,
         accountNo: numBank > 0 ? accountNo : null,
         bankAccountName: numBank > 0 ? bankRef : null,
-        mfsId: numMfs > 0 ? (selectedMfsId || mfsName) : null,
+        mfsId: numMfs > 0 ? selectedMfsId : null,
         mfsName: numMfs > 0 ? mfsName : null,
-        mfsMethod: numMfs > 0 ? mfsName : null,
         mfsPhone: numMfs > 0 ? mfsPhone : null,
         customerPaid: Number(cashGiven) || totalPaid,
         returnAmount: changeReturnAmount,
-        details: purchaseDetailsPayload,
         purchaseDetails: purchaseDetailsPayload,
-        itemCount: lineItems.length,
-        totalItems: lineItems.length,
-        itemsCount: lineItems.length,
-        totalQty: lineItems.reduce((sum, item) => sum + (Number(item.quantity) || 0), 0),
       };
 
       const editId =
         effectiveEditData?.id ??
         effectiveEditData?.purchaseId ??
-        effectiveEditData?.purchase_id ??
         stateEditData?.id ??
         stateEditData?.purchaseId ??
         routeId;
@@ -1002,8 +931,6 @@ const CreatePurchaseForm: React.FC = () => {
       if (isEditMode && editId) {
         purchasePayload.id = editId;
         purchasePayload.purchaseId = editId;
-        purchasePayload.purchase_id = editId;
-        purchasePayload.purchase_no = editId;
       }
 
       // Both insert-purchases and update-purchases endpoints in ERP backend are JSON HTTP POST
@@ -1020,7 +947,7 @@ const CreatePurchaseForm: React.FC = () => {
 
       if (result?.success) {
         const res: any = (result.data as any)?.data !== undefined ? (result.data as any).data : result.data;
-        const savedId = res?.id || res?.purchaseId || res?.purchase_id || editId || invoiceNo;
+        const savedId = res?.id || res?.purchaseId || editId || invoiceNo;
 
         const savedItem: any = {
           ...purchasePayload,

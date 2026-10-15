@@ -5,11 +5,8 @@ import type { PartyItem } from "@/types";
 
 export const WALK_IN_CUSTOMER: PartyItem = {
   id: 0,
-  partyId: 0,
   name: "Walk-in Customer",
-  partyName: "Walk-in Customer",
   phone: "",
-  partyPhone: "",
   address: "",
   type: "CUSTOMER",
 };
@@ -71,9 +68,9 @@ export const TradePartySelector: React.FC<TradePartySelectorProps> = ({
     const q = searchQuery.toLowerCase().trim();
     return partyList
       .filter((p) => {
-        const name = (p.name || p.partyName || "").toLowerCase();
-        const phone = (p.phone || p.partyPhone || "").toLowerCase();
-        const address = (p.address || p.partyAddress || (p as any).city || "").toLowerCase();
+        const name = (p.name || "").toLowerCase();
+        const phone = (p.phone || "").toLowerCase();
+        const address = (p.address || "").toLowerCase();
         return name.includes(q) || phone.includes(q) || address.includes(q);
       })
       .slice(0, 25);
@@ -132,16 +129,16 @@ export const TradePartySelector: React.FC<TradePartySelectorProps> = ({
             ) : (
               <>
                 <span className="font-bold text-black truncate">
-                  {selectedParty.name || selectedParty.partyName}
+                  {selectedParty.name}
                 </span>
-                {(selectedParty.phone || selectedParty.partyPhone) && (
+                {selectedParty.phone && (
                   <span className="text-[11px] text-gray-700 shrink-0">
-                    ({selectedParty.phone || selectedParty.partyPhone})
+                    ({selectedParty.phone})
                   </span>
                 )}
-                {(selectedParty.address || selectedParty.partyAddress || (selectedParty as any).city) && (
+                {selectedParty.address && (
                   <span className="text-[11px] text-black truncate">
-                    - {selectedParty.address || selectedParty.partyAddress || (selectedParty as any).city}
+                    - {selectedParty.address}
                   </span>
                 )}
               </>
@@ -221,8 +218,8 @@ export const TradePartySelector: React.FC<TradePartySelectorProps> = ({
           <div className="max-h-48 overflow-y-auto divide-y divide-gray-100">
             {filteredParties.length > 0 ? (
               filteredParties.map((p) => {
-                const partyKey = p.id || p.partyId || p.name;
-                const balance = (p as any).balance ?? (p as any).openingBalance ?? (p as any).dueAmount;
+                const partyKey = p.id ?? p.name;
+                const balance = p.balance ?? p.openingBalance ?? p.dueAmount;
                 return (
                   <div
                     key={partyKey}
@@ -234,14 +231,14 @@ export const TradePartySelector: React.FC<TradePartySelectorProps> = ({
                   >
                     <div className="flex flex-col min-w-0 pr-2">
                       <div className="flex items-center gap-1.5 truncate">
-                        <span className="font-semibold text-black">{p.name || p.partyName}</span>
-                        {(p.phone || p.partyPhone) && (
-                          <span className="text-[11px] text-black">({p.phone || p.partyPhone})</span>
+                        <span className="font-semibold text-black">{p.name}</span>
+                        {p.phone && (
+                          <span className="text-[11px] text-black">({p.phone})</span>
                         )}
                       </div>
-                      {(p.address || p.partyAddress || (p as any).city) && (
+                      {p.address && (
                         <span className="text-[10px] text-black truncate mt-0.5">
-                          {p.address || p.partyAddress || (p as any).city}
+                          {p.address}
                         </span>
                       )}
                     </div>

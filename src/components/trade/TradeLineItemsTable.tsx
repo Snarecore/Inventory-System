@@ -53,7 +53,7 @@ export const TradeLineItemsTable: React.FC<TradeLineItemsTableProps> = ({
           <tbody className="divide-y divide-gray-100">
             {lineItems.length > 0 ? (
               lineItems.map((item, idx) => {
-                const currentPrice = item[priceField] ?? item.sellPrice ?? item.buyPrice ?? "0";
+                const currentPrice = item[priceField] ?? "0";
                 return (
                   <tr key={idx} className="hover:bg-gray-50/70 transition-colors">
                     {/* SL */}
