@@ -321,7 +321,7 @@ const SalesReportPage: React.FC = () => {
           <button
             type="button"
             onClick={() => setShowCharts(!showCharts)}
-            className="text-[11px] font-semibold text-[#009fe3] hover:underline cursor-pointer ml-1"
+            className="text-[11px] font-semibold text-[#009fe3] cursor-pointer ml-1"
           >
             {showCharts ? "Hide Visual Charts" : "Show Visual Charts"}
           </button>

@@ -10,10 +10,15 @@ import SaleStats from "@/pages/admin/trade/sales/components/SaleStats";
 import SaleTable from "@/pages/admin/trade/sales/components/SaleTable";
 import SaleInvoiceModal from "@/pages/admin/trade/sales/components/SaleInvoiceModal";
 import apiConfig from "@/config/api.json";
-import { salesListQueryKey, partyListQueryKey, salesAndReturnQueryKey } from "@/config/query-key";
+import { partyListQueryKey } from "@/config/query-key";
 import { buildAccessUser } from "@/utils/access-user";
-import { postData } from "@/services/api-service";
 import type { SaleItem, PartyItem } from "@/types";
+import { isPartyActive } from "@/utils/party-utils";
+import {
+  useSalesAndReturnsQuery,
+  useSalesQuery,
+  extractReturnedSalesInvoiceKeysSet,
+} from "./hooks/useSalesReturnQueries";
 
 /**
  * Dedicated Sales Orders page for Sales Return workflow
@@ -68,8 +73,7 @@ const SalesReturnSalesPage: React.FC = () => {
     }
 
     const filtered = list.filter((p: any) => {
-      const isDel = String(p.isDeleted || p.is_deleted || "").trim().toUpperCase();
-      if (isDel === "Y" || isDel === "YES" || isDel === "TRUE" || isDel === "1") return false;
+      if (!isPartyActive(p)) return false;
       const type = String(p.type || p.partyType || p.party_type || p.party_type_name || p.role || "").toUpperCase();
       if (type.includes("SUPPLIER") || type.includes("VENDOR")) return false;
       return type.includes("CUSTOMER") || !type;
@@ -95,82 +99,20 @@ const SalesReturnSalesPage: React.FC = () => {
     return Array.from(custMap.values());
   }, [rawCustomerData]);
 
-  // 2. Fetch Sales & Returns to cross-reference already returned orders
-  const { data: salesAndReturnData } = useQuery({
-    queryKey: [salesAndReturnQueryKey],
-    queryFn: async () => {
-      try {
-        const accessUser = buildAccessUser();
-        const endpoint =
-          apiConfig.salesReturn?.getSalesAndReturnUrl ||
-          apiConfig.salesReturn?.salesAndReturnUrl ||
-          apiConfig.sales?.salesAndReturnUrl ||
-          "get-sales-and-return";
-        const res: any = await postData({
-          url: endpoint,
-          body: { accessUser },
-        });
-        return res?.data || res?.returns || res?.salesAndReturnList || res?.saleList || [];
-      } catch {
-        return [];
-      }
-    },
-    staleTime: 60 * 1000,
-  });
+  // 2. Fetch Sales & Returns from unified cache to cross-reference already returned orders
+  const { data: salesAndReturnData } = useSalesAndReturnsQuery();
 
   const returnedInvoiceSet = useMemo(() => {
-    const set = new Set<string>();
-    if (Array.isArray(salesAndReturnData)) {
-      salesAndReturnData.forEach((item: any) => {
-        const isReturned =
-          Boolean(item.hasReturn) ||
-          Boolean(item.returnNo) ||
-          Boolean(item.returnGrandTotal) ||
-          String(item.returnType || "").toUpperCase() === "RETURN" ||
-          (Array.isArray(item.returnDetails) && item.returnDetails.length > 0) ||
-          (Array.isArray(item.salesReturnDetails) && item.salesReturnDetails.length > 0);
-
-        if (isReturned) {
-          if (item.salesInvoiceNo) set.add(String(item.salesInvoiceNo).trim().toLowerCase());
-          if (item.invoiceNo) set.add(String(item.invoiceNo).trim().toLowerCase());
-          if (item.orderNo) set.add(String(item.orderNo).trim().toLowerCase());
-          if (item.saleId) set.add(String(item.saleId).trim().toLowerCase());
-          if (item.sale_id) set.add(String(item.sale_id).trim().toLowerCase());
-        }
-      });
-    }
-    return set;
+    return extractReturnedSalesInvoiceKeysSet(salesAndReturnData || []);
   }, [salesAndReturnData]);
 
-  // 3. Fetch Sales from Backend API
+  // 3. Fetch Sales from Backend API (Shared TanStack Query cache)
   const {
     data: salesData,
     isLoading,
     isFetching,
     refetch,
-  } = useQuery({
-    queryKey: [salesListQueryKey],
-    queryFn: async () => {
-      const accessUser = buildAccessUser();
-      const endpoint = apiConfig.sales?.salesListUrl || "get-sale-list";
-      const res: any = await postData({
-        url: endpoint,
-        body: { accessUser },
-      });
-
-      const list =
-        res?.saleList ||
-        res?.salesList ||
-        res?.data ||
-        res?.sales ||
-        res?.saleDetailsList ||
-        res?.sale_list ||
-        [];
-
-      return Array.isArray(list) ? list : [];
-    },
-    staleTime: 60 * 1000,
-  });
+  } = useSalesQuery();
 
   const rawSales: SaleItem[] = useMemo(() => {
     if (Array.isArray(salesData)) return salesData;

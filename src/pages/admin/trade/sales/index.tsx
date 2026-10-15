@@ -11,11 +11,13 @@ import SaleTable from "./components/SaleTable";
 import SaleInvoiceModal from "./components/SaleInvoiceModal";
 import { useAPI } from "@/hooks/useApi";
 import apiConfig from "@/config/api.json";
-import { salesListQueryKey, partyListQueryKey, productListQueryKey, salesAndReturnQueryKey } from "@/config/query-key";
+import { partyListQueryKey, productListQueryKey } from "@/config/query-key";
 import { buildAccessUser } from "@/utils/access-user";
 import { postData } from "@/services/api-service";
 import { showSuccessToast, showErrorToast } from "@/utils/toast-utils";
 import type { SaleItem, PartyItem } from "@/types";
+import { isPartyActive } from "@/utils/party-utils";
+import { useSalesQuery } from "@/pages/admin/trade/sales-return/hooks/useSalesReturnQueries";
 
 const Sales: React.FC = () => {
   const navigate = useNavigate();
@@ -65,8 +67,7 @@ const Sales: React.FC = () => {
     }
 
     const filtered = list.filter((p: any) => {
-      const isDel = String(p.isDeleted || p.is_deleted || "").trim().toUpperCase();
-      if (isDel === "Y" || isDel === "YES" || isDel === "TRUE" || isDel === "1") return false;
+      if (!isPartyActive(p)) return false;
       const type = String(p.type || p.partyType || p.party_type || p.party_type_name || p.role || "").toUpperCase();
       if (type.includes("SUPPLIER") || type.includes("VENDOR")) return false;
       return type.includes("CUSTOMER") || !type;
@@ -92,35 +93,13 @@ const Sales: React.FC = () => {
     return Array.from(custMap.values());
   }, [rawCustomerData]);
 
-  // 2. Fetch Sales from Backend API
+  // 2. Fetch Sales from Backend API (Shared TanStack Query cache)
   const {
     data: salesData,
     isLoading,
     isFetching,
     refetch,
-  } = useQuery({
-    queryKey: [salesListQueryKey],
-    queryFn: async () => {
-      const accessUser = buildAccessUser();
-      const endpoint = apiConfig.sales?.salesListUrl || "get-sale-list";
-      const res: any = await postData({
-        url: endpoint,
-        body: { accessUser },
-      });
-
-      const list =
-        res?.saleList ||
-        res?.salesList ||
-        res?.data ||
-        res?.sales ||
-        res?.saleDetailsList ||
-        res?.sale_list ||
-        [];
-
-      return Array.isArray(list) ? list : [];
-    },
-    staleTime: 60 * 1000,
-  });
+  } = useSalesQuery();
 
   const rawSales: SaleItem[] = useMemo(() => {
     if (Array.isArray(salesData)) return salesData;

@@ -24,6 +24,7 @@ import { postData } from "@/services/api-service";
 import { useAPI } from "@/hooks/useApi";
 import { formatMoney } from "@/utils/formatters";
 import { showSuccessToast, showErrorToast, showDeleteToast } from "@/utils/toast-utils";
+import { isPartyActive } from "@/utils/party-utils";
 import type { SaleItem, ProductItem, PartyItem } from "@/types";
 
 interface FormLineItem {
@@ -150,8 +151,7 @@ export const CreateSaleForm: React.FC = () => {
     }
 
     return list.filter((p: any) => {
-      const isDel = String(p.isDeleted || p.is_deleted || "").trim().toUpperCase();
-      if (isDel === "Y" || isDel === "YES" || isDel === "TRUE" || isDel === "1") return false;
+      if (!isPartyActive(p)) return false;
       const type = String(p.type || p.partyType || p.party_type || p.party_type_name || p.role || "").toUpperCase();
       if (type.includes("SUPPLIER") || type.includes("VENDOR")) return false;
       return type.includes("CUSTOMER") || !type;
@@ -1329,7 +1329,7 @@ export const CreateSaleForm: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setIsPartyModalOpen(true)}
-                className="text-[11px] font-bold text-[var(--color-primary)] hover:underline flex items-center gap-1 cursor-pointer"
+                className="text-[11px] font-bold text-[var(--color-primary)] flex items-center gap-1 cursor-pointer"
               >
                 <FaUserPlus size={10} /> + New
               </button>
@@ -2149,7 +2149,7 @@ export const CreateSaleForm: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setShowCashGivenCalc(!showCashGivenCalc)}
-                  className="text-[var(--color-primary)] hover:underline cursor-pointer font-bold"
+                  className="text-[var(--color-primary)] cursor-pointer font-bold"
                 >
                   {showCashGivenCalc ? "- Hide Change Calculator" : "+ Calculate Cash Change / ভাংতি"}
                 </button>

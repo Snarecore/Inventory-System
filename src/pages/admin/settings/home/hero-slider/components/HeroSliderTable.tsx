@@ -128,7 +128,7 @@ const HeroSliderTable = ({
 												className="h-10 w-16 object-cover rounded-md shadow-xs border border-gray-100"
 											/>
 										</td>
-										<td className="py-2.5 px-3 text-blue-500 hover:underline cursor-pointer">
+										<td className="py-2.5 px-3 text-blue-500 cursor-pointer">
 											<a href={data.link} target="_blank" rel="noreferrer">
 												{data.link || "N/A"}
 											</a>

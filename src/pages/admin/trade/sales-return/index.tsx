@@ -12,11 +12,17 @@ import SalesReturnInvoiceModal from "./components/SalesReturnInvoiceModal";
 import SaleTable from "@/pages/admin/trade/sales/components/SaleTable";
 import SaleInvoiceModal from "@/pages/admin/trade/sales/components/SaleInvoiceModal";
 import apiConfig from "@/config/api.json";
-import { salesAndReturnQueryKey, partyListQueryKey, salesListQueryKey } from "@/config/query-key";
+import { partyListQueryKey } from "@/config/query-key";
 import { buildAccessUser } from "@/utils/access-user";
 import { postData } from "@/services/api-service";
 import type { SalesReturnItem, PartyItem, SaleItem } from "@/types";
+import { isPartyActive } from "@/utils/party-utils";
 import { extractReturnRemarks } from "./constants/returnReasons";
+import {
+  useSalesAndReturnsQuery,
+  useSalesQuery,
+  extractReturnedSalesInvoiceKeysSet,
+} from "./hooks/useSalesReturnQueries";
 
 const SalesReturnPage: React.FC = () => {
   const navigate = useNavigate();
@@ -77,8 +83,7 @@ const SalesReturnPage: React.FC = () => {
     }
 
     const filtered = list.filter((p: any) => {
-      const isDel = String(p.isDeleted || p.is_deleted || "").trim().toUpperCase();
-      if (isDel === "Y" || isDel === "YES" || isDel === "TRUE" || isDel === "1") return false;
+      if (!isPartyActive(p)) return false;
       const type = String(p.type || p.partyType || p.party_type || p.party_type_name || p.role || "").toUpperCase();
       if (type.includes("SUPPLIER") || type.includes("VENDOR")) return false;
       return type.includes("CUSTOMER") || !type;
@@ -104,122 +109,70 @@ const SalesReturnPage: React.FC = () => {
     return Array.from(custMap.values());
   }, [rawCustomerData]);
 
-  // 2. Fetch from /get-sales-and-return API
+  // 2. Fetch from /get-sales-and-return API (Shared TanStack Query cache)
   const {
     data: apiReturnsData,
     isLoading,
     isFetching,
     refetch,
-  } = useQuery({
-    queryKey: [salesAndReturnQueryKey],
-    queryFn: async () => {
-      try {
-        const accessUser = buildAccessUser();
-        const endpoint =
-          apiConfig.salesReturn?.getSalesAndReturnUrl ||
-          apiConfig.sales?.salesAndReturnUrl ||
-          "get-sales-and-return";
-
-        const res: any = await postData({
-          url: endpoint,
-          body: { accessUser },
-        });
-
-        const list = res?.data || res?.returns || res?.salesAndReturnList || res?.saleList || [];
-        if (Array.isArray(list) && list.length > 0) {
-          const returnsList: SalesReturnItem[] = [];
-          list.forEach((item: any) => {
-            const isReturn =
-              Boolean(item.hasReturn) ||
-              Boolean(item.returnNo) ||
-              Boolean(item.returnGrandTotal) ||
-              String(item.returnType || "").toUpperCase() === "RETURN" ||
-              String(item.status || "").toUpperCase() === "RETURN" ||
-              (item.refNo && String(item.refNo).startsWith("SR-")) ||
-              (Array.isArray(item.returnDetails) && item.returnDetails.length > 0) ||
-              (Array.isArray(item.salesReturnDetails) && item.salesReturnDetails.length > 0);
-
-            if (isReturn) {
-              const noteText = extractReturnRemarks(item);
-
-              returnsList.push({
-                id: item.id || item.returnId || item.return_id,
-                returnNo: item.returnNo || item.refNo || (item.orderNo ? `RET-${item.orderNo}` : `RET-${item.id}`),
-                orderNo: item.orderNo || item.order_no || "",
-                salesInvoiceNo: item.salesInvoiceNo || item.invoiceNo || "-",
-                invoiceNo: item.salesInvoiceNo || item.invoiceNo || "-",
-                returnDate: item.returnDate || item.salesDate || item.saleDate || item.date || moment().format("YYYY-MM-DD"),
-                createdAt: item.createdAt || item.created_at || item.createdDate || item.date || item.returnDate,
-                customerId: item.customerId,
-                customerName: item.customerName || "Customer",
-                customerPhone: item.customerPhone,
-                customerAddress: item.customerAddress,
-                totalAmount: Number(item.totalAmount ?? item.returnGrandTotal ?? item.refundAmount ?? 0),
-                discount: Number(item.discount ?? 0),
-                vat: Number(item.vat ?? 0),
-                deliveryCharge: Number(item.deliveryCharge ?? item.delivery_charge ?? 0),
-                grandTotal: Number(item.returnGrandTotal ?? item.grandTotal ?? item.refundAmount ?? 0),
-                refundAmount: Number(item.returnRefundAmount ?? item.refundAmount ?? item.returnGrandTotal ?? item.grandTotal ?? 0),
-                paymentType: item.paymentType || "CASH",
-                status: item.status || "Completed",
-                note: noteText,
-                remarks: noteText,
-                reason: noteText,
-                returnDetails: item.returnDetails || item.salesReturnDetails || item.details || [],
-                itemsCount: (item.returnDetails || item.salesReturnDetails || item.details)?.length || 1,
-              });
-            }
-          });
-          return returnsList;
-        }
-        return [];
-      } catch (err) {
-        return [];
-      }
-    },
-    staleTime: 60 * 1000,
-  });
+  } = useSalesAndReturnsQuery();
 
   const rawReturns: SalesReturnItem[] = useMemo(() => {
-    if (Array.isArray(apiReturnsData)) {
-      return apiReturnsData;
-    }
-    return [];
+    if (!Array.isArray(apiReturnsData)) return [];
+
+    const returnsList: SalesReturnItem[] = [];
+    apiReturnsData.forEach((item: any) => {
+      const isReturn =
+        Boolean(item.hasReturn) ||
+        Boolean(item.returnNo) ||
+        Boolean(item.returnGrandTotal) ||
+        String(item.returnType || "").toUpperCase() === "RETURN" ||
+        String(item.status || "").toUpperCase() === "RETURN" ||
+        (item.refNo && String(item.refNo).startsWith("SR-")) ||
+        (Array.isArray(item.returnDetails) && item.returnDetails.length > 0) ||
+        (Array.isArray(item.salesReturnDetails) && item.salesReturnDetails.length > 0);
+
+      if (isReturn) {
+        const noteText = extractReturnRemarks(item);
+
+        returnsList.push({
+          id: item.id || item.returnId || item.return_id,
+          returnNo: item.returnNo || item.refNo || (item.orderNo ? `RET-${item.orderNo}` : `RET-${item.id}`),
+          orderNo: item.orderNo || item.order_no || "",
+          salesInvoiceNo: item.salesInvoiceNo || item.invoiceNo || "-",
+          invoiceNo: item.salesInvoiceNo || item.invoiceNo || "-",
+          returnDate: item.returnDate || item.salesDate || item.saleDate || item.date || moment().format("YYYY-MM-DD"),
+          createdAt: item.createdAt || item.created_at || item.createdDate || item.date || item.returnDate,
+          customerId: item.customerId,
+          customerName: item.customerName || "Customer",
+          customerPhone: item.customerPhone,
+          customerAddress: item.customerAddress,
+          totalAmount: Number(item.totalAmount ?? item.returnGrandTotal ?? item.refundAmount ?? 0),
+          discount: Number(item.discount ?? 0),
+          vat: Number(item.vat ?? 0),
+          deliveryCharge: Number(item.deliveryCharge ?? item.delivery_charge ?? 0),
+          grandTotal: Number(item.returnGrandTotal ?? item.grandTotal ?? item.refundAmount ?? 0),
+          refundAmount: Number(item.returnRefundAmount ?? item.refundAmount ?? item.returnGrandTotal ?? item.grandTotal ?? 0),
+          paymentType: item.paymentType || "CASH",
+          status: item.status || "Completed",
+          note: noteText,
+          remarks: noteText,
+          reason: noteText,
+          returnDetails: item.returnDetails || item.salesReturnDetails || item.details || [],
+          itemsCount: (item.returnDetails || item.salesReturnDetails || item.details)?.length || 1,
+        });
+      }
+    });
+    return returnsList;
   }, [apiReturnsData]);
 
-  // 3. Fetch Sales from Backend API (for Sales List view & returning)
+  // 3. Fetch Sales from Backend API (Shared TanStack Query cache)
   const {
     data: salesData,
     isLoading: isSalesLoading,
     isFetching: isSalesFetching,
     refetch: refetchSales,
-  } = useQuery({
-    queryKey: [salesListQueryKey],
-    queryFn: async () => {
-      try {
-        const accessUser = buildAccessUser();
-        const endpoint = apiConfig.sales?.salesListUrl || "get-sale-list";
-        const res: any = await postData({
-          url: endpoint,
-          body: { accessUser },
-        });
-
-        const list =
-          res?.saleList ||
-          res?.salesList ||
-          res?.data ||
-          res?.sales ||
-          res?.saleDetailsList ||
-          res?.sale_list ||
-          [];
-
-        return Array.isArray(list) ? list : [];
-      } catch {
-        return [];
-      }
-    },
-    staleTime: 60 * 1000,
-  });
+  } = useSalesQuery();
 
   const rawSales: SaleItem[] = useMemo(() => {
     if (Array.isArray(salesData)) return salesData;
@@ -228,17 +181,7 @@ const SalesReturnPage: React.FC = () => {
 
   // Set of invoices/orders that have already been returned
   const returnedInvoiceSet = useMemo(() => {
-    const set = new Set<string>();
-    if (Array.isArray(apiReturnsData)) {
-      apiReturnsData.forEach((item: any) => {
-        if (item.salesInvoiceNo) set.add(String(item.salesInvoiceNo).trim().toLowerCase());
-        if (item.invoiceNo) set.add(String(item.invoiceNo).trim().toLowerCase());
-        if (item.orderNo) set.add(String(item.orderNo).trim().toLowerCase());
-        if (item.saleId) set.add(String(item.saleId).trim().toLowerCase());
-        if (item.sale_id) set.add(String(item.sale_id).trim().toLowerCase());
-      });
-    }
-    return set;
+    return extractReturnedSalesInvoiceKeysSet(apiReturnsData || []);
   }, [apiReturnsData]);
 
   // Filtering for Sales

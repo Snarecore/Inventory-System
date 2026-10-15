@@ -24,7 +24,6 @@ import {
   purchaseAndReturnQueryKey,
   purchaseListQueryKey,
   bankInfoListQueryKey,
-  bankNameListQueryKey,
   mfsUserListQueryKey,
   productListQueryKey,
   productQueryKey,
@@ -37,6 +36,10 @@ import { formatMoney } from "@/utils/formatters";
 import { showSuccessToast, showErrorToast } from "@/utils/toast-utils";
 import type { PurchaseItem, PurchaseReturnItem } from "@/types";
 import { PURCHASE_RETURN_REASONS } from "../constants/returnReasons";
+import {
+  usePurchasesQuery,
+  usePurchaseAndReturnsQuery,
+} from "../hooks/usePurchaseReturnQueries";
 
 interface ReturnLineFormState {
   productId: string | number;
@@ -105,65 +108,10 @@ export const PurchaseReturnForm: React.FC = () => {
   const [isReceiptModalOpen, setIsReceiptModalOpen] = useState<boolean>(false);
   const [hasJustSubmitted, setHasJustSubmitted] = useState<boolean>(false);
 
-  // 1. Fetch purchases and return list using POST /get-purchase-and-return-list (fallback to /get-purchase-list)
-  const { data: apiPurchaseAndReturnData, isLoading: isLoadingInvoices } = useQuery({
-    queryKey: [purchaseAndReturnQueryKey],
-    queryFn: async () => {
-      try {
-        const accessUser = buildAccessUser();
-        const endpoint =
-          apiConfig.purchaseReturn?.getPurchaseAndReturnListUrl || "get-purchase-and-return-list";
-
-        const res: any = await postData({
-          url: endpoint,
-          body: { accessUser },
-        });
-
-        const purchases = Array.isArray(res?.data)
-          ? res.data
-          : Array.isArray(res?.purchaseList)
-          ? res.purchaseList
-          : Array.isArray(res?.purchases)
-          ? res.purchases
-          : Array.isArray(res?.purchasesList)
-          ? res.purchasesList
-          : [];
-
-        const returns = Array.isArray(res?.returns)
-          ? res.returns
-          : Array.isArray(res?.returnList)
-          ? res.returnList
-          : Array.isArray(res?.purchaseReturnList)
-          ? res.purchaseReturnList
-          : Array.isArray(res?.purchaseReturns)
-          ? res.purchaseReturns
-          : [];
-
-        let list = [...purchases, ...returns];
-
-        // If /get-purchase-and-return-list is empty or returned no records, fallback to /get-purchase-list
-        if (list.length === 0) {
-          const purchaseListEndpoint = apiConfig.purchase?.purchaseListUrl || "get-purchase-list";
-          const purchaseRes: any = await postData({
-            url: purchaseListEndpoint,
-            body: { accessUser },
-          });
-          const fallbackPurchases =
-            purchaseRes?.purchaseList ||
-            purchaseRes?.purchasesList ||
-            purchaseRes?.data ||
-            purchaseRes?.purchases ||
-            [];
-          if (Array.isArray(fallbackPurchases)) list = fallbackPurchases;
-        }
-
-        return Array.isArray(list) && list.length > 0 ? list : [];
-      } catch {
-        return [];
-      }
-    },
-    staleTime: 60 * 1000,
-  });
+  // 1. Fetch purchases and returns from shared TanStack Query cache (zero waterfall, instant cache hits)
+  const { data: apiPurchaseAndReturnData, isLoading: isLoadingReturns } = usePurchaseAndReturnsQuery();
+  const { data: purchasesData, isLoading: isLoadingPurchases } = usePurchasesQuery();
+  const isLoadingInvoices = isLoadingReturns || isLoadingPurchases;
 
   // 2. Fetch registered bank accounts for refund disbursement
   const bankInfoListUrl = apiConfig.bank?.bankInfoListUrl || "get-bank-info-list";
@@ -228,21 +176,42 @@ export const PurchaseReturnForm: React.FC = () => {
   }, [mfsData]);
 
   const availableInvoices: PurchaseItem[] = useMemo(() => {
-    if (Array.isArray(apiPurchaseAndReturnData)) {
-      return apiPurchaseAndReturnData.filter((item: any) => {
-        const hasDetails =
-          (Array.isArray(item.purchaseDetails) && item.purchaseDetails.length > 0) ||
-          (Array.isArray(item.purchasesDetails) && item.purchasesDetails.length > 0) ||
-          (Array.isArray(item.purchase_details) && item.purchase_details.length > 0) ||
-          (Array.isArray(item.purchaseListDetails) && item.purchaseListDetails.length > 0) ||
-          (Array.isArray(item.details) && item.details.length > 0) ||
-          (Array.isArray(item.items) && item.items.length > 0) ||
-          (Array.isArray(item.products) && item.products.length > 0);
-        return hasDetails;
-      });
+    const combinedCandidates: any[] = [];
+    const seenKeys = new Set<string>();
+
+    const addCandidate = (item: any) => {
+      if (!item) return;
+      const key = String(
+        item.id ||
+        item.purchaseId ||
+        item.invoiceNo ||
+        item.purchaseInvoiceNo ||
+        ""
+      ).trim().toLowerCase();
+      if (key && seenKeys.has(key)) return;
+      if (key) seenKeys.add(key);
+      combinedCandidates.push(item);
+    };
+
+    if (Array.isArray(purchasesData)) {
+      purchasesData.forEach(addCandidate);
     }
-    return [];
-  }, [apiPurchaseAndReturnData]);
+    if (Array.isArray(apiPurchaseAndReturnData)) {
+      apiPurchaseAndReturnData.forEach(addCandidate);
+    }
+
+    return combinedCandidates.filter((item: any) => {
+      const hasDetails =
+        (Array.isArray(item.purchaseDetails) && item.purchaseDetails.length > 0) ||
+        (Array.isArray(item.purchasesDetails) && item.purchasesDetails.length > 0) ||
+        (Array.isArray(item.purchase_details) && item.purchase_details.length > 0) ||
+        (Array.isArray(item.purchaseListDetails) && item.purchaseListDetails.length > 0) ||
+        (Array.isArray(item.details) && item.details.length > 0) ||
+        (Array.isArray(item.items) && item.items.length > 0) ||
+        (Array.isArray(item.products) && item.products.length > 0);
+      return hasDetails;
+    });
+  }, [purchasesData, apiPurchaseAndReturnData]);
 
   // Pre-select fallback bank or MFS only when a refund amount is allocated to that channel
   useEffect(() => {
@@ -1130,18 +1099,13 @@ export const PurchaseReturnForm: React.FC = () => {
 
       setHasJustSubmitted(true);
 
-      // Invalidate queries so inventory stock, account balances, and purchase lists immediately update
-      await Promise.allSettled([
-        queryClient.invalidateQueries({ queryKey: [purchaseAndReturnQueryKey] }),
-        queryClient.invalidateQueries({ queryKey: [purchaseListQueryKey] }),
-        queryClient.invalidateQueries({ queryKey: [productListQueryKey] }),
-        queryClient.invalidateQueries({ queryKey: [productQueryKey] }),
-        queryClient.invalidateQueries({ queryKey: [partyListQueryKey] }),
-        queryClient.invalidateQueries({ queryKey: [bankInfoListQueryKey] }),
-        queryClient.invalidateQueries({ queryKey: [bankNameListQueryKey] }),
-        queryClient.invalidateQueries({ queryKey: [mfsUserListQueryKey] }),
-        queryClient.invalidateQueries({ queryKey: [dashboardQueryKey] }),
-      ]);
+      // Invalidate relevant queries (non-blocking, stale background refresh)
+      queryClient.invalidateQueries({ queryKey: [purchaseAndReturnQueryKey] });
+      queryClient.invalidateQueries({ queryKey: [purchaseListQueryKey] });
+      queryClient.invalidateQueries({ queryKey: [productListQueryKey], refetchType: "none" });
+      queryClient.invalidateQueries({ queryKey: [productQueryKey], refetchType: "none" });
+      queryClient.invalidateQueries({ queryKey: [partyListQueryKey], refetchType: "none" });
+      queryClient.invalidateQueries({ queryKey: [dashboardQueryKey], refetchType: "none" });
 
       showSuccessToast(
         response?.msg ||

@@ -63,7 +63,7 @@ export const ColumnVisibilityDropdown: React.FC<ColumnVisibilityDropdownProps> =
             <button
               type="button"
               onClick={onReset}
-              className="text-[11px] text-[var(--color-primary)] hover:underline font-semibold cursor-pointer"
+              className="text-[11px] text-[var(--color-primary)] font-semibold cursor-pointer"
             >
               Reset
             </button>

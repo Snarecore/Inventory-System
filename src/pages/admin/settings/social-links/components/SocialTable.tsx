@@ -85,7 +85,7 @@ const SocialTable = ({
 											className="h-8 w-8 object-cover rounded-md shadow-xs border border-gray-100"
 										/>
 									</td>
-									<td className="py-2.5 px-3 text-blue-500 hover:underline cursor-pointer font-normal text-xs">
+									<td className="py-2.5 px-3 text-blue-500 cursor-pointer font-normal text-xs">
 										<a href={data.link} target="_blank" rel="noreferrer">
 											{data.link}
 										</a>

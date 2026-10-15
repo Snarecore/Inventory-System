@@ -12,11 +12,16 @@ import PurchaseReturnInvoiceModal from "./components/PurchaseReturnInvoiceModal"
 import PurchaseReturnPurchaseTable from "./components/PurchaseReturnPurchaseTable";
 import PurchaseInvoiceModal from "@/pages/admin/trade/purchases/components/PurchaseInvoiceModal";
 import apiConfig from "@/config/api.json";
-import { purchaseAndReturnQueryKey, partyListQueryKey, purchaseListQueryKey } from "@/config/query-key";
+import { partyListQueryKey } from "@/config/query-key";
 import { buildAccessUser } from "@/utils/access-user";
 import { postData } from "@/services/api-service";
 import type { PurchaseReturnItem, PartyItem, PurchaseItem } from "@/types";
+import { isPartyActive } from "@/utils/party-utils";
 import { extractPurchaseReturnRemarks } from "./constants/returnReasons";
+import {
+  usePurchasesQuery,
+  usePurchaseAndReturnsQuery,
+} from "./hooks/usePurchaseReturnQueries";
 
 type PartyListResponse =
   | PartyItem[]
@@ -77,8 +82,7 @@ const PurchaseReturnPage: React.FC = () => {
     }
 
     const filtered = list.filter((p) => {
-      const isDel = String(p.isDeleted ?? p.is_deleted ?? "").trim().toUpperCase();
-      if (isDel === "Y" || isDel === "YES" || isDel === "TRUE" || isDel === "1") return false;
+      if (!isPartyActive(p)) return false;
       const type = String(p.type || p.partyType || p.party_type || p.role || "").toUpperCase();
       return type.includes("SUPPLIER") || type.includes("VENDOR") || type.includes("BOTH");
     });
@@ -103,24 +107,12 @@ const PurchaseReturnPage: React.FC = () => {
     return Array.from(supMap.values());
   }, [rawSupplierData]);
 
-  // 2. Fetch from /get-purchase-and-return-list API (Shared cache key with Form and PurchasesPage)
+  // 2. Fetch from /get-purchase-and-return-list API (Shared TanStack Query cache with Form and PurchasesPage)
   const {
     data: apiReturnsData,
     isLoading,
     refetch,
-  } = useQuery({
-    queryKey: [purchaseAndReturnQueryKey],
-    queryFn: async () => {
-      const res = (await postData<ListResponse>({
-        url: apiConfig.purchaseReturn.getPurchaseAndReturnListUrl,
-        body: { accessUser: buildAccessUser() },
-      })) as ListResponse;
-
-      const list = res?.data || res?.returns || res?.purchaseAndReturnList || res?.purchaseReturnList || [];
-      return Array.isArray(list) ? list : [];
-    },
-    staleTime: 60 * 1000,
-  });
+  } = usePurchaseAndReturnsQuery();
 
   const rawReturns: PurchaseReturnItem[] = useMemo(() => {
     if (!Array.isArray(apiReturnsData)) return [];
@@ -178,32 +170,13 @@ const PurchaseReturnPage: React.FC = () => {
     return returnsList;
   }, [apiReturnsData]);
 
-  // 3. Fetch Purchases from Backend API (for Purchase List view & returning)
+  // 3. Fetch Purchases from Backend API (Shared TanStack Query cache with Form and PurchasesPage)
   const {
     data: purchasesData,
     isLoading: isPurchasesLoading,
     isFetching: isPurchasesFetching,
     refetch: refetchPurchases,
-  } = useQuery({
-    queryKey: [purchaseListQueryKey],
-    queryFn: async () => {
-      const res = (await postData<ListResponse>({
-        url: apiConfig.purchase.purchaseListUrl,
-        body: { accessUser: buildAccessUser() },
-      })) as ListResponse;
-
-      const list =
-        res?.purchaseList ||
-        res?.purchasesList ||
-        res?.data ||
-        res?.purchases ||
-        res?.purchaseInfoList ||
-        [];
-
-      return Array.isArray(list) ? (list as PurchaseItem[]) : [];
-    },
-    staleTime: 60 * 1000,
-  });
+  } = usePurchasesQuery();
 
   const rawPurchases: PurchaseItem[] = useMemo(() => {
     if (Array.isArray(purchasesData)) return purchasesData;

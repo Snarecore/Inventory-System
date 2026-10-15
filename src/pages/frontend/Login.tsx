@@ -466,7 +466,7 @@ export const Login: React.FC = () => {
                       setStep(1)
                       setPin(Array(PIN_LENGTH).fill(''))
                     }}
-                    className="inline-flex items-center gap-1.5 text-[#009fe3] hover:text-[#085a9c] hover:underline cursor-pointer transition-colors disabled:opacity-50"
+                    className="inline-flex items-center gap-1.5 text-[#009fe3] hover:text-[#085a9c] cursor-pointer transition-colors disabled:opacity-50"
                   >
                     <HiOutlineArrowLeft className="w-3.5 h-3.5" />
                     <span>Change number</span>
@@ -508,7 +508,7 @@ export const Login: React.FC = () => {
                   href="https://www.webnstech.net/"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-amber-500 hover:underline font-semibold cursor-pointer"
+                  className="text-amber-500 font-semibold cursor-pointer"
                 >
                   webens technology ltd
                 </a>

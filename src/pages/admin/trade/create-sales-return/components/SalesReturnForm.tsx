@@ -25,7 +25,6 @@ import {
   salesAndReturnQueryKey,
   salesListQueryKey,
   bankInfoListQueryKey,
-  bankNameListQueryKey,
   mfsUserListQueryKey,
   productListQueryKey,
   productQueryKey,
@@ -38,6 +37,10 @@ import { formatMoney } from "@/utils/formatters";
 import { showSuccessToast, showErrorToast } from "@/utils/toast-utils";
 import type { SaleItem, SalesReturnItem } from "@/types";
 import { RETURN_REASONS } from "@/pages/admin/trade/sales-return/constants/returnReasons";
+import {
+  useSalesAndReturnsQuery,
+  useSalesQuery,
+} from "@/pages/admin/trade/sales-return/hooks/useSalesReturnQueries";
 
 interface ReturnLineFormState {
   productId: string | number;
@@ -108,62 +111,10 @@ export const SalesReturnForm: React.FC = () => {
   const [isReceiptModalOpen, setIsReceiptModalOpen] = useState<boolean>(false);
   const [hasJustSubmitted, setHasJustSubmitted] = useState<boolean>(false);
 
-  // 1. Fetch sales and return list using POST /get-sales-and-return (with fallback to /get-sale-list)
-  const { data: apiSalesAndReturnData, isLoading: isLoadingInvoices } = useQuery({
-    queryKey: [salesAndReturnQueryKey],
-    queryFn: async () => {
-      try {
-        const accessUser = buildAccessUser();
-        const endpoint =
-          apiConfig.salesReturn?.getSalesAndReturnUrl ||
-          apiConfig.sales?.salesAndReturnUrl ||
-          "get-sales-and-return";
-
-        let res: any = await postData({
-          url: endpoint,
-          body: { accessUser },
-        });
-
-        const sales = Array.isArray(res?.data)
-          ? res.data
-          : Array.isArray(res?.saleList)
-          ? res.saleList
-          : Array.isArray(res?.sales)
-          ? res.sales
-          : Array.isArray(res?.salesList)
-          ? res.salesList
-          : [];
-
-        const returns = Array.isArray(res?.returns)
-          ? res.returns
-          : Array.isArray(res?.returnList)
-          ? res.returnList
-          : Array.isArray(res?.salesReturnList)
-          ? res.salesReturnList
-          : Array.isArray(res?.salesReturns)
-          ? res.salesReturns
-          : [];
-
-        let list = [...sales, ...returns];
-
-        // If /get-sales-and-return is empty or returned no records, fallback to /get-sale-list
-        if (list.length === 0) {
-          const salesListEndpoint = apiConfig.sales?.salesListUrl || "get-sale-list";
-          const salesRes: any = await postData({
-            url: salesListEndpoint,
-            body: { accessUser },
-          });
-          const fallbackSales = salesRes?.saleList || salesRes?.salesList || salesRes?.data || salesRes?.sales || [];
-          if (Array.isArray(fallbackSales)) list = fallbackSales;
-        }
-
-        return Array.isArray(list) && list.length > 0 ? list : [];
-      } catch (err) {
-        return [];
-      }
-    },
-    staleTime: 60 * 1000,
-  });
+  // 1. Fetch sales and returns from shared TanStack Query cache (zero waterfall, instant cache hits)
+  const { data: apiSalesAndReturnData, isLoading: isLoadingReturns } = useSalesAndReturnsQuery();
+  const { data: salesData, isLoading: isLoadingSales } = useSalesQuery();
+  const isLoadingInvoices = isLoadingReturns || isLoadingSales;
 
   // 2. Fetch registered bank accounts for refund disbursement
   const bankInfoListUrl = apiConfig.bank?.bankInfoListUrl || "get-bank-info-list";
@@ -228,17 +179,40 @@ export const SalesReturnForm: React.FC = () => {
   }, [mfsData]);
 
   const availableInvoices: SaleItem[] = useMemo(() => {
-    if (Array.isArray(apiSalesAndReturnData)) {
-      return apiSalesAndReturnData.filter((item: any) => {
-        const hasDetails =
-          (Array.isArray(item.salesDetails) && item.salesDetails.length > 0) ||
-          (Array.isArray(item.details) && item.details.length > 0) ||
-          (Array.isArray(item.saleDetails) && item.saleDetails.length > 0);
-        return hasDetails;
-      });
+    const combinedCandidates: any[] = [];
+    const seenKeys = new Set<string>();
+
+    const addCandidate = (item: any) => {
+      if (!item) return;
+      const key = String(
+        item.id ||
+        item.saleId ||
+        item.invoiceNo ||
+        item.salesInvoiceNo ||
+        ""
+      ).trim().toLowerCase();
+      if (key && seenKeys.has(key)) return;
+      if (key) seenKeys.add(key);
+      combinedCandidates.push(item);
+    };
+
+    if (Array.isArray(salesData)) {
+      salesData.forEach(addCandidate);
     }
-    return [];
-  }, [apiSalesAndReturnData]);
+    if (Array.isArray(apiSalesAndReturnData)) {
+      apiSalesAndReturnData.forEach(addCandidate);
+    }
+
+    return combinedCandidates.filter((item: any) => {
+      const hasDetails =
+        (Array.isArray(item.salesDetails) && item.salesDetails.length > 0) ||
+        (Array.isArray(item.details) && item.details.length > 0) ||
+        (Array.isArray(item.saleDetails) && item.saleDetails.length > 0) ||
+        (Array.isArray(item.items) && item.items.length > 0) ||
+        (Array.isArray(item.products) && item.products.length > 0);
+      return hasDetails;
+    });
+  }, [salesData, apiSalesAndReturnData]);
 
   // Pre-select fallback bank or MFS only when a refund amount is allocated to that channel
   useEffect(() => {
@@ -1251,18 +1225,13 @@ export const SalesReturnForm: React.FC = () => {
       // Mark as submitted so invalidating query does not trigger error toast on active order
       setHasJustSubmitted(true);
 
-      // Invalidate queries so inventory stock, account balances, and sales lists immediately update everywhere
-      await Promise.allSettled([
-        queryClient.invalidateQueries({ queryKey: [salesAndReturnQueryKey] }),
-        queryClient.invalidateQueries({ queryKey: [salesListQueryKey] }),
-        queryClient.invalidateQueries({ queryKey: [productListQueryKey] }),
-        queryClient.invalidateQueries({ queryKey: [productQueryKey] }),
-        queryClient.invalidateQueries({ queryKey: [partyListQueryKey] }),
-        queryClient.invalidateQueries({ queryKey: [bankInfoListQueryKey] }),
-        queryClient.invalidateQueries({ queryKey: [bankNameListQueryKey] }),
-        queryClient.invalidateQueries({ queryKey: [mfsUserListQueryKey] }),
-        queryClient.invalidateQueries({ queryKey: [dashboardQueryKey] }),
-      ]);
+      // Invalidate relevant queries (non-blocking, stale background refresh)
+      queryClient.invalidateQueries({ queryKey: [salesAndReturnQueryKey] });
+      queryClient.invalidateQueries({ queryKey: [salesListQueryKey] });
+      queryClient.invalidateQueries({ queryKey: [productListQueryKey], refetchType: "none" });
+      queryClient.invalidateQueries({ queryKey: [productQueryKey], refetchType: "none" });
+      queryClient.invalidateQueries({ queryKey: [partyListQueryKey], refetchType: "none" });
+      queryClient.invalidateQueries({ queryKey: [dashboardQueryKey], refetchType: "none" });
 
       showSuccessToast(
         response?.msg ||

@@ -204,7 +204,7 @@ export const ProfitLossChart: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setSelectedMonth('all')}
-                className="text-xs text-[#009fe3] hover:underline cursor-pointer font-medium"
+                className="text-xs text-[#009fe3] cursor-pointer font-medium"
               >
                 Reset
               </button>

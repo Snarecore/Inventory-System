@@ -672,7 +672,7 @@ export const SalesReturnTable: React.FC<SalesReturnTableProps> = ({
                                 <button
                                   type="button"
                                   onClick={() => onView(item)}
-                                  className="ml-2 text-xs text-sky-600 hover:underline font-medium cursor-pointer"
+                                  className="ml-2 text-xs text-sky-600 font-medium cursor-pointer"
                                 >
                                   View Full Slip
                                 </button>
