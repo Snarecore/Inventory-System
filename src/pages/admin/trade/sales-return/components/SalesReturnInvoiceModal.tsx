@@ -127,9 +127,16 @@ export const SalesReturnInvoiceModal: React.FC<SalesReturnInvoiceModalProps> = (
               <p className="text-[11px] text-gray-500 mt-0.5 leading-tight">
                 {userInfo?.address || ""}
               </p>
-              <p className="text-[11px] text-gray-500 leading-tight">
-                Phone: {userInfo?.phone || "017XXXXXXXX"} | Business Code: {userInfo?.businessCode || "1001"}
-              </p>
+              {(userInfo?.phone || userInfo?.businessCode) && (
+                <p className="text-[11px] text-gray-500 leading-tight">
+                  {[
+                    userInfo?.phone && `Phone: ${userInfo.phone}`,
+                    userInfo?.businessCode && `Business Code: ${userInfo.businessCode}`,
+                  ]
+                    .filter(Boolean)
+                    .join(" | ")}
+                </p>
+              )}
             </div>
 
             <div className="text-left sm:text-right shrink-0">

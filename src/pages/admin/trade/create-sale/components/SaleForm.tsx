@@ -13,8 +13,6 @@ import {
   salesListQueryKey,
   productListQueryKey,
   partyListQueryKey,
-  bankInfoListQueryKey,
-  mfsUserListQueryKey,
   salesAndReturnQueryKey,
 } from "@/config/query-key";
 import { buildAccessUser } from "@/utils/access-user";
@@ -25,6 +23,8 @@ import { useAPI } from "@/hooks/useApi";
 import { formatMoney } from "@/utils/formatters";
 import { showSuccessToast, showErrorToast, showDeleteToast } from "@/utils/toast-utils";
 import { isPartyActive } from "@/utils/party-utils";
+import { useFinancialAccounts } from "@/hooks/useFinancialAccounts";
+import { useSalesQuery } from "@/pages/admin/trade/sales-return/hooks/useSalesReturnQueries";
 import type { SaleItem, ProductItem, PartyItem } from "@/types";
 
 interface FormLineItem {
@@ -130,7 +130,7 @@ export const CreateSaleForm: React.FC = () => {
     queryFn: async () => {
       const accessUser = buildAccessUser();
       const res: any = await postData({
-        url: apiConfig.party?.partyListUrl || "get-party-info-list",
+        url: apiConfig.party.partyListUrl,
         body: { accessUser },
       });
       return res;
@@ -159,7 +159,7 @@ export const CreateSaleForm: React.FC = () => {
   }, [rawPartyData]);
 
   // 2. Fetch Products
-  const productListUrl = apiConfig.productList?.productListUrl || "get-product-list";
+  const productListUrl = apiConfig.productList.productListUrl;
   const { data: rawProductData } = useQuery({
     queryKey: [productListQueryKey],
     queryFn: async () => {
@@ -200,99 +200,17 @@ export const CreateSaleForm: React.FC = () => {
     });
   }, [rawProductData]);
 
-  // 3. Fetch Registered Banks
-  const bankInfoListUrl = apiConfig.bank?.bankInfoListUrl || "get-bank-info-list";
-  const { data: banksData } = useQuery({
-    queryKey: [bankInfoListQueryKey],
-    queryFn: async () => {
-      const accessUser = buildAccessUser();
-      const res: any = await postData({
-        url: bankInfoListUrl,
-        body: { accessUser },
-      });
-      return res;
-    },
-    staleTime: 5 * 60 * 1000,
-  });
-  const registeredBankAccounts: any[] = useMemo(() => {
-    if (!banksData) return [];
-    if (Array.isArray(banksData)) return banksData;
-    const raw = banksData as any;
-    if (Array.isArray(raw.bankAccounts)) return raw.bankAccounts;
-    if (Array.isArray(raw.bankInfoList)) return raw.bankInfoList;
-    if (Array.isArray(raw.bankList)) return raw.bankList;
-    if (Array.isArray(raw.data)) return raw.data;
-    if (raw.data && typeof raw.data === "object") {
-      if (Array.isArray(raw.data.bankAccounts)) return raw.data.bankAccounts;
-      if (Array.isArray(raw.data.bankInfoList)) return raw.data.bankInfoList;
-      if (Array.isArray(raw.data.bankList)) return raw.data.bankList;
-    }
-    return [];
-  }, [banksData]);
+  // 3. Fetch Registered Bank and MFS Accounts (Shared cache with 5-minute staleTime)
+  const { registeredBankAccounts, registeredMfsAccounts } = useFinancialAccounts();
 
-  // 4. Fetch Registered MFS Accounts
-  const mfsUserListUrl = apiConfig.mfs?.mfsUserListUrl || "mfs-user-list";
-  const { data: mfsData } = useQuery({
-    queryKey: [mfsUserListQueryKey],
-    queryFn: async () => {
-      const accessUser = buildAccessUser();
-      const res: any = await postData({
-        url: mfsUserListUrl,
-        body: { accessUser },
-      });
-      return res;
-    },
-    staleTime: 5 * 60 * 1000,
-  });
-  const registeredMfsAccounts: any[] = useMemo(() => {
-    if (!mfsData) return [];
-    if (Array.isArray(mfsData)) return mfsData;
-    const raw = mfsData as any;
-    if (Array.isArray(raw.mfsUsers)) return raw.mfsUsers;
-    if (Array.isArray(raw.mfsUserList)) return raw.mfsUserList;
-    if (Array.isArray(raw.mfsList)) return raw.mfsList;
-    if (Array.isArray(raw.data)) return raw.data;
-    if (raw.data && typeof raw.data === "object") {
-      if (Array.isArray(raw.data.mfsUsers)) return raw.data.mfsUsers;
-      if (Array.isArray(raw.data.mfsUserList)) return raw.data.mfsUserList;
-      if (Array.isArray(raw.data.mfsList)) return raw.data.mfsList;
-    }
-    return [];
-  }, [mfsData]);
-
-  // 5. Fetch fresh sale data directly from backend API for edit mode
-  const { data: apiSalesData } = useQuery({
-    queryKey: [salesListQueryKey, "edit-mode-sale", routeId || (stateEditData as any)?.invoiceNo || (stateEditData as any)?.id],
-    queryFn: async () => {
-      const accessUser = buildAccessUser();
-      const endpoint =
-        apiConfig.salesReturn?.getSalesAndReturnUrl ||
-        apiConfig.sales?.salesAndReturnUrl ||
-        "get-sales-and-return";
-
-      let res: any = await postData({
-        url: endpoint,
-        body: { accessUser },
-      });
-
-      let list = res?.data || res?.sales || res?.saleList || res?.salesList || [];
-
-      if (!Array.isArray(list) || list.length === 0) {
-        const salesListEndpoint = apiConfig.sales?.salesListUrl || "get-sale-list";
-        const salesRes: any = await postData({
-          url: salesListEndpoint,
-          body: { accessUser },
-        });
-        list = salesRes?.saleList || salesRes?.salesList || salesRes?.data || salesRes?.sales || [];
-      }
-
-      return Array.isArray(list) ? list : [];
-    },
-    enabled: isEditMode,
+  // 4. Fetch fresh sale data directly from shared sales query cache for edit mode
+  const { data: apiSalesData } = useSalesQuery({
+    enabled: Boolean(isEditMode || routeId),
   });
 
   const effectiveEditData: SaleItem | undefined = useMemo(() => {
-    const targetKey = String(routeId || stateEditData?.id || stateEditData?.saleId || stateEditData?.invoiceNo || "").trim();
+    if (stateEditData) return stateEditData;
+    const targetKey = String(routeId || "").trim();
     if (Array.isArray(apiSalesData) && apiSalesData.length > 0 && targetKey) {
       const matched = apiSalesData.find(
         (s: any) =>
@@ -301,14 +219,16 @@ export const CreateSaleForm: React.FC = () => {
       );
       if (matched) return matched;
     }
-    return stateEditData;
+    return undefined;
   }, [apiSalesData, routeId, stateEditData]);
 
-  // Auto-generate invoice number if create mode
+  // Auto-generate invoice number if create mode (Single Source of Truth from user session)
   useEffect(() => {
     if (!isEditMode && !invoiceNo) {
-      const bCode = getBusinessCode() || getUserInfo()?.businessCode || "1001";
-      setInvoiceNo(makeInvoiceNo(bCode));
+      const bCode = getBusinessCode();
+      if (bCode) {
+        setInvoiceNo(makeInvoiceNo(bCode));
+      }
     }
   }, [isEditMode, invoiceNo]);
 
@@ -1067,8 +987,8 @@ export const CreateSaleForm: React.FC = () => {
     setIsSubmitting(true);
     try {
       const accessUser = buildAccessUser();
-      const insertUrl = apiConfig.sales?.insertSalesUrl || "insert-sales";
-      const updateUrl = apiConfig.sales?.updateSalesUrl || "update-sales";
+      const insertUrl = apiConfig.sales.insertSalesUrl;
+      const updateUrl = apiConfig.sales.updateSalesUrl;
       const targetUrl = isEditMode ? updateUrl : insertUrl;
 
       const methodsUsed = [numCash > 0, numBank > 0, numMfs > 0].filter(Boolean).length;
@@ -1220,8 +1140,12 @@ export const CreateSaleForm: React.FC = () => {
     setBankAmount("");
     setMfsAmount("");
     setCashGiven("");
-    const bCode = getBusinessCode() || getUserInfo()?.businessCode || "1001";
-    setInvoiceNo(makeInvoiceNo(bCode));
+    const bCode = getBusinessCode();
+    if (bCode) {
+      setInvoiceNo(makeInvoiceNo(bCode));
+    } else {
+      setInvoiceNo("");
+    }
     setIsResetModalOpen(false);
     showDeleteToast("Sale invoice reset successfully!");
   };

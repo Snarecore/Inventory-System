@@ -127,9 +127,16 @@ export const PurchaseReturnInvoiceModal: React.FC<PurchaseReturnInvoiceModalProp
                   Debit Note
                 </span>
               </div>
-              <p className="text-[11px] text-gray-500 leading-tight mt-0.5">
-                Phone: {userInfo?.phone || "017XXXXXXXX"} | Business Code: {userInfo?.businessCode || "1001"}
-              </p>
+              {(userInfo?.phone || userInfo?.businessCode) && (
+                <p className="text-[11px] text-gray-500 leading-tight mt-0.5">
+                  {[
+                    userInfo?.phone && `Phone: ${userInfo.phone}`,
+                    userInfo?.businessCode && `Business Code: ${userInfo.businessCode}`,
+                  ]
+                    .filter(Boolean)
+                    .join(" | ")}
+                </p>
+              )}
             </div>
 
             <div className="text-left sm:text-right shrink-0">

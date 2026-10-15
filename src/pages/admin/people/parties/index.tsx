@@ -46,7 +46,7 @@ const Parties: React.FC = () => {
     setTypeFilter(urlType);
   }, [searchParams]);
 
-  const partyListUrl = apiConfig.party?.partyListUrl || "get-party-info-list";
+  const partyListUrl = apiConfig.party.partyListUrl;
 
   // POST /get-party-info-list
   const {

@@ -16,7 +16,7 @@ const SocialLinks = () => {
     const [editData, setEditData] = useState<any | null>(null);
 
     const getSocialLinksApiUrl = () => {
-        const apiUrl = `${apiConfig.setting.socialLinksUrl || "social-link"}?page=${currentPageNumber}&limit=${dataLimit}`;
+        const apiUrl = `${apiConfig.setting.socialLinksUrl}?page=${currentPageNumber}&limit=${dataLimit}`;
         return apiUrl;
     };
 

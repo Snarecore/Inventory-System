@@ -32,17 +32,17 @@ import {
   productListQueryKey,
   partyListQueryKey,
   purchaseChallanSettingsQueryKey,
-  bankInfoListQueryKey,
-  mfsUserListQueryKey,
 } from "@/config/query-key";
 import { buildAccessUser } from "@/utils/access-user";
-import { getBusinessCode, setBusinessCode, getUserInfo, setUserInfo, getStoredUser } from "@/utils/auth-storage";
+import { getBusinessCode, getUserInfo } from "@/utils/auth-storage";
 import { makeInvoiceNo } from "@/utils/invoiceNo";
 import { postData } from "@/services/api-service";
 import { useAPI } from "@/hooks/useApi";
 import { formatMoney } from "@/utils/formatters";
 import { showSuccessToast, showErrorToast, showDeleteToast } from "@/utils/toast-utils";
 import { isPartyActive } from "@/utils/party-utils";
+import { usePurchasesQuery } from "@/pages/admin/trade/purchase-return/hooks/usePurchaseReturnQueries";
+import { useFinancialAccounts } from "@/hooks/useFinancialAccounts";
 import type { PurchaseItem, PurchaseDetailItem, ProductItem, PartyItem, PurchaseChallanSettings } from "@/types";
 
 interface FormLineItem {
@@ -161,67 +161,13 @@ const CreatePurchaseForm: React.FC = () => {
   const [isSaveConfirmModalOpen, setIsSaveConfirmModalOpen] = useState<boolean>(false);
   const [pendingSavePrint, setPendingSavePrint] = useState<boolean>(false);
 
-  // Fetch Existing Purchases to determine the next sequential invoice number
-  const purchaseListUrl = apiConfig.purchase?.purchaseListUrl || "get-purchase-list";
-  const { data: rawPurchaseData } = useQuery({
-    queryKey: [purchaseListQueryKey],
-    queryFn: async () => {
-      try {
-        const res = await postData<any>({
-          url: purchaseListUrl,
-          body: { accessUser: buildAccessUser() },
-        });
-        return res;
-      } catch {
-        return null;
-      }
-    },
-    staleTime: 0,
-    refetchOnMount: "always",
+  // Fetch Existing Purchases ONLY when in edit mode (Shared cache with 60s staleTime)
+  const { data: rawPurchaseData } = usePurchasesQuery({
+    enabled: Boolean(isEditMode || routeId),
   });
 
-  // Business Code for Auto-Invoice Generation
-  const [businessCode, setBusinessCodeState] = useState<string>(() => {
-    return getBusinessCode() || buildAccessUser().businessCode || "";
-  });
-
-  // Fetch and sync business code if missing in storage
-  useEffect(() => {
-    const existing = getBusinessCode() || buildAccessUser().businessCode;
-    if (existing) {
-      if (existing !== businessCode) {
-        setBusinessCodeState(existing);
-      }
-      return;
-    }
-
-    const userInfo = getUserInfo();
-    const phone = userInfo?.phone || userInfo?.phoneNumber || getStoredUser()?.id || "";
-    if (!phone) return;
-
-    postData<any>({
-      url: "authorization-check-user",
-      body: {
-        authentication: {
-          phone_number: phone,
-        },
-      },
-    })
-      .then((res) => {
-        if (res && res.businessCode) {
-          const code = String(res.businessCode);
-          setBusinessCode(code);
-          setBusinessCodeState(code);
-          if (userInfo) {
-            setUserInfo({ ...userInfo, businessCode: code });
-          }
-          if (!isEditMode && (!invoiceNo || invoiceNo.startsWith("1001-") || !invoiceNo.startsWith(code))) {
-            setInvoiceNo(makeInvoiceNo(code));
-          }
-        }
-      })
-      .catch(() => {});
-  }, [isEditMode, businessCode, invoiceNo]);
+  // Business Code for Auto-Invoice Generation (Single Source of Truth from user session)
+  const businessCode = getBusinessCode();
 
   // Auto-generate invoice number in format: <businessCode>-<YYYY><MM><DD><HH><mm><ss><ms>
   useEffect(() => {
@@ -248,7 +194,7 @@ const CreatePurchaseForm: React.FC = () => {
   }, []);
 
   // Fetch Products via POST /get-product-list
-  const productListUrl = apiConfig.productList?.productListUrl || "get-product-list";
+  const productListUrl = apiConfig.productList.productListUrl;
   const { data: rawProductData } = useQuery({
     queryKey: [productListQueryKey],
     queryFn: async () => {
@@ -283,7 +229,7 @@ const CreatePurchaseForm: React.FC = () => {
   }, [rawProductData]);
 
   // Fetch Suppliers via POST /get-party-info-list
-  const partyListUrl = apiConfig.party?.partyListUrl || "get-party-info-list";
+  const partyListUrl = apiConfig.party.partyListUrl;
   const { data: rawPartyData } = useQuery({
     queryKey: [partyListQueryKey],
     queryFn: async () => {
@@ -319,76 +265,11 @@ const CreatePurchaseForm: React.FC = () => {
     });
   }, [rawPartyData]);
 
-  // Fetch Registered Bank Accounts via POST /get-bank-info-list
-  const bankInfoListUrl = apiConfig.bank?.bankInfoListUrl || "get-bank-info-list";
-  const { data: rawBankData } = useQuery({
-    queryKey: [bankInfoListQueryKey],
-    queryFn: async () => {
-      try {
-        const res = await postData<any>({
-          url: bankInfoListUrl,
-          body: { accessUser: buildAccessUser() },
-        });
-        return res;
-      } catch {
-        return null;
-      }
-    },
-    staleTime: 5 * 60 * 1000,
-  });
-
-  const registeredBankAccounts: any[] = useMemo(() => {
-    if (!rawBankData) return [];
-    if (Array.isArray(rawBankData)) return rawBankData;
-    const raw = rawBankData as any;
-    if (Array.isArray(raw.bankAccounts)) return raw.bankAccounts;
-    if (Array.isArray(raw.bankInfoList)) return raw.bankInfoList;
-    if (Array.isArray(raw.bankList)) return raw.bankList;
-    if (Array.isArray(raw.data)) return raw.data;
-    if (raw.data && typeof raw.data === "object") {
-      if (Array.isArray(raw.data.bankAccounts)) return raw.data.bankAccounts;
-      if (Array.isArray(raw.data.bankInfoList)) return raw.data.bankInfoList;
-      if (Array.isArray(raw.data.bankList)) return raw.data.bankList;
-    }
-    return [];
-  }, [rawBankData]);
-
-  // Fetch Registered MFS Accounts via POST /mfs-user-list
-  const mfsUserListUrl = apiConfig.mfs?.mfsUserListUrl || "mfs-user-list";
-  const { data: rawMfsData } = useQuery({
-    queryKey: [mfsUserListQueryKey],
-    queryFn: async () => {
-      try {
-        const res = await postData<any>({
-          url: mfsUserListUrl,
-          body: { accessUser: buildAccessUser() },
-        });
-        return res;
-      } catch {
-        return null;
-      }
-    },
-    staleTime: 5 * 60 * 1000,
-  });
-
-  const registeredMfsAccounts: any[] = useMemo(() => {
-    if (!rawMfsData) return [];
-    if (Array.isArray(rawMfsData)) return rawMfsData;
-    const raw = rawMfsData as any;
-    if (Array.isArray(raw.mfsUsers)) return raw.mfsUsers;
-    if (Array.isArray(raw.mfsUserList)) return raw.mfsUserList;
-    if (Array.isArray(raw.mfsList)) return raw.mfsList;
-    if (Array.isArray(raw.data)) return raw.data;
-    if (raw.data && typeof raw.data === "object") {
-      if (Array.isArray(raw.data.mfsUsers)) return raw.data.mfsUsers;
-      if (Array.isArray(raw.data.mfsUserList)) return raw.data.mfsUserList;
-      if (Array.isArray(raw.data.mfsList)) return raw.data.mfsList;
-    }
-    return [];
-  }, [rawMfsData]);
+  // Fetch Registered Bank and MFS Accounts (Shared cache with 5-minute staleTime)
+  const { registeredBankAccounts, registeredMfsAccounts } = useFinancialAccounts();
 
   // Fetch Challan Settings
-  const challanSettingsUrl = apiConfig.purchase?.purchaseChallanSettingsUrl || "get-purchase-challan-settings";
+  const challanSettingsUrl = apiConfig.purchase.purchaseChallanSettingsUrl;
   const { data: rawChallanSettings } = useQuery({
     queryKey: [purchaseChallanSettingsQueryKey],
     queryFn: async () => {
@@ -440,30 +321,14 @@ const CreatePurchaseForm: React.FC = () => {
   // 1. Resolve edit data from location state OR from loaded purchase list matching routeId (pure database API)
   const effectiveEditData: any = useMemo(() => {
     if (stateEditData) return stateEditData;
-    if (!routeId || !rawPurchaseData) return null;
+    if (!routeId || !rawPurchaseData || !Array.isArray(rawPurchaseData)) return null;
 
-    let list: any[] = [];
-    if (Array.isArray(rawPurchaseData)) {
-      list = rawPurchaseData;
-    } else if (rawPurchaseData && typeof rawPurchaseData === "object") {
-      const raw = rawPurchaseData as any;
-      if (Array.isArray(raw.purchaseList)) list = raw.purchaseList;
-      else if (Array.isArray(raw.purchasesList)) list = raw.purchasesList;
-      else if (Array.isArray(raw.purchaseListDetails)) list = raw.purchaseListDetails;
-      else if (Array.isArray(raw.purchaseInfoList)) list = raw.purchaseInfoList;
-      else if (Array.isArray(raw.data)) list = raw.data;
-      else if (raw.data && typeof raw.data === "object") {
-        if (Array.isArray(raw.data.purchaseList)) list = raw.data.purchaseList;
-        else if (Array.isArray(raw.data.purchasesList)) list = raw.data.purchasesList;
-        else if (Array.isArray(raw.data.data)) list = raw.data.data;
-      }
-    }
-
-    const found = list.find((p: any) => {
+    const target = String(routeId).trim();
+    const found = rawPurchaseData.find((p: any) => {
       if (!p) return false;
       const id = String(p.id ?? p.purchaseId ?? p.purchase_id ?? p.purId ?? "");
       const inv = String(p.invoiceNo ?? p.invoice_no ?? p.billNo ?? "");
-      return id === String(routeId) || inv === String(routeId);
+      return id === target || inv === target;
     });
 
     return found || null;
@@ -1171,8 +1036,8 @@ const CreatePurchaseForm: React.FC = () => {
 
     try {
       const accessUser = buildAccessUser();
-      const insertUrl = apiConfig.purchase?.insertPurchasesUrl || "insert-purchases";
-      const updateUrl = apiConfig.purchase?.updatePurchasesUrl || "update-purchases";
+      const insertUrl = apiConfig.purchase.insertPurchasesUrl;
+      const updateUrl = apiConfig.purchase.updatePurchasesUrl;
       const targetUrl = isEditMode ? updateUrl : insertUrl;
 
       // Backend expects "CASH" (when any payment is made) or "CREDIT" (when 100% due)
@@ -1409,8 +1274,11 @@ const CreatePurchaseForm: React.FC = () => {
     setNotes("");
     setAttachment(null);
     setSelectedProductsMap({});
-    const code = businessCode || getBusinessCode() || buildAccessUser().businessCode || "1001";
-    setInvoiceNo(makeInvoiceNo(code));
+    if (businessCode) {
+      setInvoiceNo(makeInvoiceNo(businessCode));
+    } else {
+      setInvoiceNo("");
+    }
     setIsResetModalOpen(false);
     showDeleteToast("Purchase form reset successfully!");
   };

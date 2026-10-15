@@ -12,7 +12,7 @@ import type { SaleItem } from "@/types";
 export const fetchSalesList = async (): Promise<SaleItem[]> => {
   try {
     const accessUser = buildAccessUser();
-    const endpoint = apiConfig.sales?.salesListUrl || "get-sale-list";
+    const endpoint = apiConfig.sales.salesListUrl;
     const res: any = await postData({
       url: endpoint,
       body: { accessUser },
@@ -43,11 +43,7 @@ export const fetchSalesList = async (): Promise<SaleItem[]> => {
 export const fetchSalesAndReturnList = async (): Promise<any[]> => {
   try {
     const accessUser = buildAccessUser();
-    const endpoint =
-      apiConfig.salesReturn?.getSalesAndReturnUrl ||
-      apiConfig.salesReturn?.salesAndReturnUrl ||
-      apiConfig.sales?.salesAndReturnUrl ||
-      "get-sales-and-return";
+    const endpoint = apiConfig.salesReturn.getSalesAndReturnUrl;
     const res: any = await postData({
       url: endpoint,
       body: { accessUser },

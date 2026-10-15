@@ -85,27 +85,16 @@ export function setActiveBranchId(branchId: number, rememberMe = true): void {
 export function getBusinessCode(): string {
     if (typeof window === "undefined") return "";
     const userInfo = getUserInfo();
-    if (userInfo?.businessCode) return String(userInfo.businessCode);
-    if ((userInfo as any)?.business_code) return String((userInfo as any).business_code);
-
-    const directCode = localStorage.getItem("businessCode") || sessionStorage.getItem("businessCode");
-    if (directCode) return directCode;
-
-    try {
-        const rawUser = localStorage.getItem(STORAGE_KEY_USER) || sessionStorage.getItem(STORAGE_KEY_USER);
-        if (rawUser) {
-            const parsed = JSON.parse(rawUser);
-            if (parsed.businessCode || parsed.business_code) return String(parsed.businessCode || parsed.business_code);
-        }
-    } catch {}
-
-    return "";
+    const code = userInfo?.businessCode || (userInfo as any)?.business_code;
+    return code ? String(code).trim() : "";
 }
 
 export function setBusinessCode(code: string, rememberMe = true): void {
     if (typeof window === "undefined") return;
-    const storage = rememberMe ? localStorage : sessionStorage;
-    storage.setItem("businessCode", code);
+    const userInfo = getUserInfo();
+    if (userInfo) {
+        setUserInfo({ ...userInfo, businessCode: code }, rememberMe);
+    }
 }
 
 export function setStoredUser(user: User, customExpiryMs?: number, rememberMe = true): void {
@@ -135,7 +124,9 @@ export function saveLoginSession(data: LoginSuccessResponse, rememberMe = true):
 
     const orgId = data.organizationId;
     const branchId = data.branchId;
-    const businessCode = data.businessCode || data.business_code || (data as any)?.businessCode || (data as any)?.business_code || getBusinessCode();
+    const businessCode = String(
+        data.businessCode || data.business_code || (data as any)?.businessCode || (data as any)?.business_code || ""
+    ).trim();
 
     const userInfo: UserInfo = {
         phone: data.phoneNumber,
@@ -151,10 +142,6 @@ export function saveLoginSession(data: LoginSuccessResponse, rememberMe = true):
     };
 
     setUserInfo(userInfo, rememberMe);
-
-    if (businessCode) {
-        setBusinessCode(businessCode, rememberMe);
-    }
 
     if (branchId !== undefined) {
         setActiveBranchId(branchId, rememberMe);

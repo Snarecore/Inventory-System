@@ -65,7 +65,7 @@ export const ProductTable = ({
     const [togglingId, setTogglingId] = useState<string | null>(null);
 
     const { handleApiMutation, postMutation } = useAPI();
-    const insertProductUrl = apiConfig.inventory?.insertProductUrl || "insert-product";
+    const insertProductUrl = apiConfig.inventory.insertProductUrl;
 
     const statusOptions = [
         { label: "All Status", value: "" },

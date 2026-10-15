@@ -18,7 +18,7 @@ export function buildAccessUser(): AccessUser {
     const activeBranchId = getActiveBranchId();
 
     const phone = userInfo?.phone || userInfo?.phoneNumber || user?.id || user?.email || "";
-    const businessCode = userInfo?.businessCode || getBusinessCode() || "";
+    const businessCode = getBusinessCode();
     const orgId = userInfo?.orgId || (userInfo as any)?.organizationId || 1;
     const branchId = activeBranchId || userInfo?.branchId || 1;
 

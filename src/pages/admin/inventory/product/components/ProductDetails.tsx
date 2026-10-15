@@ -14,7 +14,7 @@ const ProductDetails = () => {
     const { id } = useParams();
     const navigate = useNavigate();
 
-    const productListUrl = apiConfig.productList?.productListUrl || "get-product-list";
+    const productListUrl = apiConfig.productList.productListUrl;
 
     const { data: rawProductData, isLoading } = useQuery({
         queryKey: [productListQueryKey],

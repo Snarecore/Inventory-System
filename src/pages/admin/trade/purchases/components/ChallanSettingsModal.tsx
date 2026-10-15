@@ -47,8 +47,8 @@ const ChallanSettingsModal: React.FC<ChallanSettingsModalProps> = ({
   const queryClient = useQueryClient();
   const [settings, setSettings] = useState<PurchaseChallanSettings>(defaultSettings);
 
-  const getSettingsUrl = apiConfig.purchase?.purchaseChallanSettingsUrl || "get-purchase-challan-settings";
-  const saveSettingsUrl = apiConfig.purchase?.insertOrUpdatePurchaseChallanSettingsUrl || "insert-or-update-purchase-challan-settings";
+  const getSettingsUrl = apiConfig.purchase.purchaseChallanSettingsUrl;
+  const saveSettingsUrl = apiConfig.purchase.insertOrUpdatePurchaseChallanSettingsUrl;
 
   // Fetch current challan settings
   const { data: rawSettingsData, isLoading } = useQuery({

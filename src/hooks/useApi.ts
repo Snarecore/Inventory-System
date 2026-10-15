@@ -327,25 +327,17 @@ export const useAPI = () => {
                     showSuccessToast(response.message || (response as any)?.msg || "Deleted successfully!");
                 }
                 if (invalidateQueryKey && invalidateQueryKey.length > 0) {
-                    await queryClient.invalidateQueries({
-                        queryKey: invalidateQueryKey,
-                        exact: false,
-                        refetchType: 'all'
-                    });
-                    for (const singleKey of invalidateQueryKey) {
-                        if (typeof singleKey === 'string') {
-                            await queryClient.invalidateQueries({
-                                queryKey: [singleKey],
-                                exact: false,
-                                refetchType: 'all'
-                            });
-                            await queryClient.refetchQueries({
-                                queryKey: [singleKey],
-                                exact: false,
-                                type: 'all'
-                            });
-                        }
-                    }
+                    await Promise.all(
+                        invalidateQueryKey
+                            .filter(Boolean)
+                            .map((singleKey) =>
+                                queryClient.invalidateQueries({
+                                    queryKey: Array.isArray(singleKey) ? singleKey : [singleKey],
+                                    exact: false,
+                                    refetchType: "active",
+                                })
+                            )
+                    );
                 }
                 return response;
             } else {

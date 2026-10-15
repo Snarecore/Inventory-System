@@ -51,7 +51,7 @@ const SalesReturnSalesPage: React.FC = () => {
     queryFn: async () => {
       const accessUser = buildAccessUser();
       const res: any = await postData({
-        url: apiConfig.party?.partyListUrl || "get-party-info-list",
+        url: apiConfig.party.partyListUrl,
         body: { accessUser },
       });
       return res;

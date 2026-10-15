@@ -24,13 +24,12 @@ import apiConfig from "@/config/api.json";
 import {
   salesAndReturnQueryKey,
   salesListQueryKey,
-  bankInfoListQueryKey,
-  mfsUserListQueryKey,
   productListQueryKey,
   productQueryKey,
   partyListQueryKey,
   dashboardQueryKey,
 } from "@/config/query-key";
+import { useFinancialAccounts } from "@/hooks/useFinancialAccounts";
 import { buildAccessUser } from "@/utils/access-user";
 import { postData } from "@/services/api-service";
 import { formatMoney } from "@/utils/formatters";
@@ -116,67 +115,8 @@ export const SalesReturnForm: React.FC = () => {
   const { data: salesData, isLoading: isLoadingSales } = useSalesQuery();
   const isLoadingInvoices = isLoadingReturns || isLoadingSales;
 
-  // 2. Fetch registered bank accounts for refund disbursement
-  const bankInfoListUrl = apiConfig.bank?.bankInfoListUrl || "get-bank-info-list";
-  const { data: banksData } = useQuery({
-    queryKey: [bankInfoListQueryKey],
-    queryFn: async () => {
-      const accessUser = buildAccessUser();
-      const res: any = await postData({
-        url: bankInfoListUrl,
-        body: { accessUser },
-      });
-      return res;
-    },
-    staleTime: 5 * 60 * 1000,
-  });
-
-  const registeredBankAccounts: any[] = useMemo(() => {
-    if (!banksData) return [];
-    if (Array.isArray(banksData)) return banksData;
-    const raw = banksData as any;
-    if (Array.isArray(raw.bankAccounts)) return raw.bankAccounts;
-    if (Array.isArray(raw.bankInfoList)) return raw.bankInfoList;
-    if (Array.isArray(raw.bankList)) return raw.bankList;
-    if (Array.isArray(raw.data)) return raw.data;
-    if (raw.data && typeof raw.data === "object") {
-      if (Array.isArray(raw.data.bankAccounts)) return raw.data.bankAccounts;
-      if (Array.isArray(raw.data.bankInfoList)) return raw.data.bankInfoList;
-      if (Array.isArray(raw.data.bankList)) return raw.data.bankList;
-    }
-    return [];
-  }, [banksData]);
-
-  // 3. Fetch registered MFS accounts for refund disbursement
-  const mfsUserListUrl = apiConfig.mfs?.mfsUserListUrl || "mfs-user-list";
-  const { data: mfsData } = useQuery({
-    queryKey: [mfsUserListQueryKey],
-    queryFn: async () => {
-      const accessUser = buildAccessUser();
-      const res: any = await postData({
-        url: mfsUserListUrl,
-        body: { accessUser },
-      });
-      return res;
-    },
-    staleTime: 5 * 60 * 1000,
-  });
-
-  const registeredMfsAccounts: any[] = useMemo(() => {
-    if (!mfsData) return [];
-    if (Array.isArray(mfsData)) return mfsData;
-    const raw = mfsData as any;
-    if (Array.isArray(raw.mfsUsers)) return raw.mfsUsers;
-    if (Array.isArray(raw.mfsUserList)) return raw.mfsUserList;
-    if (Array.isArray(raw.mfsList)) return raw.mfsList;
-    if (Array.isArray(raw.data)) return raw.data;
-    if (raw.data && typeof raw.data === "object") {
-      if (Array.isArray(raw.data.mfsUsers)) return raw.data.mfsUsers;
-      if (Array.isArray(raw.data.mfsUserList)) return raw.data.mfsUserList;
-      if (Array.isArray(raw.data.mfsList)) return raw.data.mfsList;
-    }
-    return [];
-  }, [mfsData]);
+  // 2. Fetch registered Bank and MFS accounts for refund disbursement (Shared cache with 5-minute staleTime)
+  const { registeredBankAccounts, registeredMfsAccounts } = useFinancialAccounts();
 
   const availableInvoices: SaleItem[] = useMemo(() => {
     const combinedCandidates: any[] = [];
@@ -1151,8 +1091,7 @@ export const SalesReturnForm: React.FC = () => {
         returnDetails: returnDetailsPayload,
       };
 
-      const endpoint =
-        apiConfig.salesReturn?.insertSalesReturnUrl || "insert-sales-return";
+      const endpoint = apiConfig.salesReturn.insertSalesReturnUrl;
 
       const response: any = await postData({
         url: endpoint,

@@ -42,9 +42,6 @@
     "socialLinks": {
         "socialLinks": "social-link"
     },
-    "blog": {
-        "blogUrl": "blog"
-    },
     "order": {
         "orderListUrl": "orders",
         "orderDetailUrl": "orders"

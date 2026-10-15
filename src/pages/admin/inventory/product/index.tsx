@@ -29,7 +29,7 @@ const Products = () => {
         setCurrentPageNumber(1);
     };
 
-    const productListUrl = apiConfig.productList?.productListUrl || "get-product-list";
+    const productListUrl = apiConfig.productList.productListUrl;
 
     // 1. Fetch Product List from POST /get-product-list
     const {

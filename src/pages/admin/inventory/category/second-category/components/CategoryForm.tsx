@@ -41,8 +41,8 @@ const CategoryForm = ({ isOpen, onClose, editData, fetchData }: any) => {
 	const [firstCategories, setFirstCategories] = useState<any[]>([]);
 
 	const apiUrl = apiConfig.inventory.secondCategoryUrl;
-	const mainCategoryUrl = apiConfig.site?.mainCategoryUrl || apiConfig.inventory?.mainCategoryUrl;
-	const firstCategoryUrl = apiConfig.site?.firstCategoryUrl || apiConfig.inventory?.firstCategoryUrl;
+	const mainCategoryUrl = apiConfig.inventory.mainCategoryUrl;
+	const firstCategoryUrl = apiConfig.inventory.firstCategoryUrl;
 
 	const fetchMainCategoryData = async () => {
 		try {

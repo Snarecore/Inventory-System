@@ -99,8 +99,7 @@ const SalesReportPage: React.FC = () => {
     queryKey: [salesTransactionReportQueryKey, startDate, endDate],
     queryFn: async () => {
       const accessUser = buildAccessUser();
-      const endpoint =
-        apiConfig.sales?.salesTransactionReportUrl || "get-sale-transaction-report";
+      const endpoint = apiConfig.sales.salesTransactionReportUrl;
 
       const res: any = await postData({
         url: endpoint,

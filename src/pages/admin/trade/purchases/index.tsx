@@ -43,7 +43,7 @@ const Purchases: React.FC = () => {
     queryKey: [partyListQueryKey],
     queryFn: async () => {
       const response = await postData<any>({
-        url: apiConfig.party?.partyListUrl || "get-party-info-list",
+        url: apiConfig.party.partyListUrl,
         body: { accessUser: buildAccessUser() },
       });
       return response;

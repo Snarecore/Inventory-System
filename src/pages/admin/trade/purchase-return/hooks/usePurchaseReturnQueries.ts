@@ -12,7 +12,7 @@ import type { PurchaseItem } from "@/types";
 export const fetchPurchasesList = async (): Promise<PurchaseItem[]> => {
   try {
     const accessUser = buildAccessUser();
-    const endpoint = apiConfig.purchase?.purchaseListUrl || "get-purchase-list";
+    const endpoint = apiConfig.purchase.purchaseListUrl;
     const res: any = await postData({
       url: endpoint,
       body: { accessUser },

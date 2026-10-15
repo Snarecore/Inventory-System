@@ -81,10 +81,10 @@ const CreateProductForm = () => {
 
     const queryClient = useQueryClient();
     const { postMutation, handleApiMutation } = useAPI();
-    const insertProductUrl = apiConfig.inventory?.insertProductUrl || "insert-product";
-    const categoriesUrl = apiConfig.inventory?.productCategoriesListUrl || "product-categories-list";
-    const unitsUrl = apiConfig.inventory?.productUnitsListUrl || "product-units-list";
-    const productListUrl = apiConfig.productList?.productListUrl || "get-product-list";
+    const insertProductUrl = apiConfig.inventory.insertProductUrl;
+    const categoriesUrl = apiConfig.inventory.productCategoriesListUrl;
+    const unitsUrl = apiConfig.inventory.productUnitsListUrl;
+    const productListUrl = apiConfig.productList.productListUrl;
 
     // 1. Fetch Categories via GET /product-categories-list
     const { data: rawCategoryData, isLoading: isCategoriesLoading } = useQuery({

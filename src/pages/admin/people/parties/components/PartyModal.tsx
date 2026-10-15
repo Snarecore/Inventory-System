@@ -88,8 +88,8 @@ const PartyModal: React.FC<PartyModalProps> = ({
     setIsSubmitting(true);
     try {
       const accessUser = buildAccessUser();
-      const insertUrl = apiConfig.party?.insertPartyUrl || "insert-party-info";
-      const updateUrl = apiConfig.party?.updatePartyUrl || "party-info-update";
+      const insertUrl = apiConfig.party.insertPartyUrl;
+      const updateUrl = apiConfig.party.updatePartyUrl;
 
       const targetUrl = isEdit ? updateUrl : insertUrl;
       const numBalance = Number(openingBalance) || 0;
