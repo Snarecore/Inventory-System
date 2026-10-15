@@ -227,6 +227,8 @@ export const useTradeRefund = ({
     setRefundBankAmount("");
     setRefundMfsAmount("");
     setRefundDueAmount("");
+    setSelectedRefundBankId("");
+    setSelectedRefundMfsId("");
   };
 
   return {
@@ -242,6 +244,8 @@ export const useTradeRefund = ({
     setSelectedRefundBankId,
     selectedRefundMfsId,
     setSelectedRefundMfsId,
+    origPaymentMode,
+    origGrandTotal,
     origDueAmount,
     origCashPaid,
     origBankPaid,

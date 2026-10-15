@@ -10,6 +10,10 @@ import {
   FaBoxes,
   FaUndoAlt,
   FaTimes,
+  FaLock,
+  FaMoneyBillWave,
+  FaCreditCard,
+  FaMobileAlt,
 } from "react-icons/fa";
 import Button from "@/components/button/Button";
 import ConfirmModal from "@/components/modal/ConfirmModal";
@@ -137,23 +141,6 @@ export const PurchaseReturnForm: React.FC = () => {
       return hasDetails;
     });
   }, [purchasesData, apiPurchaseAndReturnData]);
-
-  // Pre-select fallback bank or MFS only when a refund amount is allocated to that channel
-  useEffect(() => {
-    if (Number(refundBankAmount) > 0 && registeredBankAccounts.length > 0 && !selectedRefundBankId) {
-      setSelectedRefundBankId(
-        String(registeredBankAccounts[0].id || "")
-      );
-    }
-  }, [registeredBankAccounts, selectedRefundBankId, refundBankAmount]);
-
-  useEffect(() => {
-    if (Number(refundMfsAmount) > 0 && registeredMfsAccounts.length > 0 && !selectedRefundMfsId) {
-      setSelectedRefundMfsId(
-        String(registeredMfsAccounts[0].id || "")
-      );
-    }
-  }, [registeredMfsAccounts, selectedRefundMfsId, refundMfsAmount]);
 
   const cleanKey = (val: any) => String(val || "").replace(/[^a-zA-Z0-9]/g, "").toLowerCase();
 
@@ -639,6 +626,12 @@ export const PurchaseReturnForm: React.FC = () => {
   });
 
   const {
+    origPaymentMode,
+    origGrandTotal,
+    origCashPaid,
+    origBankPaid,
+    origMfsPaid,
+    origDueAmount,
     numRefundCash,
     numRefundBank,
     numRefundMfs,

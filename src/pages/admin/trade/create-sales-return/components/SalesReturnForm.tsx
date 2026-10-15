@@ -10,6 +10,9 @@ import {
   FaBoxes,
   FaUndoAlt,
   FaTimes,
+  FaMoneyBillWave,
+  FaCreditCard,
+  FaMobileAlt,
 } from "react-icons/fa";
 import { FiArrowRight } from "react-icons/fi";
 import Button from "@/components/button/Button";
@@ -139,23 +142,6 @@ export const SalesReturnForm: React.FC = () => {
       return hasDetails;
     });
   }, [salesData, apiSalesAndReturnData]);
-
-  // Pre-select fallback bank or MFS only when a refund amount is allocated to that channel
-  useEffect(() => {
-    if (Number(refundBankAmount) > 0 && registeredBankAccounts.length > 0 && !selectedRefundBankId) {
-      setSelectedRefundBankId(
-        String(registeredBankAccounts[0].id || "")
-      );
-    }
-  }, [registeredBankAccounts, selectedRefundBankId, refundBankAmount]);
-
-  useEffect(() => {
-    if (Number(refundMfsAmount) > 0 && registeredMfsAccounts.length > 0 && !selectedRefundMfsId) {
-      setSelectedRefundMfsId(
-        String(registeredMfsAccounts[0].id || "")
-      );
-    }
-  }, [registeredMfsAccounts, selectedRefundMfsId, refundMfsAmount]);
 
   const cleanKey = (val: any) => String(val || "").replace(/[^a-zA-Z0-9]/g, "").toLowerCase();
 
@@ -319,21 +305,6 @@ export const SalesReturnForm: React.FC = () => {
     setCustomerAddress(sale.customerAddress || sale.customer_address || "");
     // Keep note empty so only user-specified reasons/remarks appear
     setNote("");
-
-    // Pre-select bank or MFS if originally used in the sale, else reset
-    const saleBankId = sale.bankId || (sale as any).bank_id;
-    if (saleBankId) {
-      setSelectedRefundBankId(String(saleBankId));
-    } else {
-      setSelectedRefundBankId("");
-    }
-
-    const saleMfsId = sale.mfsId;
-    if (saleMfsId) {
-      setSelectedRefundMfsId(String(saleMfsId));
-    } else {
-      setSelectedRefundMfsId("");
-    }
 
     const details: any[] =
       Array.isArray(sale.salesDetails) && sale.salesDetails.length > 0
@@ -650,6 +621,12 @@ export const SalesReturnForm: React.FC = () => {
   });
 
   const {
+    origPaymentMode,
+    origGrandTotal,
+    origCashPaid,
+    origBankPaid,
+    origMfsPaid,
+    origDueAmount,
     numRefundCash,
     numRefundBank,
     numRefundMfs,

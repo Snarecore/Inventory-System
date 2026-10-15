@@ -323,9 +323,8 @@ const Parties: React.FC = () => {
       });
     }
 
-    await queryClient.invalidateQueries({ queryKey: [partyListQueryKey] });
-    await queryClient.refetchQueries({ queryKey: [partyListQueryKey] });
-    refetchParties();
+    // Only a single clean background revalidation is needed
+    await queryClient.invalidateQueries({ queryKey: [partyListQueryKey], exact: true });
   };
 
   return (
