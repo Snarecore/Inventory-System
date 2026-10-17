@@ -47,18 +47,25 @@ export interface CollectionBankDetails {
   accountHolderName?: string;
 }
 
+export interface CollectionMfsDetails {
+  mfsId?: string | number;
+  mfsName?: string;
+  mfsPhone?: string;
+}
+
 export interface CollectionDataPayload {
   customerId: string | number;
   customerName: string;
   customerPhone: string;
   collectionDate: string;
   totalAmount: number;
-  paymentMode: "Cash" | "Bank" | "CASH" | "BANK" | string;
+  paymentMode: "Cash" | "Bank" | "MFS" | "CASH" | "BANK" | string;
   remark?: string;
   osType: "WEB";
   businessCode: string;
   collectionDetails: CollectionDetailPayload[];
   bankDetails?: CollectionBankDetails | null;
+  mfsDetails?: CollectionMfsDetails | null;
   [key: string]: any;
 }
 

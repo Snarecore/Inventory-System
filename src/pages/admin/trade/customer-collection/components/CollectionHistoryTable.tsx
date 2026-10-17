@@ -143,6 +143,9 @@ export const CollectionHistoryTable: React.FC<CollectionHistoryTableProps> = ({
   };
 
   const handlePrintClick = (row: CollectionReportItem) => {
+    const isBank = String(row.paymentMode).toUpperCase() === "BANK";
+    const isMfs = String(row.paymentMode).toUpperCase() === "MFS";
+
     const receipt: CollectionReceiptData = {
       receiptNo: String(row.collectionNo || `REC-${row.id}`),
       collectionDate: row.collectionDate || moment().format("YYYY-MM-DD"),
@@ -150,7 +153,19 @@ export const CollectionHistoryTable: React.FC<CollectionHistoryTableProps> = ({
       customerPhone: row.customerPhone || "",
       customerId: row.customerId || "",
       totalAmount: Number(row.totalAmount || 0),
-      paymentMode: row.paymentMode || "Cash",
+      paymentMode: isBank ? "Bank" : isMfs ? "MFS" : "Cash",
+      bankDetails: isBank
+        ? row.bankDetails || (row.bankName ? {
+            bankName: row.bankName,
+            accountNumber: row.accountNo || row.accountNumber,
+          } : null)
+        : null,
+      mfsDetails: isMfs
+        ? row.mfsDetails || (row.mfsName ? {
+            mfsName: row.mfsName,
+            mfsPhone: row.mfsPhone,
+          } : null)
+        : null,
       remark: row.remark || "",
       allocations: (row.details || []).map((d: any) => ({
         invoiceNo: d.invoiceNo || "-",
@@ -217,6 +232,7 @@ export const CollectionHistoryTable: React.FC<CollectionHistoryTableProps> = ({
               <option value="all">All Methods</option>
               <option value="Cash">Cash Drawer</option>
               <option value="Bank">Bank Account</option>
+              <option value="MFS">MFS (Mobile Banking)</option>
             </select>
             <FiChevronDown
               className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none text-xs"
@@ -271,6 +287,7 @@ export const CollectionHistoryTable: React.FC<CollectionHistoryTableProps> = ({
                 const rowId = row.id ?? row.collectionNo ?? idx;
                 const isExpanded = expandedRowIds.has(rowId);
                 const isBank = String(row.paymentMode).toUpperCase() === "BANK";
+                const isMfs = String(row.paymentMode).toUpperCase() === "MFS";
                 const detailsCount = (row.details || []).length;
 
                 return (
@@ -326,6 +343,8 @@ export const CollectionHistoryTable: React.FC<CollectionHistoryTableProps> = ({
                           className={`inline-block px-1.5 py-0.5 text-[10px] font-semibold border rounded-md ${
                             isBank
                               ? "bg-sky-100 text-sky-900 border-sky-300"
+                              : isMfs
+                              ? "bg-purple-100 text-purple-800 border-purple-300"
                               : "bg-emerald-100 text-emerald-800 border-emerald-300"
                           }`}
                         >

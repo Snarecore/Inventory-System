@@ -8,6 +8,7 @@ import DeleteModal from "@/components/modal/DeleteModal";
 import ConfirmModal from "@/components/modal/ConfirmModal";
 import PartyModal from "@/pages/admin/people/parties/components/PartyModal";
 import SaleInvoiceModal from "@/pages/admin/trade/sales/components/SaleInvoiceModal";
+import DatePicker from "@/components/common/DatePicker";
 import apiConfig from "@/config/api.json";
 import {
   salesListQueryKey,
@@ -1098,14 +1099,16 @@ export const CreateSaleForm: React.FC = () => {
 
         {/* Sales Date */}
         <div>
-          <label className="text-[11px] font-bold text-black  tracking-wider block mb-1">
+          <label className="text-[11px] font-bold text-black tracking-wider block mb-1">
             Sales Date <span className="text-rose-500">*</span>
           </label>
-          <input
-            type="date"
+          <DatePicker
             value={salesDate}
-            onChange={(e) => setSalesDate(e.target.value)}
-            className="w-full h-9 px-2.5 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:border-[var(--color-primary)] font-semibold text-black"
+            onChange={(dateStr) => setSalesDate(dateStr || new Date().toISOString().substring(0, 10))}
+            size="md"
+            isClearable={false}
+            displayFormat="DD MMM, YYYY"
+            placeholder="Select sales date"
           />
         </div>
 

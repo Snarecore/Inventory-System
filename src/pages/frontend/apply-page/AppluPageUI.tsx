@@ -4,6 +4,7 @@ import type React from "react"
 import { useState } from "react"
 import { Upload, FileText, User, CreditCard, MapPin } from "lucide-react"
 import { MotionDiv } from "@/utils/framer.motion"
+import DatePicker from "@/components/common/DatePicker"
 
 const AppluPageUI = () => {
     const [formData, setFormData] = useState({
@@ -128,14 +129,15 @@ const AppluPageUI = () => {
                             <label htmlFor="dateOfBirth" className="block text-sm font-medium text-gray-700 mb-1">
                               Date of Birth *
                             </label>
-                            <input
-                              type="date"
-                              id="dateOfBirth"
-                              name="dateOfBirth"
-                              required
+                            <DatePicker
                               value={formData.dateOfBirth}
-                              onChange={handleInputChange}
-                              className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary-light focus:border-transparent transition-all"
+                              onChange={(dateStr) =>
+                                setFormData((prev) => ({ ...prev, dateOfBirth: dateStr }))
+                              }
+                              size="lg"
+                              placeholder="Select date of birth"
+                              displayFormat="DD MMM, YYYY"
+                              inputClassName="py-3 px-4 rounded-lg border-gray-300"
                             />
                           </MotionDiv>
     

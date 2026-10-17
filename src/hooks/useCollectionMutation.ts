@@ -9,6 +9,7 @@ import {
   customerInvoicesDueQueryKey,
   cashBalanceQueryKey,
   bankInfoListQueryKey,
+  mfsUserListQueryKey,
   salesListQueryKey,
   dashboardQueryKey,
   partyListQueryKey,
@@ -22,10 +23,11 @@ export interface SubmitCollectionParams {
   customerName: string;
   customerPhone: string;
   collectionDate?: string;
-  paymentMode: "Cash" | "Bank" | "CASH" | "BANK" | string;
+  paymentMode: "Cash" | "Bank" | "MFS" | "CASH" | "BANK" | string;
   remark?: string;
   allocations: CollectionAllocation[];
   selectedBank?: any;
+  selectedMfs?: any;
   totalCollected: number;
   remainingTotalDue: number;
 }
@@ -39,7 +41,7 @@ export interface CollectionMutationResult {
 /**
  * Enterprise standard mutation hook for customer collection.
  * Phase 1: /insert-collection (updates trade invoices and dues)
- * Phase 2: /insert-financial-transaction (credits cash/bank balance)
+ * Phase 2: /insert-financial-transaction (credits cash/bank/MFS balance)
  * Followed by complete TanStack Query multi-cache invalidation.
  */
 export const useCollectionMutation = () => {
@@ -58,6 +60,7 @@ export const useCollectionMutation = () => {
         remark,
         allocations,
         selectedBank,
+        selectedMfs,
         totalCollected,
         remainingTotalDue,
       } = params;
@@ -72,6 +75,7 @@ export const useCollectionMutation = () => {
         remark,
         allocations,
         selectedBank,
+        selectedMfs,
       });
 
       // 2. Submit collection to backend
@@ -80,7 +84,7 @@ export const useCollectionMutation = () => {
         throw new Error(collectionRes.msg || "Failed to submit collection");
       }
 
-      // 3. Post financial ledger entry (Income) to credit cash or bank balance
+      // 3. Post financial ledger entry (Income) to credit cash, bank or MFS balance
       let ledgerOk = true;
       let ledgerMsg = "";
 
@@ -92,6 +96,7 @@ export const useCollectionMutation = () => {
           remainingDue: remainingTotalDue,
           paymentMode,
           selectedBank,
+          selectedMfs,
           notes: remark,
           date: collectionDate,
         });
@@ -120,6 +125,7 @@ export const useCollectionMutation = () => {
       });
       queryClient.invalidateQueries({ queryKey: [cashBalanceQueryKey] });
       queryClient.invalidateQueries({ queryKey: [bankInfoListQueryKey] });
+      queryClient.invalidateQueries({ queryKey: [mfsUserListQueryKey] });
       queryClient.invalidateQueries({ queryKey: [salesListQueryKey] });
       queryClient.invalidateQueries({ queryKey: [dashboardQueryKey], refetchType: "none" });
       queryClient.invalidateQueries({ queryKey: [partyListQueryKey], refetchType: "none" });

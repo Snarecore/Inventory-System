@@ -18,6 +18,7 @@ export interface DatePickerProps {
   displayFormat?: string; // Format to display in input, default "YYYY-MM-DD"
   isClearable?: boolean;
   size?: "sm" | "md" | "lg";
+  align?: "left" | "right";
 }
 
 export const DatePicker: React.FC<DatePickerProps> = ({
@@ -35,6 +36,7 @@ export const DatePicker: React.FC<DatePickerProps> = ({
   displayFormat,
   isClearable = true,
   size = "md",
+  align = "left",
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -230,7 +232,11 @@ export const DatePicker: React.FC<DatePickerProps> = ({
 
       {/* Custom Modern Calendar Dropdown */}
       {isOpen && (
-        <div className="absolute left-0 top-full mt-1 w-64 bg-white rounded-xl shadow-xl border border-gray-200 p-2.5 z-[99999] animate-in fade-in zoom-in-95 duration-150 select-none">
+        <div
+          className={`absolute ${
+            align === "right" ? "right-0" : "left-0"
+          } top-full mt-1 w-64 bg-white rounded-xl shadow-xl border border-gray-200 p-2.5 z-[99999] animate-in fade-in zoom-in-95 duration-150 select-none`}
+        >
           {/* Calendar Header */}
           <div className="flex items-center justify-between mb-2 pb-1 border-b border-gray-200">
             {/* Month & Year Trigger */}

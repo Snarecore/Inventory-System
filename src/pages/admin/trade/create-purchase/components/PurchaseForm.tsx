@@ -20,6 +20,7 @@ import ConfirmModal from "@/components/modal/ConfirmModal";
 import PartyModal from "@/pages/admin/people/parties/components/PartyModal";
 import ChallanSettingsModal from "@/pages/admin/trade/purchases/components/ChallanSettingsModal";
 import PurchaseInvoiceModal from "@/pages/admin/trade/purchases/components/PurchaseInvoiceModal";
+import DatePicker from "@/components/common/DatePicker";
 import ImageUpload from "@/components/image/ImageUpload";
 import apiConfig from "@/config/api.json";
 import {
@@ -43,6 +44,7 @@ import { useTradeProductSearch } from "@/hooks/useTradeProductSearch";
 import TradeProductSearch from "@/components/trade/TradeProductSearch";
 import TradeLineItemsTable from "@/components/trade/TradeLineItemsTable";
 import TradePartySelector from "@/components/trade/TradePartySelector";
+import { usePurchasesQuery } from "@/pages/admin/trade/purchase-return/hooks/usePurchaseReturnQueries";
 import { useFinancialLedger } from "@/hooks/useFinancialLedger";
 import { cashLeg, bankLeg, mfsLeg, type TradeTender } from "@/services/financial-ledger-service";
 import type { PurchaseItem, PurchaseDetailItem, ProductItem, PartyItem, PurchaseChallanSettings } from "@/types";
@@ -1214,11 +1216,13 @@ const CreatePurchaseForm: React.FC = () => {
           <label className="text-[11px] font-bold text-black tracking-wider block mb-1">
             Purchase Date <span className="text-rose-500">*</span>
           </label>
-          <input
-            type="date"
+          <DatePicker
             value={purchaseDate}
-            onChange={(e) => setPurchaseDate(e.target.value)}
-            className="w-full h-9 px-2.5 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:border-[var(--color-primary)] font-semibold text-black"
+            onChange={(dateStr) => setPurchaseDate(dateStr || new Date().toISOString().substring(0, 10))}
+            size="md"
+            isClearable={false}
+            displayFormat="DD MMM, YYYY"
+            placeholder="Select purchase date"
           />
         </div>
 
@@ -1260,11 +1264,13 @@ const CreatePurchaseForm: React.FC = () => {
             <label className="text-[11px] font-bold text-black tracking-wider block mb-1">
               VAT Challan Date
             </label>
-            <input
-              type="date"
+            <DatePicker
               value={vatChallanDate}
-              onChange={(e) => setVatChallanDate(e.target.value)}
-              className="w-full h-9 px-2.5 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:border-[var(--color-primary)] font-semibold text-black"
+              onChange={(dateStr) => setVatChallanDate(dateStr)}
+              size="md"
+              isClearable={true}
+              displayFormat="DD MMM, YYYY"
+              placeholder="Select VAT date"
             />
           </div>
         )}

@@ -18,6 +18,7 @@ import { FiArrowRight } from "react-icons/fi";
 import Button from "@/components/button/Button";
 import ConfirmModal from "@/components/modal/ConfirmModal";
 import SalesReturnInvoiceModal from "@/pages/admin/trade/sales-return/components/SalesReturnInvoiceModal";
+import DatePicker from "@/components/common/DatePicker";
 import apiConfig from "@/config/api.json";
 import {
   salesAndReturnQueryKey,
@@ -1101,7 +1102,7 @@ export const SalesReturnForm: React.FC = () => {
                             Order #{inv.orderNo}
                           </span>
                         )}
-                        <span className="font-mono text-xs font-semibold text-gray-800 truncate" title={inv.invoiceNo}>
+                        <span className="text-xs font-semibold text-gray-800 truncate" title={inv.invoiceNo}>
                           {inv.invoiceNo}
                         </span>
                         <span className="inline-flex items-center gap-1 px-1.5 py-0.2 rounded-full bg-emerald-50 text-emerald-700 text-[10px] font-semibold border border-emerald-200 shrink-0 leading-tight">
@@ -1161,14 +1162,16 @@ export const SalesReturnForm: React.FC = () => {
 
         {/* Return Date */}
         <div>
-          <label className="text-[11px] font-bold text-black  tracking-wider block mb-1">
+          <label className="text-[11px] font-bold text-black tracking-wider block mb-1">
             Return Date <span className="text-rose-500">*</span>
           </label>
-          <input
-            type="date"
+          <DatePicker
             value={returnDate}
-            onChange={(e) => setReturnDate(e.target.value)}
-            className="w-full h-9 px-2.5 py-1.5 border border-gray-300 rounded-lg bg-gray-50/50 hover:bg-white text-xs text-gray-900 focus:outline-none focus:border-[var(--primary-color)]"
+            onChange={(dateStr) => setReturnDate(dateStr || moment().format("YYYY-MM-DD"))}
+            size="md"
+            isClearable={false}
+            displayFormat="DD MMM, YYYY"
+            placeholder="Select return date"
           />
         </div>
 

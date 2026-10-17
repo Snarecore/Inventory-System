@@ -18,6 +18,10 @@ export interface CollectionReceiptData {
     accountNumber?: string;
     accountHolderName?: string;
   } | null;
+  mfsDetails?: {
+    mfsName?: string;
+    mfsPhone?: string;
+  } | null;
   remark?: string;
   allocations: {
     invoiceNo: string;
@@ -109,7 +113,7 @@ export const CollectionReceiptModal: React.FC<CollectionReceiptModalProps> = ({
 
           <div className="text-right">
             <span className="text-gray-500 text-[10px] block">Receipt Info</span>
-            <span className="font-mono font-semibold text-black block">#{receiptData.receiptNo}</span>
+            <span className="font-semibold text-black block">#{receiptData.receiptNo}</span>
             <span className="text-gray-600 text-[11px] block">Date: {receiptData.collectionDate}</span>
             <span className="text-sky-700 font-semibold text-[11px] block">
               Method: {receiptData.paymentMode}
@@ -123,6 +127,17 @@ export const CollectionReceiptModal: React.FC<CollectionReceiptModalProps> = ({
             <span className="text-gray-600">Bank Account:</span>
             <span className="font-semibold text-black font-mono">
               {receiptData.bankDetails.bankName} - {receiptData.bankDetails.accountNumber}
+            </span>
+          </div>
+        )}
+
+        {/* MFS Detail row if applicable */}
+        {receiptData.paymentMode === "MFS" && receiptData.mfsDetails && (
+          <div className="p-2 rounded bg-purple-50/60 border border-purple-200 text-xs flex justify-between">
+            <span className="text-gray-600">MFS Wallet:</span>
+            <span className="font-semibold text-purple-900 font-mono">
+              {receiptData.mfsDetails.mfsName}
+              {receiptData.mfsDetails.mfsPhone ? ` - ${receiptData.mfsDetails.mfsPhone}` : ""}
             </span>
           </div>
         )}

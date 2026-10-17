@@ -61,7 +61,7 @@ export const DueInvoiceAllocationTable: React.FC<DueInvoiceAllocationTableProps>
     return (
       <div className="p-4 text-center text-xs text-gray-500 border border-gray-200 rounded-lg bg-gray-50">
         <FaFileInvoiceDollar size={20} className="mx-auto text-gray-300 mb-1" />
-        <p className="font-semibold text-gray-700">No individual invoices due</p>
+        <p className="font-semibold text-black">No individual invoices due</p>
         <p className="text-[11px] text-gray-400">
           Collection will be credited directly against the customer ledger balance.
         </p>
@@ -74,13 +74,8 @@ export const DueInvoiceAllocationTable: React.FC<DueInvoiceAllocationTableProps>
       {/* Allocation Header */}
       <div className="flex items-center justify-between text-xs">
         <div className="flex items-center gap-2">
-          <span className="font-semibold text-gray-700">
+          <span className="font-semibold text-black">
             Pending Invoices ({invoices.length})
-          </span>
-          <span className="text-[11px] text-gray-500">
-            {isManualMode
-              ? `(Manual: ${selectedInvoiceNos.size} selected)`
-              : "(Auto FIFO)"}
           </span>
         </div>
 
@@ -170,19 +165,19 @@ export const DueInvoiceAllocationTable: React.FC<DueInvoiceAllocationTableProps>
                       />
                     </td>
                   )}
-                  <td className="py-2 px-2.5 font-mono text-black">
+                  <td className="py-2 px-2.5 text-black">
                     {inv.invoiceNo}
                   </td>
                   <td className="py-2 px-2.5 text-gray-600">
                     {inv.salesDate || inv.date || "-"}
                   </td>
-                  <td className="py-2 px-2.5 text-right font-mono text-black">
+                  <td className="py-2 px-2.5 text-right text-black">
                     {formatMoney(dueAmount)}
                   </td>
-                  <td className="py-2 px-2.5 text-right font-mono font-semibold text-emerald-700">
+                  <td className="py-2 px-2.5 text-right font-semibold text-emerald-700">
                     {allocatedAmount > 0 ? formatMoney(allocatedAmount) : "-"}
                   </td>
-                  <td className="py-2 px-2.5 text-right font-mono text-gray-600">
+                  <td className="py-2 px-2.5 text-right text-gray-600">
                     {formatMoney(remainingDue)}
                   </td>
                 </tr>

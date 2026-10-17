@@ -2,11 +2,12 @@ import apiConfig from "@/config/api.json";
 import { postData } from "@/services/api-service";
 import { buildAccessUser } from "@/utils/access-user";
 import { getBusinessCode } from "@/utils/auth-storage";
-import { cashLeg, bankLeg, postTradeFinancialEntries, type TradeTender } from "@/services/financial-ledger-service";
+import { cashLeg, bankLeg, mfsLeg, postTradeFinancialEntries, type TradeTender } from "@/services/financial-ledger-service";
 import type {
   InvoiceDueItem,
   CollectionDetailPayload,
   CollectionBankDetails,
+  CollectionMfsDetails,
   CollectionDataPayload,
   CollectionRequestPayload,
   CollectionAllocation,
@@ -87,10 +88,11 @@ export interface BuildCollectionPayloadParams {
   customerName: string;
   customerPhone: string;
   collectionDate?: string;
-  paymentMode: "Cash" | "Bank" | "CASH" | "BANK" | string;
+  paymentMode: "Cash" | "Bank" | "MFS" | "CASH" | "BANK" | string;
   remark?: string;
   allocations: CollectionAllocation[];
   selectedBank?: any;
+  selectedMfs?: any;
 }
 
 /**
@@ -105,6 +107,7 @@ export const buildCollectionPayload = ({
   remark = "",
   allocations,
   selectedBank,
+  selectedMfs,
 }: BuildCollectionPayloadParams): CollectionRequestPayload => {
   const code = getBusinessCode();
   const dateStr = collectionDate || new Date().toISOString().slice(0, 10);
@@ -120,6 +123,8 @@ export const buildCollectionPayload = ({
   }));
 
   const isBank = String(paymentMode).toUpperCase() === "BANK";
+  const isMfs = String(paymentMode).toUpperCase() === "MFS";
+
   const bankDetailsPayload: CollectionBankDetails | null = isBank && selectedBank
     ? {
         bankId: selectedBank.bankId ?? selectedBank.id ?? "",
@@ -129,18 +134,30 @@ export const buildCollectionPayload = ({
       }
     : null;
 
+  const mfsDetailsPayload: CollectionMfsDetails | null = isMfs && selectedMfs
+    ? {
+        mfsId: selectedMfs.id ?? selectedMfs.mfsId ?? "",
+        mfsName: selectedMfs.mfsName || selectedMfs.name || "MFS",
+        mfsPhone: selectedMfs.mfsPhone || selectedMfs.phone || selectedMfs.mobileNo || "",
+      }
+    : null;
+
   const collectionData: CollectionDataPayload = {
     customerId,
     customerName,
     customerPhone: customerPhone ? String(customerPhone).trim() : "",
     collectionDate: dateStr,
     totalAmount: totalAllocated,
-    paymentMode: isBank ? "Bank" : "Cash",
+    paymentMode: isBank ? "Bank" : isMfs ? "MFS" : "Cash",
     remark: remark.trim(),
     osType: "WEB",
     businessCode: code,
     collectionDetails: detailsPayload,
     bankDetails: bankDetailsPayload,
+    mfsDetails: mfsDetailsPayload,
+    mfsId: isMfs ? (selectedMfs?.id ?? selectedMfs?.mfsId ?? null) : null,
+    mfsName: isMfs ? (selectedMfs?.mfsName || selectedMfs?.name || null) : null,
+    mfsPhone: isMfs ? (selectedMfs?.mfsPhone || selectedMfs?.phone || selectedMfs?.mobileNo || null) : null,
   };
 
   return {
@@ -189,13 +206,14 @@ export interface PostCollectionLedgerParams {
   remainingDue: number;
   paymentMode: string;
   selectedBank?: any;
+  selectedMfs?: any;
   notes?: string;
   date?: string;
 }
 
 /**
  * Sequential Ledger posting to /insert-financial-transaction
- * Credits the collected amount to Cash or Bank balance.
+ * Credits the collected amount to Cash, Bank, or MFS balance.
  */
 export const postCollectionLedger = async ({
   customerPhone,
@@ -204,13 +222,15 @@ export const postCollectionLedger = async ({
   remainingDue,
   paymentMode,
   selectedBank,
+  selectedMfs,
   notes = "",
   date,
 }: PostCollectionLedgerParams): Promise<{ ok: boolean; msg: string }> => {
   const isBank = String(paymentMode).toUpperCase() === "BANK";
+  const isMfs = String(paymentMode).toUpperCase() === "MFS";
   const tender: TradeTender = {
     amount: Number(totalCollected.toFixed(2)),
-    leg: isBank ? bankLeg(selectedBank) : cashLeg(),
+    leg: isBank ? bankLeg(selectedBank) : isMfs ? mfsLeg(selectedMfs) : cashLeg(),
   };
 
   const stamp = Date.now();
