@@ -4,7 +4,6 @@ import { buildAccessUser } from "@/utils/access-user";
 import { getBusinessCode } from "@/utils/auth-storage";
 import { cashLeg, bankLeg, postTradeFinancialEntries, type TradeTender } from "@/services/financial-ledger-service";
 import type {
-  CustomerDueItem,
   InvoiceDueItem,
   CollectionDetailPayload,
   CollectionBankDetails,

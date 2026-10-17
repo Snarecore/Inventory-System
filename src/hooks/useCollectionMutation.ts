@@ -107,7 +107,7 @@ export const useCollectionMutation = () => {
       return {
         success: true,
         ledgerOk,
-        msg: collectionRes.msg,
+        msg: ledgerOk ? collectionRes.msg : `${collectionRes.msg} (Ledger note: ${ledgerMsg})`,
       };
     },
     onSuccess: (data, variables) => {
