@@ -78,16 +78,6 @@ export const DueInvoiceAllocationTable: React.FC<DueInvoiceAllocationTableProps>
             Pending Invoices ({invoices.length})
           </span>
         </div>
-
-        {invoices.length > 1 && (
-          <button
-            type="button"
-            onClick={onToggleManualMode}
-            className="text-xs font-semibold text-[var(--color-primary)] hover:underline cursor-pointer"
-          >
-            {isManualMode ? "Switch to Auto FIFO" : "Switch to Manual Mode"}
-          </button>
-        )}
       </div>
 
       {/* Bill Search if many invoices */}
@@ -168,16 +158,16 @@ export const DueInvoiceAllocationTable: React.FC<DueInvoiceAllocationTableProps>
                   <td className="py-2 px-2.5 text-black">
                     {inv.invoiceNo}
                   </td>
-                  <td className="py-2 px-2.5 text-gray-600">
+                  <td className="py-2 px-2.5 text-black">
                     {inv.salesDate || inv.date || "-"}
                   </td>
-                  <td className="py-2 px-2.5 text-right text-black">
+                  <td className="py-2 px-2.5 text-right text-black font-semibold">
                     {formatMoney(dueAmount)}
                   </td>
-                  <td className="py-2 px-2.5 text-right font-semibold text-emerald-700">
+                  <td className="py-2 px-2.5 text-right font-bold text-emerald-700">
                     {allocatedAmount > 0 ? formatMoney(allocatedAmount) : "-"}
                   </td>
-                  <td className="py-2 px-2.5 text-right text-gray-600">
+                  <td className="py-2 px-2.5 text-right text-black font-semibold">
                     {formatMoney(remainingDue)}
                   </td>
                 </tr>

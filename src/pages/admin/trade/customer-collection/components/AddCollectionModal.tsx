@@ -335,14 +335,14 @@ export const AddCollectionModal: React.FC<AddCollectionModalProps> = ({
             {/* Collection Amount (Smaller box) */}
             <div className="sm:col-span-4">
               <div className="flex items-center justify-between mb-0.5">
-                <label className="text-xs font-semibold text-gray-700 whitespace-nowrap">
+                <label className="text-xs font-bold text-black whitespace-nowrap">
                   Amount (৳) <span className="text-red-500">*</span>
                 </label>
                 <div className="flex items-center gap-1 shrink-0">
                   <button
                     type="button"
                     onClick={() => handleQuickPercent(1)}
-                    className="px-1.5 py-0.2 rounded text-[10px] font-medium bg-gray-100 hover:bg-gray-200 text-gray-700 cursor-pointer"
+                    className="px-1.5 py-0.2 rounded text-[10px] font-semibold bg-gray-100 hover:bg-gray-200 text-black cursor-pointer"
                     title="100% of Due"
                   >
                     100%
@@ -350,7 +350,7 @@ export const AddCollectionModal: React.FC<AddCollectionModalProps> = ({
                   <button
                     type="button"
                     onClick={() => handleQuickPercent(0.5)}
-                    className="px-1.5 py-0.2 rounded text-[10px] font-medium bg-gray-100 hover:bg-gray-200 text-gray-700 cursor-pointer"
+                    className="px-1.5 py-0.2 rounded text-[10px] font-semibold bg-gray-100 hover:bg-gray-200 text-black cursor-pointer"
                     title="50% of Due"
                   >
                     50%
@@ -358,7 +358,7 @@ export const AddCollectionModal: React.FC<AddCollectionModalProps> = ({
                   <button
                     type="button"
                     onClick={() => handleQuickPercent(0.25)}
-                    className="px-1.5 py-0.2 rounded text-[10px] font-medium bg-gray-100 hover:bg-gray-200 text-gray-700 cursor-pointer"
+                    className="px-1.5 py-0.2 rounded text-[10px] font-semibold bg-gray-100 hover:bg-gray-200 text-black cursor-pointer"
                     title="25% of Due"
                   >
                     25%
@@ -373,14 +373,14 @@ export const AddCollectionModal: React.FC<AddCollectionModalProps> = ({
                 value={amountInput}
                 onChange={handleAmountChange}
                 placeholder="0.00"
-                className="w-full h-8 px-2.5 text-xs bg-white border border-gray-200 rounded-lg text-black font-semibold focus:outline-none focus:ring-1 focus:ring-[var(--primary-color)] focus:border-[var(--primary-color)]"
+                className="w-full h-8 px-2.5 text-xs bg-white border border-gray-200 rounded-lg text-black font-bold focus:outline-none focus:ring-1 focus:ring-[var(--primary-color)] focus:border-[var(--primary-color)]"
                 required
               />
             </div>
 
             {/* Payment Mode (Cash, Bank, MFS) */}
             <div className="sm:col-span-5">
-              <label className="text-xs font-semibold text-gray-700 block mb-0.5">
+              <label className="text-xs font-bold text-black block mb-0.5">
                 Payment Mode <span className="text-red-500">*</span>
               </label>
               <div className="grid grid-cols-3 gap-1 h-8">
@@ -439,7 +439,7 @@ export const AddCollectionModal: React.FC<AddCollectionModalProps> = ({
 
             {/* Date Picker (Placed beside Payment Method) */}
             <div className="sm:col-span-3">
-              <label className="text-xs font-semibold text-gray-700 block mb-0.5">
+              <label className="text-xs font-bold text-black block mb-0.5">
                 Date <span className="text-red-500">*</span>
               </label>
               <DatePicker
@@ -450,7 +450,7 @@ export const AddCollectionModal: React.FC<AddCollectionModalProps> = ({
                 isClearable={false}
                 displayFormat="DD MMM, YYYY"
                 placeholder="Select date"
-                inputClassName="border-gray-200 hover:border-gray-300"
+                inputClassName="border-gray-200 hover:border-gray-300 font-bold text-black"
               />
             </div>
           </div>
@@ -535,7 +535,7 @@ export const AddCollectionModal: React.FC<AddCollectionModalProps> = ({
 
         {/* Remark */}
         <div>
-          <label className="text-xs font-semibold text-gray-700 block mb-1">
+          <label className="text-xs font-bold text-black block mb-1">
             Remark / Notes
           </label>
           <input
@@ -543,7 +543,7 @@ export const AddCollectionModal: React.FC<AddCollectionModalProps> = ({
             value={remark}
             onChange={(e) => setRemark(e.target.value)}
             placeholder="e.g. Paid in cash, cheque reference..."
-            className="w-full h-9 px-2.5 text-xs bg-white border border-gray-200 rounded-lg text-black focus:outline-none focus:ring-1 focus:ring-[var(--primary-color)] focus:border-[var(--primary-color)]"
+            className="w-full h-9 px-2.5 text-xs bg-white border border-gray-200 rounded-lg text-black font-semibold placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-[var(--primary-color)] focus:border-[var(--primary-color)]"
           />
         </div>
 

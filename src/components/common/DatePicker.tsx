@@ -203,7 +203,7 @@ export const DatePicker: React.FC<DatePickerProps> = ({
         } ${sizeClasses[size]} ${inputClassName}`}
       >
         <div className="flex items-center gap-2 truncate flex-1 mr-1">
-          <FaCalendarAlt className="text-gray-500 shrink-0 text-xs" />
+          <FaCalendarAlt className={`shrink-0 text-xs ${displayText ? "text-black" : "text-gray-400"}`} />
           <span className={`truncate font-semibold ${displayText ? "text-black" : "text-gray-400"}`}>
             {displayText || placeholder}
           </span>
@@ -221,9 +221,9 @@ export const DatePicker: React.FC<DatePickerProps> = ({
             </button>
           )}
           <FiChevronDown
-            className={`text-gray-500 text-xs transition-transform duration-200 ${
+            className={`text-xs transition-transform duration-200 ${
               isOpen ? "rotate-180" : ""
-            }`}
+            } ${displayText ? "text-black" : "text-gray-400"}`}
           />
         </div>
       </div>
