@@ -190,19 +190,19 @@ export const PartyTable: React.FC<PartyTableProps> = ({
     [availableColumns, visibleColumns]
   );
 
-  const getPartyName = (p: PartyItem) => p.name || p.partyName || p.party_name || "Unnamed Party";
+  const getPartyName = (p: PartyItem) => p.name || "Unnamed Party";
   const getPartyType = (p: PartyItem): "CUSTOMER" | "SUPPLIER" => {
-    const raw = (p.type || p.partyType || p.party_type || "CUSTOMER").toUpperCase();
-    return raw === "SUPPLIER" ? "SUPPLIER" : "CUSTOMER";
+    const raw = String(p.type || "CUSTOMER").toUpperCase();
+    return raw.includes("SUPPLIER") ? "SUPPLIER" : "CUSTOMER";
   };
-  const getPartyPhone = (p: PartyItem) => p.phone || p.partyPhone || p.phoneNumber || p.party_phone || "—";
-  const getPartyEmail = (p: PartyItem) => p.email || p.partyEmail || "—";
+  const getPartyPhone = (p: PartyItem) => p.phone || "—";
+  const getPartyEmail = (p: PartyItem) => p.email || "—";
   const getPartyAddress = (p: PartyItem) => {
-    const addr = (p.address || p.partyAddress || "").trim();
+    const addr = (p.address || "").trim();
     return addr || "N/A";
   };
   const getPartyBalance = (p: PartyItem) =>
-    Number(p.openingBalance ?? p.opening_balance ?? p.balance ?? p.dueAmount ?? p.due_amount ?? 0);
+    Number(p.openingBalance ?? p.balance ?? 0);
   const isPartyActive = (p: PartyItem) => {
     const raw = String(p.status ?? "active").toLowerCase();
     return raw !== "inactive" && raw !== "false" && raw !== "0";
@@ -306,7 +306,7 @@ export const PartyTable: React.FC<PartyTableProps> = ({
                     const email = getPartyEmail(party);
                     const address = getPartyAddress(party);
                     const balance = getPartyBalance(party);
-                    const partyId = String(party.id || party.partyId || party.party_id || index);
+                    const partyId = String(party.id ?? index);
 
                     return (
                       <tr

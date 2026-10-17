@@ -131,8 +131,8 @@ export const SaleTable: React.FC<SaleTableProps> = ({
     if (!customerSearchQuery.trim()) return customersList;
     const q = customerSearchQuery.toLowerCase().trim();
     return customersList.filter((c) => {
-      const name = (c.name || c.partyName || "").toLowerCase();
-      const phone = (c.phone || c.partyPhone || "").toLowerCase();
+      const name = (c.name || "").toLowerCase();
+      const phone = (c.phone || "").toLowerCase();
       return name.includes(q) || phone.includes(q);
     });
   }, [customersList, customerSearchQuery]);
@@ -140,12 +140,12 @@ export const SaleTable: React.FC<SaleTableProps> = ({
   const selectedCustomerObj = useMemo(() => {
     if (!customerFilter) return null;
     return customersList.find(
-      (c) => String(c.id ?? c.partyId ?? c.name ?? "") === String(customerFilter)
+      (c) => String(c.id ?? c.name ?? "") === String(customerFilter)
     );
   }, [customersList, customerFilter]);
 
   const currentCustomerLabel = selectedCustomerObj
-    ? (selectedCustomerObj.name || selectedCustomerObj.partyName || "Customer")
+    ? (selectedCustomerObj.name || "Customer")
     : "All Customers";
 
   const statusOptions = [
@@ -348,14 +348,14 @@ export const SaleTable: React.FC<SaleTableProps> = ({
 
                     {filteredCustomerOptions.length > 0 ? (
                       filteredCustomerOptions.map((c) => {
-                        const cVal = String(c.id ?? c.partyId ?? c.name ?? "");
+                        const cVal = String(c.id ?? c.name ?? "");
                         const isSelected = customerFilter === cVal;
-                        const cName = c.name || c.partyName || "Customer";
-                        const cPhone = c.phone || c.partyPhone || "";
+                        const cName = c.name || "Customer";
+                        const cPhone = c.phone || "";
 
                         return (
                           <div
-                            key={c.id ?? c.partyId ?? c.name}
+                            key={c.id ?? c.name}
                             onClick={() => {
                               setCustomerFilter(cVal);
                               setIsCustomerDropdownOpen(false);
@@ -489,32 +489,14 @@ export const SaleTable: React.FC<SaleTableProps> = ({
             <tbody className="divide-y divide-gray-100">
               {sales.map((sale, index) => {
                 const serialNumber = (currentPageNumber - 1) * dataLimit + index + 1;
-                const s: any = sale;
-                const rawDetails =
-                  s.salesDetails ||
-                  s.saleDetails ||
-                  s.sales_details ||
-                  s.details ||
-                  s.items ||
-                  s.products;
+                const itemsCount = Array.isArray(sale.salesDetails) && sale.salesDetails.length > 0
+                  ? sale.salesDetails.length
+                  : 1;
 
-                let itemsCount = 1;
-                if (Array.isArray(rawDetails) && rawDetails.length > 0) {
-                  const uniqueKeys = new Set<string>();
-                  rawDetails.forEach((d: any) => {
-                    const k = String(d.productId ?? d.product_id ?? d.productCode ?? d.pcode ?? d.productName ?? d.name ?? "").trim().toLowerCase();
-                    if (k) uniqueKeys.add(k);
-                  });
-                  itemsCount = uniqueKeys.size > 0 ? uniqueKeys.size : rawDetails.length;
-                } else {
-                  const explicitCount = Number(s.itemCount ?? s.item_count ?? s.totalItems ?? s.total_items ?? 0);
-                  itemsCount = explicitCount > 0 ? explicitCount : 1;
-                }
-
-                const grandTotal = Number(sale.grandTotal ?? sale.grand_total ?? sale.totalAmount ?? 0);
-                const paidAmount = Number(sale.paidAmount ?? sale.paid_amount ?? 0);
-                const dueAmount = Number(sale.dueAmount ?? sale.due_amount ?? Math.max(0, grandTotal - paidAmount));
-                const paymentType = (sale.paymentType || sale.payment_type || "CASH").toUpperCase();
+                const grandTotal = Number(sale.grandTotal ?? 0);
+                const paidAmount = Number(sale.paidAmount ?? 0);
+                const dueAmount = Number(sale.dueAmount ?? 0);
+                const paymentType = (sale.paymentType || "CASH").toUpperCase();
 
                 let statusBadge = "Paid";
                 let statusBg = "bg-emerald-100 text-emerald-800 border-emerald-300 font-semibold";
@@ -526,25 +508,12 @@ export const SaleTable: React.FC<SaleTableProps> = ({
                   statusBg = "bg-rose-100 text-rose-800 border-rose-300 font-semibold";
                 }
 
-                const isAlreadyReturned =
-                  Boolean(
-                    (sale as any).hasReturn ||
-                    (sale as any).returnNo ||
-                    (sale as any).returnGrandTotal ||
-                    String((sale as any).returnType || "").toUpperCase() === "RETURN" ||
-                    (Array.isArray((sale as any).returnDetails) && (sale as any).returnDetails.length > 0) ||
-                    (Array.isArray((sale as any).salesReturnDetails) && (sale as any).salesReturnDetails.length > 0)
-                  ) ||
-                  (returnedInvoiceSet
-                    ? returnedInvoiceSet.has(String(sale.invoiceNo || "").trim().toLowerCase()) ||
-                      returnedInvoiceSet.has(String((sale as any).salesInvoiceNo || "").trim().toLowerCase()) ||
-                      returnedInvoiceSet.has(String((sale as any).orderNo || (sale as any).order_no || "").trim().toLowerCase()) ||
-                      returnedInvoiceSet.has(String(sale.id || (sale as any).saleId || "").trim().toLowerCase())
-                    : false);
+                // Directly read return flag from backend (same as cashboi-v2)
+                const isAlreadyReturned = Boolean(sale.hasReturn);
 
                 return (
                   <tr
-                    key={sale.id || sale.saleId || sale.invoiceNo || index}
+                    key={sale.id || sale.invoiceNo || index}
                     className="hover:bg-sky-50/40 transition-colors group"
                   >
                     {/* SL */}
@@ -558,7 +527,7 @@ export const SaleTable: React.FC<SaleTableProps> = ({
                     {showOrderId && isColVisible("orderId") && (
                       <td className="py-2.5 px-3 text-black text-xs font-normal whitespace-nowrap">
                         <span className="font-medium text-gray-800">
-                          {sale.orderNo || (sale as any).order_no || sale.invoiceNo || (sale as any).invoice_no || (sale as any).salesInvoiceNo || (sale.id ? `ORD-${sale.id}` : "-")}
+                          {sale.orderNo || sale.invoiceNo || "-"}
                         </span>
                       </td>
                     )}
@@ -566,14 +535,14 @@ export const SaleTable: React.FC<SaleTableProps> = ({
                     {/* Customer */}
                     {isColVisible("customer") && (
                       <td className="py-2.5 px-3 text-black text-xs font-normal whitespace-nowrap">
-                        {sale.customerName || sale.customer_name || "Walk-in Customer"}
+                        {sale.customerName || "Walk-in Customer"}
                       </td>
                     )}
 
                     {/* Phone */}
                     {isColVisible("phone") && (
                       <td className="py-2.5 px-3 text-black text-xs font-normal whitespace-nowrap">
-                        {sale.customerPhone || sale.customer_phone || "-"}
+                        {sale.customerPhone || "-"}
                       </td>
                     )}
 
@@ -581,8 +550,8 @@ export const SaleTable: React.FC<SaleTableProps> = ({
                     {isColVisible("date") && (
                       <td className="py-2.5 px-3 text-black text-xs font-normal whitespace-nowrap">
                         <span className="flex items-center gap-1 text-[11px] text-black font-normal">
-                          {sale.salesDate || sale.saleDate || sale.date
-                            ? moment(sale.salesDate || sale.saleDate || sale.date).format("DD MMM, YYYY")
+                          {sale.salesDate
+                            ? moment(sale.salesDate).format("DD MMM, YYYY")
                             : moment().format("DD MMM, YYYY")}
                         </span>
                       </td>

@@ -142,7 +142,7 @@ const CreateProductForm = () => {
             list = productListData as ProductItem[];
         }
         return list.filter((p: any) => {
-            const isDel = String(p.isDeleted || p.is_deleted || p.isDelete || p.is_delete || "").trim().toUpperCase();
+            const isDel = String(p.isDeleted || p.is_deleted || "").trim().toUpperCase();
             return isDel !== "Y" && isDel !== "YES" && isDel !== "TRUE" && isDel !== "1";
         });
     }, [productListData]);
@@ -154,12 +154,7 @@ const CreateProductForm = () => {
             const found = productList.find(
                 (p: any) =>
                     String(p.id) === String(editId) ||
-                    String(p.product_id) === String(editId) ||
-                    String(p._id) === String(editId) ||
-                    String(p.pcode) === String(editId) ||
-                    String(p.productCode) === String(editId) ||
-                    String(p.code) === String(editId) ||
-                    String(p.sku) === String(editId)
+                    String(p.pcode) === String(editId)
             );
             if (found) return found;
         }
@@ -170,25 +165,25 @@ const CreateProductForm = () => {
     // Load product data into form fields when in edit mode
     useEffect(() => {
         if (isEditMode && editingProduct) {
-            const name = editingProduct.name || editingProduct.productName || "";
-            const category = editingProduct.category || editingProduct.categoryName || "";
+            const name = editingProduct.name || "";
+            const category = editingProduct.category || "";
             const unit = editingProduct.unit || "PCS";
-            const secondary_unit = editingProduct.secondary_unit || editingProduct.secondaryUnit || "";
-            const secondary_price = editingProduct.secondary_price !== undefined && editingProduct.secondary_price !== null ? String(editingProduct.secondary_price) : (editingProduct.secondaryPrice !== undefined ? String(editingProduct.secondaryPrice) : "");
-            const quantity = String(editingProduct.quantity ?? editingProduct.stock ?? "0");
-            const buy_price = editingProduct.buy_price !== undefined && editingProduct.buy_price !== null ? String(editingProduct.buy_price) : (editingProduct.buyPrice !== undefined ? String(editingProduct.buyPrice) : "");
-            const sell_price = editingProduct.sell_price !== undefined && editingProduct.sell_price !== null ? String(editingProduct.sell_price) : (editingProduct.sellPrice !== undefined ? String(editingProduct.sellPrice) : "");
-            const pcode = editingProduct.pcode || editingProduct.productCode || editingProduct.code || "";
+            const secondary_unit = editingProduct.secondaryUnit || editingProduct.secondary_unit || "";
+            const secondary_price = editingProduct.secondaryPrice !== undefined ? String(editingProduct.secondaryPrice) : (editingProduct.secondary_price !== undefined ? String(editingProduct.secondary_price) : "");
+            const quantity = String(editingProduct.quantity ?? "0");
+            const buy_price = editingProduct.buyPrice !== undefined ? String(editingProduct.buyPrice) : (editingProduct.buy_price !== undefined ? String(editingProduct.buy_price) : "");
+            const sell_price = editingProduct.sellPrice !== undefined ? String(editingProduct.sellPrice) : (editingProduct.sell_price !== undefined ? String(editingProduct.sell_price) : "");
+            const pcode = editingProduct.pcode || "";
             const sku = editingProduct.sku || "";
             const barcode = editingProduct.barcode || "";
-            const low_stock_threshold = String(editingProduct.low_stock_threshold ?? editingProduct.lowStockThreshold ?? "5");
-            const packing_levels = editingProduct.packing_levels || editingProduct.packingLevels || "";
+            const low_stock_threshold = String(editingProduct.lowStockThreshold ?? editingProduct.low_stock_threshold ?? "5");
+            const packing_levels = editingProduct.packingLevels || editingProduct.packing_levels || "";
             
-            const isDec = (editingProduct as any).is_decimal === "Yes" || (editingProduct as any).is_decimal === true || (editingProduct as any).isDecimal === "Yes" || (editingProduct as any).isDecimal === true;
+            const isDec = (editingProduct as any).isDecimal === "Yes" || (editingProduct as any).isDecimal === true || (editingProduct as any).is_decimal === "Yes" || (editingProduct as any).is_decimal === true;
             setIsDecimalAllowed(isDec);
 
             const rawStatus = String(editingProduct.status ?? "").trim().toLowerCase();
-            const status: "active" | "inactive" = (rawStatus === "inactive" || rawStatus === "false" || rawStatus === "0" || editingProduct.status === false || editingProduct.status === 0) ? "inactive" : "active";
+            const status: "active" | "inactive" = (rawStatus === "inactive" || rawStatus === "false" || rawStatus === "0") ? "inactive" : "active";
 
             setFieldValues({
                 name,

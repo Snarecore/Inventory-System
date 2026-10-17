@@ -25,7 +25,7 @@ const PartyModal: React.FC<PartyModalProps> = ({
   onSuccess,
   defaultType = "CUSTOMER",
 }) => {
-  const partyId = partyData?.id ?? partyData?.partyId ?? partyData?.party_id ?? (partyData as any)?.customerId ?? (partyData as any)?.supplierId;
+  const partyId = partyData?.id;
   const isEdit = Boolean(partyData && partyId);
 
   const [partyType, setPartyType] = useState<PartyType>(defaultType);
@@ -42,15 +42,15 @@ const PartyModal: React.FC<PartyModalProps> = ({
   useEffect(() => {
     if (isOpen) {
       if (partyData) {
-        const rawType = (partyData.type || partyData.partyType || partyData.party_type || defaultType).toUpperCase();
+        const rawType = String(partyData.type || defaultType).toUpperCase();
         setPartyType(rawType === "SUPPLIER" ? "SUPPLIER" : "CUSTOMER");
-        setPartyName(partyData.name || partyData.partyName || partyData.party_name || "");
-        setPartyPhone(partyData.phone || partyData.partyPhone || partyData.phoneNumber || partyData.party_phone || "");
-        setPartyEmail(partyData.email || partyData.partyEmail || "");
-        setPartyAddress(partyData.address || partyData.partyAddress || "");
+        setPartyName(partyData.name || "");
+        setPartyPhone(partyData.phone || "");
+        setPartyEmail(partyData.email || "");
+        setPartyAddress(partyData.address || "");
         setOpeningBalance(
-          partyData.openingBalance != null || partyData.opening_balance != null || partyData.balance != null || partyData.dueAmount != null
-            ? String(partyData.openingBalance ?? partyData.opening_balance ?? partyData.balance ?? partyData.dueAmount ?? "")
+          partyData.openingBalance != null || partyData.balance != null
+            ? String(partyData.openingBalance ?? partyData.balance ?? "")
             : ""
         );
         

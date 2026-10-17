@@ -83,22 +83,22 @@ const PurchaseReturnPage: React.FC = () => {
 
     const filtered = list.filter((p) => {
       if (!isPartyActive(p)) return false;
-      const type = String(p.type || p.partyType || p.party_type || p.role || "").toUpperCase();
+      const type = String(p.type || p.partyType || "").toUpperCase();
       return type.includes("SUPPLIER") || type.includes("VENDOR") || type.includes("BOTH");
     });
 
     const supMap = new Map<string, PartyItem>();
     filtered.forEach((p) => {
-      const key = String(p.id ?? p.partyId ?? p.name ?? "").trim();
+      const key = String(p.id ?? p.name ?? "").trim();
       if (key) {
         supMap.set(key, {
-          id: p.id ?? p.partyId,
-          partyId: p.id ?? p.partyId,
-          name: p.name || p.partyName || "Supplier",
-          partyName: p.name || p.partyName || "Supplier",
-          phone: p.phone || p.partyPhone || "",
-          partyPhone: p.phone || p.partyPhone || "",
-          address: p.address || p.partyAddress || "",
+          id: p.id,
+          partyId: p.id,
+          name: p.name || "Supplier",
+          partyName: p.name || "Supplier",
+          phone: p.phone || "",
+          partyPhone: p.phone || "",
+          address: p.address || "",
           type: "SUPPLIER",
         });
       }
@@ -131,27 +131,27 @@ const PurchaseReturnPage: React.FC = () => {
 
       if (isReturn) {
         const noteText = extractPurchaseReturnRemarks(item);
-        const details = item.returnDetails || item.purchaseReturnDetails || item.details || [];
+        const details = item.returnDetails || [];
 
         returnsList.push({
-          id: item.id || item.returnId || item.return_id,
-          returnNo: item.returnNo || item.refNo || (item.orderNo ? `PR-${item.orderNo}` : `PR-${item.id}`),
-          orderNo: item.orderNo || item.order_no || item.purchaseInvoiceNo || item.invoiceNo || "",
-          purchaseInvoiceNo: item.purchaseInvoiceNo || item.invoiceNo || "-",
-          invoiceNo: item.purchaseInvoiceNo || item.invoiceNo || "-",
-          challanNo: item.challanNo || item.challan_no || "",
-          returnDate: item.returnDate || item.purchaseDate || item.date || moment().format("YYYY-MM-DD"),
-          createdAt: item.createdAt || item.created_at || item.createdDate || item.date || item.returnDate,
+          id: item.id || item.returnId,
+          returnNo: item.returnNo || (item.orderNo ? `PR-${item.orderNo}` : `PR-${item.id}`),
+          orderNo: item.orderNo || "",
+          purchaseInvoiceNo: item.invoiceNo || "-",
+          invoiceNo: item.invoiceNo || "-",
+          challanNo: item.challanNo || "",
+          returnDate: item.returnDate || item.purchaseDate || moment().format("YYYY-MM-DD"),
+          createdAt: item.createdAt || item.returnDate,
           supplierId: item.supplierId,
           supplierName: item.supplierName || "Supplier",
           supplierPhone: item.supplierPhone,
           supplierAddress: item.supplierAddress,
-          totalAmount: Number(item.totalAmount ?? item.returnGrandTotal ?? item.refundAmount ?? 0),
+          totalAmount: Number(item.totalAmount ?? 0),
           discount: Number(item.discount ?? 0),
           vat: Number(item.vat ?? 0),
-          deliveryCharge: Number(item.deliveryCharge ?? item.delivery_charge ?? 0),
-          grandTotal: Number(item.returnGrandTotal ?? item.grandTotal ?? item.refundAmount ?? 0),
-          refundAmount: Number(item.returnRefundAmount ?? item.refundAmount ?? item.returnGrandTotal ?? item.grandTotal ?? 0),
+          deliveryCharge: Number(item.deliveryCharge ?? 0),
+          grandTotal: Number(item.grandTotal ?? item.returnGrandTotal ?? 0),
+          refundAmount: Number(item.refundAmount ?? item.returnRefundAmount ?? item.grandTotal ?? 0),
           paymentType: item.paymentType || "CASH",
           status: item.status || "Completed",
           note: noteText,
@@ -215,7 +215,7 @@ const PurchaseReturnPage: React.FC = () => {
       if (isFilterActive(statusFilter)) {
         const grandTotal = Number(purchase.grandTotal ?? purchase.totalAmount ?? 0);
         const paidAmount = Number(purchase.paidAmount ?? 0);
-        const dueAmount = Number(purchase.dueAmount ?? Math.max(0, grandTotal - paidAmount));
+        const dueAmount = Number(purchase.dueAmount ?? 0);
         const s = String(purchase.status || "").toUpperCase();
 
         if (statusFilter === "PAID") {
@@ -279,10 +279,10 @@ const PurchaseReturnPage: React.FC = () => {
         return moment(dateA).diff(moment(dateB));
       }
       if (sortBy === "amount_high" || sortBy === "amount_high_to_low") {
-        return Number(b.grandTotal ?? b.totalAmount ?? 0) - Number(a.grandTotal ?? a.totalAmount ?? 0);
+        return Number(b.grandTotal ?? 0) - Number(a.grandTotal ?? 0);
       }
       if (sortBy === "amount_low" || sortBy === "amount_low_to_high") {
-        return Number(a.grandTotal ?? a.totalAmount ?? 0) - Number(b.grandTotal ?? b.totalAmount ?? 0);
+        return Number(a.grandTotal ?? 0) - Number(b.grandTotal ?? 0);
       }
       if (sortBy === "supplier_a_to_z") {
         return String(a.supplierName || "").localeCompare(String(b.supplierName || ""));

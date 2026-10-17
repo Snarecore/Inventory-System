@@ -73,16 +73,16 @@ const ProductDetails = () => {
         );
     }
 
-    const name = product.name || product.productName || "Unnamed Product";
-    const pcode = product.pcode || product.productCode || product.code || "-";
+    const name = product.name || "Unnamed Product";
+    const pcode = product.pcode || "-";
     const sku = product.sku || "-";
     const barcode = product.barcode || "-";
-    const category = product.category || product.categoryName || "General";
+    const category = product.category || "General";
     const unit = product.unit || "PCS";
-    const quantity = Number(product.quantity ?? product.stock ?? 0);
-    const buyPrice = Number(product.buy_price ?? product.buyPrice ?? 0);
-    const sellPrice = Number(product.sell_price ?? product.sellPrice ?? 0);
-    const lowThreshold = Number(product.low_stock_threshold ?? product.lowStockThreshold ?? 5);
+    const quantity = Number(product.quantity ?? 0);
+    const buyPrice = Number(product.buyPrice ?? 0);
+    const sellPrice = Number(product.sellPrice ?? 0);
+    const lowThreshold = Number(product.lowStockThreshold ?? 5);
     const isLowStock = quantity <= lowThreshold;
     const isActive =
         product.status === "active" ||

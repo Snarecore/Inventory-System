@@ -13,7 +13,7 @@ export interface UsePurchaseTableFilterOptions {
  */
 export const getPurchaseDateString = (p: any): string => {
   if (!p) return "";
-  const rawDate = p.purchaseDate || p.date || p.salesDate || p.createdAt || p.created_at;
+  const rawDate = p.purchaseDate || p.createdAt;
   if (rawDate) {
     if (typeof rawDate === "string") {
       const match = rawDate.match(/^(\d{4}-\d{2}-\d{2})/);
@@ -23,7 +23,7 @@ export const getPurchaseDateString = (p: any): string => {
     if (d.isValid()) return d.format("YYYY-MM-DD");
   }
 
-  const inv = String(p.invoiceNo || p.invoice_no || "");
+  const inv = String(p.invoiceNo || "");
   const dtMatch = inv.match(/(20\d{2})(0[1-9]|1[0-2])(0[1-9]|[12]\d|3[01])/);
   if (dtMatch) {
     return `${dtMatch[1]}-${dtMatch[2]}-${dtMatch[3]}`;
@@ -51,22 +51,22 @@ export const extractSuppliersList = (rawPartyData: any, purchases: PurchaseItem[
 
   const filtered = list.filter((p: any) => {
     if (!isPartyActive(p)) return false;
-    const type = String(p.type || p.partyType || p.party_type || p.role || "").toUpperCase();
+    const type = String(p.type || p.partyType || "").toUpperCase();
     return type.includes("SUPPLIER") || type.includes("VENDOR") || type.includes("BOTH") || !type;
   });
 
   const supMap = new Map<string, PartyItem>();
   filtered.forEach((p: any) => {
-    const key = String(p.id ?? p.partyId ?? p.name ?? "").trim();
+    const key = String(p.id ?? p.name ?? "").trim();
     if (key) {
       supMap.set(key, {
-        id: p.id ?? p.partyId,
-        partyId: p.id ?? p.partyId,
-        name: p.name || p.partyName || "Supplier",
-        partyName: p.name || p.partyName || "Supplier",
-        phone: p.phone || p.partyPhone || "",
-        partyPhone: p.phone || p.partyPhone || "",
-        address: p.address || p.partyAddress || "",
+        id: p.id,
+        partyId: p.id,
+        name: p.name || "Supplier",
+        partyName: p.name || "Supplier",
+        phone: p.phone || "",
+        partyPhone: p.phone || "",
+        address: p.address || "",
         type: "SUPPLIER",
       });
     }
@@ -74,8 +74,8 @@ export const extractSuppliersList = (rawPartyData: any, purchases: PurchaseItem[
 
   // Also include any supplier from actual purchases
   purchases.forEach((pur: any) => {
-    const supId = pur.supplierId || pur.supplier_id;
-    const supName = pur.supplierName || pur.supplier_name;
+    const supId = pur.supplierId;
+    const supName = pur.supplierName;
     const key = String(supId ?? supName ?? "").trim();
     if (key && !supMap.has(key)) {
       supMap.set(key, {
@@ -83,9 +83,9 @@ export const extractSuppliersList = (rawPartyData: any, purchases: PurchaseItem[
         partyId: supId || supName,
         name: supName || "Supplier",
         partyName: supName || "Supplier",
-        phone: pur.supplierPhone || pur.supplier_phone || "",
-        partyPhone: pur.supplierPhone || pur.supplier_phone || "",
-        address: pur.supplierAddress || pur.supplier_address || "",
+        phone: pur.supplierPhone || "",
+        partyPhone: pur.supplierPhone || "",
+        address: pur.supplierAddress || "",
         type: "SUPPLIER",
       });
     }
@@ -125,11 +125,11 @@ export const usePurchaseTableFilter = ({
       // 1. Search Query
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase().trim();
-        const inv = String(purchase.invoiceNo || purchase.invoice_no || "").toLowerCase();
-        const ord = String(purchase.orderNo || purchase.order_no || "").toLowerCase();
-        const ch = String(purchase.challanNo || purchase.challan_no || "").toLowerCase();
-        const sName = String(purchase.supplierName || purchase.supplier_name || "").toLowerCase();
-        const sPhone = String(purchase.supplierPhone || purchase.supplier_phone || "").toLowerCase();
+        const inv = String(purchase.invoiceNo || "").toLowerCase();
+        const ord = String(purchase.orderNo || "").toLowerCase();
+        const ch = String(purchase.challanNo || "").toLowerCase();
+        const sName = String(purchase.supplierName || "").toLowerCase();
+        const sPhone = String(purchase.supplierPhone || "").toLowerCase();
         if (!inv.includes(q) && !ord.includes(q) && !ch.includes(q) && !sName.includes(q) && !sPhone.includes(q)) {
           return false;
         }
@@ -137,9 +137,8 @@ export const usePurchaseTableFilter = ({
 
       // 2. Status Filter
       if (statusFilter && statusFilter !== "all") {
-        const grandTotal = Number(purchase.grandTotal ?? purchase.grand_total ?? purchase.totalAmount ?? 0);
-        const paidAmount = Number(purchase.paidAmount ?? purchase.paid_amount ?? 0);
-        const dueAmount = Number(purchase.dueAmount ?? purchase.due_amount ?? Math.max(0, grandTotal - paidAmount));
+        const paidAmount = Number(purchase.paidAmount ?? 0);
+        const dueAmount = Number(purchase.dueAmount ?? 0);
         const s = String(purchase.status || "").toUpperCase();
 
         if (statusFilter === "PAID") {
@@ -153,14 +152,14 @@ export const usePurchaseTableFilter = ({
 
       // 3. Payment Method
       if (paymentMethodFilter && paymentMethodFilter !== "all") {
-        const pMethod = String(purchase.paymentType || purchase.payment_type || "CASH").toUpperCase();
+        const pMethod = String(purchase.paymentType || "CASH").toUpperCase();
         if (!pMethod.includes(paymentMethodFilter.toUpperCase())) return false;
       }
 
       // 4. Supplier Filter
       if (supplierFilter && supplierFilter !== "all") {
-        const sId = String(purchase.supplierId ?? purchase.supplier_id ?? "");
-        const sName = String(purchase.supplierName ?? purchase.supplier_name ?? "");
+        const sId = String(purchase.supplierId ?? "");
+        const sName = String(purchase.supplierName ?? "");
         const filterVal = String(supplierFilter).trim().toLowerCase();
         if (sId.toLowerCase() !== filterVal && sName.toLowerCase() !== filterVal) {
           return false;
@@ -225,33 +224,33 @@ export const usePurchaseTableFilter = ({
       case "amount_high":
       case "amount_high_to_low":
         return [...filteredPurchases].sort((a: any, b: any) => {
-          const amtA = Number(a.grandTotal ?? a.grand_total ?? a.totalAmount ?? 0);
-          const amtB = Number(b.grandTotal ?? b.grand_total ?? b.totalAmount ?? 0);
+          const amtA = Number(a.grandTotal ?? 0);
+          const amtB = Number(b.grandTotal ?? 0);
           return amtB - amtA;
         });
       case "amount_low":
       case "amount_low_to_high":
         return [...filteredPurchases].sort((a: any, b: any) => {
-          const amtA = Number(a.grandTotal ?? a.grand_total ?? a.totalAmount ?? 0);
-          const amtB = Number(b.grandTotal ?? b.grand_total ?? b.totalAmount ?? 0);
+          const amtA = Number(a.grandTotal ?? 0);
+          const amtB = Number(b.grandTotal ?? 0);
           return amtA - amtB;
         });
       case "supplier_a_to_z":
         return [...filteredPurchases].sort((a: any, b: any) => {
-          const nameA = String(a.supplierName || a.supplier_name || "").toLowerCase();
-          const nameB = String(b.supplierName || b.supplier_name || "").toLowerCase();
+          const nameA = String(a.supplierName || "").toLowerCase();
+          const nameB = String(b.supplierName || "").toLowerCase();
           return nameA.localeCompare(nameB);
         });
       case "supplier_z_to_a":
         return [...filteredPurchases].sort((a: any, b: any) => {
-          const nameA = String(a.supplierName || a.supplier_name || "").toLowerCase();
-          const nameB = String(b.supplierName || b.supplier_name || "").toLowerCase();
+          const nameA = String(a.supplierName || "").toLowerCase();
+          const nameB = String(b.supplierName || "").toLowerCase();
           return nameB.localeCompare(nameA);
         });
       case "oldest":
         return [...filteredPurchases].sort((a: any, b: any) => {
-          const dateA = a.createdAt || a.purchaseDate || a.date || "";
-          const dateB = b.createdAt || b.purchaseDate || b.date || "";
+          const dateA = a.purchaseDate || a.createdAt || "";
+          const dateB = b.purchaseDate || b.createdAt || "";
           if (dateA && dateB) {
             const diff = moment(dateA).diff(moment(dateB));
             if (!isNaN(diff) && diff !== 0) return diff;
@@ -263,8 +262,8 @@ export const usePurchaseTableFilter = ({
       case "latest":
       default:
         return [...filteredPurchases].sort((a: any, b: any) => {
-          const dateA = a.createdAt || a.purchaseDate || a.date || "";
-          const dateB = b.createdAt || b.purchaseDate || b.date || "";
+          const dateA = a.purchaseDate || a.createdAt || "";
+          const dateB = b.purchaseDate || b.createdAt || "";
           if (dateA && dateB) {
             const diff = moment(dateB).diff(moment(dateA));
             if (!isNaN(diff) && diff !== 0) return diff;
@@ -283,9 +282,9 @@ export const usePurchaseTableFilter = ({
     let totalDue = 0;
 
     sortedPurchases.forEach((purchase: any) => {
-      const gTotal = Number(purchase.grandTotal ?? purchase.grand_total ?? purchase.totalAmount ?? 0);
-      const paid = Number(purchase.paidAmount ?? purchase.paid_amount ?? 0);
-      const due = Number(purchase.dueAmount ?? purchase.due_amount ?? Math.max(0, gTotal - paid));
+      const gTotal = Number(purchase.grandTotal ?? 0);
+      const paid = Number(purchase.paidAmount ?? 0);
+      const due = Number(purchase.dueAmount ?? 0);
 
       totalAmount += gTotal;
       totalPaid += paid;

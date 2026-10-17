@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect, useMemo } from "react";
 import { FaSearch, FaUserPlus, FaWalking } from "react-icons/fa";
 import { FiChevronDown } from "react-icons/fi";
 import type { PartyItem } from "@/types";
+import { formatMoney } from "@/utils/formatters";
 
 export const WALK_IN_CUSTOMER: PartyItem = {
   id: 0,
@@ -24,6 +25,8 @@ export interface TradePartySelectorProps {
   walkInPhone?: string;
   onChangeWalkInName?: (val: string) => void;
   onChangeWalkInPhone?: (val: string) => void;
+  previousDue?: number | null;
+  isLoadingDue?: boolean;
 }
 
 export const TradePartySelector: React.FC<TradePartySelectorProps> = ({
@@ -39,6 +42,8 @@ export const TradePartySelector: React.FC<TradePartySelectorProps> = ({
   walkInPhone = "",
   onChangeWalkInName,
   onChangeWalkInPhone,
+  previousDue,
+  isLoadingDue = false,
 }) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -152,6 +157,16 @@ export const TradePartySelector: React.FC<TradePartySelectorProps> = ({
         <FiChevronDown className="text-gray-500 text-xs ml-1 shrink-0" size={14} />
       </div>
 
+      {/* Customer Previous Due Banner (Loaded from Backend /customer-invoices-due) */}
+      {!isWalkIn && selectedParty && previousDue !== undefined && previousDue !== null && (
+        <div className="mt-1 flex items-center justify-between px-2.5 py-1 bg-amber-50/80 border border-amber-200/90 rounded-md text-[11px]">
+          <span className="text-amber-900 font-medium">Previous Due:</span>
+          <span className={`font-bold ${previousDue > 0 ? "text-rose-600" : "text-emerald-600"}`}>
+            {isLoadingDue ? "Loading..." : formatMoney(previousDue)}
+          </span>
+        </div>
+      )}
+
       {/* Optional Walk-in Inputs */}
       {isWalkIn && (
         <div className="mt-1.5 grid grid-cols-2 gap-1.5 p-1.5 bg-emerald-50/70 border border-emerald-200 rounded-lg">
@@ -219,7 +234,7 @@ export const TradePartySelector: React.FC<TradePartySelectorProps> = ({
             {filteredParties.length > 0 ? (
               filteredParties.map((p) => {
                 const partyKey = p.id ?? p.name;
-                const balance = p.balance ?? p.openingBalance ?? p.dueAmount;
+                const balance = p.openingBalance ?? p.balance ?? 0;
                 return (
                   <div
                     key={partyKey}

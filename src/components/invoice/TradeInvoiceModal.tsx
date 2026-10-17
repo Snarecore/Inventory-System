@@ -78,6 +78,8 @@ export interface TradeInvoiceData {
   paidAmount?: number;
   dueAmount?: number;
   refundAmount?: number;
+  previousDue?: number;
+  totalDueWithCurrent?: number;
 
   notes?: string;
 }
@@ -467,7 +469,7 @@ export const TradeInvoiceModal: React.FC<TradeInvoiceModalProps> = ({
               {isReturn ? (
                 <div className="flex justify-between text-amber-700 font-bold">
                   <span>Refund Amount:</span>
-                  <span>৳ {formatMoney(Number(inv.refundAmount ?? inv.paidAmount ?? inv.grandTotal))}</span>
+                  <span>৳ {formatMoney(Number(inv.refundAmount ?? inv.grandTotal))}</span>
                 </div>
               ) : (
                 <>
@@ -479,6 +481,18 @@ export const TradeInvoiceModal: React.FC<TradeInvoiceModalProps> = ({
                     <div className="flex justify-between text-rose-600 font-black">
                       <span>Due Amount:</span>
                       <span>৳ {formatMoney(due)}</span>
+                    </div>
+                  )}
+                  {Number(inv.previousDue || 0) > 0 && (
+                    <div className="flex justify-between text-amber-800 text-[11px] pt-0.5 border-t border-dashed border-gray-200">
+                      <span>Previous Due:</span>
+                      <span>৳ {formatMoney(Number(inv.previousDue))}</span>
+                    </div>
+                  )}
+                  {Number(inv.previousDue || 0) > 0 && (
+                    <div className="flex justify-between text-rose-700 font-bold text-xs bg-rose-50 px-1.5 py-0.5 rounded">
+                      <span>Total Balance Due:</span>
+                      <span>৳ {formatMoney(due + Number(inv.previousDue))}</span>
                     </div>
                   )}
                   {Number(inv.customerPaid ?? 0) > grandTotal && (

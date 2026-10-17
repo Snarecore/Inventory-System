@@ -18,19 +18,19 @@ export const PartyDetailsModal: React.FC<PartyDetailsModalProps> = ({
 }) => {
   if (!party) return null;
 
-  const rawType = (party.type || party.partyType || party.party_type || "CUSTOMER").toUpperCase();
+  const rawType = (party.type || "CUSTOMER").toUpperCase();
   const isSupplier = rawType === "SUPPLIER";
-  const name = party.name || party.partyName || party.party_name || "Unnamed Party";
-  const partyCode = (party as any).partyCode || (party as any).code || (party as any).party_code || "";
-  const phone = party.phone || party.partyPhone || party.phoneNumber || party.party_phone || "—";
-  const altPhone = (party as any).alternatePhone || (party as any).altPhone || (party as any).alternate_phone || "—";
-  const email = party.email || party.partyEmail || "—";
-  const address = (party.address || party.partyAddress || "").trim();
+  const name = party.name || "Unnamed Party";
+  const partyCode = (party as any).partyCode || (party as any).code || "";
+  const phone = party.phone || "—";
+  const altPhone = (party as any).alternatePhone || "—";
+  const email = party.email || "—";
+  const address = (party.address || "").trim();
   const area = ((party as any).area || (party as any).city || "").trim();
   const fullAddress = address ? (area ? `${address}, ${area}` : address) : (area || "N/A");
-  const balance = Number(party.openingBalance ?? party.opening_balance ?? party.balance ?? party.dueAmount ?? party.due_amount ?? 0);
-  const creditLimit = (party as any).creditLimit || (party as any).credit_limit;
-  const note = party.note || (party as any).remarks || party.description || "";
+  const balance = Number(party.openingBalance ?? party.balance ?? 0);
+  const creditLimit = (party as any).creditLimit;
+  const note = party.note || "";
   
   const rawStatus = String(party.status ?? "active").trim().toLowerCase();
   const isActive = rawStatus !== "inactive" && rawStatus !== "false" && rawStatus !== "0";

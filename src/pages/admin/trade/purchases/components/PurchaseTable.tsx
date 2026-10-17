@@ -119,8 +119,8 @@ export const PurchaseTable: React.FC<PurchaseTableProps> = ({
     if (!supplierSearchQuery.trim()) return suppliersList;
     const q = supplierSearchQuery.toLowerCase().trim();
     return suppliersList.filter((s) => {
-      const name = (s.name || s.partyName || "").toLowerCase();
-      const phone = (s.phone || s.partyPhone || "").toLowerCase();
+      const name = (s.name || "").toLowerCase();
+      const phone = (s.phone || "").toLowerCase();
       return name.includes(q) || phone.includes(q);
     });
   }, [suppliersList, supplierSearchQuery]);
@@ -128,12 +128,12 @@ export const PurchaseTable: React.FC<PurchaseTableProps> = ({
   const selectedSupplierObj = useMemo(() => {
     if (!supplierFilter) return null;
     return suppliersList.find(
-      (s) => String(s.id ?? s.partyId ?? s.name ?? "") === String(supplierFilter)
+      (s) => String(s.id ?? s.name ?? "") === String(supplierFilter)
     );
   }, [suppliersList, supplierFilter]);
 
   const currentSupplierLabel = selectedSupplierObj
-    ? (selectedSupplierObj.name || selectedSupplierObj.partyName || "Supplier")
+    ? (selectedSupplierObj.name || "Supplier")
     : "All Suppliers";
 
   const statusOptions = [
@@ -336,14 +336,14 @@ export const PurchaseTable: React.FC<PurchaseTableProps> = ({
 
                     {filteredSupplierOptions.length > 0 ? (
                       filteredSupplierOptions.map((s) => {
-                        const sVal = String(s.id ?? s.partyId ?? s.name ?? "");
+                        const sVal = String(s.id ?? s.name ?? "");
                         const isSelected = supplierFilter === sVal;
-                        const sName = s.name || s.partyName || "Supplier";
-                        const sPhone = s.phone || s.partyPhone || "";
+                        const sName = s.name || "Supplier";
+                        const sPhone = s.phone || "";
 
                         return (
                           <div
-                            key={s.id ?? s.partyId ?? s.name}
+                            key={s.id ?? s.name}
                             onClick={() => {
                               setSupplierFilter(sVal);
                               setIsSupplierDropdownOpen(false);
@@ -472,36 +472,13 @@ export const PurchaseTable: React.FC<PurchaseTableProps> = ({
               <tbody className="divide-y divide-gray-100">
                 {purchases.map((purchase, index) => {
                   const serialNumber = (currentPageNumber - 1) * dataLimit + index + 1;
-                  const p: any = purchase;
-                  const rawDetails =
-                    p.purchaseDetails ||
-                    p.purchasesDetails ||
-                    p.purchase_details ||
-                    p.details ||
-                    p.items ||
-                    p.products ||
-                    p.purchaseListDetails ||
-                    p.salesDetails ||
-                    p.saleDetails ||
-                    p.productList ||
-                    p.productsList;
+                  const itemsCount = Array.isArray(purchase.purchaseDetails) && purchase.purchaseDetails.length > 0
+                    ? purchase.purchaseDetails.length
+                    : 1;
 
-                  let itemsCount = 1;
-                  if (Array.isArray(rawDetails) && rawDetails.length > 0) {
-                    const uniqueKeys = new Set<string>();
-                    rawDetails.forEach((d: any) => {
-                      const k = String(d.productId ?? d.product_id ?? d.productCode ?? d.pcode ?? d.productName ?? d.name ?? "").trim().toLowerCase();
-                      if (k) uniqueKeys.add(k);
-                    });
-                    itemsCount = uniqueKeys.size > 0 ? uniqueKeys.size : rawDetails.length;
-                  } else {
-                    const explicitCount = Number(p.itemCount ?? p.item_count ?? p.totalItems ?? p.total_items ?? p.itemsCount ?? p.items_count ?? p.productCount ?? p.product_count ?? 0);
-                    itemsCount = explicitCount > 0 ? explicitCount : 1;
-                  }
-
-                  const grandTotal = Number(purchase.grandTotal ?? purchase.totalAmount ?? 0);
+                  const grandTotal = Number(purchase.grandTotal ?? 0);
                   const paidAmount = Number(purchase.paidAmount ?? 0);
-                  const dueAmount = Number(purchase.dueAmount ?? Math.max(0, grandTotal - paidAmount));
+                  const dueAmount = Number(purchase.dueAmount ?? 0);
                   const paymentType = (purchase.paymentType || "CASH").toUpperCase();
 
                   let statusBadge = "Paid";
@@ -516,7 +493,7 @@ export const PurchaseTable: React.FC<PurchaseTableProps> = ({
 
                   return (
                     <tr
-                      key={purchase.id || purchase.purchaseId || purchase.invoiceNo || index}
+                      key={purchase.id || purchase.invoiceNo || index}
                       className="hover:bg-sky-50/40 transition-colors group"
                     >
                       {/* SL */}

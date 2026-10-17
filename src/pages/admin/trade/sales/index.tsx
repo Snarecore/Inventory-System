@@ -1,27 +1,24 @@
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import moment from "moment";
-import { FaPlus, FaShoppingCart } from "react-icons/fa";
+import { FaPlus } from "react-icons/fa";
 import PageHeader from "@/components/page-header/PageHeader";
 import Button from "@/components/button/Button";
 import RefreshButton from "@/components/table-components/RefreshButton";
 import SaleStats from "./components/SaleStats";
 import SaleTable from "./components/SaleTable";
 import SaleInvoiceModal from "./components/SaleInvoiceModal";
-import { useAPI } from "@/hooks/useApi";
 import apiConfig from "@/config/api.json";
-import { partyListQueryKey, productListQueryKey } from "@/config/query-key";
+import { partyListQueryKey } from "@/config/query-key";
 import { buildAccessUser } from "@/utils/access-user";
 import { postData } from "@/services/api-service";
-import { showSuccessToast, showErrorToast } from "@/utils/toast-utils";
 import type { SaleItem, PartyItem } from "@/types";
 import { isPartyActive } from "@/utils/party-utils";
 import { useSalesQuery } from "@/pages/admin/trade/sales-return/hooks/useSalesReturnQueries";
 
 const Sales: React.FC = () => {
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
 
   // Search, Filters & Pagination State
   const [searchQuery, setSearchQuery] = useState<string>("");
@@ -112,10 +109,10 @@ const Sales: React.FC = () => {
       // 1. Search Query
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase().trim();
-        const inv = String(sale.invoiceNo || sale.invoice_no || sale.salesInvoiceNo || "").toLowerCase();
-        const ord = String(sale.orderNo || sale.order_no || "").toLowerCase();
-        const cName = String(sale.customerName || sale.customer_name || "").toLowerCase();
-        const cPhone = String(sale.customerPhone || sale.customer_phone || "").toLowerCase();
+        const inv = String(sale.invoiceNo || "").toLowerCase();
+        const ord = String(sale.orderNo || "").toLowerCase();
+        const cName = String(sale.customerName || "").toLowerCase();
+        const cPhone = String(sale.customerPhone || "").toLowerCase();
         if (!inv.includes(q) && !ord.includes(q) && !cName.includes(q) && !cPhone.includes(q)) {
           return false;
         }
@@ -123,9 +120,8 @@ const Sales: React.FC = () => {
 
       // 2. Status Filter
       if (statusFilter !== "all") {
-        const grandTotal = Number(sale.grandTotal ?? sale.grand_total ?? sale.totalAmount ?? 0);
-        const paidAmount = Number(sale.paidAmount ?? sale.paid_amount ?? 0);
-        const dueAmount = Number(sale.dueAmount ?? sale.due_amount ?? Math.max(0, grandTotal - paidAmount));
+        const paidAmount = Number(sale.paidAmount || 0);
+        const dueAmount = Number(sale.dueAmount || 0);
         const s = String(sale.status || "").toUpperCase();
 
         if (statusFilter === "PAID") {
@@ -139,14 +135,14 @@ const Sales: React.FC = () => {
 
       // 3. Payment Method
       if (paymentMethodFilter !== "all") {
-        const pMethod = String(sale.paymentType || sale.payment_type || "CASH").toUpperCase();
+        const pMethod = String(sale.paymentType || "CASH").toUpperCase();
         if (pMethod !== paymentMethodFilter) return false;
       }
 
       // 4. Customer Filter
       if (customerFilter !== "all") {
-        const cId = String(sale.customerId || sale.customer_id || "");
-        const cName = String(sale.customerName || sale.customer_name || "");
+        const cId = String(sale.customerId || "");
+        const cName = String(sale.customerName || "");
         const filterVal = String(customerFilter).trim().toLowerCase();
         if (
           cId.toLowerCase() !== filterVal &&
@@ -158,7 +154,7 @@ const Sales: React.FC = () => {
 
       // 5. Date Range Filter
       if (dateFilter !== "all") {
-        const saleDateStr = sale.salesDate || sale.saleDate || sale.date;
+        const saleDateStr = sale.salesDate;
         if (!saleDateStr) return true;
         const saleDate = moment(saleDateStr);
 
@@ -195,10 +191,10 @@ const Sales: React.FC = () => {
   // Sort
   const sortedSales = useMemo(() => {
     return [...filteredSales].sort((a: any, b: any) => {
-      const dateA = new Date(a.salesDate || a.saleDate || a.date || a.createdAt || 0).getTime();
-      const dateB = new Date(b.salesDate || b.saleDate || b.date || b.createdAt || 0).getTime();
-      const amountA = Number(a.grandTotal ?? a.grand_total ?? a.totalAmount ?? 0);
-      const amountB = Number(b.grandTotal ?? b.grand_total ?? b.totalAmount ?? 0);
+      const dateA = new Date(a.salesDate || 0).getTime();
+      const dateB = new Date(b.salesDate || 0).getTime();
+      const amountA = Number(a.grandTotal || 0);
+      const amountB = Number(b.grandTotal || 0);
 
       if (sortBy === "oldest") return dateA - dateB;
       if (sortBy === "amount_high" || sortBy === "amount_high_to_low") {
@@ -210,14 +206,14 @@ const Sales: React.FC = () => {
         return diff !== 0 ? diff : dateB - dateA;
       }
       if (sortBy === "customer_a_to_z") {
-        const nameA = String(a.customerName || a.customer_name || a.customer?.name || "Walk-in Customer").trim().toLowerCase();
-        const nameB = String(b.customerName || b.customer_name || b.customer?.name || "Walk-in Customer").trim().toLowerCase();
+        const nameA = String(a.customerName || "Walk-in Customer").trim().toLowerCase();
+        const nameB = String(b.customerName || "Walk-in Customer").trim().toLowerCase();
         const cmp = nameA.localeCompare(nameB);
         return cmp !== 0 ? cmp : dateB - dateA;
       }
       if (sortBy === "customer_z_to_a") {
-        const nameA = String(a.customerName || a.customer_name || a.customer?.name || "Walk-in Customer").trim().toLowerCase();
-        const nameB = String(b.customerName || b.customer_name || b.customer?.name || "Walk-in Customer").trim().toLowerCase();
+        const nameA = String(a.customerName || "Walk-in Customer").trim().toLowerCase();
+        const nameB = String(b.customerName || "Walk-in Customer").trim().toLowerCase();
         const cmp = nameB.localeCompare(nameA);
         return cmp !== 0 ? cmp : dateB - dateA;
       }
@@ -232,9 +228,9 @@ const Sales: React.FC = () => {
     let totalDue = 0;
 
     sortedSales.forEach((sale: any) => {
-      const gt = Number(sale.grandTotal ?? sale.grand_total ?? sale.totalAmount ?? 0);
-      const paid = Number(sale.paidAmount ?? sale.paid_amount ?? 0);
-      const due = Number(sale.dueAmount ?? sale.due_amount ?? Math.max(0, gt - paid));
+      const gt = Number(sale.grandTotal || 0);
+      const paid = Number(sale.paidAmount || 0);
+      const due = Number(sale.dueAmount || 0);
 
       totalAmount += gt;
       totalPaid += paid;

@@ -84,23 +84,23 @@ const SalesReturnPage: React.FC = () => {
 
     const filtered = list.filter((p: any) => {
       if (!isPartyActive(p)) return false;
-      const type = String(p.type || p.partyType || p.party_type || p.party_type_name || p.role || "").toUpperCase();
+      const type = String(p.type || p.partyType || "").toUpperCase();
       if (type.includes("SUPPLIER") || type.includes("VENDOR")) return false;
       return type.includes("CUSTOMER") || !type;
     });
 
     const custMap = new Map<string, PartyItem>();
     filtered.forEach((p: any) => {
-      const key = String(p.id ?? p.partyId ?? p.name ?? "").trim();
+      const key = String(p.id ?? p.name ?? "").trim();
       if (key) {
         custMap.set(key, {
-          id: p.id ?? p.partyId,
-          partyId: p.id ?? p.partyId,
-          name: p.name || p.partyName || "Customer",
-          partyName: p.name || p.partyName || "Customer",
-          phone: p.phone || p.partyPhone || "",
-          partyPhone: p.phone || p.partyPhone || "",
-          address: p.address || p.partyAddress || "",
+          id: p.id,
+          partyId: p.id,
+          name: p.name || "Customer",
+          partyName: p.name || "Customer",
+          phone: p.phone || "",
+          partyPhone: p.phone || "",
+          address: p.address || "",
           type: "CUSTOMER",
         });
       }
@@ -136,30 +136,30 @@ const SalesReturnPage: React.FC = () => {
         const noteText = extractReturnRemarks(item);
 
         returnsList.push({
-          id: item.id || item.returnId || item.return_id,
-          returnNo: item.returnNo || item.refNo || (item.orderNo ? `RET-${item.orderNo}` : `RET-${item.id}`),
-          orderNo: item.orderNo || item.order_no || "",
-          salesInvoiceNo: item.salesInvoiceNo || item.invoiceNo || "-",
-          invoiceNo: item.salesInvoiceNo || item.invoiceNo || "-",
-          returnDate: item.returnDate || item.salesDate || item.saleDate || item.date || moment().format("YYYY-MM-DD"),
-          createdAt: item.createdAt || item.created_at || item.createdDate || item.date || item.returnDate,
+          id: item.id || item.returnId,
+          returnNo: item.returnNo || (item.orderNo ? `RET-${item.orderNo}` : `RET-${item.id}`),
+          orderNo: item.orderNo || "",
+          salesInvoiceNo: item.invoiceNo || item.salesInvoiceNo || "-",
+          invoiceNo: item.invoiceNo || item.salesInvoiceNo || "-",
+          returnDate: item.returnDate || item.salesDate || moment().format("YYYY-MM-DD"),
+          createdAt: item.createdAt || item.returnDate,
           customerId: item.customerId,
           customerName: item.customerName || "Customer",
           customerPhone: item.customerPhone,
           customerAddress: item.customerAddress,
-          totalAmount: Number(item.totalAmount ?? item.returnGrandTotal ?? item.refundAmount ?? 0),
+          totalAmount: Number(item.totalAmount ?? item.returnGrandTotal ?? 0),
           discount: Number(item.discount ?? 0),
           vat: Number(item.vat ?? 0),
-          deliveryCharge: Number(item.deliveryCharge ?? item.delivery_charge ?? 0),
-          grandTotal: Number(item.returnGrandTotal ?? item.grandTotal ?? item.refundAmount ?? 0),
-          refundAmount: Number(item.returnRefundAmount ?? item.refundAmount ?? item.returnGrandTotal ?? item.grandTotal ?? 0),
+          deliveryCharge: Number(item.deliveryCharge ?? 0),
+          grandTotal: Number(item.returnGrandTotal ?? item.grandTotal ?? 0),
+          refundAmount: Number(item.returnRefundAmount ?? item.refundAmount ?? item.returnGrandTotal ?? 0),
           paymentType: item.paymentType || "CASH",
           status: item.status || "Completed",
           note: noteText,
           remarks: noteText,
           reason: noteText,
-          returnDetails: item.returnDetails || item.salesReturnDetails || item.details || [],
-          itemsCount: (item.returnDetails || item.salesReturnDetails || item.details)?.length || 1,
+          returnDetails: item.returnDetails || item.salesReturnDetails || [],
+          itemsCount: (item.returnDetails || item.salesReturnDetails)?.length || 1,
         });
       }
     });
@@ -190,9 +190,9 @@ const SalesReturnPage: React.FC = () => {
       // 1. Search Query
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase().trim();
-        const inv = String(sale.invoiceNo || sale.invoice_no || "").toLowerCase();
-        const cName = String(sale.customerName || sale.customer_name || "").toLowerCase();
-        const cPhone = String(sale.customerPhone || sale.customer_phone || "").toLowerCase();
+        const inv = String(sale.invoiceNo || "").toLowerCase();
+        const cName = String(sale.customerName || "").toLowerCase();
+        const cPhone = String(sale.customerPhone || "").toLowerCase();
         if (!inv.includes(q) && !cName.includes(q) && !cPhone.includes(q)) {
           return false;
         }
@@ -200,9 +200,8 @@ const SalesReturnPage: React.FC = () => {
 
       // 2. Status Filter
       if (statusFilter !== "all" && statusFilter !== "") {
-        const grandTotal = Number(sale.grandTotal ?? sale.grand_total ?? sale.totalAmount ?? 0);
-        const paidAmount = Number(sale.paidAmount ?? sale.paid_amount ?? 0);
-        const dueAmount = Number(sale.dueAmount ?? sale.due_amount ?? Math.max(0, grandTotal - paidAmount));
+        const paidAmount = Number(sale.paidAmount ?? 0);
+        const dueAmount = Number(sale.dueAmount ?? 0);
         const s = String(sale.status || "").toUpperCase();
 
         if (statusFilter === "PAID") {
@@ -216,14 +215,14 @@ const SalesReturnPage: React.FC = () => {
 
       // 3. Payment Method
       if (paymentMethodFilter !== "all") {
-        const pMethod = String(sale.paymentType || sale.payment_type || "CASH").toUpperCase();
+        const pMethod = String(sale.paymentType || "CASH").toUpperCase();
         if (pMethod !== paymentMethodFilter) return false;
       }
 
       // 4. Customer Filter
       if (customerFilter !== "all") {
-        const cId = String(sale.customerId || sale.customer_id || "");
-        const cName = String(sale.customerName || sale.customer_name || "");
+        const cId = String(sale.customerId || "");
+        const cName = String(sale.customerName || "");
         const filterVal = String(customerFilter).trim().toLowerCase();
         if (cId.toLowerCase() !== filterVal && cName.toLowerCase() !== filterVal) {
           return false;
@@ -232,7 +231,7 @@ const SalesReturnPage: React.FC = () => {
 
       // 5. Date Range Filter
       if (dateFilter !== "all") {
-        const saleDateStr = sale.salesDate || sale.saleDate || sale.date;
+        const saleDateStr = sale.salesDate;
         if (!saleDateStr) return true;
         const saleDate = moment(saleDateStr);
 
@@ -269,8 +268,8 @@ const SalesReturnPage: React.FC = () => {
   // Sorting for Sales
   const sortedSales = useMemo(() => {
     return [...filteredSales].sort((a: any, b: any) => {
-      const dateA = a.salesDate || a.saleDate || a.date;
-      const dateB = b.salesDate || b.saleDate || b.date;
+      const dateA = a.salesDate;
+      const dateB = b.salesDate;
       if (sortBy === "latest") {
         return moment(dateB).diff(moment(dateA));
       }
@@ -278,26 +277,26 @@ const SalesReturnPage: React.FC = () => {
         return moment(dateA).diff(moment(dateB));
       }
       if (sortBy === "amount_high" || sortBy === "amount_high_to_low") {
-        const amtA = Number(a.grandTotal ?? a.grand_total ?? a.totalAmount ?? 0);
-        const amtB = Number(b.grandTotal ?? b.grand_total ?? b.totalAmount ?? 0);
+        const amtA = Number(a.grandTotal ?? 0);
+        const amtB = Number(b.grandTotal ?? 0);
         const diff = amtB - amtA;
         return diff !== 0 ? diff : moment(dateB).diff(moment(dateA));
       }
       if (sortBy === "amount_low" || sortBy === "amount_low_to_high") {
-        const amtA = Number(a.grandTotal ?? a.grand_total ?? a.totalAmount ?? 0);
-        const amtB = Number(b.grandTotal ?? b.grand_total ?? b.totalAmount ?? 0);
+        const amtA = Number(a.grandTotal ?? 0);
+        const amtB = Number(b.grandTotal ?? 0);
         const diff = amtA - amtB;
         return diff !== 0 ? diff : moment(dateB).diff(moment(dateA));
       }
       if (sortBy === "customer_a_to_z") {
-        const nameA = String(a.customerName || a.customer_name || a.customer?.name || "Walk-in Customer").trim().toLowerCase();
-        const nameB = String(b.customerName || b.customer_name || b.customer?.name || "Walk-in Customer").trim().toLowerCase();
+        const nameA = String(a.customerName || "Walk-in Customer").trim().toLowerCase();
+        const nameB = String(b.customerName || "Walk-in Customer").trim().toLowerCase();
         const cmp = nameA.localeCompare(nameB);
         return cmp !== 0 ? cmp : moment(dateB).diff(moment(dateA));
       }
       if (sortBy === "customer_z_to_a") {
-        const nameA = String(a.customerName || a.customer_name || a.customer?.name || "Walk-in Customer").trim().toLowerCase();
-        const nameB = String(b.customerName || b.customer_name || b.customer?.name || "Walk-in Customer").trim().toLowerCase();
+        const nameA = String(a.customerName || "Walk-in Customer").trim().toLowerCase();
+        const nameB = String(b.customerName || "Walk-in Customer").trim().toLowerCase();
         const cmp = nameB.localeCompare(nameA);
         return cmp !== 0 ? cmp : moment(dateB).diff(moment(dateA));
       }
@@ -494,7 +493,7 @@ const SalesReturnPage: React.FC = () => {
   };
 
   const handleEditSale = (sale: SaleItem) => {
-    navigate(`/admin/edit-sale/${sale.id || sale.saleId || sale.invoiceNo}`, {
+    navigate(`/admin/edit-sale/${sale.id || sale.invoiceNo}`, {
       state: { editData: sale },
     });
   };

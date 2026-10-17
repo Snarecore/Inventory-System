@@ -120,8 +120,8 @@ export const PurchaseReturnPurchaseTable: React.FC<PurchaseReturnPurchaseTablePr
     if (!supplierSearchQuery.trim()) return suppliersList;
     const q = supplierSearchQuery.toLowerCase().trim();
     return suppliersList.filter((s) => {
-      const name = (s.name || s.partyName || "").toLowerCase();
-      const phone = (s.phone || s.partyPhone || "").toLowerCase();
+      const name = (s.name || "").toLowerCase();
+      const phone = (s.phone || "").toLowerCase();
       return name.includes(q) || phone.includes(q);
     });
   }, [suppliersList, supplierSearchQuery]);
@@ -129,12 +129,12 @@ export const PurchaseReturnPurchaseTable: React.FC<PurchaseReturnPurchaseTablePr
   const selectedSupplierObj = useMemo(() => {
     if (!supplierFilter) return null;
     return suppliersList.find(
-      (s) => String(s.id ?? s.partyId ?? s.name ?? "") === String(supplierFilter)
+      (s) => String(s.id ?? s.name ?? "") === String(supplierFilter)
     );
   }, [suppliersList, supplierFilter]);
 
   const currentSupplierLabel = selectedSupplierObj
-    ? (selectedSupplierObj.name || selectedSupplierObj.partyName || "Supplier")
+    ? (selectedSupplierObj.name || "Supplier")
     : "All Suppliers";
 
   const statusOptions = [
@@ -336,14 +336,14 @@ export const PurchaseReturnPurchaseTable: React.FC<PurchaseReturnPurchaseTablePr
 
                     {filteredSupplierOptions.length > 0 ? (
                       filteredSupplierOptions.map((s) => {
-                        const sVal = String(s.id ?? s.partyId ?? s.name ?? "");
+                        const sVal = String(s.id ?? s.name ?? "");
                         const isSelected = supplierFilter === sVal;
-                        const sName = s.name || s.partyName || "Supplier";
-                        const sPhone = s.phone || s.partyPhone || "";
+                        const sName = s.name || "Supplier";
+                        const sPhone = s.phone || "";
 
                         return (
                           <div
-                            key={s.id ?? s.partyId ?? s.name}
+                            key={s.id ?? s.name}
                             onClick={() => {
                               setSupplierFilter(sVal);
                               setIsSupplierDropdownOpen(false);
@@ -470,36 +470,13 @@ export const PurchaseReturnPurchaseTable: React.FC<PurchaseReturnPurchaseTablePr
             <tbody className="divide-y divide-gray-100">
               {purchases.map((purchase, index) => {
                 const serialNumber = (currentPageNumber - 1) * dataLimit + index + 1;
-                const p: any = purchase;
-                const rawDetails =
-                  p.purchaseDetails ||
-                  p.purchasesDetails ||
-                  p.purchase_details ||
-                  p.details ||
-                  p.items ||
-                  p.products ||
-                  p.purchaseListDetails ||
-                  p.salesDetails ||
-                  p.saleDetails ||
-                  p.productList ||
-                  p.productsList;
+                const itemsCount = Array.isArray(purchase.purchaseDetails) && purchase.purchaseDetails.length > 0
+                  ? purchase.purchaseDetails.length
+                  : 1;
 
-                let itemsCount = 1;
-                if (Array.isArray(rawDetails) && rawDetails.length > 0) {
-                  const uniqueKeys = new Set<string>();
-                  rawDetails.forEach((d: any) => {
-                    const k = String(d.productId ?? d.product_id ?? d.productCode ?? d.pcode ?? d.productName ?? d.name ?? "").trim().toLowerCase();
-                    if (k) uniqueKeys.add(k);
-                  });
-                  itemsCount = uniqueKeys.size > 0 ? uniqueKeys.size : rawDetails.length;
-                } else {
-                  const explicitCount = Number(p.itemCount ?? p.item_count ?? p.totalItems ?? p.total_items ?? p.itemsCount ?? p.items_count ?? p.productCount ?? p.product_count ?? 0);
-                  itemsCount = explicitCount > 0 ? explicitCount : 1;
-                }
-
-                const grandTotal = Number(purchase.grandTotal ?? purchase.totalAmount ?? 0);
+                const grandTotal = Number(purchase.grandTotal ?? 0);
                 const paidAmount = Number(purchase.paidAmount ?? 0);
-                const dueAmount = Number(purchase.dueAmount ?? Math.max(0, grandTotal - paidAmount));
+                const dueAmount = Number(purchase.dueAmount ?? 0);
                 const paymentType = (purchase.paymentType || "CASH").toUpperCase();
 
                 let statusBadge = "Paid";
@@ -512,26 +489,11 @@ export const PurchaseReturnPurchaseTable: React.FC<PurchaseReturnPurchaseTablePr
                   statusBg = "bg-rose-100 text-rose-800 border-rose-300 font-semibold";
                 }
 
-                const isAlreadyReturned =
-                  Boolean(
-                    (purchase as any).hasReturn ||
-                    (purchase as any).returnNo ||
-                    (purchase as any).returnGrandTotal ||
-                    String((purchase as any).returnType || "").toUpperCase() === "RETURN" ||
-                    (Array.isArray((purchase as any).returnDetails) && (purchase as any).returnDetails.length > 0) ||
-                    (Array.isArray((purchase as any).purchaseReturnDetails) && (purchase as any).purchaseReturnDetails.length > 0)
-                  ) ||
-                  (returnedInvoiceSet
-                    ? returnedInvoiceSet.has(String(purchase.invoiceNo || "").trim().toLowerCase()) ||
-                      returnedInvoiceSet.has(String((purchase as any).purchaseInvoiceNo || "").trim().toLowerCase()) ||
-                      returnedInvoiceSet.has(String((purchase as any).orderNo || (purchase as any).order_no || "").trim().toLowerCase()) ||
-                      returnedInvoiceSet.has(String((purchase as any).challanNo || (purchase as any).challan_no || "").trim().toLowerCase()) ||
-                      returnedInvoiceSet.has(String(purchase.id || (purchase as any).purchaseId || "").trim().toLowerCase())
-                    : false);
+                const isAlreadyReturned = Boolean(purchase.hasReturn);
 
                 return (
                   <tr
-                    key={purchase.id || purchase.purchaseId || purchase.invoiceNo || index}
+                    key={purchase.id || purchase.invoiceNo || index}
                     className="hover:bg-sky-50/40 transition-colors group"
                   >
                     {/* SL */}
@@ -549,7 +511,7 @@ export const PurchaseReturnPurchaseTable: React.FC<PurchaseReturnPurchaseTablePr
                           className={`font-medium ${onView ? "cursor-pointer hover:text-sky-600 transition-colors" : "text-gray-800"}`}
                           title={onView ? "Click to view invoice" : undefined}
                         >
-                          {purchase.orderNo || (purchase as any).order_no || purchase.invoiceNo || (purchase as any).invoice_no || (purchase as any).purchaseInvoiceNo || purchase.challanNo || (purchase as any).challan_no || (purchase.id ? `PO-${purchase.id}` : "-")}
+                          {purchase.orderNo || purchase.invoiceNo || "-"}
                         </span>
                       </td>
                     )}
@@ -572,8 +534,8 @@ export const PurchaseReturnPurchaseTable: React.FC<PurchaseReturnPurchaseTablePr
                     {isColVisible("date") && (
                       <td className="py-2.5 px-3 text-black text-xs font-normal whitespace-nowrap">
                         <span className="flex items-center gap-1 text-[11px] text-black font-normal">
-                          {purchase.purchaseDate || (purchase as any).date || purchase.createdAt
-                            ? moment(purchase.purchaseDate || (purchase as any).date || purchase.createdAt).format("DD MMM, YYYY")
+                          {purchase.purchaseDate
+                            ? moment(purchase.purchaseDate).format("DD MMM, YYYY")
                             : moment().format("DD MMM, YYYY")}
                         </span>
                       </td>

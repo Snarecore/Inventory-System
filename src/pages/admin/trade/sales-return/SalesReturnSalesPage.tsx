@@ -14,11 +14,7 @@ import { partyListQueryKey } from "@/config/query-key";
 import { buildAccessUser } from "@/utils/access-user";
 import type { SaleItem, PartyItem } from "@/types";
 import { isPartyActive } from "@/utils/party-utils";
-import {
-  useSalesAndReturnsQuery,
-  useSalesQuery,
-  extractReturnedSalesInvoiceKeysSet,
-} from "./hooks/useSalesReturnQueries";
+import { useSalesAndReturnsQuery } from "./hooks/useSalesReturnQueries";
 
 /**
  * Dedicated Sales Orders page for Sales Return workflow
@@ -74,23 +70,23 @@ const SalesReturnSalesPage: React.FC = () => {
 
     const filtered = list.filter((p: any) => {
       if (!isPartyActive(p)) return false;
-      const type = String(p.type || p.partyType || p.party_type || p.party_type_name || p.role || "").toUpperCase();
+      const type = String(p.type || p.partyType || "").toUpperCase();
       if (type.includes("SUPPLIER") || type.includes("VENDOR")) return false;
       return type.includes("CUSTOMER") || !type;
     });
 
     const custMap = new Map<string, PartyItem>();
     filtered.forEach((p: any) => {
-      const key = String(p.id ?? p.partyId ?? p.name ?? "").trim();
+      const key = String(p.id ?? p.name ?? "").trim();
       if (key) {
         custMap.set(key, {
-          id: p.id ?? p.partyId,
-          partyId: p.id ?? p.partyId,
-          name: p.name || p.partyName || "Customer",
-          partyName: p.name || p.partyName || "Customer",
-          phone: p.phone || p.partyPhone || "",
-          partyPhone: p.phone || p.partyPhone || "",
-          address: p.address || p.partyAddress || "",
+          id: p.id,
+          partyId: p.id,
+          name: p.name || "Customer",
+          partyName: p.name || "Customer",
+          phone: p.phone || "",
+          partyPhone: p.phone || "",
+          address: p.address || "",
           type: "CUSTOMER",
         });
       }
@@ -99,20 +95,13 @@ const SalesReturnSalesPage: React.FC = () => {
     return Array.from(custMap.values());
   }, [rawCustomerData]);
 
-  // 2. Fetch Sales & Returns from unified cache to cross-reference already returned orders
-  const { data: salesAndReturnData } = useSalesAndReturnsQuery();
-
-  const returnedInvoiceSet = useMemo(() => {
-    return extractReturnedSalesInvoiceKeysSet(salesAndReturnData || []);
-  }, [salesAndReturnData]);
-
-  // 3. Fetch Sales from Backend API (Shared TanStack Query cache)
+  // Unified Query for Sales and Returns (matches cashboi-v2 backend contract)
   const {
     data: salesData,
     isLoading,
     isFetching,
     refetch,
-  } = useSalesQuery();
+  } = useSalesAndReturnsQuery();
 
   const rawSales: SaleItem[] = useMemo(() => {
     if (Array.isArray(salesData)) return salesData;
@@ -125,10 +114,10 @@ const SalesReturnSalesPage: React.FC = () => {
       // 1. Search Query
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase().trim();
-        const inv = String(sale.invoiceNo || sale.invoice_no || sale.salesInvoiceNo || "").toLowerCase();
-        const ord = String(sale.orderNo || sale.order_no || "").toLowerCase();
-        const cName = String(sale.customerName || sale.customer_name || "").toLowerCase();
-        const cPhone = String(sale.customerPhone || sale.customer_phone || "").toLowerCase();
+        const inv = String(sale.invoiceNo || "").toLowerCase();
+        const ord = String(sale.orderNo || "").toLowerCase();
+        const cName = String(sale.customerName || "").toLowerCase();
+        const cPhone = String(sale.customerPhone || "").toLowerCase();
         if (!inv.includes(q) && !ord.includes(q) && !cName.includes(q) && !cPhone.includes(q)) {
           return false;
         }
@@ -136,9 +125,8 @@ const SalesReturnSalesPage: React.FC = () => {
 
       // 2. Status Filter
       if (statusFilter !== "all" && statusFilter !== "") {
-        const grandTotal = Number(sale.grandTotal ?? sale.grand_total ?? sale.totalAmount ?? 0);
-        const paidAmount = Number(sale.paidAmount ?? sale.paid_amount ?? 0);
-        const dueAmount = Number(sale.dueAmount ?? sale.due_amount ?? Math.max(0, grandTotal - paidAmount));
+        const paidAmount = Number(sale.paidAmount ?? 0);
+        const dueAmount = Number(sale.dueAmount ?? 0);
         const s = String(sale.status || "").toUpperCase();
 
         if (statusFilter === "PAID") {
@@ -152,14 +140,14 @@ const SalesReturnSalesPage: React.FC = () => {
 
       // 3. Payment Method
       if (paymentMethodFilter !== "all") {
-        const pMethod = String(sale.paymentType || sale.payment_type || "CASH").toUpperCase();
+        const pMethod = String(sale.paymentType || "CASH").toUpperCase();
         if (pMethod !== paymentMethodFilter) return false;
       }
 
       // 4. Customer Filter
       if (customerFilter !== "all") {
-        const cId = String(sale.customerId || sale.customer_id || "");
-        const cName = String(sale.customerName || sale.customer_name || "");
+        const cId = String(sale.customerId || "");
+        const cName = String(sale.customerName || "");
         const filterVal = String(customerFilter).trim().toLowerCase();
         if (
           cId.toLowerCase() !== filterVal &&
@@ -171,7 +159,7 @@ const SalesReturnSalesPage: React.FC = () => {
 
       // 5. Date Range Filter
       if (dateFilter !== "all") {
-        const saleDateStr = sale.salesDate || sale.saleDate || sale.date;
+        const saleDateStr = sale.salesDate;
         if (!saleDateStr) return true;
         const saleDate = moment(saleDateStr);
 
@@ -208,8 +196,8 @@ const SalesReturnSalesPage: React.FC = () => {
   // Sorting
   const sortedSales = useMemo(() => {
     return [...filteredSales].sort((a: any, b: any) => {
-      const dateA = a.salesDate || a.saleDate || a.date;
-      const dateB = b.salesDate || b.saleDate || b.date;
+      const dateA = a.salesDate;
+      const dateB = b.salesDate;
 
       if (sortBy === "latest") {
         return moment(dateB).diff(moment(dateA));
@@ -218,26 +206,26 @@ const SalesReturnSalesPage: React.FC = () => {
         return moment(dateA).diff(moment(dateB));
       }
       if (sortBy === "amount_high" || sortBy === "amount_high_to_low") {
-        const amtA = Number(a.grandTotal ?? a.grand_total ?? a.totalAmount ?? 0);
-        const amtB = Number(b.grandTotal ?? b.grand_total ?? b.totalAmount ?? 0);
+        const amtA = Number(a.grandTotal ?? 0);
+        const amtB = Number(b.grandTotal ?? 0);
         const diff = amtB - amtA;
         return diff !== 0 ? diff : moment(dateB).diff(moment(dateA));
       }
       if (sortBy === "amount_low" || sortBy === "amount_low_to_high") {
-        const amtA = Number(a.grandTotal ?? a.grand_total ?? a.totalAmount ?? 0);
-        const amtB = Number(b.grandTotal ?? b.grand_total ?? b.totalAmount ?? 0);
+        const amtA = Number(a.grandTotal ?? 0);
+        const amtB = Number(b.grandTotal ?? 0);
         const diff = amtA - amtB;
         return diff !== 0 ? diff : moment(dateB).diff(moment(dateA));
       }
       if (sortBy === "customer_a_to_z") {
-        const nameA = String(a.customerName || a.customer_name || a.customer?.name || "Walk-in Customer").trim().toLowerCase();
-        const nameB = String(b.customerName || b.customer_name || b.customer?.name || "Walk-in Customer").trim().toLowerCase();
+        const nameA = String(a.customerName || "Walk-in Customer").trim().toLowerCase();
+        const nameB = String(b.customerName || "Walk-in Customer").trim().toLowerCase();
         const cmp = nameA.localeCompare(nameB);
         return cmp !== 0 ? cmp : moment(dateB).diff(moment(dateA));
       }
       if (sortBy === "customer_z_to_a") {
-        const nameA = String(a.customerName || a.customer_name || a.customer?.name || "Walk-in Customer").trim().toLowerCase();
-        const nameB = String(b.customerName || b.customer_name || b.customer?.name || "Walk-in Customer").trim().toLowerCase();
+        const nameA = String(a.customerName || "Walk-in Customer").trim().toLowerCase();
+        const nameB = String(b.customerName || "Walk-in Customer").trim().toLowerCase();
         const cmp = nameB.localeCompare(nameA);
         return cmp !== 0 ? cmp : moment(dateB).diff(moment(dateA));
       }
@@ -252,9 +240,9 @@ const SalesReturnSalesPage: React.FC = () => {
     let totalDue = 0;
 
     sortedSales.forEach((sale: any) => {
-      const gTotal = Number(sale.grandTotal ?? sale.grand_total ?? sale.totalAmount ?? 0);
-      const paid = Number(sale.paidAmount ?? sale.paid_amount ?? 0);
-      const due = Number(sale.dueAmount ?? sale.due_amount ?? Math.max(0, gTotal - paid));
+      const gTotal = Number(sale.grandTotal ?? 0);
+      const paid = Number(sale.paidAmount ?? 0);
+      const due = Number(sale.dueAmount ?? 0);
 
       totalAmount += gTotal;
       totalPaid += paid;
@@ -293,7 +281,7 @@ const SalesReturnSalesPage: React.FC = () => {
   };
 
   const handleEdit = (sale: SaleItem) => {
-    navigate(`/admin/edit-sale/${sale.id || sale.saleId || sale.invoiceNo}`, {
+    navigate(`/admin/edit-sale/${sale.id || sale.invoiceNo}`, {
       state: { editData: sale },
     });
   };
@@ -357,7 +345,6 @@ const SalesReturnSalesPage: React.FC = () => {
         setCustomEndDate={setCustomEndDate}
         sortBy={sortBy}
         setSortBy={setSortBy}
-        returnedInvoiceSet={returnedInvoiceSet}
         showReturnAction={true}
         onEdit={handleEdit}
         onView={handleView}

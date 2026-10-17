@@ -323,8 +323,8 @@ export const SalesReturnForm: React.FC = () => {
 
     if (details.length > 0) {
       const formattedLines: ReturnLineFormState[] = details.map((d: any) => {
-        const soldQty = Number(d.quantity ?? d.qty ?? 1);
-        const p = Number(d.sellPrice ?? d.unitPrice ?? d.price ?? 0);
+        const soldQty = Number(d.quantity ?? 1);
+        const p = Number(d.sellPrice ?? 0);
 
         const pId = String(d.productId ?? d.id ?? "").trim();
         const pCode = String(d.productCode ?? d.pcode ?? "").trim();

@@ -130,9 +130,9 @@ export const TradeProductSearch: React.FC<TradeProductSearchProps> = ({
 
           {filteredProducts.length > 0 ? (
             filteredProducts.map((p) => {
-              const prodKey = String(p.id ?? p.productCode ?? p.pcode ?? "");
+              const prodKey = String(p.id ?? p.pcode ?? "");
               const isAlreadyInList = isProductAlreadyInList(p);
-              const pCodeStr = String(p.productCode || p.pcode || "").toLowerCase();
+              const pCodeStr = String(p.pcode || "").toLowerCase();
               const existingIndex = lineItems.findIndex(
                 (item) =>
                   (p.id && String(item.productId) === String(p.id)) ||
@@ -140,14 +140,14 @@ export const TradeProductSearch: React.FC<TradeProductSearchProps> = ({
               );
               const cartItem = existingIndex > -1 ? lineItems[existingIndex] : null;
               const cartQty = Number(cartItem?.quantity || 0);
-              const totalStock = Number(p.quantity ?? p.stock ?? 0);
+              const totalStock = Number(p.quantity ?? 0);
               const remainingStock = Math.max(0, totalStock - cartQty);
               const isOutOfStock = mode === "sale" && totalStock <= 0;
               const defaultPrice = Number(
                 mode === "purchase" ? p.buyPrice ?? 0 : p.sellPrice ?? 0
               );
               const prodName = p.name || "Product";
-              const prodCode = p.productCode || p.pcode || "N/A";
+              const prodCode = p.pcode || "N/A";
               const prodUnit = p.unit || "pcs";
               const priceFieldName =
                 mode === "purchase" ? "buyPrice" : "sellPrice";

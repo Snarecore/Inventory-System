@@ -212,18 +212,18 @@ const CreatePurchaseForm: React.FC = () => {
 
     return list
       .filter((p: any) => {
-        const isDel = String(p.isDeleted || p.is_deleted || "").trim().toUpperCase();
+        const isDel = String(p.isDeleted || "").trim().toUpperCase();
         return isDel !== "Y" && isDel !== "YES" && isDel !== "TRUE" && isDel !== "1";
       })
       .map((p: any) => ({
         ...p,
-        id: p.id ?? p.productId ?? p.product_id ?? p.pcode,
-        name: p.name || p.productName || "Product",
-        productCode: p.productCode || p.pcode || "",
-        pcode: p.pcode || p.productCode || "",
-        buyPrice: Number(p.buyPrice ?? p.buy_price ?? 0),
-        sellPrice: Number(p.sellPrice ?? p.sell_price ?? 0),
-        quantity: Number(p.quantity ?? p.stock ?? 0),
+        id: p.id ?? p.pcode,
+        name: p.name || "Product",
+        productCode: p.pcode || "",
+        pcode: p.pcode || "",
+        buyPrice: Number(p.buyPrice ?? 0),
+        sellPrice: Number(p.sellPrice ?? 0),
+        quantity: Number(p.quantity ?? 0),
         unit: p.unit || "pcs",
       }));
   }, [rawProductData]);
@@ -266,10 +266,10 @@ const CreatePurchaseForm: React.FC = () => {
       })
       .map((p: any) => ({
         ...p,
-        id: p.id ?? p.partyId ?? p.party_id,
-        name: p.name || p.partyName || p.party_name || "",
-        phone: p.phone || p.partyPhone || p.phoneNumber || "",
-        address: p.address || p.partyAddress || "",
+        id: p.id,
+        name: p.name || "Supplier",
+        phone: p.phone || "",
+        address: p.address || "",
       }));
   }, [rawPartyData]);
 
@@ -486,20 +486,20 @@ const CreatePurchaseForm: React.FC = () => {
 
           if (key) seenProductKeys.add(key);
 
-          const buyP = Number(item.buyPrice ?? item.unitPrice ?? item.price ?? 0);
-          const q = Number(item.quantity ?? item.qty ?? 1);
-          const v = Number(item.vat ?? item.vat_amount ?? 0);
+          const buyP = Number(item.buyPrice ?? 0);
+          const q = Number(item.quantity ?? 1);
+          const v = Number(item.vat ?? 0);
           const tot = Number(item.total ?? (buyP * q));
 
           // Match with allProducts to get current stock and fallback name/code
           const matchedProd = allProducts.find((p) => {
             const pIdStr = String(p.id ?? "");
-            const pCodeStr = String(p.productCode || p.pcode || "").toLowerCase();
+            const pCodeStr = String(p.pcode || "").toLowerCase();
             return (pId && pIdStr === pId) || (pCode && pCodeStr === pCode.toLowerCase());
           });
 
           const currentLiveStock = matchedProd
-            ? Number(matchedProd.quantity ?? matchedProd.stock ?? 0)
+            ? Number(matchedProd.quantity ?? 0)
             : Number(item.stock ?? 0);
 
           const detailId = item.id || item.purchaseDetailId;
@@ -508,7 +508,7 @@ const CreatePurchaseForm: React.FC = () => {
             id: detailId,
             purchaseDetailId: detailId,
             productId: pId || (matchedProd?.id ? String(matchedProd.id) : ""),
-            productCode: pCode || matchedProd?.productCode || matchedProd?.pcode || "",
+            productCode: pCode || matchedProd?.pcode || "",
             productName: pName !== "Product" ? pName : (matchedProd?.name || "Product"),
             unit: item.unit || matchedProd?.unit || "pcs",
             buyPrice: String(buyP),
@@ -540,7 +540,7 @@ const CreatePurchaseForm: React.FC = () => {
           });
 
           if (matchedProd) {
-            const liveStock = Number(matchedProd.quantity ?? matchedProd.stock ?? 0);
+            const liveStock = Number(matchedProd.quantity ?? 0);
             if (item.stock !== liveStock) {
               changed = true;
               return { ...item, stock: liveStock };
@@ -592,7 +592,7 @@ const CreatePurchaseForm: React.FC = () => {
         const prodName = product.name || "Product";
         const prodUnit = product.unit || "pcs";
         const buyPrice = Number(product.buyPrice ?? 0);
-        const currentStock = Number(product.quantity ?? product.stock ?? 0);
+        const currentStock = Number(product.quantity ?? 0);
 
         const newLine: FormLineItem = {
           productId: pId,
@@ -627,8 +627,8 @@ const CreatePurchaseForm: React.FC = () => {
 
   const handleAddProduct = useCallback(
     (product: ProductItem) => {
-      const pId = product.id ?? product.productId ?? "";
-      const pCode = product.pcode || product.productCode || "";
+      const pId = product.id ?? "";
+      const pCode = product.pcode || "";
       const existingIndex = lineItems.findIndex(
         (item) =>
           (pId && item.productId && String(item.productId) === String(pId)) ||

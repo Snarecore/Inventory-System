@@ -244,19 +244,19 @@ export const ProductTable = ({
     };
 
     // Helper functions for safe field access
-    const getName = (p: ProductItem) => p.name || p.productName || "Unnamed Product";
-    const getCode = (p: ProductItem) => p.pcode || p.productCode || p.code || "";
+    const getName = (p: ProductItem) => p.name || "Unnamed Product";
+    const getCode = (p: ProductItem) => p.pcode || "";
     const getSku = (p: ProductItem) => p.sku || "-";
     const getBarcode = (p: ProductItem) => p.barcode || "";
-    const getCategory = (p: ProductItem) => p.category || p.categoryName || "General";
+    const getCategory = (p: ProductItem) => p.category || "General";
     const getUnit = (p: ProductItem) => p.unit || "PCS";
-    const getQuantity = (p: ProductItem) => Number(p.quantity ?? p.stock ?? p.stockQuantity ?? p.currentStock ?? p.current_stock ?? p.totalQuantity ?? p.qty ?? p.availableStock ?? 0);
-    const getBuyPrice = (p: ProductItem) => Number(p.buy_price ?? p.buyPrice ?? 0);
-    const getSellPrice = (p: ProductItem) => Number(p.sell_price ?? p.sellPrice ?? 0);
-    const getLowThreshold = (p: ProductItem) => Number(p.low_stock_threshold ?? p.lowStockThreshold ?? 5);
+    const getQuantity = (p: ProductItem) => Number(p.quantity ?? 0);
+    const getBuyPrice = (p: ProductItem) => Number(p.buyPrice ?? 0);
+    const getSellPrice = (p: ProductItem) => Number(p.sellPrice ?? 0);
+    const getLowThreshold = (p: ProductItem) => Number(p.lowStockThreshold ?? 5);
     const isActive = (p: ProductItem) => {
         const raw = String(p?.status ?? "").trim().toLowerCase();
-        if (raw === "inactive" || raw === "false" || raw === "0" || p?.status === false || p?.status === 0) {
+        if (raw === "inactive" || raw === "false" || raw === "0") {
             return false;
         }
         return true;
@@ -651,13 +651,13 @@ export const ProductTable = ({
                                 <div className="px-3 py-2 bg-gray-50 rounded-lg border border-gray-200">
                                     <span className="text-xs text-black block mb-0.5">Decimal Quantity Sale</span>
                                     <span className="text-xs font-medium text-black">
-                                        {(selectedProduct as any).is_decimal === "Yes" || (selectedProduct as any).is_decimal === true || (selectedProduct as any).isDecimal === "Yes" || (selectedProduct as any).isDecimal === true ? "Allowed (Fractional quantity supported)" : "Not Allowed (Whole numbers only)"}
+                                        {(selectedProduct as any).isDecimal === "Yes" || (selectedProduct as any).isDecimal === true || (selectedProduct as any).is_decimal === "Yes" || (selectedProduct as any).is_decimal === true ? "Allowed (Fractional quantity supported)" : "Not Allowed (Whole numbers only)"}
                                     </span>
                                 </div>
                                 <div className="px-3 py-2 bg-gray-50 rounded-lg border border-gray-200">
                                     <span className="text-xs text-black block mb-0.5">Packing Levels</span>
                                     <span className="text-xs font-medium text-black">
-                                        {selectedProduct.packing_levels || (selectedProduct as any).packingLevels || "-"}
+                                        {selectedProduct.packingLevels || (selectedProduct as any).packing_levels || "-"}
                                     </span>
                                 </div>
                             </div>

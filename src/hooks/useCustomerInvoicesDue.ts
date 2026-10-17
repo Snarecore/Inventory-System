@@ -26,7 +26,7 @@ export const normalizeCustomerInvoicesDue = (raw: any): InvoiceDueItem[] => {
       const invNo = String(inv.invoiceNo || inv.orderNo || `INV_${idx}`).trim();
       const grand = Number(inv.grandTotal ?? inv.totalAmount ?? inv.grand_total ?? 0);
       const paid = Number(inv.paidAmount ?? inv.paid_amount ?? 0);
-      const due = Number(inv.dueAmount ?? inv.due_amount ?? Math.max(0, grand - paid));
+      const due = Number(inv.dueAmount ?? inv.due_amount ?? 0);
 
       return {
         ...inv,
@@ -86,5 +86,7 @@ export const useCustomerInvoicesDueQuery = (
     ...options,
   });
 };
+
+export const useCustomerInvoicesDue = useCustomerInvoicesDueQuery;
 
 export default useCustomerInvoicesDueQuery;

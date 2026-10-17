@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo, useRef, useCallback } from "react"
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { FiChevronDown } from "react-icons/fi";
-import { FaTrash, FaSearch, FaBarcode, FaUserPlus, FaCheck, FaPlus, FaTimes, FaPrint, FaCalculator, FaMoneyBillWave, FaCreditCard, FaMobileAlt, FaWallet, FaWalking } from "react-icons/fa";
+import { FaCalculator } from "react-icons/fa";
 import Button from "@/components/button/Button";
 import DeleteModal from "@/components/modal/DeleteModal";
 import ConfirmModal from "@/components/modal/ConfirmModal";
@@ -16,7 +16,7 @@ import {
   salesAndReturnQueryKey,
 } from "@/config/query-key";
 import { buildAccessUser } from "@/utils/access-user";
-import { getBusinessCode, getUserInfo } from "@/utils/auth-storage";
+import { getBusinessCode } from "@/utils/auth-storage";
 import { makeInvoiceNo } from "@/utils/invoiceNo";
 import { postData } from "@/services/api-service";
 import { useAPI } from "@/hooks/useApi";
@@ -32,6 +32,7 @@ import TradeLineItemsTable from "@/components/trade/TradeLineItemsTable";
 import TradePartySelector from "@/components/trade/TradePartySelector";
 import { useSalesQuery } from "@/pages/admin/trade/sales-return/hooks/useSalesReturnQueries";
 import { useFinancialLedger } from "@/hooks/useFinancialLedger";
+import { useCustomerInvoicesDue } from "@/hooks/useCustomerInvoicesDue";
 import { cashLeg, bankLeg, mfsLeg, type TradeTender } from "@/services/financial-ledger-service";
 import type { SaleItem, ProductItem, PartyItem } from "@/types";
 
@@ -85,6 +86,24 @@ export const CreateSaleForm: React.FC = () => {
   const [walkInName, setWalkInName] = useState<string>("");
   const [walkInPhone, setWalkInPhone] = useState<string>("");
   const [isPartyModalOpen, setIsPartyModalOpen] = useState<boolean>(false);
+
+  // Live Previous Due fetched directly from backend (/customer-invoices-due)
+  const customerApiId = useMemo(() => {
+    if (!selectedCustomer) return "";
+    const isWalkIn =
+      selectedCustomer.id === 0 ||
+      String(selectedCustomer.name || "").toLowerCase().includes("walk-in");
+    if (isWalkIn) return "";
+    return String(selectedCustomer.partyId ?? selectedCustomer.id ?? "");
+  }, [selectedCustomer]);
+
+  const { data: customerDueInvoices, isLoading: isLoadingCustomerDue } =
+    useCustomerInvoicesDue(customerApiId);
+
+  const previousDue = useMemo(() => {
+    if (!customerDueInvoices || customerDueInvoices.length === 0) return 0;
+    return customerDueInvoices.reduce((sum, inv) => sum + Number(inv.dueAmount || 0), 0);
+  }, [customerDueInvoices]);
 
   // Line items
   const [lineItems, setLineItems] = useState<FormLineItem[]>([]);
@@ -189,13 +208,13 @@ export const CreateSaleForm: React.FC = () => {
       })
       .map((p: any) => ({
         ...p,
-        id: p.id ?? p.productId ?? p.product_id ?? p.pcode,
-        name: p.name || p.productName || "Product",
+        id: p.id ?? p.pcode,
+        name: p.name || "Product",
         productCode: p.productCode || p.pcode || "",
         pcode: p.pcode || p.productCode || "",
-        buyPrice: Number(p.buyPrice ?? p.buy_price ?? 0),
-        sellPrice: Number(p.sellPrice ?? p.sell_price ?? 0),
-        quantity: Number(p.quantity ?? p.stock ?? 0),
+        buyPrice: Number(p.buyPrice ?? 0),
+        sellPrice: Number(p.sellPrice ?? 0),
+        quantity: Number(p.quantity ?? 0),
         unit: p.unit || "pcs",
       }));
   }, [rawProductData]);
@@ -380,16 +399,16 @@ export const CreateSaleForm: React.FC = () => {
         }
 
         const loaded: FormLineItem[] = rawDetails.map((item: any) => {
-          const p = Number(item.sellPrice ?? item.unitPrice ?? item.price ?? 0);
-          const q = Number(item.quantity ?? item.qty ?? 1);
-          const d = Number(item.discount ?? item.discount_amount ?? 0);
-          const v = Number(item.vat ?? item.vat_amount ?? 0);
+          const p = Number(item.sellPrice ?? 0);
+          const q = Number(item.quantity ?? 1);
+          const d = Number(item.discount ?? 0);
+          const v = Number(item.vat ?? 0);
           const tot =
             item.total !== undefined && item.total !== null && !isNaN(Number(item.total)) && Number(item.total) > 0
               ? Number(item.total)
               : Number(p * q + v - d);
 
-          const pId = String(item.productId ?? item.id ?? item.product_id ?? "").trim();
+          const pId = String(item.productId ?? item.id ?? "").trim();
           const pCode = String(item.productCode ?? item.pcode ?? "").trim();
           const pName = String(item.productName ?? item.name ?? "Product").trim();
 
@@ -410,11 +429,11 @@ export const CreateSaleForm: React.FC = () => {
           const matchedProd = allProducts.find(
             (prod) =>
               (pId && String(prod.id ?? "").trim() === pId) ||
-              (pCode && String(prod.productCode || prod.pcode || "").trim().toLowerCase() === pCode.toLowerCase())
+              (pCode && String(prod.pcode || prod.productCode || "").trim().toLowerCase() === pCode.toLowerCase())
           );
 
           const liveStock = matchedProd
-            ? Number(matchedProd.quantity ?? matchedProd.stock ?? 0)
+            ? Number(matchedProd.quantity ?? 0)
             : Number(item.stock ?? 0);
 
           return {
@@ -520,8 +539,8 @@ export const CreateSaleForm: React.FC = () => {
   // Helper to check if a product is already added in the sale line items list
   const isProductAlreadyInList = useCallback(
     (p: ProductItem) => {
-      const pId = String(p.id ?? p.productId ?? (p as any).product_id ?? "");
-      const pCode = (p.pcode || p.productCode || (p as any).product_code || "").trim().toLowerCase();
+      const pId = String(p.id ?? "");
+      const pCode = (p.pcode || "").trim().toLowerCase();
 
       return lineItems.some((item) => {
         if (pId && item.productId && String(item.productId) === pId) return true;
@@ -535,13 +554,13 @@ export const CreateSaleForm: React.FC = () => {
   // Toggle adding or removing a product from sale line items directly (matches PurchaseForm UX)
   const handleToggleProductInList = useCallback(
     (p: ProductItem) => {
-      const pId = String(p.id ?? p.productId ?? (p as any).product_id ?? "");
-      const pCode = p.pcode || p.productCode || (p as any).product_code || "";
-      const pName = p.name || p.productName || (p as any).product_name || "Product";
+      const pId = String(p.id ?? "");
+      const pCode = p.pcode || "";
+      const pName = p.name || "Product";
       const unit = p.unit || "pcs";
-      const sellPrice = Number(p.sellPrice ?? p.sell_price ?? p.buyPrice ?? (p as any).buy_price ?? 0);
-      const buyPrice = Number(p.buyPrice ?? (p as any).buy_price ?? 0);
-      const stock = Number(p.quantity ?? p.stock ?? (p as any).qty ?? 0);
+      const sellPrice = Number(p.sellPrice ?? 0);
+      const buyPrice = Number(p.buyPrice ?? 0);
+      const stock = Number(p.quantity ?? 0);
 
       const isAlreadyIn = isProductAlreadyInList(p);
 
@@ -589,7 +608,7 @@ export const CreateSaleForm: React.FC = () => {
       const pCode = p.pcode || "";
       const pName = p.name || "Product";
       const unit = p.unit || "pcs";
-      const sellPrice = Number(p.sellPrice ?? p.buyPrice ?? 0);
+      const sellPrice = Number(p.sellPrice ?? 0);
       const buyPrice = Number(p.buyPrice ?? 0);
       const stock = Number(p.quantity ?? 0);
 
@@ -934,6 +953,8 @@ export const CreateSaleForm: React.FC = () => {
         setSavedSaleForInvoice({
           ...payload,
           id: savedId,
+          previousDue,
+          previousDueInvoices: customerDueInvoices || [],
         });
         setIsInvoiceModalOpen(true);
       }
@@ -1058,6 +1079,8 @@ export const CreateSaleForm: React.FC = () => {
           walkInPhone={walkInPhone}
           onChangeWalkInName={setWalkInName}
           onChangeWalkInPhone={setWalkInPhone}
+          previousDue={customerApiId ? previousDue : null}
+          isLoadingDue={isLoadingCustomerDue}
         />
 
         {/* Invoice No */}

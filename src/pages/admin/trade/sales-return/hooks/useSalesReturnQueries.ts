@@ -12,21 +12,28 @@ import type { SaleItem } from "@/types";
 export const fetchSalesList = async (): Promise<SaleItem[]> => {
   try {
     const accessUser = buildAccessUser();
-    const endpoint = apiConfig.sales.salesListUrl;
-    const res: any = await postData({
-      url: endpoint,
-      body: { accessUser },
-    });
+    // Prefer get-sales-and-return (like cashboi-v2) so unpaid/credit sales are not dropped and return details are included
+    const endpoint = apiConfig.sales.salesAndReturnUrl || apiConfig.salesReturn.getSalesAndReturnUrl || "get-sales-and-return";
+    let res: any;
+    try {
+      res = await postData({
+        url: endpoint,
+        body: { accessUser },
+      });
+    } catch {
+      res = await postData({
+        url: apiConfig.sales.salesListUrl || "get-sale-list",
+        body: { accessUser },
+      });
+    }
 
     const list =
+      (Array.isArray(res?.data) ? res?.data : null) ||
       res?.saleList ||
       res?.salesList ||
       res?.sales ||
       res?.saleDetailsList ||
       res?.sale_list ||
-      (Array.isArray(res?.data)
-        ? res?.data
-        : res?.data?.saleList || res?.data?.sales || res?.data?.sale_list) ||
       [];
 
     const normalized = (Array.isArray(list) ? list : []).map((item: any) => {
@@ -38,8 +45,18 @@ export const fetchSalesList = async (): Promise<SaleItem[]> => {
           : Array.isArray(item.details)
           ? item.details
           : [];
+
+      const grandTotal = Number(item.grandTotal ?? item.grand_total ?? item.totalAmount ?? 0);
+      const paidAmount = Number(item.paidAmount ?? item.paid_amount ?? 0);
+      const dueAmount = Number(item.dueAmount ?? item.due_amount ?? 0);
+      const hasReturn = Boolean(item.hasReturn || item.returnNo || item.returnGrandTotal);
+
       return {
         ...item,
+        grandTotal,
+        paidAmount,
+        dueAmount,
+        hasReturn,
         salesDetails: lineItems,
         details: lineItems,
       };

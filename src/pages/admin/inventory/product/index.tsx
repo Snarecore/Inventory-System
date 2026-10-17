@@ -62,7 +62,7 @@ const Products = () => {
             list = rawProductData as ProductItem[];
         }
         return list.filter((p: any) => {
-            const isDel = String(p.isDeleted || p.is_deleted || p.isDelete || p.is_delete || "").trim().toUpperCase();
+            const isDel = String(p.isDeleted || p.is_deleted || "").trim().toUpperCase();
             return isDel !== "Y" && isDel !== "YES" && isDel !== "TRUE" && isDel !== "1";
         });
     }, [rawProductData]);
@@ -88,14 +88,14 @@ const Products = () => {
     // Helper to evaluate product status
     const isProductActive = (p: ProductItem) => {
         const raw = String(p?.status ?? "").trim().toLowerCase();
-        if (raw === "inactive" || raw === "false" || raw === "0" || p?.status === false || p?.status === 0) {
+        if (raw === "inactive" || raw === "false" || raw === "0") {
             return false;
         }
         return true;
     };
 
     const getProductQuantity = (p: ProductItem) =>
-        Number(p.quantity ?? p.stock ?? p.stockQuantity ?? p.currentStock ?? p.current_stock ?? p.totalQuantity ?? p.qty ?? p.availableStock ?? 0);
+        Number(p.quantity ?? 0);
 
     // Filter products based on search, category, and status
     const filteredProducts = useMemo(() => {
@@ -103,11 +103,11 @@ const Products = () => {
             // Search filter
             if (searchQuery.trim()) {
                 const search = searchQuery.toLowerCase().trim();
-                const name = (product.name || product.productName || "").toLowerCase();
-                const pcode = (product.pcode || product.productCode || product.code || "").toLowerCase();
+                const name = (product.name || "").toLowerCase();
+                const pcode = (product.pcode || "").toLowerCase();
                 const sku = (product.sku || "").toLowerCase();
                 const barcode = (product.barcode || "").toLowerCase();
-                const category = (product.category || product.categoryName || "").toLowerCase();
+                const category = (product.category || "").toLowerCase();
 
                 const matchesSearch =
                     name.includes(search) ||
@@ -121,7 +121,7 @@ const Products = () => {
 
             // Category filter
             if (categoryFilter) {
-                const cat = (product.category || product.categoryName || "").toLowerCase();
+                const cat = (product.category || "").toLowerCase();
                 if (cat !== categoryFilter.toLowerCase()) return false;
             }
 
@@ -129,7 +129,7 @@ const Products = () => {
             if (statusFilter) {
                 const active = isProductActive(product);
                 const qty = getProductQuantity(product);
-                const threshold = Number(product.low_stock_threshold ?? product.lowStockThreshold ?? 5);
+                const threshold = Number(product.lowStockThreshold ?? 5);
 
                 if (statusFilter === "active" && !active) return false;
                 if (statusFilter === "inactive" && active) return false;
@@ -147,12 +147,12 @@ const Products = () => {
         const inactiveCount = allProducts.filter((p) => !isProductActive(p)).length;
         const lowStockCount = allProducts.filter((p) => {
             const qty = getProductQuantity(p);
-            const threshold = Number(p.low_stock_threshold ?? p.lowStockThreshold ?? 5);
+            const threshold = Number(p.lowStockThreshold ?? 5);
             return qty <= threshold;
         }).length;
         const totalStockValue = allProducts.reduce((sum, p) => {
             const qty = getProductQuantity(p);
-            const buyPrice = Number(p.buy_price ?? p.buyPrice ?? 0);
+            const buyPrice = Number(p.buyPrice ?? 0);
             return sum + qty * buyPrice;
         }, 0);
 
@@ -169,14 +169,14 @@ const Products = () => {
     const sortedProducts = useMemo(() => {
         const reversed = [...filteredProducts].reverse();
         return reversed.sort((a, b) => {
-            const timeA = new Date(a.createdAt || (a as any).created_at || (a as any).updatedAt || (a as any).updated_at || 0).getTime();
-            const timeB = new Date(b.createdAt || (b as any).created_at || (b as any).updatedAt || (b as any).updated_at || 0).getTime();
+            const timeA = new Date(a.createdAt || 0).getTime();
+            const timeB = new Date(b.createdAt || 0).getTime();
             if (!isNaN(timeA) && !isNaN(timeB) && timeA > 0 && timeB > 0 && timeA !== timeB) {
                 return timeB - timeA;
             }
 
-            const rawIdA = a.id ?? (a as any).product_id ?? (a as any).productId ?? a.pcode ?? (a as any).productCode ?? (a as any).code;
-            const rawIdB = b.id ?? (b as any).product_id ?? (b as any).productId ?? b.pcode ?? (b as any).productCode ?? (b as any).code;
+            const rawIdA = a.id ?? a.pcode;
+            const rawIdB = b.id ?? b.pcode;
             const numA = Number(String(rawIdA || '').replace(/\D/g, ''));
             const numB = Number(String(rawIdB || '').replace(/\D/g, ''));
             if (numA && numB && numA !== numB) {

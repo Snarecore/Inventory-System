@@ -150,13 +150,13 @@ export const PurchaseReturnTable: React.FC<PurchaseReturnTableProps> = ({
     if (!supplierFilter || supplierFilter === "all") return null;
     return suppliersList.find(
       (s) =>
-        String(s.id ?? s.partyId ?? "").toLowerCase() === supplierFilter.toLowerCase() ||
-        String(s.name || s.partyName || "").toLowerCase() === supplierFilter.toLowerCase()
+        String(s.id ?? "").toLowerCase() === supplierFilter.toLowerCase() ||
+        String(s.name || "").toLowerCase() === supplierFilter.toLowerCase()
     );
   }, [suppliersList, supplierFilter]);
 
   const currentSupplierLabel = selectedSupplierObj
-    ? (selectedSupplierObj.name || selectedSupplierObj.partyName || "Supplier")
+    ? (selectedSupplierObj.name || "Supplier")
     : "All Suppliers";
 
   const isAnyFilterActive =
@@ -347,14 +347,14 @@ export const PurchaseReturnTable: React.FC<PurchaseReturnTableProps> = ({
 
                     {filteredSupplierOptions.length > 0 ? (
                       filteredSupplierOptions.map((s) => {
-                        const sVal = String(s.id ?? s.partyId ?? s.name ?? "");
+                        const sVal = String(s.id ?? s.name ?? "");
                         const isSelected = supplierFilter === sVal;
-                        const sName = s.name || s.partyName || "Supplier";
-                        const sPhone = s.phone || s.partyPhone || "";
+                        const sName = s.name || "Supplier";
+                        const sPhone = s.phone || "";
 
                         return (
                           <div
-                            key={s.id ?? s.partyId ?? s.name}
+                            key={sVal}
                             onClick={() => {
                               setSupplierFilter(sVal);
                               setIsSupplierDropdownOpen(false);
@@ -481,7 +481,7 @@ export const PurchaseReturnTable: React.FC<PurchaseReturnTableProps> = ({
                 const rowKey = item.id || item.returnNo || index;
                 const isExpanded = expandedRows.has(rowKey);
                 const sl = (currentPageNumber - 1) * dataLimit + index + 1;
-                const refund = Number(item.refundAmount ?? item.grandTotal ?? item.totalAmount ?? 0);
+                const refund = Number(item.refundAmount ?? item.grandTotal ?? 0);
                 const pType = String(item.paymentType || "CASH").toUpperCase();
 
                 // Payment badges

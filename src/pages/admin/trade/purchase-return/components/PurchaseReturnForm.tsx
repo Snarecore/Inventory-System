@@ -332,8 +332,8 @@ export const PurchaseReturnForm: React.FC = () => {
 
     if (details.length > 0) {
       const formattedLines: ReturnLineFormState[] = details.map((d: any) => {
-        const purchasedQty = Number(d.quantity ?? d.qty ?? 1);
-        const buyPrice = Number(d.buyPrice ?? d.unitPrice ?? d.price ?? 0);
+        const purchasedQty = Number(d.quantity ?? 1);
+        const buyPrice = Number(d.buyPrice ?? 0);
 
         const pId = String(d.productId ?? d.id ?? "").trim();
         const pCode = String(d.productCode ?? d.pcode ?? "").trim();
@@ -1109,7 +1109,7 @@ export const PurchaseReturnForm: React.FC = () => {
 
                     <div className="text-right shrink-0">
                       <span className="font-bold text-[var(--primary-color)] text-xs block">
-                        ৳ {formatMoney(Number(inv.grandTotal ?? inv.totalAmount ?? 0))}
+                        ৳ {formatMoney(Number(inv.grandTotal ?? 0))}
                       </span>
                       {Number(inv.dueAmount || 0) > 0 && (
                         <span className="text-[10px] text-rose-600 font-semibold block">

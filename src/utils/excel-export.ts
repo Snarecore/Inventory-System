@@ -13,38 +13,17 @@ export interface ExportPurchasesOptions {
  */
 const getItemsCount = (p: any): number => {
   if (!p) return 0;
-  const rawDetails =
-    p.purchaseDetails ||
-    p.purchasesDetails ||
-    p.purchase_details ||
-    p.details ||
-    p.items ||
-    p.products ||
-    p.purchaseListDetails ||
-    p.salesDetails ||
-    p.saleDetails ||
-    p.productList ||
-    p.productsList;
+  const rawDetails = p.purchaseDetails || p.salesDetails || p.returnDetails;
 
   if (Array.isArray(rawDetails) && rawDetails.length > 0) {
     const uniqueKeys = new Set<string>();
     rawDetails.forEach((d: any) => {
-      const k = String(d.productId ?? d.product_id ?? d.productCode ?? d.pcode ?? d.productName ?? d.name ?? "").trim().toLowerCase();
+      const k = String(d.productId ?? d.productCode ?? d.pcode ?? d.productName ?? "").trim().toLowerCase();
       if (k) uniqueKeys.add(k);
     });
     return uniqueKeys.size > 0 ? uniqueKeys.size : rawDetails.length;
   }
-  const explicitCount = Number(
-    p.itemCount ??
-    p.item_count ??
-    p.totalItems ??
-    p.total_items ??
-    p.itemsCount ??
-    p.items_count ??
-    p.productCount ??
-    p.product_count ??
-    0
-  );
+  const explicitCount = Number(p.itemCount ?? p.totalItems ?? 0);
   return explicitCount > 0 ? explicitCount : 1;
 };
 
@@ -80,11 +59,11 @@ export function exportPurchasesToExcel(
   const rows = purchases.map((item: any, index: number) => {
     const grandTotal = Number(item.grandTotal ?? item.totalAmount ?? 0);
     const paidAmount = Number(item.paidAmount ?? 0);
-    const dueAmount = Number(item.dueAmount ?? Math.max(0, grandTotal - paidAmount));
+    const dueAmount = Number(item.dueAmount ?? 0);
     const itemsCount = getItemsCount(item);
-    const discount = Number(item.discount ?? item.discount_amount ?? 0);
-    const vat = Number(item.vat ?? item.vat_amount ?? 0);
-    const transport = Number(item.transportCost ?? item.transport_cost ?? item.delivery_charge ?? 0);
+    const discount = Number(item.discount ?? 0);
+    const vat = Number(item.vat ?? 0);
+    const transport = Number(item.transportCost ?? 0);
 
     sumGrandTotal += grandTotal;
     sumPaid += paidAmount;
@@ -112,11 +91,11 @@ export function exportPurchasesToExcel(
       "Due Amount (BDT)": dueAmount,
       "Payment Method": (item.paymentType || "CASH").toUpperCase(),
       "Payment Status": status,
-      "Challan No": item.challanNo || item.challan_no || "",
-      "Vehicle No": item.vehicleNo || item.vehicle_no || "",
-      "Driver Name": item.driverName || item.driver_name || "",
-      "PO Number": item.poNumber || item.po_number || "",
-      "Notes": item.note || item.notes || "",
+      "Challan No": item.challanNo || "",
+      "Vehicle No": item.vehicleNo || "",
+      "Driver Name": item.driverName || "",
+      "PO Number": item.poNumber || "",
+      "Notes": item.note || "",
     };
   });
 
@@ -209,13 +188,13 @@ export function exportSalesToExcel(
   let sumItems = 0;
 
   const rows = sales.map((item: any, index: number) => {
-    const grandTotal = Number(item.grandTotal ?? item.totalAmount ?? item.total_amount ?? 0);
-    const paidAmount = Number(item.paidAmount ?? item.paid_amount ?? 0);
-    const dueAmount = Number(item.dueAmount ?? item.due_amount ?? Math.max(0, grandTotal - paidAmount));
+    const grandTotal = Number(item.grandTotal ?? item.totalAmount ?? 0);
+    const paidAmount = Number(item.paidAmount ?? 0);
+    const dueAmount = Number(item.dueAmount ?? 0);
     const itemsCount = getItemsCount(item);
     const discount = Number(item.discount ?? 0);
     const vat = Number(item.vat ?? 0);
-    const delivery = Number(item.delivery_charge ?? item.deliveryCharge ?? 0);
+    const delivery = Number(item.deliveryCharge ?? 0);
 
     sumGrandTotal += grandTotal;
     sumPaid += paidAmount;
@@ -231,22 +210,22 @@ export function exportSalesToExcel(
 
     return {
       "SL": index + 1,
-      "Invoice No": item.invoiceNo || item.invoice_no || `INV-${item.id || index + 1}`,
-      "Sales Date": item.salesDate || item.saleDate || item.date || todayStr,
-      "Customer Name": item.customerName || item.customer_name || "Walk-in Customer",
-      "Customer Phone": item.customerPhone || item.customer_phone || "-",
-      "Customer Address": item.customerAddress || item.customer_address || "-",
+      "Invoice No": item.invoiceNo || `INV-${item.id || index + 1}`,
+      "Sales Date": item.salesDate || todayStr,
+      "Customer Name": item.customerName || "Walk-in Customer",
+      "Customer Phone": item.customerPhone || "-",
+      "Customer Address": item.customerAddress || "-",
       "Items Count": itemsCount,
-      "Subtotal (BDT)": Number((item.totalAmount ?? item.total_amount ?? grandTotal).toFixed(2)),
+      "Subtotal (BDT)": Number((item.totalAmount ?? grandTotal).toFixed(2)),
       "Discount (BDT)": discount,
       "VAT (BDT)": vat,
       "Delivery (BDT)": delivery,
       "Grand Total (BDT)": grandTotal,
       "Paid Amount (BDT)": paidAmount,
       "Due Amount (BDT)": dueAmount,
-      "Payment Type": (item.paymentType || item.payment_type || "CASH").toUpperCase(),
+      "Payment Type": (item.paymentType || "CASH").toUpperCase(),
       "Status": status,
-      "Notes": item.note || item.remarks || "",
+      "Notes": item.note || "",
     };
   });
 

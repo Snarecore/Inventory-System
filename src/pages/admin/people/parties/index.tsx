@@ -99,7 +99,7 @@ const Parties: React.FC = () => {
 
     return list.filter((p: any) => {
       if (!p || typeof p !== "object") return false;
-      const isDel = String(p.isDeleted || p.is_deleted || p.isDelete || p.is_delete || "").trim().toUpperCase();
+      const isDel = String(p.isDeleted || "").trim().toUpperCase();
       return isDel !== "Y" && isDel !== "YES" && isDel !== "TRUE" && isDel !== "1";
     });
   }, [rawPartyData]);
@@ -110,7 +110,7 @@ const Parties: React.FC = () => {
   };
 
   const getPartyType = (p: PartyItem): "CUSTOMER" | "SUPPLIER" => {
-    const raw = (p.type || p.partyType || p.party_type || p.party_type_name || "CUSTOMER").toUpperCase();
+    const raw = String(p.type || "CUSTOMER").toUpperCase();
     return raw.includes("SUPPLIER") ? "SUPPLIER" : "CUSTOMER";
   };
 
@@ -128,7 +128,7 @@ const Parties: React.FC = () => {
 
       if (isPartyActive(p)) activeCount++;
 
-      const bal = Number(p.openingBalance ?? p.opening_balance ?? p.balance ?? p.dueAmount ?? p.due_amount ?? 0);
+      const bal = Number(p.openingBalance ?? p.balance ?? 0);
       totalOpeningBalance += bal;
     });
 
@@ -147,10 +147,10 @@ const Parties: React.FC = () => {
       // Search filter
       if (searchQuery.trim()) {
         const query = searchQuery.toLowerCase().trim();
-        const name = (party.name || party.partyName || party.party_name || "").toLowerCase();
-        const phone = (party.phone || party.partyPhone || party.phoneNumber || party.party_phone || "").toLowerCase();
-        const email = (party.email || party.partyEmail || "").toLowerCase();
-        const address = (party.address || party.partyAddress || "").toLowerCase();
+        const name = (party.name || "").toLowerCase();
+        const phone = (party.phone || "").toLowerCase();
+        const email = (party.email || "").toLowerCase();
+        const address = (party.address || "").toLowerCase();
 
         const matches =
           name.includes(query) ||
@@ -184,40 +184,40 @@ const Parties: React.FC = () => {
     switch (sortBy) {
       case "amount_high_to_low":
         return result.sort((a, b) => {
-          const balA = Number(a.openingBalance ?? a.opening_balance ?? a.balance ?? a.dueAmount ?? a.due_amount ?? 0);
-          const balB = Number(b.openingBalance ?? b.opening_balance ?? b.balance ?? b.dueAmount ?? b.due_amount ?? 0);
+          const balA = Number(a.openingBalance ?? a.balance ?? 0);
+          const balB = Number(b.openingBalance ?? b.balance ?? 0);
           return balB - balA;
         });
       case "amount_low_to_high":
         return result.sort((a, b) => {
-          const balA = Number(a.openingBalance ?? a.opening_balance ?? a.balance ?? a.dueAmount ?? a.due_amount ?? 0);
-          const balB = Number(b.openingBalance ?? b.opening_balance ?? b.balance ?? b.dueAmount ?? b.due_amount ?? 0);
+          const balA = Number(a.openingBalance ?? a.balance ?? 0);
+          const balB = Number(b.openingBalance ?? b.balance ?? 0);
           return balA - balB;
         });
       case "name_a_to_z":
         return result.sort((a, b) => {
-          const nameA = (a.name || a.partyName || a.party_name || "").toLowerCase();
-          const nameB = (b.name || b.partyName || b.party_name || "").toLowerCase();
+          const nameA = (a.name || "").toLowerCase();
+          const nameB = (b.name || "").toLowerCase();
           return nameA.localeCompare(nameB);
         });
       case "name_z_to_a":
         return result.sort((a, b) => {
-          const nameA = (a.name || a.partyName || a.party_name || "").toLowerCase();
-          const nameB = (b.name || b.partyName || b.party_name || "").toLowerCase();
+          const nameA = (a.name || "").toLowerCase();
+          const nameB = (b.name || "").toLowerCase();
           return nameB.localeCompare(nameA);
         });
       case "latest":
       default: {
         const reversed = [...filteredParties].reverse();
         return reversed.sort((a, b) => {
-          const timeA = new Date(a.createdAt || (a as any).created_at || (a as any).createdAtTime || (a as any).updatedAt || (a as any).updated_at || (a as any).date || 0).getTime();
-          const timeB = new Date(b.createdAt || (b as any).created_at || (b as any).createdAtTime || (b as any).updatedAt || (b as any).updated_at || (b as any).date || 0).getTime();
+          const timeA = new Date(a.createdAt || 0).getTime();
+          const timeB = new Date(b.createdAt || 0).getTime();
           if (!isNaN(timeA) && !isNaN(timeB) && timeA > 0 && timeB > 0 && timeA !== timeB) {
             return timeB - timeA;
           }
 
-          const rawIdA = a.id ?? (a as any).party_id ?? (a as any).partyId ?? (a as any).code ?? (a as any).partyCode;
-          const rawIdB = b.id ?? (b as any).party_id ?? (b as any).partyId ?? (b as any).code ?? (b as any).partyCode;
+          const rawIdA = a.id;
+          const rawIdB = b.id;
           const numA = Number(String(rawIdA || '').replace(/\D/g, ''));
           const numB = Number(String(rawIdB || '').replace(/\D/g, ''));
           if (numA && numB && numA !== numB) {
