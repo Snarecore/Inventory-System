@@ -33,6 +33,42 @@ export const CustomerDueTable: React.FC<CustomerDueTableProps> = ({
   const [currentPageNumber, setCurrentPageNumber] = useState<number>(1);
   const [dataLimit, setDataLimit] = useState<number>(10);
 
+  // Lightweight sort header component with small black chevron matching Cash-Boi tables (SaleTable, PartyTable)
+  const SortHeader = ({
+    label,
+    activeKey,
+  }: {
+    label: string;
+    activeKey: "name" | "due";
+  }) => {
+    const isAsc =
+      sortBy === (activeKey === "name" ? "name_asc" : "lowest");
+
+    const handleClick = () => {
+      if (activeKey === "name") {
+        setSortBy(sortBy === "name_asc" ? "name_desc" : sortBy === "name_desc" ? "highest" : "name_asc");
+      } else {
+        setSortBy(sortBy === "highest" ? "lowest" : "highest");
+      }
+      setCurrentPageNumber(1);
+    };
+
+    return (
+      <span
+        onClick={handleClick}
+        className="inline-flex items-center gap-1 select-none text-black cursor-pointer hover:opacity-80 transition-opacity"
+      >
+        <span>{label}</span>
+        <FiChevronDown
+          size={11}
+          className={`text-black transition-transform duration-200 ${
+            isAsc ? "rotate-180" : ""
+          }`}
+        />
+      </span>
+    );
+  };
+
   // Filtered & Sorted Customer Data
   const processedCustomers = useMemo(() => {
     let list = [...customers];
@@ -123,10 +159,9 @@ export const CustomerDueTable: React.FC<CustomerDueTableProps> = ({
     <div className="bg-white rounded-xl shadow-xs border border-gray-200 flex flex-col relative z-20 overflow-visible">
       {/* Search and Filters Bar - Matching Cash-Boi standard layout */}
       <div className="p-2 sm:p-2.5 border-b border-gray-100 flex flex-wrap items-center justify-between gap-2 relative z-40 overflow-visible">
-        {/* Left Section: Compact Search Box + Filters Group */}
+        {/* Left Section: Compact Search Box */}
         <div className="flex flex-wrap items-center gap-2 flex-1 min-w-0">
-          {/* Search Box */}
-          <div className="w-full sm:w-44 md:w-48 lg:w-56 shrink-0">
+          <div className="w-full sm:w-56 shrink-0">
             <Search
               searchQuery={searchInput}
               onSearchChange={(val) => {
@@ -138,28 +173,6 @@ export const CustomerDueTable: React.FC<CustomerDueTableProps> = ({
                 setCurrentPageNumber(1);
               }}
               placeholder="Search customer, phone..."
-            />
-          </div>
-
-          {/* Sort By Filter */}
-          <div className="relative w-[calc(50%-4px)] sm:w-36 shrink-0">
-            <select
-              value={sortBy}
-              onChange={(e) => {
-                setSortBy(e.target.value);
-                setCurrentPageNumber(1);
-              }}
-              className="w-full h-8 pl-2.5 pr-6 text-xs border border-gray-200 rounded-lg bg-gray-50/50 hover:bg-white text-black font-medium focus:outline-none focus:border-[var(--color-primary)] cursor-pointer appearance-none"
-            >
-              <option value="highest">Highest Due First</option>
-              <option value="lowest">Lowest Due First</option>
-              <option value="name_asc">Name (A-Z)</option>
-              <option value="name_desc">Name (Z-A)</option>
-              <option value="invoices">Most Invoices</option>
-            </select>
-            <FiChevronDown
-              className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none text-xs"
-              size={13}
             />
           </div>
         </div>
@@ -192,11 +205,17 @@ export const CustomerDueTable: React.FC<CustomerDueTableProps> = ({
             <thead>
               <tr className="bg-[#41BEF3] text-black text-xs font-semibold">
                 <th className="py-2.5 px-3 text-center w-10">SL</th>
-                <th className="py-2.5 px-3">Customer Name</th>
+                <th className="py-2.5 px-3">
+                  <SortHeader label="Customer Name" activeKey="name" />
+                </th>
                 <th className="py-2.5 px-3">Phone</th>
                 <th className="py-2.5 px-3">Address</th>
                 <th className="py-2.5 px-3 text-center">Invoices</th>
-                <th className="py-2.5 px-3 text-right">Total Due (৳)</th>
+                <th className="py-2.5 px-3 text-right">
+                  <div className="flex justify-end">
+                    <SortHeader label="Total Due (৳)" activeKey="due" />
+                  </div>
+                </th>
                 <th className="py-2.5 px-3 text-center w-24">Action</th>
               </tr>
             </thead>
