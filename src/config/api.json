@@ -104,5 +104,11 @@
         "getCashBalanceInfoUrl": "get-cash-balance-info",
         "getFinancialTransactionUrl": "get-financial-transaction",
         "getExpenseSummaryDetailsUrl": "get-expense-summary-details"
+    },
+    "collection": {
+        "customersDueUrl": "customers-due",
+        "customerInvoicesDueUrl": "customer-invoices-due",
+        "insertCollectionUrl": "insert-collection",
+        "collectionReportUrl": "get-collection-report"
     }
 }

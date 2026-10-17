@@ -410,5 +410,4 @@ export interface PurchaseReturnItem {
   [key: string]: any;
 }
 
-
-
+export * from './collection.types';

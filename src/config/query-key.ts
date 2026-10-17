@@ -47,3 +47,7 @@ export const purchaseAndReturnQueryKey = "get-purchase-and-return-list";
 export const insertPurchaseReturnQueryKey = "insert-purchase-return";
 export const cashBalanceQueryKey = "get-cash-balance-info";
 export const financialTransactionQueryKey = "get-financial-transaction";
+export const customersDueQueryKey = "customers-due";
+export const customerInvoicesDueQueryKey = "customer-invoices-due";
+export const insertCollectionQueryKey = "insert-collection";
+export const collectionReportQueryKey = "get-collection-report";
