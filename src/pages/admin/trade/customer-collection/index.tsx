@@ -34,30 +34,21 @@ export const CustomerCollection: React.FC = () => {
   // 4. Compute High-Performance Aggregated Statistics
   const stats = useMemo(() => {
     let totalDue = 0;
-    let highDueCount = 0;
-    let highDueAmount = 0;
-    let medLowDueCount = 0;
-    let medLowDueAmount = 0;
+    let maxDue = 0;
 
     customers.forEach((c) => {
       const due = Number(c.totalDue || 0);
       totalDue += due;
-      if (due >= 10000) {
-        highDueCount += 1;
-        highDueAmount += due;
-      } else {
-        medLowDueCount += 1;
-        medLowDueAmount += due;
-      }
+      if (due > maxDue) maxDue = due;
     });
+
+    const avgDue = customers.length > 0 ? totalDue / customers.length : 0;
 
     return {
       totalDue,
       totalCustomers: customers.length,
-      highDueCount,
-      highDueAmount,
-      medLowDueCount,
-      medLowDueAmount,
+      avgDue,
+      maxDue,
     };
   }, [customers]);
 
@@ -131,10 +122,8 @@ export const CustomerCollection: React.FC = () => {
         <CollectionStatsCards
           totalDue={stats.totalDue}
           totalCustomers={stats.totalCustomers}
-          highDueCount={stats.highDueCount}
-          highDueAmount={stats.highDueAmount}
-          medLowDueCount={stats.medLowDueCount}
-          medLowDueAmount={stats.medLowDueAmount}
+          avgDue={stats.avgDue}
+          maxDue={stats.maxDue}
         />
       )}
 

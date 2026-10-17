@@ -27,7 +27,6 @@ export const CustomerDueTable: React.FC<CustomerDueTableProps> = ({
   // Search & Filters State
   const [searchInput, setSearchInput] = useState<string>("");
   const debouncedSearch = useDebounce(searchInput, 250);
-  const [tierFilter, setTierFilter] = useState<string>("all");
   const [sortBy, setSortBy] = useState<string>("highest");
 
   // Pagination states matching Cash-Boi standards
@@ -50,18 +49,7 @@ export const CustomerDueTable: React.FC<CustomerDueTableProps> = ({
       });
     }
 
-    // 2. Due Tier Filter
-    if (tierFilter !== "all") {
-      list = list.filter((c) => {
-        const due = Number(c.totalDue || 0);
-        if (tierFilter === "high") return due >= 10000;
-        if (tierFilter === "medium") return due >= 3000 && due < 10000;
-        if (tierFilter === "low") return due < 3000;
-        return true;
-      });
-    }
-
-    // 3. Sorting
+    // 2. Sorting
     list.sort((a, b) => {
       const dueA = Number(a.totalDue || 0);
       const dueB = Number(b.totalDue || 0);
@@ -87,7 +75,7 @@ export const CustomerDueTable: React.FC<CustomerDueTableProps> = ({
     });
 
     return list;
-  }, [customers, debouncedSearch, tierFilter, sortBy]);
+  }, [customers, debouncedSearch, sortBy]);
 
   // Paginated Slice
   const paginatedCustomers = useMemo(() => {
@@ -153,27 +141,6 @@ export const CustomerDueTable: React.FC<CustomerDueTableProps> = ({
             />
           </div>
 
-          {/* Tier Filter */}
-          <div className="relative w-[calc(50%-4px)] sm:w-36 shrink-0">
-            <select
-              value={tierFilter}
-              onChange={(e) => {
-                setTierFilter(e.target.value);
-                setCurrentPageNumber(1);
-              }}
-              className="w-full h-8 pl-2.5 pr-6 text-xs border border-gray-200 rounded-lg bg-gray-50/50 hover:bg-white text-black font-medium focus:outline-none focus:border-[var(--color-primary)] cursor-pointer appearance-none"
-            >
-              <option value="all">All Tiers ({customers.length})</option>
-              <option value="high">High Due (≥ ৳10k)</option>
-              <option value="medium">Medium Due (৳3k-10k)</option>
-              <option value="low">Low Due (&lt; ৳3k)</option>
-            </select>
-            <FiChevronDown
-              className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none text-xs"
-              size={13}
-            />
-          </div>
-
           {/* Sort By Filter */}
           <div className="relative w-[calc(50%-4px)] sm:w-36 shrink-0">
             <select
@@ -214,7 +181,7 @@ export const CustomerDueTable: React.FC<CustomerDueTableProps> = ({
       {/* Main Table Content */}
       <div className="overflow-x-auto w-full relative z-10">
         {isLoading ? (
-          <TableSkeleton columnCount={8} rowCount={8} />
+          <TableSkeleton columnCount={7} rowCount={8} />
         ) : processedCustomers.length === 0 ? (
           <EmptyState
             title="No Due Customers Found"
@@ -230,7 +197,6 @@ export const CustomerDueTable: React.FC<CustomerDueTableProps> = ({
                 <th className="py-2.5 px-3">Address</th>
                 <th className="py-2.5 px-3 text-center">Invoices</th>
                 <th className="py-2.5 px-3 text-right">Total Due (৳)</th>
-                <th className="py-2.5 px-3 text-center">Risk Level</th>
                 <th className="py-2.5 px-3 text-center w-24">Action</th>
               </tr>
             </thead>
@@ -238,16 +204,6 @@ export const CustomerDueTable: React.FC<CustomerDueTableProps> = ({
               {paginatedCustomers.map((cust, index) => {
                 const serialNumber = (currentPageNumber - 1) * dataLimit + index + 1;
                 const dueAmount = Number(cust.totalDue || 0);
-
-                let badgeText = "Low Due";
-                let badgeClass = "bg-emerald-100 text-emerald-800 border-emerald-300";
-                if (dueAmount >= 10000) {
-                  badgeText = "High Due";
-                  badgeClass = "bg-rose-100 text-rose-800 border-rose-300";
-                } else if (dueAmount >= 3000) {
-                  badgeText = "Medium Due";
-                  badgeClass = "bg-amber-100 text-amber-800 border-amber-300";
-                }
 
                 return (
                   <tr
@@ -293,15 +249,6 @@ export const CustomerDueTable: React.FC<CustomerDueTableProps> = ({
                     {/* Total Due */}
                     <td className="py-2.5 px-3 text-right text-rose-600 font-semibold text-xs whitespace-nowrap">
                       ৳ {formatMoney(dueAmount)}
-                    </td>
-
-                    {/* Risk Status */}
-                    <td className="py-2.5 px-3 text-center">
-                      <span
-                        className={`inline-block px-1.5 py-0.5 text-[10px] font-semibold border rounded-md ${badgeClass}`}
-                      >
-                        {badgeText}
-                      </span>
                     </td>
 
                     {/* Action */}
