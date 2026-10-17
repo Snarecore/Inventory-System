@@ -28,6 +28,8 @@ import {
   dashboardQueryKey,
 } from "@/config/query-key";
 import { useFinancialAccounts } from "@/hooks/useFinancialAccounts";
+import { useFinancialLedger } from "@/hooks/useFinancialLedger";
+import { cashLeg, bankLeg, mfsLeg, type TradeTender } from "@/services/financial-ledger-service";
 import { useTradeRefund } from "@/hooks/useTradeRefund";
 import TradeRefundSection from "@/components/trade/TradeRefundSection";
 import { buildAccessUser } from "@/utils/access-user";
@@ -109,6 +111,7 @@ export const PurchaseReturnForm: React.FC = () => {
 
   // 2. Fetch registered Bank and MFS accounts for refund disbursement (Shared cache with 5-minute staleTime)
   const { registeredBankAccounts, registeredMfsAccounts } = useFinancialAccounts();
+  const { recordTradeLedger } = useFinancialLedger();
 
   const availableInvoices: PurchaseItem[] = useMemo(() => {
     const combinedCandidates: any[] = [];
@@ -137,7 +140,8 @@ export const PurchaseReturnForm: React.FC = () => {
     return combinedCandidates.filter((item: any) => {
       const hasDetails =
         (Array.isArray(item.purchaseDetails) && item.purchaseDetails.length > 0) ||
-        (Array.isArray(item.purchasesDetails) && item.purchasesDetails.length > 0);
+        (Array.isArray(item.purchasesDetails) && item.purchasesDetails.length > 0) ||
+        (Array.isArray(item.details) && item.details.length > 0);
       return hasDetails;
     });
   }, [purchasesData, apiPurchaseAndReturnData]);
@@ -315,39 +319,26 @@ export const PurchaseReturnForm: React.FC = () => {
     setSupplierAddress(purchase.supplierAddress || (purchase as any).supplier_address || "");
     setNote("");
 
-    // Pre-select bank or MFS if originally used in the purchase, else reset
-    const purchaseBankId = purchase.bankId;
-    if (purchaseBankId) {
-      setSelectedRefundBankId(String(purchaseBankId));
-    } else {
-      setSelectedRefundBankId("");
-    }
-
-    const purchaseMfsId = purchase.mfsId;
-    if (purchaseMfsId) {
-      setSelectedRefundMfsId(String(purchaseMfsId));
-    } else {
-      setSelectedRefundMfsId("");
-    }
-
     const details: any[] =
       Array.isArray(purchase.purchaseDetails) && purchase.purchaseDetails.length > 0
         ? purchase.purchaseDetails
-        : Array.isArray(purchase.purchasesDetails)
+        : Array.isArray(purchase.purchasesDetails) && purchase.purchasesDetails.length > 0
         ? purchase.purchasesDetails
+        : Array.isArray(purchase.details)
+        ? purchase.details
         : [];
 
     const returnedMap = getReturnedQuantitiesForPurchase(purchase);
 
     if (details.length > 0) {
       const formattedLines: ReturnLineFormState[] = details.map((d: any) => {
-        const purchasedQty = Number(d.quantity ?? 1);
-        const buyPrice = Number(d.buyPrice ?? d.unitPrice ?? 0);
+        const purchasedQty = Number(d.quantity ?? d.qty ?? 1);
+        const buyPrice = Number(d.buyPrice ?? d.unitPrice ?? d.price ?? 0);
 
         const pId = String(d.productId ?? d.id ?? "").trim();
         const pCode = String(d.productCode ?? d.pcode ?? "").trim();
-        const pName = String(d.productName ?? d.name ?? "Product").trim().toLowerCase();
-        const baseName = pName.split(/[(/[-]/)[0].trim();
+        const pName = String(d.productName ?? d.name ?? "Product").trim();
+        const baseName = pName.toLowerCase().split(/[(/[-]/)[0].trim();
 
         const directReturned = Number(
           d.alreadyReturnedQty ??
@@ -369,9 +360,9 @@ export const PurchaseReturnForm: React.FC = () => {
         const initialSelected = availableQty > 0;
 
         return {
-          productId: d.productId ?? d.id ?? "",
-          productCode: d.productCode ?? d.pcode ?? "",
-          productName: d.productName ?? d.name ?? "Product",
+          productId: pId,
+          productCode: pCode,
+          productName: pName,
           unit: d.unit || "pcs",
           purchasedQuantity: purchasedQty,
           alreadyReturnedQty: alreadyReturned,
@@ -656,8 +647,6 @@ export const PurchaseReturnForm: React.FC = () => {
     setInvoiceDiscount("");
     setInvoiceVat("");
     resetRefund();
-    setSelectedRefundBankId("");
-    setSelectedRefundMfsId("");
     setNote("");
   };
 
@@ -860,6 +849,34 @@ export const PurchaseReturnForm: React.FC = () => {
       queryClient.invalidateQueries({ queryKey: [productQueryKey], refetchType: "none" });
       queryClient.invalidateQueries({ queryKey: [partyListQueryKey], refetchType: "none" });
       queryClient.invalidateQueries({ queryKey: [dashboardQueryKey], refetchType: "none" });
+
+      // Post financial transaction INCOME to increase cash/bank balance for supplier refund
+      if (totals.refundAmount > 0) {
+        try {
+          const refundTenders: TradeTender[] = [
+            { amount: numRefundCash, leg: cashLeg() },
+            { amount: numRefundBank, leg: bankLeg(matchedBank) },
+            { amount: numRefundMfs, leg: mfsLeg(matchedMfs) },
+          ].filter((t) => t.amount > 0);
+
+          if (refundTenders.length > 0) {
+            const itemSummary = activeLines.map((l) => l.productName).filter(Boolean).join(", ");
+            await recordTradeLedger({
+              tradeType: "INCOME",
+              tenders: refundTenders,
+              invoiceNo: generatedReturnNo || purchaseInvoiceNo,
+              partyId: supplierId || "",
+              head: "Purchase Return",
+              itemsSummary: itemSummary,
+              notes: finalNote,
+              date: returnDate,
+              totalDue: numRefundDue,
+            });
+          }
+        } catch (ledgerErr) {
+          console.error("Purchase return saved, but financial ledger posting encountered an error:", ledgerErr);
+        }
+      }
 
       showSuccessToast(
         response?.msg ||

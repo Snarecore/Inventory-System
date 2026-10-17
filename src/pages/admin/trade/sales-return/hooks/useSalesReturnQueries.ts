@@ -29,7 +29,23 @@ export const fetchSalesList = async (): Promise<SaleItem[]> => {
         : res?.data?.saleList || res?.data?.sales || res?.data?.sale_list) ||
       [];
 
-    return Array.isArray(list) ? (list as SaleItem[]) : [];
+    const normalized = (Array.isArray(list) ? list : []).map((item: any) => {
+      const lineItems =
+        Array.isArray(item.salesDetails) && item.salesDetails.length > 0
+          ? item.salesDetails
+          : Array.isArray(item.saleDetails) && item.saleDetails.length > 0
+          ? item.saleDetails
+          : Array.isArray(item.details)
+          ? item.details
+          : [];
+      return {
+        ...item,
+        salesDetails: lineItems,
+        details: lineItems,
+      };
+    });
+
+    return normalized as SaleItem[];
   } catch (error) {
     console.error("Failed to fetch sales list:", error);
     return [];
@@ -93,6 +109,18 @@ export const fetchSalesAndReturnList = async (): Promise<any[]> => {
 
       if (!seen.has(key)) {
         seen.add(key);
+
+        const lineItems =
+          Array.isArray(item.salesDetails) && item.salesDetails.length > 0
+            ? item.salesDetails
+            : Array.isArray(item.saleDetails) && item.saleDetails.length > 0
+            ? item.saleDetails
+            : Array.isArray(item.details)
+            ? item.details
+            : [];
+        item.salesDetails = lineItems;
+        item.details = lineItems;
+
         unifiedList.push(item);
       }
     };

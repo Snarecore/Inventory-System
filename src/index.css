@@ -21,7 +21,6 @@
   --font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   --font-body: "Plus Jakarta Sans", sans-serif;
 
-  /* Brand / Primary Color (ক্যাশ বই ব্র্যান্ড কালার) */
   --color-primary: var(--primary-color);
   --color-primary-hover: var(--primary-color-hover);
   --color-primary-light: var(--primary-color-light);
@@ -143,4 +142,3 @@ input[type="number"] {
   -moz-appearance: textfield;
   appearance: textfield;
 }
-

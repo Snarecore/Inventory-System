@@ -98,5 +98,11 @@
         "updateSalesUrl": "update-sales",
         "salesTransactionReportUrl": "get-sale-transaction-report",
         "salesAndReturnUrl": "get-sales-and-return"
+    },
+    "finance": {
+        "insertFinancialTransactionUrl": "insert-financial-transaction",
+        "getCashBalanceInfoUrl": "get-cash-balance-info",
+        "getFinancialTransactionUrl": "get-financial-transaction",
+        "getExpenseSummaryDetailsUrl": "get-expense-summary-details"
     }
 }

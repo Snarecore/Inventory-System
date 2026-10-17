@@ -52,6 +52,7 @@ export const extractBankAccounts = (raw: any): BankAccountItem[] => {
     bankName: b.bankName || b.name || "Bank",
     accountNo: b.accountNo || b.accountNumber || b.bankAccountNumber || b.bankAccountNo || "",
     bankAccountName: b.bankAccountName || b.accountName || "",
+    balance: Number(b.balance ?? b.currentBalance ?? b.initialBalance ?? 0),
   }));
 };
 

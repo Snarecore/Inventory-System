@@ -43,6 +43,8 @@ import { useTradeProductSearch } from "@/hooks/useTradeProductSearch";
 import TradeProductSearch from "@/components/trade/TradeProductSearch";
 import TradeLineItemsTable from "@/components/trade/TradeLineItemsTable";
 import TradePartySelector from "@/components/trade/TradePartySelector";
+import { useFinancialLedger } from "@/hooks/useFinancialLedger";
+import { cashLeg, bankLeg, mfsLeg, type TradeTender } from "@/services/financial-ledger-service";
 import type { PurchaseItem, PurchaseDetailItem, ProductItem, PartyItem, PurchaseChallanSettings } from "@/types";
 
 interface FormLineItem {
@@ -102,6 +104,7 @@ const CreatePurchaseForm: React.FC = () => {
   const { id: routeId } = useParams();
   const queryClient = useQueryClient();
   const { postFormMutation, postMutation, handleApiMutation } = useAPI();
+  const { recordTradeLedger } = useFinancialLedger();
 
   const stateEditData: PurchaseItem | undefined = (location.state as any)?.editData;
   const isEditMode = Boolean(routeId || stateEditData);
@@ -457,7 +460,14 @@ const CreatePurchaseForm: React.FC = () => {
       }
 
       // Line Items (Purchase Details)
-      const rawDetails = Array.isArray(data.purchaseDetails) ? data.purchaseDetails : [];
+      const rawDetails: any[] =
+        Array.isArray(data.purchaseDetails) && data.purchaseDetails.length > 0
+          ? data.purchaseDetails
+          : Array.isArray(data.purchasesDetails) && data.purchasesDetails.length > 0
+          ? data.purchasesDetails
+          : Array.isArray(data.details)
+          ? data.details
+          : [];
 
       if (Array.isArray(rawDetails) && rawDetails.length > 0) {
         const seenProductKeys = new Set<string>();
@@ -476,9 +486,9 @@ const CreatePurchaseForm: React.FC = () => {
 
           if (key) seenProductKeys.add(key);
 
-          const buyP = Number(item.buyPrice ?? 0);
-          const q = Number(item.quantity ?? 1);
-          const v = Number(item.vat ?? 0);
+          const buyP = Number(item.buyPrice ?? item.unitPrice ?? item.price ?? 0);
+          const q = Number(item.quantity ?? item.qty ?? 1);
+          const v = Number(item.vat ?? item.vat_amount ?? 0);
           const tot = Number(item.total ?? (buyP * q));
 
           // Match with allProducts to get current stock and fallback name/code
@@ -919,6 +929,7 @@ const CreatePurchaseForm: React.FC = () => {
         customerPaid: Number(cashGiven) || totalPaid,
         returnAmount: changeReturnAmount,
         purchaseDetails: purchaseDetailsPayload,
+        details: purchaseDetailsPayload,
       };
 
       const editId =
@@ -948,6 +959,40 @@ const CreatePurchaseForm: React.FC = () => {
       if (result?.success) {
         const res: any = (result.data as any)?.data !== undefined ? (result.data as any).data : result.data;
         const savedId = res?.id || res?.purchaseId || editId || invoiceNo;
+
+        // Post financial transaction EXPENSE to update cash/bank balances
+        if (totalPaid > 0) {
+          try {
+            const selectedBankObj = registeredBankAccounts.find(
+              (b) => String(b.id) === String(selectedBankId)
+            );
+            const selectedMfsObj = registeredMfsAccounts.find(
+              (m) => String(m.id) === String(selectedMfsId)
+            );
+
+            const tenders: TradeTender[] = [
+              { amount: numCash, leg: cashLeg() },
+              { amount: numBank, leg: bankLeg(selectedBankObj) },
+              { amount: numMfs, leg: mfsLeg(selectedMfsObj) },
+            ].filter((t) => t.amount > 0);
+
+            const productSummary = lineItems.map((li) => li.productName).filter(Boolean).join(", ");
+
+            await recordTradeLedger({
+              tradeType: "EXPENSE",
+              tenders,
+              invoiceNo: invoiceNo.trim(),
+              partyId: selectedSupplier?.id || "",
+              head: "Purchase",
+              itemsSummary: productSummary,
+              notes: notes.trim(),
+              date: purchaseDate,
+              totalDue: dueAmount,
+            });
+          } catch (ledgerErr) {
+            console.error("Purchase saved, but financial ledger posting encountered an error:", ledgerErr);
+          }
+        }
 
         const savedItem: any = {
           ...purchasePayload,

@@ -28,6 +28,8 @@ import {
   dashboardQueryKey,
 } from "@/config/query-key";
 import { useFinancialAccounts } from "@/hooks/useFinancialAccounts";
+import { useFinancialLedger } from "@/hooks/useFinancialLedger";
+import { cashLeg, bankLeg, mfsLeg, type TradeTender } from "@/services/financial-ledger-service";
 import { buildAccessUser } from "@/utils/access-user";
 import { postData } from "@/services/api-service";
 import { formatMoney } from "@/utils/formatters";
@@ -110,6 +112,7 @@ export const SalesReturnForm: React.FC = () => {
 
   // 2. Fetch registered Bank and MFS accounts for refund disbursement (Shared cache with 5-minute staleTime)
   const { registeredBankAccounts, registeredMfsAccounts } = useFinancialAccounts();
+  const { recordTradeLedger } = useFinancialLedger();
 
   const availableInvoices: SaleItem[] = useMemo(() => {
     const combinedCandidates: any[] = [];
@@ -138,7 +141,8 @@ export const SalesReturnForm: React.FC = () => {
     return combinedCandidates.filter((item: any) => {
       const hasDetails =
         (Array.isArray(item.salesDetails) && item.salesDetails.length > 0) ||
-        (Array.isArray(item.saleDetails) && item.saleDetails.length > 0);
+        (Array.isArray(item.saleDetails) && item.saleDetails.length > 0) ||
+        (Array.isArray(item.details) && item.details.length > 0);
       return hasDetails;
     });
   }, [salesData, apiSalesAndReturnData]);
@@ -309,21 +313,23 @@ export const SalesReturnForm: React.FC = () => {
     const details: any[] =
       Array.isArray(sale.salesDetails) && sale.salesDetails.length > 0
         ? sale.salesDetails
-        : Array.isArray(sale.saleDetails)
+        : Array.isArray(sale.saleDetails) && sale.saleDetails.length > 0
         ? sale.saleDetails
+        : Array.isArray(sale.details)
+        ? sale.details
         : [];
 
     const returnedMap = getReturnedQuantitiesForSale(sale);
 
     if (details.length > 0) {
       const formattedLines: ReturnLineFormState[] = details.map((d: any) => {
-        const soldQty = Number(d.quantity ?? 1);
-        const p = Number(d.sellPrice ?? d.unitPrice ?? 0);
+        const soldQty = Number(d.quantity ?? d.qty ?? 1);
+        const p = Number(d.sellPrice ?? d.unitPrice ?? d.price ?? 0);
 
-        const pId = String(d.productId ?? "").trim();
+        const pId = String(d.productId ?? d.id ?? "").trim();
         const pCode = String(d.productCode ?? d.pcode ?? "").trim();
-        const pName = String(d.productName ?? d.name ?? "Product").trim().toLowerCase();
-        const baseName = pName.split(/[(/[-]/)[0].trim();
+        const pName = String(d.productName ?? d.name ?? "Product").trim();
+        const baseName = pName.toLowerCase().split(/[(/[-]/)[0].trim();
 
         const directReturned = Number(
           d.returnedQuantity ??
@@ -334,7 +340,7 @@ export const SalesReturnForm: React.FC = () => {
         const matchedFromReturns = Math.max(
           pId ? (returnedMap[`id_${pId}`] || 0) : 0,
           pCode ? (returnedMap[`code_${pCode.toLowerCase()}`] || 0) : 0,
-          pName ? (returnedMap[`name_${pName}`] || 0) : 0,
+          pName ? (returnedMap[`name_${pName.toLowerCase()}`] || 0) : 0,
           baseName ? (returnedMap[`basename_${baseName}`] || 0) : 0
         );
 
@@ -345,9 +351,9 @@ export const SalesReturnForm: React.FC = () => {
         const initialSelected = availableQty > 0;
 
         return {
-          productId: d.productId ?? "",
-          productCode: d.productCode ?? d.pcode ?? "",
-          productName: d.productName ?? d.name ?? "Product",
+          productId: pId,
+          productCode: pCode,
+          productName: pName,
           unit: d.unit || "pcs",
           soldQuantity: soldQty,
           alreadyReturnedQty: alreadyReturned,
@@ -875,6 +881,34 @@ export const SalesReturnForm: React.FC = () => {
       queryClient.invalidateQueries({ queryKey: [productQueryKey], refetchType: "none" });
       queryClient.invalidateQueries({ queryKey: [partyListQueryKey], refetchType: "none" });
       queryClient.invalidateQueries({ queryKey: [dashboardQueryKey], refetchType: "none" });
+
+      // Post financial transaction EXPENSE to reduce cash/bank balance for customer refund
+      if (totals.refundAmount > 0) {
+        try {
+          const refundTenders: TradeTender[] = [
+            { amount: numRefundCash, leg: cashLeg() },
+            { amount: numRefundBank, leg: bankLeg(matchedBank) },
+            { amount: numRefundMfs, leg: mfsLeg(matchedMfs) },
+          ].filter((t) => t.amount > 0);
+
+          if (refundTenders.length > 0) {
+            const itemSummary = activeLines.map((l) => l.productName).filter(Boolean).join(", ");
+            await recordTradeLedger({
+              tradeType: "EXPENSE",
+              tenders: refundTenders,
+              invoiceNo: generatedReturnNo || salesInvoiceNo,
+              partyId: customerId || "",
+              head: "Sales Return",
+              itemsSummary: itemSummary,
+              notes: finalNote,
+              date: returnDate,
+              totalDue: numRefundDue,
+            });
+          }
+        } catch (ledgerErr) {
+          console.error("Sales return saved, but financial ledger posting encountered an error:", ledgerErr);
+        }
+      }
 
       showSuccessToast(
         response?.msg ||

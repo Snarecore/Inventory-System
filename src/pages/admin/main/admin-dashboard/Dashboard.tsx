@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { KpiCardsGrid } from './components/KpiCardsGrid';
 import { SaleAnalysisChart } from './components/SaleAnalysisChart';
 import { ProfitLossChart } from './components/ProfitLossChart';
@@ -6,11 +6,29 @@ import { AssetAnalysisChart } from './components/AssetAnalysisChart';
 import { TopCustomersWidget } from './components/TopCustomersWidget';
 import { TopSaleItemsWidget } from './components/TopSaleItemsWidget';
 import { mockKpiData } from './data/mockDashboardData';
+import { useCashBalanceQuery } from '@/hooks/useCashBalance';
+import { useFinancialAccounts } from '@/hooks/useFinancialAccounts';
 
 const AdminDashboard: React.FC = () => {
+  const { data: liveCashBalance } = useCashBalanceQuery();
+  const { registeredBankAccounts } = useFinancialAccounts();
+
+  const kpiData = useMemo(() => {
+    const liveBank = registeredBankAccounts.reduce(
+      (sum, b) => sum + (Number(b.balance) || 0),
+      0
+    );
+
+    return {
+      ...mockKpiData,
+      cashBalance: typeof liveCashBalance === 'number' ? liveCashBalance : mockKpiData.cashBalance,
+      bankBalance: liveBank > 0 ? liveBank : mockKpiData.bankBalance,
+    };
+  }, [liveCashBalance, registeredBankAccounts]);
+
   return (
     <div className="flex flex-col gap-4 sm:gap-4.5 p-4 sm:p-5 bg-[#f8fafc]">
-      <KpiCardsGrid data={mockKpiData} />
+      <KpiCardsGrid data={kpiData} />
       
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-4.5 items-stretch">
         <div className="col-span-12 lg:col-span-8 flex flex-col h-full">

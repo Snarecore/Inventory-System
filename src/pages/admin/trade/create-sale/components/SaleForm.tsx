@@ -31,6 +31,8 @@ import TradeProductSearch from "@/components/trade/TradeProductSearch";
 import TradeLineItemsTable from "@/components/trade/TradeLineItemsTable";
 import TradePartySelector from "@/components/trade/TradePartySelector";
 import { useSalesQuery } from "@/pages/admin/trade/sales-return/hooks/useSalesReturnQueries";
+import { useFinancialLedger } from "@/hooks/useFinancialLedger";
+import { cashLeg, bankLeg, mfsLeg, type TradeTender } from "@/services/financial-ledger-service";
 import type { SaleItem, ProductItem, PartyItem } from "@/types";
 
 interface FormLineItem {
@@ -68,6 +70,7 @@ export const CreateSaleForm: React.FC = () => {
   const { id: routeId } = useParams();
   const queryClient = useQueryClient();
   const { postMutation, handleApiMutation } = useAPI();
+  const { recordTradeLedger } = useFinancialLedger();
 
   const stateEditData: SaleItem | undefined = (location.state as any)?.editData;
   const isEditMode = Boolean(routeId || stateEditData);
@@ -318,8 +321,15 @@ export const CreateSaleForm: React.FC = () => {
         setWalkInPhone("");
       }
 
-      // Details - load directly from salesDetails
-      const rawDetails = Array.isArray(data.salesDetails) ? data.salesDetails : [];
+      // Details - load directly from salesDetails, saleDetails, or details
+      const rawDetails: any[] =
+        Array.isArray(data.salesDetails) && data.salesDetails.length > 0
+          ? data.salesDetails
+          : Array.isArray(data.saleDetails) && data.saleDetails.length > 0
+          ? data.saleDetails
+          : Array.isArray(data.details)
+          ? data.details
+          : [];
       if (Array.isArray(rawDetails) && rawDetails.length > 0) {
         // Extract returned quantities map for this sale (if any return records exist)
         const invNo = String(data.invoiceNo || (data as any).salesInvoiceNo || "").trim();
@@ -330,7 +340,7 @@ export const CreateSaleForm: React.FC = () => {
         const processDetails = (dList: any[]) => {
           if (!Array.isArray(dList)) return;
           dList.forEach((rd: any) => {
-            const pId = String(rd.productId ?? "").trim();
+            const pId = String(rd.productId ?? rd.id ?? "").trim();
             const pCode = String(rd.productCode ?? rd.pcode ?? "").trim();
             const pName = String(rd.productName ?? rd.name ?? "").trim().toLowerCase();
             const qty = Number(rd.quantity ?? rd.returnQuantity ?? 0);
@@ -370,18 +380,18 @@ export const CreateSaleForm: React.FC = () => {
         }
 
         const loaded: FormLineItem[] = rawDetails.map((item: any) => {
-          const p = Number(item.sellPrice ?? item.price ?? 0);
-          const q = Number(item.quantity ?? 1);
-          const d = Number(item.discount ?? 0);
-          const v = Number(item.vat ?? 0);
+          const p = Number(item.sellPrice ?? item.unitPrice ?? item.price ?? 0);
+          const q = Number(item.quantity ?? item.qty ?? 1);
+          const d = Number(item.discount ?? item.discount_amount ?? 0);
+          const v = Number(item.vat ?? item.vat_amount ?? 0);
           const tot =
             item.total !== undefined && item.total !== null && !isNaN(Number(item.total)) && Number(item.total) > 0
               ? Number(item.total)
               : Number(p * q + v - d);
 
-          const pId = String(item.productId || "").trim();
-          const pCode = String(item.productCode || item.pcode || "").trim();
-          const pName = String(item.productName || item.name || "").trim().toLowerCase();
+          const pId = String(item.productId ?? item.id ?? item.product_id ?? "").trim();
+          const pCode = String(item.productCode ?? item.pcode ?? "").trim();
+          const pName = String(item.productName ?? item.name ?? "Product").trim();
 
           const directReturned = Number(
             item.returnedQuantity ??
@@ -392,7 +402,7 @@ export const CreateSaleForm: React.FC = () => {
           const matchedFromReturns =
             (pId && returnedQtyMap[`id_${pId}`]) ||
             (pCode && returnedQtyMap[`code_${pCode}`]) ||
-            (pName && returnedQtyMap[`name_${pName}`]) ||
+            (pName && returnedQtyMap[`name_${pName.toLowerCase()}`]) ||
             0;
 
           const retQty = Math.max(directReturned, matchedFromReturns);
@@ -410,9 +420,9 @@ export const CreateSaleForm: React.FC = () => {
           return {
             id: item.id || item.saleDetailId,
             saleDetailId: item.id || item.saleDetailId,
-            productId: item.productId || "",
-            productCode: item.productCode || item.pcode || "",
-            productName: item.productName || item.name || "Product",
+            productId: pId,
+            productCode: pCode,
+            productName: pName,
             unit: item.unit || "pcs",
             sellPrice: String(p),
             buyPrice: Number(item.buyPrice || 0),
@@ -867,6 +877,7 @@ export const CreateSaleForm: React.FC = () => {
         accountNo: numBank > 0 ? (finalAccountNo || null) : null,
         bankAccountName: numBank > 0 ? (finalBankRef || null) : null,
         salesDetails,
+        details: salesDetails,
       };
 
       const editId =
@@ -891,6 +902,33 @@ export const CreateSaleForm: React.FC = () => {
       if (result?.success) {
         const res: any = (result.data as any)?.data !== undefined ? (result.data as any).data : result.data;
         const savedId = res?.id || res?.saleId || editId || invoiceNo;
+
+        // Post financial transaction INCOME to update cash/bank balances
+        if (totalPaid > 0) {
+          try {
+            const tenders: TradeTender[] = [
+              { amount: numCash, leg: cashLeg() },
+              { amount: numBank, leg: bankLeg(selectedBankObj) },
+              { amount: numMfs, leg: mfsLeg(selectedMfsObj) },
+            ].filter((t) => t.amount > 0);
+
+            const productSummary = lineItems.map((li) => li.productName).filter(Boolean).join(", ");
+
+            await recordTradeLedger({
+              tradeType: "INCOME",
+              tenders,
+              invoiceNo: invoiceNo.trim(),
+              partyId: finalCustomerId,
+              head: "Sales",
+              itemsSummary: productSummary,
+              notes: notes.trim(),
+              date: salesDate,
+              totalDue: dueAmount,
+            });
+          } catch (ledgerErr) {
+            console.error("Sale saved, but financial ledger posting encountered an error:", ledgerErr);
+          }
+        }
 
         setShouldAutoPrint(shouldPrint);
         setSavedSaleForInvoice({
