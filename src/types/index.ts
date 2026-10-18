@@ -181,7 +181,6 @@ export interface PurchaseChallanSettings {
   showTransportCost?: boolean;
   showDeliveryDate?: boolean;
   showNotes?: boolean;
-  showPoNumber?: boolean;
   enableAttachments?: boolean;
   showAttachments?: boolean;
   [key: string]: any;

@@ -94,7 +94,6 @@ export function exportPurchasesToExcel(
       "Challan No": item.challanNo || "",
       "Vehicle No": item.vehicleNo || "",
       "Driver Name": item.driverName || "",
-      "PO Number": item.poNumber || "",
       "Notes": item.note || "",
     };
   });
@@ -120,7 +119,6 @@ export function exportPurchasesToExcel(
     "Challan No": "",
     "Vehicle No": "",
     "Driver Name": "",
-    "PO Number": "",
     "Notes": "",
   };
 

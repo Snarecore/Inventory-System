@@ -19,7 +19,7 @@ import {
   purchaseChallanSettingsQueryKey,
 } from "@/config/query-key";
 import { buildAccessUser } from "@/utils/access-user";
-import { getBusinessCode, getUserInfo } from "@/utils/auth-storage";
+import { getBusinessCode } from "@/utils/auth-storage";
 import { makeInvoiceNo } from "@/utils/invoiceNo";
 import { postData } from "@/services/api-service";
 import { useAPI } from "@/hooks/useApi";
@@ -41,7 +41,6 @@ import type { PurchaseItem, ProductItem, PartyItem, PurchaseChallanSettings } fr
 interface FormLineItem {
   id?: string | number;
   purchaseDetailId?: string | number;
-  purchase_detail_id?: string | number;
   productId: string | number;
   productCode: string;
   productName: string;
@@ -81,10 +80,8 @@ const defaultChallanSettings: PurchaseChallanSettings = {
   // Aliases
   showChallanNo: true,
   showVehicleNo: true,
-  showDeliveryDate: true,
   showNotes: true,
   showTransportCost: true,
-  showPoNumber: true,
   enableAttachments: true,
   showAttachments: true,
 };
@@ -110,7 +107,6 @@ const CreatePurchaseForm: React.FC = () => {
 
   // Challan & Logistics Info
   const [challanNo, setChallanNo] = useState<string>("");
-  const [poNumber, setPoNumber] = useState<string>("");
   const [vatChallan, setVatChallan] = useState<string>("");
   const [vatChallanDate, setVatChallanDate] = useState<string>("");
   const [vehicleNo, setVehicleNo] = useState<string>("");
@@ -130,8 +126,6 @@ const CreatePurchaseForm: React.FC = () => {
   const [invoiceDiscount, setInvoiceDiscount] = useState<string>("");
   const [invoiceDiscountType, setInvoiceDiscountType] = useState<"FLAT" | "PERCENT">("FLAT");
   const [invoiceVat, setInvoiceVat] = useState<string>("");
-
-
 
   // Modals & Settings
   const [isChallanSettingsOpen, setIsChallanSettingsOpen] = useState<boolean>(false);
@@ -307,9 +301,7 @@ const CreatePurchaseForm: React.FC = () => {
           showDriverName: data.driverName ?? data.showDriverName ?? true,
           showDriverPhone: data.driverPhone ?? data.showDriverPhone ?? true,
           showTransportCost: data.showTransportCost ?? true,
-          showDeliveryDate: data.showChallanDate ?? data.showDeliveryDate ?? true,
           showNotes: data.remarks ?? data.showNotes ?? true,
-          showPoNumber: data.showPoNumber ?? true,
           enableAttachments: data.attachments ?? data.enableAttachments ?? true,
           showAttachments: data.attachments ?? data.showAttachments ?? true,
         });
@@ -1052,7 +1044,6 @@ const CreatePurchaseForm: React.FC = () => {
     setCapacityCft("");
     setDriverName("");
     setDriverPhone("");
-    setPoNumber("");
     setNotes("");
     setAttachment(null);
     if (businessCode) {
@@ -1310,20 +1301,6 @@ const CreatePurchaseForm: React.FC = () => {
             />
           </div>
         )}
-
-        {/* PO Number (UI / Design Only) */}
-        <div>
-          <label className="text-[11px] font-bold text-black tracking-wider block mb-1">
-            PO Number
-          </label>
-          <input
-            type="text"
-            value={poNumber}
-            onChange={(e) => setPoNumber(e.target.value)}
-            className="w-full h-9 px-2.5 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:border-[var(--color-primary)] font-semibold text-black"
-            placeholder="e.g. PO-2026-001"
-          />
-        </div>
       </div>
 
       {/* Product Live Search & Add Bar */}
