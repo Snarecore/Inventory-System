@@ -8,12 +8,18 @@ import DateRangePicker from "@/components/date-range-picker/DateRangePicker";
 import Pagination from "@/components/pagination";
 import TableSkeleton from "@/components/skeleton/TableSkeleton";
 import EmptyState from "@/components/empty-state/EmptyState";
+import ColumnVisibilityDropdown, { type ColumnItem } from "@/components/table-components/ColumnVisibilityDropdown";
 import { useCollectionReportQuery } from "@/hooks/useCollectionReport";
 import { useDebounce } from "@/hooks/useDebounce";
 import { formatMoney } from "@/utils/formatters";
 import { showSuccessToast, showErrorToast } from "@/utils/toast-utils";
 import type { CollectionReceiptData } from "./CollectionReceiptModal";
 import type { CollectionReportItem } from "@/types/collection.types";
+
+const cleanDateOnly = (dateStr?: string | null): string => {
+  if (!dateStr) return "-";
+  return String(dateStr).replace("T", " ").split(" ")[0].trim() || "-";
+};
 
 interface CollectionHistoryTableProps {
   onPrintReceipt: (receipt: CollectionReceiptData) => void;
@@ -42,6 +48,61 @@ export const CollectionHistoryTable: React.FC<CollectionHistoryTableProps> = ({
   // Pagination states matching Cash-Boi standards
   const [currentPageNumber, setCurrentPageNumber] = useState<number>(1);
   const [dataLimit, setDataLimit] = useState<number>(10);
+
+  // Column Visibility Configuration
+  const availableColumns: ColumnItem[] = [
+    { key: "expand", label: "Expand" },
+    { key: "sl", label: "SL" },
+    { key: "date", label: "Date" },
+    { key: "voucherNo", label: "Voucher No" },
+    { key: "customer", label: "Customer" },
+    { key: "phone", label: "Phone" },
+    { key: "method", label: "Method" },
+    { key: "received", label: "Received (৳)" },
+    { key: "bills", label: "Bills" },
+    { key: "remark", label: "Remark" },
+    { key: "receipt", label: "Receipt" },
+  ];
+
+  const [visibleColumns, setVisibleColumns] = useState<Record<string, boolean>>(() => {
+    try {
+      const saved = localStorage.getItem("collection_history_columns");
+      if (saved) return JSON.parse(saved);
+    } catch {}
+    return {};
+  });
+
+  const isColVisible = (key: string) => visibleColumns[key] !== false;
+
+  const handleToggleColumn = (key: string) => {
+    setVisibleColumns((prev) => {
+      const currentlyVisible = prev[key] !== false;
+      const willBeVisible = !currentlyVisible;
+      const countAfter = availableColumns.filter((c) =>
+        c.key === key ? willBeVisible : prev[c.key] !== false
+      ).length;
+      if (countAfter === 0) return prev;
+
+      const next = { ...prev, [key]: willBeVisible };
+      try {
+        localStorage.setItem("collection_history_columns", JSON.stringify(next));
+      } catch {}
+      return next;
+    });
+  };
+
+  const handleResetColumns = () => {
+    const resetState: Record<string, boolean> = {};
+    availableColumns.forEach((c) => {
+      resetState[c.key] = true;
+    });
+    setVisibleColumns(resetState);
+    try {
+      localStorage.removeItem("collection_history_columns");
+    } catch {}
+  };
+
+  const activeVisibleColumnCount = availableColumns.filter((c) => isColVisible(c.key)).length;
 
   // Fetch report data
   const {
@@ -119,7 +180,7 @@ export const CollectionHistoryTable: React.FC<CollectionHistoryTableProps> = ({
       const rows = filteredCollections.map((item, idx) => ({
         SL: idx + 1,
         "Voucher No": item.collectionNo || `COL-${idx + 1}`,
-        Date: item.collectionDate || "-",
+        Date: cleanDateOnly(item.collectionDate),
         Customer: item.customerName || "-",
         Phone: item.customerPhone || "-",
         "Payment Mode": item.paymentMode || "Cash",
@@ -147,7 +208,7 @@ export const CollectionHistoryTable: React.FC<CollectionHistoryTableProps> = ({
 
     const receipt: CollectionReceiptData = {
       receiptNo: String(row.collectionNo || `REC-${row.id}`),
-      collectionDate: row.collectionDate || moment().format("YYYY-MM-DD"),
+      collectionDate: cleanDateOnly(row.collectionDate) !== "-" ? cleanDateOnly(row.collectionDate) : moment().format("YYYY-MM-DD"),
       customerName: row.customerName || "Customer",
       customerPhone: row.customerPhone || "",
       customerId: row.customerId || "",
@@ -242,8 +303,15 @@ export const CollectionHistoryTable: React.FC<CollectionHistoryTableProps> = ({
           </div>
         </div>
 
-        {/* Right Section: Export to Excel Button */}
+        {/* Right Section: Column Visibility & Export */}
         <div className="flex items-center justify-end gap-1.5 sm:gap-2 shrink-0 w-full sm:w-auto pt-1 sm:pt-0 border-t sm:border-t-0 border-gray-100">
+          <ColumnVisibilityDropdown
+            columns={availableColumns}
+            visibleColumns={visibleColumns}
+            onToggle={handleToggleColumn}
+            onReset={handleResetColumns}
+          />
+
           <button
             type="button"
             onClick={handleExport}
@@ -259,7 +327,7 @@ export const CollectionHistoryTable: React.FC<CollectionHistoryTableProps> = ({
       {/* Main Table Content */}
       <div className="overflow-x-auto w-full relative z-10">
         {isLoading ? (
-          <TableSkeleton columnCount={8} rowCount={8} />
+          <TableSkeleton columnCount={activeVisibleColumnCount} rowCount={8} />
         ) : filteredCollections.length === 0 ? (
           <EmptyState
             title="No Collection History Found"
@@ -269,17 +337,17 @@ export const CollectionHistoryTable: React.FC<CollectionHistoryTableProps> = ({
           <table className="w-full text-left border-collapse text-xs">
             <thead>
               <tr className="bg-[#41BEF3] text-black text-xs font-semibold">
-                <th className="py-2.5 px-3 text-center w-8"></th>
-                <th className="py-2.5 px-3 text-center w-10">SL</th>
-                <th className="py-2.5 px-3">Date</th>
-                <th className="py-2.5 px-3">Voucher No</th>
-                <th className="py-2.5 px-3">Customer</th>
-                <th className="py-2.5 px-3">Phone</th>
-                <th className="py-2.5 px-3 text-center">Method</th>
-                <th className="py-2.5 px-3 text-right">Received (৳)</th>
-                <th className="py-2.5 px-3 text-center">Bills</th>
-                <th className="py-2.5 px-3">Remark</th>
-                <th className="py-2.5 px-3 text-center w-16">Receipt</th>
+                {isColVisible("expand") && <th className="py-2.5 px-3 text-center w-8"></th>}
+                {isColVisible("sl") && <th className="py-2.5 px-3 text-center w-10">SL</th>}
+                {isColVisible("date") && <th className="py-2.5 px-3">Date</th>}
+                {isColVisible("voucherNo") && <th className="py-2.5 px-3">Voucher No</th>}
+                {isColVisible("customer") && <th className="py-2.5 px-3">Customer</th>}
+                {isColVisible("phone") && <th className="py-2.5 px-3">Phone</th>}
+                {isColVisible("method") && <th className="py-2.5 px-3 text-center">Method</th>}
+                {isColVisible("received") && <th className="py-2.5 px-3 text-right">Received (৳)</th>}
+                {isColVisible("bills") && <th className="py-2.5 px-3 text-center">Bills</th>}
+                {isColVisible("remark") && <th className="py-2.5 px-3">Remark</th>}
+                {isColVisible("receipt") && <th className="py-2.5 px-3 text-center w-16">Receipt</th>}
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
@@ -295,105 +363,127 @@ export const CollectionHistoryTable: React.FC<CollectionHistoryTableProps> = ({
                   <React.Fragment key={`row-${rowId}`}>
                     <tr className="hover:bg-sky-50/40 transition-colors group">
                       {/* Accordion Expand Toggle */}
-                      <td className="py-2.5 px-2 text-center">
-                        {detailsCount > 0 && (
-                          <button
-                            type="button"
-                            onClick={() => toggleRow(rowId)}
-                            className="p-1 text-gray-500 hover:text-black transition-colors cursor-pointer"
-                            title={isExpanded ? "Collapse" : "View bills"}
-                          >
-                            <FiChevronRight
-                              size={13}
-                              className={`transition-transform duration-200 ${
-                                isExpanded ? "rotate-90" : ""
-                              }`}
-                            />
-                          </button>
-                        )}
-                      </td>
+                      {isColVisible("expand") && (
+                        <td className="py-2.5 px-2 text-center">
+                          {detailsCount > 0 && (
+                            <button
+                              type="button"
+                              onClick={() => toggleRow(rowId)}
+                              className="p-1 text-gray-500 hover:text-black transition-colors cursor-pointer"
+                              title={isExpanded ? "Collapse" : "View bills"}
+                            >
+                              <FiChevronRight
+                                size={13}
+                                className={`transition-transform duration-200 ${
+                                  isExpanded ? "rotate-90" : ""
+                                }`}
+                              />
+                            </button>
+                          )}
+                        </td>
+                      )}
 
                       {/* SL */}
-                      <td className="py-2.5 px-3 text-center text-black text-xs font-normal">
-                        {serialNumber}
-                      </td>
+                      {isColVisible("sl") && (
+                        <td className="py-2.5 px-3 text-center text-black text-xs font-normal">
+                          {serialNumber}
+                        </td>
+                      )}
 
                       {/* Date */}
-                      <td className="py-2.5 px-3 text-black text-xs font-normal whitespace-nowrap">
-                        {row.collectionDate || "-"}
-                      </td>
+                      {isColVisible("date") && (
+                        <td className="py-2.5 px-3 text-black text-xs font-normal whitespace-nowrap">
+                          {cleanDateOnly(row.collectionDate)}
+                        </td>
+                      )}
 
                       {/* Voucher No */}
-                      <td className="py-2.5 px-3 text-black text-xs font-semibold whitespace-nowrap font-mono">
-                        {row.collectionNo || `COL-${idx + 1}`}
-                      </td>
+                      {isColVisible("voucherNo") && (
+                        <td className="py-2.5 px-3 text-black text-xs font-semibold whitespace-nowrap font-mono">
+                          {row.collectionNo || `COL-${idx + 1}`}
+                        </td>
+                      )}
 
                       {/* Customer */}
-                      <td className="py-2.5 px-3 text-black text-xs font-semibold whitespace-nowrap">
-                        {row.customerName}
-                      </td>
+                      {isColVisible("customer") && (
+                        <td className="py-2.5 px-3 text-black text-xs font-semibold whitespace-nowrap">
+                          {row.customerName}
+                        </td>
+                      )}
 
                       {/* Phone */}
-                      <td className="py-2.5 px-3 text-black text-xs font-normal whitespace-nowrap">
-                        {row.customerPhone || "-"}
-                      </td>
+                      {isColVisible("phone") && (
+                        <td className="py-2.5 px-3 text-black text-xs font-normal whitespace-nowrap">
+                          {row.customerPhone || "-"}
+                        </td>
+                      )}
 
                       {/* Method */}
-                      <td className="py-2.5 px-3 text-center">
-                        <span
-                          className={`inline-block px-1.5 py-0.5 text-[10px] font-semibold border rounded-md ${
-                            isBank
-                              ? "bg-sky-100 text-sky-900 border-sky-300"
-                              : isMfs
-                              ? "bg-purple-100 text-purple-800 border-purple-300"
-                              : "bg-emerald-100 text-emerald-800 border-emerald-300"
-                          }`}
-                        >
-                          {row.paymentMode || "Cash"}
-                        </span>
-                      </td>
+                      {isColVisible("method") && (
+                        <td className="py-2.5 px-3 text-center">
+                          <span
+                            className={`inline-block px-1.5 py-0.5 text-[10px] font-semibold border rounded-md ${
+                              isBank
+                                ? "bg-sky-100 text-sky-900 border-sky-300"
+                                : isMfs
+                                ? "bg-purple-100 text-purple-800 border-purple-300"
+                                : "bg-emerald-100 text-emerald-800 border-emerald-300"
+                            }`}
+                          >
+                            {row.paymentMode || "Cash"}
+                          </span>
+                        </td>
+                      )}
 
                       {/* Received Amount */}
-                      <td className="py-2.5 px-3 text-right whitespace-nowrap">
-                        <span className="text-emerald-700 font-semibold text-xs block">
-                          ৳ {formatMoney(row.totalAmount)}
-                        </span>
-                        {Number(row.totalDiscount || 0) > 0 && (
-                          <span className="text-[10px] text-amber-700 font-medium block">
-                            - ৳ {formatMoney(row.totalDiscount || 0)} Disc
+                      {isColVisible("received") && (
+                        <td className="py-2.5 px-3 text-right whitespace-nowrap">
+                          <span className="text-emerald-700 font-semibold text-xs block">
+                            ৳ {formatMoney(row.totalAmount)}
                           </span>
-                        )}
-                      </td>
+                          {Number(row.totalDiscount || 0) > 0 && (
+                            <span className="text-[10px] text-amber-700 font-medium block">
+                              - ৳ {formatMoney(row.totalDiscount || 0)} Disc
+                            </span>
+                          )}
+                        </td>
+                      )}
 
                       {/* Bills Count */}
-                      <td className="py-2.5 px-3 text-center">
-                        <span className="inline-block px-1.5 py-0.5 bg-gray-100 text-black rounded text-[11px] font-normal">
-                          {detailsCount}
-                        </span>
-                      </td>
+                      {isColVisible("bills") && (
+                        <td className="py-2.5 px-3 text-center">
+                          <span className="inline-block px-1.5 py-0.5 bg-gray-100 text-black rounded text-[11px] font-normal">
+                            {detailsCount}
+                          </span>
+                        </td>
+                      )}
 
                       {/* Remark */}
-                      <td className="py-2.5 px-3 text-gray-500 text-xs truncate max-w-[150px]">
-                        {row.remark || "-"}
-                      </td>
+                      {isColVisible("remark") && (
+                        <td className="py-2.5 px-3 text-gray-500 text-xs truncate max-w-[150px]">
+                          {row.remark || "-"}
+                        </td>
+                      )}
 
                       {/* Receipt Action */}
-                      <td className="py-2 px-3 text-center">
-                        <button
-                          type="button"
-                          onClick={() => handlePrintClick(row)}
-                          title="Print Money Receipt"
-                          className="p-1 rounded text-gray-600 hover:bg-gray-100 hover:text-[var(--color-primary)] transition-colors cursor-pointer"
-                        >
-                          <FiPrinter size={14} />
-                        </button>
-                      </td>
+                      {isColVisible("receipt") && (
+                        <td className="py-2 px-3 text-center">
+                          <button
+                            type="button"
+                            onClick={() => handlePrintClick(row)}
+                            title="Print Money Receipt"
+                            className="p-1 rounded text-gray-600 hover:bg-gray-100 hover:text-[var(--color-primary)] transition-colors cursor-pointer"
+                          >
+                            <FiPrinter size={14} />
+                          </button>
+                        </td>
+                      )}
                     </tr>
 
                     {/* Expanded Invoices Row */}
                     {isExpanded && detailsCount > 0 && (
                       <tr className="bg-sky-50/20 border-b border-gray-100">
-                        <td colSpan={11} className="py-2.5 px-4 pl-12">
+                        <td colSpan={activeVisibleColumnCount} className="py-2.5 px-4 pl-12">
                           <div className="bg-white rounded-lg border border-gray-200 p-2.5 space-y-1.5">
                             <span className="text-[11px] font-semibold text-gray-700">
                               Settled Bills Breakdown:

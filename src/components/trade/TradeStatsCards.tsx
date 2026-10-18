@@ -27,7 +27,7 @@ export const TradeStatsCards: React.FC<TradeStatsCardsProps> = ({ cards }) => {
             }`}
           >
             <div className="flex flex-col min-w-0">
-              <span className="text-[11px] font-semibold text-black uppercase tracking-wider truncate">
+              <span className="text-[11px] font-semibold text-black truncate">
                 {card.title}
               </span>
               <span

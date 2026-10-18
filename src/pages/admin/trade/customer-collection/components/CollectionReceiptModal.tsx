@@ -119,7 +119,9 @@ export const CollectionReceiptModal: React.FC<CollectionReceiptModalProps> = ({
           <div className="text-right">
             <span className="text-gray-500 text-[10px] block">Receipt Info</span>
             <span className="font-semibold text-black block">#{receiptData.receiptNo}</span>
-            <span className="text-gray-600 text-[11px] block">Date: {receiptData.collectionDate}</span>
+            <span className="text-gray-600 text-[11px] block">
+              Date: {receiptData.collectionDate ? String(receiptData.collectionDate).replace("T", " ").split(" ")[0] : "-"}
+            </span>
             <span className="text-sky-700 font-semibold text-[11px] block">
               Method: {receiptData.paymentMode}
             </span>

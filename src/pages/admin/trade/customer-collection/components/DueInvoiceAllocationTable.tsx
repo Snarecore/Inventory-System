@@ -308,7 +308,9 @@ export const DueInvoiceAllocationTable: React.FC<DueInvoiceAllocationTableProps>
                     {inv.invoiceNo}
                   </td>
                   <td className="py-1 px-2.5 text-black whitespace-nowrap">
-                    {inv.salesDate || inv.date || "-"}
+                    {inv.salesDate || inv.date
+                      ? String(inv.salesDate || inv.date).replace("T", " ").split(" ")[0]
+                      : "-"}
                   </td>
                   <td className="py-1 px-2.5 text-right text-black font-semibold whitespace-nowrap">
                     {formatMoney(dueAmount)}
