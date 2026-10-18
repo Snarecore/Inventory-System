@@ -81,9 +81,9 @@ export const useCustomerInvoicesDueQuery = (
     queryKey: [customerInvoicesDueQueryKey, String(customerId || "")],
     queryFn: () => fetchCustomerInvoicesDue(customerId!),
     enabled: Boolean(customerId),
-    staleTime: 0,
-    refetchOnMount: "always",
-    refetchOnWindowFocus: true,
+    staleTime: 60 * 1000,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
     ...options,
   });
 };

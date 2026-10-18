@@ -23,11 +23,6 @@ export const CustomerCollection: React.FC = () => {
     refetch,
   } = useCustomersDueQuery();
 
-  // Auto-refresh data on page mount and active tab change
-  useEffect(() => {
-    refetch();
-  }, [activeTab, refetch]);
-
   // 2. Collection Modal State
   const [selectedCustomer, setSelectedCustomer] = useState<CustomerDueItem | null>(null);
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
@@ -146,12 +141,14 @@ export const CustomerCollection: React.FC = () => {
       )}
 
       {/* Payment Collection Modal */}
-      <AddCollectionModal
-        isOpen={isModalOpen}
-        customer={selectedCustomer}
-        onClose={handleCloseModal}
-        onSuccess={handleCollectionSuccess}
-      />
+      {isModalOpen && (
+        <AddCollectionModal
+          isOpen={isModalOpen}
+          customer={selectedCustomer}
+          onClose={handleCloseModal}
+          onSuccess={handleCollectionSuccess}
+        />
+      )}
 
       {/* Printable Money Receipt Modal */}
       <CollectionReceiptModal

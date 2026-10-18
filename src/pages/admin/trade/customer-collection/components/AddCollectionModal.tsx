@@ -34,7 +34,9 @@ export const AddCollectionModal: React.FC<AddCollectionModalProps> = ({
 }) => {
   const customerId = customer?.customerId ? String(customer.customerId) : "";
   const { data: rawInvoices = [], isLoading: isInvoicesLoading } =
-    useCustomerInvoicesDueQuery(customerId);
+    useCustomerInvoicesDueQuery(customerId, {
+      enabled: Boolean(isOpen && customerId),
+    });
 
   const invoices = useMemo(() => {
     return sortInvoicesFIFO(rawInvoices);
