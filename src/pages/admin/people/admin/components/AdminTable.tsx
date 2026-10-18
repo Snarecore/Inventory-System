@@ -6,6 +6,7 @@ import DropdownFilter from "@/components/table-components/DropdownFilter";
 import Search from "@/components/table-components/Search";
 import { useEffect, useMemo, useState } from "react";
 import { FiTrash2 } from "react-icons/fi";
+import { useDebounce } from "@/hooks/useDebounce";
 
 interface AdminDataProps {
     id: string;
@@ -90,7 +91,17 @@ const AdminTable = ({
         closeDeleteModal();
     };
 
-    const rows = (dataList && dataList.length ? dataList : DUMMY_ADMINS) as AdminDataProps[];
+    const debouncedSearch = useDebounce(searchQuery, 250);
+    const allRows = (dataList && dataList.length ? dataList : DUMMY_ADMINS) as AdminDataProps[];
+    const rows = useMemo(() => {
+        if (!debouncedSearch.trim()) return allRows;
+        const q = debouncedSearch.toLowerCase().trim();
+        return allRows.filter((item) =>
+            (item.name || "").toLowerCase().includes(q) ||
+            (item.email || "").toLowerCase().includes(q) ||
+            (item.phone || "").toLowerCase().includes(q)
+        );
+    }, [allRows, debouncedSearch]);
 
     const [openDropdown, setOpenDropdown] = useState<FilterKey | null>(null);
 

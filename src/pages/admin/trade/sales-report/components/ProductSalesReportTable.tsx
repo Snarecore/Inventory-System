@@ -8,6 +8,7 @@ import * as XLSX from "xlsx";
 import { showSuccessToast, showErrorToast } from "@/utils/toast-utils";
 import moment from "moment";
 import type { SaleItem } from "@/types";
+import { useDebounce } from "@/hooks/useDebounce";
 
 interface ProductSalesReportTableProps {
   transactions: SaleItem[];
@@ -28,6 +29,7 @@ export const ProductSalesReportTable: React.FC<ProductSalesReportTableProps> = (
   transactions,
 }) => {
   const [searchQuery, setSearchQuery] = useState("");
+  const debouncedSearch = useDebounce(searchQuery, 250);
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
 
@@ -97,14 +99,14 @@ export const ProductSalesReportTable: React.FC<ProductSalesReportTableProps> = (
 
   // Filtered
   const filtered = useMemo(() => {
-    if (!searchQuery.trim()) return productSummaries;
-    const q = searchQuery.toLowerCase().trim();
+    if (!debouncedSearch.trim()) return productSummaries;
+    const q = debouncedSearch.toLowerCase().trim();
     return productSummaries.filter(
       (p) =>
         p.productName.toLowerCase().includes(q) ||
         p.productCode.toLowerCase().includes(q)
     );
-  }, [productSummaries, searchQuery]);
+  }, [productSummaries, debouncedSearch]);
 
   const totalCount = filtered.length;
   const pageCount = Math.ceil(totalCount / pageSize) || 1;

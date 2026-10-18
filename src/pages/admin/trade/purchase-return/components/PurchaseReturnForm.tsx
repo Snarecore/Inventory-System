@@ -33,6 +33,7 @@ import { useFinancialLedger } from "@/hooks/useFinancialLedger";
 import { cashLeg, bankLeg, mfsLeg, type TradeTender } from "@/services/financial-ledger-service";
 import { useTradeRefund } from "@/hooks/useTradeRefund";
 import TradeRefundSection from "@/components/trade/TradeRefundSection";
+import { useDebounce } from "@/hooks/useDebounce";
 import { buildAccessUser } from "@/utils/access-user";
 import { postData } from "@/services/api-service";
 import { formatMoney } from "@/utils/formatters";
@@ -95,6 +96,7 @@ export const PurchaseReturnForm: React.FC = () => {
   // Search & Dropdown
   const [isInvoiceDropdownOpen, setIsInvoiceDropdownOpen] = useState<boolean>(false);
   const [invoiceSearchQuery, setInvoiceSearchQuery] = useState<string>("");
+  const debouncedInvoiceSearch = useDebounce(invoiceSearchQuery, 250);
   const invoiceDropdownRef = useRef<HTMLDivElement>(null);
 
   // Submission & Modals
@@ -451,7 +453,7 @@ export const PurchaseReturnForm: React.FC = () => {
 
   // Instant keystroke search: O(N) single loop with zero regex or nested lookups
   const filteredInvoices = useMemo(() => {
-    const q = invoiceSearchQuery.toLowerCase().trim();
+    const q = debouncedInvoiceSearch.toLowerCase().trim();
     if (!q) return unreturnedInvoices;
 
     return unreturnedInvoices.filter((inv) => {
@@ -466,7 +468,7 @@ export const PurchaseReturnForm: React.FC = () => {
         sPhone.includes(q)
       );
     });
-  }, [unreturnedInvoices, invoiceSearchQuery]);
+  }, [unreturnedInvoices, debouncedInvoiceSearch]);
 
   // Recalculate totals
   const totals = useMemo(() => {

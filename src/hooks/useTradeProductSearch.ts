@@ -1,6 +1,7 @@
 import { useState, useMemo, useRef, useEffect, useCallback } from "react";
 import type { ProductItem } from "@/types";
 import { showErrorToast } from "@/utils/toast-utils";
+import { useDebounce } from "@/hooks/useDebounce";
 
 export interface UseTradeProductSearchOptions {
   allProducts: ProductItem[];
@@ -18,6 +19,7 @@ export const useTradeProductSearch = ({
   maxResults = 10,
 }: UseTradeProductSearchOptions) => {
   const [searchQuery, setSearchQuery] = useState<string>("");
+  const debouncedSearch = useDebounce(searchQuery, 150);
   const [barcodeInput, setBarcodeInput] = useState<string>("");
   const [isDropdownOpen, setIsDropdownOpen] = useState<boolean>(false);
   const searchRef = useRef<HTMLDivElement>(null);
@@ -35,8 +37,8 @@ export const useTradeProductSearch = ({
 
   // Filtered Products for Search Dropdown (Instant O(N) in-memory filter)
   const filteredProducts = useMemo(() => {
-    if (!searchQuery.trim()) return allProducts.slice(0, maxResults);
-    const q = searchQuery.toLowerCase().trim();
+    if (!debouncedSearch.trim()) return allProducts.slice(0, maxResults);
+    const q = debouncedSearch.toLowerCase().trim();
     return allProducts
       .filter((p) => {
         const name = (p.name || "").toLowerCase();
@@ -45,7 +47,7 @@ export const useTradeProductSearch = ({
         return name.includes(q) || code.includes(q) || barcode.includes(q);
       })
       .slice(0, maxResults);
-  }, [allProducts, searchQuery, maxResults]);
+  }, [allProducts, debouncedSearch, maxResults]);
 
   // Find Product STRICTLY By barcode or pcode
   const findProductByBarcode = useCallback(

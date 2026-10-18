@@ -12,6 +12,7 @@ import {
 import { RiArrowDropDownLine } from "react-icons/ri";
 import { formatMoney } from "@/utils/formatters";
 import type { InvoiceDueItem, CollectionAllocation } from "@/types/collection.types";
+import { useDebounce } from "@/hooks/useDebounce";
 
 export interface TenderBreakdown {
   cash: number;
@@ -47,6 +48,7 @@ export const DueInvoiceAllocationTable: React.FC<DueInvoiceAllocationTableProps>
   tenderBreakdown,
 }) => {
   const [filterQuery, setFilterQuery] = useState<string>("");
+  const debouncedFilterQuery = useDebounce(filterQuery, 200);
   const [isBreakdownOpen, setIsBreakdownOpen] = useState<boolean>(false);
   const [dropdownCoords, setDropdownCoords] = useState<{
     top: number;
@@ -160,13 +162,13 @@ export const DueInvoiceAllocationTable: React.FC<DueInvoiceAllocationTableProps>
   }, [allocations]);
 
   const filteredInvoices = useMemo(() => {
-    if (!filterQuery.trim()) return invoices;
-    const q = filterQuery.toLowerCase().trim();
+    if (!debouncedFilterQuery.trim()) return invoices;
+    const q = debouncedFilterQuery.toLowerCase().trim();
     return invoices.filter((inv) => {
       const invNo = String(inv.invoiceNo || "").toLowerCase();
       return invNo.includes(q);
     });
-  }, [invoices, filterQuery]);
+  }, [invoices, debouncedFilterQuery]);
 
   if (isLoading) {
     return (

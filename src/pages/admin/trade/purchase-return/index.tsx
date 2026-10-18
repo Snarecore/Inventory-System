@@ -22,6 +22,7 @@ import {
   usePurchasesQuery,
   usePurchaseAndReturnsQuery,
 } from "./hooks/usePurchaseReturnQueries";
+import { useDebounce } from "@/hooks/useDebounce";
 
 type PartyListResponse =
   | PartyItem[]
@@ -40,6 +41,7 @@ const PurchaseReturnPage: React.FC = () => {
 
   // Search & Filter State
   const [searchQuery, setSearchQuery] = useState<string>("");
+  const debouncedSearch = useDebounce(searchQuery, 250);
   const [supplierFilter, setSupplierFilter] = useState<string>("all");
   const [paymentMethodFilter, setPaymentMethodFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
@@ -197,8 +199,8 @@ const PurchaseReturnPage: React.FC = () => {
   const filteredPurchases = useMemo(() => {
     return rawPurchases.filter((purchase) => {
       // 1. Search Query
-      if (searchQuery.trim()) {
-        const q = searchQuery.toLowerCase().trim();
+      if (debouncedSearch.trim()) {
+        const q = debouncedSearch.toLowerCase().trim();
         const inv = String(purchase.invoiceNo || "").toLowerCase();
         const challan = String(purchase.challanNo || "").toLowerCase();
         const sName = String(purchase.supplierName || "").toLowerCase();
@@ -253,7 +255,7 @@ const PurchaseReturnPage: React.FC = () => {
     });
   }, [
     rawPurchases,
-    searchQuery,
+    debouncedSearch,
     statusFilter,
     paymentMethodFilter,
     supplierFilter,
@@ -301,8 +303,8 @@ const PurchaseReturnPage: React.FC = () => {
   const filteredReturns = useMemo(() => {
     return rawReturns.filter((item) => {
       // 1. Search Query
-      if (searchQuery.trim()) {
-        const q = searchQuery.toLowerCase().trim();
+      if (debouncedSearch.trim()) {
+        const q = debouncedSearch.toLowerCase().trim();
         const ordNo = String(item.orderNo || "").toLowerCase();
         const retNo = String(item.returnNo || "").toLowerCase();
         const invNo = String(item.purchaseInvoiceNo || item.invoiceNo || "").toLowerCase();
@@ -352,7 +354,7 @@ const PurchaseReturnPage: React.FC = () => {
     });
   }, [
     rawReturns,
-    searchQuery,
+    debouncedSearch,
     supplierFilter,
     paymentMethodFilter,
     dateFilter,

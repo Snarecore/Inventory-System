@@ -14,6 +14,7 @@ import { partyListQueryKey } from "@/config/query-key";
 import { buildAccessUser } from "@/utils/access-user";
 import { postData } from "@/services/api-service";
 import type { PartyItem, PartyType } from "@/types";
+import { useDebounce } from "@/hooks/useDebounce";
 
 const Parties: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -21,9 +22,10 @@ const Parties: React.FC = () => {
 
   const initialType = searchParams.get("type") || "";
   const [typeFilter, setTypeFilter] = useState<string>(initialType);
-  const [statusFilter, setStatusFilter] = useState<string>("");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
   const [sortBy, setSortBy] = useState<string>("latest");
   const [searchQuery, setSearchQuery] = useState<string>("");
+  const debouncedSearch = useDebounce(searchQuery, 250);
 
   const [dataLimit, setDataLimit] = useState<number>(10);
   const [currentPageNumber, setCurrentPageNumber] = useState<number>(1);
@@ -145,8 +147,8 @@ const Parties: React.FC = () => {
   const filteredParties = useMemo(() => {
     return allParties.filter((party) => {
       // Search filter
-      if (searchQuery.trim()) {
-        const query = searchQuery.toLowerCase().trim();
+      if (debouncedSearch.trim()) {
+        const query = debouncedSearch.toLowerCase().trim();
         const name = (party.name || "").toLowerCase();
         const phone = (party.phone || "").toLowerCase();
         const email = (party.email || "").toLowerCase();
@@ -168,7 +170,7 @@ const Parties: React.FC = () => {
       }
 
       // Status filter (active / inactive)
-      if (statusFilter) {
+      if (statusFilter && statusFilter !== "all") {
         const active = isPartyActive(party);
         if (statusFilter === "active" && !active) return false;
         if (statusFilter === "inactive" && active) return false;
@@ -176,7 +178,7 @@ const Parties: React.FC = () => {
 
       return true;
     });
-  }, [allParties, searchQuery, typeFilter, statusFilter]);
+  }, [allParties, debouncedSearch, typeFilter, statusFilter]);
 
   // Sorted parties based on sortBy
   const sortedParties = useMemo(() => {

@@ -23,6 +23,7 @@ import {
   useSalesQuery,
   extractReturnedSalesInvoiceKeysSet,
 } from "./hooks/useSalesReturnQueries";
+import { useDebounce } from "@/hooks/useDebounce";
 
 const SalesReturnPage: React.FC = () => {
   const navigate = useNavigate();
@@ -32,6 +33,7 @@ const SalesReturnPage: React.FC = () => {
 
   // Search & Filter State
   const [searchQuery, setSearchQuery] = useState<string>("");
+  const debouncedSearch = useDebounce(searchQuery, 250);
   const [customerFilter, setCustomerFilter] = useState<string>("all");
   const [paymentMethodFilter, setPaymentMethodFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
@@ -185,8 +187,8 @@ const SalesReturnPage: React.FC = () => {
   const filteredSales = useMemo(() => {
     return rawSales.filter((sale: any) => {
       // 1. Search Query
-      if (searchQuery.trim()) {
-        const q = searchQuery.toLowerCase().trim();
+      if (debouncedSearch.trim()) {
+        const q = debouncedSearch.toLowerCase().trim();
         const inv = String(sale.invoiceNo || "").toLowerCase();
         const cName = String(sale.customerName || "").toLowerCase();
         const cPhone = String(sale.customerPhone || "").toLowerCase();
@@ -253,7 +255,7 @@ const SalesReturnPage: React.FC = () => {
     });
   }, [
     rawSales,
-    searchQuery,
+    debouncedSearch,
     statusFilter,
     paymentMethodFilter,
     customerFilter,
@@ -311,8 +313,8 @@ const SalesReturnPage: React.FC = () => {
   const filteredReturns = useMemo(() => {
     return rawReturns.filter((item) => {
       // 1. Search Query
-      if (searchQuery.trim()) {
-        const q = searchQuery.toLowerCase().trim();
+      if (debouncedSearch.trim()) {
+        const q = debouncedSearch.toLowerCase().trim();
         const ordNo = String(item.orderNo || "").toLowerCase();
         const retNo = String(item.returnNo || "").toLowerCase();
         const invNo = String(item.salesInvoiceNo || item.invoiceNo || "").toLowerCase();
@@ -375,7 +377,7 @@ const SalesReturnPage: React.FC = () => {
     });
   }, [
     rawReturns,
-    searchQuery,
+    debouncedSearch,
     customerFilter,
     paymentMethodFilter,
     dateFilter,

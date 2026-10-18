@@ -38,6 +38,7 @@ import { postData } from "@/services/api-service";
 import { formatMoney } from "@/utils/formatters";
 import { showSuccessToast, showErrorToast } from "@/utils/toast-utils";
 import type { SaleItem, SalesReturnItem } from "@/types";
+import { useDebounce } from "@/hooks/useDebounce";
 import { RETURN_REASONS } from "@/pages/admin/trade/sales-return/constants/returnReasons";
 import {
   useSalesAndReturnsQuery,
@@ -98,6 +99,7 @@ export const SalesReturnForm: React.FC = () => {
   // Search & Dropdown
   const [isInvoiceDropdownOpen, setIsInvoiceDropdownOpen] = useState<boolean>(false);
   const [invoiceSearchQuery, setInvoiceSearchQuery] = useState<string>("");
+  const debouncedInvoiceSearch = useDebounce(invoiceSearchQuery, 250);
   const invoiceDropdownRef = useRef<HTMLDivElement>(null);
 
   // Submission & Modals
@@ -448,7 +450,7 @@ export const SalesReturnForm: React.FC = () => {
 
   // Instant keystroke search: O(N) single loop with zero regex or nested lookups
   const filteredInvoices = useMemo(() => {
-    const q = invoiceSearchQuery.toLowerCase().trim();
+    const q = debouncedInvoiceSearch.toLowerCase().trim();
     if (!q) return unreturnedInvoices;
 
     return unreturnedInvoices.filter((inv) => {
@@ -463,7 +465,7 @@ export const SalesReturnForm: React.FC = () => {
         cPhone.includes(q)
       );
     });
-  }, [unreturnedInvoices, invoiceSearchQuery]);
+  }, [unreturnedInvoices, debouncedInvoiceSearch]);
 
   // Recalculate totals
   const totals = useMemo(() => {

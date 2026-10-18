@@ -271,7 +271,10 @@ export const SaleTable: React.FC<SaleTableProps> = ({
           <div className="w-full sm:w-44 md:w-48 lg:w-52 shrink-0">
             <Search
               searchQuery={searchQuery}
-              onSearchChange={setSearchQuery}
+              onSearchChange={(val) => {
+                setSearchQuery(val);
+                setCurrentPageNumber(1);
+              }}
               setSearchQuery={setSearchQuery}
               placeholder="Search sales..."
             />

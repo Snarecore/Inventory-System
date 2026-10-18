@@ -2,6 +2,7 @@ import { useState, useMemo, useCallback } from "react";
 import moment from "moment";
 import type { PurchaseItem, PartyItem } from "@/types";
 import { isPartyActive } from "@/utils/party-utils";
+import { useDebounce } from "@/hooks/useDebounce";
 
 export interface UsePurchaseTableFilterOptions {
   purchases: PurchaseItem[];
@@ -104,6 +105,7 @@ export const usePurchaseTableFilter = ({
 }: UsePurchaseTableFilterOptions) => {
   // Search, Filters & Pagination State
   const [searchQuery, setSearchQuery] = useState<string>("");
+  const debouncedSearch = useDebounce(searchQuery, 250);
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [paymentMethodFilter, setPaymentMethodFilter] = useState<string>("all");
   const [supplierFilter, setSupplierFilter] = useState<string>("all");
@@ -123,8 +125,8 @@ export const usePurchaseTableFilter = ({
   const filteredPurchases = useMemo(() => {
     return purchases.filter((purchase: any) => {
       // 1. Search Query
-      if (searchQuery.trim()) {
-        const q = searchQuery.toLowerCase().trim();
+      if (debouncedSearch.trim()) {
+        const q = debouncedSearch.toLowerCase().trim();
         const inv = String(purchase.invoiceNo || "").toLowerCase();
         const ord = String(purchase.orderNo || "").toLowerCase();
         const ch = String(purchase.challanNo || "").toLowerCase();
@@ -209,7 +211,7 @@ export const usePurchaseTableFilter = ({
     });
   }, [
     purchases,
-    searchQuery,
+    debouncedSearch,
     statusFilter,
     paymentMethodFilter,
     supplierFilter,

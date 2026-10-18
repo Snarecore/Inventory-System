@@ -14,6 +14,7 @@ import { productListQueryKey } from "@/config/query-key";
 import { buildAccessUser } from "@/utils/access-user";
 import { postData } from "@/services/api-service";
 import type { ProductItem } from "@/types";
+import { useDebounce } from "@/hooks/useDebounce";
 
 const Products = () => {
     const [dataLimit, setDataLimit] = useState(10);
@@ -21,6 +22,7 @@ const Products = () => {
 
     const [currentPageNumber, setCurrentPageNumber] = useState(1);
     const [searchQuery, setSearchQuery] = useState("");
+    const debouncedSearch = useDebounce(searchQuery, 250);
     const [categoryFilter, setCategoryFilter] = useState("");
     const [statusFilter, setStatusFilter] = useState("");
 
@@ -101,8 +103,8 @@ const Products = () => {
     const filteredProducts = useMemo(() => {
         return allProducts.filter((product) => {
             // Search filter
-            if (searchQuery.trim()) {
-                const search = searchQuery.toLowerCase().trim();
+            if (debouncedSearch.trim()) {
+                const search = debouncedSearch.toLowerCase().trim();
                 const name = (product.name || "").toLowerCase();
                 const pcode = (product.pcode || "").toLowerCase();
                 const sku = (product.sku || "").toLowerCase();
@@ -138,7 +140,7 @@ const Products = () => {
 
             return true;
         });
-    }, [allProducts, searchQuery, categoryFilter, statusFilter]);
+    }, [allProducts, debouncedSearch, categoryFilter, statusFilter]);
 
     // Metrics
     const metrics = useMemo(() => {

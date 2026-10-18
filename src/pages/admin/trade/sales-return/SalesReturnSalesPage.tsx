@@ -15,6 +15,7 @@ import { buildAccessUser } from "@/utils/access-user";
 import type { SaleItem, PartyItem } from "@/types";
 import { isPartyActive } from "@/utils/party-utils";
 import { useSalesAndReturnsQuery } from "./hooks/useSalesReturnQueries";
+import { useDebounce } from "@/hooks/useDebounce";
 
 /**
  * Dedicated Sales Orders page for Sales Return workflow
@@ -27,6 +28,7 @@ const SalesReturnSalesPage: React.FC = () => {
 
   // Search, Filters & Pagination State
   const [searchQuery, setSearchQuery] = useState<string>("");
+  const debouncedSearch = useDebounce(searchQuery, 250);
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [paymentMethodFilter, setPaymentMethodFilter] = useState<string>("all");
   const [customerFilter, setCustomerFilter] = useState<string>("all");
@@ -109,8 +111,8 @@ const SalesReturnSalesPage: React.FC = () => {
   const filteredSales = useMemo(() => {
     return rawSales.filter((sale: any) => {
       // 1. Search Query
-      if (searchQuery.trim()) {
-        const q = searchQuery.toLowerCase().trim();
+      if (debouncedSearch.trim()) {
+        const q = debouncedSearch.toLowerCase().trim();
         const inv = String(sale.invoiceNo || "").toLowerCase();
         const ord = String(sale.orderNo || "").toLowerCase();
         const cName = String(sale.customerName || "").toLowerCase();
@@ -181,7 +183,7 @@ const SalesReturnSalesPage: React.FC = () => {
     });
   }, [
     rawSales,
-    searchQuery,
+    debouncedSearch,
     statusFilter,
     paymentMethodFilter,
     customerFilter,

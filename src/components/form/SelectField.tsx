@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import { RiArrowDropDownLine } from "react-icons/ri";
+import { useDebounce } from "@/hooks/useDebounce";
 
 interface Option {
     label: string;
@@ -21,6 +22,7 @@ const SelectInput: React.FC<SelectInputProps> = ({ label, value, options, onChan
     const [openDropdown, setOpenDropdown] = useState(false);
     const [selectedOption, setSelectedOption] = useState<Option | null>(value);
     const [searchTerm, setSearchTerm] = useState("");
+    const debouncedSearchTerm = useDebounce(searchTerm, 150);
     const dropdownRef = useRef<HTMLDivElement | null>(null);
 
     useEffect(() => {
@@ -47,10 +49,10 @@ const SelectInput: React.FC<SelectInputProps> = ({ label, value, options, onChan
     };
 
     const filteredOptions = useMemo(() => {
-        if (!searchTerm.trim()) return options;
-        const q = searchTerm.toLocaleLowerCase();
+        if (!debouncedSearchTerm.trim()) return options;
+        const q = debouncedSearchTerm.toLocaleLowerCase();
         return options.filter((option) => option.label && option.label.toLocaleLowerCase().includes(q));
-    }, [options, searchTerm]);
+    }, [options, debouncedSearchTerm]);
 
     return (
         <div className={`flex flex-col items-center w-full ${openDropdown ? 'relative z-50' : ''}`}>

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import moment from "moment";
 import { FiEye, FiPrinter, FiDownload } from "react-icons/fi";
 import { FaPhone, FaCalendarAlt, FaFileExcel, FaSearch, FaShoppingBag } from "react-icons/fa";
@@ -10,6 +10,7 @@ import { formatMoney } from "@/utils/formatters";
 import { exportSalesToExcel } from "@/utils/excel-export";
 import { showSuccessToast, showErrorToast } from "@/utils/toast-utils";
 import type { SaleItem } from "@/types";
+import { useDebounce } from "@/hooks/useDebounce";
 
 interface SalesReportTableProps {
   transactions: SaleItem[];
@@ -25,6 +26,7 @@ export const SalesReportTable: React.FC<SalesReportTableProps> = ({
   onPrint,
 }) => {
   const [searchQuery, setSearchQuery] = useState<string>("");
+  const debouncedSearch = useDebounce(searchQuery, 250);
   const [paymentFilter, setPaymentFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [currentPage, setCurrentPage] = useState<number>(1);
@@ -47,30 +49,32 @@ export const SalesReportTable: React.FC<SalesReportTableProps> = ({
   };
 
   // Filtered
-  const filtered = transactions.filter((t: any) => {
-    if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase().trim();
-      const inv = String(t.invoiceNo || t.invoice_no || "").toLowerCase();
-      const name = String(t.customerName || t.customer_name || "").toLowerCase();
-      const phone = String(t.customerPhone || t.customer_phone || "").toLowerCase();
-      if (!inv.includes(q) && !name.includes(q) && !phone.includes(q)) return false;
-    }
-    if (paymentFilter !== "all") {
-      const p = String(t.paymentType || t.payment_type || "CASH").toUpperCase();
-      if (p !== paymentFilter) return false;
-    }
-    if (statusFilter !== "all") {
-      const s = String(t.status || "").toUpperCase();
-      const gt = Number(t.grandTotal ?? t.grand_total ?? t.totalAmount ?? 0);
-      const paid = Number(t.paidAmount ?? t.paid_amount ?? 0);
-      const due = Number(t.dueAmount ?? t.due_amount ?? Math.max(0, gt - paid));
+  const filtered = useMemo(() => {
+    return transactions.filter((t: any) => {
+      if (debouncedSearch.trim()) {
+        const q = debouncedSearch.toLowerCase().trim();
+        const inv = String(t.invoiceNo || t.invoice_no || "").toLowerCase();
+        const name = String(t.customerName || t.customer_name || "").toLowerCase();
+        const phone = String(t.customerPhone || t.customer_phone || "").toLowerCase();
+        if (!inv.includes(q) && !name.includes(q) && !phone.includes(q)) return false;
+      }
+      if (paymentFilter !== "all") {
+        const p = String(t.paymentType || t.payment_type || "CASH").toUpperCase();
+        if (p !== paymentFilter) return false;
+      }
+      if (statusFilter !== "all") {
+        const s = String(t.status || "").toUpperCase();
+        const gt = Number(t.grandTotal ?? t.grand_total ?? t.totalAmount ?? 0);
+        const paid = Number(t.paidAmount ?? t.paid_amount ?? 0);
+        const due = Number(t.dueAmount ?? t.due_amount ?? Math.max(0, gt - paid));
 
-      if (statusFilter === "PAID" && (due > 0 || paid === 0)) return false;
-      if (statusFilter === "PARTIAL" && (due === 0 || paid === 0)) return false;
-      if (statusFilter === "PENDING" && (paid > 0 && due === 0)) return false;
-    }
-    return true;
-  });
+        if (statusFilter === "PAID" && (due > 0 || paid === 0)) return false;
+        if (statusFilter === "PARTIAL" && (due === 0 || paid === 0)) return false;
+        if (statusFilter === "PENDING" && (paid > 0 && due === 0)) return false;
+      }
+      return true;
+    });
+  }, [transactions, debouncedSearch, paymentFilter, statusFilter]);
 
   const totalCount = filtered.length;
   const pageCount = Math.ceil(totalCount / pageSize) || 1;

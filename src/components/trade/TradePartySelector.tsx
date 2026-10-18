@@ -3,6 +3,7 @@ import { FaSearch, FaUserPlus, FaWalking } from "react-icons/fa";
 import { FiChevronDown } from "react-icons/fi";
 import type { PartyItem } from "@/types";
 import { formatMoney } from "@/utils/formatters";
+import { useDebounce } from "@/hooks/useDebounce";
 
 export const WALK_IN_CUSTOMER: PartyItem = {
   id: 0,
@@ -46,6 +47,7 @@ export const TradePartySelector: React.FC<TradePartySelectorProps> = ({
   isLoadingDue = false,
 }) => {
   const [searchQuery, setSearchQuery] = useState("");
+  const debouncedSearch = useDebounce(searchQuery, 200);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -69,8 +71,8 @@ export const TradePartySelector: React.FC<TradePartySelectorProps> = ({
 
   // Filtered List - encapsulated locally so typing in search does NOT re-render parent form!
   const filteredParties = useMemo(() => {
-    if (!searchQuery.trim()) return partyList.slice(0, 15);
-    const q = searchQuery.toLowerCase().trim();
+    if (!debouncedSearch.trim()) return partyList.slice(0, 15);
+    const q = debouncedSearch.toLowerCase().trim();
     return partyList
       .filter((p) => {
         const name = (p.name || "").toLowerCase();
@@ -79,7 +81,7 @@ export const TradePartySelector: React.FC<TradePartySelectorProps> = ({
         return name.includes(q) || phone.includes(q) || address.includes(q);
       })
       .slice(0, 25);
-  }, [partyList, searchQuery]);
+  }, [partyList, debouncedSearch]);
 
   return (
     <div className="relative" ref={containerRef}>

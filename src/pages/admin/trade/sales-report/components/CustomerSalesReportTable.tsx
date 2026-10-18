@@ -8,6 +8,7 @@ import * as XLSX from "xlsx";
 import { showSuccessToast, showErrorToast } from "@/utils/toast-utils";
 import moment from "moment";
 import type { SaleItem } from "@/types";
+import { useDebounce } from "@/hooks/useDebounce";
 
 interface CustomerSalesReportTableProps {
   transactions: SaleItem[];
@@ -29,6 +30,7 @@ export const CustomerSalesReportTable: React.FC<CustomerSalesReportTableProps> =
   transactions,
 }) => {
   const [searchQuery, setSearchQuery] = useState("");
+  const debouncedSearch = useDebounce(searchQuery, 250);
   const [filterDueOnly, setFilterDueOnly] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
@@ -91,8 +93,8 @@ export const CustomerSalesReportTable: React.FC<CustomerSalesReportTableProps> =
   const filtered = useMemo(() => {
     return customerSummaries.filter((c) => {
       if (filterDueOnly && c.totalDue <= 0) return false;
-      if (searchQuery.trim()) {
-        const q = searchQuery.toLowerCase().trim();
+      if (debouncedSearch.trim()) {
+        const q = debouncedSearch.toLowerCase().trim();
         return (
           c.customerName.toLowerCase().includes(q) ||
           c.customerPhone.toLowerCase().includes(q) ||
@@ -101,7 +103,7 @@ export const CustomerSalesReportTable: React.FC<CustomerSalesReportTableProps> =
       }
       return true;
     });
-  }, [customerSummaries, searchQuery, filterDueOnly]);
+  }, [customerSummaries, debouncedSearch, filterDueOnly]);
 
   const totalCount = filtered.length;
   const pageCount = Math.ceil(totalCount / pageSize) || 1;
