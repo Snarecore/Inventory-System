@@ -133,6 +133,7 @@ export const TradeInvoiceModal: React.FC<TradeInvoiceModalProps> = ({
       return;
     }
 
+    const origin = window.location.origin;
     const appStyles = Array.from(document.querySelectorAll("link[rel='stylesheet'], style"))
       .map((el) => el.outerHTML)
       .join("\n");
@@ -143,22 +144,54 @@ export const TradeInvoiceModal: React.FC<TradeInvoiceModalProps> = ({
         <head>
           <title>${modalTitle} - ${inv?.invoiceNo}</title>
           <meta charset="utf-8" />
-          <script src="https://cdn.tailwindcss.com"></script>
+          <base href="${origin}/" />
           ${appStyles}
           <style>
-            @media print {
-              body { margin: 0; padding: 12px; font-family: sans-serif; background: #fff; }
-              .no-print { display: none !important; }
-              @page { margin: 8mm; size: auto; }
+            * {
+              -webkit-print-color-adjust: exact !important;
+              print-color-adjust: exact !important;
+              color-adjust: exact !important;
+              box-sizing: border-box;
+            }
+            @page {
+              margin: 8mm;
+              size: auto;
+            }
+            body {
+              margin: 0;
+              padding: 12px;
+              font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+              background: #fff !important;
+              color: #111827;
+            }
+            .no-print {
+              display: none !important;
+            }
+            table {
+              border-collapse: collapse;
+              width: 100%;
             }
           </style>
         </head>
         <body class="bg-white text-gray-900">
           ${printContent}
           <script>
-            window.onload = function() {
+            function triggerPrint() {
+              window.focus();
               window.print();
-              setTimeout(function() { window.close(); }, 500);
+              window.onafterprint = function() {
+                window.close();
+              };
+              setTimeout(function() {
+                window.close();
+              }, 1500);
+            }
+            if (document.readyState === 'complete') {
+              setTimeout(triggerPrint, 150);
+            } else {
+              window.addEventListener('load', function() {
+                setTimeout(triggerPrint, 150);
+              });
             }
           </script>
         </body>

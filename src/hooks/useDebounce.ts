@@ -1,8 +1,6 @@
 import { useState, useEffect } from "react";
 
 /**
- * 
- * 
  * @param value 
  * @param delay 
  * @returns 
