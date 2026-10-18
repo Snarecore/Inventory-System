@@ -1,3 +1,4 @@
+import moment from "moment";
 import apiConfig from "@/config/api.json";
 import { postData } from "@/services/api-service";
 import { buildAccessUser } from "@/utils/access-user";
@@ -15,6 +16,40 @@ import type {
 } from "@/types/collection.types";
 
 /**
+ * Enterprise standard FIFO chronological sorter.
+ * Ensures the oldest pending invoice is placed first (Row 1).
+ */
+export const sortInvoicesFIFO = (invoices: InvoiceDueItem[]): InvoiceDueItem[] => {
+  return [...invoices].sort((a, b) => {
+    // 1. Compare Date (earliest/oldest date first)
+    const dateA = a.salesDate || a.saleDate || a.date || a.createdAt;
+    const dateB = b.salesDate || b.saleDate || b.date || b.createdAt;
+    if (dateA && dateB && dateA !== dateB) {
+      const diff = moment(dateA).diff(moment(dateB));
+      if (diff !== 0) return diff;
+    }
+
+    // 2. Compare timestamp in invoiceNo (e.g. 28488-20261018091848876 vs 28488-20261018091934453)
+    const invA = String(a.invoiceNo || "");
+    const invB = String(b.invoiceNo || "");
+    const matchA = invA.match(/\d{10,}/);
+    const matchB = invB.match(/\d{10,}/);
+    if (matchA && matchB && matchA[0] !== matchB[0]) {
+      return matchA[0].localeCompare(matchB[0]);
+    }
+
+    // 3. Fallback to numeric ID if available (lower/earlier ID first)
+    if (a.id != null && b.id != null && a.id !== b.id) {
+      const numA = Number(a.id);
+      const numB = Number(b.id);
+      if (!isNaN(numA) && !isNaN(numB)) return numA - numB;
+    }
+
+    return invA.localeCompare(invB);
+  });
+};
+
+/**
  * Pure Mathematical FIFO Allocation Engine (First-In, First-Out).
  * Automatically distributes the entered payment amount across due invoices,
  * beginning with the oldest invoice first.
@@ -26,8 +61,10 @@ export const allocateCollectionFIFO = (
   let remainingPayment = Math.max(0, Number(enteredAmount) || 0);
   const allocations: CollectionAllocation[] = [];
 
-  // Sort by date or preserve order as retrieved from backend
-  const sortedInvoices = [...invoices].filter((inv) => Number(inv.dueAmount || 0) > 0);
+  // Sort chronologically (oldest invoice first) and filter only invoices with pending due
+  const sortedInvoices = sortInvoicesFIFO(invoices).filter(
+    (inv) => Number(inv.dueAmount || 0) > 0
+  );
 
   for (const inv of sortedInvoices) {
     const itemDue = Number(inv.dueAmount || 0);
@@ -43,6 +80,8 @@ export const allocateCollectionFIFO = (
         originalDue: itemDue,
         allocatedAmount: roundedPaid,
         remainingDue: roundedRemaining,
+        paidAmount: roundedPaid,
+        dueAmount: roundedRemaining,
       });
       remainingPayment = Math.max(0, remainingPayment - roundedPaid);
     }

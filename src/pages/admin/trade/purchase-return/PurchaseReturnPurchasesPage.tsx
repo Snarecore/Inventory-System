@@ -21,6 +21,8 @@ import {
 } from "./hooks/usePurchaseReturnQueries";
 import { usePurchaseTableFilter } from "@/pages/admin/trade/purchases/hooks/usePurchaseTableFilter";
 
+const EMPTY_PURCHASES: PurchaseItem[] = [];
+
 /**
  * Dedicated Purchase Orders page for Purchase Return workflow
  * URL: /admin/purchase-return-purchases
@@ -62,23 +64,7 @@ const PurchaseReturnPurchasesPage: React.FC = () => {
     refetch,
   } = usePurchasesQuery();
 
-  const rawPurchases: PurchaseItem[] = useMemo(() => {
-    if (Array.isArray(purchasesData)) return purchasesData;
-    if (purchasesData && typeof purchasesData === "object") {
-      const raw = purchasesData as any;
-      const list =
-        raw.purchaseList ||
-        raw.purchasesList ||
-        raw.purchases ||
-        raw.purchaseListDetails ||
-        raw.purchaseInfoList ||
-        raw.purchase_list ||
-        (Array.isArray(raw.data) ? raw.data : raw.data?.purchaseList || raw.data?.purchases) ||
-        [];
-      if (Array.isArray(list)) return list;
-    }
-    return [];
-  }, [purchasesData]);
+  const rawPurchases: PurchaseItem[] = Array.isArray(purchasesData) ? purchasesData : EMPTY_PURCHASES;
 
   // Dedicated filtering, sorting, pagination, and KPI calculations hook
   const {

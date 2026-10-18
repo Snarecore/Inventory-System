@@ -114,10 +114,8 @@ export const CustomerDueTable: React.FC<CustomerDueTableProps> = ({
   }, [customers, debouncedSearch, sortBy]);
 
   // Paginated Slice
-  const paginatedCustomers = useMemo(() => {
-    const startIndex = (currentPageNumber - 1) * dataLimit;
-    return processedCustomers.slice(startIndex, startIndex + dataLimit);
-  }, [processedCustomers, currentPageNumber, dataLimit]);
+  const startIndex = (currentPageNumber - 1) * dataLimit;
+  const paginatedCustomers = processedCustomers.slice(startIndex, startIndex + dataLimit);
 
   const totalCount = processedCustomers.length;
   const pageCount = Math.max(1, Math.ceil(totalCount / dataLimit));

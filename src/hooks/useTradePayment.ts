@@ -68,17 +68,15 @@ export const useTradePayment = ({
   const [mfsPhone, setMfsPhone] = useState<string>("");
 
   // Numeric computations
-  const numCash = useMemo(() => Math.max(0, Number(cashAmount) || 0), [cashAmount]);
-  const numBank = useMemo(() => Math.max(0, Number(bankAmount) || 0), [bankAmount]);
-  const numMfs = useMemo(() => Math.max(0, Number(mfsAmount) || 0), [mfsAmount]);
+  const numCash = Math.max(0, Number(cashAmount) || 0);
+  const numBank = Math.max(0, Number(bankAmount) || 0);
+  const numMfs = Math.max(0, Number(mfsAmount) || 0);
 
-  const totalPaid = useMemo(() => numCash + numBank + numMfs, [numCash, numBank, numMfs]);
-  const dueAmount = useMemo(() => Math.max(0, grandTotal - totalPaid), [grandTotal, totalPaid]);
+  const totalPaid = numCash + numBank + numMfs;
+  const dueAmount = Math.max(0, grandTotal - totalPaid);
 
-  const changeReturnAmount = useMemo(() => {
-    const given = Number(cashGiven) || 0;
-    return given > numCash && numCash > 0 ? given - numCash : 0;
-  }, [cashGiven, numCash]);
+  const givenCash = Number(cashGiven) || 0;
+  const changeReturnAmount = givenCash > numCash && numCash > 0 ? givenCash - numCash : 0;
 
   // Normalize / cap value helper
   const normalizePaymentValue = useCallback((val: string, max: number): string => {

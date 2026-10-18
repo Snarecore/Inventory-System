@@ -49,6 +49,21 @@ interface PurchaseReturnPurchaseTableProps {
   onExport?: () => void;
 }
 
+const AVAILABLE_COLUMNS: ColumnItem[] = [
+  { key: "sl", label: "SL" },
+  { key: "orderNo", label: "Order No" },
+  { key: "supplier", label: "Supplier" },
+  { key: "phone", label: "Phone" },
+  { key: "date", label: "Date" },
+  { key: "items", label: "Items" },
+  { key: "total", label: "Total (৳)" },
+  { key: "paid", label: "Paid (৳)" },
+  { key: "due", label: "Due (৳)" },
+  { key: "method", label: "Method" },
+  { key: "status", label: "Payment Status" },
+  { key: "actions", label: "Action" },
+];
+
 export const PurchaseReturnPurchaseTable: React.FC<PurchaseReturnPurchaseTableProps> = ({
   purchases,
   exportablePurchases,
@@ -126,12 +141,9 @@ export const PurchaseReturnPurchaseTable: React.FC<PurchaseReturnPurchaseTablePr
     });
   }, [suppliersList, supplierSearchQuery]);
 
-  const selectedSupplierObj = useMemo(() => {
-    if (!supplierFilter) return null;
-    return suppliersList.find(
-      (s) => String(s.id ?? s.name ?? "") === String(supplierFilter)
-    );
-  }, [suppliersList, supplierFilter]);
+  const selectedSupplierObj = supplierFilter
+    ? suppliersList.find((s) => String(s.id ?? s.name ?? "") === String(supplierFilter)) || null
+    : null;
 
   const currentSupplierLabel = selectedSupplierObj
     ? (selectedSupplierObj.name || "Supplier")
@@ -194,23 +206,7 @@ export const PurchaseReturnPurchaseTable: React.FC<PurchaseReturnPurchaseTablePr
   };
 
   // Column Visibility Configuration
-  const availableColumns: ColumnItem[] = useMemo(
-    () => [
-      { key: "sl", label: "SL" },
-      { key: "orderNo", label: "Order No" },
-      { key: "supplier", label: "Supplier" },
-      { key: "phone", label: "Phone" },
-      { key: "date", label: "Date" },
-      { key: "items", label: "Items" },
-      { key: "total", label: "Total (৳)" },
-      { key: "paid", label: "Paid (৳)" },
-      { key: "due", label: "Due (৳)" },
-      { key: "method", label: "Method" },
-      { key: "status", label: "Payment Status" },
-      { key: "actions", label: "Action" },
-    ],
-    []
-  );
+  const availableColumns = AVAILABLE_COLUMNS;
 
   const [visibleColumns, setVisibleColumns] = useState<Record<string, boolean>>(() => {
     try {
@@ -252,10 +248,7 @@ export const PurchaseReturnPurchaseTable: React.FC<PurchaseReturnPurchaseTablePr
     } catch {}
   };
 
-  const activeVisibleColumnCount = useMemo(
-    () => availableColumns.filter((c) => isColVisible(c.key)).length,
-    [availableColumns, visibleColumns]
-  );
+  const activeVisibleColumnCount = availableColumns.filter((c) => isColVisible(c.key)).length;
 
   return (
     <div className="bg-white rounded-xl shadow-xs border border-gray-200 flex flex-col relative z-20 overflow-visible">

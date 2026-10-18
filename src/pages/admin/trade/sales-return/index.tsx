@@ -174,10 +174,7 @@ const SalesReturnPage: React.FC = () => {
     refetch: refetchSales,
   } = useSalesQuery();
 
-  const rawSales: SaleItem[] = useMemo(() => {
-    if (Array.isArray(salesData)) return salesData;
-    return [];
-  }, [salesData]);
+  const rawSales: SaleItem[] = Array.isArray(salesData) ? salesData : [];
 
   // Set of invoices/orders that have already been returned
   const returnedInvoiceSet = useMemo(() => {
@@ -307,10 +304,8 @@ const SalesReturnPage: React.FC = () => {
   // Sales Pagination
   const salesTotalCount = sortedSales.length;
   const salesPageCount = Math.ceil(salesTotalCount / dataLimit) || 1;
-  const paginatedSales = useMemo(() => {
-    const startIndex = (currentPageNumber - 1) * dataLimit;
-    return sortedSales.slice(startIndex, startIndex + dataLimit);
-  }, [sortedSales, currentPageNumber, dataLimit]);
+  const startIndexSales = (currentPageNumber - 1) * dataLimit;
+  const paginatedSales = sortedSales.slice(startIndexSales, startIndexSales + dataLimit);
 
   // Filtering
   const filteredReturns = useMemo(() => {
@@ -448,10 +443,8 @@ const SalesReturnPage: React.FC = () => {
   // Pagination
   const totalCount = sortedReturns.length;
   const pageCount = Math.ceil(totalCount / dataLimit) || 1;
-  const paginatedReturns = useMemo(() => {
-    const startIndex = (currentPageNumber - 1) * dataLimit;
-    return sortedReturns.slice(startIndex, startIndex + dataLimit);
-  }, [sortedReturns, currentPageNumber, dataLimit]);
+  const startIndex = (currentPageNumber - 1) * dataLimit;
+  const paginatedReturns = sortedReturns.slice(startIndex, startIndex + dataLimit);
 
   const handlePagination = (paginationData: { selected: number }) => {
     setCurrentPageNumber(paginationData.selected + 1);

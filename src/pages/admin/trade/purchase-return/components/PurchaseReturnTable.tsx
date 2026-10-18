@@ -146,14 +146,13 @@ export const PurchaseReturnTable: React.FC<PurchaseReturnTableProps> = ({
     });
   }, [suppliersList, supplierSearchQuery]);
 
-  const selectedSupplierObj = useMemo(() => {
-    if (!supplierFilter || supplierFilter === "all") return null;
-    return suppliersList.find(
-      (s) =>
-        String(s.id ?? "").toLowerCase() === supplierFilter.toLowerCase() ||
-        String(s.name || "").toLowerCase() === supplierFilter.toLowerCase()
-    );
-  }, [suppliersList, supplierFilter]);
+  const selectedSupplierObj = (!supplierFilter || supplierFilter === "all")
+    ? null
+    : suppliersList.find(
+        (s) =>
+          String(s.id ?? "").toLowerCase() === supplierFilter.toLowerCase() ||
+          String(s.name || "").toLowerCase() === supplierFilter.toLowerCase()
+      ) || null;
 
   const currentSupplierLabel = selectedSupplierObj
     ? (selectedSupplierObj.name || "Supplier")

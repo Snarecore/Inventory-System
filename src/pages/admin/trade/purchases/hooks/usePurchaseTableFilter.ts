@@ -302,10 +302,8 @@ export const usePurchaseTableFilter = ({
   // Pagination calculation
   const totalCount = sortedPurchases.length;
   const pageCount = Math.max(1, Math.ceil(totalCount / dataLimit));
-  const paginatedPurchases = useMemo(() => {
-    const startIndex = (currentPageNumber - 1) * dataLimit;
-    return sortedPurchases.slice(startIndex, startIndex + dataLimit);
-  }, [sortedPurchases, currentPageNumber, dataLimit]);
+  const startIndex = (currentPageNumber - 1) * dataLimit;
+  const paginatedPurchases = sortedPurchases.slice(startIndex, startIndex + dataLimit);
 
   const handlePagination = useCallback((paginationData: { selected: number }) => {
     setCurrentPageNumber(paginationData.selected + 1);

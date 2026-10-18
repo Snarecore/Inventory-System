@@ -33,10 +33,7 @@ const Purchases: React.FC = () => {
   } = usePurchasesQuery();
 
   // Extract all purchases from standardized cache
-  const allPurchases: PurchaseItem[] = useMemo(() => {
-    if (Array.isArray(purchasesData)) return purchasesData;
-    return [];
-  }, [purchasesData]);
+  const allPurchases: PurchaseItem[] = Array.isArray(purchasesData) ? purchasesData : [];
 
   // 2. Fetch Suppliers from POST /get-party-info-list
   const { data: rawPartyData } = useQuery({

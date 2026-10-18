@@ -137,12 +137,9 @@ export const SaleTable: React.FC<SaleTableProps> = ({
     });
   }, [customersList, customerSearchQuery]);
 
-  const selectedCustomerObj = useMemo(() => {
-    if (!customerFilter) return null;
-    return customersList.find(
-      (c) => String(c.id ?? c.name ?? "") === String(customerFilter)
-    );
-  }, [customersList, customerFilter]);
+  const selectedCustomerObj = customerFilter
+    ? customersList.find((c) => String(c.id ?? c.name ?? "") === String(customerFilter)) || null
+    : null;
 
   const currentCustomerLabel = selectedCustomerObj
     ? (selectedCustomerObj.name || "Customer")
@@ -207,25 +204,20 @@ export const SaleTable: React.FC<SaleTableProps> = ({
   };
 
   // Column Visibility Configuration
-  const availableColumns: ColumnItem[] = useMemo(() => {
-    const list: ColumnItem[] = [{ key: "sl", label: "SL" }];
-    if (showOrderId) list.push({ key: "orderId", label: "Order ID" });
-    list.push(
-      { key: "customer", label: "Customer" },
-      { key: "phone", label: "Phone" },
-      { key: "date", label: "Date" },
-      { key: "items", label: "Items" },
-      { key: "total", label: "Total (৳)" },
-      { key: "paid", label: "Paid (৳)" },
-      { key: "due", label: "Due (৳)" }
-    );
-    if (showMethod) list.push({ key: "method", label: "Method" });
-    list.push(
-      { key: "status", label: "Payment Status" },
-      { key: "actions", label: showReturnAction ? "Action" : "Actions" }
-    );
-    return list;
-  }, [showOrderId, showMethod, showReturnAction]);
+  const availableColumns: ColumnItem[] = [
+    { key: "sl", label: "SL" },
+    ...(showOrderId ? [{ key: "orderId", label: "Order ID" }] : []),
+    { key: "customer", label: "Customer" },
+    { key: "phone", label: "Phone" },
+    { key: "date", label: "Date" },
+    { key: "items", label: "Items" },
+    { key: "total", label: "Total (৳)" },
+    { key: "paid", label: "Paid (৳)" },
+    { key: "due", label: "Due (৳)" },
+    ...(showMethod ? [{ key: "method", label: "Method" }] : []),
+    { key: "status", label: "Payment Status" },
+    { key: "actions", label: showReturnAction ? "Action" : "Actions" },
+  ];
 
   const [visibleColumns, setVisibleColumns] = useState<Record<string, boolean>>(() => {
     try {

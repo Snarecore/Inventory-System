@@ -79,6 +79,8 @@ export interface CollectionAllocation {
   originalDue: number;
   allocatedAmount: number;
   remainingDue: number;
+  paidAmount?: number;
+  dueAmount?: number;
 }
 
 export interface AllocationResult {

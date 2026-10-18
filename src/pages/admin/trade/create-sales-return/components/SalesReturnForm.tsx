@@ -27,6 +27,8 @@ import {
   productQueryKey,
   partyListQueryKey,
   dashboardQueryKey,
+  customersDueQueryKey,
+  customerInvoicesDueQueryKey,
 } from "@/config/query-key";
 import { useFinancialAccounts } from "@/hooks/useFinancialAccounts";
 import { useFinancialLedger } from "@/hooks/useFinancialLedger";
@@ -292,11 +294,8 @@ export const SalesReturnForm: React.FC = () => {
     return returnedQtyMap;
   }, [returnsBySaleKey]);
 
-  const isCurrentSaleAlreadyReturned = useMemo(() => {
-    if (!selectedSale) return false;
-    if (hasJustSubmitted) return false;
-    return isSaleAlreadyReturned(selectedSale);
-  }, [selectedSale, hasJustSubmitted, isSaleAlreadyReturned]);
+  const isCurrentSaleAlreadyReturned =
+    Boolean(selectedSale && !hasJustSubmitted && isSaleAlreadyReturned(selectedSale));
 
   // Load sale into form and configure customer payment & refund suggestion
   const loadInvoice = useCallback((sale: SaleItem) => {
@@ -882,6 +881,8 @@ export const SalesReturnForm: React.FC = () => {
       queryClient.invalidateQueries({ queryKey: [productQueryKey], refetchType: "none" });
       queryClient.invalidateQueries({ queryKey: [partyListQueryKey], refetchType: "none" });
       queryClient.invalidateQueries({ queryKey: [dashboardQueryKey], refetchType: "none" });
+      queryClient.invalidateQueries({ queryKey: [customersDueQueryKey] });
+      queryClient.invalidateQueries({ queryKey: [customerInvoicesDueQueryKey] });
 
       // Post financial transaction EXPENSE to reduce cash/bank balance for customer refund
       if (totals.refundAmount > 0) {

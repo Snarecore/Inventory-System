@@ -148,14 +148,13 @@ export const SalesReturnTable: React.FC<SalesReturnTableProps> = ({
     });
   }, [customersList, customerSearchQuery]);
 
-  const selectedCustomerObj = useMemo(() => {
-    if (!customerFilter || customerFilter === "all") return null;
-    return customersList.find(
-      (c) =>
-        String(c.id ?? c.partyId ?? "").toLowerCase() === customerFilter.toLowerCase() ||
-        String(c.name || c.partyName || "").toLowerCase() === customerFilter.toLowerCase()
-    );
-  }, [customersList, customerFilter]);
+  const selectedCustomerObj = (!customerFilter || customerFilter === "all")
+    ? null
+    : customersList.find(
+        (c) =>
+          String(c.id ?? c.partyId ?? "").toLowerCase() === customerFilter.toLowerCase() ||
+          String(c.name || c.partyName || "").toLowerCase() === customerFilter.toLowerCase()
+      ) || null;
 
   const currentCustomerLabel = selectedCustomerObj
     ? (selectedCustomerObj.name || selectedCustomerObj.partyName || "Customer")

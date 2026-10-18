@@ -98,10 +98,8 @@ export const CollectionHistoryTable: React.FC<CollectionHistoryTableProps> = ({
   }, [reportData, debouncedSearch, paymentModeFilter]);
 
   // Paginated Slice
-  const paginatedCollections = useMemo(() => {
-    const start = (currentPageNumber - 1) * dataLimit;
-    return filteredCollections.slice(start, start + dataLimit);
-  }, [filteredCollections, currentPageNumber, dataLimit]);
+  const start = (currentPageNumber - 1) * dataLimit;
+  const paginatedCollections = filteredCollections.slice(start, start + dataLimit);
 
   const totalCount = filteredCollections.length;
   const pageCount = Math.max(1, Math.ceil(totalCount / dataLimit));

@@ -302,11 +302,8 @@ export const PurchaseReturnForm: React.FC = () => {
     return returnedQtyMap;
   }, [returnsByPurchaseKey]);
 
-  const isCurrentPurchaseAlreadyReturned = useMemo(() => {
-    if (!selectedPurchase) return false;
-    if (hasJustSubmitted) return false;
-    return isPurchaseAlreadyReturned(selectedPurchase);
-  }, [selectedPurchase, hasJustSubmitted, isPurchaseAlreadyReturned]);
+  const isCurrentPurchaseAlreadyReturned =
+    Boolean(selectedPurchase && !hasJustSubmitted && isPurchaseAlreadyReturned(selectedPurchase));
 
   // Load purchase into form and configure supplier payment breakdown
   const loadInvoice = useCallback((purchase: PurchaseItem) => {

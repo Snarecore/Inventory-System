@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import PageHeader from "@/components/page-header/PageHeader";
 import RefreshButton from "@/components/table-components/RefreshButton";
 import { useCustomersDueQuery } from "@/hooks/useCustomersDue";
@@ -22,6 +22,11 @@ export const CustomerCollection: React.FC = () => {
     isFetching,
     refetch,
   } = useCustomersDueQuery();
+
+  // Auto-refresh data on page mount and active tab change
+  useEffect(() => {
+    refetch();
+  }, [activeTab, refetch]);
 
   // 2. Collection Modal State
   const [selectedCustomer, setSelectedCustomer] = useState<CustomerDueItem | null>(null);

@@ -140,10 +140,7 @@ export const PartyTable: React.FC<PartyTableProps> = ({
     { key: "action", label: "Actions", align: "text-right", width: "w-[14.285%]" },
   ];
 
-  const availableColumns: ColumnItem[] = useMemo(
-    () => tableHeaders.map((h) => ({ key: h.key, label: h.label })),
-    []
-  );
+  const availableColumns: ColumnItem[] = tableHeaders.map((h) => ({ key: h.key, label: h.label }));
 
   const [visibleColumns, setVisibleColumns] = useState<Record<string, boolean>>(() => {
     try {

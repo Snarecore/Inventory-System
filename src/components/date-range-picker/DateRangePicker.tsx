@@ -275,24 +275,19 @@ export const DateRangePicker: React.FC<DateRangePickerProps> = ({
   }, [viewDate, rangeStart, rangeEnd, hoverDate]);
 
   // Display label on trigger
-  const displayLabel = useMemo(() => {
-    if (activePreset && activePreset !== "all" && activePreset !== "custom") {
-      const found = presets.find((p) => p.value === activePreset);
-      if (found) return found.label;
-    }
-
-    if (rangeStart && rangeEnd) {
-      if (rangeStart === rangeEnd) {
-        return moment(rangeStart).format("D MMM YYYY");
-      }
-      return `${moment(rangeStart).format("D MMM")} - ${moment(rangeEnd).format("D MMM")}`;
-    }
-
-    if (rangeStart) return `From ${moment(rangeStart).format("D MMM")}`;
-    if (rangeEnd) return `Until ${moment(rangeEnd).format("D MMM")}`;
-
-    return "All Dates";
-  }, [activePreset, rangeStart, rangeEnd]);
+  let displayLabel = "All Dates";
+  if (activePreset && activePreset !== "all" && activePreset !== "custom") {
+    const found = presets.find((p) => p.value === activePreset);
+    if (found) displayLabel = found.label;
+  } else if (rangeStart && rangeEnd) {
+    displayLabel = rangeStart === rangeEnd
+      ? moment(rangeStart).format("D MMM YYYY")
+      : `${moment(rangeStart).format("D MMM")} - ${moment(rangeEnd).format("D MMM")}`;
+  } else if (rangeStart) {
+    displayLabel = `From ${moment(rangeStart).format("D MMM")}`;
+  } else if (rangeEnd) {
+    displayLabel = `Until ${moment(rangeEnd).format("D MMM")}`;
+  }
 
   // Size styling
   const sizeClasses = {

@@ -7,6 +7,7 @@ import {
 import {
   customersDueQueryKey,
   customerInvoicesDueQueryKey,
+  collectionReportQueryKey,
   cashBalanceQueryKey,
   bankInfoListQueryKey,
   mfsUserListQueryKey,
@@ -120,9 +121,8 @@ export const useCollectionMutation = () => {
 
       // Invalidate relevant caches immediately so UI is 100% synchronized
       queryClient.invalidateQueries({ queryKey: [customersDueQueryKey] });
-      queryClient.invalidateQueries({
-        queryKey: [customerInvoicesDueQueryKey, String(customerId)],
-      });
+      queryClient.invalidateQueries({ queryKey: [customerInvoicesDueQueryKey] });
+      queryClient.invalidateQueries({ queryKey: [collectionReportQueryKey] });
       queryClient.invalidateQueries({ queryKey: [cashBalanceQueryKey] });
       queryClient.invalidateQueries({ queryKey: [bankInfoListQueryKey] });
       queryClient.invalidateQueries({ queryKey: [mfsUserListQueryKey] });

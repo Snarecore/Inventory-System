@@ -11,6 +11,7 @@ import { useCollectionMutation } from "@/hooks/useCollectionMutation";
 import {
   allocateCollectionFIFO,
   allocateCollectionManual,
+  sortInvoicesFIFO,
 } from "@/services/collection-service";
 import DueInvoiceAllocationTable from "./DueInvoiceAllocationTable";
 import type { CollectionReceiptData } from "./CollectionReceiptModal";
@@ -32,8 +33,12 @@ export const AddCollectionModal: React.FC<AddCollectionModalProps> = ({
   onSuccess,
 }) => {
   const customerId = customer?.customerId ? String(customer.customerId) : "";
-  const { data: invoices = [], isLoading: isInvoicesLoading } =
+  const { data: rawInvoices = [], isLoading: isInvoicesLoading } =
     useCustomerInvoicesDueQuery(customerId);
+
+  const invoices = useMemo(() => {
+    return sortInvoicesFIFO(rawInvoices);
+  }, [rawInvoices]);
 
   const { registeredBankAccounts, registeredMfsAccounts, isLoading: isAccountsLoading } = useFinancialAccounts();
   const collectionMutation = useCollectionMutation();
@@ -52,18 +57,13 @@ export const AddCollectionModal: React.FC<AddCollectionModalProps> = ({
     () => new Set()
   );
 
-  const customerTotalDue = useMemo(() => {
-    if (invoices.length > 0) {
-      return invoices.reduce((sum, inv) => sum + Number(inv.dueAmount || 0), 0);
-    }
-    return Number(customer?.totalDue || 0);
-  }, [invoices, customer]);
+  const customerTotalDue = invoices.length > 0
+    ? invoices.reduce((sum, inv) => sum + Number(inv.dueAmount || 0), 0)
+    : Number(customer?.totalDue || 0);
 
-  const selectedInvoicesDue = useMemo(() => {
-    return invoices
-      .filter((inv) => selectedInvoiceNos.has(inv.invoiceNo))
-      .reduce((sum, inv) => sum + Number(inv.dueAmount || 0), 0);
-  }, [invoices, selectedInvoiceNos]);
+  const selectedInvoicesDue = invoices
+    .filter((inv) => selectedInvoiceNos.has(inv.invoiceNo))
+    .reduce((sum, inv) => sum + Number(inv.dueAmount || 0), 0);
 
   const effectiveMaxDue = isManualMode && selectedInvoiceNos.size > 0
     ? selectedInvoicesDue
@@ -126,12 +126,9 @@ export const AddCollectionModal: React.FC<AddCollectionModalProps> = ({
     });
   };
 
-  const isAllSelected = useMemo(() => {
-    return (
-      invoices.length > 0 &&
-      invoices.every((inv) => selectedInvoiceNos.has(inv.invoiceNo))
-    );
-  }, [invoices, selectedInvoiceNos]);
+  const isAllSelected =
+    invoices.length > 0 &&
+    invoices.every((inv) => selectedInvoiceNos.has(inv.invoiceNo));
 
   const handleToggleSelectAll = () => {
     if (isAllSelected) {

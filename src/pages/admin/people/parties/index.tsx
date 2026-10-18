@@ -232,10 +232,8 @@ const Parties: React.FC = () => {
 
   // Pagination calculation
   const pageCount = Math.max(1, Math.ceil(sortedParties.length / dataLimit));
-  const paginatedParties = useMemo(() => {
-    const start = (currentPageNumber - 1) * dataLimit;
-    return sortedParties.slice(start, start + dataLimit);
-  }, [sortedParties, currentPageNumber, dataLimit]);
+  const start = (currentPageNumber - 1) * dataLimit;
+  const paginatedParties = sortedParties.slice(start, start + dataLimit);
 
   const handlePagination = (paginationData: { selected: number }) => {
     setCurrentPageNumber(paginationData.selected + 1);

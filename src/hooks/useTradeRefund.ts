@@ -26,35 +26,29 @@ export const useTradeRefund = ({
   const [selectedRefundMfsId, setSelectedRefundMfsId] = useState<string>("");
 
   // Extract original invoice payment figures
-  const origPaymentMode = useMemo(() => {
-    return String(
-      selectedRecord?.paymentType || (selectedRecord as any)?.payment_type || "CASH"
-    ).toUpperCase();
-  }, [selectedRecord]);
+  const origPaymentMode = String(
+    selectedRecord?.paymentType || (selectedRecord as any)?.payment_type || "CASH"
+  ).toUpperCase();
 
-  const origGrandTotal = useMemo(() => {
-    return Number(
-      selectedRecord?.grandTotal ??
-        (selectedRecord as any)?.grand_total ??
-        selectedRecord?.totalAmount ??
-        (selectedRecord as any)?.total_amount ??
-        0
-    );
-  }, [selectedRecord]);
+  const origGrandTotal = Number(
+    selectedRecord?.grandTotal ??
+      (selectedRecord as any)?.grand_total ??
+      selectedRecord?.totalAmount ??
+      (selectedRecord as any)?.total_amount ??
+      0
+  );
 
-  const origPaidAmount = useMemo(() => {
-    return Number(selectedRecord?.paidAmount ?? (selectedRecord as any)?.paid_amount ?? 0);
-  }, [selectedRecord]);
+  const origPaidAmount = Number(
+    selectedRecord?.paidAmount ?? (selectedRecord as any)?.paid_amount ?? 0
+  );
 
-  const origDueAmount = useMemo(() => {
-    return Number(
-      selectedRecord?.dueAmount ??
-        (selectedRecord as any)?.due_amount ??
-        (origPaymentMode === "CREDIT"
-          ? origGrandTotal
-          : Math.max(0, origGrandTotal - origPaidAmount))
-    );
-  }, [selectedRecord, origPaymentMode, origGrandTotal, origPaidAmount]);
+  const origDueAmount = Number(
+    selectedRecord?.dueAmount ??
+      (selectedRecord as any)?.due_amount ??
+      (origPaymentMode === "CREDIT"
+        ? origGrandTotal
+        : Math.max(0, origGrandTotal - origPaidAmount))
+  );
 
   // Split amounts recorded on the original document
   const { origCashPaid, origBankPaid, origMfsPaid } = useMemo(() => {
@@ -209,18 +203,13 @@ export const useTradeRefund = ({
     }
   }, [selectedRecord, registeredBankAccounts, registeredMfsAccounts]);
 
-  const numRefundCash = useMemo(() => Number(refundCashAmount) || 0, [refundCashAmount]);
-  const numRefundBank = useMemo(() => Number(refundBankAmount) || 0, [refundBankAmount]);
-  const numRefundMfs = useMemo(() => Number(refundMfsAmount) || 0, [refundMfsAmount]);
-  const numRefundDue = useMemo(() => Number(refundDueAmount) || 0, [refundDueAmount]);
+  const numRefundCash = Number(refundCashAmount) || 0;
+  const numRefundBank = Number(refundBankAmount) || 0;
+  const numRefundMfs = Number(refundMfsAmount) || 0;
+  const numRefundDue = Number(refundDueAmount) || 0;
 
-  const totalRefundAllocated = useMemo(() => {
-    return numRefundCash + numRefundBank + numRefundMfs + numRefundDue;
-  }, [numRefundCash, numRefundBank, numRefundMfs, numRefundDue]);
-
-  const refundDifference = useMemo(() => {
-    return Number((refundAmount - totalRefundAllocated).toFixed(2));
-  }, [refundAmount, totalRefundAllocated]);
+  const totalRefundAllocated = numRefundCash + numRefundBank + numRefundMfs + numRefundDue;
+  const refundDifference = Number((refundAmount - totalRefundAllocated).toFixed(2));
 
   const resetRefund = () => {
     setRefundCashAmount("");

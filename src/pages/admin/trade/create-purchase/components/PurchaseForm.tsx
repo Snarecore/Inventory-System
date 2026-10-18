@@ -710,35 +710,22 @@ const CreatePurchaseForm: React.FC = () => {
   }, [lineItems]);
 
   // 3. Invoice-level Overall Discount (Fixed Amount)
-  const calculatedInvoiceDiscount = useMemo(() => {
-    return Number(invoiceDiscount) || 0;
-  }, [invoiceDiscount]);
+  const calculatedInvoiceDiscount = Number(invoiceDiscount) || 0;
 
   // 4. Total Discount combined
-  const totalDiscount = useMemo(() => {
-    return calculatedInvoiceDiscount;
-  }, [calculatedInvoiceDiscount]);
+  const totalDiscount = calculatedInvoiceDiscount;
 
   // 6. Invoice-level VAT (Fixed Amount)
-  const calculatedInvoiceVat = useMemo(() => {
-    return Number(invoiceVat) || 0;
-  }, [invoiceVat]);
+  const calculatedInvoiceVat = Number(invoiceVat) || 0;
 
   // 7. Total VAT combined
-  const totalVat = useMemo(() => {
-    return lineVatTotal + calculatedInvoiceVat;
-  }, [lineVatTotal, calculatedInvoiceVat]);
+  const totalVat = lineVatTotal + calculatedInvoiceVat;
 
   // 8. Transport / Freight
-  const calculatedTransport = useMemo(() => {
-    return Number(transportCost) || 0;
-  }, [transportCost]);
+  const calculatedTransport = Number(transportCost) || 0;
 
   // 9. Grand Total
-  const grandTotal = useMemo(() => {
-    const total = rawSubtotal - totalDiscount + totalVat + calculatedTransport;
-    return Math.max(0, Math.round(total * 100) / 100);
-  }, [rawSubtotal, totalDiscount, totalVat, calculatedTransport]);
+  const grandTotal = Math.max(0, Math.round((rawSubtotal - totalDiscount + totalVat + calculatedTransport) * 100) / 100);
 
   const payment = useTradePayment({
     grandTotal,

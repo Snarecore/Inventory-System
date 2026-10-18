@@ -15,6 +15,9 @@ import {
   productListQueryKey,
   partyListQueryKey,
   salesAndReturnQueryKey,
+  customersDueQueryKey,
+  customerInvoicesDueQueryKey,
+  collectionReportQueryKey,
 } from "@/config/query-key";
 import { buildAccessUser } from "@/utils/access-user";
 import { getBusinessCode } from "@/utils/auth-storage";
@@ -89,22 +92,18 @@ export const CreateSaleForm: React.FC = () => {
   const [isPartyModalOpen, setIsPartyModalOpen] = useState<boolean>(false);
 
   // Live Previous Due fetched directly from backend (/customer-invoices-due)
-  const customerApiId = useMemo(() => {
-    if (!selectedCustomer) return "";
-    const isWalkIn =
-      selectedCustomer.id === 0 ||
-      String(selectedCustomer.name || "").toLowerCase().includes("walk-in");
-    if (isWalkIn) return "";
-    return String(selectedCustomer.partyId ?? selectedCustomer.id ?? "");
-  }, [selectedCustomer]);
+  const isWalkIn =
+    !selectedCustomer ||
+    selectedCustomer.id === 0 ||
+    String(selectedCustomer.name || "").toLowerCase().includes("walk-in");
+  const customerApiId = isWalkIn ? "" : String(selectedCustomer.partyId ?? selectedCustomer.id ?? "");
 
   const { data: customerDueInvoices, isLoading: isLoadingCustomerDue } =
     useCustomerInvoicesDue(customerApiId);
 
-  const previousDue = useMemo(() => {
-    if (!customerDueInvoices || customerDueInvoices.length === 0) return 0;
-    return customerDueInvoices.reduce((sum, inv) => sum + Number(inv.dueAmount || 0), 0);
-  }, [customerDueInvoices]);
+  const previousDue = (customerDueInvoices && customerDueInvoices.length > 0)
+    ? customerDueInvoices.reduce((sum, inv) => sum + Number(inv.dueAmount || 0), 0)
+    : 0;
 
   // Line items
   const [lineItems, setLineItems] = useState<FormLineItem[]>([]);
@@ -495,19 +494,10 @@ export const CreateSaleForm: React.FC = () => {
     return lineItems.reduce((acc, item) => acc + (Number(item.total) || 0), 0);
   }, [lineItems]);
 
-  const totalDiscount = useMemo(() => {
-    return Number(discountValue) || 0;
-  }, [discountValue]);
-
-  const totalVat = useMemo(() => {
-    return Number(vatAmount) || 0;
-  }, [vatAmount]);
-
+  const totalDiscount = Number(discountValue) || 0;
+  const totalVat = Number(vatAmount) || 0;
   const calculatedDelivery = Number(deliveryCharge) || 0;
-
-  const grandTotal = useMemo(() => {
-    return Math.max(0, rawSubtotal - totalDiscount + totalVat + calculatedDelivery);
-  }, [rawSubtotal, totalDiscount, totalVat, calculatedDelivery]);
+  const grandTotal = Math.max(0, rawSubtotal - totalDiscount + totalVat + calculatedDelivery);
 
   const payment = useTradePayment({
     grandTotal,
@@ -914,7 +904,14 @@ export const CreateSaleForm: React.FC = () => {
         mutation: postMutation,
         url: targetUrl,
         body: payload,
-        invalidateQueryKey: [salesListQueryKey, productListQueryKey, salesAndReturnQueryKey],
+        invalidateQueryKey: [
+          salesListQueryKey,
+          productListQueryKey,
+          salesAndReturnQueryKey,
+          customersDueQueryKey,
+          customerInvoicesDueQueryKey,
+          collectionReportQueryKey,
+        ],
         showSuccessMessage: true,
         showErrorMessage: true,
       });

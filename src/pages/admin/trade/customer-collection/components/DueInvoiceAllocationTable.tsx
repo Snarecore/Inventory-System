@@ -130,9 +130,13 @@ export const DueInvoiceAllocationTable: React.FC<DueInvoiceAllocationTableProps>
             {filteredInvoices.map((inv) => {
               const isSelected = selectedInvoiceNos.has(inv.invoiceNo);
               const alloc = allocationMap.get(inv.invoiceNo);
-              const allocatedAmount = alloc ? alloc.paidAmount : 0;
+              const allocatedAmount = alloc
+                ? (alloc.allocatedAmount ?? alloc.paidAmount ?? 0)
+                : 0;
               const dueAmount = Number(inv.dueAmount || 0);
-              const remainingDue = alloc ? alloc.dueAmount : dueAmount;
+              const remainingDue = alloc
+                ? (alloc.remainingDue ?? alloc.dueAmount ?? Math.max(0, dueAmount - allocatedAmount))
+                : dueAmount;
 
               return (
                 <tr

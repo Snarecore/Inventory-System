@@ -98,10 +98,7 @@ const Sales: React.FC = () => {
     refetch,
   } = useSalesQuery();
 
-  const rawSales: SaleItem[] = useMemo(() => {
-    if (Array.isArray(salesData)) return salesData;
-    return [];
-  }, [salesData]);
+  const rawSales: SaleItem[] = Array.isArray(salesData) ? salesData : [];
 
   // Filtering & Sorting
   const filteredSales = useMemo(() => {
@@ -248,10 +245,8 @@ const Sales: React.FC = () => {
   // Pagination
   const totalCount = sortedSales.length;
   const pageCount = Math.ceil(totalCount / dataLimit) || 1;
-  const paginatedSales = useMemo(() => {
-    const startIndex = (currentPageNumber - 1) * dataLimit;
-    return sortedSales.slice(startIndex, startIndex + dataLimit);
-  }, [sortedSales, currentPageNumber, dataLimit]);
+  const startIndex = (currentPageNumber - 1) * dataLimit;
+  const paginatedSales = sortedSales.slice(startIndex, startIndex + dataLimit);
 
   const handlePagination = (paginationData: { selected: number }) => {
     setCurrentPageNumber(paginationData.selected + 1);

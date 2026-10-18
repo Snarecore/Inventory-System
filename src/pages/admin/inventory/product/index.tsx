@@ -189,10 +189,8 @@ const Products = () => {
 
     // Pagination calculations
     const pageCount = Math.max(1, Math.ceil(sortedProducts.length / dataLimit));
-    const paginatedProducts = useMemo(() => {
-        const start = (currentPageNumber - 1) * dataLimit;
-        return sortedProducts.slice(start, start + dataLimit);
-    }, [sortedProducts, currentPageNumber, dataLimit]);
+    const start = (currentPageNumber - 1) * dataLimit;
+    const paginatedProducts = sortedProducts.slice(start, start + dataLimit);
 
     const handlePagination = (paginationData: { selected: number }) => {
         setCurrentPageNumber(paginationData.selected + 1);

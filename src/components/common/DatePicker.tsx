@@ -169,10 +169,7 @@ export const DatePicker: React.FC<DatePickerProps> = ({
   }, [viewDate]);
 
   // Display text in input
-  const displayText = useMemo(() => {
-    if (!selectedMoment) return "";
-    return selectedMoment.format(displayFormat || format);
-  }, [selectedMoment, displayFormat, format]);
+  const displayText = selectedMoment ? selectedMoment.format(displayFormat || format) : "";
 
   // Size styling
   const sizeClasses = {

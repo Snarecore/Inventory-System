@@ -307,20 +307,15 @@ const CreateProductForm = () => {
     }, [unitOptions, selectedUnit]);
 
     // Active pricing unit: Secondary Unit if selected, otherwise Primary Unit
-    const activePricingUnit = useMemo(() => {
-        if (selectedSecondaryUnit?.label) return selectedSecondaryUnit.label;
-        if (selectedUnit?.label) return selectedUnit.label;
-        return "";
-    }, [selectedSecondaryUnit, selectedUnit]);
+    const activePricingUnit = selectedSecondaryUnit?.label || selectedUnit?.label || "";
 
     // Numeric conversion ratio (1 Primary Unit = ? Secondary Units)
-    const conversionFactor = useMemo(() => {
-        if (!selectedUnit || !selectedSecondaryUnit || !fieldValues.packing_levels) return null;
-        const match = fieldValues.packing_levels.match(/\d+(\.\d+)?/);
-        if (!match) return null;
-        const num = parseFloat(match[0]);
-        return num > 0 ? num : null;
-    }, [selectedUnit, selectedSecondaryUnit, fieldValues.packing_levels]);
+    const conversionMatch = (selectedUnit && selectedSecondaryUnit && fieldValues.packing_levels)
+        ? fieldValues.packing_levels.match(/\d+(\.\d+)?/)
+        : null;
+    const conversionFactor = conversionMatch && parseFloat(conversionMatch[0]) > 0
+        ? parseFloat(conversionMatch[0])
+        : null;
 
     // Sync selected category when options are loaded
     useEffect(() => {

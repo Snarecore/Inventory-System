@@ -118,7 +118,9 @@ export const useCollectionReportQuery = (
   return useQuery({
     queryKey: [collectionReportQueryKey, filters?.startDate, filters?.endDate],
     queryFn: () => fetchCollectionReport(filters),
-    staleTime: 60 * 1000, // 1 minute fresh time
+    staleTime: 0,
+    refetchOnMount: "always",
+    refetchOnWindowFocus: true,
     ...options,
   });
 };

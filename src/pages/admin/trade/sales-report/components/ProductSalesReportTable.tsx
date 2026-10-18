@@ -93,9 +93,7 @@ export const ProductSalesReportTable: React.FC<ProductSalesReportTableProps> = (
   }, [transactions]);
 
   // Overall total revenue from products
-  const grandProductRevenue = useMemo(() => {
-    return productSummaries.reduce((acc, p) => acc + p.totalRevenue, 0);
-  }, [productSummaries]);
+  const grandProductRevenue = productSummaries.reduce((acc, p) => acc + p.totalRevenue, 0);
 
   // Filtered
   const filtered = useMemo(() => {

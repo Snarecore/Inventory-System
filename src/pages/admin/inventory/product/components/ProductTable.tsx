@@ -37,6 +37,19 @@ interface ProductTableProps {
     onRefresh: () => void;
 }
 
+const tableHeaders = [
+    { key: "sl", label: "SL", align: "text-center" },
+    { key: "name", label: "Product Name", align: "text-left" },
+    { key: "category", label: "Category", align: "text-left" },
+    { key: "stock", label: "Stock & Unit", align: "text-center" },
+    { key: "buyPrice", label: "Buy Price", align: "text-right" },
+    { key: "sellPrice", label: "Sell Price", align: "text-right" },
+    { key: "status", label: "Status", align: "text-center" },
+    { key: "action", label: "Actions", align: "text-center" },
+];
+
+const availableColumns: ColumnItem[] = tableHeaders.map((h) => ({ key: h.key, label: h.label }));
+
 export const ProductTable = ({
     products,
     totalCount,
@@ -78,21 +91,7 @@ export const ProductTable = ({
         return [{ label: "All Categories", value: "" }, ...categoryOptions];
     }, [categoryOptions]);
 
-    const tableHeaders = [
-        { key: "sl", label: "SL", align: "text-center" },
-        { key: "name", label: "Product Name", align: "text-left" },
-        { key: "category", label: "Category", align: "text-left" },
-        { key: "stock", label: "Stock & Unit", align: "text-center" },
-        { key: "buyPrice", label: "Buy Price", align: "text-right" },
-        { key: "sellPrice", label: "Sell Price", align: "text-right" },
-        { key: "status", label: "Status", align: "text-center" },
-        { key: "action", label: "Actions", align: "text-center" },
-    ];
 
-    const availableColumns: ColumnItem[] = useMemo(
-        () => tableHeaders.map((h) => ({ key: h.key, label: h.label })),
-        []
-    );
 
     const [visibleColumns, setVisibleColumns] = useState<Record<string, boolean>>(() => {
         try {
