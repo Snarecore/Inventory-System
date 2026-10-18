@@ -135,14 +135,14 @@ export const useCollectionMutation = () => {
     onSuccess: (data, variables) => {
       const { customerId, totalCollected, totalDiscount = 0 } = variables;
 
-      // Invalidate relevant caches immediately so UI is 100% synchronized
+      // Invalidate relevant caches: active table updates immediately, background queries marked stale
       queryClient.invalidateQueries({ queryKey: [customersDueQueryKey] });
-      queryClient.invalidateQueries({ queryKey: [customerInvoicesDueQueryKey] });
-      queryClient.invalidateQueries({ queryKey: [collectionReportQueryKey] });
-      queryClient.invalidateQueries({ queryKey: [cashBalanceQueryKey] });
-      queryClient.invalidateQueries({ queryKey: [bankInfoListQueryKey] });
-      queryClient.invalidateQueries({ queryKey: [mfsUserListQueryKey] });
-      queryClient.invalidateQueries({ queryKey: [salesListQueryKey] });
+      queryClient.invalidateQueries({ queryKey: [customerInvoicesDueQueryKey], refetchType: "none" });
+      queryClient.invalidateQueries({ queryKey: [collectionReportQueryKey], refetchType: "none" });
+      queryClient.invalidateQueries({ queryKey: [cashBalanceQueryKey], refetchType: "none" });
+      queryClient.invalidateQueries({ queryKey: [bankInfoListQueryKey], refetchType: "none" });
+      queryClient.invalidateQueries({ queryKey: [mfsUserListQueryKey], refetchType: "none" });
+      queryClient.invalidateQueries({ queryKey: [salesListQueryKey], refetchType: "none" });
       queryClient.invalidateQueries({ queryKey: [dashboardQueryKey], refetchType: "none" });
       queryClient.invalidateQueries({ queryKey: [partyListQueryKey], refetchType: "none" });
 

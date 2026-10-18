@@ -67,7 +67,6 @@ export const CustomerCollection: React.FC = () => {
   };
 
   const handleCollectionSuccess = (receipt: CollectionReceiptData) => {
-    refetch();
     setReceiptData(receipt);
     setIsReceiptModalOpen(true);
   };

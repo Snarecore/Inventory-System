@@ -82,7 +82,6 @@ export const useCustomerInvoicesDueQuery = (
     queryFn: () => fetchCustomerInvoicesDue(customerId!),
     enabled: Boolean(customerId),
     staleTime: 60 * 1000,
-    refetchOnMount: false,
     refetchOnWindowFocus: false,
     ...options,
   });
