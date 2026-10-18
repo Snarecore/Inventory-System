@@ -2,18 +2,7 @@ import React, { useState, useEffect, useMemo, useRef, useCallback } from "react"
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { FiChevronDown } from "react-icons/fi";
-import {
-  FaTrash,
-  FaSearch,
-  FaBarcode,
-  FaUserPlus,
-  FaSlidersH,
-  FaCheck,
-  FaPlus,
-  FaTimes,
-  FaPrint,
-  FaCalculator,
-} from "react-icons/fa";
+import { FaSlidersH, FaCalculator } from "react-icons/fa";
 import Button from "@/components/button/Button";
 import DeleteModal from "@/components/modal/DeleteModal";
 import ConfirmModal from "@/components/modal/ConfirmModal";
@@ -47,7 +36,7 @@ import TradePartySelector from "@/components/trade/TradePartySelector";
 import { usePurchasesQuery } from "@/pages/admin/trade/purchase-return/hooks/usePurchaseReturnQueries";
 import { useFinancialLedger } from "@/hooks/useFinancialLedger";
 import { cashLeg, bankLeg, mfsLeg, type TradeTender } from "@/services/financial-ledger-service";
-import type { PurchaseItem, PurchaseDetailItem, ProductItem, PartyItem, PurchaseChallanSettings } from "@/types";
+import type { PurchaseItem, ProductItem, PartyItem, PurchaseChallanSettings } from "@/types";
 
 interface FormLineItem {
   id?: string | number;
@@ -105,7 +94,7 @@ const CreatePurchaseForm: React.FC = () => {
   const location = useLocation();
   const { id: routeId } = useParams();
   const queryClient = useQueryClient();
-  const { postFormMutation, postMutation, handleApiMutation } = useAPI();
+  const { postMutation, handleApiMutation } = useAPI();
   const { recordTradeLedger } = useFinancialLedger();
 
   const stateEditData: PurchaseItem | undefined = (location.state as any)?.editData;
@@ -538,7 +527,7 @@ const CreatePurchaseForm: React.FC = () => {
             const pIdStr = String(p.id ?? "");
             const pCodeStr = String(p.productCode || p.pcode || "").toLowerCase();
             return (item.productId && pIdStr === String(item.productId)) ||
-                   (item.productCode && pCodeStr === item.productCode.toLowerCase());
+                    (item.productCode && pCodeStr === item.productCode.toLowerCase());
           });
 
           if (matchedProd) {
@@ -734,7 +723,6 @@ const CreatePurchaseForm: React.FC = () => {
   });
 
   const {
-    cashAmount,
     bankAmount,
     mfsAmount,
     cashGiven,
@@ -1058,18 +1046,15 @@ const CreatePurchaseForm: React.FC = () => {
     setTransportCost("");
     resetPayment();
     setChallanNo("");
-    setChallanDate("");
     setVatChallan("");
     setVatChallanDate("");
     setVehicleNo("");
     setCapacityCft("");
     setDriverName("");
     setDriverPhone("");
-    setDeliveryDate("");
     setPoNumber("");
     setNotes("");
     setAttachment(null);
-    setSelectedProductsMap({});
     if (businessCode) {
       setInvoiceNo(makeInvoiceNo(businessCode));
     } else {
