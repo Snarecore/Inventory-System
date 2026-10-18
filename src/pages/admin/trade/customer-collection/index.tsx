@@ -1,7 +1,13 @@
 import React, { useState, useMemo, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
 import PageHeader from "@/components/page-header/PageHeader";
 import RefreshButton from "@/components/table-components/RefreshButton";
 import { useCustomersDueQuery } from "@/hooks/useCustomersDue";
+import { useSalesQuery } from "@/pages/admin/trade/sales-return/hooks/useSalesReturnQueries";
+import { partyListQueryKey } from "@/config/query-key";
+import apiConfig from "@/config/api.json";
+import { postData } from "@/services/api-service";
+import { buildAccessUser } from "@/utils/access-user";
 import CollectionStatsCards from "./components/CollectionStatsCards";
 import CustomerDueTable from "./components/CustomerDueTable";
 import CollectionHistoryTable from "./components/CollectionHistoryTable";
@@ -22,6 +28,110 @@ export const CustomerCollection: React.FC = () => {
     isFetching,
     refetch,
   } = useCustomersDueQuery();
+
+  // Fetch party master list to enrich addresses if missing in /customers-due
+  const { data: rawPartyData } = useQuery({
+    queryKey: [partyListQueryKey],
+    queryFn: async () => {
+      const partyListUrl = apiConfig.party?.partyListUrl || "get-party-info-list";
+      const res: any = await postData({
+        url: partyListUrl,
+        body: { accessUser: buildAccessUser() },
+      });
+      return res;
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const partyMap = useMemo(() => {
+    const map = new Map<string, { address?: string; phone?: string; name?: string }>();
+    if (!rawPartyData) return map;
+    let list: any[] = [];
+    if (Array.isArray(rawPartyData)) list = rawPartyData;
+    else if (rawPartyData && typeof rawPartyData === "object") {
+      const raw = rawPartyData as any;
+      if (Array.isArray(raw.customerList)) list = raw.customerList;
+      else if (Array.isArray(raw.partyList)) list = raw.partyList;
+      else if (Array.isArray(raw.partyInfoList)) list = raw.partyInfoList;
+      else if (Array.isArray(raw.data)) list = raw.data;
+    }
+    list.forEach((p: any) => {
+      const addr = (p.address || p.partyAddress || "").trim();
+      if (addr) {
+        if (p.id) map.set(String(p.id), { address: addr });
+        if (p.partyId) map.set(String(p.partyId), { address: addr });
+        if (p.phone) map.set(String(p.phone).trim(), { address: addr });
+        if (p.partyPhone) map.set(String(p.partyPhone).trim(), { address: addr });
+      }
+    });
+    return map;
+  }, [rawPartyData]);
+
+  // Fetch sales records to accurately count pending invoices for due customers
+  const { data: salesList = [] } = useSalesQuery({
+    staleTime: 60 * 1000,
+  });
+
+  const salesDueCountMap = useMemo(() => {
+    const idMap = new Map<string, Set<string>>();
+    const phoneMap = new Map<string, Set<string>>();
+
+    if (Array.isArray(salesList)) {
+      salesList.forEach((s: any) => {
+        const due = Number(s.dueAmount ?? s.due_amount ?? 0);
+        if (due > 0) {
+          const invNo = String(s.invoiceNo || s.orderNo || s.id || Math.random());
+          const cId = String(s.customerId ?? s.customer_id ?? "");
+          const cPhone = String(s.customerPhone ?? s.customer_phone ?? s.phone ?? "").trim();
+
+          if (cId) {
+            if (!idMap.has(cId)) idMap.set(cId, new Set());
+            idMap.get(cId)!.add(invNo);
+          }
+          if (cPhone) {
+            if (!phoneMap.has(cPhone)) phoneMap.set(cPhone, new Set());
+            phoneMap.get(cPhone)!.add(invNo);
+          }
+        }
+      });
+    }
+
+    return { idMap, phoneMap };
+  }, [salesList]);
+
+  const enrichedCustomers = useMemo(() => {
+    return customers.map((c) => {
+      const idKey = String(c.customerId ?? c.id ?? "");
+      const phoneKey = String(c.customerPhone ?? "").trim();
+      const partyInfo = partyMap.get(idKey) || (phoneKey ? partyMap.get(phoneKey) : undefined);
+      const resolvedAddress =
+        (c.customerAddress && c.customerAddress !== "-" ? c.customerAddress : partyInfo?.address) || "";
+
+      // Calculate accurate pending invoices count:
+      // 1. From backend c.invoiceCount if > 0
+      // 2. From sales list matching by customerId or phone
+      // 3. Fallback to 1 if customer has totalDue > 0
+      const salesCount =
+        salesDueCountMap.idMap.get(idKey)?.size ??
+        (phoneKey ? salesDueCountMap.phoneMap.get(phoneKey)?.size : undefined) ??
+        0;
+
+      const finalInvoiceCount =
+        c.invoiceCount && c.invoiceCount > 0
+          ? c.invoiceCount
+          : salesCount > 0
+          ? salesCount
+          : Number(c.totalDue || 0) > 0
+          ? 1
+          : 0;
+
+      return {
+        ...c,
+        customerAddress: resolvedAddress,
+        invoiceCount: finalInvoiceCount,
+      };
+    });
+  }, [customers, partyMap, salesDueCountMap]);
 
   // 2. Collection Modal State
   const [selectedCustomer, setSelectedCustomer] = useState<CustomerDueItem | null>(null);
@@ -129,7 +239,7 @@ export const CustomerCollection: React.FC = () => {
       {/* Main Content View */}
       {activeTab === "dues" ? (
         <CustomerDueTable
-          customers={customers}
+          customers={enrichedCustomers}
           isLoading={isLoading}
           isFetching={isFetching}
           onRefresh={handleRefresh}

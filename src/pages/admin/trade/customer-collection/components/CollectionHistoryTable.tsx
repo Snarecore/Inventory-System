@@ -460,7 +460,10 @@ export const CollectionHistoryTable: React.FC<CollectionHistoryTableProps> = ({
 
                       {/* Remark */}
                       {isColVisible("remark") && (
-                        <td className="py-2.5 px-3 text-gray-500 text-xs truncate max-w-[150px]">
+                        <td
+                          className="py-2.5 px-3 text-black text-xs font-normal truncate max-w-[150px]"
+                          title={row.remark || ""}
+                        >
                           {row.remark || "-"}
                         </td>
                       )}

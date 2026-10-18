@@ -26,18 +26,45 @@ export const normalizeCustomersDue = (raw: any): CustomerDueItem[] => {
     const custId = item.customerId ?? item.id ?? item.partyId ?? `cust_${idx}`;
     const due = Number(item.totalDue ?? item.dueAmount ?? item.due_amount ?? item.due ?? 0);
 
+    const address =
+      item.customerAddress ||
+      item.address ||
+      item.partyAddress ||
+      "";
+
+    let invCount = Number(
+      item.invoiceCount ??
+      item.invoicesCount ??
+      item.totalInvoices ??
+      item.totalInvoice ??
+      item.invoice_count ??
+      item.invoices_count ??
+      item.ordersCount ??
+      item.salesCount ??
+      item.saleCount ??
+      item.billCount ??
+      item.count ??
+      0
+    );
+    if (invCount === 0) {
+      if (Array.isArray(item.invoices)) invCount = item.invoices.length;
+      else if (Array.isArray(item.invoiceList)) invCount = item.invoiceList.length;
+      else if (Array.isArray(item.invoicesDueList)) invCount = item.invoicesDueList.length;
+      else if (Array.isArray(item.details)) invCount = item.details.length;
+    }
+
     return {
       ...item,
       id: custId,
       customerId: custId,
       customerName: item.customerName || item.name || item.partyName || "General Customer",
       customerPhone: item.customerPhone || item.phone || item.mobile || "",
-      customerAddress: item.customerAddress || item.address || "",
+      customerAddress: address,
       totalDue: due,
       total_due: due,
       dueAmount: due,
       due_amount: due,
-      invoiceCount: Number(item.invoiceCount ?? item.invoicesCount ?? item.count ?? 0),
+      invoiceCount: invCount,
       lastSaleDate: item.lastSaleDate || item.salesDate || item.saleDate || null,
     };
   });
