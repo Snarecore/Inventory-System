@@ -83,7 +83,6 @@ export const CreateSaleForm: React.FC = () => {
   // Basic Information
   const [invoiceNo, setInvoiceNo] = useState<string>("");
   const [salesDate, setSalesDate] = useState<string>(() => new Date().toISOString().substring(0, 10));
-  const [poNumber, setPoNumber] = useState<string>("");
 
   // Customer State
   const [selectedCustomer, setSelectedCustomer] = useState<PartyItem | null>(null);
@@ -271,7 +270,6 @@ export const CreateSaleForm: React.FC = () => {
         setSalesDate(String(data.salesDate).substring(0, 10));
       }
       setNotes(data.note || "");
-      setPoNumber(data.poNumber || "");
 
       const disc = data.discount ?? "";
       setDiscountValue(disc !== "" && disc !== null && Number(disc) > 0 ? String(disc) : "");
@@ -974,7 +972,6 @@ export const CreateSaleForm: React.FC = () => {
     setVatAmount("");
     setDeliveryCharge("");
     setNotes("");
-    setPoNumber("");
     resetPayment();
     const bCode = getBusinessCode();
     if (bCode) {
@@ -1062,7 +1059,7 @@ export const CreateSaleForm: React.FC = () => {
 
 
       {/* Grid: Customer & Meta Details */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 bg-white p-2.5 sm:p-3 rounded-xl border border-gray-200 shadow-xs">
+      <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-3 gap-2.5 bg-white p-2.5 sm:p-3 rounded-xl border border-gray-200 shadow-xs">
         {/* Customer Selector */}
         <TradePartySelector
           partyType="customer"
@@ -1106,20 +1103,6 @@ export const CreateSaleForm: React.FC = () => {
             isClearable={false}
             displayFormat="DD MMM, YYYY"
             placeholder="Select sales date"
-          />
-        </div>
-
-        {/* PO / Reference No */}
-        <div>
-          <label className="text-[11px] font-bold text-black  tracking-wider block mb-1">
-            PO Number
-          </label>
-          <input
-            type="text"
-            value={poNumber}
-            onChange={(e) => setPoNumber(e.target.value)}
-            className="w-full h-9 px-2.5 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:border-[var(--color-primary)] font-semibold text-black"
-            placeholder="e.g. PO-89234"
           />
         </div>
       </div>
