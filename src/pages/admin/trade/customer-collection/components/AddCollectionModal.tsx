@@ -404,7 +404,9 @@ export const AddCollectionModal: React.FC<AddCollectionModalProps> = ({
       title="Customer Collection"
       onClose={onClose}
       width="w-full max-w-[700px]"
-      className="!py-2.5 sm:!py-3"
+      className="!pt-2 !pb-2.5 sm:!pt-2 sm:!pb-3"
+      headerClassName="!pb-1"
+      bodyClassName="!mt-1.5"
     >
       <form onSubmit={handleSubmit} className="space-y-1.5">
         {/* Customer Info Strip */}
