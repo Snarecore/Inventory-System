@@ -59,6 +59,7 @@ export interface CollectionDataPayload {
   customerPhone: string;
   collectionDate: string;
   totalAmount: number;
+  totalDiscount?: number;
   paymentMode: "Cash" | "Bank" | "MFS" | "CASH" | "BANK" | string;
   remark?: string;
   osType: "WEB";
@@ -66,6 +67,9 @@ export interface CollectionDataPayload {
   collectionDetails: CollectionDetailPayload[];
   bankDetails?: CollectionBankDetails | null;
   mfsDetails?: CollectionMfsDetails | null;
+  cashAmount?: number;
+  bankAmount?: number;
+  mfsAmount?: number;
   [key: string]: any;
 }
 
@@ -78,8 +82,11 @@ export interface CollectionAllocation {
   invoiceNo: string;
   originalDue: number;
   allocatedAmount: number;
+  allocatedPaid?: number;
+  allocatedDiscount?: number;
   remainingDue: number;
   paidAmount?: number;
+  discountAmount?: number;
   dueAmount?: number;
 }
 
@@ -104,6 +111,7 @@ export interface CollectionReportItem {
   customerPhone?: string;
   collectionDate?: string;
   totalAmount?: number;
+  totalDiscount?: number;
   paymentMode?: string;
   remark?: string;
   collectionDetails?: CollectionReportDetailItem[];

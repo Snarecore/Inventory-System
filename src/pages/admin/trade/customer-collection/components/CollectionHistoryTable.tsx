@@ -124,6 +124,7 @@ export const CollectionHistoryTable: React.FC<CollectionHistoryTableProps> = ({
         Phone: item.customerPhone || "-",
         "Payment Mode": item.paymentMode || "Cash",
         "Total Received (৳)": Number(item.totalAmount || 0),
+        "Total Discount (৳)": Number(item.totalDiscount || 0),
         "Invoices Settled": (item.details || []).map((d: any) => d.invoiceNo).join(", "),
         Remark: item.remark || "-",
       }));
@@ -151,6 +152,7 @@ export const CollectionHistoryTable: React.FC<CollectionHistoryTableProps> = ({
       customerPhone: row.customerPhone || "",
       customerId: row.customerId || "",
       totalAmount: Number(row.totalAmount || 0),
+      totalDiscount: Number(row.totalDiscount || 0),
       paymentMode: isBank ? "Bank" : isMfs ? "MFS" : "Cash",
       bankDetails: isBank
         ? row.bankDetails || (row.bankName ? {
@@ -168,6 +170,7 @@ export const CollectionHistoryTable: React.FC<CollectionHistoryTableProps> = ({
       allocations: (row.details || []).map((d: any) => ({
         invoiceNo: d.invoiceNo || "-",
         paidAmount: Number(d.paidAmount || 0),
+        discountAmount: Number(d.discountAmount || d.discount || 0),
         dueAmount: Number(d.dueAmount || 0),
       })),
     };
@@ -351,8 +354,15 @@ export const CollectionHistoryTable: React.FC<CollectionHistoryTableProps> = ({
                       </td>
 
                       {/* Received Amount */}
-                      <td className="py-2.5 px-3 text-right text-emerald-700 font-semibold text-xs whitespace-nowrap">
-                        ৳ {formatMoney(row.totalAmount)}
+                      <td className="py-2.5 px-3 text-right whitespace-nowrap">
+                        <span className="text-emerald-700 font-semibold text-xs block">
+                          ৳ {formatMoney(row.totalAmount)}
+                        </span>
+                        {Number(row.totalDiscount || 0) > 0 && (
+                          <span className="text-[10px] text-amber-700 font-medium block">
+                            - ৳ {formatMoney(row.totalDiscount || 0)} Disc
+                          </span>
+                        )}
                       </td>
 
                       {/* Bills Count */}

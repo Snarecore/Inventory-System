@@ -56,6 +56,7 @@ export const normalizeCollectionReport = (raw: any): CollectionReportItem[] => {
       collectionDate: item.collectionDate || item.date || "",
       addedDate: item.addedDate || item.createdAt || "",
       totalAmount: Number(item.totalAmount ?? item.amount ?? 0),
+      totalDiscount: Number(item.totalDiscount ?? item.discount ?? 0),
       paymentMode: item.paymentMode || "Cash",
       remark: item.remark || item.notes || "",
       details: details.map((d: any) => ({

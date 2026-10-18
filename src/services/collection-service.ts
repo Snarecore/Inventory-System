@@ -56,9 +56,11 @@ export const sortInvoicesFIFO = (invoices: InvoiceDueItem[]): InvoiceDueItem[] =
  */
 export const allocateCollectionFIFO = (
   invoices: InvoiceDueItem[],
-  enteredAmount: number
+  enteredAmount: number,
+  discountAmount: number = 0
 ): AllocationResult => {
-  let remainingPayment = Math.max(0, Number(enteredAmount) || 0);
+  let remainingPaid = Math.max(0, Number(enteredAmount) || 0);
+  let remainingDiscount = Math.max(0, Number(discountAmount) || 0);
   const allocations: CollectionAllocation[] = [];
 
   // Sort chronologically (oldest invoice first) and filter only invoices with pending due
@@ -70,23 +72,35 @@ export const allocateCollectionFIFO = (
     const itemDue = Number(inv.dueAmount || 0);
     if (itemDue <= 0) continue;
 
-    const paidForThisInvoice = Math.min(itemDue, remainingPayment);
+    // 1. Allocate payment from actual money paid
+    const paidForThisInvoice = Math.min(itemDue, remainingPaid);
     const roundedPaid = Number(paidForThisInvoice.toFixed(2));
-    const roundedRemaining = Number(Math.max(0, itemDue - roundedPaid).toFixed(2));
+    remainingPaid = Math.max(0, Number((remainingPaid - roundedPaid).toFixed(2)));
 
-    if (roundedPaid > 0) {
+    // 2. Allocate discount against any remaining due on this invoice
+    const dueAfterPaid = Math.max(0, Number((itemDue - roundedPaid).toFixed(2)));
+    const discountForThisInvoice = Math.min(dueAfterPaid, remainingDiscount);
+    const roundedDiscount = Number(discountForThisInvoice.toFixed(2));
+    remainingDiscount = Math.max(0, Number((remainingDiscount - roundedDiscount).toFixed(2)));
+
+    const totalSettled = Number((roundedPaid + roundedDiscount).toFixed(2));
+    const roundedRemaining = Number(Math.max(0, itemDue - totalSettled).toFixed(2));
+
+    if (totalSettled > 0) {
       allocations.push({
         invoiceNo: inv.invoiceNo,
         originalDue: itemDue,
-        allocatedAmount: roundedPaid,
+        allocatedAmount: totalSettled,
+        allocatedPaid: roundedPaid,
+        allocatedDiscount: roundedDiscount,
         remainingDue: roundedRemaining,
         paidAmount: roundedPaid,
+        discountAmount: roundedDiscount,
         dueAmount: roundedRemaining,
       });
-      remainingPayment = Math.max(0, remainingPayment - roundedPaid);
     }
 
-    if (remainingPayment <= 0) break;
+    if (remainingPaid <= 0 && remainingDiscount <= 0) break;
   }
 
   const allocatedTotal = Number(
@@ -113,13 +127,14 @@ export const allocateCollectionFIFO = (
 export const allocateCollectionManual = (
   invoices: InvoiceDueItem[],
   enteredAmount: number,
-  selectedInvoiceNos: Set<string>
+  selectedInvoiceNos: Set<string>,
+  discountAmount: number = 0
 ): AllocationResult => {
   const selectedInvoices = invoices.filter(
     (inv) => selectedInvoiceNos.has(inv.invoiceNo) && Number(inv.dueAmount || 0) > 0
   );
 
-  return allocateCollectionFIFO(selectedInvoices, enteredAmount);
+  return allocateCollectionFIFO(selectedInvoices, enteredAmount, discountAmount);
 };
 
 export interface BuildCollectionPayloadParams {
@@ -127,11 +142,16 @@ export interface BuildCollectionPayloadParams {
   customerName: string;
   customerPhone: string;
   collectionDate?: string;
-  paymentMode: "Cash" | "Bank" | "MFS" | "CASH" | "BANK" | string;
+  paymentMode: string;
   remark?: string;
   allocations: CollectionAllocation[];
   selectedBank?: any;
   selectedMfs?: any;
+  totalAmount?: number;
+  totalDiscount?: number;
+  cashAmount?: number;
+  bankAmount?: number;
+  mfsAmount?: number;
 }
 
 /**
@@ -147,6 +167,11 @@ export const buildCollectionPayload = ({
   allocations,
   selectedBank,
   selectedMfs,
+  totalAmount,
+  totalDiscount = 0,
+  cashAmount,
+  bankAmount,
+  mfsAmount,
 }: BuildCollectionPayloadParams): CollectionRequestPayload => {
   const code = getBusinessCode();
   const dateStr = collectionDate || new Date().toISOString().slice(0, 10);
@@ -157,14 +182,20 @@ export const buildCollectionPayload = ({
   const detailsPayload: CollectionDetailPayload[] = allocations.map((a) => ({
     invoiceNo: a.invoiceNo,
     paidAmount: a.allocatedAmount,
+    discountAmount: a.allocatedDiscount || 0,
+    discount: a.allocatedDiscount || 0,
     dueAmount: a.remainingDue,
     businessCode: code,
   }));
 
-  const isBank = String(paymentMode).toUpperCase() === "BANK";
-  const isMfs = String(paymentMode).toUpperCase() === "MFS";
+  const numCash = cashAmount != null ? Number(cashAmount) : 0;
+  const numBank = bankAmount != null ? Number(bankAmount) : 0;
+  const numMfs = mfsAmount != null ? Number(mfsAmount) : 0;
 
-  const bankDetailsPayload: CollectionBankDetails | null = isBank && selectedBank
+  const hasBank = numBank > 0 || String(paymentMode).toUpperCase().includes("BANK");
+  const hasMfs = numMfs > 0 || String(paymentMode).toUpperCase().includes("MFS");
+
+  const bankDetailsPayload: CollectionBankDetails | null = hasBank && selectedBank
     ? {
         bankId: selectedBank.bankId ?? selectedBank.id ?? "",
         bankName: selectedBank.bankName || selectedBank.name || "",
@@ -173,7 +204,7 @@ export const buildCollectionPayload = ({
       }
     : null;
 
-  const mfsDetailsPayload: CollectionMfsDetails | null = isMfs && selectedMfs
+  const mfsDetailsPayload: CollectionMfsDetails | null = hasMfs && selectedMfs
     ? {
         mfsId: selectedMfs.id ?? selectedMfs.mfsId ?? "",
         mfsName: selectedMfs.mfsName || selectedMfs.name || "MFS",
@@ -181,22 +212,58 @@ export const buildCollectionPayload = ({
       }
     : null;
 
+  const numDiscount = Number(totalDiscount) || 0;
+  const numTotalAmount =
+    totalAmount != null
+      ? Number(totalAmount)
+      : Math.max(0, Number((totalAllocated - numDiscount).toFixed(2)));
+
+  // Backend Spring Boot controller strictly validates that paymentMode is one of: "Cash", "Bank", or "MFS"
+  let backendPaymentMode = "Cash";
+  const normalizedMode = String(paymentMode || "").trim().toUpperCase();
+
+  if (normalizedMode === "BANK" || normalizedMode === "CARD") {
+    backendPaymentMode = "Bank";
+  } else if (normalizedMode === "MFS") {
+    backendPaymentMode = "MFS";
+  } else if (normalizedMode === "CASH") {
+    backendPaymentMode = "Cash";
+  } else {
+    // Multi-tender split payment (e.g. "Cash + Bank + MFS", "Bank + MFS", etc.)
+    if (numCash > 0) {
+      backendPaymentMode = "Cash";
+    } else if (numBank > 0) {
+      backendPaymentMode = "Bank";
+    } else if (numMfs > 0) {
+      backendPaymentMode = "MFS";
+    } else {
+      backendPaymentMode = "Cash";
+    }
+  }
+
   const collectionData: CollectionDataPayload = {
     customerId,
     customerName,
     customerPhone: customerPhone ? String(customerPhone).trim() : "",
     collectionDate: dateStr,
-    totalAmount: totalAllocated,
-    paymentMode: isBank ? "Bank" : isMfs ? "MFS" : "Cash",
+    totalAmount: numTotalAmount,
+    totalDiscount: numDiscount,
+    paymentMode: backendPaymentMode,
     remark: remark.trim(),
     osType: "WEB",
     businessCode: code,
     collectionDetails: detailsPayload,
     bankDetails: bankDetailsPayload,
     mfsDetails: mfsDetailsPayload,
-    mfsId: isMfs ? (selectedMfs?.id ?? selectedMfs?.mfsId ?? null) : null,
-    mfsName: isMfs ? (selectedMfs?.mfsName || selectedMfs?.name || null) : null,
-    mfsPhone: isMfs ? (selectedMfs?.mfsPhone || selectedMfs?.phone || selectedMfs?.mobileNo || null) : null,
+    mfsId: hasMfs ? (selectedMfs?.id ?? selectedMfs?.mfsId ?? null) : null,
+    mfsName: hasMfs ? (selectedMfs?.mfsName || selectedMfs?.name || null) : null,
+    mfsPhone: hasMfs ? (selectedMfs?.mfsPhone || selectedMfs?.phone || selectedMfs?.mobileNo || null) : null,
+    cashReceived: numCash,
+    cardReceived: numBank,
+    mfsReceived: numMfs,
+    cashAmount: numCash,
+    bankAmount: numBank,
+    mfsAmount: numMfs,
   };
 
   return {
@@ -248,6 +315,9 @@ export interface PostCollectionLedgerParams {
   selectedMfs?: any;
   notes?: string;
   date?: string;
+  cashAmount?: number;
+  bankAmount?: number;
+  mfsAmount?: number;
 }
 
 /**
@@ -264,13 +334,28 @@ export const postCollectionLedger = async ({
   selectedMfs,
   notes = "",
   date,
+  cashAmount,
+  bankAmount,
+  mfsAmount,
 }: PostCollectionLedgerParams): Promise<{ ok: boolean; msg: string }> => {
-  const isBank = String(paymentMode).toUpperCase() === "BANK";
-  const isMfs = String(paymentMode).toUpperCase() === "MFS";
-  const tender: TradeTender = {
-    amount: Number(totalCollected.toFixed(2)),
-    leg: isBank ? bankLeg(selectedBank) : isMfs ? mfsLeg(selectedMfs) : cashLeg(),
-  };
+  const tenders: TradeTender[] = [];
+
+  const numCash = cashAmount != null ? Number(cashAmount) : 0;
+  const numBank = bankAmount != null ? Number(bankAmount) : 0;
+  const numMfs = mfsAmount != null ? Number(mfsAmount) : 0;
+
+  if (numCash > 0 || numBank > 0 || numMfs > 0) {
+    if (numCash > 0) tenders.push({ amount: numCash, leg: cashLeg() });
+    if (numBank > 0) tenders.push({ amount: numBank, leg: bankLeg(selectedBank) });
+    if (numMfs > 0) tenders.push({ amount: numMfs, leg: mfsLeg(selectedMfs) });
+  } else {
+    const isBank = String(paymentMode).toUpperCase().includes("BANK");
+    const isMfs = String(paymentMode).toUpperCase().includes("MFS");
+    tenders.push({
+      amount: Number(totalCollected.toFixed(2)),
+      leg: isBank ? bankLeg(selectedBank) : isMfs ? mfsLeg(selectedMfs) : cashLeg(),
+    });
+  }
 
   const stamp = Date.now();
   const txnRef = `COL-${stamp}`;
@@ -278,7 +363,7 @@ export const postCollectionLedger = async ({
   try {
     const res = await postTradeFinancialEntries({
       tradeType: "INCOME",
-      tenders: [tender],
+      tenders,
       invoiceNo: txnRef,
       refNo: txnRef,
       partyId: customerPhone || String(customerId),

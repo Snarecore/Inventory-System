@@ -43,8 +43,11 @@ export const AddCollectionModal: React.FC<AddCollectionModalProps> = ({
   const { registeredBankAccounts, registeredMfsAccounts, isLoading: isAccountsLoading } = useFinancialAccounts();
   const collectionMutation = useCollectionMutation();
 
-  // Form States
-  const [amountInput, setAmountInput] = useState<string>("");
+  // Form States (Multi-Tender State Memory for Cash, Bank, and MFS)
+  const [cashAmountInput, setCashAmountInput] = useState<string>("");
+  const [bankAmountInput, setBankAmountInput] = useState<string>("");
+  const [mfsAmountInput, setMfsAmountInput] = useState<string>("");
+  const [discountInput, setDiscountInput] = useState<string>("");
   const [paymentMode, setPaymentMode] = useState<"Cash" | "Bank" | "MFS">("Cash");
   const [selectedBankId, setSelectedBankId] = useState<string>("");
   const [selectedMfsId, setSelectedMfsId] = useState<string>("");
@@ -72,7 +75,10 @@ export const AddCollectionModal: React.FC<AddCollectionModalProps> = ({
   // Sync state on open
   useEffect(() => {
     if (isOpen && customer) {
-      setAmountInput(String(customer.totalDue || ""));
+      setCashAmountInput(String(customer.totalDue || ""));
+      setBankAmountInput("");
+      setMfsAmountInput("");
+      setDiscountInput("");
       setPaymentMode("Cash");
       setSelectedBankId("");
       setSelectedMfsId("");
@@ -99,23 +105,48 @@ export const AddCollectionModal: React.FC<AddCollectionModalProps> = ({
     }
   }, [registeredMfsAccounts, selectedMfsId]);
 
-  const numericAmount = Math.max(0, parseFloat(amountInput) || 0);
+  const selectedBankObj = useMemo(() => {
+    return registeredBankAccounts.find(
+      (b) => String(b.id || b.bankId) === String(selectedBankId)
+    ) || null;
+  }, [registeredBankAccounts, selectedBankId]);
 
-  const { allocations, allocatedTotal, remainingDue } = useMemo(() => {
+  const selectedMfsObj = useMemo(() => {
+    return registeredMfsAccounts.find(
+      (m) => String(m.id || m.mfsId) === String(selectedMfsId)
+    ) || null;
+  }, [registeredMfsAccounts, selectedMfsId]);
+
+  const numericCash = Math.max(0, parseFloat(cashAmountInput) || 0);
+  const numericBank = Math.max(0, parseFloat(bankAmountInput) || 0);
+  const numericMfs = Math.max(0, parseFloat(mfsAmountInput) || 0);
+  const numericTotalPaid = Number((numericCash + numericBank + numericMfs).toFixed(2));
+  const numericDiscount = Math.max(0, parseFloat(discountInput) || 0);
+  const totalSettleAmount = Number((numericTotalPaid + numericDiscount).toFixed(2));
+
+  // Current active mode's amount value bound to the single Amount input
+  const currentAmountValue =
+    paymentMode === "Cash"
+      ? cashAmountInput
+      : paymentMode === "Bank"
+      ? bankAmountInput
+      : mfsAmountInput;
+
+  const { allocations, allocatedTotal, remainingTotalDue } = useMemo(() => {
     if (invoices.length === 0) {
       return {
         allocations: [],
-        allocatedTotal: Math.min(numericAmount, customerTotalDue),
-        remainingDue: Math.max(0, customerTotalDue - numericAmount),
+        allocatedTotal: Math.min(totalSettleAmount, customerTotalDue),
+        remainingTotalDue: Math.max(0, Number((customerTotalDue - totalSettleAmount).toFixed(2))),
       };
     }
 
     if (isManualMode && selectedInvoiceNos.size > 0) {
-      return allocateCollectionManual(invoices, selectedInvoiceNos, numericAmount);
+      return allocateCollectionManual(invoices, numericTotalPaid, selectedInvoiceNos, numericDiscount);
     }
 
-    return allocateCollectionFIFO(invoices, numericAmount);
-  }, [invoices, numericAmount, customerTotalDue, isManualMode, selectedInvoiceNos]);
+    return allocateCollectionFIFO(invoices, numericTotalPaid, numericDiscount);
+  }, [invoices, numericTotalPaid, numericDiscount, totalSettleAmount, customerTotalDue, isManualMode, selectedInvoiceNos]);
 
   const handleToggleInvoice = (invNo: string) => {
     setSelectedInvoiceNos((prev) => {
@@ -152,48 +183,115 @@ export const AddCollectionModal: React.FC<AddCollectionModalProps> = ({
     });
   };
 
-  // Strictly prevent typing or pasting an amount higher than the effective due amount
+  const handlePaymentModeChange = (newMode: "Cash" | "Bank" | "MFS") => {
+    setPaymentMode(newMode);
+  };
+
+  // Strictly prevent typing or pasting an amount higher than the effective due minus discount and other tenders
   const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    let rawValue = e.target.value;
+    if (rawValue === "") {
+      if (paymentMode === "Cash") setCashAmountInput("");
+      else if (paymentMode === "Bank") setBankAmountInput("");
+      else setMfsAmountInput("");
+      return;
+    }
+    // If field was "0" and user typed a digit (e.g. "05"), strip leading zeros unless decimal "0."
+    if (rawValue.length > 1 && rawValue.startsWith("0") && !rawValue.startsWith("0.")) {
+      rawValue = rawValue.replace(/^0+/, "") || "0";
+    }
+    const val = parseFloat(rawValue);
+    if (isNaN(val)) {
+      if (paymentMode === "Cash") setCashAmountInput("");
+      else if (paymentMode === "Bank") setBankAmountInput("");
+      else setMfsAmountInput("");
+      return;
+    }
+    if (val < 0) {
+      if (paymentMode === "Cash") setCashAmountInput("0");
+      else if (paymentMode === "Bank") setBankAmountInput("0");
+      else setMfsAmountInput("0");
+      return;
+    }
+
+    const otherPaid =
+      paymentMode === "Cash"
+        ? numericBank + numericMfs
+        : paymentMode === "Bank"
+        ? numericCash + numericMfs
+        : numericCash + numericBank;
+
+    const maxAllowed = Math.max(
+      0,
+      Number((effectiveMaxDue - numericDiscount - otherPaid).toFixed(2))
+    );
+
+    if (effectiveMaxDue >= 0 && val > maxAllowed) {
+      const clamped = String(maxAllowed);
+      if (paymentMode === "Cash") setCashAmountInput(clamped);
+      else if (paymentMode === "Bank") setBankAmountInput(clamped);
+      else setMfsAmountInput(clamped);
+      return;
+    }
+
+    if (paymentMode === "Cash") setCashAmountInput(rawValue);
+    else if (paymentMode === "Bank") setBankAmountInput(rawValue);
+    else setMfsAmountInput(rawValue);
+  };
+
+  // Dedicated discount handler (key: totalDiscount)
+  // If discount + total paid exceeds total due, auto-clamps discount
+  const handleDiscountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const rawValue = e.target.value;
     if (rawValue === "") {
-      setAmountInput("");
+      setDiscountInput("");
       return;
     }
     const val = parseFloat(rawValue);
     if (isNaN(val)) {
-      setAmountInput("");
+      setDiscountInput("");
       return;
     }
     if (val < 0) {
-      setAmountInput("0");
+      setDiscountInput("0");
       return;
     }
     if (effectiveMaxDue >= 0 && val > effectiveMaxDue) {
-      setAmountInput(String(effectiveMaxDue));
+      setDiscountInput(String(effectiveMaxDue));
+      setCashAmountInput("");
+      setBankAmountInput("");
+      setMfsAmountInput("");
       return;
     }
-    setAmountInput(rawValue);
+    if (numericTotalPaid + val > effectiveMaxDue) {
+      const maxDiscount = Math.max(0, Number((effectiveMaxDue - numericTotalPaid).toFixed(2)));
+      setDiscountInput(String(maxDiscount));
+      return;
+    }
+    setDiscountInput(rawValue);
   };
 
-  // Auto-clamp entered amount if user switches selection mode or unchecks invoices
+  // Auto-clamp entered amounts and discount if customer selection or invoices change
   useEffect(() => {
-    if (amountInput !== "") {
-      const val = parseFloat(amountInput);
-      if (!isNaN(val) && effectiveMaxDue >= 0 && val > effectiveMaxDue) {
-        setAmountInput(effectiveMaxDue > 0 ? String(effectiveMaxDue) : "0");
-      }
+    if (effectiveMaxDue >= 0 && totalSettleAmount > effectiveMaxDue) {
+      const disc = Math.min(effectiveMaxDue, numericDiscount);
+      let remainingForPay = Math.max(0, Number((effectiveMaxDue - disc).toFixed(2)));
+
+      setDiscountInput(disc > 0 ? String(disc) : "");
+
+      const newCash = Math.min(numericCash, remainingForPay);
+      remainingForPay = Math.max(0, Number((remainingForPay - newCash).toFixed(2)));
+
+      const newBank = Math.min(numericBank, remainingForPay);
+      remainingForPay = Math.max(0, Number((remainingForPay - newBank).toFixed(2)));
+
+      const newMfs = Math.min(numericMfs, remainingForPay);
+
+      setCashAmountInput(newCash > 0 ? String(newCash) : "");
+      setBankAmountInput(newBank > 0 ? String(newBank) : "");
+      setMfsAmountInput(newMfs > 0 ? String(newMfs) : "");
     }
   }, [effectiveMaxDue]);
-
-  const handleQuickPercent = (pct: number) => {
-    const target = effectiveMaxDue > 0 ? effectiveMaxDue : customerTotalDue;
-    if (pct === 1) {
-      setAmountInput(String(target));
-    } else {
-      const calculated = Number((target * pct).toFixed(2));
-      setAmountInput(String(Math.min(target, calculated)));
-    }
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -203,8 +301,8 @@ export const AddCollectionModal: React.FC<AddCollectionModalProps> = ({
       return;
     }
 
-    if (numericAmount <= 0) {
-      showErrorToast("Please enter a valid amount greater than 0");
+    if (numericTotalPaid <= 0 && numericDiscount <= 0) {
+      showErrorToast("Please enter a valid amount or discount greater than 0");
       return;
     }
 
@@ -213,34 +311,28 @@ export const AddCollectionModal: React.FC<AddCollectionModalProps> = ({
       return;
     }
 
-    if (numericAmount > effectiveMaxDue && effectiveMaxDue > 0) {
+    if (totalSettleAmount > effectiveMaxDue && effectiveMaxDue > 0) {
       showErrorToast(
-        `Collection amount cannot exceed due of ৳ ${formatMoney(effectiveMaxDue)}`
+        `Total payment + discount cannot exceed due of ৳ ${formatMoney(effectiveMaxDue)}`
       );
       return;
     }
 
-    let selectedBankObj = null;
-    if (paymentMode === "Bank") {
-      if (!selectedBankId) {
-        showErrorToast("Please select a bank account");
-        return;
-      }
-      selectedBankObj = registeredBankAccounts.find(
-        (b) => String(b.id || b.bankId) === String(selectedBankId)
-      );
+    if (numericBank > 0 && !selectedBankId) {
+      showErrorToast("Please select a bank account for the bank payment");
+      return;
     }
 
-    let selectedMfsObj = null;
-    if (paymentMode === "MFS") {
-      if (!selectedMfsId) {
-        showErrorToast("Please select an MFS account");
-        return;
-      }
-      selectedMfsObj = registeredMfsAccounts.find(
-        (m) => String(m.id || m.mfsId) === String(selectedMfsId)
-      );
+    if (numericMfs > 0 && !selectedMfsId) {
+      showErrorToast("Please select an MFS account for the MFS payment");
+      return;
     }
+
+    const activeModes: string[] = [];
+    if (numericCash > 0) activeModes.push("Cash");
+    if (numericBank > 0) activeModes.push("Bank");
+    if (numericMfs > 0) activeModes.push("MFS");
+    const finalPaymentMode = activeModes.join(" + ") || paymentMode;
 
     try {
       const result = await collectionMutation.mutateAsync({
@@ -248,13 +340,17 @@ export const AddCollectionModal: React.FC<AddCollectionModalProps> = ({
         customerName: customer.customerName,
         customerPhone: customer.customerPhone,
         collectionDate,
-        paymentMode,
+        paymentMode: finalPaymentMode,
         remark,
         allocations,
         selectedBank: selectedBankObj,
         selectedMfs: selectedMfsObj,
-        totalCollected: allocatedTotal || numericAmount,
-        remainingTotalDue: remainingDue,
+        totalCollected: numericTotalPaid,
+        totalDiscount: numericDiscount,
+        remainingTotalDue,
+        cashAmount: numericCash,
+        bankAmount: numericBank,
+        mfsAmount: numericMfs,
       });
 
       if (result.success) {
@@ -264,8 +360,12 @@ export const AddCollectionModal: React.FC<AddCollectionModalProps> = ({
           customerName: customer.customerName,
           customerPhone: customer.customerPhone,
           customerId: customer.customerId,
-          totalAmount: allocatedTotal || numericAmount,
-          paymentMode,
+          totalAmount: numericTotalPaid,
+          totalDiscount: numericDiscount,
+          paymentMode: finalPaymentMode,
+          cashAmount: numericCash,
+          bankAmount: numericBank,
+          mfsAmount: numericMfs,
           bankDetails: selectedBankObj
             ? {
                 bankName: selectedBankObj.bankName,
@@ -282,8 +382,9 @@ export const AddCollectionModal: React.FC<AddCollectionModalProps> = ({
           remark: remark.trim(),
           allocations: allocations.map((a) => ({
             invoiceNo: a.invoiceNo,
-            paidAmount: a.allocatedAmount ?? a.paidAmount,
-            dueAmount: a.remainingDue ?? a.dueAmount,
+            paidAmount: a.allocatedPaid ?? a.allocatedAmount ?? a.paidAmount ?? 0,
+            discountAmount: a.allocatedDiscount ?? 0,
+            dueAmount: a.remainingDue ?? a.dueAmount ?? 0,
           })),
         };
 
@@ -300,13 +401,14 @@ export const AddCollectionModal: React.FC<AddCollectionModalProps> = ({
   return (
     <Modal
       isOpen={isOpen}
-      title="Customer Collection (বকেয়া আদায়)"
+      title="Customer Collection"
       onClose={onClose}
-      width="w-full max-w-2xl"
+      width="w-full max-w-[700px]"
+      className="!py-2.5 sm:!py-3"
     >
-      <form onSubmit={handleSubmit} className="space-y-2">
+      <form onSubmit={handleSubmit} className="space-y-1.5">
         {/* Customer Info Strip */}
-        <div className="flex items-center justify-between gap-2.5 py-1.5 px-2.5 bg-gray-50 border border-gray-200 rounded-lg text-xs whitespace-nowrap">
+        <div className="flex items-center justify-between gap-2.5 py-1 px-2.5 bg-gray-50 border border-gray-200 rounded-lg text-xs whitespace-nowrap">
           {/* Customer Name & Phone */}
           <div className="flex items-center gap-1.5 min-w-0">
             <span className="font-bold text-black truncate">{customer.customerName}</span>
@@ -319,75 +421,82 @@ export const AddCollectionModal: React.FC<AddCollectionModalProps> = ({
 
           {/* Total Due */}
           <div className="flex items-center gap-1.5 shrink-0">
-            <span className="text-gray-500 text-[11px] font-medium uppercase">Total Due:</span>
+            <span className="text-gray-500 text-[11px] font-medium">Total Due:</span>
             <span className="text-sm font-bold text-rose-600 font-mono">
               ৳ {formatMoney(effectiveMaxDue)}
             </span>
           </div>
         </div>
 
-        {/* Collection Amount, Payment Method & Date in ONE line */}
-        <div className="space-y-1.5">
-          <div className="grid grid-cols-1 sm:grid-cols-12 gap-2 sm:gap-2.5 items-end">
-            {/* Collection Amount (Smaller box) */}
-            <div className="sm:col-span-4">
-              <div className="flex items-center justify-between mb-0.5">
-                <label className="text-xs font-bold text-black whitespace-nowrap">
-                  Amount (৳) <span className="text-red-500">*</span>
-                </label>
-                <div className="flex items-center gap-1 shrink-0">
-                  <button
-                    type="button"
-                    onClick={() => handleQuickPercent(1)}
-                    className="px-1.5 py-0.2 rounded text-[10px] font-semibold bg-gray-100 hover:bg-gray-200 text-black cursor-pointer"
-                    title="100% of Due"
-                  >
-                    100%
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleQuickPercent(0.5)}
-                    className="px-1.5 py-0.2 rounded text-[10px] font-semibold bg-gray-100 hover:bg-gray-200 text-black cursor-pointer"
-                    title="50% of Due"
-                  >
-                    50%
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleQuickPercent(0.25)}
-                    className="px-1.5 py-0.2 rounded text-[10px] font-semibold bg-gray-100 hover:bg-gray-200 text-black cursor-pointer"
-                    title="25% of Due"
-                  >
-                    25%
-                  </button>
-                </div>
-              </div>
+        {/* Collection Amount, Discount, Payment Method & Date in ONE line */}
+        <div className="space-y-1">
+          <div className="grid grid-cols-1 sm:grid-cols-[1.1fr_1.1fr_1.7fr_1.1fr] gap-1.5 sm:gap-2 items-end">
+            {/* Collection Amount */}
+            <div>
+              <label className="text-xs font-bold text-black whitespace-nowrap block mb-0.5">
+                Amount (৳) <span className="text-red-500">*</span>
+              </label>
               <input
                 type="number"
                 min="0"
+                max={Math.max(
+                  0,
+                  Number(
+                    (
+                      effectiveMaxDue -
+                      numericDiscount -
+                      (paymentMode === "Cash"
+                        ? numericBank + numericMfs
+                        : paymentMode === "Bank"
+                        ? numericCash + numericMfs
+                        : numericCash + numericBank)
+                    ).toFixed(2)
+                  )
+                )}
+                step="0.01"
+                value={currentAmountValue}
+                onChange={handleAmountChange}
+                onWheel={(e) => e.currentTarget.blur()}
+                onFocus={(e) => e.target.select()}
+                placeholder="0.00"
+                className="w-full h-8 px-2 text-xs bg-white border border-gray-200 rounded-lg text-black font-bold focus:outline-none focus:ring-1 focus:ring-[var(--primary-color)] focus:border-[var(--primary-color)] [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                required={numericDiscount <= 0 && numericTotalPaid <= 0}
+              />
+            </div>
+
+            {/* Total Discount (key: totalDiscount) */}
+            <div>
+              <label className="text-xs font-bold text-black whitespace-nowrap block mb-0.5" title="Discount / ছাড়">
+                Discount (৳)
+              </label>
+              <input
+                type="number"
+                name="totalDiscount"
+                min="0"
                 max={effectiveMaxDue > 0 ? effectiveMaxDue : 0}
                 step="0.01"
-                value={amountInput}
-                onChange={handleAmountChange}
+                value={discountInput}
+                onChange={handleDiscountChange}
+                onWheel={(e) => e.currentTarget.blur()}
+                onFocus={(e) => e.target.select()}
                 placeholder="0.00"
-                className="w-full h-8 px-2.5 text-xs bg-white border border-gray-200 rounded-lg text-black font-bold focus:outline-none focus:ring-1 focus:ring-[var(--primary-color)] focus:border-[var(--primary-color)]"
-                required
+                className="w-full h-8 px-2 text-xs bg-white border border-gray-200 rounded-lg text-black font-bold focus:outline-none focus:ring-1 focus:ring-amber-500 focus:border-amber-500 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
               />
             </div>
 
             {/* Payment Mode (Cash, Bank, MFS) */}
-            <div className="sm:col-span-5">
-              <label className="text-xs font-bold text-black block mb-0.5">
+            <div>
+              <label className="text-xs font-bold text-black whitespace-nowrap block mb-0.5">
                 Payment Mode <span className="text-red-500">*</span>
               </label>
               <div className="grid grid-cols-3 gap-1 h-8">
                 {/* 1. Cash */}
                 <button
                   type="button"
-                  onClick={() => setPaymentMode("Cash")}
-                  className={`h-full px-2 rounded-lg border font-semibold text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                  onClick={() => handlePaymentModeChange("Cash")}
+                  className={`h-8 py-0 px-2 rounded-lg border font-semibold text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer box-border leading-none whitespace-nowrap shrink-0 ${
                     paymentMode === "Cash"
-                      ? "border-emerald-500 bg-emerald-50 text-emerald-900 ring-1 ring-emerald-500 shadow-2xs font-bold"
+                      ? "border-emerald-500 bg-emerald-50 text-emerald-900 font-bold shadow-xs"
                       : "border-gray-200 bg-gray-50/70 hover:bg-white text-gray-700 hover:border-gray-300"
                   }`}
                 >
@@ -401,10 +510,10 @@ export const AddCollectionModal: React.FC<AddCollectionModalProps> = ({
                 {/* 2. Bank */}
                 <button
                   type="button"
-                  onClick={() => setPaymentMode("Bank")}
-                  className={`h-full px-2 rounded-lg border font-semibold text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                  onClick={() => handlePaymentModeChange("Bank")}
+                  className={`h-8 py-0 px-2 rounded-lg border font-semibold text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer box-border leading-none whitespace-nowrap shrink-0 ${
                     paymentMode === "Bank"
-                      ? "border-sky-500 bg-sky-50 text-sky-900 ring-1 ring-sky-500 shadow-2xs font-bold"
+                      ? "border-sky-500 bg-sky-50 text-sky-900 font-bold shadow-xs"
                       : "border-gray-200 bg-gray-50/70 hover:bg-white text-gray-700 hover:border-gray-300"
                   }`}
                 >
@@ -418,10 +527,10 @@ export const AddCollectionModal: React.FC<AddCollectionModalProps> = ({
                 {/* 3. MFS */}
                 <button
                   type="button"
-                  onClick={() => setPaymentMode("MFS")}
-                  className={`h-full px-2 rounded-lg border font-semibold text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                  onClick={() => handlePaymentModeChange("MFS")}
+                  className={`h-8 py-0 px-2 rounded-lg border font-semibold text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer box-border leading-none whitespace-nowrap shrink-0 ${
                     paymentMode === "MFS"
-                      ? "border-purple-500 bg-purple-50 text-purple-900 ring-1 ring-purple-500 shadow-2xs font-bold"
+                      ? "border-purple-500 bg-purple-50 text-purple-900 font-bold shadow-xs"
                       : "border-gray-200 bg-gray-50/70 hover:bg-white text-gray-700 hover:border-gray-300"
                   }`}
                 >
@@ -435,7 +544,7 @@ export const AddCollectionModal: React.FC<AddCollectionModalProps> = ({
             </div>
 
             {/* Date Picker (Placed beside Payment Method) */}
-            <div className="sm:col-span-3">
+            <div>
               <label className="text-xs font-bold text-black block mb-0.5">
                 Date <span className="text-red-500">*</span>
               </label>
@@ -452,67 +561,78 @@ export const AddCollectionModal: React.FC<AddCollectionModalProps> = ({
             </div>
           </div>
 
-          {/* Dynamic Bank Account Selector (if Bank mode selected) */}
-          {paymentMode === "Bank" && (
-            <div className="px-2.5 py-1 rounded-md border border-sky-200 bg-sky-50/50 flex items-center gap-2">
-              <label className="text-[11px] font-semibold text-sky-950 flex items-center gap-1.5 whitespace-nowrap shrink-0">
-                <FaCreditCard size={11} className="text-sky-600" />
-                Select Bank Account <span className="text-red-500">*</span>:
-              </label>
-              <div className="relative flex-1">
-                <select
-                  value={selectedBankId}
-                  onChange={(e) => setSelectedBankId(e.target.value)}
-                  disabled={isAccountsLoading}
-                  className="w-full h-7 px-2 pr-7 text-xs bg-white border border-sky-300 rounded text-black focus:outline-none focus:ring-1 focus:ring-sky-500 focus:border-sky-500 appearance-none cursor-pointer"
-                  required
-                >
-                  {registeredBankAccounts.length === 0 ? (
-                    <option value="">No bank accounts registered</option>
-                  ) : (
-                    registeredBankAccounts.map((b) => (
-                      <option key={String(b.id || b.bankId)} value={String(b.id || b.bankId)}>
-                        {b.bankName} - {b.accountNo} ({b.bankAccountName || "Main"})
-                      </option>
-                    ))
-                  )}
-                </select>
-                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-1.5 text-sky-600">
-                  <RiArrowDropDownLine className="text-lg" />
+          {/* Dynamic Bank / MFS Account Selectors */}
+          {(paymentMode === "Bank" || numericBank > 0 || paymentMode === "MFS" || numericMfs > 0) && (
+            <div
+              className={
+                (paymentMode === "Bank" || numericBank > 0) && (paymentMode === "MFS" || numericMfs > 0)
+                  ? "grid grid-cols-1 sm:grid-cols-2 gap-1.5"
+                  : "space-y-1.5"
+              }
+            >
+              {/* Bank Account Selector */}
+              {(paymentMode === "Bank" || numericBank > 0) && (
+                <div className="px-2.5 py-1 rounded-md border border-sky-200 bg-sky-50/50 flex items-center gap-2">
+                  <label className="text-[11px] font-semibold text-sky-950 flex items-center gap-1.5 whitespace-nowrap shrink-0">
+                    <FaCreditCard size={11} className="text-sky-600" />
+                    Select Bank Account <span className="text-red-500">*</span>:
+                  </label>
+                  <div className="relative flex-1">
+                    <select
+                      value={selectedBankId}
+                      onChange={(e) => setSelectedBankId(e.target.value)}
+                      disabled={isAccountsLoading}
+                      className="w-full h-7 px-2 pr-7 text-xs bg-white border border-sky-300 rounded text-black focus:outline-none focus:ring-1 focus:ring-sky-500 focus:border-sky-500 appearance-none cursor-pointer"
+                      required={numericBank > 0}
+                    >
+                      {registeredBankAccounts.length === 0 ? (
+                        <option value="">No bank accounts registered</option>
+                      ) : (
+                        registeredBankAccounts.map((b) => (
+                          <option key={String(b.id || b.bankId)} value={String(b.id || b.bankId)}>
+                            {b.bankName} - {b.accountNo} ({b.bankAccountName || "Main"})
+                          </option>
+                        ))
+                      )}
+                    </select>
+                    <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-1.5 text-sky-600">
+                      <RiArrowDropDownLine className="text-lg" />
+                    </div>
+                  </div>
                 </div>
-              </div>
-            </div>
-          )}
+              )}
 
-          {/* Dynamic MFS Account Selector (if MFS mode selected) */}
-          {paymentMode === "MFS" && (
-            <div className="px-2.5 py-1 rounded-md border border-purple-200 bg-purple-50/50 flex items-center gap-2">
-              <label className="text-[11px] font-semibold text-purple-950 flex items-center gap-1.5 whitespace-nowrap shrink-0">
-                <FaMobileAlt size={11} className="text-purple-600" />
-                Select MFS Account <span className="text-red-500">*</span>:
-              </label>
-              <div className="relative flex-1">
-                <select
-                  value={selectedMfsId}
-                  onChange={(e) => setSelectedMfsId(e.target.value)}
-                  disabled={isAccountsLoading}
-                  className="w-full h-7 px-2 pr-7 text-xs bg-white border border-purple-300 rounded text-black focus:outline-none focus:ring-1 focus:ring-purple-500 focus:border-purple-500 appearance-none cursor-pointer"
-                  required
-                >
-                  {registeredMfsAccounts.length === 0 ? (
-                    <option value="">No MFS accounts registered</option>
-                  ) : (
-                    registeredMfsAccounts.map((m) => (
-                      <option key={String(m.id || m.mfsId)} value={String(m.id || m.mfsId)}>
-                        {m.mfsName} {m.mfsPhone ? `- ${m.mfsPhone}` : ""}
-                      </option>
-                    ))
-                  )}
-                </select>
-                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-1.5 text-purple-600">
-                  <RiArrowDropDownLine className="text-lg" />
+              {/* MFS Account Selector */}
+              {(paymentMode === "MFS" || numericMfs > 0) && (
+                <div className="px-2.5 py-1 rounded-md border border-purple-200 bg-purple-50/50 flex items-center gap-2">
+                  <label className="text-[11px] font-semibold text-purple-950 flex items-center gap-1.5 whitespace-nowrap shrink-0">
+                    <FaMobileAlt size={11} className="text-purple-600" />
+                    Select MFS Account <span className="text-red-500">*</span>:
+                  </label>
+                  <div className="relative flex-1">
+                    <select
+                      value={selectedMfsId}
+                      onChange={(e) => setSelectedMfsId(e.target.value)}
+                      disabled={isAccountsLoading}
+                      className="w-full h-7 px-2 pr-7 text-xs bg-white border border-purple-300 rounded text-black focus:outline-none focus:ring-1 focus:ring-purple-500 focus:border-purple-500 appearance-none cursor-pointer"
+                      required={numericMfs > 0}
+                    >
+                      {registeredMfsAccounts.length === 0 ? (
+                        <option value="">No MFS accounts registered</option>
+                      ) : (
+                        registeredMfsAccounts.map((m) => (
+                          <option key={String(m.id || m.mfsId)} value={String(m.id || m.mfsId)}>
+                            {m.mfsName} {m.mfsPhone ? `- ${m.mfsPhone}` : ""}
+                          </option>
+                        ))
+                      )}
+                    </select>
+                    <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-1.5 text-purple-600">
+                      <RiArrowDropDownLine className="text-lg" />
+                    </div>
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
           )}
         </div>
@@ -528,50 +648,62 @@ export const AddCollectionModal: React.FC<AddCollectionModalProps> = ({
           allocations={allocations}
           isManualMode={isManualMode}
           onToggleManualMode={handleToggleManualMode}
+          tenderBreakdown={{
+            cash: numericCash,
+            bank: numericBank,
+            mfs: numericMfs,
+            bankName: selectedBankObj?.bankName,
+            mfsName: selectedMfsObj?.mfsName,
+          }}
         />
 
-        {/* Remark */}
-        <div>
-          <label className="text-xs font-bold text-black block mb-1">
-            Remark / Notes
-          </label>
-          <input
-            type="text"
-            value={remark}
-            onChange={(e) => setRemark(e.target.value)}
-            placeholder="e.g. Paid in cash, cheque reference..."
-            className="w-full h-9 px-2.5 text-xs bg-white border border-gray-200 rounded-lg text-black font-semibold placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-[var(--primary-color)] focus:border-[var(--primary-color)]"
-          />
-        </div>
+        {/* Remark & Action Buttons in One Row */}
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-end gap-2 pt-1 border-t border-gray-100">
+          {/* Remark Input */}
+          <div className="flex-1 min-w-0">
+            <label className="text-xs font-bold text-black block mb-0.5">
+              Remark / Notes
+            </label>
+            <input
+              type="text"
+              value={remark}
+              onChange={(e) => setRemark(e.target.value)}
+              placeholder="e.g. Paid in cash, cheque reference..."
+              className="w-full h-8 px-2.5 text-xs bg-white border border-gray-200 rounded-lg text-black font-semibold placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-[var(--primary-color)] focus:border-[var(--primary-color)]"
+            />
+          </div>
 
-        {/* Action Buttons Matching PartyModal */}
-        <div className="flex justify-end items-center gap-2 mt-1 pt-2.5 border-t border-gray-100">
-          <Button
-            label="Cancel"
-            onClick={onClose}
-            type="button"
-            disabled={collectionMutation.isPending}
-            color="#6b7280"
-            hoverColor="#4b5563"
-            buttonClass="!text-xs !py-1.5 !px-3.5"
-          />
-          <Button
-            label={
-              collectionMutation.isPending
-                ? "Saving..."
-                : `Confirm Collection (৳ ${formatMoney(numericAmount)})`
-            }
-            type="submit"
-            disabled={
-              collectionMutation.isPending ||
-              numericAmount <= 0 ||
-              (effectiveMaxDue >= 0 && numericAmount > effectiveMaxDue)
-            }
-            isLoading={collectionMutation.isPending}
-            color="var(--primary-color)"
-            hoverColor="var(--primary-color-hover)"
-            buttonClass="!text-xs !py-1.5 !px-4 font-bold"
-          />
+          {/* Action Buttons Matching PartyModal */}
+          <div className="flex items-center gap-2 shrink-0">
+            <Button
+              label="Cancel"
+              onClick={onClose}
+              type="button"
+              disabled={collectionMutation.isPending}
+              color="#6b7280"
+              hoverColor="#4b5563"
+              buttonClass="!text-xs !py-0 !px-3.5 h-8 font-semibold whitespace-nowrap"
+            />
+            <Button
+              label={
+                collectionMutation.isPending
+                  ? "Saving..."
+                  : numericDiscount > 0
+                  ? `Confirm Collection (৳ ${formatMoney(numericTotalPaid)} + ৳ ${formatMoney(numericDiscount)} Disc)`
+                  : `Confirm Collection (৳ ${formatMoney(numericTotalPaid)})`
+              }
+              type="submit"
+              disabled={
+                collectionMutation.isPending ||
+                (numericTotalPaid <= 0 && numericDiscount <= 0) ||
+                (effectiveMaxDue >= 0 && totalSettleAmount > effectiveMaxDue)
+              }
+              isLoading={collectionMutation.isPending}
+              color="var(--primary-color)"
+              hoverColor="var(--primary-color-hover)"
+              buttonClass="!text-xs !py-0 !px-4 h-8 font-bold whitespace-nowrap"
+            />
+          </div>
         </div>
       </form>
     </Modal>

@@ -12,6 +12,7 @@ export interface CollectionReceiptData {
   customerPhone: string;
   customerId: string | number;
   totalAmount: number;
+  totalDiscount?: number;
   paymentMode: string;
   bankDetails?: {
     bankName?: string;
@@ -23,9 +24,13 @@ export interface CollectionReceiptData {
     mfsPhone?: string;
   } | null;
   remark?: string;
+  cashAmount?: number;
+  bankAmount?: number;
+  mfsAmount?: number;
   allocations: {
     invoiceNo: string;
     paidAmount: number;
+    discountAmount?: number;
     dueAmount: number;
   }[];
   businessName?: string;
@@ -122,7 +127,7 @@ export const CollectionReceiptModal: React.FC<CollectionReceiptModalProps> = ({
         </div>
 
         {/* Bank Detail row if applicable */}
-        {receiptData.paymentMode === "Bank" && receiptData.bankDetails && (
+        {receiptData.bankDetails && (
           <div className="p-2 rounded bg-sky-50/50 border border-sky-100 text-xs flex justify-between">
             <span className="text-gray-600">Bank Account:</span>
             <span className="font-semibold text-black font-mono">
@@ -132,7 +137,7 @@ export const CollectionReceiptModal: React.FC<CollectionReceiptModalProps> = ({
         )}
 
         {/* MFS Detail row if applicable */}
-        {receiptData.paymentMode === "MFS" && receiptData.mfsDetails && (
+        {receiptData.mfsDetails && (
           <div className="p-2 rounded bg-purple-50/60 border border-purple-200 text-xs flex justify-between">
             <span className="text-gray-600">MFS Wallet:</span>
             <span className="font-semibold text-purple-900 font-mono">
@@ -142,14 +147,42 @@ export const CollectionReceiptModal: React.FC<CollectionReceiptModalProps> = ({
           </div>
         )}
 
+        {/* Tender Breakdown if multiple methods used */}
+        {((Number(receiptData.cashAmount || 0) > 0 ? 1 : 0) +
+          (Number(receiptData.bankAmount || 0) > 0 ? 1 : 0) +
+          (Number(receiptData.mfsAmount || 0) > 0 ? 1 : 0)) > 1 && (
+          <div className="flex flex-wrap items-center gap-3 px-2 py-1.5 bg-gray-50 border border-gray-200 rounded text-xs text-gray-700">
+            <span className="font-semibold text-black">Payment Split:</span>
+            {Number(receiptData.cashAmount || 0) > 0 && (
+              <span>Cash: <strong className="text-emerald-700">৳ {formatMoney(receiptData.cashAmount || 0)}</strong></span>
+            )}
+            {Number(receiptData.bankAmount || 0) > 0 && (
+              <span>Bank: <strong className="text-sky-700">৳ {formatMoney(receiptData.bankAmount || 0)}</strong></span>
+            )}
+            {Number(receiptData.mfsAmount || 0) > 0 && (
+              <span>MFS: <strong className="text-purple-700">৳ {formatMoney(receiptData.mfsAmount || 0)}</strong></span>
+            )}
+          </div>
+        )}
+
         {/* Total Amount Received Strip */}
-        <div className="p-2.5 bg-emerald-50 border border-emerald-200 rounded-lg flex items-center justify-between">
-          <span className="font-semibold text-emerald-900 text-xs uppercase">
-            Total Received:
-          </span>
-          <span className="text-base font-bold text-emerald-700 font-mono">
-            ৳ {formatMoney(receiptData.totalAmount)}
-          </span>
+        <div className="p-2.5 bg-emerald-50 border border-emerald-200 rounded-lg space-y-1">
+          <div className="flex items-center justify-between">
+            <span className="font-semibold text-emerald-900 text-xs uppercase">
+              Total Received:
+            </span>
+            <span className="text-base font-bold text-emerald-700 font-mono">
+              ৳ {formatMoney(receiptData.totalAmount)}
+            </span>
+          </div>
+          {Number(receiptData.totalDiscount || 0) > 0 && (
+            <div className="flex items-center justify-between text-xs pt-1 border-t border-emerald-200/60">
+              <span className="text-gray-600 font-medium">Discount (ছাড়):</span>
+              <span className="font-bold text-amber-700 font-mono">
+                ৳ {formatMoney(receiptData.totalDiscount || 0)}
+              </span>
+            </div>
+          )}
         </div>
 
         {/* Invoices Breakdown Table */}
@@ -160,23 +193,38 @@ export const CollectionReceiptModal: React.FC<CollectionReceiptModalProps> = ({
                 <tr>
                   <th className="py-2 px-2.5">Invoice No</th>
                   <th className="py-2 px-2.5 text-right">Amount Paid (৳)</th>
+                  {receiptData.allocations.some((a) => Number(a.discountAmount || 0) > 0) && (
+                    <th className="py-2 px-2.5 text-right">Discount (৳)</th>
+                  )}
                   <th className="py-2 px-2.5 text-right">Remaining Due (৳)</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100 font-mono">
-                {receiptData.allocations.map((a) => (
-                  <tr key={a.invoiceNo} className="hover:bg-sky-50/20">
-                    <td className="py-1.5 px-2.5 text-black font-medium">
-                      {a.invoiceNo}
-                    </td>
-                    <td className="py-1.5 px-2.5 text-right font-semibold text-emerald-700">
-                      {formatMoney(a.paidAmount)}
-                    </td>
-                    <td className="py-1.5 px-2.5 text-right text-gray-600">
-                      {formatMoney(a.dueAmount)}
-                    </td>
-                  </tr>
-                ))}
+                {receiptData.allocations.map((a) => {
+                  const hasDiscountCol = receiptData.allocations.some(
+                    (item) => Number(item.discountAmount || 0) > 0
+                  );
+                  return (
+                    <tr key={a.invoiceNo} className="hover:bg-sky-50/20">
+                      <td className="py-1.5 px-2.5 text-black font-medium">
+                        {a.invoiceNo}
+                      </td>
+                      <td className="py-1.5 px-2.5 text-right font-semibold text-emerald-700">
+                        {formatMoney(a.paidAmount)}
+                      </td>
+                      {hasDiscountCol && (
+                        <td className="py-1.5 px-2.5 text-right font-semibold text-amber-700">
+                          {Number(a.discountAmount || 0) > 0
+                            ? formatMoney(a.discountAmount || 0)
+                            : "-"}
+                        </td>
+                      )}
+                      <td className="py-1.5 px-2.5 text-right text-gray-600">
+                        {formatMoney(a.dueAmount)}
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>

@@ -30,7 +30,11 @@ export interface SubmitCollectionParams {
   selectedBank?: any;
   selectedMfs?: any;
   totalCollected: number;
+  totalDiscount?: number;
   remainingTotalDue: number;
+  cashAmount?: number;
+  bankAmount?: number;
+  mfsAmount?: number;
 }
 
 export interface CollectionMutationResult {
@@ -63,7 +67,11 @@ export const useCollectionMutation = () => {
         selectedBank,
         selectedMfs,
         totalCollected,
+        totalDiscount = 0,
         remainingTotalDue,
+        cashAmount,
+        bankAmount,
+        mfsAmount,
       } = params;
 
       // 1. Build strict API payload
@@ -77,6 +85,11 @@ export const useCollectionMutation = () => {
         allocations,
         selectedBank,
         selectedMfs,
+        totalAmount: totalCollected,
+        totalDiscount,
+        cashAmount,
+        bankAmount,
+        mfsAmount,
       });
 
       // 2. Submit collection to backend
@@ -100,6 +113,9 @@ export const useCollectionMutation = () => {
           selectedMfs,
           notes: remark,
           date: collectionDate,
+          cashAmount,
+          bankAmount,
+          mfsAmount,
         });
 
         ledgerOk = ledgerRes.ok;
@@ -117,7 +133,7 @@ export const useCollectionMutation = () => {
       };
     },
     onSuccess: (data, variables) => {
-      const { customerId, totalCollected } = variables;
+      const { customerId, totalCollected, totalDiscount = 0 } = variables;
 
       // Invalidate relevant caches immediately so UI is 100% synchronized
       queryClient.invalidateQueries({ queryKey: [customersDueQueryKey] });
@@ -130,13 +146,15 @@ export const useCollectionMutation = () => {
       queryClient.invalidateQueries({ queryKey: [dashboardQueryKey], refetchType: "none" });
       queryClient.invalidateQueries({ queryKey: [partyListQueryKey], refetchType: "none" });
 
+      const discText = totalDiscount > 0 ? ` (Discount: ৳${formatMoney(totalDiscount)})` : "";
+
       if (data.ledgerOk) {
         showSuccessToast(
-          `Collection of ৳${formatMoney(totalCollected)} recorded successfully!`
+          `Collection of ৳${formatMoney(totalCollected)}${discText} recorded successfully!`
         );
       } else {
         showSuccessToast(
-          `Collection recorded! (Balance ledger update is syncing in background)`
+          `Collection recorded!${discText} (Balance ledger update is syncing in background)`
         );
       }
     },

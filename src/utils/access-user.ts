@@ -32,7 +32,7 @@ export function withBranchScope<T extends Record<string, unknown>>(data: T): T &
     const access = buildAccessUser();
     return {
         ...data,
-        orgId: data.orgId !== undefined ? data.orgId : access.orgId,
-        branchId: data.branchId !== undefined ? data.branchId : access.branchId,
+        orgId: (data as any).orgId !== undefined ? (data as any).orgId : access.orgId,
+        branchId: (data as any).branchId !== undefined ? (data as any).branchId : access.branchId,
     };
 }

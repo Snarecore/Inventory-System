@@ -1,7 +1,7 @@
 import apiConfig from "@/config/api.json";
 import { postData } from "@/services/api-service";
 import { buildAccessUser } from "@/utils/access-user";
-import type { BankAccountItem, MfsUserItem } from "@/types";
+import type { BankAccountItem, MfsAccountItem } from "@/hooks/useFinancialAccounts";
 
 export type FinancialTransactionType = "INCOME" | "EXPENSE" | "TRANSFER";
 export type FinancialAccountType = "CASH" | "BANK" | "MFS";
@@ -88,7 +88,7 @@ export const bankLeg = (bank: BankAccountItem | any): TenderLeg => ({
 /**
  * MFS (bKash / Nagad / Rocket) leg builder
  */
-export const mfsLeg = (wallet: MfsUserItem | any): TenderLeg => {
+export const mfsLeg = (wallet: MfsAccountItem | any): TenderLeg => {
   const method = wallet?.mfsName || wallet?.method || "MFS";
   const holder = wallet?.mfsPhone || wallet?.mobileNo || wallet?.holder || "";
   const nameLabel = [method, holder].filter(Boolean).join(" - ") || "MFS";
