@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { BsThreeDotsVertical } from "react-icons/bs";
 import { GiHamburgerMenu } from "react-icons/gi";
-import { IoClose } from "react-icons/io5";
+import { IoClose, IoChevronDown } from "react-icons/io5";
 import { menu } from "@/navigation/sidebar";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { RiArrowDropDownLine, RiArrowDropRightLine } from "react-icons/ri";
@@ -24,7 +24,7 @@ const MenuItem = ({
     className?: string;
     onClick?: () => void;
 }) => (
-    <div className={`flex items-center gap-3 p-2 hover:bg-[var(--color-primary-light)] cursor-pointer ${className}`} onClick={onClick}>
+    <div className={`flex items-center gap-2 px-2 py-1.5 rounded cursor-pointer transition-colors ${className}`} onClick={onClick}>
         {icon}
         <span>{text}</span>
     </div>
@@ -90,16 +90,16 @@ const Header = ({ sidebarClick }: { sidebarClick: boolean }) => {
             ? "lg:left-20"
             : "lg:left-56"
             }`}>
-            <div className="flex lg:hidden items-center justify-between px-4 h-16 bg-white border-b border-gray-200 transition-all ease-in-out duration-300">
+            <div className="flex lg:hidden items-center justify-between px-4 h-12 bg-white border-b border-gray-200 transition-all ease-in-out duration-300">
                 {showSidebarMenu ? (
                     <IoClose
-                        size={26}
+                        size={24}
                         className="text-[var(--color-primary)] cursor-pointer"
                         onClick={() => setShowSidebarMenu(false)}
                     />
                 ) : (
                     <GiHamburgerMenu
-                        size={22}
+                        size={20}
                         className="text-[var(--color-primary)] cursor-pointer"
                         onClick={() => setShowSidebarMenu(true)}
                     />
@@ -110,7 +110,7 @@ const Header = ({ sidebarClick }: { sidebarClick: boolean }) => {
                         <img
                             src={logoImg}
                             alt="Cash Boi"
-                            className="h-8 w-auto max-w-[150px] object-contain"
+                            className="h-7 w-auto max-w-[140px] object-contain"
                         />
                     </Link>
                 </div>
@@ -124,39 +124,41 @@ const Header = ({ sidebarClick }: { sidebarClick: boolean }) => {
 
                     {showMenuDropdown && (
                         <MotionDiv>
-                            <div className="absolute top-6 right-0 w-48 bg-white shadow-xl rounded-lg border border-gray-100 z-50 dropdown-menu p-2">
-                                <div className="flex items-center gap-1 bg-gray-100 border-b border-gray-100 p-2 rounded-md mb-2">
+                            <div className="absolute top-7 right-0 w-44 bg-white shadow-lg rounded-md border border-gray-200 z-50 dropdown-menu p-1">
+                                <div className="flex items-center gap-2 bg-gray-50 border border-gray-100 p-1.5 rounded mb-1">
                                     <img
                                         src="/avatar.png"
                                         alt="user"
-                                        className="w-[45px] h-[45px] rounded-full border border-gray-200"
+                                        className="w-6 h-6 rounded object-cover shrink-0"
                                     />
-                                    <div>
-                                        <p className="text-[15px] font-semibold text-gray-800 truncate max-w-[140px]">
+                                    <div className="flex items-center gap-1.5 min-w-0">
+                                        <span className="text-xs font-semibold text-gray-800 truncate">
                                             {displayName}
-                                        </p>
-                                        <p className="text-[12px] text-gray-500 capitalize">
+                                        </span>
+                                        <span className="text-[9px] font-bold text-[#0369a1] bg-[#e0f2fe] border border-[#38bdf8] uppercase tracking-wider px-1.5 py-0.5 rounded leading-none shrink-0">
                                             {displayRole}
-                                        </p>
+                                        </span>
                                     </div>
                                 </div>
-                                <div className="border-b border-gray-300 pb-2 mb-2">
+                                <div className="space-y-0.5">
                                     <MenuItem
-                                        icon={<FaUserCircle size={15} />}
+                                        icon={<FaUserCircle size={13} className="text-gray-500" />}
                                         text="My Profile"
-                                        className="text-[13px] text-gray-700 font-medium rounded-md hover:text-[var(--color-primary)]"
+                                        className="text-xs text-gray-700 font-medium hover:bg-gray-100"
                                     />
                                     <MenuItem
-                                        icon={<FaCog size={15} />}
+                                        icon={<FaCog size={13} className="text-gray-500" />}
                                         text="Settings"
-                                        className="text-[13px] text-gray-700 font-medium rounded-md hover:text-[var(--color-primary)]"
+                                        className="text-xs text-gray-700 font-medium hover:bg-gray-100"
                                     />
                                 </div>
 
+                                <div className="my-1 border-t border-gray-100" />
+
                                 <MenuItem
-                                    icon={<FaSignOutAlt size={15} />}
+                                    icon={<FaSignOutAlt size={13} />}
                                     text="Logout"
-                                    className="text-red-500 text-[13px] font-medium rounded-md hover:bg-[var(--color-primary)]"
+                                    className="text-red-500 text-xs font-medium hover:bg-red-50"
                                     onClick={handleLogout}
                                 />
                             </div>
@@ -166,7 +168,7 @@ const Header = ({ sidebarClick }: { sidebarClick: boolean }) => {
 
                 {showSidebarMenu && (
                     <div
-                        className={`fixed top-16 left-0 w-full h-[calc(100vh-64px)] border-t border-gray-200 overflow-auto bg-white shadow-lg transform transition-all duration-300 ease-in-out ${showSidebarMenu ? "translate-x-0 opacity-100" : "-translate-x-full opacity-0"
+                        className={`fixed top-12 left-0 w-full h-[calc(100vh-48px)] border-t border-gray-200 overflow-auto bg-white shadow-lg transform transition-all duration-300 ease-in-out ${showSidebarMenu ? "translate-x-0 opacity-100" : "-translate-x-full opacity-0"
                             }`}
                     >
                         <div className="p-4">
@@ -288,22 +290,27 @@ const Header = ({ sidebarClick }: { sidebarClick: boolean }) => {
                 <div className="" onClick={() => {}}></div>
             )}
 
-            <div className="hidden lg:flex justify-end items-center px-4 h-16 bg-white border-b border-gray-200">
-                <div className="flex gap-4 items-center">
+            <div className="hidden lg:flex justify-end items-center px-4 h-12 bg-white border-b border-gray-200">
+                <div className="relative">
                     <div
                         ref={userImageRef}
-                        className="hidden lg:flex items-center gap-2 cursor-pointer hover:bg-gray-50 p-2 rounded-lg transition-colors relative"
+                        className="hidden lg:flex items-center gap-2 cursor-pointer bg-gray-100 border border-gray-200 px-2.5 py-1 rounded-md select-none"
                         onClick={() => setShowUserDropdown(!showUserDropdown)}>
-                        <MotionDiv className="flex item-center gap-1">
+                        <MotionDiv className="flex items-center gap-2">
                             <img
                                 src="/avatar.png"
                                 alt="user"
-                                className="w-[40px] h-[40px] rounded-lg"
+                                className="w-7 h-7 rounded object-cover"
                             />
-                            <div>
-                                <p className="text-[15px] font-semibold text-gray-800">{displayName}</p>
-                                <p className="text-[12px] text-gray-500 capitalize">{displayRole}</p>
-                            </div>
+                            <span className="text-sm font-medium text-gray-800">
+                                {displayName}
+                            </span>
+                            <IoChevronDown
+                                size={14}
+                                className={`text-gray-600 transition-transform duration-200 ${
+                                    showUserDropdown ? "rotate-180" : ""
+                                }`}
+                            />
                         </MotionDiv>
                     </div>
 
@@ -311,42 +318,48 @@ const Header = ({ sidebarClick }: { sidebarClick: boolean }) => {
                         ref={dropdownRef}
                         aria-hidden={!showUserDropdown}
                         className={[
-                            "absolute top-16 right-4 bg-white shadow-xl rounded-xl border border-gray-100 p-2",
-                            "origin-top-right transition-all duration-300 ease-out transform",
+                            "absolute top-[calc(100%+4px)] right-0 w-44 bg-white shadow-lg rounded-md border border-gray-200 p-1 z-50",
+                            "origin-top-right transition-all duration-200 ease-out transform",
                             showUserDropdown
                                 ? "opacity-100 translate-y-0 scale-100"
-                                : "opacity-0 translate-y-4 scale-95 pointer-events-none",
+                                : "opacity-0 translate-y-1 scale-95 pointer-events-none",
                         ].join(" ")}
                     >
-                        <div className="flex items-center gap-1 bg-gray-100 border-b border-gray-100 p-2 rounded-md mb-2">
+                        <div className="flex items-center gap-2 bg-gray-50 border border-gray-100 p-1.5 rounded mb-1">
                             <img
                                 src="/avatar.png"
                                 alt="user"
-                                className="w-[45px] h-[45px] rounded-full border border-gray-200"
+                                className="w-6 h-6 rounded object-cover shrink-0"
                             />
-                            <div>
-                                <p className="text-[15px] font-semibold text-gray-800 truncate max-w-[150px]">{displayName}</p>
-                                <p className="text-[12px] text-gray-500 capitalize">{displayRole}</p>
+                            <div className="flex items-center gap-1.5 min-w-0">
+                                <span className="text-xs font-semibold text-gray-800 truncate">
+                                    {displayName}
+                                </span>
+                                <span className="text-[9px] font-bold text-[#0369a1] bg-[#e0f2fe] border border-[#38bdf8] uppercase tracking-wider px-1.5 py-0.5 rounded leading-none shrink-0">
+                                    {displayRole}
+                                </span>
                             </div>
                         </div>
 
-                        <div className="border-b border-gray-300 pb-2 mb-2">
+                        <div className="space-y-0.5">
                             <MenuItem
-                                icon={<FaUserCircle size={15} />}
+                                icon={<FaUserCircle size={13} className="text-gray-500" />}
                                 text="My Profile"
-                                className="text-[13px] text-gray-700 font-medium rounded-md hover:text-[var(--color-primary)]"
+                                className="text-xs text-gray-700 font-medium hover:bg-gray-100"
                             />
                             <MenuItem
-                                icon={<FaCog size={15} />}
+                                icon={<FaCog size={13} className="text-gray-500" />}
                                 text="Settings"
-                                className="text-[13px] text-gray-700 font-medium rounded-md hover:text-[var(--color-primary)]"
+                                className="text-xs text-gray-700 font-medium hover:bg-gray-100"
                             />
                         </div>
 
+                        <div className="my-1 border-t border-gray-100" />
+
                         <MenuItem
-                            icon={<FaSignOutAlt size={15} />}
+                            icon={<FaSignOutAlt size={13} />}
                             text="Logout"
-                            className="text-red-500 text-[13px] font-medium rounded-md hover:bg-[var(--color-primary)]"
+                            className="text-red-500 text-xs font-medium hover:bg-red-50"
                             onClick={handleLogout}
                         />
                     </div>

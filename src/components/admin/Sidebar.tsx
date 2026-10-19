@@ -63,19 +63,19 @@ const Sidebar = ({ sidebarClick }: SidebarProps) => {
         sidebarClick ? "w-20" : "w-56"
       }`}
     >
-      <div className={`h-16 flex items-center border-b border-gray-200 shrink-0 ${sidebarClick ? "justify-center px-2" : "justify-start px-3.5"}`}>
+      <div className={`h-12 flex items-center border-b border-gray-200 shrink-0 ${sidebarClick ? "justify-center px-2" : "justify-start px-3.5"}`}>
         <Link to={"/admin"} className="flex items-center">
           {sidebarClick ? (
             <img
               src={logoImg}
               alt="Cash Boi"
-              className="h-8 w-8 object-contain rounded-md"
+              className="h-7 w-7 object-contain rounded-md"
             />
           ) : (
             <img
               src={logoImg}
               alt="Cash Boi"
-              className="h-8 w-auto max-w-[155px] object-contain"
+              className="h-7 w-auto max-w-[145px] object-contain"
             />
           )}
         </Link>
