@@ -46,6 +46,7 @@ const PurchaseReturn = React.lazy(() => import('@/pages/admin/trade/purchase-ret
 const PurchaseReturnPurchases = React.lazy(() => import('@/pages/admin/trade/purchase-return/PurchaseReturnPurchasesPage'))
 const CreatePurchaseReturn = React.lazy(() => import('@/pages/admin/trade/purchase-return/CreatePurchaseReturnPage'))
 const CustomerCollection = React.lazy(() => import('@/pages/admin/trade/customer-collection'))
+const SupplierPayment = React.lazy(() => import('@/pages/admin/trade/supplier-payment'))
 
 
 const LoadingFallback = () => (
@@ -149,6 +150,22 @@ export const router = createBrowserRouter([
   {
     path: '/purchases/returns',
     element: <Navigate to="/admin/purchase-return" replace />,
+  },
+  {
+    path: '/purchase/payments',
+    element: <Navigate to="/admin/supplier-payment" replace />,
+  },
+  {
+    path: '/purchases/payments',
+    element: <Navigate to="/admin/supplier-payment" replace />,
+  },
+  {
+    path: '/supplier-payment',
+    element: <Navigate to="/admin/supplier-payment" replace />,
+  },
+  {
+    path: '/payment',
+    element: <Navigate to="/admin/supplier-payment" replace />,
   },
 
   {
@@ -290,6 +307,14 @@ export const router = createBrowserRouter([
       {
         path: 'collection',
         element: <Navigate to="/admin/customer-collection" replace />,
+      },
+      {
+        path: 'supplier-payment',
+        element: withSuspense(SupplierPayment),
+      },
+      {
+        path: 'payment',
+        element: <Navigate to="/admin/supplier-payment" replace />,
       },
 
       {

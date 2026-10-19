@@ -75,7 +75,7 @@ const Sidebar = ({ sidebarClick }: SidebarProps) => {
             <img
               src={logoImg}
               alt="Cash Boi"
-              className="h-7 w-auto max-w-[145px] object-contain"
+              className="h-7 w-auto max-w-36 object-contain"
             />
           )}
         </Link>

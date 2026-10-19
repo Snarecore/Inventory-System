@@ -51,3 +51,7 @@ export const customersDueQueryKey = "customers-due";
 export const customerInvoicesDueQueryKey = "customer-invoices-due";
 export const insertCollectionQueryKey = "insert-collection";
 export const collectionReportQueryKey = "get-collection-report";
+export const purchasesDueQueryKey = "purchases-due";
+export const purchasesInvoicesDueQueryKey = "purchases-invoices-due";
+export const insertPaymentQueryKey = "insert-payment";
+export const paymentReportQueryKey = "get-payment-report";

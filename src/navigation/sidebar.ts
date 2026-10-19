@@ -104,6 +104,7 @@ export const menu = [
 				subItems: [
 					{ id: 26, name: "Purchase List", path: "/admin/purchases", permissionKey: "purchase.list.view" },
 					{ id: 27, name: "Create Purchase", path: "/admin/create-purchase", permissionKey: "purchase.create.view" },
+					{ id: 395, name: "Supplier Payment", path: "/admin/supplier-payment", permissionKey: "purchase.payment.view" },
 				],
 			},
 

@@ -110,5 +110,11 @@
         "customerInvoicesDueUrl": "customer-invoices-due",
         "insertCollectionUrl": "insert-collection",
         "collectionReportUrl": "get-collection-report"
+    },
+    "payment": {
+        "purchasesDueUrl": "purchases-due",
+        "purchasesInvoicesDueUrl": "purchases-invoices-due",
+        "insertPaymentUrl": "insert-payment",
+        "paymentReportUrl": "get-payment-report"
     }
 }
