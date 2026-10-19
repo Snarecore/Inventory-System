@@ -15,6 +15,7 @@ import apiConfig from "@/config/api.json";
 import { productListQueryKey, productQueryKey, insertProductQueryKey } from "@/config/query-key";
 import { buildAccessUser, withBranchScope } from "@/utils/access-user";
 import type { ProductItem } from "@/types";
+import { getProductStockDisplay } from "@/utils/product-unit";
 
 interface ProductTableProps {
     products: ProductItem[];
@@ -359,6 +360,7 @@ export const ProductTable = ({
                                         const active = isActive(product);
                                         const rowNumber = (currentPageNumber - 1) * dataLimit + (index + 1);
                                         const prodId = String(product.id || product.pcode || index);
+                                        const stockInfo = getProductStockDisplay(product);
 
                                         return (
                                             <tr
@@ -400,9 +402,12 @@ export const ProductTable = ({
                                                 {/* Stock & Unit */}
                                                 {isColVisible("stock") && (
                                                     <td className="py-2.5 px-3 text-center">
-                                                        <div className="inline-flex items-center justify-center gap-1.5">
+                                                        <div
+                                                            className="inline-flex items-center justify-center gap-1.5"
+                                                            title={stockInfo.hasSecondaryUnit ? `Primary: ${stockInfo.primaryStockText}` : undefined}
+                                                        >
                                                             <span className="font-normal text-xs text-black">
-                                                                {qty} {getUnit(product)}
+                                                                {stockInfo.displayStock}
                                                             </span>
                                                             {isLowStock && (
                                                                 <span className="inline-flex items-center text-[10px] font-semibold text-amber-800 bg-amber-100 border border-amber-300 px-1.5 py-0.5 rounded-md">
@@ -584,8 +589,13 @@ export const ProductTable = ({
                                 <div className="px-3 py-2 bg-gray-50 rounded-lg border border-gray-200">
                                     <span className="text-xs text-black block mb-0.5">Available Stock</span>
                                     <span className="text-sm font-semibold text-black">
-                                        {getQuantity(selectedProduct)} {getUnit(selectedProduct)}
+                                        {getProductStockDisplay(selectedProduct).displayStock}
                                     </span>
+                                    {getProductStockDisplay(selectedProduct).hasSecondaryUnit && (
+                                        <span className="text-[10px] text-gray-500 block mt-0.5">
+                                            ({getProductStockDisplay(selectedProduct).primaryStockText})
+                                        </span>
+                                    )}
                                 </div>
                                 <div className="px-3 py-2 bg-gray-50 rounded-lg border border-gray-200">
                                     <span className="text-xs text-black block mb-0.5">Low Stock Alert</span>
@@ -703,7 +713,7 @@ export const ProductTable = ({
                     title="Delete Product"
                     message={
                         getQuantity(productToDelete) > 0
-                            ? `Are you sure you want to delete "${getName(productToDelete)}"? Currently it has ${getQuantity(productToDelete)} ${getUnit(productToDelete)} in stock. Deleting will inactivate and remove it from your inventory.`
+                            ? `Are you sure you want to delete "${getName(productToDelete)}"? Currently it has ${getProductStockDisplay(productToDelete).displayStock} in stock. Deleting will inactivate and remove it from your inventory.`
                             : `Are you sure you want to delete "${getName(productToDelete)}"? This will inactivate and remove it from your inventory.`
                     }
                     onClose={closeDeleteModal}

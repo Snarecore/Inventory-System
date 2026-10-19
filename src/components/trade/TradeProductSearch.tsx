@@ -148,7 +148,7 @@ export const TradeProductSearch: React.FC<TradeProductSearchProps> = ({
               );
               const prodName = p.name || "Product";
               const prodCode = p.pcode || "N/A";
-              const prodUnit = p.unit || "pcs";
+              const prodUnit = (p as any).secondary_unit || (p as any).secondaryUnit || p.unit || "pcs";
               const priceFieldName =
                 mode === "purchase" ? "buyPrice" : "sellPrice";
 

@@ -700,7 +700,7 @@ const CreateProductForm = () => {
                             {/* Row 2, Col 4: Quantity */}
                             <div>
                                 <InputField
-                                    label="Quantity"
+                                    label={activePricingUnit ? `Quantity (${activePricingUnit})` : "Quantity"}
                                     type={isDecimalAllowed ? "number" : "text"}
                                     name="quantity"
                                     value={fieldValues.quantity}

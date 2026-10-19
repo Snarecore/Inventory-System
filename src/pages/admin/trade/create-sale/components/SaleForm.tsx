@@ -214,7 +214,7 @@ export const CreateSaleForm: React.FC = () => {
         buyPrice: Number(p.buyPrice ?? 0),
         sellPrice: Number(p.sellPrice ?? 0),
         quantity: Number(p.quantity ?? 0),
-        unit: p.unit || "pcs",
+        unit: p.secondary_unit || p.secondaryUnit || p.unit || "pcs",
       }));
   }, [rawProductData]);
 
@@ -440,7 +440,7 @@ export const CreateSaleForm: React.FC = () => {
             productId: pId,
             productCode: pCode,
             productName: pName,
-            unit: item.unit || "pcs",
+            unit: item.unit || (matchedProd as any)?.secondary_unit || (matchedProd as any)?.secondaryUnit || matchedProd?.unit || "pcs",
             sellPrice: String(p),
             buyPrice: Number(item.buyPrice || 0),
             quantity: String(q),
@@ -546,7 +546,7 @@ export const CreateSaleForm: React.FC = () => {
       const pId = String(p.id ?? "");
       const pCode = p.pcode || "";
       const pName = p.name || "Product";
-      const unit = p.unit || "pcs";
+      const unit = (p as any).secondary_unit || (p as any).secondaryUnit || p.unit || "pcs";
       const sellPrice = Number(p.sellPrice ?? 0);
       const buyPrice = Number(p.buyPrice ?? 0);
       const stock = Number(p.quantity ?? 0);
@@ -596,7 +596,7 @@ export const CreateSaleForm: React.FC = () => {
       const pId = String(p.id ?? "");
       const pCode = p.pcode || "";
       const pName = p.name || "Product";
-      const unit = p.unit || "pcs";
+      const unit = (p as any).secondary_unit || (p as any).secondaryUnit || p.unit || "pcs";
       const sellPrice = Number(p.sellPrice ?? 0);
       const buyPrice = Number(p.buyPrice ?? 0);
       const stock = Number(p.quantity ?? 0);

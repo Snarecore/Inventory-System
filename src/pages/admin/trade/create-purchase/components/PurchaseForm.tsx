@@ -209,7 +209,7 @@ const CreatePurchaseForm: React.FC = () => {
         buyPrice: Number(p.buyPrice ?? 0),
         sellPrice: Number(p.sellPrice ?? 0),
         quantity: Number(p.quantity ?? 0),
-        unit: p.unit || "pcs",
+        unit: p.secondary_unit || p.secondaryUnit || p.unit || "pcs",
       }));
   }, [rawProductData]);
 
@@ -493,7 +493,7 @@ const CreatePurchaseForm: React.FC = () => {
             productId: pId || (matchedProd?.id ? String(matchedProd.id) : ""),
             productCode: pCode || matchedProd?.pcode || "",
             productName: pName !== "Product" ? pName : (matchedProd?.name || "Product"),
-            unit: item.unit || matchedProd?.unit || "pcs",
+            unit: item.unit || (matchedProd as any)?.secondary_unit || (matchedProd as any)?.secondaryUnit || matchedProd?.unit || "pcs",
             buyPrice: String(buyP),
             quantity: String(q),
             vat: v ? String(v) : "",
@@ -573,7 +573,7 @@ const CreatePurchaseForm: React.FC = () => {
         );
       } else {
         const prodName = product.name || "Product";
-        const prodUnit = product.unit || "pcs";
+        const prodUnit = (product as any).secondary_unit || (product as any).secondaryUnit || product.unit || "pcs";
         const buyPrice = Number(product.buyPrice ?? 0);
         const currentStock = Number(product.quantity ?? 0);
 

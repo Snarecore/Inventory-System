@@ -9,6 +9,7 @@ import { buildAccessUser } from "@/utils/access-user";
 import { postData } from "@/services/api-service";
 import TableSkeleton from "@/components/skeleton/TableSkeleton";
 import type { ProductItem } from "@/types";
+import { getProductStockDisplay } from "@/utils/product-unit";
 
 const ProductDetails = () => {
     const { id } = useParams();
@@ -84,6 +85,7 @@ const ProductDetails = () => {
     const sellPrice = Number(product.sellPrice ?? 0);
     const lowThreshold = Number(product.lowStockThreshold ?? 5);
     const isLowStock = quantity <= lowThreshold;
+    const stockInfo = getProductStockDisplay(product);
     const isActive =
         product.status === "active" ||
         product.status === true ||
@@ -229,12 +231,17 @@ const ProductDetails = () => {
                         <div className="p-4 bg-gray-50 rounded-lg text-center">
                             <span className="text-xs text-gray-500 font-medium">Available Quantity</span>
                             <p className="text-3xl font-extrabold text-black mt-1">
-                                {quantity} <span className="text-base font-medium text-gray-500">{unit}</span>
+                                {stockInfo.displayStock}
                             </p>
+                            {stockInfo.hasSecondaryUnit && (
+                                <span className="text-xs text-gray-400 block mt-1">
+                                    ({stockInfo.primaryStockText})
+                                </span>
+                            )}
                             {isLowStock && (
                                 <div className="inline-flex items-center gap-1.5 text-xs font-medium text-amber-800 bg-amber-100 border border-amber-300 px-2.5 py-1 rounded-md mt-2">
                                     <FiAlertTriangle className="w-3.5 h-3.5" />
-                                    Low Stock Alert (Threshold: {lowThreshold})
+                                    Low Stock Alert (Threshold: {lowThreshold} {unit})
                                 </div>
                             )}
                         </div>
