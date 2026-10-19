@@ -352,7 +352,7 @@ export const TradePartyDueTable = <T extends GenericTradePartyDue>({
                     {/* Party ID */}
                     {showIdColumn && isColVisible("partyId") && (
                       <td className="py-2.5 px-3 text-black text-xs font-medium whitespace-nowrap">
-                        {partyId ? `#${partyId}` : <span className="text-gray-400">-</span>}
+                        {partyId ? partyId : <span className="text-gray-400">-</span>}
                       </td>
                     )}
 
