@@ -1,57 +1,15 @@
 import React from "react";
-import { FaShoppingCart, FaMoneyBillWave, FaExclamationCircle, FaReceipt } from "react-icons/fa";
-import { formatMoney } from "@/utils/formatters";
-import TradeStatsCards from "@/components/trade/TradeStatsCards";
+import TradeInvoiceStats from "@/components/trade/TradeInvoiceStats";
 
-interface SaleStatsProps {
+export interface SaleStatsProps {
   totalCount: number;
   totalAmount: number;
   totalPaid: number;
   totalDue: number;
 }
 
-const SaleStats: React.FC<SaleStatsProps> = ({
-  totalCount,
-  totalAmount,
-  totalPaid,
-  totalDue,
-}) => {
-  const cards = [
-    {
-      title: "Total Sales",
-      value: `৳ ${formatMoney(totalAmount)}`,
-      icon: FaShoppingCart,
-      color: "text-blue-600",
-      bg: "bg-blue-50/60 border-blue-300 hover:border-blue-400",
-      iconBg: "bg-blue-100 text-blue-600",
-    },
-    {
-      title: "Total Paid",
-      value: `৳ ${formatMoney(totalPaid)}`,
-      icon: FaMoneyBillWave,
-      color: "text-emerald-600",
-      bg: "bg-emerald-50/60 border-emerald-300 hover:border-emerald-400",
-      iconBg: "bg-emerald-100 text-emerald-600",
-    },
-    {
-      title: "Total Credit",
-      value: `৳ ${formatMoney(totalDue)}`,
-      icon: FaExclamationCircle,
-      color: "text-rose-600",
-      bg: "bg-rose-50/60 border-rose-300 hover:border-rose-400",
-      iconBg: "bg-rose-100 text-rose-600",
-    },
-    {
-      title: "Avg. Sale Value",
-      value: `৳ ${formatMoney(totalCount > 0 ? totalAmount / totalCount : 0)}`,
-      icon: FaReceipt,
-      color: "text-purple-600",
-      bg: "bg-purple-50/60 border-purple-300 hover:border-purple-400",
-      iconBg: "bg-purple-100 text-purple-600",
-    },
-  ];
-
-  return <TradeStatsCards cards={cards} />;
+export const SaleStats: React.FC<SaleStatsProps> = (props) => {
+  return <TradeInvoiceStats type="sale" {...props} />;
 };
 
 export default SaleStats;

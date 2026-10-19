@@ -2,14 +2,17 @@ import * as XLSX from "xlsx";
 import type { PurchaseItem, PurchaseReturnItem } from "@/types";
 import { getUserInfo } from "./auth-storage";
 
-export interface ExportPurchasesOptions {
+export interface GenericExcelExportOptions {
   fileName?: string;
   sheetName?: string;
   businessName?: string;
 }
 
+export type ExportPurchasesOptions = GenericExcelExportOptions;
+export type ExportSalesOptions = GenericExcelExportOptions;
+
 /**
- * Extracts items count from purchase object across all known schemas
+ * Extracts items count from purchase/sale object across all known schemas
  */
 const getItemsCount = (p: any): number => {
   if (!p) return 0;
@@ -18,7 +21,11 @@ const getItemsCount = (p: any): number => {
   if (Array.isArray(rawDetails) && rawDetails.length > 0) {
     const uniqueKeys = new Set<string>();
     rawDetails.forEach((d: any) => {
-      const k = String(d.productId ?? d.productCode ?? d.pcode ?? d.productName ?? "").trim().toLowerCase();
+      const k = String(
+        d.productId ?? d.productCode ?? d.pcode ?? d.productName ?? ""
+      )
+        .trim()
+        .toLowerCase();
       if (k) uniqueKeys.add(k);
     });
     return uniqueKeys.size > 0 ? uniqueKeys.size : rawDetails.length;
@@ -26,6 +33,41 @@ const getItemsCount = (p: any): number => {
   const explicitCount = Number(p.itemCount ?? p.totalItems ?? 0);
   return explicitCount > 0 ? explicitCount : 1;
 };
+
+/**
+ * Senior Developer Standard: Unified Excel Builder & File Generator.
+ * Handles worksheet transformation, auto-fitting column widths, workbook generation, and trigger download.
+ */
+export function buildAndDownloadExcel<T extends Record<string, any>>(
+  rows: T[],
+  totalRow: T,
+  options: GenericExcelExportOptions
+): void {
+  if (!rows || rows.length === 0) {
+    throw new Error("No data available to export");
+  }
+
+  const fullData = [...rows, totalRow];
+  const headers = Object.keys(rows[0]);
+  const worksheet = XLSX.utils.json_to_sheet(fullData, { header: headers });
+
+  // Auto-calculate column widths based on maximum content length
+  worksheet["!cols"] = headers.map((key) => {
+    let maxLen = key.length;
+    fullData.forEach((row: any) => {
+      const val = row[key];
+      if (val !== undefined && val !== null) {
+        const len = String(val).length;
+        if (len > maxLen) maxLen = len;
+      }
+    });
+    return { wch: Math.min(Math.max(maxLen + 3, 10), 40) };
+  });
+
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(workbook, worksheet, options.sheetName || "Sheet1");
+  XLSX.writeFile(workbook, options.fileName || "export.xlsx");
+}
 
 /**
  * Enterprise standard Excel export for Purchases
@@ -38,16 +80,8 @@ export function exportPurchasesToExcel(
     throw new Error("No purchase data available to export");
   }
 
-  const userInfo = getUserInfo();
-  const businessName =
-    options?.businessName ||
-    userInfo?.businessName ||
-    "Cash Boi ERP";
-
   const todayStr = new Date().toISOString().substring(0, 10);
-  const fileName =
-    options?.fileName ||
-    `Purchases_Report_${todayStr}.xlsx`;
+  const fileName = options?.fileName || `Purchases_Report_${todayStr}.xlsx`;
   const sheetName = options?.sheetName || "Purchases";
 
   let sumGrandTotal = 0;
@@ -55,7 +89,6 @@ export function exportPurchasesToExcel(
   let sumDue = 0;
   let sumItems = 0;
 
-  // Format purchase rows for Excel
   const rows = purchases.map((item: any, index: number) => {
     const grandTotal = Number(item.grandTotal ?? item.totalAmount ?? 0);
     const paidAmount = Number(item.paidAmount ?? 0);
@@ -75,14 +108,17 @@ export function exportPurchasesToExcel(
     else if (dueAmount > 0 && paidAmount === 0) status = "DUE";
 
     return {
-      "SL": index + 1,
+      SL: index + 1,
       "Invoice No": item.invoiceNo || `PUR-${item.id || index + 1}`,
-      "Purchase Date": item.purchaseDate || (item.createdAt ? item.createdAt.substring(0, 10) : ""),
+      "Purchase Date":
+        item.purchaseDate || (item.createdAt ? item.createdAt.substring(0, 10) : ""),
       "Supplier Name": item.supplierName || "Direct Supplier",
       "Supplier Phone": item.supplierPhone || "",
       "Supplier Address": item.supplierAddress || "",
       "Items Count": itemsCount,
-      "Subtotal (BDT)": Number((item.totalAmount || (grandTotal - vat - transport + discount)).toFixed(2)),
+      "Subtotal (BDT)": Number(
+        (item.totalAmount || grandTotal - vat - transport + discount).toFixed(2)
+      ),
       "Discount (BDT)": discount,
       "VAT (BDT)": vat,
       "Transport (BDT)": transport,
@@ -94,13 +130,12 @@ export function exportPurchasesToExcel(
       "Challan No": item.challanNo || "",
       "Vehicle No": item.vehicleNo || "",
       "Driver Name": item.driverName || "",
-      "Notes": item.note || "",
+      Notes: item.note || "",
     };
   });
 
-  // Add Summary Total Row
   const totalRow = {
-    "SL": "TOTAL",
+    SL: "TOTAL",
     "Invoice No": `Total Invoices: ${purchases.length}`,
     "Purchase Date": "",
     "Supplier Name": "",
@@ -119,42 +154,10 @@ export function exportPurchasesToExcel(
     "Challan No": "",
     "Vehicle No": "",
     "Driver Name": "",
-    "Notes": "",
+    Notes: "",
   };
 
-  const fullData = [...rows, totalRow];
-
-  // Create worksheet
-  const worksheet = XLSX.utils.json_to_sheet(fullData, {
-    header: Object.keys(rows[0]),
-  });
-
-  // Auto-calculate column widths
-  const colKeys = Object.keys(rows[0]);
-  const colWidths = colKeys.map((key) => {
-    let maxLen = key.length;
-    fullData.forEach((row: any) => {
-      const val = row[key];
-      if (val !== undefined && val !== null) {
-        const len = String(val).length;
-        if (len > maxLen) maxLen = len;
-      }
-    });
-    return { wch: Math.min(Math.max(maxLen + 3, 10), 40) };
-  });
-  worksheet["!cols"] = colWidths;
-
-  // Create workbook and write file
-  const workbook = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(workbook, worksheet, sheetName);
-
-  XLSX.writeFile(workbook, fileName);
-}
-
-export interface ExportSalesOptions {
-  fileName?: string;
-  sheetName?: string;
-  businessName?: string;
+  buildAndDownloadExcel(rows, totalRow, { fileName, sheetName });
 }
 
 /**
@@ -168,16 +171,8 @@ export function exportSalesToExcel(
     throw new Error("No sales data available to export");
   }
 
-  const userInfo = getUserInfo();
-  const businessName =
-    options?.businessName ||
-    userInfo?.businessName ||
-    "Cash Boi ERP";
-
   const todayStr = new Date().toISOString().substring(0, 10);
-  const fileName =
-    options?.fileName ||
-    `Sales_Report_${todayStr}.xlsx`;
+  const fileName = options?.fileName || `Sales_Report_${todayStr}.xlsx`;
   const sheetName = options?.sheetName || "Sales";
 
   let sumGrandTotal = 0;
@@ -207,7 +202,7 @@ export function exportSalesToExcel(
     }
 
     return {
-      "SL": index + 1,
+      SL: index + 1,
       "Invoice No": item.invoiceNo || `INV-${item.id || index + 1}`,
       "Sales Date": item.salesDate || todayStr,
       "Customer Name": item.customerName || "Walk-in Customer",
@@ -222,13 +217,13 @@ export function exportSalesToExcel(
       "Paid Amount (BDT)": paidAmount,
       "Due Amount (BDT)": dueAmount,
       "Payment Type": (item.paymentType || "CASH").toUpperCase(),
-      "Status": status,
-      "Notes": item.note || "",
+      Status: status,
+      Notes: item.note || "",
     };
   });
 
   const totalRow = {
-    "SL": "TOTAL",
+    SL: "TOTAL",
     "Invoice No": `Total Invoices: ${sales.length}`,
     "Sales Date": "",
     "Customer Name": "",
@@ -243,32 +238,11 @@ export function exportSalesToExcel(
     "Paid Amount (BDT)": Number(sumPaid.toFixed(2)),
     "Due Amount (BDT)": Number(sumDue.toFixed(2)),
     "Payment Type": "",
-    "Status": "",
-    "Notes": "",
+    Status: "",
+    Notes: "",
   };
 
-  const fullData = [...rows, totalRow];
-  const worksheet = XLSX.utils.json_to_sheet(fullData, {
-    header: Object.keys(rows[0]),
-  });
-
-  const colKeys = Object.keys(rows[0]);
-  const colWidths = colKeys.map((key) => {
-    let maxLen = key.length;
-    fullData.forEach((row: any) => {
-      const val = row[key];
-      if (val !== undefined && val !== null) {
-        const len = String(val).length;
-        if (len > maxLen) maxLen = len;
-      }
-    });
-    return { wch: Math.min(Math.max(maxLen + 3, 10), 40) };
-  });
-  worksheet["!cols"] = colWidths;
-
-  const workbook = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(workbook, worksheet, sheetName);
-  XLSX.writeFile(workbook, fileName);
+  buildAndDownloadExcel(rows, totalRow, { fileName, sheetName });
 }
 
 /**
@@ -301,7 +275,7 @@ export function exportSalesReturnToExcel(
     sumItems += itemsCount;
 
     return {
-      "SL": index + 1,
+      SL: index + 1,
       "Return No": item.returnNo || `RET-${item.id || index + 1}`,
       "Return Date": item.returnDate || item.date || todayStr,
       "Original Invoice": item.invoiceNo || "-",
@@ -311,59 +285,37 @@ export function exportSalesReturnToExcel(
       "Refund Channel": (item.paymentType || "CASH").toUpperCase(),
       "Return Value (BDT)": Number(returnAmount.toFixed(2)),
       "Refunded Amount (BDT)": Number(refundAmount.toFixed(2)),
-      "Status": (item.status || "COMPLETED").toUpperCase(),
-      "Remarks": item.note || item.remarks || "",
+      Status: (item.status || "COMPLETED").toUpperCase(),
+      Remarks: item.note || item.remarks || "",
     };
   });
 
   const totalRow = {
-    "SL": "TOTAL",
+    SL: "TOTAL",
     "Return No": `Total Returns: ${returns.length}`,
     "Return Date": "",
     "Original Invoice": "",
     "Customer Name": "",
     "Customer Phone": "",
     "Items Count": sumItems,
-    "Return Reason": "",
     "Refund Channel": "",
     "Return Value (BDT)": Number(sumReturnAmount.toFixed(2)),
     "Refunded Amount (BDT)": Number(sumRefundAmount.toFixed(2)),
-    "Status": "",
-    "Remarks": "",
+    Status: "",
+    Remarks: "",
   };
 
-  const fullData = [...rows, totalRow];
-  const worksheet = XLSX.utils.json_to_sheet(fullData, {
-    header: Object.keys(rows[0]),
-  });
-
-  const colKeys = Object.keys(rows[0]);
-  const colWidths = colKeys.map((key) => {
-    let maxLen = key.length;
-    fullData.forEach((row: any) => {
-      const val = row[key];
-      if (val !== undefined && val !== null) {
-        const len = String(val).length;
-        if (len > maxLen) maxLen = len;
-      }
-    });
-    return { wch: Math.min(Math.max(maxLen + 3, 10), 40) };
-  });
-  worksheet["!cols"] = colWidths;
-
-  const workbook = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(workbook, worksheet, sheetName);
-  XLSX.writeFile(workbook, fileName);
+  buildAndDownloadExcel(rows, totalRow, { fileName, sheetName });
 }
 
 /**
- * Excel export for Purchase Returns (same layout as the Sales Return export, supplier instead of customer)
+ * Enterprise standard Excel export for Purchase Returns
  */
 export function exportPurchaseReturnToExcel(
   returns: PurchaseReturnItem[],
   options?: { fileName?: string; sheetName?: string }
 ): void {
-  if (returns.length === 0) {
+  if (!returns || returns.length === 0) {
     throw new Error("No purchase return data available to export");
   }
 
@@ -375,7 +327,7 @@ export function exportPurchaseReturnToExcel(
   let sumRefundAmount = 0;
   let sumItems = 0;
 
-  const rows: Record<string, string | number>[] = returns.map((item, index) => {
+  const rows = returns.map((item: any, index: number) => {
     const returnAmount = Number(item.totalAmount ?? 0);
     const refundAmount = Number(item.refundAmount ?? returnAmount);
     const details = item.returnDetails ?? [];
@@ -386,7 +338,7 @@ export function exportPurchaseReturnToExcel(
     sumItems += itemsCount;
 
     return {
-      "SL": index + 1,
+      SL: index + 1,
       "Return No": item.returnNo || `PR-${item.id ?? index + 1}`,
       "Return Date": item.returnDate || todayStr,
       "Original Invoice": item.purchaseInvoiceNo || item.invoiceNo || "-",
@@ -396,13 +348,13 @@ export function exportPurchaseReturnToExcel(
       "Refund Channel": (item.paymentType || "CASH").toUpperCase(),
       "Return Value (BDT)": Number(returnAmount.toFixed(2)),
       "Refunded Amount (BDT)": Number(refundAmount.toFixed(2)),
-      "Status": (item.status || "COMPLETED").toUpperCase(),
-      "Remarks": item.note || item.remarks || "",
+      Status: (item.status || "COMPLETED").toUpperCase(),
+      Remarks: item.note || item.remarks || "",
     };
   });
 
-  const totalRow: Record<string, string | number> = {
-    "SL": "TOTAL",
+  const totalRow = {
+    SL: "TOTAL",
     "Return No": `Total Returns: ${returns.length}`,
     "Return Date": "",
     "Original Invoice": "",
@@ -412,20 +364,9 @@ export function exportPurchaseReturnToExcel(
     "Refund Channel": "",
     "Return Value (BDT)": Number(sumReturnAmount.toFixed(2)),
     "Refunded Amount (BDT)": Number(sumRefundAmount.toFixed(2)),
-    "Status": "",
-    "Remarks": "",
+    Status: "",
+    Remarks: "",
   };
 
-  const headers = Object.keys(rows[0]);
-  const fullData = [...rows, totalRow];
-  const worksheet = XLSX.utils.json_to_sheet(fullData, { header: headers });
-
-  worksheet["!cols"] = headers.map((key) => {
-    const maxLen = fullData.reduce((max, row) => Math.max(max, String(row[key] ?? "").length), key.length);
-    return { wch: Math.min(Math.max(maxLen + 3, 10), 40) };
-  });
-
-  const workbook = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(workbook, worksheet, sheetName);
-  XLSX.writeFile(workbook, fileName);
+  buildAndDownloadExcel(rows, totalRow, { fileName, sheetName });
 }
