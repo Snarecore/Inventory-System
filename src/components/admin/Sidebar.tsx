@@ -60,7 +60,7 @@ const Sidebar = ({ sidebarClick }: SidebarProps) => {
   return (
     <div
       className={`hidden lg:flex flex-col h-screen bg-white shadow-md transition-all ease-in duration-300 border-r border-gray-200 relative shrink-0 ${
-        sidebarClick ? "w-20" : "w-56"
+        sidebarClick ? "w-20" : "w-52"
       }`}
     >
       <div className={`h-12 flex items-center border-b border-gray-200 shrink-0 ${sidebarClick ? "justify-center px-2" : "justify-start px-3.5"}`}>
