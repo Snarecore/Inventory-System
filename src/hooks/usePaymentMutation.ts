@@ -17,7 +17,8 @@ import {
 } from "@/config/query-key";
 import { showSuccessToast, showErrorToast } from "@/utils/toast-utils";
 import { formatMoney } from "@/utils/formatters";
-import type { PaymentAllocation } from "@/types/payment.types";
+import type { SupplierDueItem, PaymentAllocation } from "@/types/payment.types";
+import type { PurchaseItem } from "@/types";
 
 export interface SubmitPaymentParams {
   supplierId: string | number;
@@ -135,42 +136,78 @@ export const usePaymentMutation = () => {
       };
     },
     onSuccess: (data, variables) => {
-      const { totalPaid, totalDiscount = 0 } = variables;
+      const {
+        supplierId,
+        allocations = [],
+        totalPaid,
+        totalDiscount = 0,
+        remainingTotalDue,
+      } = variables;
 
-      // Invalidate relevant caches: active due table updates immediately, background queries marked stale
+      const clearedInvoiceNos = new Set(
+        allocations
+          .filter((a) => Number(a.remainingDue ?? a.dueAmount ?? 0) <= 0)
+          .map((a) => String(a.invoiceNo).toLowerCase().trim())
+      );
+
+      // 1. Optimistically update purchasesDueQueryKey cache
+      queryClient.setQueryData<SupplierDueItem[]>([purchasesDueQueryKey], (oldList) => {
+        if (!Array.isArray(oldList)) return oldList;
+        return oldList
+          .map((sup) => {
+            const currentSupId = String(sup.supplierId ?? sup.id ?? "");
+            if (currentSupId === String(supplierId)) {
+              const currentInvCount = Number(sup.invoiceCount || 0);
+              const newInvCount = Math.max(0, currentInvCount - clearedInvoiceNos.size);
+              const safeRemaining = Math.max(0, Number(remainingTotalDue));
+              return {
+                ...sup,
+                totalDue: safeRemaining,
+                total_due: safeRemaining,
+                dueAmount: safeRemaining,
+                due_amount: safeRemaining,
+                invoiceCount: newInvCount,
+              };
+            }
+            return sup;
+          })
+          .filter((sup) => Number(sup.totalDue || 0) > 0);
+      });
+
+      // 2. Optimistically update purchaseListQueryKey cache so pending invoice counts update immediately
+      queryClient.setQueryData<PurchaseItem[]>([purchaseListQueryKey], (oldPurchases) => {
+        if (!Array.isArray(oldPurchases)) return oldPurchases;
+        return oldPurchases.map((p: any) => {
+          const invNo = String(p.invoiceNo || p.purchaseNo || p.challanNo || p.id || "").toLowerCase().trim();
+          const matchedAlloc = allocations.find(
+            (a) => String(a.invoiceNo).toLowerCase().trim() === invNo
+          );
+          if (matchedAlloc) {
+            const newDue = Math.max(0, Number(matchedAlloc.remainingDue ?? 0));
+            const paidInc = Number(matchedAlloc.allocatedPaid ?? matchedAlloc.paidAmount ?? 0);
+            return {
+              ...p,
+              dueAmount: newDue,
+              due_amount: newDue,
+              due: newDue,
+              paidAmount: Number(p.paidAmount ?? p.paid_amount ?? 0) + paidInc,
+              paid_amount: Number(p.paidAmount ?? p.paid_amount ?? 0) + paidInc,
+            };
+          }
+          return p;
+        });
+      });
+
+      // 3. Actively invalidate and refetch active due tables and invoice queries
       queryClient.invalidateQueries({ queryKey: [purchasesDueQueryKey] });
-      queryClient.invalidateQueries({
-        queryKey: [purchasesInvoicesDueQueryKey],
-        refetchType: "none",
-      });
-      queryClient.invalidateQueries({
-        queryKey: [paymentReportQueryKey],
-        refetchType: "none",
-      });
-      queryClient.invalidateQueries({
-        queryKey: [cashBalanceQueryKey],
-        refetchType: "none",
-      });
-      queryClient.invalidateQueries({
-        queryKey: [bankInfoListQueryKey],
-        refetchType: "none",
-      });
-      queryClient.invalidateQueries({
-        queryKey: [mfsUserListQueryKey],
-        refetchType: "none",
-      });
-      queryClient.invalidateQueries({
-        queryKey: [purchaseListQueryKey],
-        refetchType: "none",
-      });
-      queryClient.invalidateQueries({
-        queryKey: [dashboardQueryKey],
-        refetchType: "none",
-      });
-      queryClient.invalidateQueries({
-        queryKey: [partyListQueryKey],
-        refetchType: "none",
-      });
+      queryClient.invalidateQueries({ queryKey: [purchaseListQueryKey] });
+      queryClient.invalidateQueries({ queryKey: [purchasesInvoicesDueQueryKey] });
+      queryClient.invalidateQueries({ queryKey: [paymentReportQueryKey] });
+      queryClient.invalidateQueries({ queryKey: [cashBalanceQueryKey], refetchType: "none" });
+      queryClient.invalidateQueries({ queryKey: [bankInfoListQueryKey], refetchType: "none" });
+      queryClient.invalidateQueries({ queryKey: [mfsUserListQueryKey], refetchType: "none" });
+      queryClient.invalidateQueries({ queryKey: [dashboardQueryKey], refetchType: "none" });
+      queryClient.invalidateQueries({ queryKey: [partyListQueryKey], refetchType: "none" });
 
       const discText =
         totalDiscount > 0 ? ` (Discount: ৳${formatMoney(totalDiscount)})` : "";

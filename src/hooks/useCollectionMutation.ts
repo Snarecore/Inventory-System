@@ -17,7 +17,7 @@ import {
 } from "@/config/query-key";
 import { showSuccessToast, showErrorToast } from "@/utils/toast-utils";
 import { formatMoney } from "@/utils/formatters";
-import type { CollectionAllocation } from "@/types/collection.types";
+import type { CustomerDueItem, CollectionAllocation } from "@/types/collection.types";
 
 export interface SubmitCollectionParams {
   customerId: string | number;
@@ -133,16 +133,76 @@ export const useCollectionMutation = () => {
       };
     },
     onSuccess: (data, variables) => {
-      const { customerId, totalCollected, totalDiscount = 0 } = variables;
+      const {
+        customerId,
+        allocations = [],
+        totalCollected,
+        totalDiscount = 0,
+        remainingTotalDue,
+      } = variables;
 
-      // Invalidate relevant caches: active table updates immediately, background queries marked stale
+      const clearedInvoiceNos = new Set(
+        allocations
+          .filter((a) => Number(a.remainingDue ?? a.dueAmount ?? 0) <= 0)
+          .map((a) => String(a.invoiceNo).toLowerCase().trim())
+      );
+
+      // 1. Optimistically update customersDueQueryKey cache
+      queryClient.setQueryData<CustomerDueItem[]>([customersDueQueryKey], (oldList) => {
+        if (!Array.isArray(oldList)) return oldList;
+        return oldList
+          .map((cust) => {
+            const currentCustId = String(cust.customerId ?? cust.id ?? "");
+            if (currentCustId === String(customerId)) {
+              const currentInvCount = Number(cust.invoiceCount || 0);
+              const newInvCount = Math.max(0, currentInvCount - clearedInvoiceNos.size);
+              const safeRemaining = Math.max(0, Number(remainingTotalDue));
+              return {
+                ...cust,
+                totalDue: safeRemaining,
+                total_due: safeRemaining,
+                dueAmount: safeRemaining,
+                due_amount: safeRemaining,
+                invoiceCount: newInvCount,
+              };
+            }
+            return cust;
+          })
+          .filter((cust) => Number(cust.totalDue || 0) > 0);
+      });
+
+      // 2. Optimistically update salesListQueryKey cache so pending invoice counts update immediately
+      queryClient.setQueryData<any[]>([salesListQueryKey], (oldSales) => {
+        if (!Array.isArray(oldSales)) return oldSales;
+        return oldSales.map((s: any) => {
+          const invNo = String(s.invoiceNo || s.orderNo || s.id || "").toLowerCase().trim();
+          const matchedAlloc = allocations.find(
+            (a) => String(a.invoiceNo).toLowerCase().trim() === invNo
+          );
+          if (matchedAlloc) {
+            const newDue = Math.max(0, Number(matchedAlloc.remainingDue ?? 0));
+            const paidInc = Number(matchedAlloc.allocatedPaid ?? matchedAlloc.paidAmount ?? 0);
+            return {
+              ...s,
+              dueAmount: newDue,
+              due_amount: newDue,
+              due: newDue,
+              paidAmount: Number(s.paidAmount ?? s.paid_amount ?? 0) + paidInc,
+              paid_amount: Number(s.paidAmount ?? s.paid_amount ?? 0) + paidInc,
+            };
+          }
+          return s;
+        });
+      });
+
+      // 3. Actively invalidate and refetch active due tables and invoice queries
       queryClient.invalidateQueries({ queryKey: [customersDueQueryKey] });
-      queryClient.invalidateQueries({ queryKey: [customerInvoicesDueQueryKey], refetchType: "none" });
-      queryClient.invalidateQueries({ queryKey: [collectionReportQueryKey], refetchType: "none" });
+      queryClient.invalidateQueries({ queryKey: [salesListQueryKey] });
+      queryClient.invalidateQueries({ queryKey: [customerInvoicesDueQueryKey] });
+      queryClient.invalidateQueries({ queryKey: [collectionReportQueryKey] });
       queryClient.invalidateQueries({ queryKey: [cashBalanceQueryKey], refetchType: "none" });
       queryClient.invalidateQueries({ queryKey: [bankInfoListQueryKey], refetchType: "none" });
       queryClient.invalidateQueries({ queryKey: [mfsUserListQueryKey], refetchType: "none" });
-      queryClient.invalidateQueries({ queryKey: [salesListQueryKey], refetchType: "none" });
       queryClient.invalidateQueries({ queryKey: [dashboardQueryKey], refetchType: "none" });
       queryClient.invalidateQueries({ queryKey: [partyListQueryKey], refetchType: "none" });
 

@@ -66,7 +66,11 @@ export const SupplierPayment: React.FC = () => {
   }, [rawPartyData]);
 
   // Fetch purchases records to accurately count pending invoices for due suppliers
-  const { data: purchasesList = [] } = usePurchasesQuery({
+  const {
+    data: purchasesList = [],
+    refetch: refetchPurchases,
+    isFetching: isPurchasesFetching,
+  } = usePurchasesQuery({
     staleTime: 60 * 1000,
   });
 
@@ -123,10 +127,10 @@ export const SupplierPayment: React.FC = () => {
         0;
 
       const finalInvoiceCount =
-        s.invoiceCount && s.invoiceCount > 0
-          ? s.invoiceCount
-          : purchasesCount > 0
+        purchasesCount > 0
           ? purchasesCount
+          : s.invoiceCount && s.invoiceCount > 0
+          ? s.invoiceCount
           : Number(s.totalDue || 0) > 0
           ? 1
           : 0;
@@ -170,6 +174,7 @@ export const SupplierPayment: React.FC = () => {
 
   const handleRefresh = () => {
     refetch();
+    refetchPurchases();
   };
 
   const handlePay = (supplier: SupplierDueItem) => {
@@ -183,6 +188,8 @@ export const SupplierPayment: React.FC = () => {
   };
 
   const handlePaymentSuccess = (receipt: PaymentReceiptData) => {
+    refetch();
+    refetchPurchases();
     setReceiptData(receipt);
     setIsReceiptModalOpen(true);
   };
@@ -230,7 +237,7 @@ export const SupplierPayment: React.FC = () => {
 
           <RefreshButton
             onClick={handleRefresh}
-            isLoading={isLoading || isFetching}
+            isLoading={isLoading || isFetching || isPurchasesFetching}
           />
         </div>
       </div>

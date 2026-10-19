@@ -68,7 +68,11 @@ export const CustomerCollection: React.FC = () => {
   }, [rawPartyData]);
 
   // Fetch sales records to accurately count pending invoices for due customers
-  const { data: salesList = [] } = useSalesQuery({
+  const {
+    data: salesList = [],
+    refetch: refetchSales,
+    isFetching: isSalesFetching,
+  } = useSalesQuery({
     staleTime: 60 * 1000,
   });
 
@@ -117,10 +121,10 @@ export const CustomerCollection: React.FC = () => {
         0;
 
       const finalInvoiceCount =
-        c.invoiceCount && c.invoiceCount > 0
-          ? c.invoiceCount
-          : salesCount > 0
+        salesCount > 0
           ? salesCount
+          : c.invoiceCount && c.invoiceCount > 0
+          ? c.invoiceCount
           : Number(c.totalDue || 0) > 0
           ? 1
           : 0;
@@ -164,6 +168,7 @@ export const CustomerCollection: React.FC = () => {
 
   const handleRefresh = () => {
     refetch();
+    refetchSales();
   };
 
   const handleCollect = (customer: CustomerDueItem) => {
@@ -177,6 +182,8 @@ export const CustomerCollection: React.FC = () => {
   };
 
   const handleCollectionSuccess = (receipt: CollectionReceiptData) => {
+    refetch();
+    refetchSales();
     setReceiptData(receipt);
     setIsReceiptModalOpen(true);
   };
@@ -222,7 +229,10 @@ export const CustomerCollection: React.FC = () => {
             </button>
           </div>
 
-          <RefreshButton onClick={handleRefresh} />
+          <RefreshButton
+            onClick={handleRefresh}
+            isLoading={isLoading || isFetching || isSalesFetching}
+          />
         </div>
       </div>
 
