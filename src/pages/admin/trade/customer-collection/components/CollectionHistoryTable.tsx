@@ -399,7 +399,7 @@ export const CollectionHistoryTable: React.FC<CollectionHistoryTableProps> = ({
 
                       {/* Voucher No */}
                       {isColVisible("voucherNo") && (
-                        <td className="py-2.5 px-3 text-black text-xs font-semibold whitespace-nowrap font-mono">
+                        <td className="py-2.5 px-3 text-black text-xs font-semibold whitespace-nowrap">
                           {row.collectionNo || `COL-${idx + 1}`}
                         </td>
                       )}
@@ -495,7 +495,7 @@ export const CollectionHistoryTable: React.FC<CollectionHistoryTableProps> = ({
                               {(row.details || []).map((detail: any, di: number) => (
                                 <div
                                   key={di}
-                                  className="p-2 rounded bg-gray-50 border border-gray-200 text-xs flex items-center justify-between font-mono"
+                                  className="p-2 rounded bg-gray-50 border border-gray-200 text-xs flex items-center justify-between"
                                 >
                                   <span className="font-semibold text-black">
                                     #{detail.invoiceNo}

@@ -132,7 +132,7 @@ export const CollectionReceiptModal: React.FC<CollectionReceiptModalProps> = ({
         {receiptData.bankDetails && (
           <div className="p-2 rounded bg-sky-50/50 border border-sky-100 text-xs flex justify-between">
             <span className="text-gray-600">Bank Account:</span>
-            <span className="font-semibold text-black font-mono">
+            <span className="font-semibold text-black">
               {receiptData.bankDetails.bankName} - {receiptData.bankDetails.accountNumber}
             </span>
           </div>
@@ -142,7 +142,7 @@ export const CollectionReceiptModal: React.FC<CollectionReceiptModalProps> = ({
         {receiptData.mfsDetails && (
           <div className="p-2 rounded bg-purple-50/60 border border-purple-200 text-xs flex justify-between">
             <span className="text-gray-600">MFS Wallet:</span>
-            <span className="font-semibold text-purple-900 font-mono">
+            <span className="font-semibold text-purple-900">
               {receiptData.mfsDetails.mfsName}
               {receiptData.mfsDetails.mfsPhone ? ` - ${receiptData.mfsDetails.mfsPhone}` : ""}
             </span>
@@ -173,14 +173,14 @@ export const CollectionReceiptModal: React.FC<CollectionReceiptModalProps> = ({
             <span className="font-semibold text-emerald-900 text-xs uppercase">
               Total Received:
             </span>
-            <span className="text-base font-bold text-emerald-700 font-mono">
+            <span className="text-base font-bold text-emerald-700">
               ৳ {formatMoney(receiptData.totalAmount)}
             </span>
           </div>
           {Number(receiptData.totalDiscount || 0) > 0 && (
             <div className="flex items-center justify-between text-xs pt-1 border-t border-emerald-200/60">
               <span className="text-gray-600 font-medium">Discount (ছাড়):</span>
-              <span className="font-bold text-amber-700 font-mono">
+              <span className="font-bold text-amber-700">
                 ৳ {formatMoney(receiptData.totalDiscount || 0)}
               </span>
             </div>
@@ -201,7 +201,7 @@ export const CollectionReceiptModal: React.FC<CollectionReceiptModalProps> = ({
                   <th className="py-2 px-2.5 text-right">Remaining Due (৳)</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100 font-mono">
+              <tbody className="divide-y divide-gray-100">
                 {receiptData.allocations.map((a) => {
                   const hasDiscountCol = receiptData.allocations.some(
                     (item) => Number(item.discountAmount || 0) > 0
