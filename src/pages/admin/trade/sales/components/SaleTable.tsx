@@ -503,8 +503,18 @@ export const SaleTable: React.FC<SaleTableProps> = ({
                   statusBg = "bg-rose-100 text-rose-800 border-rose-300 font-semibold";
                 }
 
-                // Directly read return flag from backend (same as cashboi-v2)
-                const isAlreadyReturned = Boolean(sale.hasReturn);
+                // Directly read return flag from backend or returnedInvoiceSet
+                const invoiceKey = String(sale.invoiceNo || "").trim().toLowerCase();
+                const orderKey = String(sale.orderNo || "").trim().toLowerCase();
+                const idKey = String(sale.id || "").trim().toLowerCase();
+                const isAlreadyReturned =
+                  Boolean(sale.hasReturn) ||
+                  Boolean(
+                    returnedInvoiceSet &&
+                      ((invoiceKey && returnedInvoiceSet.has(invoiceKey)) ||
+                        (orderKey && returnedInvoiceSet.has(orderKey)) ||
+                        (idKey && returnedInvoiceSet.has(idKey)))
+                  );
 
                 return (
                   <tr
@@ -608,9 +618,9 @@ export const SaleTable: React.FC<SaleTableProps> = ({
                             {isAlreadyReturned ? (
                               <span
                                 title="This sale has already been returned"
-                                className="inline-flex items-center gap-1.5 px-1.5 py-1 text-xs font-semibold text-rose-600 bg-gray-100 border border-gray-200 rounded-md cursor-not-allowed select-none"
+                                className="p-1 rounded text-gray-300 cursor-not-allowed inline-flex items-center"
                               >
-                                <span>Returned</span>
+                                <FaUndoAlt size={12} />
                               </span>
                             ) : (
                               <button
@@ -620,10 +630,10 @@ export const SaleTable: React.FC<SaleTableProps> = ({
                                     state: { sale },
                                   })
                                 }
-                                title="Return Product"
-                                className="inline-flex items-center gap-1.5 px-1.5 py-1 text-xs text-white bg-[var(--color-primary)] rounded-md shadow-xs transition-all cursor-pointer"
+                                title="Return Sale / পণ্য ফেরত"
+                                className="p-1 rounded text-rose-600 hover:bg-rose-100 transition-colors cursor-pointer inline-flex items-center"
                               >
-                                <span>Return Product</span>
+                                <FaUndoAlt size={12} />
                               </button>
                             )}
                           </div>
@@ -653,6 +663,27 @@ export const SaleTable: React.FC<SaleTableProps> = ({
                             >
                               <FiEdit size={14} />
                             </button>
+                            {isAlreadyReturned ? (
+                              <span
+                                title="This sale has already been returned"
+                                className="p-1 rounded text-gray-300 cursor-not-allowed inline-flex items-center"
+                              >
+                                <FaUndoAlt size={12} />
+                              </span>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  navigate("/admin/create-sales-return", {
+                                    state: { sale },
+                                  })
+                                }
+                                title="Return Sale / পণ্য ফেরত"
+                                className="p-1 rounded text-rose-600 hover:bg-rose-100 transition-colors cursor-pointer inline-flex items-center"
+                              >
+                                <FaUndoAlt size={12} />
+                              </button>
+                            )}
                           </div>
                         )}
                       </td>

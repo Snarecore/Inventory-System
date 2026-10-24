@@ -74,22 +74,9 @@ export const menu = [
 				subItems: [
 					{ id: 22, name: "Sales List", path: "/admin/sales", permissionKey: "sales.list.view" },
 					{ id: 28, name: "Create Sale", path: "/admin/create-sale", permissionKey: "sales.create.view" },
-					{ id: 295, name: "Customer Collection", path: "/admin/customer-collection", permissionKey: "sales.collection.view" },
-					// { id: 25, name: "Sales Reports", path: "/admin/sales-report", permissionKey: "sales.reports.view" },
-				],
-			},
-
-			{
-				id: 290,
-				name: "Sales Return",
-				title: "Sales Return",
-				icon: FaUndoAlt,
-				path: "/admin/sales-return",
-				permissionKey: "sales.return.view",
-				subItems: [
-					{ id: 291, name: "Sales List", path: "/admin/sales-return-sales", permissionKey: "sales.list.view" },
+					{ id: 29, name: "Sales Returns", path: "/admin/sales-return", permissionKey: "sales.return.view" },
 					{ id: 30, name: "Create Return", path: "/admin/create-sales-return", permissionKey: "sales.create_return.view" },
-					{ id: 29, name: "Sales Returns List", path: "/admin/sales-return", permissionKey: "sales.return.view" },
+					{ id: 295, name: "Customer Collection", path: "/admin/customer-collection", permissionKey: "sales.collection.view" },
 				],
 			},
 

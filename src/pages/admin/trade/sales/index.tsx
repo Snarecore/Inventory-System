@@ -1,27 +1,48 @@
-import React, { useState, useMemo } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useState, useEffect, useMemo } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import moment from "moment";
-import { FaPlus } from "react-icons/fa";
+import { FaPlus, FaShoppingCart, FaUndoAlt } from "react-icons/fa";
 import PageHeader from "@/components/page-header/PageHeader";
 import Button from "@/components/button/Button";
 import RefreshButton from "@/components/table-components/RefreshButton";
 import SaleStats from "./components/SaleStats";
 import SaleTable from "./components/SaleTable";
 import SaleInvoiceModal from "./components/SaleInvoiceModal";
+import SalesReturnStats from "@/pages/admin/trade/sales-return/components/SalesReturnStats";
+import SalesReturnTable from "@/pages/admin/trade/sales-return/components/SalesReturnTable";
+import SalesReturnInvoiceModal from "@/pages/admin/trade/sales-return/components/SalesReturnInvoiceModal";
 import apiConfig from "@/config/api.json";
 import { partyListQueryKey } from "@/config/query-key";
 import { buildAccessUser } from "@/utils/access-user";
 import { postData } from "@/services/api-service";
-import type { SaleItem, PartyItem } from "@/types";
+import type { SaleItem, SalesReturnItem, PartyItem } from "@/types";
 import { isPartyActive } from "@/utils/party-utils";
-import { useSalesQuery } from "@/pages/admin/trade/sales-return/hooks/useSalesReturnQueries";
+import { extractReturnRemarks } from "@/pages/admin/trade/sales-return/constants/returnReasons";
+import {
+  useSalesAndReturnsQuery,
+  extractReturnedSalesInvoiceKeysSet,
+} from "@/pages/admin/trade/sales-return/hooks/useSalesReturnQueries";
 import { useDebounce } from "@/hooks/useDebounce";
 
 const Sales: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
 
-  // Search, Filters & Pagination State
+  // Tab State: "sales" | "returns"
+  const searchParams = useMemo(() => new URLSearchParams(location.search), [location.search]);
+  const isReturnRoute = location.pathname.includes("sales-return") || searchParams.get("tab") === "returns";
+  const [activeTab, setActiveTab] = useState<"sales" | "returns">(isReturnRoute ? "returns" : "sales");
+
+  useEffect(() => {
+    if (location.pathname.includes("sales-return") || searchParams.get("tab") === "returns") {
+      setActiveTab("returns");
+    } else if (location.pathname === "/admin/sales" && !searchParams.get("tab")) {
+      setActiveTab("sales");
+    }
+  }, [location.pathname, searchParams]);
+
+  // Shared Search & Filters
   const [searchQuery, setSearchQuery] = useState<string>("");
   const debouncedSearch = useDebounce(searchQuery, 250);
   const [statusFilter, setStatusFilter] = useState<string>("all");
@@ -34,20 +55,29 @@ const Sales: React.FC = () => {
   const [currentPageNumber, setCurrentPageNumber] = useState<number>(1);
   const [dataLimit, setDataLimit] = useState<number>(10);
 
-  // Modals
-  const [isInvoiceModalOpen, setIsInvoiceModalOpen] = useState<boolean>(false);
+  // Modals - Sales
+  const [isSaleInvoiceModalOpen, setIsSaleInvoiceModalOpen] = useState<boolean>(false);
   const [selectedSaleForInvoice, setSelectedSaleForInvoice] = useState<SaleItem | null>(null);
 
-  // 1. Fetch Customers
+  // Modals - Returns
+  const [isReturnInvoiceModalOpen, setIsReturnInvoiceModalOpen] = useState<boolean>(false);
+  const [selectedReturnForInvoice, setSelectedReturnForInvoice] = useState<SalesReturnItem | null>(null);
+  const [autoPrintReturnModal, setAutoPrintReturnModal] = useState<boolean>(false);
+
+  // 1. Fetch Customers (Shared query)
   const { data: rawCustomerData } = useQuery({
     queryKey: [partyListQueryKey, "CUSTOMER"],
     queryFn: async () => {
-      const accessUser = buildAccessUser();
-      const res: any = await postData({
-        url: apiConfig.party.partyListUrl,
-        body: { accessUser },
-      });
-      return res;
+      try {
+        const accessUser = buildAccessUser();
+        const res: any = await postData({
+          url: apiConfig.party.partyListUrl,
+          body: { accessUser },
+        });
+        return res;
+      } catch {
+        return [];
+      }
     },
     staleTime: 5 * 60 * 1000,
   });
@@ -92,20 +122,107 @@ const Sales: React.FC = () => {
     return Array.from(custMap.values());
   }, [rawCustomerData]);
 
-  // 2. Fetch Sales from Backend API (Shared TanStack Query cache)
+  // 2. Fetch Combined Sales & Returns in a SINGLE API Request (Eliminating duplicate calls)
   const {
-    data: salesData,
-    isLoading,
-    isFetching,
-    refetch,
-  } = useSalesQuery();
+    data: apiReturnsData,
+    isLoading: isSalesLoading,
+    isFetching: isSalesFetching,
+    refetch: refetchSalesAndReturns,
+  } = useSalesAndReturnsQuery();
 
-  const rawSales: SaleItem[] = Array.isArray(salesData) ? salesData : [];
+  const isReturnsLoading = isSalesLoading;
+  const isReturnsFetching = isSalesFetching;
 
-  // Filtering & Sorting
+  // Single-pass memoized extraction of Sales and Returns
+  const { rawSales, rawReturns } = useMemo(() => {
+    if (!Array.isArray(apiReturnsData)) return { rawSales: [], rawReturns: [] };
+
+    const salesList: SaleItem[] = [];
+    const returnsList: SalesReturnItem[] = [];
+
+    apiReturnsData.forEach((item: any) => {
+      const isReturn =
+        Boolean(item.isReturnRecord) ||
+        Boolean(item.returnNo) ||
+        Boolean(item.returnGrandTotal) ||
+        String(item.returnType || "").toUpperCase() === "RETURN" ||
+        String(item.status || "").toUpperCase() === "RETURN" ||
+        (typeof item.refNo === "string" && item.refNo.startsWith("SR-")) ||
+        (Array.isArray(item.returnDetails) && item.returnDetails.length > 0) ||
+        (Array.isArray(item.salesReturnDetails) && item.salesReturnDetails.length > 0) ||
+        Boolean(item.hasReturn);
+
+      const isSale = Boolean(item.invoiceNo) || Boolean(item.salesDate) || (item.orderNo && !item.returnNo);
+
+      const lineItems =
+        Array.isArray(item.salesDetails) && item.salesDetails.length > 0
+          ? item.salesDetails
+          : Array.isArray(item.saleDetails) && item.saleDetails.length > 0
+          ? item.saleDetails
+          : Array.isArray(item.details)
+          ? item.details
+          : [];
+
+      if (isReturn) {
+        const noteText = extractReturnRemarks(item);
+
+        returnsList.push({
+          id: item.id || item.returnId,
+          returnNo: item.returnNo || (item.orderNo ? `RET-${item.orderNo}` : `RET-${item.id}`),
+          orderNo: item.orderNo || "",
+          salesInvoiceNo: item.invoiceNo || item.salesInvoiceNo || "-",
+          invoiceNo: item.invoiceNo || item.salesInvoiceNo || "-",
+          returnDate: item.returnDate || item.salesDate || moment().format("YYYY-MM-DD"),
+          createdAt: item.createdAt || item.returnDate,
+          customerId: item.customerId,
+          customerName: item.customerName || "Customer",
+          customerPhone: item.customerPhone,
+          customerAddress: item.customerAddress,
+          totalAmount: Number(item.totalAmount ?? item.returnGrandTotal ?? 0),
+          discount: Number(item.discount ?? 0),
+          vat: Number(item.vat ?? 0),
+          deliveryCharge: Number(item.deliveryCharge ?? 0),
+          grandTotal: Number(item.returnGrandTotal ?? item.grandTotal ?? 0),
+          refundAmount: Number(item.returnRefundAmount ?? item.refundAmount ?? item.returnGrandTotal ?? 0),
+          paymentType: item.paymentType || "CASH",
+          status: item.status || "Completed",
+          note: noteText,
+          remarks: noteText,
+          reason: noteText,
+          returnDetails: item.returnDetails || item.salesReturnDetails || [],
+          itemsCount: (item.returnDetails || item.salesReturnDetails)?.length || 1,
+        });
+      }
+
+      if (isSale) {
+        const grandTotal = Number(item.grandTotal ?? item.grand_total ?? item.totalAmount ?? 0);
+        const paidAmount = Number(item.paidAmount ?? item.paid_amount ?? 0);
+        const dueAmount = Number(item.dueAmount ?? item.due_amount ?? 0);
+        const hasReturn = Boolean(item.hasReturn || item.returnNo || item.returnGrandTotal);
+
+        salesList.push({
+          ...item,
+          grandTotal,
+          paidAmount,
+          dueAmount,
+          hasReturn,
+          salesDetails: lineItems,
+          details: lineItems,
+        });
+      }
+    });
+
+    return { rawSales: salesList, rawReturns: returnsList };
+  }, [apiReturnsData]);
+
+  // Set of returned invoice keys for the return icon indicators
+  const returnedInvoiceSet = useMemo(() => {
+    return extractReturnedSalesInvoiceKeysSet(apiReturnsData || []);
+  }, [apiReturnsData]);
+
+  // ----------------- SALES FILTERING & SORTING -----------------
   const filteredSales = useMemo(() => {
     return rawSales.filter((sale: any) => {
-      // 1. Search Query
       if (debouncedSearch.trim()) {
         const q = debouncedSearch.toLowerCase().trim();
         const inv = String(sale.invoiceNo || "").toLowerCase();
@@ -117,8 +234,7 @@ const Sales: React.FC = () => {
         }
       }
 
-      // 2. Status Filter
-      if (statusFilter !== "all") {
+      if (statusFilter !== "all" && statusFilter !== "") {
         const paidAmount = Number(sale.paidAmount || 0);
         const dueAmount = Number(sale.dueAmount || 0);
         const s = String(sale.status || "").toUpperCase();
@@ -132,26 +248,20 @@ const Sales: React.FC = () => {
         }
       }
 
-      // 3. Payment Method
       if (paymentMethodFilter !== "all") {
         const pMethod = String(sale.paymentType || "CASH").toUpperCase();
         if (pMethod !== paymentMethodFilter) return false;
       }
 
-      // 4. Customer Filter
       if (customerFilter !== "all") {
         const cId = String(sale.customerId || "");
         const cName = String(sale.customerName || "");
         const filterVal = String(customerFilter).trim().toLowerCase();
-        if (
-          cId.toLowerCase() !== filterVal &&
-          cName.toLowerCase() !== filterVal
-        ) {
+        if (cId.toLowerCase() !== filterVal && cName.toLowerCase() !== filterVal) {
           return false;
         }
       }
 
-      // 5. Date Range Filter
       if (dateFilter !== "all") {
         const saleDateStr = sale.salesDate;
         if (!saleDateStr) return true;
@@ -187,7 +297,6 @@ const Sales: React.FC = () => {
     customEndDate,
   ]);
 
-  // Sort
   const sortedSales = useMemo(() => {
     return [...filteredSales].sort((a: any, b: any) => {
       const dateA = new Date(a.salesDate || 0).getTime();
@@ -220,8 +329,8 @@ const Sales: React.FC = () => {
     });
   }, [filteredSales, sortBy]);
 
-  // Overall KPIs calculation from active filtered sales
-  const stats = useMemo(() => {
+  // Sales Stats
+  const salesStats = useMemo(() => {
     let totalAmount = 0;
     let totalPaid = 0;
     let totalDue = 0;
@@ -244,105 +353,374 @@ const Sales: React.FC = () => {
     };
   }, [sortedSales]);
 
-  // Pagination
-  const totalCount = sortedSales.length;
-  const pageCount = Math.ceil(totalCount / dataLimit) || 1;
-  const startIndex = (currentPageNumber - 1) * dataLimit;
-  const paginatedSales = sortedSales.slice(startIndex, startIndex + dataLimit);
+  // Sales Pagination
+  const salesTotalCount = sortedSales.length;
+  const salesPageCount = Math.ceil(salesTotalCount / dataLimit) || 1;
+  const startSalesIndex = (currentPageNumber - 1) * dataLimit;
+  const paginatedSales = sortedSales.slice(startSalesIndex, startSalesIndex + dataLimit);
 
+  // ----------------- RETURNS FILTERING & SORTING -----------------
+  const filteredReturns = useMemo(() => {
+    return rawReturns.filter((item) => {
+      if (debouncedSearch.trim()) {
+        const q = debouncedSearch.toLowerCase().trim();
+        const ordNo = String(item.orderNo || "").toLowerCase();
+        const retNo = String(item.returnNo || "").toLowerCase();
+        const invNo = String(item.salesInvoiceNo || item.invoiceNo || "").toLowerCase();
+        const cName = String(item.customerName || "").toLowerCase();
+        const cPhone = String(item.customerPhone || "").toLowerCase();
+        const remarks = String(item.note || item.remarks || "").toLowerCase();
+        if (
+          !ordNo.includes(q) &&
+          !retNo.includes(q) &&
+          !invNo.includes(q) &&
+          !cName.includes(q) &&
+          !cPhone.includes(q) &&
+          !remarks.includes(q)
+        ) {
+          return false;
+        }
+      }
+
+      if (customerFilter && customerFilter !== "all") {
+        const cId = String(item.customerId ?? "").trim().toLowerCase();
+        const cName = String(item.customerName ?? "").trim().toLowerCase();
+        const filterVal = customerFilter.toLowerCase();
+        if (cId !== filterVal && !cName.includes(filterVal)) {
+          return false;
+        }
+      }
+
+      if (paymentMethodFilter !== "all") {
+        if (String(item.paymentType || "").toUpperCase() !== paymentMethodFilter.toUpperCase()) {
+          return false;
+        }
+      }
+
+      if (dateFilter !== "all") {
+        const dateStr = item.returnDate || item.createdAt;
+        if (dateStr) {
+          const itemDate = moment(dateStr);
+          if (dateFilter === "today") {
+            if (!itemDate.isSame(moment(), "day")) return false;
+          } else if (dateFilter === "yesterday") {
+            if (!itemDate.isSame(moment().subtract(1, "day"), "day")) return false;
+          } else if (dateFilter === "last7days") {
+            if (!itemDate.isAfter(moment().subtract(7, "days"))) return false;
+          } else if (dateFilter === "thisMonth") {
+            if (!itemDate.isSame(moment(), "month")) return false;
+          } else if (dateFilter === "lastMonth") {
+            if (!itemDate.isSame(moment().subtract(1, "month"), "month")) return false;
+          } else if (dateFilter === "custom" && customStartDate && customEndDate) {
+            if (itemDate.isBefore(moment(customStartDate)) || itemDate.isAfter(moment(customEndDate).endOf("day"))) {
+              return false;
+            }
+          }
+        }
+      }
+
+      return true;
+    });
+  }, [
+    rawReturns,
+    debouncedSearch,
+    customerFilter,
+    paymentMethodFilter,
+    dateFilter,
+    customStartDate,
+    customEndDate,
+  ]);
+
+  const sortedReturns = useMemo(() => {
+    return [...filteredReturns].sort((a, b) => {
+      const timeA = new Date(a.createdAt || a.returnDate || 0).getTime();
+      const timeB = new Date(b.createdAt || b.returnDate || 0).getTime();
+      const idA = Number(a.id || a.returnId || 0);
+      const idB = Number(b.id || b.returnId || 0);
+      const amountA = Number(a.refundAmount ?? a.grandTotal ?? 0);
+      const amountB = Number(b.refundAmount ?? b.grandTotal ?? 0);
+
+      if (sortBy === "oldest") {
+        if (timeA !== timeB) return timeA - timeB;
+        return idA - idB;
+      }
+      if (sortBy === "amount_high" || sortBy === "amount_high_to_low") return amountB - amountA;
+      if (sortBy === "amount_low" || sortBy === "amount_low_to_high") return amountA - amountB;
+      if (sortBy === "customer_a_to_z") {
+        const nameA = String(a.customerName || "").trim().toLowerCase();
+        const nameB = String(b.customerName || "").trim().toLowerCase();
+        const cmp = nameA.localeCompare(nameB);
+        return cmp !== 0 ? cmp : timeB - timeA;
+      }
+      if (sortBy === "customer_z_to_a") {
+        const nameA = String(a.customerName || "").trim().toLowerCase();
+        const nameB = String(b.customerName || "").trim().toLowerCase();
+        const cmp = nameB.localeCompare(nameA);
+        return cmp !== 0 ? cmp : timeB - timeA;
+      }
+
+      if (timeB !== timeA) return timeB - timeA;
+      return idB - idA;
+    });
+  }, [filteredReturns, sortBy]);
+
+  // Returns Stats
+  const returnsStats = useMemo(() => {
+    let totalRefund = 0;
+    let cashRefund = 0;
+    let creditAdjust = 0;
+
+    sortedReturns.forEach((r) => {
+      const amt = Number(r.refundAmount ?? r.grandTotal ?? 0);
+      totalRefund += amt;
+      const p = String(r.paymentType || "CASH").toUpperCase();
+      if (p === "CASH") cashRefund += amt;
+      else if (p === "CREDIT") creditAdjust += amt;
+    });
+
+    return {
+      totalCount: sortedReturns.length,
+      totalRefundAmount: totalRefund,
+      totalCashRefund: cashRefund,
+      totalCreditAdjust: creditAdjust,
+    };
+  }, [sortedReturns]);
+
+  // Returns Pagination
+  const returnsTotalCount = sortedReturns.length;
+  const returnsPageCount = Math.ceil(returnsTotalCount / dataLimit) || 1;
+  const startReturnsIndex = (currentPageNumber - 1) * dataLimit;
+  const paginatedReturns = sortedReturns.slice(startReturnsIndex, startReturnsIndex + dataLimit);
+
+  // Pagination Handler
   const handlePagination = (paginationData: { selected: number }) => {
     setCurrentPageNumber(paginationData.selected + 1);
   };
 
-  // Actions
-  const handleView = (sale: SaleItem) => {
-    setSelectedSaleForInvoice(sale);
-    setIsInvoiceModalOpen(true);
+  const handleResetFilters = () => {
+    setSearchQuery("");
+    setCustomerFilter("all");
+    setPaymentMethodFilter("all");
+    setStatusFilter("all");
+    setDateFilter("all");
+    setCustomStartDate("");
+    setCustomEndDate("");
+    setSortBy("latest");
+    setCurrentPageNumber(1);
   };
 
-  const handlePrint = (sale: SaleItem) => {
+  // Actions - Sales
+  const handleViewSale = (sale: SaleItem) => {
     setSelectedSaleForInvoice(sale);
-    setIsInvoiceModalOpen(true);
+    setIsSaleInvoiceModalOpen(true);
   };
 
-  const handleEdit = (sale: SaleItem) => {
+  const handlePrintSale = (sale: SaleItem) => {
+    setSelectedSaleForInvoice(sale);
+    setIsSaleInvoiceModalOpen(true);
+  };
+
+  const handleEditSale = (sale: SaleItem) => {
     navigate(`/admin/edit-sale/${sale.id || sale.saleId || sale.invoiceNo}`, {
       state: { editData: sale },
     });
   };
 
+  // Actions - Returns
+  const handleViewReturn = (item: SalesReturnItem) => {
+    setSelectedReturnForInvoice(item);
+    setAutoPrintReturnModal(false);
+    setIsReturnInvoiceModalOpen(true);
+  };
+
+  const handlePrintReturn = (item: SalesReturnItem) => {
+    setSelectedReturnForInvoice(item);
+    setAutoPrintReturnModal(true);
+    setIsReturnInvoiceModalOpen(true);
+  };
+
+  const handleRefetchAll = () => {
+    refetchSalesAndReturns();
+  };
+
+  const isGlobalLoading = isSalesLoading || isReturnsLoading;
+  const isGlobalFetching = isSalesFetching || isReturnsFetching;
+
   return (
-    <div className="flex flex-col gap-2.5 px-3 py-2 sm:px-4 sm:py-2.5 max-w-[1600px] mx-auto w-full">
+    <div className="flex flex-col gap-2 sm:gap-2.5 px-3 py-1.5 sm:px-4 sm:py-2 max-w-[1600px] mx-auto w-full">
       {/* Top Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
         <PageHeader
           headerTitle="Sales"
-          headerDescription="Manage customer sales, invoices, payment breakdowns, and credit dues"
+          headerDescription="Manage customer sales invoices, returns, credit adjustments, and payment tracking"
         />
 
         <div className="flex items-center gap-2 self-end sm:self-auto">
-          <RefreshButton onClick={() => refetch()} isLoading={isLoading || isFetching} />
-          <Button
-            label="New Sale"
-            onClick={() => navigate("/admin/create-sale")}
-            color="var(--primary-color)"
-            hoverColor="var(--primary-color-hover)"
-            icon={<FaPlus className="text-white text-xs" />}
-          />
+          <RefreshButton onClick={handleRefetchAll} isLoading={isGlobalLoading || isGlobalFetching} />
+          {activeTab === "sales" ? (
+            <Button
+              label="New Sale"
+              onClick={() => navigate("/admin/create-sale")}
+              color="var(--primary-color)"
+              hoverColor="var(--primary-color-hover)"
+              icon={<FaPlus className="text-white text-xs" />}
+            />
+          ) : (
+            <Button
+              label="Create Return"
+              onClick={() => navigate("/admin/create-sales-return")}
+              color="var(--primary-color)"
+              hoverColor="var(--primary-color-hover)"
+              icon={<FaPlus className="text-white text-xs" />}
+            />
+          )}
         </div>
       </div>
 
-      {/* KPI Cards */}
-      <SaleStats
-        totalCount={stats.totalCount}
-        totalAmount={stats.totalAmount}
-        totalPaid={stats.totalPaid}
-        totalDue={stats.totalDue}
-      />
+      {/* KPI Cards based on Active Tab */}
+      {activeTab === "sales" ? (
+        <SaleStats
+          totalCount={salesStats.totalCount}
+          totalAmount={salesStats.totalAmount}
+          totalPaid={salesStats.totalPaid}
+          totalDue={salesStats.dueAmount ?? salesStats.totalDue}
+        />
+      ) : (
+        <SalesReturnStats
+          totalCount={returnsStats.totalCount}
+          totalRefundAmount={returnsStats.totalRefundAmount}
+          totalCashRefund={returnsStats.totalCashRefund}
+          totalCreditAdjust={returnsStats.totalCreditAdjust}
+        />
+      )}
 
-      {/* Main Table */}
-      <SaleTable
-        sales={paginatedSales}
-        exportableSales={sortedSales}
-        totalCount={totalCount}
-        isLoading={isLoading}
-        isFetching={isFetching}
-        pageCount={pageCount}
-        currentPageNumber={currentPageNumber}
-        setCurrentPageNumber={setCurrentPageNumber}
-        dataLimit={dataLimit}
-        setDataLimit={setDataLimit}
-        handlePagination={handlePagination}
-        searchQuery={searchQuery}
-        setSearchQuery={setSearchQuery}
-        statusFilter={statusFilter}
-        setStatusFilter={setStatusFilter}
-        paymentMethodFilter={paymentMethodFilter}
-        setPaymentMethodFilter={setPaymentMethodFilter}
-        customerFilter={customerFilter}
-        setCustomerFilter={setCustomerFilter}
-        customersList={customersList}
-        dateFilter={dateFilter}
-        setDateFilter={setDateFilter}
-        customStartDate={customStartDate}
-        setCustomStartDate={setCustomStartDate}
-        customEndDate={customEndDate}
-        setCustomEndDate={setCustomEndDate}
-        sortBy={sortBy}
-        setSortBy={setSortBy}
-        onEdit={handleEdit}
-        onView={handleView}
-        onPrint={handlePrint}
-      />
+      {/* Unified Tab Switcher: Sales Invoices vs Sales Returns */}
+      <div className="flex items-center gap-1.5 border-b border-gray-200/90 -my-0.5">
+        <button
+          type="button"
+          onClick={() => {
+            setActiveTab("sales");
+            setCurrentPageNumber(1);
+            navigate("/admin/sales", { replace: true });
+          }}
+          className={`flex items-center gap-1.5 px-3 sm:px-3.5 py-1 text-xs font-bold transition-all border-b-2 cursor-pointer ${
+            activeTab === "sales"
+              ? "border-[var(--color-primary)] text-[var(--color-primary)] bg-sky-50/50 rounded-t-md"
+              : "border-transparent text-gray-600 hover:text-black hover:bg-gray-50 rounded-t-md"
+          }`}
+        >
+          <FaShoppingCart size={11} />
+          <span>Sales List ({rawSales.length})</span>
+        </button>
 
-      {/* Printable Invoice Modal */}
+        <button
+          type="button"
+          onClick={() => {
+            setActiveTab("returns");
+            setCurrentPageNumber(1);
+            navigate("/admin/sales-return", { replace: true });
+          }}
+          className={`flex items-center gap-1.5 px-3 sm:px-3.5 py-1 text-xs font-bold transition-all border-b-2 cursor-pointer ${
+            activeTab === "returns"
+              ? "border-[var(--color-primary)] text-[var(--color-primary)] bg-sky-50/50 rounded-t-md"
+              : "border-transparent text-gray-600 hover:text-black hover:bg-gray-50 rounded-t-md"
+          }`}
+        >
+          <FaUndoAlt size={11} />
+          <span>Sales Return List ({rawReturns.length})</span>
+        </button>
+      </div>
+
+      {/* Tab Content */}
+      {activeTab === "sales" ? (
+        <SaleTable
+          sales={paginatedSales}
+          exportableSales={sortedSales}
+          totalCount={salesTotalCount}
+          isLoading={isSalesLoading}
+          isFetching={isSalesFetching}
+          pageCount={salesPageCount}
+          currentPageNumber={currentPageNumber}
+          setCurrentPageNumber={setCurrentPageNumber}
+          dataLimit={dataLimit}
+          setDataLimit={setDataLimit}
+          handlePagination={handlePagination}
+          searchQuery={searchQuery}
+          setSearchQuery={setSearchQuery}
+          statusFilter={statusFilter}
+          setStatusFilter={setStatusFilter}
+          paymentMethodFilter={paymentMethodFilter}
+          setPaymentMethodFilter={setPaymentMethodFilter}
+          customerFilter={customerFilter}
+          setCustomerFilter={setCustomerFilter}
+          customersList={customersList}
+          dateFilter={dateFilter}
+          setDateFilter={setDateFilter}
+          customStartDate={customStartDate}
+          setCustomStartDate={setCustomStartDate}
+          customEndDate={customEndDate}
+          setCustomEndDate={setCustomEndDate}
+          sortBy={sortBy}
+          setSortBy={setSortBy}
+          returnedInvoiceSet={returnedInvoiceSet}
+          onEdit={handleEditSale}
+          onView={handleViewSale}
+          onPrint={handlePrintSale}
+        />
+      ) : (
+        <SalesReturnTable
+          returns={paginatedReturns}
+          exportableReturns={sortedReturns}
+          totalCount={returnsTotalCount}
+          rawCount={rawReturns.length}
+          isLoading={isReturnsLoading}
+          pageCount={returnsPageCount}
+          currentPageNumber={currentPageNumber}
+          setCurrentPageNumber={setCurrentPageNumber}
+          dataLimit={dataLimit}
+          setDataLimit={setDataLimit}
+          handlePagination={handlePagination}
+          searchQuery={searchQuery}
+          setSearchQuery={setSearchQuery}
+          customerFilter={customerFilter}
+          setCustomerFilter={setCustomerFilter}
+          customersList={customersList}
+          paymentMethodFilter={paymentMethodFilter}
+          setPaymentMethodFilter={setPaymentMethodFilter}
+          dateFilter={dateFilter}
+          setDateFilter={setDateFilter}
+          customStartDate={customStartDate}
+          setCustomStartDate={setCustomStartDate}
+          customEndDate={customEndDate}
+          setCustomEndDate={setCustomEndDate}
+          sortBy={sortBy}
+          setSortBy={setSortBy}
+          onResetFilters={handleResetFilters}
+          onView={handleViewReturn}
+          onPrint={handlePrintReturn}
+        />
+      )}
+
+      {/* Sale Invoice Modal */}
       <SaleInvoiceModal
-        isOpen={isInvoiceModalOpen}
+        isOpen={isSaleInvoiceModalOpen}
         onClose={() => {
-          setIsInvoiceModalOpen(false);
+          setIsSaleInvoiceModalOpen(false);
           setSelectedSaleForInvoice(null);
         }}
         sale={selectedSaleForInvoice}
+      />
+
+      {/* Sales Return Invoice Modal */}
+      <SalesReturnInvoiceModal
+        isOpen={isReturnInvoiceModalOpen}
+        onClose={() => {
+          setIsReturnInvoiceModalOpen(false);
+          setSelectedReturnForInvoice(null);
+          setAutoPrintReturnModal(false);
+        }}
+        returnData={selectedReturnForInvoice}
+        autoPrint={autoPrintReturnModal}
       />
     </div>
   );

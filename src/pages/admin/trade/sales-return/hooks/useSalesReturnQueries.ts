@@ -116,7 +116,7 @@ export const fetchSalesAndReturnList = async (): Promise<any[]> => {
         Boolean(item.returnGrandTotal) ||
         String(item.returnType || "").toUpperCase() === "RETURN" ||
         String(item.status || "").toUpperCase() === "RETURN" ||
-        (item.refNo && String(item.refNo).startsWith("SR-")) ||
+        (typeof item.refNo === "string" && item.refNo.startsWith("SR-")) ||
         (Array.isArray(item.returnDetails) && item.returnDetails.length > 0) ||
         (Array.isArray(item.salesReturnDetails) && item.salesReturnDetails.length > 0);
 
@@ -137,14 +137,15 @@ export const fetchSalesAndReturnList = async (): Promise<any[]> => {
             : [];
         item.salesDetails = lineItems;
         item.details = lineItems;
+        item.isReturnRecord = isReturn;
 
         unifiedList.push(item);
       }
     };
 
-    sales.forEach(addItem);
-    returns.forEach(addItem);
-    directList.forEach(addItem);
+    sales.forEach((s) => addItem(s));
+    returns.forEach((r) => addItem(r));
+    directList.forEach((d) => addItem(d));
 
     return unifiedList;
   } catch (error) {
