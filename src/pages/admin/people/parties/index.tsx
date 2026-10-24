@@ -99,11 +99,40 @@ const Parties: React.FC = () => {
       }
     }
 
-    return list.filter((p: any) => {
-      if (!p || typeof p !== "object") return false;
-      const isDel = String(p.isDeleted || "").trim().toUpperCase();
-      return isDel !== "Y" && isDel !== "YES" && isDel !== "TRUE" && isDel !== "1";
-    });
+    return list
+      .filter((p: any) => {
+        if (!p || typeof p !== "object") return false;
+        const isDel = String(p.isDeleted || p.is_deleted || "").trim().toUpperCase();
+        return isDel !== "Y" && isDel !== "YES" && isDel !== "TRUE" && isDel !== "1";
+      })
+      .map((p: any) => {
+        const id = p.id ?? p.partyId;
+        const name = p.name || p.partyName || "";
+        const phone = p.phone || p.partyPhone || "";
+        const email = p.email || "";
+        const address = p.address || p.partyAddress || "";
+        const rawType = String(p.type || p.partyType || "CUSTOMER").toUpperCase();
+        const type = rawType.includes("SUPPLIER") ? "SUPPLIER" : "CUSTOMER";
+        const openingBalance = p.openingBalance ?? p.balance ?? 0;
+        const balance = p.balance ?? p.openingBalance ?? 0;
+
+        return {
+          ...p,
+          id,
+          partyId: id,
+          name,
+          partyName: name,
+          phone,
+          partyPhone: phone,
+          email,
+          address,
+          partyAddress: address,
+          type,
+          partyType: type,
+          openingBalance,
+          balance,
+        };
+      });
   }, [rawPartyData]);
 
   const isPartyActive = (p: PartyItem) => {

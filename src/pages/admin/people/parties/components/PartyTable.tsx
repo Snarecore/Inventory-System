@@ -303,7 +303,7 @@ export const PartyTable: React.FC<PartyTableProps> = ({
                     const email = getPartyEmail(party);
                     const address = getPartyAddress(party);
                     const balance = getPartyBalance(party);
-                    const partyId = String(party.id ?? index);
+                    const partyId = String(party.id ?? party.partyId ?? index);
 
                     return (
                       <tr

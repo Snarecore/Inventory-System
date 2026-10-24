@@ -19,7 +19,7 @@ const ImageUpload: React.FC<ImageUploadProps> = ({ value, onChange, size = "sm",
 		if (url.startsWith("blob:") || url.startsWith("data:") || url.startsWith("http://") || url.startsWith("https://")) {
 			return url;
 		}
-		const rawBaseUrl = import.meta.env.VITE_API_BASE_URL || "https://itouch.stepserp.com/cash-boi-v4/api";
+		const rawBaseUrl = import.meta.env.VITE_API_BASE_URL;
 		const serverHost = rawBaseUrl.replace(/\/api\/?$/, "");
 		const cleanUrl = url.startsWith("/") ? url.slice(1) : url;
 		return `${serverHost}/${cleanUrl}`;

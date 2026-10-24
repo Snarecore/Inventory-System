@@ -14,7 +14,7 @@ interface PartyModalProps {
   isOpen: boolean;
   onClose: () => void;
   partyData?: PartyItem | null;
-  onSuccess: () => void;
+  onSuccess: (savedParty?: PartyItem) => void;
   defaultType?: PartyType;
 }
 
@@ -25,7 +25,7 @@ const PartyModal: React.FC<PartyModalProps> = ({
   onSuccess,
   defaultType = "CUSTOMER",
 }) => {
-  const partyId = partyData?.id;
+  const partyId = partyData?.id ?? partyData?.partyId;
   const isEdit = Boolean(partyData && partyId);
 
   const [partyType, setPartyType] = useState<PartyType>(defaultType);
@@ -95,6 +95,7 @@ const PartyModal: React.FC<PartyModalProps> = ({
       const numBalance = Number(openingBalance) || 0;
 
       const partyDetails = withBranchScope({
+        ...(partyData ? partyData : {}),
         ...(isEdit && partyId ? {
           id: partyId,
           partyId: partyId,
