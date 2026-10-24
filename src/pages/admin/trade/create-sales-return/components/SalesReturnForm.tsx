@@ -39,11 +39,11 @@ import { formatMoney } from "@/utils/formatters";
 import { showSuccessToast, showErrorToast } from "@/utils/toast-utils";
 import type { SaleItem, SalesReturnItem } from "@/types";
 import { useDebounce } from "@/hooks/useDebounce";
-import { RETURN_REASONS } from "@/pages/admin/trade/sales-return/constants/returnReasons";
+import { RETURN_REASONS } from "@/pages/admin/trade/constants/returnReasons";
 import {
   useSalesAndReturnsQuery,
   useSalesQuery,
-} from "@/pages/admin/trade/sales-return/hooks/useSalesReturnQueries";
+} from "@/pages/admin/trade/sales/hooks/useSalesQueries";
 import { useTradeRefund } from "@/hooks/useTradeRefund";
 import TradeRefundSection from "@/components/trade/TradeRefundSection";
 

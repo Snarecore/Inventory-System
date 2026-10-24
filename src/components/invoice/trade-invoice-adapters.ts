@@ -1,6 +1,9 @@
 import type { TradeInvoiceData, TradeInvoiceLineItem } from "./TradeInvoiceModal";
-import { getReturnReasonLabel, extractReturnRemarks } from "@/pages/admin/trade/sales-return/constants/returnReasons";
-import { getPurchaseReturnReasonLabel } from "@/pages/admin/trade/purchase-return/constants/returnReasons";
+import {
+  getReturnReasonLabel,
+  extractReturnRemarks,
+  getPurchaseReturnReasonLabel,
+} from "@/pages/admin/trade/constants/returnReasons";
 
 const resolveAttachmentUrl = (raw: any): string | null => {
   if (!raw) return null;

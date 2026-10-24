@@ -34,7 +34,7 @@ import { useTradeProductSearch } from "@/hooks/useTradeProductSearch";
 import TradeProductSearch from "@/components/trade/TradeProductSearch";
 import TradeLineItemsTable from "@/components/trade/TradeLineItemsTable";
 import TradePartySelector from "@/components/trade/TradePartySelector";
-import { useSalesQuery } from "@/pages/admin/trade/sales-return/hooks/useSalesReturnQueries";
+import { useSalesQuery } from "@/pages/admin/trade/sales/hooks/useSalesQueries";
 import { useFinancialLedger } from "@/hooks/useFinancialLedger";
 import { useCustomerInvoicesDue } from "@/hooks/useCustomerInvoicesDue";
 import { cashLeg, bankLeg, mfsLeg, type TradeTender } from "@/services/financial-ledger-service";

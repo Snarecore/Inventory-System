@@ -9,7 +9,7 @@ import RefreshButton from "@/components/table-components/RefreshButton";
 import SaleStats from "./components/SaleStats";
 import SaleTable from "./components/SaleTable";
 import SaleInvoiceModal from "./components/SaleInvoiceModal";
-import SalesReturnStats from "@/pages/admin/trade/sales-return/components/SalesReturnStats";
+import TradeReturnStats from "@/components/trade/TradeReturnStats";
 import SalesReturnTable from "@/pages/admin/trade/sales-return/components/SalesReturnTable";
 import SalesReturnInvoiceModal from "@/pages/admin/trade/sales-return/components/SalesReturnInvoiceModal";
 import apiConfig from "@/config/api.json";
@@ -18,11 +18,13 @@ import { buildAccessUser } from "@/utils/access-user";
 import { postData } from "@/services/api-service";
 import type { SaleItem, SalesReturnItem, PartyItem } from "@/types";
 import { isPartyActive } from "@/utils/party-utils";
-import { extractReturnRemarks } from "@/pages/admin/trade/sales-return/constants/returnReasons";
+import { extractReturnRemarks } from "@/pages/admin/trade/constants/returnReasons";
 import {
   useSalesAndReturnsQuery,
   extractReturnedSalesInvoiceKeysSet,
-} from "@/pages/admin/trade/sales-return/hooks/useSalesReturnQueries";
+  normalizeSaleRecord,
+  isReturnRecord,
+} from "./hooks/useSalesQueries";
 import { useDebounce } from "@/hooks/useDebounce";
 
 const Sales: React.FC = () => {
@@ -141,29 +143,10 @@ const Sales: React.FC = () => {
     const returnsList: SalesReturnItem[] = [];
 
     apiReturnsData.forEach((item: any) => {
-      const isReturn =
-        Boolean(item.isReturnRecord) ||
-        Boolean(item.returnNo) ||
-        Boolean(item.returnGrandTotal) ||
-        String(item.returnType || "").toUpperCase() === "RETURN" ||
-        String(item.status || "").toUpperCase() === "RETURN" ||
-        (typeof item.refNo === "string" && item.refNo.startsWith("SR-")) ||
-        (Array.isArray(item.returnDetails) && item.returnDetails.length > 0) ||
-        (Array.isArray(item.salesReturnDetails) && item.salesReturnDetails.length > 0) ||
-        Boolean(item.hasReturn);
-
+      const isRet = Boolean(item.isReturnRecord) || isReturnRecord(item);
       const isSale = Boolean(item.invoiceNo) || Boolean(item.salesDate) || (item.orderNo && !item.returnNo);
 
-      const lineItems =
-        Array.isArray(item.salesDetails) && item.salesDetails.length > 0
-          ? item.salesDetails
-          : Array.isArray(item.saleDetails) && item.saleDetails.length > 0
-          ? item.saleDetails
-          : Array.isArray(item.details)
-          ? item.details
-          : [];
-
-      if (isReturn) {
+      if (isRet) {
         const noteText = extractReturnRemarks(item);
 
         returnsList.push({
@@ -195,20 +178,7 @@ const Sales: React.FC = () => {
       }
 
       if (isSale) {
-        const grandTotal = Number(item.grandTotal ?? item.grand_total ?? item.totalAmount ?? 0);
-        const paidAmount = Number(item.paidAmount ?? item.paid_amount ?? 0);
-        const dueAmount = Number(item.dueAmount ?? item.due_amount ?? 0);
-        const hasReturn = Boolean(item.hasReturn || item.returnNo || item.returnGrandTotal);
-
-        salesList.push({
-          ...item,
-          grandTotal,
-          paidAmount,
-          dueAmount,
-          hasReturn,
-          salesDetails: lineItems,
-          details: lineItems,
-        });
+        salesList.push(normalizeSaleRecord(item));
       }
     });
 
@@ -586,7 +556,7 @@ const Sales: React.FC = () => {
           totalDue={salesStats.dueAmount ?? salesStats.totalDue}
         />
       ) : (
-        <SalesReturnStats
+        <TradeReturnStats
           totalCount={returnsStats.totalCount}
           totalRefundAmount={returnsStats.totalRefundAmount}
           totalCashRefund={returnsStats.totalCashRefund}

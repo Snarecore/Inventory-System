@@ -44,9 +44,6 @@ interface SaleTableProps {
   sortBy?: string;
   setSortBy?: (sort: string) => void;
   returnedInvoiceSet?: Set<string>;
-  showReturnAction?: boolean;
-  showMethod?: boolean;
-  showOrderId?: boolean;
   onEdit: (sale: SaleItem) => void;
   onView: (sale: SaleItem) => void;
   onPrint: (sale: SaleItem) => void;
@@ -83,9 +80,6 @@ export const SaleTable: React.FC<SaleTableProps> = ({
   sortBy = "latest",
   setSortBy,
   returnedInvoiceSet,
-  showReturnAction = false,
-  showMethod = !showReturnAction,
-  showOrderId = showReturnAction,
   onEdit,
   onView,
   onPrint,
@@ -206,7 +200,6 @@ export const SaleTable: React.FC<SaleTableProps> = ({
   // Column Visibility Configuration
   const availableColumns: ColumnItem[] = [
     { key: "sl", label: "SL" },
-    ...(showOrderId ? [{ key: "orderId", label: "Order ID" }] : []),
     { key: "customer", label: "Customer" },
     { key: "phone", label: "Phone" },
     { key: "date", label: "Date" },
@@ -214,9 +207,9 @@ export const SaleTable: React.FC<SaleTableProps> = ({
     { key: "total", label: "Total (৳)" },
     { key: "paid", label: "Paid (৳)" },
     { key: "due", label: "Due (৳)" },
-    ...(showMethod ? [{ key: "method", label: "Method" }] : []),
+    { key: "method", label: "Method" },
     { key: "status", label: "Payment Status" },
-    { key: "actions", label: showReturnAction ? "Action" : "Actions" },
+    { key: "actions", label: "Actions" },
   ];
 
   const [visibleColumns, setVisibleColumns] = useState<Record<string, boolean>>(() => {
@@ -454,7 +447,6 @@ export const SaleTable: React.FC<SaleTableProps> = ({
               <thead>
                 <tr className="bg-[#41BEF3] text-black text-xs font-semibold">
                   {isColVisible("sl") && <th className="py-2.5 px-3 text-center w-10">SL</th>}
-                  {showOrderId && isColVisible("orderId") && <th className="py-2.5 px-3">Order ID</th>}
                   {isColVisible("customer") && (
                     <th className="py-2.5 px-3">
                       <SortHeader label="Customer" activeKey="customer" />
@@ -472,12 +464,10 @@ export const SaleTable: React.FC<SaleTableProps> = ({
                   )}
                   {isColVisible("paid") && <th className="py-2.5 px-3 text-right">Paid (৳)</th>}
                   {isColVisible("due") && <th className="py-2.5 px-3 text-right">Due (৳)</th>}
-                  {showMethod && isColVisible("method") && <th className="py-2.5 px-3 text-center">Method</th>}
+                  {isColVisible("method") && <th className="py-2.5 px-3 text-center">Method</th>}
                   {isColVisible("status") && <th className="py-2.5 px-3 text-center">Payment Status</th>}
                   {isColVisible("actions") && (
-                    <th className={`py-2.5 px-3 text-center ${showReturnAction ? "w-36" : "w-28"}`}>
-                      {showReturnAction ? "Action" : "Actions"}
-                    </th>
+                    <th className="py-2.5 px-3 text-center w-28">Actions</th>
                   )}
                 </tr>
               </thead>
@@ -525,15 +515,6 @@ export const SaleTable: React.FC<SaleTableProps> = ({
                     {isColVisible("sl") && (
                       <td className="py-2.5 px-3 text-center text-black text-xs font-normal">
                         {serialNumber}
-                      </td>
-                    )}
-
-                    {/* Order ID (Sales Return → Sales List only) */}
-                    {showOrderId && isColVisible("orderId") && (
-                      <td className="py-2.5 px-3 text-black text-xs font-normal whitespace-nowrap">
-                        <span className="font-medium text-gray-800">
-                          {sale.orderNo || sale.invoiceNo || "-"}
-                        </span>
                       </td>
                     )}
 
@@ -593,7 +574,7 @@ export const SaleTable: React.FC<SaleTableProps> = ({
                     )}
 
                     {/* Payment Method */}
-                    {showMethod && isColVisible("method") && (
+                    {isColVisible("method") && (
                       <td className="py-2.5 px-3 text-center">
                         <span className="inline-block px-1.5 py-0.5 text-[10px] font-semibold bg-sky-100 text-sky-900 border border-sky-300 rounded-md">
                           {paymentType}
@@ -613,79 +594,53 @@ export const SaleTable: React.FC<SaleTableProps> = ({
                     {/* Actions */}
                     {isColVisible("actions") && (
                       <td className="py-2 px-3 text-center whitespace-nowrap">
-                        {showReturnAction ? (
-                          <div className="flex items-center justify-center">
-                            {isAlreadyReturned ? (
-                              <span
-                                title="This sale has already been returned"
-                                className="p-1 rounded text-gray-300 cursor-not-allowed inline-flex items-center"
-                              >
-                                <FaUndoAlt size={12} />
-                              </span>
-                            ) : (
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  navigate("/admin/create-sales-return", {
-                                    state: { sale },
-                                  })
-                                }
-                                title="Return Sale / পণ্য ফেরত"
-                                className="p-1 rounded text-rose-600 hover:bg-rose-100 transition-colors cursor-pointer inline-flex items-center"
-                              >
-                                <FaUndoAlt size={12} />
-                              </button>
-                            )}
-                          </div>
-                        ) : (
-                          <div className="flex items-center justify-center gap-1.5">
+                        <div className="flex items-center justify-center gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => onView(sale)}
+                            title="View Invoice"
+                            className="p-1 rounded text-sky-600 hover:bg-sky-100 transition-colors cursor-pointer"
+                          >
+                            <FiEye size={14} />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => onPrint(sale)}
+                            title="Print Invoice"
+                            className="p-1 rounded text-gray-600 hover:bg-gray-100 transition-colors cursor-pointer"
+                          >
+                            <FiPrinter size={14} />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => onEdit(sale)}
+                            title="Edit Sale"
+                            className="p-1 rounded text-amber-600 hover:bg-amber-100 transition-colors cursor-pointer"
+                          >
+                            <FiEdit size={14} />
+                          </button>
+                          {isAlreadyReturned ? (
+                            <span
+                              title="This sale has already been returned"
+                              className="p-1 rounded text-gray-300 cursor-not-allowed inline-flex items-center"
+                            >
+                              <FaUndoAlt size={12} />
+                            </span>
+                          ) : (
                             <button
                               type="button"
-                              onClick={() => onView(sale)}
-                              title="View Invoice"
-                              className="p-1 rounded text-sky-600 hover:bg-sky-100 transition-colors cursor-pointer"
+                              onClick={() =>
+                                navigate("/admin/create-sales-return", {
+                                  state: { sale },
+                                })
+                              }
+                              title="Return Sale / পণ্য ফেরত"
+                              className="p-1 rounded text-rose-600 hover:bg-rose-100 transition-colors cursor-pointer inline-flex items-center"
                             >
-                              <FiEye size={14} />
+                              <FaUndoAlt size={12} />
                             </button>
-                            <button
-                              type="button"
-                              onClick={() => onPrint(sale)}
-                              title="Print Invoice"
-                              className="p-1 rounded text-gray-600 hover:bg-gray-100 transition-colors cursor-pointer"
-                            >
-                              <FiPrinter size={14} />
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => onEdit(sale)}
-                              title="Edit Sale"
-                              className="p-1 rounded text-amber-600 hover:bg-amber-100 transition-colors cursor-pointer"
-                            >
-                              <FiEdit size={14} />
-                            </button>
-                            {isAlreadyReturned ? (
-                              <span
-                                title="This sale has already been returned"
-                                className="p-1 rounded text-gray-300 cursor-not-allowed inline-flex items-center"
-                              >
-                                <FaUndoAlt size={12} />
-                              </span>
-                            ) : (
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  navigate("/admin/create-sales-return", {
-                                    state: { sale },
-                                  })
-                                }
-                                title="Return Sale / পণ্য ফেরত"
-                                className="p-1 rounded text-rose-600 hover:bg-rose-100 transition-colors cursor-pointer inline-flex items-center"
-                              >
-                                <FaUndoAlt size={12} />
-                              </button>
-                            )}
-                          </div>
-                        )}
+                          )}
+                        </div>
                       </td>
                     )}
                   </tr>
