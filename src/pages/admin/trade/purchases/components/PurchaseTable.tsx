@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import { FiEye, FiEdit, FiPrinter, FiChevronDown } from "react-icons/fi";
 import moment from "moment";
 import Search from "@/components/table-components/Search";
@@ -8,7 +9,7 @@ import TableSkeleton from "@/components/skeleton/TableSkeleton";
 import Pagination from "@/components/pagination";
 import ColumnVisibilityDropdown, { type ColumnItem } from "@/components/table-components/ColumnVisibilityDropdown";
 import type { PurchaseItem, PartyItem } from "@/types";
-import { FaPhone, FaCalendarAlt, FaSearch, FaFileExcel } from "react-icons/fa";
+import { FaPhone, FaCalendarAlt, FaSearch, FaFileExcel, FaUndoAlt } from "react-icons/fa";
 import { exportPurchasesToExcel } from "@/utils/excel-export";
 import { showSuccessToast, showErrorToast } from "@/utils/toast-utils";
 import { formatMoney } from "@/utils/formatters";
@@ -19,6 +20,7 @@ interface PurchaseTableProps {
   totalCount: number;
   isLoading?: boolean;
   isFetching?: boolean;
+  returnedInvoiceSet?: Set<string>;
   pageCount: number;
   currentPageNumber: number;
   setCurrentPageNumber: React.Dispatch<React.SetStateAction<number>>;
@@ -45,6 +47,7 @@ interface PurchaseTableProps {
   onEdit: (purchase: PurchaseItem) => void;
   onView: (purchase: PurchaseItem) => void;
   onPrint: (purchase: PurchaseItem) => void;
+  onReturn?: (purchase: PurchaseItem) => void;
   onExport?: () => void;
 }
 
@@ -67,6 +70,7 @@ export const PurchaseTable: React.FC<PurchaseTableProps> = ({
   exportablePurchases,
   totalCount,
   isLoading,
+  returnedInvoiceSet,
   pageCount,
   currentPageNumber,
   setCurrentPageNumber,
@@ -93,8 +97,10 @@ export const PurchaseTable: React.FC<PurchaseTableProps> = ({
   onEdit,
   onView,
   onPrint,
+  onReturn,
   onExport,
 }) => {
+  const navigate = useNavigate();
   const [isSupplierDropdownOpen, setIsSupplierDropdownOpen] = useState<boolean>(false);
   const [supplierSearchQuery, setSupplierSearchQuery] = useState<string>("");
 
@@ -487,6 +493,17 @@ export const PurchaseTable: React.FC<PurchaseTableProps> = ({
                     statusBg = "bg-rose-100 text-rose-800 border-rose-300 font-semibold";
                   }
 
+                  const isAlreadyReturned = Boolean(
+                    purchase.hasReturn ||
+                    (returnedInvoiceSet && (
+                      (purchase.invoiceNo && returnedInvoiceSet.has(String(purchase.invoiceNo).trim().toLowerCase())) ||
+                      (purchase.orderNo && returnedInvoiceSet.has(String(purchase.orderNo).trim().toLowerCase())) ||
+                      (purchase.challanNo && returnedInvoiceSet.has(String(purchase.challanNo).trim().toLowerCase())) ||
+                      (purchase.id && returnedInvoiceSet.has(String(purchase.id).trim().toLowerCase())) ||
+                      (purchase.purchaseId && returnedInvoiceSet.has(String(purchase.purchaseId).trim().toLowerCase()))
+                    ))
+                  );
+
                   return (
                     <tr
                       key={purchase.id || purchase.invoiceNo || index}
@@ -600,6 +617,32 @@ export const PurchaseTable: React.FC<PurchaseTableProps> = ({
                             >
                               <FiEdit size={14} />
                             </button>
+                            {/* Return Action */}
+                            {isAlreadyReturned ? (
+                              <span
+                                title="Already Returned"
+                                className="p-1 rounded text-gray-300 cursor-not-allowed inline-flex items-center"
+                              >
+                                <FaUndoAlt size={12} />
+                              </span>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  if (onReturn) {
+                                    onReturn(purchase);
+                                  } else {
+                                    navigate("/admin/create-purchase-return", {
+                                      state: { purchase },
+                                    });
+                                  }
+                                }}
+                                title="Return Product"
+                                className="p-1 rounded text-indigo-600 hover:bg-indigo-100 transition-colors cursor-pointer"
+                              >
+                                <FaUndoAlt size={12} />
+                              </button>
+                            )}
                           </div>
                         </td>
                       )}

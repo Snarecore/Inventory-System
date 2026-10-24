@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
 import moment from "moment";
 import { FaPlus, FaShoppingCart, FaUndoAlt } from "react-icons/fa";
 import PageHeader from "@/components/page-header/PageHeader";
@@ -12,14 +11,10 @@ import SaleInvoiceModal from "./components/SaleInvoiceModal";
 import TradeReturnStats from "@/components/trade/TradeReturnStats";
 import SalesReturnTable from "@/pages/admin/trade/sales-return/components/SalesReturnTable";
 import SalesReturnInvoiceModal from "@/pages/admin/trade/sales-return/components/SalesReturnInvoiceModal";
-import apiConfig from "@/config/api.json";
-import { partyListQueryKey } from "@/config/query-key";
-import { buildAccessUser } from "@/utils/access-user";
-import { postData } from "@/services/api-service";
 import type { SaleItem, SalesReturnItem, PartyItem } from "@/types";
-import { isPartyActive } from "@/utils/party-utils";
 import { extractReturnRemarks } from "@/pages/admin/trade/constants/returnReasons";
 import {
+  useSalesQuery,
   useSalesAndReturnsQuery,
   extractReturnedSalesInvoiceKeysSet,
   normalizeSaleRecord,
@@ -66,78 +61,19 @@ const Sales: React.FC = () => {
   const [selectedReturnForInvoice, setSelectedReturnForInvoice] = useState<SalesReturnItem | null>(null);
   const [autoPrintReturnModal, setAutoPrintReturnModal] = useState<boolean>(false);
 
-  // 1. Fetch Customers (Shared query)
-  const { data: rawCustomerData } = useQuery({
-    queryKey: [partyListQueryKey, "CUSTOMER"],
-    queryFn: async () => {
-      try {
-        const accessUser = buildAccessUser();
-        const res: any = await postData({
-          url: apiConfig.party.partyListUrl,
-          body: { accessUser },
-        });
-        return res;
-      } catch {
-        return [];
-      }
-    },
-    staleTime: 5 * 60 * 1000,
-  });
 
-  const customersList: PartyItem[] = useMemo(() => {
-    let list: any[] = [];
-    if (rawCustomerData) {
-      if (Array.isArray(rawCustomerData)) list = rawCustomerData;
-      else if (rawCustomerData && typeof rawCustomerData === "object") {
-        const raw = rawCustomerData as any;
-        if (Array.isArray(raw.customerList)) list = raw.customerList;
-        else if (Array.isArray(raw.partyList)) list = raw.partyList;
-        else if (Array.isArray(raw.partyInfoList)) list = raw.partyInfoList;
-        else if (Array.isArray(raw.data)) list = raw.data;
-      }
-    }
 
-    const filtered = list.filter((p: any) => {
-      if (!isPartyActive(p)) return false;
-      const type = String(p.type || p.partyType || p.party_type || p.party_type_name || p.role || "").toUpperCase();
-      if (type.includes("SUPPLIER") || type.includes("VENDOR")) return false;
-      return type.includes("CUSTOMER") || !type;
-    });
-
-    const custMap = new Map<string, PartyItem>();
-    filtered.forEach((p: any) => {
-      const key = String(p.id ?? p.partyId ?? p.name ?? "").trim();
-      if (key) {
-        custMap.set(key, {
-          id: p.id ?? p.partyId,
-          partyId: p.id ?? p.partyId,
-          name: p.name || p.partyName || "Customer",
-          partyName: p.name || p.partyName || "Customer",
-          phone: p.phone || p.partyPhone || "",
-          partyPhone: p.phone || p.partyPhone || "",
-          address: p.address || p.partyAddress || "",
-          type: "CUSTOMER",
-        });
-      }
-    });
-
-    return Array.from(custMap.values());
-  }, [rawCustomerData]);
-
-  // 2. Fetch Combined Sales & Returns in a SINGLE API Request (Eliminating duplicate calls)
+  // 2. Primary Unified Fetch: Fetch Combined Sales & Returns in a SINGLE API Request
   const {
     data: apiReturnsData,
-    isLoading: isSalesLoading,
-    isFetching: isSalesFetching,
+    isLoading: isCombinedLoading,
+    isFetching: isCombinedFetching,
     refetch: refetchSalesAndReturns,
   } = useSalesAndReturnsQuery();
 
-  const isReturnsLoading = isSalesLoading;
-  const isReturnsFetching = isSalesFetching;
-
   // Single-pass memoized extraction of Sales and Returns
-  const { rawSales, rawReturns } = useMemo(() => {
-    if (!Array.isArray(apiReturnsData)) return { rawSales: [], rawReturns: [] };
+  const { combinedSales, rawReturns } = useMemo(() => {
+    if (!Array.isArray(apiReturnsData)) return { combinedSales: [], rawReturns: [] };
 
     const salesList: SaleItem[] = [];
     const returnsList: SalesReturnItem[] = [];
@@ -182,8 +118,73 @@ const Sales: React.FC = () => {
       }
     });
 
-    return { rawSales: salesList, rawReturns: returnsList };
+    return { combinedSales: salesList, rawReturns: returnsList };
   }, [apiReturnsData]);
+
+  // Fallback: If combined query yielded zero sales after completion, automatically fetch standard sales list
+  const shouldFallbackSales = Boolean(apiReturnsData && combinedSales.length === 0);
+
+  const {
+    data: fallbackSalesData,
+    isLoading: isFallbackSalesLoading,
+    isFetching: isFallbackSalesFetching,
+    refetch: refetchFallbackSales,
+  } = useSalesQuery({
+    enabled: shouldFallbackSales,
+  });
+
+  // Final sales array: uses combined sales, or fallback sales if combined was empty
+  const rawSales = useMemo(() => {
+    if (combinedSales.length > 0) return combinedSales;
+    if (Array.isArray(fallbackSalesData)) return fallbackSalesData;
+    return [];
+  }, [combinedSales, fallbackSalesData]);
+
+  // Zero-network customers list derived directly from active sales and returns
+  const customersList: PartyItem[] = useMemo(() => {
+    const custMap = new Map<string, PartyItem>();
+
+    rawSales.forEach((s) => {
+      const key = String(s.customerId ?? s.partyId ?? s.customerName ?? "").trim();
+      if (key && !custMap.has(key)) {
+        custMap.set(key, {
+          id: s.customerId ?? s.partyId,
+          partyId: s.customerId ?? s.partyId,
+          name: s.customerName || "Customer",
+          partyName: s.customerName || "Customer",
+          phone: s.customerPhone || "",
+          partyPhone: s.customerPhone || "",
+          address: s.customerAddress || "",
+          type: "CUSTOMER",
+        });
+      }
+    });
+
+    rawReturns.forEach((r) => {
+      const key = String(r.customerId ?? r.partyId ?? r.customerName ?? "").trim();
+      if (key && !custMap.has(key)) {
+        custMap.set(key, {
+          id: r.customerId ?? r.partyId,
+          partyId: r.customerId ?? r.partyId,
+          name: r.customerName || "Customer",
+          partyName: r.customerName || "Customer",
+          phone: r.customerPhone || "",
+          partyPhone: r.customerPhone || "",
+          address: r.customerAddress || "",
+          type: "CUSTOMER",
+        });
+      }
+    });
+
+    return Array.from(custMap.values()).sort((a, b) =>
+      String(a.name || "").localeCompare(String(b.name || ""))
+    );
+  }, [rawSales, rawReturns]);
+
+  const isSalesLoading = isCombinedLoading || (shouldFallbackSales && isFallbackSalesLoading);
+  const isSalesFetching = isCombinedFetching || (shouldFallbackSales && isFallbackSalesFetching);
+  const isReturnsLoading = isCombinedLoading;
+  const isReturnsFetching = isCombinedFetching;
 
   // Set of returned invoice keys for the return icon indicators
   const returnedInvoiceSet = useMemo(() => {
@@ -510,7 +511,11 @@ const Sales: React.FC = () => {
   };
 
   const handleRefetchAll = () => {
+    handleResetFilters();
     refetchSalesAndReturns();
+    if (shouldFallbackSales) {
+      refetchFallbackSales();
+    }
   };
 
   const isGlobalLoading = isSalesLoading || isReturnsLoading;

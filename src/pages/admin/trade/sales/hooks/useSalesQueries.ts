@@ -75,11 +75,7 @@ export const isReturnRecord = (item: any): boolean => {
 export const fetchSalesList = async (): Promise<SaleItem[]> => {
   try {
     const accessUser = buildAccessUser();
-    const endpoint =
-      apiConfig.sales.salesAndReturnUrl ||
-      apiConfig.salesReturn.getSalesAndReturnUrl ||
-      apiConfig.sales.salesListUrl ||
-      "get-sales-and-return";
+    const endpoint = apiConfig.sales.salesListUrl;
 
     const res: any = await postData({
       url: endpoint,

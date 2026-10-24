@@ -91,21 +91,9 @@ export const menu = [
 				subItems: [
 					{ id: 26, name: "Purchase List", path: "/admin/purchases", permissionKey: "purchase.list.view" },
 					{ id: 27, name: "Create Purchase", path: "/admin/create-purchase", permissionKey: "purchase.create.view" },
-					{ id: 395, name: "Supplier Payment", path: "/admin/supplier-payment", permissionKey: "purchase.payment.view" },
-				],
-			},
-
-			{
-				id: 390,
-				name: "Purchase Return",
-				title: "Purchase Return",
-				icon: FaUndoAlt,
-				path: "/admin/purchase-return",
-				permissionKey: "purchase.return.view",
-				subItems: [
-					{ id: 391, name: "Purchase List", path: "/admin/purchase-return-purchases", permissionKey: "purchase.list.view" },
+					{ id: 31, name: "Purchase Returns", path: "/admin/purchase-return", permissionKey: "purchase.return.view" },
 					{ id: 32, name: "Create Return", path: "/admin/create-purchase-return", permissionKey: "purchase.create_return.view" },
-					{ id: 31, name: "Purchase Returns List", path: "/admin/purchase-return", permissionKey: "purchase.return.view" },
+					{ id: 395, name: "Supplier Payment", path: "/admin/supplier-payment", permissionKey: "purchase.payment.view" },
 				],
 			},
 			{

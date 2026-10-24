@@ -25,7 +25,6 @@ import {
   purchaseListQueryKey,
   productListQueryKey,
   productQueryKey,
-  partyListQueryKey,
   dashboardQueryKey,
 } from "@/config/query-key";
 import { useFinancialAccounts } from "@/hooks/useFinancialAccounts";
@@ -39,11 +38,11 @@ import { postData } from "@/services/api-service";
 import { formatMoney } from "@/utils/formatters";
 import { showSuccessToast, showErrorToast } from "@/utils/toast-utils";
 import type { PurchaseItem, PurchaseReturnItem } from "@/types";
-import { PURCHASE_RETURN_REASONS } from "../constants/returnReasons";
+import { PURCHASE_RETURN_REASONS } from "@/pages/admin/trade/constants/returnReasons";
 import {
   usePurchasesQuery,
   usePurchaseAndReturnsQuery,
-} from "../hooks/usePurchaseReturnQueries";
+} from "@/pages/admin/trade/purchases/hooks/usePurchaseQueries";
 
 interface ReturnLineFormState {
   productId: string | number;
@@ -847,7 +846,6 @@ export const PurchaseReturnForm: React.FC = () => {
       queryClient.invalidateQueries({ queryKey: [purchaseListQueryKey] });
       queryClient.invalidateQueries({ queryKey: [productListQueryKey], refetchType: "none" });
       queryClient.invalidateQueries({ queryKey: [productQueryKey], refetchType: "none" });
-      queryClient.invalidateQueries({ queryKey: [partyListQueryKey], refetchType: "none" });
       queryClient.invalidateQueries({ queryKey: [dashboardQueryKey], refetchType: "none" });
 
       // Post financial transaction INCOME to increase cash/bank balance for supplier refund

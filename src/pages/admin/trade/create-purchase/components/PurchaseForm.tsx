@@ -33,7 +33,7 @@ import { useTradeProductSearch } from "@/hooks/useTradeProductSearch";
 import TradeProductSearch from "@/components/trade/TradeProductSearch";
 import TradeLineItemsTable from "@/components/trade/TradeLineItemsTable";
 import TradePartySelector from "@/components/trade/TradePartySelector";
-import { usePurchasesQuery } from "@/pages/admin/trade/purchase-return/hooks/usePurchaseReturnQueries";
+import { usePurchasesQuery } from "@/pages/admin/trade/purchases/hooks/usePurchaseQueries";
 import { useFinancialLedger } from "@/hooks/useFinancialLedger";
 import { cashLeg, bankLeg, mfsLeg, type TradeTender } from "@/services/financial-ledger-service";
 import type { PurchaseItem, ProductItem, PartyItem, PurchaseChallanSettings } from "@/types";

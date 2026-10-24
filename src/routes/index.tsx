@@ -40,8 +40,6 @@ const Sales = React.lazy(() => import('@/pages/admin/trade/sales'))
 const CreateSale = React.lazy(() => import('@/pages/admin/trade/create-sale'))
 const SalesReport = React.lazy(() => import('@/pages/admin/trade/sales-report'))
 const CreateSalesReturn = React.lazy(() => import('@/pages/admin/trade/create-sales-return'))
-const PurchaseReturn = React.lazy(() => import('@/pages/admin/trade/purchase-return'))
-const PurchaseReturnPurchases = React.lazy(() => import('@/pages/admin/trade/purchase-return/PurchaseReturnPurchasesPage'))
 const CreatePurchaseReturn = React.lazy(() => import('@/pages/admin/trade/purchase-return/CreatePurchaseReturnPage'))
 const CustomerCollection = React.lazy(() => import('@/pages/admin/trade/customer-collection'))
 const SupplierPayment = React.lazy(() => import('@/pages/admin/trade/supplier-payment'))
@@ -288,11 +286,11 @@ export const router = createBrowserRouter([
       },
       {
         path: 'purchase-return',
-        element: withSuspense(PurchaseReturn),
+        element: withSuspense(Purchases),
       },
       {
         path: 'purchase-return-purchases',
-        element: withSuspense(PurchaseReturnPurchases),
+        element: <Navigate to="/admin/purchases" replace />,
       },
       {
         path: 'create-purchase-return',

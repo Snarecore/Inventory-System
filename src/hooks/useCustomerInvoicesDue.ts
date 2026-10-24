@@ -54,7 +54,7 @@ export const fetchCustomerInvoicesDue = async (
   if (!customerId) return [];
 
   try {
-    const endpoint = apiConfig.collection?.customerInvoicesDueUrl || "customer-invoices-due";
+    const endpoint = apiConfig.collection.customerInvoicesDueUrl;
     const res: any = await postData({
       url: endpoint,
       body: {

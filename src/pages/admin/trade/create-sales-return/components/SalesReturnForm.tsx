@@ -25,7 +25,6 @@ import {
   salesListQueryKey,
   productListQueryKey,
   productQueryKey,
-  partyListQueryKey,
   dashboardQueryKey,
   customersDueQueryKey,
   customerInvoicesDueQueryKey,
@@ -881,7 +880,6 @@ export const SalesReturnForm: React.FC = () => {
       queryClient.invalidateQueries({ queryKey: [salesListQueryKey] });
       queryClient.invalidateQueries({ queryKey: [productListQueryKey], refetchType: "none" });
       queryClient.invalidateQueries({ queryKey: [productQueryKey], refetchType: "none" });
-      queryClient.invalidateQueries({ queryKey: [partyListQueryKey], refetchType: "none" });
       queryClient.invalidateQueries({ queryKey: [dashboardQueryKey], refetchType: "none" });
       queryClient.invalidateQueries({ queryKey: [customersDueQueryKey] });
       queryClient.invalidateQueries({ queryKey: [customerInvoicesDueQueryKey] });

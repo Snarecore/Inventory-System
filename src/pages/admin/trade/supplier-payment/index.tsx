@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import PageHeader from "@/components/page-header/PageHeader";
 import RefreshButton from "@/components/table-components/RefreshButton";
 import { usePurchasesDueQuery } from "@/hooks/usePurchasesDue";
-import { usePurchasesQuery } from "@/pages/admin/trade/purchase-return/hooks/usePurchaseReturnQueries";
+import { usePurchasesQuery } from "@/pages/admin/trade/purchases/hooks/usePurchaseQueries";
 import { partyListQueryKey } from "@/config/query-key";
 import apiConfig from "@/config/api.json";
 import { postData } from "@/services/api-service";
