@@ -67,13 +67,7 @@ export const PartyTable: React.FC<PartyTableProps> = ({
     { label: "Inactive", value: "inactive" },
   ];
 
-  const SortHeader = ({
-    label,
-    activeKey,
-  }: {
-    label: string;
-    activeKey: "name" | "amount";
-  }) => {
+  const renderSortHeader = (label: string, activeKey: "name" | "amount") => {
     const isAsc =
       sortBy === (activeKey === "name" ? "name_a_to_z" : "amount_low_to_high");
     const isDesc =
@@ -118,7 +112,7 @@ export const PartyTable: React.FC<PartyTableProps> = ({
     {
       key: "name",
       label: "Names",
-      headerNode: <SortHeader label="Names" activeKey="name" />,
+      headerNode: renderSortHeader("Names", "name"),
       align: "text-left",
       width: "w-[10.285%]",
     },
@@ -130,7 +124,7 @@ export const PartyTable: React.FC<PartyTableProps> = ({
       label: "Opening Balance",
       headerNode: (
         <div className="flex justify-end">
-          <SortHeader label="Opening Balance" activeKey="amount" />
+          {renderSortHeader("Opening Balance", "amount")}
         </div>
       ),
       align: "text-right",

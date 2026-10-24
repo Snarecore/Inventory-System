@@ -123,14 +123,8 @@ export const TradePartyDueTable = <T extends GenericTradePartyDue>({
 
   const activeVisibleColumnCount = availableColumns.filter((c) => isColVisible(c.key)).length;
 
-  // Sort Header
-  const SortHeader = ({
-    label,
-    activeKey,
-  }: {
-    label: string;
-    activeKey: "name" | "due";
-  }) => {
+  // Sort Header render helper
+  const renderSortHeader = (label: string, activeKey: "name" | "due") => {
     const isAsc = sortBy === (activeKey === "name" ? "name_asc" : "lowest");
 
     const handleClick = () => {
@@ -311,7 +305,7 @@ export const TradePartyDueTable = <T extends GenericTradePartyDue>({
                 )}
                 {isColVisible("name") && (
                   <th className="py-2.5 px-3 whitespace-nowrap">
-                    <SortHeader label={`${partyTitle} Name`} activeKey="name" />
+                    {renderSortHeader(`${partyTitle} Name`, "name")}
                   </th>
                 )}
                 {isColVisible("phone") && <th className="py-2.5 px-3 whitespace-nowrap">Phone</th>}
@@ -320,7 +314,7 @@ export const TradePartyDueTable = <T extends GenericTradePartyDue>({
                 {isColVisible("due") && (
                   <th className="py-2.5 px-3 text-right whitespace-nowrap">
                     <div className="flex justify-end">
-                      <SortHeader label="Total Due (৳)" activeKey="due" />
+                      {renderSortHeader("Total Due (৳)", "due")}
                     </div>
                   </th>
                 )}

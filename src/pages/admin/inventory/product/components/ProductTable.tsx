@@ -12,7 +12,7 @@ import DeleteModal from "@/components/modal/DeleteModal";
 import { showErrorToast } from "@/utils/toast-utils";
 import { useAPI } from "@/hooks/useApi";
 import apiConfig from "@/config/api.json";
-import { productListQueryKey, productQueryKey, insertProductQueryKey } from "@/config/query-key";
+import { productListQueryKey, productQueryKey } from "@/config/query-key";
 import { buildAccessUser, withBranchScope } from "@/utils/access-user";
 import type { ProductItem } from "@/types";
 import { getProductStockDisplay } from "@/utils/product-unit";
@@ -187,7 +187,7 @@ export const ProductTable = ({
                     accessUser: buildAccessUser(),
                     product: deletePayload
                 },
-                invalidateQueryKey: [productListQueryKey, productQueryKey, insertProductQueryKey],
+                invalidateQueryKey: [productListQueryKey, productQueryKey],
                 showSuccessMessage: true,
                 showErrorMessage: true
             });
@@ -232,7 +232,7 @@ export const ProductTable = ({
                     accessUser: buildAccessUser(),
                     product: updatedProductPayload
                 },
-                invalidateQueryKey: [productListQueryKey, productQueryKey, insertProductQueryKey],
+                invalidateQueryKey: [productListQueryKey, productQueryKey],
                 showSuccessMessage: true,
                 showErrorMessage: true
             });

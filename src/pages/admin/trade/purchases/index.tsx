@@ -64,13 +64,13 @@ const Purchases: React.FC = () => {
   const [autoPrintReturnModal, setAutoPrintReturnModal] = useState<boolean>(false);
 
 
-  // 1. Authoritative Purchases Query: /get-purchase-list (Single source of truth for Purchases)
+  // 1. Authoritative Purchases Query: disabled by default since usePurchaseAndReturnsQuery already fetches unified purchases
   const {
     data: purchasesData,
     isLoading: isPurchasesLoadingQuery,
     isFetching: isPurchasesFetching,
     refetch: refetchPurchases,
-  } = usePurchasesQuery();
+  } = usePurchasesQuery({ enabled: false });
 
   // 2. Returns & Return Indicators Query: /get-purchase-and-return-list
   const {

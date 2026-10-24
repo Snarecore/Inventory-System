@@ -175,13 +175,7 @@ export function TradeReturnTable<T extends Record<string, any>>({
     dateFilter !== "all" ||
     sortBy !== "latest";
 
-  const SortHeader = ({
-    label,
-    activeKey,
-  }: {
-    label: string;
-    activeKey: "party" | "amount";
-  }) => {
+  const renderSortHeader = (label: string, activeKey: "party" | "amount") => {
     const isAsc =
       sortBy === (activeKey === "party" ? `${partyType}_a_to_z` : "amount_low_to_high") ||
       (activeKey === "amount" && sortBy === "amount_low");
@@ -408,8 +402,6 @@ export function TradeReturnTable<T extends Record<string, any>>({
               <option value="all">All Methods</option>
               <option value="CASH">Cash</option>
               <option value="CREDIT">Credit / Due Adjust</option>
-              <option value="MFS">MFS (bKash/Nagad)</option>
-              <option value="BANK">Bank</option>
             </select>
             <FiChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 text-black pointer-events-none text-xs" size={13} />
           </div>
@@ -471,7 +463,7 @@ export function TradeReturnTable<T extends Record<string, any>>({
                 {isColVisible("orderId") && <th className="py-2.5 px-3 whitespace-nowrap">Order ID</th>}
                 {isColVisible(partyType) && (
                   <th className="py-2.5 px-3 min-w-[120px]">
-                    <SortHeader label={actualPartyLabel} activeKey="party" />
+                    {renderSortHeader(actualPartyLabel, "party")}
                   </th>
                 )}
                 {isColVisible("returnDate") && <th className="py-2.5 px-3 whitespace-nowrap">Return Date</th>}
@@ -481,7 +473,7 @@ export function TradeReturnTable<T extends Record<string, any>>({
                 {isColVisible("refundAmount") && (
                   <th className="py-2.5 px-3 text-right w-32 whitespace-nowrap">
                     <div className="flex justify-end">
-                      <SortHeader label="Refund Amount" activeKey="amount" />
+                      {renderSortHeader("Refund Amount", "amount")}
                     </div>
                   </th>
                 )}

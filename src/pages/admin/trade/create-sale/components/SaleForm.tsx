@@ -108,7 +108,6 @@ export const CreateSaleForm: React.FC = () => {
   const [lineItems, setLineItems] = useState<FormLineItem[]>([]);
 
   // Pricing, Discounts, VAT & Extra
-  const [discountType, setDiscountType] = useState<"FLAT" | "PERCENT">("FLAT");
   const [discountValue, setDiscountValue] = useState<string>("");
   const [vatAmount, setVatAmount] = useState<string>("");
   const [deliveryCharge, setDeliveryCharge] = useState<string>("");
@@ -274,7 +273,6 @@ export const CreateSaleForm: React.FC = () => {
 
       const disc = data.discount ?? "";
       setDiscountValue(disc !== "" && disc !== null && Number(disc) > 0 ? String(disc) : "");
-      setDiscountType(data.discountType === "PERCENT" ? "PERCENT" : "FLAT");
 
       const v = data.vat ?? "";
       setVatAmount(v !== "" && v !== null && Number(v) > 0 ? String(v) : "");
@@ -505,9 +503,6 @@ export const CreateSaleForm: React.FC = () => {
   });
 
   const {
-    cashAmount,
-    bankAmount,
-    mfsAmount,
     cashGiven,
     selectedBankId,
     selectedMfsId,
@@ -585,7 +580,6 @@ export const CreateSaleForm: React.FC = () => {
           stock,
         };
         setLineItems((prev) => [...prev, newLine]);
-        showSuccessToast(`Added "${pName}" to invoice`);
       }
     },
     [isProductAlreadyInList]
@@ -639,7 +633,6 @@ export const CreateSaleForm: React.FC = () => {
           };
           return updated;
         });
-        showSuccessToast(`Increased "${pName}" quantity to ${newQty}`);
       } else {
         const newLine: FormLineItem = {
           productId: pId,
@@ -655,7 +648,6 @@ export const CreateSaleForm: React.FC = () => {
           stock,
         };
         setLineItems((prev) => [...prev, newLine]);
-        showSuccessToast(`Added "${pName}" to invoice`);
       }
     },
     [lineItems]

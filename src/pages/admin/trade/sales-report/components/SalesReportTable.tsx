@@ -132,8 +132,6 @@ export const SalesReportTable: React.FC<SalesReportTableProps> = ({
           >
             <option value="all">All Payments</option>
             <option value="CASH">Cash</option>
-            <option value="BANK">Bank / Card</option>
-            <option value="MFS">MFS (bKash/Nagad)</option>
             <option value="CREDIT">Credit / Due</option>
           </select>
 

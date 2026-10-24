@@ -53,8 +53,8 @@ const SalesReportPage: React.FC = () => {
   const [showCharts, setShowCharts] = useState<boolean>(true);
 
   // Data Mode toggle: "mock" or "live"
-  // Defaulting to "mock" for design & testing as requested by the user
-  const [useMockData, setUseMockData] = useState<boolean>(true);
+  // Default to live data for production
+  const [useMockData, setUseMockData] = useState<boolean>(false);
 
   // Modals state
   const [selectedInvoice, setSelectedInvoice] = useState<SaleItem | null>(null);

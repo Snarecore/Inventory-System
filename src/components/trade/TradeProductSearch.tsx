@@ -164,7 +164,7 @@ export const TradeProductSearch: React.FC<TradeProductSearchProps> = ({
                     }
                     onToggleProduct(p);
                   }}
-                  className={`p-2 sm:p-2.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs transition-colors select-none cursor-pointer ${
+                  className={`px-3 py-1.5 sm:py-2 flex items-center justify-between gap-2 text-xs transition-colors select-none cursor-pointer ${
                     isOutOfStock && !isAlreadyInList
                       ? "opacity-60 bg-gray-50/90 cursor-not-allowed border-l-4 border-l-rose-300"
                       : isAlreadyInList
@@ -172,7 +172,7 @@ export const TradeProductSearch: React.FC<TradeProductSearchProps> = ({
                       : "hover:bg-gray-50 border-l-4 border-l-transparent"
                   }`}
                 >
-                  <div className="flex items-center gap-2.5 min-w-0">
+                  <div className="flex items-center gap-2.5 min-w-0 flex-1">
                     {/* Checkbox box */}
                     <div
                       className={`w-4 h-4 rounded border flex items-center justify-center transition-colors shrink-0 ${
@@ -196,40 +196,38 @@ export const TradeProductSearch: React.FC<TradeProductSearchProps> = ({
                       )}
                     </div>
 
-                    <div className="flex flex-col min-w-0">
-                      <div className="flex items-center gap-1.5 flex-wrap">
-                        <span
-                          className={`font-bold truncate ${
-                            isOutOfStock && !isAlreadyInList
-                              ? "text-gray-500 line-through decoration-rose-400"
-                              : isAlreadyInList
-                              ? "text-[var(--color-primary)]"
-                              : "text-black"
-                          }`}
-                        >
-                          {prodName}
+                    <div className="flex items-center gap-2 min-w-0 flex-wrap sm:flex-nowrap">
+                      <span
+                        className={`font-bold text-xs truncate max-w-[200px] sm:max-w-sm ${
+                          isOutOfStock && !isAlreadyInList
+                            ? "text-gray-500 line-through decoration-rose-400"
+                            : isAlreadyInList
+                            ? "text-[var(--color-primary)]"
+                            : "text-black"
+                        }`}
+                      >
+                        {prodName}
+                      </span>
+                      <span className="text-[11px] text-gray-500 whitespace-nowrap shrink-0 flex items-center gap-1.5">
+                        <span className="text-gray-300">|</span>
+                        <span>
+                          Code: <span className="text-gray-800 font-medium">{prodCode}</span>
                         </span>
-                        {isAlreadyInList && (
-                          <span className="text-[10px] bg-emerald-100 text-emerald-800 border border-emerald-300 px-1.5 py-0.2 rounded font-semibold whitespace-nowrap">
-                            Added in list
-                          </span>
-                        )}
-                        {isOutOfStock && !isAlreadyInList && (
-                          <span className="text-[10px] bg-rose-100 text-rose-700 border border-rose-300 px-1.5 py-0.2 rounded font-bold whitespace-nowrap">
-                            Stock Out / স্টক নেই
-                          </span>
-                        )}
-                      </div>
-                      <span className="text-[10px] text-gray-500">
-                        Code:{" "}
-                        <span className="text-black font-medium">
-                          {prodCode}
-                        </span>{" "}
-                        | Unit:{" "}
-                        <span className="text-black font-medium">
-                          {prodUnit}
+                        <span className="text-gray-300">|</span>
+                        <span>
+                          Unit: <span className="text-gray-800 font-medium">{prodUnit}</span>
                         </span>
                       </span>
+                      {isAlreadyInList && (
+                        <span className="text-[10px] bg-emerald-100 text-emerald-800 border border-emerald-300 px-1.5 py-0.2 rounded font-semibold whitespace-nowrap shrink-0">
+                          Added in list
+                        </span>
+                      )}
+                      {isOutOfStock && !isAlreadyInList && (
+                        <span className="text-[10px] bg-rose-100 text-rose-700 border border-rose-300 px-1.5 py-0.2 rounded font-bold whitespace-nowrap shrink-0">
+                          Stock Out / স্টক নেই
+                        </span>
+                      )}
                     </div>
                   </div>
 

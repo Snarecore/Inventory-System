@@ -63,13 +63,13 @@ const Sales: React.FC = () => {
 
 
 
-  // 1. Authoritative Sales Query: /get-sale-list (Single source of truth for Sales)
+  // 1. Authoritative Sales Query: disabled by default since useSalesAndReturnsQuery already fetches unified sales
   const {
     data: salesData,
     isLoading: isSalesLoadingQuery,
     isFetching: isSalesFetching,
     refetch: refetchSales,
-  } = useSalesQuery();
+  } = useSalesQuery({ enabled: false });
 
   // 2. Returns & Return Indicators Query: /get-sales-and-return-list
   const {
@@ -214,7 +214,7 @@ const Sales: React.FC = () => {
         }
       }
 
-      if (paymentMethodFilter !== "all") {
+      if (paymentMethodFilter !== "all" && paymentMethodFilter !== "") {
         const pMethod = String(sale.paymentType || "CASH").toUpperCase();
         if (pMethod !== paymentMethodFilter) return false;
       }
@@ -357,7 +357,7 @@ const Sales: React.FC = () => {
         }
       }
 
-      if (paymentMethodFilter !== "all") {
+      if (paymentMethodFilter !== "all" && paymentMethodFilter !== "") {
         if (String(item.paymentType || "").toUpperCase() !== paymentMethodFilter.toUpperCase()) {
           return false;
         }

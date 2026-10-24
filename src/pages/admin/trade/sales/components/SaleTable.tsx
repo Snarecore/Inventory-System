@@ -83,7 +83,7 @@ export const SaleTable: React.FC<SaleTableProps> = ({
   onEdit,
   onView,
   onPrint,
-  onDelete,
+  onDelete: _onDelete,
   onExport,
 }) => {
   const navigate = useNavigate();
@@ -139,29 +139,8 @@ export const SaleTable: React.FC<SaleTableProps> = ({
     ? (selectedCustomerObj.name || "Customer")
     : "All Customers";
 
-  const statusOptions = [
-    { value: "", label: "All Status" },
-    { value: "PAID", label: "Paid" },
-    { value: "PARTIAL", label: "Partial" },
-    { value: "DUE", label: "Due / Credit" },
-  ];
-
-  const methodOptions = [
-    { value: "", label: "All Methods" },
-    { value: "CASH", label: "Cash" },
-    { value: "BANK", label: "Bank" },
-    { value: "MFS", label: "MFS (bKash/Nagad)" },
-    { value: "CREDIT", label: "Credit" },
-  ];
-
-  // Lightweight sort header component with small black chevron
-  const SortHeader = ({
-    label,
-    activeKey,
-  }: {
-    label: string;
-    activeKey: "customer" | "amount";
-  }) => {
+  // Lightweight sort header render helper with small black chevron
+  const renderSortHeader = (label: string, activeKey: "customer" | "amount") => {
     const isAsc =
       sortBy === (activeKey === "customer" ? "customer_a_to_z" : "amount_low_to_high") ||
       (activeKey === "amount" && sortBy === "amount_low");
@@ -400,10 +379,8 @@ export const SaleTable: React.FC<SaleTableProps> = ({
               }}
               className="w-full h-8 pl-2.5 pr-6 text-xs border border-gray-200 rounded-lg bg-gray-50/50 hover:bg-white text-black font-medium focus:outline-none focus:border-[var(--color-primary)] cursor-pointer appearance-none"
             >
-              <option value="">All Methods</option>
+              <option value="all">All Methods</option>
               <option value="CASH">Cash</option>
-              <option value="BANK">Bank</option>
-              <option value="MFS">MFS (bKash/Nagad)</option>
               <option value="CREDIT">Credit</option>
             </select>
             <FiChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none text-xs" size={13} />
@@ -449,7 +426,7 @@ export const SaleTable: React.FC<SaleTableProps> = ({
                   {isColVisible("sl") && <th className="py-2.5 px-3 text-center w-10">SL</th>}
                   {isColVisible("customer") && (
                     <th className="py-2.5 px-3">
-                      <SortHeader label="Customer" activeKey="customer" />
+                      {renderSortHeader("Customer", "customer")}
                     </th>
                   )}
                   {isColVisible("phone") && <th className="py-2.5 px-3">Phone</th>}
@@ -458,7 +435,7 @@ export const SaleTable: React.FC<SaleTableProps> = ({
                   {isColVisible("total") && (
                     <th className="py-2.5 px-3 text-right">
                       <div className="flex justify-end">
-                        <SortHeader label="Total (৳)" activeKey="amount" />
+                        {renderSortHeader("Total (৳)", "amount")}
                       </div>
                     </th>
                   )}

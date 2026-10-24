@@ -1,10 +1,8 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
 import moment from "moment";
 import {
-  FaCheck,
-  FaPrint,
   FaSearch,
   FaFileInvoice,
   FaBoxes,
@@ -79,7 +77,7 @@ export const SalesReturnForm: React.FC = () => {
   const [customerName, setCustomerName] = useState<string>(stateSale?.customerName || "");
   const [customerPhone, setCustomerPhone] = useState<string>(stateSale?.customerPhone || "");
   const [customerAddress, setCustomerAddress] = useState<string>(stateSale?.customerAddress || "");
-  const [paymentType, setPaymentType] = useState<string>("CASH");
+  const paymentType = "CASH";
   const status = "Return";
   const [note, setNote] = useState<string>("");
 
@@ -512,19 +510,6 @@ export const SalesReturnForm: React.FC = () => {
     }
   };
 
-  // Quick Action: Select All items with full available quantities
-  const handleSelectAllFullQty = () => {
-    setReturnMode("FULL");
-    setLines((prev) =>
-      prev.map((l) => ({
-        ...l,
-        isSelected: l.availableQuantity > 0,
-        quantity: l.availableQuantity,
-        total: l.availableQuantity * l.sellPrice,
-      }))
-    );
-  };
-
   // Quick Action: Clear all return quantities
   const handleClearAllQty = () => {
     setReturnMode("PARTIAL");
@@ -640,7 +625,6 @@ export const SalesReturnForm: React.FC = () => {
     numRefundDue,
     selectedRefundBankId,
     selectedRefundMfsId,
-    totalRefundAllocated,
     refundDifference,
     resetRefund,
   } = refund;
@@ -658,6 +642,9 @@ export const SalesReturnForm: React.FC = () => {
       setCustomerPhone("");
       setCustomerAddress("");
       setLines([]);
+      setInvoiceDiscount("");
+      setInvoiceVat("");
+      setInvoiceDeliveryCharge("");
       resetRefund();
     }
   };

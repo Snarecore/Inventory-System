@@ -124,7 +124,6 @@ const CreatePurchaseForm: React.FC = () => {
 
   // Invoice-level Financials
   const [invoiceDiscount, setInvoiceDiscount] = useState<string>("");
-  const [invoiceDiscountType, setInvoiceDiscountType] = useState<"FLAT" | "PERCENT">("FLAT");
   const [invoiceVat, setInvoiceVat] = useState<string>("");
 
   // Modals & Settings
@@ -625,7 +624,6 @@ const CreatePurchaseForm: React.FC = () => {
         const curQty = Number(lineItems[existingIndex].quantity) || 1;
         const newQty = curQty + 1;
         handleUpdateLineItem(existingIndex, "quantity", String(newQty));
-        showSuccessToast(`Increased "${lineItems[existingIndex].productName}" quantity to ${newQty}`);
       } else {
         handleToggleProductInList(product);
       }
@@ -720,20 +718,13 @@ const CreatePurchaseForm: React.FC = () => {
   const {
     bankAmount,
     mfsAmount,
-    cashGiven,
     selectedBankId,
     selectedMfsId,
-    bankName,
-    accountNo,
-    bankRef,
-    mfsName,
-    mfsPhone,
     numCash,
     numBank,
     numMfs,
     totalPaid,
     dueAmount,
-    changeReturnAmount,
     resetPayment,
     initializePayment,
   } = payment;

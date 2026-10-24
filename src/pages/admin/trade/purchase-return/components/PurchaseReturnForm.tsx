@@ -1,10 +1,8 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
 import moment from "moment";
 import {
-  FaCheck,
-  FaPrint,
   FaSearch,
   FaFileInvoice,
   FaBoxes,
@@ -628,7 +626,6 @@ export const PurchaseReturnForm: React.FC = () => {
     numRefundDue,
     selectedRefundBankId,
     selectedRefundMfsId,
-    totalRefundAllocated,
     refundDifference,
     resetRefund,
   } = refund;

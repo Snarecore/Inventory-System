@@ -11,7 +11,6 @@ import apiConfig from '@/config/api.json';
 import { 
     productListQueryKey, 
     productQueryKey, 
-    insertProductQueryKey,
     productCategoriesListQueryKey,
     productUnitsListQueryKey
 } from '@/config/query-key';
@@ -497,7 +496,7 @@ const CreateProductForm = () => {
                 mutation: postMutation as any,
                 url: insertProductUrl,
                 body: payload as any,
-                invalidateQueryKey: [productListQueryKey, productQueryKey, insertProductQueryKey],
+                invalidateQueryKey: [productListQueryKey, productQueryKey],
                 showSuccessMessage: true,
                 showErrorMessage: true
             });
