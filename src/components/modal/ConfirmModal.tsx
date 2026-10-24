@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useRef, useEffect } from "react";
 import { FiCheckCircle, FiSave, FiAlertCircle, FiHelpCircle } from "react-icons/fi";
 
 export interface ConfirmModalProps {
@@ -28,7 +28,21 @@ const ConfirmModal: React.FC<ConfirmModalProps> = ({
   confirmButtonColor = "bg-[#009fe3] hover:bg-[#0085be]",
   isLoading = false,
 }) => {
+  const isConfirmingRef = useRef(false);
+
+  useEffect(() => {
+    if (isOpen) {
+      isConfirmingRef.current = false;
+    }
+  }, [isOpen]);
+
   if (!isOpen) return null;
+
+  const handleConfirmClick = () => {
+    if (isConfirmingRef.current || isLoading) return;
+    isConfirmingRef.current = true;
+    onConfirm();
+  };
 
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-[#000000b6] bg-opacity-50 z-[9999] p-2">
@@ -61,7 +75,7 @@ const ConfirmModal: React.FC<ConfirmModalProps> = ({
           </button>
           <button
             type="button"
-            onClick={onConfirm}
+            onClick={handleConfirmClick}
             disabled={isLoading}
             className={`px-5 py-2 text-xs font-bold text-white rounded-lg cursor-pointer transition flex items-center justify-center gap-2 shadow-sm disabled:opacity-50 min-w-[110px] ${
               confirmButtonColor || "bg-[#009fe3] hover:bg-[#0085be]"

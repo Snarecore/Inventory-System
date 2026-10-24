@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
-import { FiChevronDown } from "react-icons/fi";
+import { FiChevronDown, FiRefreshCw } from "react-icons/fi";
 import { FaSlidersH, FaCalculator } from "react-icons/fa";
 import Button from "@/components/button/Button";
 import DeleteModal from "@/components/modal/DeleteModal";
@@ -134,6 +134,7 @@ const CreatePurchaseForm: React.FC = () => {
   const [isPrintModalOpen, setIsPrintModalOpen] = useState<boolean>(false);
   const [shouldAutoPrint, setShouldAutoPrint] = useState<boolean>(false);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const isSubmittingRef = useRef<boolean>(false);
   const [itemIndexToDelete, setItemIndexToDelete] = useState<number | null>(null);
   const [isDeleteLineModalOpen, setIsDeleteLineModalOpen] = useState<boolean>(false);
   const [isResetModalOpen, setIsResetModalOpen] = useState<boolean>(false);
@@ -751,6 +752,8 @@ const CreatePurchaseForm: React.FC = () => {
 
   // Pre-validate & Open Confirmation Modal
   const handlePreSubmit = (shouldPrint = false) => {
+    if (isSubmittingRef.current || isSubmitting) return;
+
     if (!selectedSupplier) {
       showErrorToast("Please select a supplier for this purchase");
       return;
@@ -788,6 +791,8 @@ const CreatePurchaseForm: React.FC = () => {
 
   // Submit Purchase
   const handleSubmit = async (shouldPrint = false) => {
+    if (isSubmittingRef.current || isSubmitting) return;
+
     if (!selectedSupplier) {
       showErrorToast("Please select a supplier for this purchase");
       return;
@@ -819,6 +824,7 @@ const CreatePurchaseForm: React.FC = () => {
       return;
     }
 
+    isSubmittingRef.current = true;
     setIsSubmitting(true);
 
     try {
@@ -829,7 +835,8 @@ const CreatePurchaseForm: React.FC = () => {
 
       // Backend expects "CASH" (when any payment is made) or "CREDIT" (when 100% due)
       const paymentType = totalPaid > 0 ? "CASH" : "CREDIT";
-      const paymentStatus = dueAmount <= 0 ? "Paid" : totalPaid > 0 ? "PARTIAL" : "Pending";
+      // Backend status is strictly "PAID" or "PENDING" in ALL CAPS
+      const status = totalPaid >= grandTotal && grandTotal > 0 ? "PAID" : "PENDING";
 
       const purchaseDetailsPayload = lineItems.map((item) => {
         const p = Number(item.buyPrice) || 0;
@@ -839,12 +846,10 @@ const CreatePurchaseForm: React.FC = () => {
         const lineVat = (base * v) / 100;
 
         return {
-          productId: String(item.productId || ""),
+          productId: item.productId || item.id,
           productCode: String(item.productCode || ""),
           productName: item.productName || "",
-          packSize: null,
           unit: item.unit || "pcs",
-          expiryDate: null,
           quantity: q,
           buyPrice: p,
           discount: 0,
@@ -857,50 +862,42 @@ const CreatePurchaseForm: React.FC = () => {
         };
       });
 
+      const supplierId =
+        (selectedSupplier as any).partyId ||
+        selectedSupplier.id ||
+        selectedSupplier.phone ||
+        "";
+
       const purchasePayload: any = {
         accessUser,
         invoiceNo: invoiceNo.trim(),
-        purchaseDate,
-        supplierId: selectedSupplier.id || "",
+        supplierId,
         supplierName: selectedSupplier.name || "",
-        supplierPhone: selectedSupplier.phone || "",
-        supplierAddress: selectedSupplier.address || "",
+        supplierPhone: selectedSupplier.phone || (selectedSupplier as any).mobile || "",
+        supplierAddress: selectedSupplier.address || (selectedSupplier as any).city || "",
+        purchaseDate,
+        totalAmount: rawSubtotal,
+        discount: totalDiscount,
+        grandTotal,
+        paidAmount: totalPaid,
+        dueAmount,
+        paymentType,
+        status,
+        note: notes.trim() || "",
+        vat: totalVat,
+        addedBy: accessUser.phone || "",
+        osType: "WEB",
+        delivery_charge: calculatedTransport,
         challanNo: challanNo.trim() || null,
-        challanDate: purchaseDate,
+        challanRefNo: challanNo.trim() || null,
+        challanDate: purchaseDate || null,
         vatChallan: vatChallan.trim() || null,
         vatChallanDate: vatChallanDate || null,
         vehicleNo: vehicleNo.trim() || null,
         capacityCft: capacityCft.trim() || null,
         driverName: driverName.trim() || null,
         driverPhone: driverPhone.trim() || null,
-        transportCost: calculatedTransport,
-        totalAmount: rawSubtotal,
-        discount: totalDiscount,
-        discountType: invoiceDiscountType,
-        vat: totalVat,
-        grandTotal,
-        paidAmount: totalPaid,
-        dueAmount,
-        paymentType,
-        status: paymentStatus,
-        osType: "WEB",
-        note: notes.trim() || null,
         attachments: attachment || null,
-        operation: isEditMode ? "update" : "insert",
-        cashReceived: numCash,
-        cardReceived: numBank,
-        mfsReceived: numMfs,
-        bankId: numBank > 0 ? selectedBankId : null,
-        bankName: numBank > 0 ? bankName : null,
-        accountNo: numBank > 0 ? accountNo : null,
-        bankAccountName: numBank > 0 ? bankRef : null,
-        mfsId: numMfs > 0 ? selectedMfsId : null,
-        mfsName: numMfs > 0 ? mfsName : null,
-        mfsPhone: numMfs > 0 ? mfsPhone : null,
-        customerPaid: Number(cashGiven) || totalPaid,
-        returnAmount: changeReturnAmount,
-        purchaseDetails: purchaseDetailsPayload,
-        details: purchaseDetailsPayload,
       };
 
       const editId =
@@ -910,9 +907,15 @@ const CreatePurchaseForm: React.FC = () => {
         stateEditData?.purchaseId ??
         routeId;
 
-      if (isEditMode && editId) {
-        purchasePayload.id = editId;
-        purchasePayload.purchaseId = editId;
+      if (isEditMode) {
+        if (editId) {
+          purchasePayload.id = editId;
+          purchasePayload.purchaseId = editId;
+        }
+        purchasePayload.deliveryCharge = calculatedTransport;
+        purchasePayload.details = purchaseDetailsPayload;
+      } else {
+        purchasePayload.purchaseDetails = purchaseDetailsPayload;
       }
 
       // Both insert-purchases and update-purchases endpoints in ERP backend are JSON HTTP POST
@@ -1019,11 +1022,21 @@ const CreatePurchaseForm: React.FC = () => {
           attachments: attachment || purchasePayload.attachments,
         });
         setIsPrintModalOpen(true);
+      } else {
+        // If save failed or duplicate invoice collided, generate a fresh invoice number in create mode
+        if (!isEditMode && businessCode) {
+          const fresh = makeInvoiceNo(businessCode);
+          setInvoiceNo(fresh);
+        }
       }
     } catch (err: any) {
       console.error("Save purchase exception:", err);
       showErrorToast(err?.message || "An error occurred while saving purchase");
+      if (!isEditMode && businessCode) {
+        setInvoiceNo(makeInvoiceNo(businessCode));
+      }
     } finally {
+      isSubmittingRef.current = false;
       setIsSubmitting(false);
     }
   };
@@ -1165,14 +1178,47 @@ const CreatePurchaseForm: React.FC = () => {
 
         {/* Invoice No */}
         <div>
-          <label className="text-[11px] font-bold text-black tracking-wider block mb-1">
-            Invoice No <span className="text-rose-500">*</span>
-          </label>
+          <div className="flex items-center justify-between mb-1">
+            <label className="text-[11px] font-bold text-black tracking-wider block">
+              Invoice No <span className="text-rose-500">*</span>
+            </label>
+            {!isEditMode && (
+              <button
+                type="button"
+                onClick={() => {
+                  if (businessCode) {
+                    setInvoiceNo(makeInvoiceNo(businessCode));
+                    showSuccessToast("New invoice number generated");
+                  }
+                }}
+                className="text-[10px] text-[var(--primary-color)] hover:underline flex items-center gap-1 cursor-pointer font-medium"
+                title="Generate new invoice number"
+              >
+                <FiRefreshCw size={10} className="shrink-0" />
+                <span>Regenerate</span>
+              </button>
+            )}
+          </div>
           <div
-            className="w-full h-9 px-2.5 py-1.5 text-xs border border-gray-300 rounded-lg bg-gray-200 font-bold text-black flex items-center select-text cursor-default"
+            className="w-full h-9 px-2.5 py-1.5 text-xs border border-gray-300 rounded-lg bg-gray-200 font-bold text-black flex items-center justify-between select-text cursor-default"
             title="Auto-generated Invoice Number"
           >
-            {invoiceNo || "N/A"}
+            <span className="truncate">{invoiceNo || "N/A"}</span>
+            {!isEditMode && (
+              <button
+                type="button"
+                onClick={() => {
+                  if (businessCode) {
+                    setInvoiceNo(makeInvoiceNo(businessCode));
+                    showSuccessToast("New invoice number generated");
+                  }
+                }}
+                className="p-1 text-gray-500 hover:text-[var(--primary-color)] transition-colors cursor-pointer rounded shrink-0 ml-1"
+                title="Generate new invoice number"
+              >
+                <FiRefreshCw size={12} />
+              </button>
+            )}
           </div>
         </div>
 
@@ -1628,8 +1674,13 @@ const CreatePurchaseForm: React.FC = () => {
       {isSaveConfirmModalOpen && (
         <ConfirmModal
           isOpen={isSaveConfirmModalOpen}
-          onClose={() => setIsSaveConfirmModalOpen(false)}
+          onClose={() => {
+            if (!isSubmittingRef.current && !isSubmitting) {
+              setIsSaveConfirmModalOpen(false);
+            }
+          }}
           onConfirm={async () => {
+            if (isSubmittingRef.current || isSubmitting) return;
             setIsSaveConfirmModalOpen(false);
             await handleSubmit(pendingSavePrint);
           }}

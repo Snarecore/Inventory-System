@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
-import { FiChevronDown } from "react-icons/fi";
+import { FiChevronDown, FiRefreshCw } from "react-icons/fi";
 import { FaCalculator } from "react-icons/fa";
 import Button from "@/components/button/Button";
 import DeleteModal from "@/components/modal/DeleteModal";
@@ -120,6 +120,7 @@ export const CreateSaleForm: React.FC = () => {
 
   // Modals & Submitting
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const isSubmittingRef = useRef<boolean>(false);
   const [savedSaleForInvoice, setSavedSaleForInvoice] = useState<SaleItem | null>(null);
   const [isInvoiceModalOpen, setIsInvoiceModalOpen] = useState<boolean>(false);
   const [shouldAutoPrint, setShouldAutoPrint] = useState<boolean>(false);
@@ -737,6 +738,7 @@ export const CreateSaleForm: React.FC = () => {
 
   // Pre-Submit validation & Modal Open
   const handlePreSubmit = (shouldPrint = false) => {
+    if (isSubmittingRef.current || isSubmitting) return;
     if (!selectedCustomer) {
       showErrorToast("Please select or add a customer");
       return;
@@ -783,8 +785,10 @@ export const CreateSaleForm: React.FC = () => {
 
   // Submit Sale Form
   const handleSubmit = async (shouldPrint = false) => {
+    if (isSubmittingRef.current || isSubmitting) return;
     if (!selectedCustomer || lineItems.length === 0) return;
 
+    isSubmittingRef.current = true;
     setIsSubmitting(true);
     try {
       const accessUser = buildAccessUser();
@@ -953,10 +957,21 @@ export const CreateSaleForm: React.FC = () => {
           previousDueInvoices: customerDueInvoices || [],
         });
         setIsInvoiceModalOpen(true);
+      } else {
+        // If sale creation failed or reference collided, auto-generate fresh invoice number in create mode
+        if (!isEditMode) {
+          const bCode = getBusinessCode();
+          if (bCode) setInvoiceNo(makeInvoiceNo(bCode));
+        }
       }
     } catch (err: any) {
       showErrorToast(err?.message || "An error occurred while saving sale transaction");
+      if (!isEditMode) {
+        const bCode = getBusinessCode();
+        if (bCode) setInvoiceNo(makeInvoiceNo(bCode));
+      }
     } finally {
+      isSubmittingRef.current = false;
       setIsSubmitting(false);
     }
   };
@@ -1080,14 +1095,49 @@ export const CreateSaleForm: React.FC = () => {
 
         {/* Invoice No */}
         <div>
-          <label className="text-[11px] font-bold text-black  tracking-wider block mb-1">
-            Invoice No <span className="text-rose-500">*</span>
-          </label>
+          <div className="flex items-center justify-between mb-1">
+            <label className="text-[11px] font-bold text-black tracking-wider block">
+              Invoice No <span className="text-rose-500">*</span>
+            </label>
+            {!isEditMode && (
+              <button
+                type="button"
+                onClick={() => {
+                  const bCode = getBusinessCode();
+                  if (bCode) {
+                    setInvoiceNo(makeInvoiceNo(bCode));
+                    showSuccessToast("New invoice number generated");
+                  }
+                }}
+                className="text-[10px] text-[var(--primary-color)] hover:underline flex items-center gap-1 cursor-pointer font-medium"
+                title="Generate new invoice number"
+              >
+                <FiRefreshCw size={10} className="shrink-0" />
+                <span>Regenerate</span>
+              </button>
+            )}
+          </div>
           <div
-            className="w-full h-9 px-2.5 py-1.5 text-xs border border-gray-300 rounded-lg bg-gray-200 font-bold text-black flex items-center select-text cursor-default"
+            className="w-full h-9 px-2.5 py-1.5 text-xs border border-gray-300 rounded-lg bg-gray-200 font-bold text-black flex items-center justify-between select-text cursor-default"
             title="Auto-generated Invoice Number"
           >
-            {invoiceNo || "N/A"}
+            <span className="truncate">{invoiceNo || "N/A"}</span>
+            {!isEditMode && (
+              <button
+                type="button"
+                onClick={() => {
+                  const bCode = getBusinessCode();
+                  if (bCode) {
+                    setInvoiceNo(makeInvoiceNo(bCode));
+                    showSuccessToast("New invoice number generated");
+                  }
+                }}
+                className="p-1 text-gray-500 hover:text-[var(--primary-color)] transition-colors cursor-pointer rounded shrink-0 ml-1"
+                title="Generate new invoice number"
+              >
+                <FiRefreshCw size={12} />
+              </button>
+            )}
           </div>
         </div>
 
@@ -1378,8 +1428,14 @@ export const CreateSaleForm: React.FC = () => {
           message={`Are you sure you want to ${isEditMode ? "update" : "save"} this sale invoice with total amount ৳${formatMoney(grandTotal)}?`}
           confirmText={pendingSavePrint ? "Save & Print" : "Save"}
           cancelText="Cancel"
-          onClose={() => setIsSaveConfirmModalOpen(false)}
+          isLoading={isSubmitting}
+          onClose={() => {
+            if (!isSubmittingRef.current && !isSubmitting) {
+              setIsSaveConfirmModalOpen(false);
+            }
+          }}
           onConfirm={() => {
+            if (isSubmittingRef.current || isSubmitting) return;
             setIsSaveConfirmModalOpen(false);
             handleSubmit(pendingSavePrint);
           }}
