@@ -63,7 +63,15 @@ const Sales: React.FC = () => {
 
 
 
-  // 2. Primary Unified Fetch: Fetch Combined Sales & Returns in a SINGLE API Request
+  // 1. Authoritative Sales Query: /get-sale-list (Single source of truth for Sales)
+  const {
+    data: salesData,
+    isLoading: isSalesLoadingQuery,
+    isFetching: isSalesFetching,
+    refetch: refetchSales,
+  } = useSalesQuery();
+
+  // 2. Returns & Return Indicators Query: /get-sales-and-return-list
   const {
     data: apiReturnsData,
     isLoading: isCombinedLoading,
@@ -113,7 +121,7 @@ const Sales: React.FC = () => {
         });
       }
 
-      if (isSale) {
+      if (isSale && !item.isReturnRecord) {
         salesList.push(normalizeSaleRecord(item));
       }
     });
@@ -121,24 +129,12 @@ const Sales: React.FC = () => {
     return { combinedSales: salesList, rawReturns: returnsList };
   }, [apiReturnsData]);
 
-  // Fallback: If combined query yielded zero sales after completion, automatically fetch standard sales list
-  const shouldFallbackSales = Boolean(apiReturnsData && combinedSales.length === 0);
-
-  const {
-    data: fallbackSalesData,
-    isLoading: isFallbackSalesLoading,
-    isFetching: isFallbackSalesFetching,
-    refetch: refetchFallbackSales,
-  } = useSalesQuery({
-    enabled: shouldFallbackSales,
-  });
-
-  // Final sales array: uses combined sales, or fallback sales if combined was empty
+  // Final sales array: uses authoritative salesData, or combined sales as fallback
   const rawSales = useMemo(() => {
+    if (Array.isArray(salesData) && salesData.length > 0) return salesData;
     if (combinedSales.length > 0) return combinedSales;
-    if (Array.isArray(fallbackSalesData)) return fallbackSalesData;
     return [];
-  }, [combinedSales, fallbackSalesData]);
+  }, [salesData, combinedSales]);
 
   // Zero-network customers list derived directly from active sales and returns
   const customersList: PartyItem[] = useMemo(() => {
@@ -181,8 +177,7 @@ const Sales: React.FC = () => {
     );
   }, [rawSales, rawReturns]);
 
-  const isSalesLoading = isCombinedLoading || (shouldFallbackSales && isFallbackSalesLoading);
-  const isSalesFetching = isCombinedFetching || (shouldFallbackSales && isFallbackSalesFetching);
+  const isSalesLoading = isSalesLoadingQuery && rawSales.length === 0;
   const isReturnsLoading = isCombinedLoading;
   const isReturnsFetching = isCombinedFetching;
 
@@ -512,10 +507,8 @@ const Sales: React.FC = () => {
 
   const handleRefetchAll = () => {
     handleResetFilters();
+    refetchSales();
     refetchSalesAndReturns();
-    if (shouldFallbackSales) {
-      refetchFallbackSales();
-    }
   };
 
   const isGlobalLoading = isSalesLoading || isReturnsLoading;

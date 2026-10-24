@@ -507,6 +507,7 @@ const CreatePurchaseForm: React.FC = () => {
         }
       }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [effectiveEditData, suppliersList, allProducts, routeId]);
 
   // Synchronize live stock for lineItems whenever allProducts is loaded or updated
@@ -534,6 +535,7 @@ const CreatePurchaseForm: React.FC = () => {
         return changed ? updated : prevItems;
       });
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [allProducts]);
 
 

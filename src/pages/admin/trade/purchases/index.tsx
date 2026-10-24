@@ -64,7 +64,15 @@ const Purchases: React.FC = () => {
   const [autoPrintReturnModal, setAutoPrintReturnModal] = useState<boolean>(false);
 
 
-  // 2. Primary Unified Fetch: Fetch Purchases & Returns from /get-purchase-and-return-list (Single Network Call)
+  // 1. Authoritative Purchases Query: /get-purchase-list (Single source of truth for Purchases)
+  const {
+    data: purchasesData,
+    isLoading: isPurchasesLoadingQuery,
+    isFetching: isPurchasesFetching,
+    refetch: refetchPurchases,
+  } = usePurchasesQuery();
+
+  // 2. Returns & Return Indicators Query: /get-purchase-and-return-list
   const {
     data: combinedData,
     isLoading: isCombinedLoading,
@@ -122,7 +130,11 @@ const Purchases: React.FC = () => {
             returnDetails: details,
             itemsCount: details.length || 1,
           });
-        } else if (!isRet && (item.invoiceNo || item.purchaseInvoiceNo || item.orderNo || item.id)) {
+        }
+
+        // Purchases must NEVER be excluded, even if a return was made against them
+        const isPur = Boolean(item.invoiceNo) || Boolean(item.purchaseInvoiceNo) || (item.orderNo && !item.returnNo);
+        if (isPur && !item.isReturnRecord) {
           pList.push(normalizePurchaseRecord(item));
         }
       });
@@ -131,24 +143,12 @@ const Purchases: React.FC = () => {
     return { combinedPurchases: pList, rawReturns: rList };
   }, [combinedData]);
 
-  // Fallback: If combined query yielded zero purchases after completion, automatically fetch standard purchase list
-  const shouldFallbackPurchases = Boolean(combinedData && combinedPurchases.length === 0);
-
-  const {
-    data: fallbackPurchasesData,
-    isLoading: isFallbackPurchasesLoading,
-    isFetching: isFallbackPurchasesFetching,
-    refetch: refetchFallbackPurchases,
-  } = usePurchasesQuery({
-    enabled: shouldFallbackPurchases,
-  });
-
-  // Final purchases array: uses combined purchases, or fallback purchases if combined was empty
+  // Final purchases array: uses authoritative purchasesData, or combined purchases as fallback
   const rawPurchases = useMemo(() => {
+    if (Array.isArray(purchasesData) && purchasesData.length > 0) return purchasesData;
     if (combinedPurchases.length > 0) return combinedPurchases;
-    if (Array.isArray(fallbackPurchasesData)) return fallbackPurchasesData;
     return [];
-  }, [combinedPurchases, fallbackPurchasesData]);
+  }, [purchasesData, combinedPurchases]);
 
   // Zero-network suppliers list derived directly from active purchases and returns
   const suppliersList: PartyItem[] = useMemo(() => {
@@ -191,8 +191,7 @@ const Purchases: React.FC = () => {
     );
   }, [rawPurchases, rawReturns]);
 
-  const isPurchasesLoading = isCombinedLoading || (shouldFallbackPurchases && isFallbackPurchasesLoading);
-  const isPurchasesFetching = isCombinedFetching || (shouldFallbackPurchases && isFallbackPurchasesFetching);
+  const isPurchasesLoading = isPurchasesLoadingQuery && rawPurchases.length === 0;
   const isReturnsLoading = isCombinedLoading;
   const isReturnsFetching = isCombinedFetching;
 
@@ -515,10 +514,8 @@ const Purchases: React.FC = () => {
 
   const handleRefetchAll = () => {
     handleResetFilters();
+    refetchPurchases();
     refetchCombined();
-    if (shouldFallbackPurchases) {
-      refetchFallbackPurchases();
-    }
   };
 
   const isGlobalLoading = isPurchasesLoading || isReturnsLoading;

@@ -39,16 +39,40 @@ export const normalizePurchaseRecord = (item: any): PurchaseItem => {
   const grandTotal = Number(item?.grandTotal ?? item?.grand_total ?? item?.totalAmount ?? 0);
   const paidAmount = Number(item?.paidAmount ?? item?.paid_amount ?? 0);
   const dueAmount = Number(item?.dueAmount ?? item?.due_amount ?? 0);
+  const supplierId = item?.supplierId ?? item?.supplier_id ?? item?.partyId ?? item?.party_id;
+  const supplierName =
+    item?.supplierName ||
+    item?.supplier_name ||
+    item?.partyName ||
+    item?.party_name ||
+    item?.supplier ||
+    "Direct Supplier";
+  const supplierPhone =
+    item?.supplierPhone ||
+    item?.supplier_phone ||
+    item?.phone ||
+    item?.partyPhone ||
+    item?.party_phone ||
+    "";
+  const supplierAddress =
+    item?.supplierAddress ||
+    item?.supplier_address ||
+    item?.address ||
+    item?.partyAddress ||
+    "";
   const hasReturn = Boolean(
     item?.hasReturn ||
     item?.returnNo ||
-    item?.returnGrandTotal ||
     (Array.isArray(item?.returnDetails) && item.returnDetails.length > 0) ||
     (Array.isArray(item?.purchaseReturnDetails) && item.purchaseReturnDetails.length > 0)
   );
 
   return {
     ...item,
+    supplierId,
+    supplierName,
+    supplierPhone,
+    supplierAddress,
     grandTotal,
     paidAmount,
     dueAmount,
@@ -60,18 +84,17 @@ export const normalizePurchaseRecord = (item: any): PurchaseItem => {
 
 /**
  * Determines if an arbitrary item represents a purchase return record.
+ * NOTE: item.hasReturn is a boolean on a PURCHASE and must NEVER classify the purchase as a return.
  */
 export const isPurchaseReturnRecord = (item: any): boolean => {
   if (!item) return false;
   return (
-    Boolean(item.hasReturn) ||
+    Boolean(item.isReturnRecord) ||
     Boolean(item.returnNo) ||
-    Boolean(item.returnGrandTotal) ||
-    String(item.returnType || "").toUpperCase() === "RETURN" ||
-    String(item.status || "").toUpperCase() === "RETURN" ||
     (typeof item.refNo === "string" && item.refNo.startsWith("PR-")) ||
-    (Array.isArray(item.returnDetails) && item.returnDetails.length > 0) ||
-    (Array.isArray(item.purchaseReturnDetails) && item.purchaseReturnDetails.length > 0)
+    String(item.returnType || "").toUpperCase() === "RETURN" ||
+    (String(item.status || "").toUpperCase() === "RETURN" && !item.invoiceNo) ||
+    (Array.isArray(item.returnDetails) && item.returnDetails.length > 0 && !item.purchaseDetails?.length)
   );
 };
 
@@ -146,9 +169,9 @@ export const fetchPurchaseAndReturnList = async (): Promise<any[]> => {
     const seen = new Set<string>();
     const unifiedList: any[] = [];
 
-    const addItem = (item: any) => {
+    const addItem = (item: any, forceIsReturn?: boolean) => {
       if (!item) return;
-      const isReturn = isPurchaseReturnRecord(item);
+      const isReturn = forceIsReturn !== undefined ? forceIsReturn : isPurchaseReturnRecord(item);
 
       const prefix = isReturn ? "ret" : "pur";
       const idKey = item.returnNo || item.purchaseInvoiceNo || item.invoiceNo || item.orderNo || item.id;
@@ -160,14 +183,15 @@ export const fetchPurchaseAndReturnList = async (): Promise<any[]> => {
         const lineItems = extractPurchaseLineItems(item);
         item.purchaseDetails = lineItems;
         item.details = lineItems;
+        item.isReturnRecord = isReturn;
 
         unifiedList.push(item);
       }
     };
 
-    purchases.forEach(addItem);
-    returns.forEach(addItem);
-    directList.forEach(addItem);
+    purchases.forEach((p: any) => addItem(p, false));
+    returns.forEach((r: any) => addItem(r, true));
+    directList.forEach((d: any) => addItem(d));
 
     return unifiedList;
   } catch (error) {

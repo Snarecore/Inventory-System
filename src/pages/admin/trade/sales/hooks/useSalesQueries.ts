@@ -38,10 +38,40 @@ export const normalizeSaleRecord = (item: any): SaleItem => {
   const grandTotal = Number(item?.grandTotal ?? item?.grand_total ?? item?.totalAmount ?? 0);
   const paidAmount = Number(item?.paidAmount ?? item?.paid_amount ?? 0);
   const dueAmount = Number(item?.dueAmount ?? item?.due_amount ?? 0);
-  const hasReturn = Boolean(item?.hasReturn || item?.returnNo || item?.returnGrandTotal);
+  const customerId = item?.customerId ?? item?.customer_id ?? item?.partyId ?? item?.party_id;
+  const customerName =
+    item?.customerName ||
+    item?.customer_name ||
+    item?.partyName ||
+    item?.party_name ||
+    item?.customer ||
+    "Customer";
+  const customerPhone =
+    item?.customerPhone ||
+    item?.customer_phone ||
+    item?.phone ||
+    item?.partyPhone ||
+    item?.party_phone ||
+    "";
+  const customerAddress =
+    item?.customerAddress ||
+    item?.customer_address ||
+    item?.address ||
+    item?.partyAddress ||
+    "";
+  const hasReturn = Boolean(
+    item?.hasReturn ||
+    item?.returnNo ||
+    (Array.isArray(item?.returnDetails) && item.returnDetails.length > 0) ||
+    (Array.isArray(item?.salesReturnDetails) && item.salesReturnDetails.length > 0)
+  );
 
   return {
     ...item,
+    customerId,
+    customerName,
+    customerPhone,
+    customerAddress,
     grandTotal,
     paidAmount,
     dueAmount,
@@ -53,18 +83,17 @@ export const normalizeSaleRecord = (item: any): SaleItem => {
 
 /**
  * Determines if an arbitrary item represents a return record.
+ * NOTE: item.hasReturn is a boolean on a SALE and must NEVER classify the sale as a return.
  */
 export const isReturnRecord = (item: any): boolean => {
   if (!item) return false;
   return (
-    Boolean(item.hasReturn) ||
+    Boolean(item.isReturnRecord) ||
     Boolean(item.returnNo) ||
-    Boolean(item.returnGrandTotal) ||
-    String(item.returnType || "").toUpperCase() === "RETURN" ||
-    String(item.status || "").toUpperCase() === "RETURN" ||
     (typeof item.refNo === "string" && item.refNo.startsWith("SR-")) ||
-    (Array.isArray(item.returnDetails) && item.returnDetails.length > 0) ||
-    (Array.isArray(item.salesReturnDetails) && item.salesReturnDetails.length > 0)
+    String(item.returnType || "").toUpperCase() === "RETURN" ||
+    (String(item.status || "").toUpperCase() === "RETURN" && !item.invoiceNo) ||
+    (Array.isArray(item.returnDetails) && item.returnDetails.length > 0 && !item.salesDetails?.length)
   );
 };
 
@@ -137,9 +166,9 @@ export const fetchSalesAndReturnList = async (): Promise<UnifiedTradeRecord[]> =
     const seen = new Set<string>();
     const unifiedList: UnifiedTradeRecord[] = [];
 
-    const addItem = (item: any, index: number) => {
+    const addItem = (item: any, index: number, forceIsReturn?: boolean) => {
       if (!item) return;
-      const isRet = isReturnRecord(item);
+      const isRet = forceIsReturn !== undefined ? forceIsReturn : isReturnRecord(item);
       const prefix = isRet ? "ret" : "sale";
       const idKey =
         item.returnNo ||
@@ -158,8 +187,8 @@ export const fetchSalesAndReturnList = async (): Promise<UnifiedTradeRecord[]> =
       }
     };
 
-    sales.forEach((s, idx) => addItem(s, idx));
-    returns.forEach((r, idx) => addItem(r, idx));
+    sales.forEach((s, idx) => addItem(s, idx, false));
+    returns.forEach((r, idx) => addItem(r, idx, true));
     directList.forEach((d, idx) => addItem(d, idx));
 
     return unifiedList;
