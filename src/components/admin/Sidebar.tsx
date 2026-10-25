@@ -45,16 +45,13 @@ const Sidebar = ({ sidebarClick }: SidebarProps) => {
   );
 
   const handleParentItemClick = (item: any) => {
-    if (sidebarClick) {
-      const target =
-        item.path ||
-        (item.subItems && item.subItems.length > 0
-          ? item.subItems[0].path
-          : null);
-      if (target) navigate(target);
-      return;
-    }
     toggleSubMenu(item.id);
+    const target =
+      item.path ||
+      (item.subItems && item.subItems.length > 0
+        ? item.subItems[0].path
+        : null);
+    if (target) navigate(target);
   };
 
   return (

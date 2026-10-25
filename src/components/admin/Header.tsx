@@ -85,6 +85,12 @@ const Header = ({ sidebarClick }: { sidebarClick: boolean }) => {
         navigate("/login", { replace: true });
     };
 
+    const handleOpenCompanyProfile = () => {
+        setShowUserDropdown(false);
+        setShowMenuDropdown(false);
+        navigate("/admin/company");
+    };
+
     return (
         <div className={`fixed top-0 right-0 left-0 z-40 transition-[left] duration-300 ${sidebarClick
             ? "lg:left-20"
@@ -145,11 +151,13 @@ const Header = ({ sidebarClick }: { sidebarClick: boolean }) => {
                                         icon={<FaUserCircle size={13} className="text-gray-500" />}
                                         text="My Profile"
                                         className="text-xs text-gray-700 font-medium hover:bg-gray-100"
+                                        onClick={handleOpenCompanyProfile}
                                     />
                                     <MenuItem
                                         icon={<FaCog size={13} className="text-gray-500" />}
                                         text="Settings"
                                         className="text-xs text-gray-700 font-medium hover:bg-gray-100"
+                                        onClick={handleOpenCompanyProfile}
                                     />
                                 </div>
 
@@ -189,7 +197,13 @@ const Header = ({ sidebarClick }: { sidebarClick: boolean }) => {
                                             <div key={item.id}>
                                                 {item.subItems && item.subItems.length > 0 ? (
                                                     <div
-                                                        onClick={() => toggleSubMenu(item.id)}
+                                                        onClick={() => {
+                                                            toggleSubMenu(item.id);
+                                                            if (item.path) {
+                                                                navigate(item.path);
+                                                                closeSidebarWithTransition();
+                                                            }
+                                                        }}
                                                         className={`w-full group px-[12px] py-[8px] flex items-center justify-between cursor-pointer rounded-md transition-all mb-[2px] ${isOpen || isParentActive
                                                             ? "bg-[#FFF7F0] text-[var(--color-primary)]"
                                                             : "hover:bg-gray-100"
@@ -346,11 +360,13 @@ const Header = ({ sidebarClick }: { sidebarClick: boolean }) => {
                                 icon={<FaUserCircle size={13} className="text-gray-500" />}
                                 text="My Profile"
                                 className="text-xs text-gray-700 font-medium hover:bg-gray-100"
+                                onClick={handleOpenCompanyProfile}
                             />
                             <MenuItem
                                 icon={<FaCog size={13} className="text-gray-500" />}
                                 text="Settings"
                                 className="text-xs text-gray-700 font-medium hover:bg-gray-100"
+                                onClick={handleOpenCompanyProfile}
                             />
                         </div>
 

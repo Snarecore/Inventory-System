@@ -55,3 +55,5 @@ export const purchasesDueQueryKey = "purchases-due";
 export const purchasesInvoicesDueQueryKey = "purchases-invoices-due";
 export const insertPaymentQueryKey = "insert-payment";
 export const paymentReportQueryKey = "get-payment-report";
+export const businessProfileQueryKey = "business-profile";
+export const businessTypesQueryKey = "get-business-types";

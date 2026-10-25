@@ -16,12 +16,18 @@ const ImageUpload: React.FC<ImageUploadProps> = ({ value, onChange, size = "sm",
 
 	const getDisplayUrl = (url: string | null) => {
 		if (!url) return "";
-		if (url.startsWith("blob:") || url.startsWith("data:") || url.startsWith("http://") || url.startsWith("https://")) {
-			return url;
+		const trimmed = url.trim();
+		if (trimmed.startsWith("blob:") || trimmed.startsWith("data:") || trimmed.startsWith("http://") || trimmed.startsWith("https://")) {
+			return trimmed;
+		}
+		// Support UUID / fileGUID format from file upload API
+		if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(trimmed)) {
+			const apiBase = (import.meta.env.VITE_API_BASE_URL as string)?.replace(/\/+$/, "") || "";
+			return apiBase ? `${apiBase}/files/file/${trimmed}` : trimmed;
 		}
 		const rawBaseUrl = import.meta.env.VITE_API_BASE_URL;
 		const serverHost = rawBaseUrl.replace(/\/api\/?$/, "");
-		const cleanUrl = url.startsWith("/") ? url.slice(1) : url;
+		const cleanUrl = trimmed.startsWith("/") ? trimmed.slice(1) : trimmed;
 		return `${serverHost}/${cleanUrl}`;
 	};
 

@@ -43,6 +43,7 @@ const CreateSalesReturn = React.lazy(() => import('@/pages/admin/trade/create-sa
 const CreatePurchaseReturn = React.lazy(() => import('@/pages/admin/trade/purchase-return/CreatePurchaseReturnPage'))
 const CustomerCollection = React.lazy(() => import('@/pages/admin/trade/customer-collection'))
 const SupplierPayment = React.lazy(() => import('@/pages/admin/trade/supplier-payment'))
+const Company = React.lazy(() => import('@/pages/admin/company'))
 
 
 const LoadingFallback = () => (
@@ -162,6 +163,18 @@ export const router = createBrowserRouter([
   {
     path: '/payment',
     element: <Navigate to="/admin/supplier-payment" replace />,
+  },
+  {
+    path: '/company',
+    element: <Navigate to="/admin/company" replace />,
+  },
+  {
+    path: '/business-profile',
+    element: <Navigate to="/admin/company" replace />,
+  },
+  {
+    path: '/administration',
+    element: <Navigate to="/admin/company" replace />,
   },
 
   {
@@ -376,6 +389,18 @@ export const router = createBrowserRouter([
       {
         path: 'create-blog',
         element: withSuspense(BlogCreation),
+      },
+      {
+        path: 'company',
+        element: withSuspense(Company),
+      },
+      {
+        path: 'business-profile',
+        element: <Navigate to="/admin/company" replace />,
+      },
+      {
+        path: 'administration',
+        element: <Navigate to="/admin/company" replace />,
       },
     ],
   },

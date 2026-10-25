@@ -102,5 +102,10 @@
         "purchasesInvoicesDueUrl": "purchases-invoices-due",
         "insertPaymentUrl": "insert-payment",
         "paymentReportUrl": "get-payment-report"
+    },
+    "business": {
+        "businessProfileUrl": "business-profile",
+        "businessProfileSaveUrl": "business-profile-save",
+        "businessTypesUrl": "get-business-types"
     }
 }
