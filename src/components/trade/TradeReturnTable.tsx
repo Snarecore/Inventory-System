@@ -7,6 +7,19 @@ import DateRangePicker from "@/components/date-range-picker/DateRangePicker";
 import EmptyState from "@/components/empty-state/EmptyState";
 import TableSkeleton from "@/components/skeleton/TableSkeleton";
 import Pagination from "@/components/pagination";
+import {
+  TableContainer,
+  TableToolbar,
+  TableScroll,
+  Table,
+  TableHead,
+  TableTh,
+  TableBody,
+  TableRow,
+  TableCell,
+  TablePaginationFooter,
+  TableActionButtons,
+} from "@/components/common";
 import ColumnVisibilityDropdown, { type ColumnItem } from "@/components/table-components/ColumnVisibilityDropdown";
 import type { PartyItem } from "@/types";
 import { showSuccessToast, showErrorToast } from "@/utils/toast-utils";
@@ -269,9 +282,9 @@ export function TradeReturnTable<T extends Record<string, any>>({
   const activeVisibleColumnCount = availableColumns.filter((c) => isColVisible(c.key)).length;
 
   return (
-    <div className="bg-white rounded-xl shadow-xs border border-gray-200 flex flex-col relative z-20 overflow-visible">
+    <TableContainer>
       {/* Filters Toolbar */}
-      <div className="p-2 sm:p-2.5 border-b border-gray-100 flex flex-wrap items-center justify-between gap-2 relative z-40 overflow-visible">
+      <TableToolbar>
         {/* Left Section: Search & Dropdown Filters in uniform height */}
         <div className="flex flex-wrap items-center gap-2 flex-1 min-w-0">
           {/* Search Box */}
@@ -443,10 +456,10 @@ export function TradeReturnTable<T extends Record<string, any>>({
             </button>
           )}
         </div>
-      </div>
+      </TableToolbar>
 
       {/* Main Table Content */}
-      <div className="overflow-x-auto w-full relative z-10">
+      <TableScroll>
         {isLoading ? (
           <TableSkeleton columnCount={activeVisibleColumnCount} rowCount={8} />
         ) : returns.length === 0 ? (
@@ -457,32 +470,30 @@ export function TradeReturnTable<T extends Record<string, any>>({
             onButtonClick={onResetFilters}
           />
         ) : (
-          <table className="w-full text-left border-collapse text-xs">
-            <thead>
-              <tr className="bg-[#41BEF3] text-black text-xs font-semibold">
-                {isColVisible("sl") && <th className="py-2.5 px-3 text-center w-10">SL</th>}
-                {isColVisible("orderId") && <th className="py-2.5 px-3 whitespace-nowrap">Order ID</th>}
-                {isColVisible(partyType) && (
-                  <th className="py-2.5 px-3 min-w-[120px]">
-                    {renderSortHeader(actualPartyLabel, "party")}
-                  </th>
-                )}
-                {isColVisible("returnDate") && <th className="py-2.5 px-3 whitespace-nowrap">Return Date</th>}
-                {isColVisible("items") && <th className="py-2.5 px-3 text-center w-24 whitespace-nowrap">Items</th>}
-                {isColVisible("remarks") && <th className="py-2.5 px-3 text-center w-44 min-w-[150px] max-w-[180px]">Remarks</th>}
-                {isColVisible("paymentType") && <th className="py-2.5 px-3 text-center w-28 whitespace-nowrap">Payment Type</th>}
-                {isColVisible("refundAmount") && (
-                  <th className="py-2.5 px-3 text-right w-32 whitespace-nowrap">
-                    <div className="flex justify-end">
-                      {renderSortHeader("Refund Amount", "amount")}
-                    </div>
-                  </th>
-                )}
-                {isColVisible("status") && <th className="py-2.5 px-3 text-center w-28 whitespace-nowrap">Status</th>}
-                {isColVisible("actions") && <th className="py-2.5 px-3 text-center w-24 whitespace-nowrap">Actions</th>}
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100">
+          <Table>
+            <TableHead>
+              {isColVisible("sl") && <TableTh align="center" width={40}>SL</TableTh>}
+              {isColVisible("orderId") && <TableTh className="whitespace-nowrap">Order ID</TableTh>}
+              {isColVisible(partyType) && (
+                <TableTh className="min-w-[120px]">
+                  {renderSortHeader(actualPartyLabel, "party")}
+                </TableTh>
+              )}
+              {isColVisible("returnDate") && <TableTh className="whitespace-nowrap">Return Date</TableTh>}
+              {isColVisible("items") && <TableTh align="center" className="w-24 whitespace-nowrap">Items</TableTh>}
+              {isColVisible("remarks") && <TableTh align="center" className="w-44 min-w-[150px] max-w-[180px]">Remarks</TableTh>}
+              {isColVisible("paymentType") && <TableTh align="center" className="w-28 whitespace-nowrap">Payment Type</TableTh>}
+              {isColVisible("refundAmount") && (
+                <TableTh align="right" className="w-32 whitespace-nowrap">
+                  <div className="flex justify-end">
+                    {renderSortHeader("Refund Amount", "amount")}
+                  </div>
+                </TableTh>
+              )}
+              {isColVisible("status") && <TableTh align="center" className="w-28 whitespace-nowrap">Status</TableTh>}
+              {isColVisible("actions") && <TableTh align="center" className="w-24 whitespace-nowrap">Actions</TableTh>}
+            </TableHead>
+            <TableBody>
               {returns.map((item, index) => {
                 const isExpanded = expandedRows.has(item.id);
                 const sl = (currentPageNumber - 1) * dataLimit + index + 1;
@@ -640,24 +651,12 @@ export function TradeReturnTable<T extends Record<string, any>>({
                       {/* Actions */}
                       {isColVisible("actions") && (
                         <td className="py-2 px-3 text-center w-24 whitespace-nowrap">
-                          <div className="flex items-center justify-center gap-1.5">
-                            <button
-                              type="button"
-                              onClick={() => onView(item)}
-                              className="p-1 rounded text-sky-600 hover:bg-sky-100 transition-colors cursor-pointer"
-                              title="View Return Slip"
-                            >
-                              <FiEye size={14} />
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => onPrint(item)}
-                              className="p-1 rounded text-gray-600 hover:bg-gray-100 transition-colors cursor-pointer"
-                              title="Print Return Slip"
-                            >
-                              <FiPrinter size={14} />
-                            </button>
-                          </div>
+                          <TableActionButtons
+                            onView={() => onView(item)}
+                            onPrint={() => onPrint(item)}
+                            viewTitle="View Return Slip"
+                            printTitle="Print Return Slip"
+                          />
                         </td>
                       )}
                     </tr>
@@ -764,40 +763,25 @@ export function TradeReturnTable<T extends Record<string, any>>({
                   </React.Fragment>
                 );
               })}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
         )}
-      </div>
+      </TableScroll>
 
       {/* Pagination Footer */}
-      {!isLoading && returns.length > 0 && (
-        <div className="p-2.5 sm:p-3 border-t border-gray-100 bg-gray-50/50 flex flex-col sm:flex-row items-center justify-between gap-2.5">
-          <div className="flex items-center gap-2 text-xs text-gray-500">
-            <span>Show</span>
-            <select
-              value={dataLimit}
-              onChange={(e) => {
-                setDataLimit(Number(e.target.value));
-                setCurrentPageNumber(1);
-              }}
-              className="border border-gray-300 rounded px-1.5 py-0.5 text-xs bg-white text-gray-700 focus:outline-none focus:border-[var(--color-primary)] cursor-pointer"
-            >
-              <option value={10}>10</option>
-              <option value={20}>20</option>
-              <option value={50}>50</option>
-              <option value={100}>100</option>
-            </select>
-            <span>entries per page (Total {totalCount} {actualPartyLabel.toLowerCase()} returns)</span>
-          </div>
-
-          <Pagination
-            pageCount={pageCount}
-            currentPageNumber={currentPageNumber}
-            handlePagination={handlePagination}
-          />
-        </div>
+      {!isLoading && (
+        <TablePaginationFooter
+          totalCount={totalCount}
+          pageCount={pageCount}
+          currentPageNumber={currentPageNumber}
+          dataLimit={dataLimit}
+          setDataLimit={setDataLimit}
+          setCurrentPageNumber={setCurrentPageNumber}
+          handlePagination={handlePagination}
+          entityLabel={`${actualPartyLabel.toLowerCase()} returns`}
+        />
       )}
-    </div>
+    </TableContainer>
   );
 }
 

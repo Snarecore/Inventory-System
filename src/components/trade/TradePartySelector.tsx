@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect, useMemo } from "react";
 import { FaSearch, FaUserPlus, FaWalking } from "react-icons/fa";
 import { FiChevronDown } from "react-icons/fi";
+import TextInput from "@/components/form/TextInput";
 import type { PartyItem } from "@/types";
 import { formatMoney } from "@/utils/formatters";
 import { useDebounce } from "@/hooks/useDebounce";
@@ -172,19 +173,19 @@ export const TradePartySelector: React.FC<TradePartySelectorProps> = ({
       {/* Optional Walk-in Inputs */}
       {isWalkIn && (
         <div className="mt-1.5 grid grid-cols-2 gap-1.5 p-1.5 bg-emerald-50/70 border border-emerald-200 rounded-lg">
-          <input
-            type="text"
+          <TextInput
             placeholder="Name (Optional)"
             value={walkInName}
-            onChange={(e) => onChangeWalkInName?.(e.target.value)}
-            className="w-full px-2 py-1 text-xs border border-gray-300 rounded bg-white font-medium text-black focus:outline-none focus:border-emerald-500"
+            onChange={(val) => onChangeWalkInName?.(val)}
+            wrapperClass="!h-7 !px-2 bg-white !border-gray-300 focus-within:!border-emerald-500 focus-within:!ring-emerald-500"
+            inputClass="font-medium text-black"
           />
-          <input
-            type="text"
+          <TextInput
             placeholder="Phone (Optional)"
             value={walkInPhone}
-            onChange={(e) => onChangeWalkInPhone?.(e.target.value)}
-            className="w-full px-2 py-1 text-xs border border-gray-300 rounded bg-white font-medium text-black focus:outline-none focus:border-emerald-500"
+            onChange={(val) => onChangeWalkInPhone?.(val)}
+            wrapperClass="!h-7 !px-2 bg-white !border-gray-300 focus-within:!border-emerald-500 focus-within:!ring-emerald-500"
+            inputClass="font-medium text-black"
           />
         </div>
       )}
@@ -192,15 +193,14 @@ export const TradePartySelector: React.FC<TradePartySelectorProps> = ({
       {/* Dropdown Panel */}
       {isDropdownOpen && (
         <div className="absolute left-0 right-0 sm:right-auto sm:w-96 max-w-[calc(100vw-32px)] mt-1 bg-white rounded-lg shadow-xl border border-gray-200 p-2 z-30">
-          <div className="relative mb-2">
-            <FaSearch className="absolute left-2.5 top-2.5 text-gray-400 text-xs" />
-            <input
-              type="text"
+          <div className="mb-2">
+            <TextInput
+              icon={<FaSearch className="text-gray-400 text-xs" />}
               placeholder={`Search ${displayLabel.toLowerCase()} name, phone, address...`}
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-7 pr-2 py-1.5 text-xs border border-gray-200 rounded-md focus:outline-none focus:border-[var(--color-primary)] text-black"
+              onChange={(val) => setSearchQuery(val)}
               autoFocus
+              wrapperClass="!h-8 !px-2 bg-white !border-gray-200"
             />
           </div>
 

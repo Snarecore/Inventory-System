@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import Modal from "@/components/modal/Modal";
 import Button from "@/components/button/Button";
+import ToggleInput from "@/components/form/ToggleInput";
 import { buildAccessUser } from "@/utils/access-user";
 import { postData } from "@/services/api-service";
 import { showSuccessToast, showErrorToast } from "@/utils/toast-utils";
@@ -256,15 +257,11 @@ const ChallanSettingsModal: React.FC<ChallanSettingsModalProps> = ({
                   </div>
                 </div>
 
-                <div className="relative inline-flex items-center cursor-pointer ml-1.5 sm:ml-3 shrink-0">
-                  <input
-                    type="checkbox"
-                    checked={isChecked}
-                    onChange={() => handleToggle(opt.key)}
-                    className="sr-only peer"
-                  />
-                  <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[var(--color-primary)]"></div>
-                </div>
+                <ToggleInput
+                  checked={isChecked}
+                  onChange={() => handleToggle(opt.key)}
+                  className="ml-1.5 sm:ml-3 shrink-0"
+                />
               </label>
             );
           })}

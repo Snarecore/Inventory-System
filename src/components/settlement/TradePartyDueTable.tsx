@@ -3,9 +3,20 @@ import { FiChevronDown } from "react-icons/fi";
 import { FaFileExcel } from "react-icons/fa";
 import * as XLSX from "xlsx";
 import Search from "@/components/table-components/Search";
-import Pagination from "@/components/pagination";
-import TableSkeleton from "@/components/skeleton/TableSkeleton";
-import EmptyState from "@/components/empty-state/EmptyState";
+import {
+  TableContainer,
+  TableToolbar,
+  TableScroll,
+  Table,
+  TableHead,
+  TableTh,
+  TableBody,
+  TableRow,
+  TableCell,
+  TablePaginationFooter,
+  TableSkeleton,
+  EmptyState,
+} from "@/components/common";
 import ColumnVisibilityDropdown, { type ColumnItem } from "@/components/table-components/ColumnVisibilityDropdown";
 import { useDebounce } from "@/hooks/useDebounce";
 import { formatMoney } from "@/utils/formatters";
@@ -246,9 +257,9 @@ export const TradePartyDueTable = <T extends GenericTradePartyDue>({
   };
 
   return (
-    <div className="bg-white rounded-xl shadow-xs border border-gray-200 flex flex-col relative z-20 overflow-visible">
+    <TableContainer>
       {/* Search and Filters Bar */}
-      <div className="p-2 sm:p-2.5 border-b border-gray-100 flex flex-wrap items-center justify-between gap-2 relative z-40 overflow-visible">
+      <TableToolbar>
         <div className="flex flex-wrap items-center gap-2 flex-1 min-w-0">
           <div className="w-full sm:w-56 shrink-0">
             <Search
@@ -284,10 +295,10 @@ export const TradePartyDueTable = <T extends GenericTradePartyDue>({
             <span>Export</span>
           </button>
         </div>
-      </div>
+      </TableToolbar>
 
       {/* Main Table Content */}
-      <div className="overflow-x-auto w-full relative z-10">
+      <TableScroll>
         {isLoading ? (
           <TableSkeleton columnCount={activeVisibleColumnCount} rowCount={8} />
         ) : processedParties.length === 0 ? (
@@ -296,34 +307,32 @@ export const TradePartyDueTable = <T extends GenericTradePartyDue>({
             description={`There are no ${partyTitle.toLowerCase()} receivables matching your selected search or filters.`}
           />
         ) : (
-          <table className="w-full text-left border-collapse text-xs">
-            <thead>
-              <tr className="bg-[#41BEF3] text-black text-xs font-semibold">
-                {isColVisible("sl") && <th className="py-2.5 px-3 text-center w-10 whitespace-nowrap">SL</th>}
-                {showIdColumn && isColVisible("partyId") && (
-                  <th className="py-2.5 px-3 whitespace-nowrap">{partyTitle} ID</th>
-                )}
-                {isColVisible("name") && (
-                  <th className="py-2.5 px-3 whitespace-nowrap">
-                    {renderSortHeader(`${partyTitle} Name`, "name")}
-                  </th>
-                )}
-                {isColVisible("phone") && <th className="py-2.5 px-3 whitespace-nowrap">Phone</th>}
-                {isColVisible("address") && <th className="py-2.5 px-3 whitespace-nowrap">Address</th>}
-                {isColVisible("invoices") && <th className="py-2.5 px-3 text-center whitespace-nowrap">Invoices</th>}
-                {isColVisible("due") && (
-                  <th className="py-2.5 px-3 text-right whitespace-nowrap">
-                    <div className="flex justify-end">
-                      {renderSortHeader("Total Due (৳)", "due")}
-                    </div>
-                  </th>
-                )}
-                {isColVisible("action") && (
-                  <th className="py-2.5 px-3 text-center whitespace-nowrap min-w-[100px] w-28">Action</th>
-                )}
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100">
+          <Table>
+            <TableHead>
+              {isColVisible("sl") && <TableTh align="center" width={40} className="whitespace-nowrap">SL</TableTh>}
+              {showIdColumn && isColVisible("partyId") && (
+                <TableTh className="whitespace-nowrap">{partyTitle} ID</TableTh>
+              )}
+              {isColVisible("name") && (
+                <TableTh className="whitespace-nowrap">
+                  {renderSortHeader(`${partyTitle} Name`, "name")}
+                </TableTh>
+              )}
+              {isColVisible("phone") && <TableTh className="whitespace-nowrap">Phone</TableTh>}
+              {isColVisible("address") && <TableTh className="whitespace-nowrap">Address</TableTh>}
+              {isColVisible("invoices") && <TableTh align="center" className="whitespace-nowrap">Invoices</TableTh>}
+              {isColVisible("due") && (
+                <TableTh align="right" className="whitespace-nowrap">
+                  <div className="flex justify-end">
+                    {renderSortHeader("Total Due (৳)", "due")}
+                  </div>
+                </TableTh>
+              )}
+              {isColVisible("action") && (
+                <TableTh align="center" className="whitespace-nowrap min-w-[100px] w-28">Action</TableTh>
+              )}
+            </TableHead>
+            <TableBody>
               {paginatedParties.map((party, index) => {
                 const serialNumber = (currentPageNumber - 1) * dataLimit + index + 1;
                 const dueAmount = getDueAmount(party);
@@ -413,42 +422,25 @@ export const TradePartyDueTable = <T extends GenericTradePartyDue>({
                   </tr>
                 );
               })}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
         )}
-      </div>
+      </TableScroll>
 
       {/* Pagination Footer */}
       {!isLoading && processedParties.length > 0 && (
-        <div className="p-2.5 sm:p-3 border-t border-gray-100 bg-gray-50/50 flex flex-col sm:flex-row items-center justify-between gap-2.5">
-          <div className="flex items-center gap-2 text-xs text-gray-500">
-            <span>Show</span>
-            <select
-              value={dataLimit}
-              onChange={(e) => {
-                setDataLimit(Number(e.target.value));
-                setCurrentPageNumber(1);
-              }}
-              className="border border-gray-300 rounded px-1.5 py-0.5 text-xs bg-white text-gray-700 focus:outline-none focus:border-[var(--color-primary)] cursor-pointer"
-            >
-              <option value={10}>10</option>
-              <option value={20}>20</option>
-              <option value={50}>50</option>
-              <option value={100}>100</option>
-            </select>
-            <span>
-              entries per page (Total {totalCount} {partyTitle.toLowerCase()}s)
-            </span>
-          </div>
-
-          <Pagination
-            pageCount={pageCount}
-            currentPageNumber={currentPageNumber}
-            handlePagination={handlePagination}
-          />
-        </div>
+        <TablePaginationFooter
+          totalCount={totalCount}
+          pageCount={pageCount}
+          currentPageNumber={currentPageNumber}
+          dataLimit={dataLimit}
+          setDataLimit={setDataLimit}
+          setCurrentPageNumber={setCurrentPageNumber}
+          handlePagination={handlePagination}
+          entityLabel={`${partyTitle.toLowerCase()}s`}
+        />
       )}
-    </div>
+    </TableContainer>
   );
 };
 

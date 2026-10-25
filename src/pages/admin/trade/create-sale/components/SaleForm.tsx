@@ -9,6 +9,7 @@ import ConfirmModal from "@/components/modal/ConfirmModal";
 import PartyModal from "@/pages/admin/people/parties/components/PartyModal";
 import SaleInvoiceModal from "@/pages/admin/trade/sales/components/SaleInvoiceModal";
 import DatePicker from "@/components/common/DatePicker";
+import CurrencyInput from "@/components/form/CurrencyInput";
 import apiConfig from "@/config/api.json";
 import {
   salesListQueryKey,
@@ -1181,55 +1182,25 @@ export const CreateSaleForm: React.FC = () => {
             </h3>
 
             {/* Overall Invoice Discount (Fixed Amount) */}
-            <div className="flex items-center justify-between gap-2">
-              <label className="text-[11px] text-black font-semibold">Overall Discount (৳):</label>
-              <div className="relative w-32 sm:w-36">
-                <span className="absolute left-2 top-1 text-black text-xs font-bold">৳</span>
-                <input
-                  type="number"
-                  step="0.01"
-                  value={discountValue}
-                  placeholder="0"
-                  onWheel={(e) => e.currentTarget.blur()}
-                  onChange={(e) => setDiscountValue(e.target.value)}
-                  className="w-full pl-5 pr-2 py-1 text-xs border border-gray-300 rounded text-right text-black font-bold focus:outline-none focus:border-[var(--color-primary)]"
-                />
-              </div>
-            </div>
+            <CurrencyInput
+              label="Overall Discount (৳):"
+              value={discountValue}
+              onChange={setDiscountValue}
+            />
 
             {/* Invoice VAT (Fixed Amount) */}
-            <div className="flex items-center justify-between gap-2">
-              <label className="text-[11px] text-black font-semibold">Invoice VAT (৳):</label>
-              <div className="relative w-32 sm:w-36">
-                <span className="absolute left-2 top-1 text-black text-xs font-bold">৳</span>
-                <input
-                  type="number"
-                  step="0.01"
-                  value={vatAmount}
-                  placeholder="0"
-                  onWheel={(e) => e.currentTarget.blur()}
-                  onChange={(e) => setVatAmount(e.target.value)}
-                  className="w-full pl-5 pr-2 py-1 text-xs border border-gray-300 rounded text-right text-black font-bold focus:outline-none focus:border-[var(--color-primary)]"
-                />
-              </div>
-            </div>
+            <CurrencyInput
+              label="Invoice VAT (৳):"
+              value={vatAmount}
+              onChange={setVatAmount}
+            />
 
             {/* Delivery Charge */}
-            <div className="flex items-center justify-between gap-2">
-              <label className="text-[11px] text-black font-semibold">Delivery Charge (৳):</label>
-              <div className="relative w-32 sm:w-36">
-                <span className="absolute left-2 top-1 text-black text-xs font-bold">৳</span>
-                <input
-                  type="number"
-                  step="0.01"
-                  value={deliveryCharge}
-                  placeholder="0"
-                  onWheel={(e) => e.currentTarget.blur()}
-                  onChange={(e) => setDeliveryCharge(e.target.value)}
-                  className="w-full pl-5 pr-2 py-1 text-xs border border-gray-300 rounded text-right text-black font-bold focus:outline-none focus:border-[var(--color-primary)]"
-                />
-              </div>
-            </div>
+            <CurrencyInput
+              label="Delivery Charge (৳):"
+              value={deliveryCharge}
+              onChange={setDeliveryCharge}
+            />
           </div>
 
           {/* Notes / Remarks */}

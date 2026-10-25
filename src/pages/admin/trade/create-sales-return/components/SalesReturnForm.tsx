@@ -17,6 +17,7 @@ import Button from "@/components/button/Button";
 import ConfirmModal from "@/components/modal/ConfirmModal";
 import SalesReturnInvoiceModal from "@/pages/admin/trade/sales-return/components/SalesReturnInvoiceModal";
 import DatePicker from "@/components/common/DatePicker";
+import TextInput from "@/components/form/TextInput";
 import apiConfig from "@/config/api.json";
 import {
   salesAndReturnQueryKey,
@@ -1164,52 +1165,45 @@ export const SalesReturnForm: React.FC = () => {
         </div>
 
         {/* Customer Details */}
-        <div>
-          <label className="text-[11px] font-bold text-black tracking-wider block mb-1">
-            Customer
-          </label>
-          <input
-            type="text"
-            readOnly
-            disabled
-            value={
-              customerName
-                ? customerPhone
-                  ? `${customerName} • ${customerPhone}`
-                  : customerName
-                : "N/A"
-            }
-            placeholder="N/A"
-            className="w-full h-9 px-2.5 py-1.5 border border-gray-200 rounded-lg bg-gray-50 text-xs font-normal text-black placeholder:text-black cursor-default truncate"
-          />
-        </div>
+        <TextInput
+          label="Customer"
+          readOnly
+          disabled
+          value={
+            customerName
+              ? customerPhone
+                ? `${customerName} • ${customerPhone}`
+                : customerName
+              : "N/A"
+          }
+          placeholder="N/A"
+          wrapperClass="!h-9 bg-gray-50 !border-gray-200"
+          inputClass="font-normal text-black cursor-default truncate"
+        />
 
         {/* Refund / Settlement Type - Auto-determined by customer's original payment method */}
-        <div>
-          <label className="text-[11px] font-bold text-black tracking-wider block mb-1">
-            Refund / Settlement Type <span className="text-rose-500">*</span>
-          </label>
-          <input
-            type="text"
-            readOnly
-            disabled
-            value={
-              selectedSale
-                ? paymentType === "CASH"
-                  ? "Cash Refund"
-                  : paymentType === "CREDIT"
-                  ? "Credit (Due Adjustment)"
-                  : paymentType === "MFS"
-                  ? `MFS (${selectedSale.mfsName || "bKash / Nagad"})`
-                  : paymentType === "BANK"
-                  ? `Bank (${selectedSale.bankName || "Transfer"})`
-                  : paymentType
-                : "N/A"
-            }
-            placeholder="N/A"
-            className="w-full h-9 px-2.5 py-1.5 border border-gray-200 rounded-lg bg-gray-50 text-xs font-normal text-black placeholder:text-black cursor-default truncate"
-          />
-        </div>
+        <TextInput
+          label="Refund / Settlement Type"
+          required
+          readOnly
+          disabled
+          value={
+            selectedSale
+              ? paymentType === "CASH"
+                ? "Cash Refund"
+                : paymentType === "CREDIT"
+                ? "Credit (Due Adjustment)"
+                : paymentType === "MFS"
+                ? `MFS (${selectedSale.mfsName || "bKash / Nagad"})`
+                : paymentType === "BANK"
+                ? `Bank (${selectedSale.bankName || "Transfer"})`
+                : paymentType
+              : "N/A"
+          }
+          placeholder="N/A"
+          wrapperClass="!h-9 bg-gray-50 !border-gray-200"
+          inputClass="font-normal text-black cursor-default truncate"
+        />
       </div>
 
       {/* Customer Original Payment Breakdown Banner (Compact Spacing & Padding) */}

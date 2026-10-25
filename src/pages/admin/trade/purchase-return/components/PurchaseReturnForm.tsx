@@ -17,6 +17,7 @@ import Button from "@/components/button/Button";
 import ConfirmModal from "@/components/modal/ConfirmModal";
 import PurchaseReturnInvoiceModal from "./PurchaseReturnInvoiceModal";
 import DatePicker from "@/components/common/DatePicker";
+import TextInput from "@/components/form/TextInput";
 import apiConfig from "@/config/api.json";
 import {
   purchaseAndReturnQueryKey,
@@ -1139,52 +1140,45 @@ export const PurchaseReturnForm: React.FC = () => {
         </div>
 
         {/* Supplier Details */}
-        <div>
-          <label className="text-[11px] font-bold text-black tracking-wider block mb-1">
-            Supplier
-          </label>
-          <input
-            type="text"
-            readOnly
-            disabled
-            value={
-              supplierName
-                ? supplierPhone
-                  ? `${supplierName} • ${supplierPhone}`
-                  : supplierName
-                : "N/A"
-            }
-            placeholder="N/A"
-            className="w-full h-9 px-2.5 py-1.5 border border-gray-200 rounded-lg bg-gray-50 text-xs font-normal text-black placeholder:text-black cursor-default truncate"
-          />
-        </div>
+        <TextInput
+          label="Supplier"
+          readOnly
+          disabled
+          value={
+            supplierName
+              ? supplierPhone
+                ? `${supplierName} • ${supplierPhone}`
+                : supplierName
+              : "N/A"
+          }
+          placeholder="N/A"
+          wrapperClass="!h-9 bg-gray-50 !border-gray-200"
+          inputClass="font-normal text-black cursor-default truncate"
+        />
 
         {/* Refund / Settlement Type */}
-        <div>
-          <label className="text-[11px] font-bold text-black tracking-wider block mb-1">
-            Refund / Settlement Type <span className="text-rose-500">*</span>
-          </label>
-          <input
-            type="text"
-            readOnly
-            disabled
-            value={
-              selectedPurchase
-                ? origPaymentMode === "CASH"
-                  ? "Cash Refund"
-                  : origPaymentMode === "CREDIT"
-                  ? "Credit (Due Adjustment)"
-                  : origPaymentMode === "MFS"
-                  ? `MFS (${selectedPurchase.mfsName || "bKash / Nagad"})`
-                  : origPaymentMode === "BANK"
-                  ? `Bank (${selectedPurchase.bankName || "Transfer"})`
-                  : origPaymentMode
-                : "N/A"
-            }
-            placeholder="N/A"
-            className="w-full h-9 px-2.5 py-1.5 border border-gray-200 rounded-lg bg-gray-50 text-xs font-normal text-black placeholder:text-black cursor-default truncate"
-          />
-        </div>
+        <TextInput
+          label="Refund / Settlement Type"
+          required
+          readOnly
+          disabled
+          value={
+            selectedPurchase
+              ? origPaymentMode === "CASH"
+                ? "Cash Refund"
+                : origPaymentMode === "CREDIT"
+                ? "Credit (Due Adjustment)"
+                : origPaymentMode === "MFS"
+                ? `MFS (${selectedPurchase.mfsName || "bKash / Nagad"})`
+                : origPaymentMode === "BANK"
+                ? `Bank (${selectedPurchase.bankName || "Transfer"})`
+                : origPaymentMode
+              : "N/A"
+          }
+          placeholder="N/A"
+          wrapperClass="!h-9 bg-gray-50 !border-gray-200"
+          inputClass="font-normal text-black cursor-default truncate"
+        />
       </div>
 
       {/* Supplier's Original Payment Breakdown Banner */}

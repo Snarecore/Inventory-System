@@ -6,6 +6,7 @@ import {
   FaSpinner,
 } from "react-icons/fa";
 import { formatMoney } from "@/utils/formatters";
+import TextInput from "@/components/form/TextInput";
 import type { InvoiceDueItem, CollectionAllocation } from "@/types/collection.types";
 import { useDebounce } from "@/hooks/useDebounce";
 import { TenderBreakdownPortal } from "@/components/settlement/TenderBreakdownPortal";
@@ -35,7 +36,6 @@ export const DueInvoiceAllocationTable: React.FC<DueInvoiceAllocationTableProps>
   isAllSelected,
   allocations,
   isManualMode,
-  onToggleManualMode,
   tenderBreakdown,
 }) => {
   const [filterQuery, setFilterQuery] = useState<string>("");
@@ -92,13 +92,13 @@ export const DueInvoiceAllocationTable: React.FC<DueInvoiceAllocationTableProps>
       {/* Bill Search if many invoices */}
       {invoices.length > 3 && (
         <div className="relative">
-          <FaSearch className="absolute left-2.5 top-2.5 text-gray-400 text-xs" />
-          <input
-            type="text"
+          <TextInput
+            icon={<FaSearch className="text-gray-400 text-xs" />}
             value={filterQuery}
-            onChange={(e) => setFilterQuery(e.target.value)}
+            onChange={(val) => setFilterQuery(val)}
             placeholder="Filter invoice no..."
-            className="w-full pl-7 pr-6 py-1 bg-white border border-gray-200 rounded-md text-xs text-black focus:outline-none focus:border-[var(--color-primary)]"
+            wrapperClass="!h-7 bg-white !border-gray-200"
+            inputClass="text-xs text-black"
           />
           {filterQuery && (
             <button

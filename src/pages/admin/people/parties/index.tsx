@@ -11,8 +11,9 @@ import PartyModal from "./components/PartyModal";
 import PartyDetailsModal from "./components/PartyDetailsModal";
 import apiConfig from "@/config/api.json";
 import { partyListQueryKey } from "@/config/query-key";
-import { buildAccessUser } from "@/utils/access-user";
+import { buildAccessUser, withBranchScope } from "@/utils/access-user";
 import { postData } from "@/services/api-service";
+import { showErrorToast } from "@/utils/toast-utils";
 import type { PartyItem, PartyType } from "@/types";
 import { useDebounce } from "@/hooks/useDebounce";
 
@@ -296,64 +297,80 @@ const Parties: React.FC = () => {
     setIsViewModalOpen(true);
   };
 
-  const handleModalSuccess = async (savedParty?: PartyItem) => {
-    if (savedParty) {
-      queryClient.setQueryData([partyListQueryKey], (oldData: any) => {
-        if (!oldData) {
-          return { status: "Success", partyList: [savedParty] };
-        }
-        if (Array.isArray(oldData)) {
-          const exists = oldData.some(
-            (p: any) =>
-              (savedParty.id && (p.id === savedParty.id || p.partyId === savedParty.id)) ||
-              (savedParty.phone && (p.phone === savedParty.phone || p.partyPhone === savedParty.phone))
-          );
-          return exists
-            ? oldData.map((p: any) =>
-                (savedParty.id && (p.id === savedParty.id || p.partyId === savedParty.id)) ||
-                (savedParty.phone && (p.phone === savedParty.phone || p.partyPhone === savedParty.phone))
-                  ? { ...p, ...savedParty }
-                  : p
-              )
-            : [savedParty, ...oldData];
-        }
-        if (oldData && typeof oldData === "object") {
-          const listKey = Array.isArray(oldData.partyList)
-            ? "partyList"
-            : Array.isArray(oldData.partyInfoList)
-            ? "partyInfoList"
-            : Array.isArray(oldData.partiesList)
-            ? "partiesList"
-            : Array.isArray(oldData.data)
-            ? "data"
-            : "partyList";
+  const handleModalSuccess = (savedParty?: PartyItem) => {
+    if (!savedParty) return;
 
-          const currentList = Array.isArray(oldData[listKey]) ? oldData[listKey] : [];
-          const exists = currentList.some(
-            (p: any) =>
-              (savedParty.id && (p.id === savedParty.id || p.partyId === savedParty.id)) ||
-              (savedParty.phone && (p.phone === savedParty.phone || p.partyPhone === savedParty.phone))
-          );
-          const updatedList = exists
-            ? currentList.map((p: any) =>
-                (savedParty.id && (p.id === savedParty.id || p.partyId === savedParty.id)) ||
-                (savedParty.phone && (p.phone === savedParty.phone || p.partyPhone === savedParty.phone))
-                  ? { ...p, ...savedParty }
-                  : p
-              )
-            : [savedParty, ...currentList];
+    const targetId = String(savedParty.id ?? savedParty.partyId ?? savedParty.phone ?? "").trim();
+    if (!targetId) return;
 
-          return {
-            ...oldData,
-            [listKey]: updatedList,
-          };
+    queryClient.setQueryData([partyListQueryKey], (oldData: any) => {
+      if (!oldData) return oldData;
+
+      const updateItem = (p: any) => {
+        if (!p || typeof p !== "object") return p;
+        const pId = String(p.id ?? p.partyId ?? p.party_id ?? p.phone ?? p.partyPhone ?? "").trim();
+        return pId === targetId || (savedParty.phone && String(p.phone ?? p.partyPhone ?? "").trim() === String(savedParty.phone).trim())
+          ? { ...p, ...savedParty, status: savedParty.status }
+          : p;
+      };
+
+      const updateListDeep = (obj: any): any => {
+        if (Array.isArray(obj)) return obj.map(updateItem);
+        if (obj && typeof obj === "object") {
+          const next: any = Array.isArray(obj) ? [] : { ...obj };
+          for (const k of Object.keys(obj)) {
+            if (Array.isArray(obj[k])) {
+              next[k] = obj[k].map(updateItem);
+            } else if (obj[k] && typeof obj[k] === "object") {
+              next[k] = updateListDeep(obj[k]);
+            }
+          }
+          return next;
         }
-        return oldData;
+        return obj;
+      };
+
+      return updateListDeep(oldData);
+    });
+  };
+
+  const handleTogglePartyStatus = async (party: PartyItem) => {
+    const partyId = party.id ?? party.partyId;
+    if (!partyId) return;
+
+    const currentActive = isPartyActive(party);
+    const nextStatus = currentActive ? "Inactive" : "Active";
+    const updated = { ...party, status: nextStatus };
+
+    // 1. Instantly update in-memory cache (0ms delay, zero network refetch)
+    handleModalSuccess(updated);
+
+    try {
+      const payload = withBranchScope({
+        ...party,
+        id: partyId,
+        partyId: partyId,
+        name: party.name || party.partyName || "",
+        partyName: party.name || party.partyName || "",
+        phone: party.phone || party.partyPhone || "",
+        partyPhone: party.phone || party.partyPhone || "",
+        type: party.type || party.partyType || "CUSTOMER",
+        partyType: party.type || party.partyType || "CUSTOMER",
+        status: nextStatus,
       });
-    }
 
-    // Only a single clean background revalidation is needed
-    await queryClient.invalidateQueries({ queryKey: [partyListQueryKey], exact: true });
+      const res = await postData<any>({
+        url: apiConfig.party.updatePartyUrl,
+        body: { accessUser: buildAccessUser(), ...payload },
+      });
+
+      if (!res || res.error || String(res?.status).toLowerCase() === "error") {
+        showErrorToast(res?.msg || "Failed to update party status");
+        handleModalSuccess({ ...party, status: currentActive ? "Active" : "Inactive" });
+      }
+    } catch {
+      handleModalSuccess({ ...party, status: currentActive ? "Active" : "Inactive" });
+    }
   };
 
   return (
@@ -474,6 +491,7 @@ const Parties: React.FC = () => {
         onEdit={openEditModal}
         onView={openViewModal}
         onRefresh={handleRefresh}
+        onToggleStatus={handleTogglePartyStatus}
       />
 
       {/* Add / Edit Party Modal */}

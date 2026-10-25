@@ -10,6 +10,8 @@ import PartyModal from "@/pages/admin/people/parties/components/PartyModal";
 import ChallanSettingsModal from "@/pages/admin/trade/purchases/components/ChallanSettingsModal";
 import PurchaseInvoiceModal from "@/pages/admin/trade/purchases/components/PurchaseInvoiceModal";
 import DatePicker from "@/components/common/DatePicker";
+import TextInput from "@/components/form/TextInput";
+import CurrencyInput from "@/components/form/CurrencyInput";
 import ImageUpload from "@/components/image/ImageUpload";
 import apiConfig from "@/config/api.json";
 import {
@@ -1230,34 +1232,22 @@ const CreatePurchaseForm: React.FC = () => {
 
         {/* Optional Challan Ref No */}
         {(challanSettings.showChallanRefNo ?? challanSettings.showChallanNo) && (
-          <div>
-            <label className="text-[11px] font-bold text-black tracking-wider block mb-1">
-              Challan Ref No
-            </label>
-            <input
-              type="text"
-              value={challanNo}
-              onChange={(e) => setChallanNo(e.target.value)}
-              className="w-full h-9 px-2.5 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:border-[var(--color-primary)] font-semibold text-black"
-              placeholder="e.g. CH-98234"
-            />
-          </div>
+          <TextInput
+            label="Challan Ref No"
+            value={challanNo}
+            onChange={(val: any) => setChallanNo(typeof val === "string" ? val : val?.target?.value ?? "")}
+            placeholder="e.g. CH-98234"
+          />
         )}
 
         {/* Optional VAT Challan No */}
         {challanSettings.showVatChallan && (
-          <div>
-            <label className="text-[11px] font-bold text-black tracking-wider block mb-1">
-              VAT Challan No
-            </label>
-            <input
-              type="text"
-              value={vatChallan}
-              onChange={(e) => setVatChallan(e.target.value)}
-              className="w-full h-9 px-2.5 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:border-[var(--color-primary)] font-semibold text-black"
-              placeholder="e.g. VAT-98234"
-            />
-          </div>
+          <TextInput
+            label="VAT Challan No"
+            value={vatChallan}
+            onChange={(val: any) => setVatChallan(typeof val === "string" ? val : val?.target?.value ?? "")}
+            placeholder="e.g. VAT-98234"
+          />
         )}
 
         {/* Optional VAT Challan Date */}
@@ -1279,66 +1269,42 @@ const CreatePurchaseForm: React.FC = () => {
 
         {/* Optional Vehicle No */}
         {(challanSettings.vehicleNumber ?? challanSettings.showVehicleNo) && (
-          <div>
-            <label className="text-[11px] font-bold text-black tracking-wider block mb-1">
-              Vehicle / Truck No
-            </label>
-            <input
-              type="text"
-              value={vehicleNo}
-              onChange={(e) => setVehicleNo(e.target.value)}
-              className="w-full h-9 px-2.5 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:border-[var(--color-primary)] font-semibold text-black"
-              placeholder="e.g. DHAKA-METRO-11-2233"
-            />
-          </div>
+          <TextInput
+            label="Vehicle / Truck No"
+            value={vehicleNo}
+            onChange={(val: any) => setVehicleNo(typeof val === "string" ? val : val?.target?.value ?? "")}
+            placeholder="e.g. DHAKA-METRO-11-2233"
+          />
         )}
 
         {/* Optional Capacity (CFT) */}
         {challanSettings.capacityCft && (
-          <div>
-            <label className="text-[11px] font-bold text-black tracking-wider block mb-1">
-              Capacity (CFT)
-            </label>
-            <input
-              type="text"
-              value={capacityCft}
-              onChange={(e) => setCapacityCft(e.target.value)}
-              className="w-full h-9 px-2.5 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:border-[var(--color-primary)] font-semibold text-black"
-              placeholder="e.g. 500 CFT"
-            />
-          </div>
+          <TextInput
+            label="Capacity (CFT)"
+            value={capacityCft}
+            onChange={(val: any) => setCapacityCft(typeof val === "string" ? val : val?.target?.value ?? "")}
+            placeholder="e.g. 500 CFT"
+          />
         )}
 
         {/* Optional Driver Name */}
         {(challanSettings.driverName ?? challanSettings.showDriverName) && (
-          <div>
-            <label className="text-[11px] font-bold text-black tracking-wider block mb-1">
-              Driver Name
-            </label>
-            <input
-              type="text"
-              value={driverName}
-              onChange={(e) => setDriverName(e.target.value)}
-              className="w-full h-9 px-2.5 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:border-[var(--color-primary)] font-semibold text-black"
-              placeholder="e.g. Rafiq Hossain"
-            />
-          </div>
+          <TextInput
+            label="Driver Name"
+            value={driverName}
+            onChange={(val: any) => setDriverName(typeof val === "string" ? val : val?.target?.value ?? "")}
+            placeholder="e.g. Rafiq Hossain"
+          />
         )}
 
         {/* Optional Driver Phone */}
         {(challanSettings.driverPhone ?? challanSettings.showDriverPhone) && (
-          <div>
-            <label className="text-[11px] font-bold text-black tracking-wider block mb-1">
-              Driver Phone
-            </label>
-            <input
-              type="text"
-              value={driverPhone}
-              onChange={(e) => setDriverPhone(e.target.value)}
-              className="w-full h-9 px-2.5 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:border-[var(--color-primary)] font-semibold text-black"
-              placeholder="017xxxxxxxx"
-            />
-          </div>
+          <TextInput
+            label="Driver Phone"
+            value={driverPhone}
+            onChange={(val: any) => setDriverPhone(typeof val === "string" ? val : val?.target?.value ?? "")}
+            placeholder="017xxxxxxxx"
+          />
         )}
       </div>
 
@@ -1375,56 +1341,26 @@ const CreatePurchaseForm: React.FC = () => {
             </h3>
 
             {/* Overall Invoice Discount (Fixed Amount) */}
-            <div className="flex items-center justify-between gap-2">
-              <label className="text-[11px] text-black font-semibold">Discount (৳):</label>
-              <div className="relative w-32 sm:w-36">
-                <span className="absolute left-2 top-1 text-black text-xs font-bold">৳</span>
-                <input
-                  type="number"
-                  step="0.01"
-                  value={invoiceDiscount}
-                  placeholder="0"
-                  onWheel={(e) => e.currentTarget.blur()}
-                  onChange={(e) => setInvoiceDiscount(e.target.value)}
-                  className="w-full pl-5 pr-2 py-1 text-xs border border-gray-300 rounded text-right text-black font-bold focus:outline-none focus:border-[var(--color-primary)]"
-                />
-              </div>
-            </div>
+            <CurrencyInput
+              label="Discount (৳):"
+              value={invoiceDiscount}
+              onChange={setInvoiceDiscount}
+            />
 
             {/* Invoice VAT (Fixed Amount) */}
-            <div className="flex items-center justify-between gap-2">
-              <label className="text-[11px] text-black font-semibold">Invoice VAT (৳):</label>
-              <div className="relative w-32 sm:w-36">
-                <span className="absolute left-2 top-1 text-black text-xs font-bold">৳</span>
-                <input
-                  type="number"
-                  step="0.01"
-                  value={invoiceVat}
-                  placeholder="0"
-                  onWheel={(e) => e.currentTarget.blur()}
-                  onChange={(e) => setInvoiceVat(e.target.value)}
-                  className="w-full pl-5 pr-2 py-1 text-xs border border-gray-300 rounded text-right text-black font-bold focus:outline-none focus:border-[var(--color-primary)]"
-                />
-              </div>
-            </div>
+            <CurrencyInput
+              label="Invoice VAT (৳):"
+              value={invoiceVat}
+              onChange={setInvoiceVat}
+            />
 
             {/* Transport / Freight Charge */}
             {challanSettings.showTransportCost && (
-              <div className="flex items-center justify-between gap-2">
-                <label className="text-[11px] text-black font-semibold">Transport (৳):</label>
-                <div className="relative w-32 sm:w-36">
-                  <span className="absolute left-2 top-1 text-black text-xs font-bold  ">৳</span>
-                  <input
-                    type="number"
-                    step="0.01"
-                    value={transportCost}
-                    placeholder="0"
-                    onWheel={(e) => e.currentTarget.blur()}
-                    onChange={(e) => setTransportCost(e.target.value)}
-                    className="w-full pl-5 pr-2 py-1 text-xs border border-gray-300 rounded text-right   text-black font-bold focus:outline-none focus:border-[var(--color-primary)]"
-                  />
-                </div>
-              </div>
+              <CurrencyInput
+                label="Transport (৳):"
+                value={transportCost}
+                onChange={setTransportCost}
+              />
             )}
           </div>
 

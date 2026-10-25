@@ -2,7 +2,7 @@ import React, { useState, useMemo } from "react";
 import { FaUserTie, FaFileExcel, FaPhone, FaMapMarkerAlt } from "react-icons/fa";
 import Search from "@/components/table-components/Search";
 import EmptyState from "@/components/empty-state/EmptyState";
-import Pagination from "@/components/pagination";
+import TablePaginationFooter from "@/components/table-components/TablePaginationFooter";
 import { formatMoney } from "@/utils/formatters";
 import * as XLSX from "xlsx";
 import { showSuccessToast, showErrorToast } from "@/utils/toast-utils";
@@ -324,30 +324,17 @@ export const CustomerSalesReportTable: React.FC<CustomerSalesReportTableProps> =
 
       {/* Pagination Footer */}
       {paginated.length > 0 && (
-        <div className="p-2.5 sm:p-3 border-t border-gray-100 bg-gray-50/50 flex flex-col sm:flex-row items-center justify-between gap-2.5">
-          <div className="flex items-center gap-2 text-xs text-gray-500">
-            <span>Show</span>
-            <select
-              value={pageSize}
-              onChange={(e) => {
-                setPageSize(Number(e.target.value));
-                setCurrentPage(1);
-              }}
-              className="border border-gray-300 rounded px-1.5 py-0.5 text-xs bg-white text-gray-700 focus:outline-none focus:border-[var(--color-primary)] cursor-pointer"
-            >
-              <option value={10}>10</option>
-              <option value={20}>20</option>
-              <option value={50}>50</option>
-            </select>
-            <span>entries per page (Total {totalCount} customers)</span>
-          </div>
-
-          <Pagination
-            pageCount={pageCount}
-            currentPageNumber={currentPage}
-            handlePagination={(data) => setCurrentPage(data.selected + 1)}
-          />
-        </div>
+        <TablePaginationFooter
+          totalCount={totalCount}
+          pageCount={pageCount}
+          currentPageNumber={currentPage}
+          dataLimit={pageSize}
+          setDataLimit={setPageSize}
+          setCurrentPageNumber={setCurrentPage}
+          handlePagination={(data) => setCurrentPage(data.selected + 1)}
+          pageSizeOptions={[10, 20, 50]}
+          entityLabel="customers"
+        />
       )}
     </div>
   );

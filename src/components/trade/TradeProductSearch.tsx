@@ -1,5 +1,6 @@
 import React from "react";
 import { FaSearch, FaBarcode, FaCheck, FaPlus, FaTimes } from "react-icons/fa";
+import TextInput from "@/components/form/TextInput";
 import type { ProductItem } from "@/types";
 import { formatMoney } from "@/utils/formatters";
 import { showErrorToast } from "@/utils/toast-utils";
@@ -59,34 +60,34 @@ export const TradeProductSearch: React.FC<TradeProductSearchProps> = ({
       <div className="flex items-center gap-2">
         {/* Barcode Quick Scan */}
         {shouldShowBarcode && (
-          <div className="relative w-44 sm:w-56 shrink-0 hidden sm:block">
-            <FaBarcode className="absolute left-2.5 top-2.5 text-gray-400 text-xs" />
-            <input
-              type="text"
+          <div className="w-44 sm:w-56 shrink-0 hidden sm:block">
+            <TextInput
+              icon={<FaBarcode className="text-gray-400 text-xs" />}
               placeholder="Scan barcode..."
               value={barcodeInput}
-              onChange={(e) => handleBarcodeChange(e.target.value)}
+              onChange={(val) => handleBarcodeChange(val)}
               onKeyDown={handleBarcodeScan}
               onPaste={handleBarcodePaste}
-              className="w-full pl-7 pr-2.5 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:border-[var(--color-primary)] font-medium text-black h-9 bg-gray-50/50"
+              wrapperClass="!h-9 bg-gray-50/50 !border-gray-300"
+              inputClass="font-medium text-black"
             />
           </div>
         )}
 
         {/* Search Product Input */}
-        <div className="relative flex-1">
-          <FaSearch className="absolute left-3 top-2.5 text-gray-400 text-xs" />
-          <input
-            type="text"
+        <div className="flex-1">
+          <TextInput
+            icon={<FaSearch className="text-gray-400 text-xs" />}
             placeholder={defaultPlaceholder}
             value={searchQuery}
-            onChange={(e) => {
-              setSearchQuery(e.target.value);
+            onChange={(val) => {
+              setSearchQuery(val);
               setIsDropdownOpen(true);
             }}
             onFocus={() => setIsDropdownOpen(true)}
             onKeyDown={handleKeyDownSearch}
-            className="w-full pl-8 pr-3 py-1.5 text-xs border border-[var(--primary-color)] rounded-lg focus:outline-none focus:border-[var(--color-primary)] focus:ring-2 focus:ring-[var(--color-primary)]/20 bg-gray-50/40 focus:bg-white font-medium text-black placeholder:text-gray-400 placeholder:text-xs h-9 transition-all"
+            wrapperClass="!h-9 bg-gray-50/40 focus-within:bg-white !border-[var(--primary-color)] focus-within:ring-2 focus-within:ring-[var(--color-primary)]/20"
+            inputClass="font-medium text-black placeholder:text-gray-400 placeholder:text-xs"
           />
         </div>
 

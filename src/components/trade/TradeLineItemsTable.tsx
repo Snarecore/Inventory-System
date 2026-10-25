@@ -1,6 +1,7 @@
 import React from "react";
 import { FaTrash } from "react-icons/fa";
 import { formatMoney } from "@/utils/formatters";
+import TextInput from "@/components/form/TextInput";
 
 export interface TradeLineItemsTableProps {
   title?: string;
@@ -85,18 +86,16 @@ export const TradeLineItemsTable: React.FC<TradeLineItemsTableProps> = ({
 
                     {/* Price (Right Aligned Money Input, No Wheel/Spinners) */}
                     <td className="py-2 px-2 text-right whitespace-nowrap">
-                      <div className="relative inline-block w-full">
-                        <span className="absolute left-1.5 top-1.5 text-black font-bold text-[11px]">৳</span>
-                        <input
-                          type="number"
-                          step="0.01"
-                          value={currentPrice}
-                          placeholder="0"
-                          onWheel={(e) => e.currentTarget.blur()}
-                          onChange={(e) => onUpdatePrice(idx, e.target.value)}
-                          className="w-full pl-5 pr-1.5 py-1 text-xs border border-gray-300 rounded text-right font-bold text-black focus:outline-none focus:border-[var(--color-primary)]"
-                        />
-                      </div>
+                      <TextInput
+                        type="number"
+                        step="0.01"
+                        value={currentPrice}
+                        placeholder="0"
+                        icon={<span className="text-black font-bold text-[11px]">৳</span>}
+                        onChange={(val) => onUpdatePrice(idx, val)}
+                        wrapperClass="!h-7 bg-white !border-gray-300 !px-1.5 focus-within:!border-[var(--color-primary)]"
+                        inputClass="text-right font-bold text-black"
+                      />
                     </td>
 
                     {/* Quantity (Stepper) */}

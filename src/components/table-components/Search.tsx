@@ -1,5 +1,6 @@
 import React from "react";
 import { FiSearch, FiX } from "react-icons/fi";
+import TextInput from "@/components/form/TextInput";
 
 interface SearchProps {
 	searchQuery: string;
@@ -17,8 +18,7 @@ const Search = React.memo(({
 	placeholder = "Search",
 	className = "",
 }: SearchProps) => {
-	const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-		const val = e.target.value;
+	const handleChange = (val: string) => {
 		if (onSearchChange) onSearchChange(val);
 		if (setSearchQuery) setSearchQuery(val);
 	};
@@ -30,13 +30,13 @@ const Search = React.memo(({
 
 	return (
 		<div className={`relative flex items-center w-full ${className}`}>
-			<FiSearch className="absolute left-2.5 text-gray-400 text-sm pointer-events-none" />
-			<input
-				type="text"
+			<TextInput
 				placeholder={placeholder}
 				value={searchQuery}
 				onChange={handleChange}
-				className={`w-full pl-8 ${searchQuery ? "pr-7" : "pr-3"} h-[32px] text-xs text-black border border-[var(--color-primary)] rounded-md bg-white placeholder:text-gray-400 focus:outline-none focus:border-[var(--color-primary)] focus:ring-1 focus:ring-[var(--color-primary)] transition-colors`}
+				icon={<FiSearch className="text-gray-400 text-sm pointer-events-none" />}
+				wrapperClass="!h-[32px] !border-[var(--color-primary)] !rounded-md focus-within:!ring-1 focus-within:!ring-[var(--color-primary)]"
+				inputClass={`${searchQuery ? "!pr-6" : "!pr-1"}`}
 			/>
 			{searchQuery && (
 				<button

@@ -4,6 +4,7 @@ import { useNavigate, useParams, useSearchParams, useLocation } from "react-rout
 import Button from '@/components/button/Button';
 import SelectInput from '@/components/form/SelectField';
 import InputField from '@/components/form/TextInput';
+import ToggleInput from '@/components/form/ToggleInput';
 import { RiArrowDropDownLine } from 'react-icons/ri';
 import { showErrorToast } from '@/utils/toast-utils';
 import { useAPI } from '@/hooks/useApi';
@@ -106,7 +107,7 @@ const CreateProductForm = () => {
     });
 
     // 3. Fetch Product List to prefill edit form or auto-generate pcode/barcode for new product
-    const { data: productListData, isLoading: isProductListLoading, refetch: refetchProductList } = useQuery({
+    const { data: productListData, isLoading: isProductListLoading } = useQuery({
         queryKey: [productListQueryKey],
         queryFn: async () => {
             try {
@@ -122,12 +123,6 @@ const CreateProductForm = () => {
         staleTime: 60 * 1000,
         refetchOnWindowFocus: false,
     });
-
-    useEffect(() => {
-        if (isEditMode) {
-            refetchProductList();
-        }
-    }, [isEditMode, editId]);
 
     // Normalize product list
     const productList: ProductItem[] = useMemo(() => {
@@ -564,21 +559,11 @@ const CreateProductForm = () => {
                                         title="Allow decimal numbers in quantity"
                                     >
                                         <span className="text-[10px] font-medium text-gray-400">Allow Decimal</span>
-                                        <div className="relative inline-flex items-center flex-shrink-0">
-                                            <input
-                                                type="checkbox"
-                                                checked={isDecimalAllowed}
-                                                onChange={(e) => handleDecimalToggle(e.target.checked)}
-                                                className="sr-only peer"
-                                            />
-                                            <div className="w-5 h-3 bg-gray-300 peer-focus:outline-none rounded-full peer peer-checked:bg-[var(--primary-color)]">
-                                                <div
-                                                    className={`absolute top-[1.5px] left-[1.5px] w-2 h-2 bg-white rounded-full transition-transform ${
-                                                        isDecimalAllowed ? "translate-x-2" : ""
-                                                    }`}
-                                                />
-                                            </div>
-                                        </div>
+                                        <ToggleInput
+                                            checked={isDecimalAllowed}
+                                            onChange={(checked) => handleDecimalToggle(checked)}
+                                            size="sm"
+                                        />
                                     </label>
                                 </div>
                                 <SelectInput
@@ -608,18 +593,17 @@ const CreateProductForm = () => {
                                     <label htmlFor="packing_levels" className="text-xs font-semibold text-black block mb-1 truncate">
                                         Conversion Ratio (1 {selectedUnit.label} = ?)
                                     </label>
-                                    <div className="flex items-center w-full transition-all duration-200 border border-gray-300 rounded-lg px-2 h-9 bg-white text-black text-xs focus-within:ring-1 focus-within:ring-[var(--primary-color)] focus-within:border-[var(--primary-color)]">
-                                        <input
-                                            id="packing_levels"
+                                    <div className="relative">
+                                        <InputField
                                             name="packing_levels"
                                             type="text"
                                             value={fieldValues.packing_levels}
                                             onChange={handleChange}
                                             placeholder={`e.g. 10 (1 ${selectedUnit.label} = 10 ${selectedSecondaryUnit.label})`}
-                                            className="w-full focus:outline-none placeholder:text-xs placeholder:text-gray-400 px-1 text-xs bg-transparent"
+                                            inputClass={fieldValues.packing_levels ? "pr-24" : ""}
                                         />
                                         {fieldValues.packing_levels ? (
-                                            <span className="shrink-0 text-[10px] font-semibold text-[var(--primary-color)] bg-[var(--primary-color-light)] border border-[var(--primary-color-muted)] px-1.5 py-0.5 rounded ml-1 whitespace-nowrap select-none">
+                                            <span className="absolute right-2 top-2 text-[10px] font-semibold text-[var(--primary-color)] bg-[var(--primary-color-light)] border border-[var(--primary-color-muted)] px-1.5 py-0.5 rounded whitespace-nowrap select-none pointer-events-none">
                                                 1 {selectedUnit.label} = {
                                                     fieldValues.packing_levels.toLowerCase().includes(selectedSecondaryUnit.label.toLowerCase())
                                                         ? fieldValues.packing_levels
@@ -654,19 +638,14 @@ const CreateProductForm = () => {
                                         </span>
                                     ) : null}
                                 </div>
-                                <div className="flex items-center w-full transition-all duration-200 border border-gray-300 rounded-lg px-2.5 h-9 bg-white text-black text-xs focus-within:ring-1 focus-within:ring-[var(--primary-color)] focus-within:border-[var(--primary-color)]">
-                                    <input
-                                        id="buy_price"
-                                        name="buy_price"
-                                        type="number"
-                                        required
-                                        value={fieldValues.buy_price}
-                                        onChange={handleChange}
-                                        onWheel={(e) => e.currentTarget.blur()}
-                                        placeholder="0.00"
-                                        className="w-full focus:outline-none placeholder:text-xs placeholder:text-gray-400 px-1 text-xs bg-transparent"
-                                    />
-                                </div>
+                                <InputField
+                                    name="buy_price"
+                                    type="number"
+                                    required
+                                    value={fieldValues.buy_price}
+                                    onChange={handleChange}
+                                    placeholder="0.00"
+                                />
                             </div>
 
                             {/* Row 2, Col 3: Sell Price (based on Secondary Unit if selected, else Primary Unit) */}
@@ -681,19 +660,14 @@ const CreateProductForm = () => {
                                         </span>
                                     ) : null}
                                 </div>
-                                <div className="flex items-center w-full transition-all duration-200 border border-gray-300 rounded-lg px-2.5 h-9 bg-white text-black text-xs focus-within:ring-1 focus-within:ring-[var(--primary-color)] focus-within:border-[var(--primary-color)]">
-                                    <input
-                                        id="sell_price"
-                                        name="sell_price"
-                                        type="number"
-                                        required
-                                        value={fieldValues.sell_price}
-                                        onChange={handleChange}
-                                        onWheel={(e) => e.currentTarget.blur()}
-                                        placeholder="0.00"
-                                        className="w-full focus:outline-none placeholder:text-xs placeholder:text-gray-400 px-1 text-xs bg-transparent"
-                                    />
-                                </div>
+                                <InputField
+                                    name="sell_price"
+                                    type="number"
+                                    required
+                                    value={fieldValues.sell_price}
+                                    onChange={handleChange}
+                                    placeholder="0.00"
+                                />
                             </div>
 
                             {/* Row 2, Col 4: Quantity */}
@@ -774,22 +748,12 @@ const CreateProductForm = () => {
                     <span className="text-xs font-semibold text-black">
                         Status
                     </span>
-                    <label className="relative inline-flex items-center cursor-pointer flex-shrink-0">
-                        <input
-                            type="checkbox"
-                            name="status"
-                            checked={fieldValues.status === "active"}
-                            onChange={(e) => handleStatusToggle(e.target.checked)}
-                            className="sr-only peer"
-                        />
-                        <div className="w-8 h-4 bg-gray-300 peer-focus:outline-none rounded-full peer peer-checked:bg-[var(--primary-color)]">
-                            <div
-                                className={`absolute top-[2px] left-[2px] w-3 h-3 bg-white rounded-full transition-transform ${
-                                    fieldValues.status === "active" ? "translate-x-4" : ""
-                                }`}
-                            />
-                        </div>
-                    </label>
+                    <ToggleInput
+                        name="status"
+                        checked={fieldValues.status === "active"}
+                        onChange={(checked) => handleStatusToggle(checked)}
+                        size="sm"
+                    />
                     <span className={`text-[11px] font-semibold px-2 py-0.5 rounded ${
                         fieldValues.status === "active" ? "bg-emerald-50 text-emerald-600" : "bg-gray-100 text-gray-500"
                     }`}>

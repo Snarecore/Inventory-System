@@ -1,10 +1,22 @@
 import React, { useState, useMemo } from "react";
-import { FiEye, FiEdit, FiChevronDown } from "react-icons/fi";
+import { FiChevronDown } from "react-icons/fi";
 import Search from "@/components/table-components/Search";
 import DropdownFilter from "@/components/table-components/DropdownFilter";
 import EmptyState from "@/components/empty-state/EmptyState";
 import TableSkeleton from "@/components/skeleton/TableSkeleton";
-import Pagination from "@/components/pagination";
+import {
+  TableContainer,
+  TableToolbar,
+  TableScroll,
+  Table,
+  TableHead,
+  TableTh,
+  TableBody,
+  TableRow,
+  TableCell,
+  TablePaginationFooter,
+  TableActionButtons,
+} from "@/components/common";
 import ColumnVisibilityDropdown, { type ColumnItem } from "@/components/table-components/ColumnVisibilityDropdown";
 import type { PartyItem } from "@/types";
 
@@ -30,6 +42,7 @@ interface PartyTableProps {
   onEdit: (party: PartyItem) => void;
   onView: (party: PartyItem) => void;
   onRefresh: () => void;
+  onToggleStatus?: (party: PartyItem) => void;
 }
 
 export const PartyTable: React.FC<PartyTableProps> = ({
@@ -52,6 +65,8 @@ export const PartyTable: React.FC<PartyTableProps> = ({
   setSortBy,
   onEdit,
   onView,
+  onRefresh: _onRefresh,
+  onToggleStatus,
 }) => {
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
 
@@ -200,9 +215,9 @@ export const PartyTable: React.FC<PartyTableProps> = ({
   };
 
   return (
-    <div className="bg-white rounded-xl shadow-xs border border-gray-200 flex flex-col relative z-20 overflow-visible">
+    <TableContainer>
       {/* Table Header: Search (Left) & Controls/Filters (Right) */}
-      <div className="p-2 sm:p-2.5 border-b border-gray-100 flex flex-wrap items-center justify-between gap-2 relative z-40 overflow-visible">
+      <TableToolbar>
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 w-full">
           {/* Left: Search Box */}
           <div className="flex items-center gap-2 w-full sm:w-auto">
@@ -261,7 +276,7 @@ export const PartyTable: React.FC<PartyTableProps> = ({
             />
           </div>
         </div>
-      </div>
+      </TableToolbar>
 
       {/* Loading Skeleton */}
       {isLoading && parties.length === 0 ? (
@@ -271,22 +286,20 @@ export const PartyTable: React.FC<PartyTableProps> = ({
       ) : (
         <>
           {/* Table */}
-          <div className="w-full overflow-x-auto relative z-10">
-            <table className="w-full text-left border-collapse table-fixed min-w-[750px] text-xs">
-              <thead>
-                <tr className="bg-[#41BEF3] text-black text-xs font-semibold">
-                  {tableHeaders.filter((h) => isColVisible(h.key)).map(({ key, label, headerNode, align, width }) => (
-                    <th
-                      key={key}
-                      className={`py-2.5 px-3 ${align} ${width || ""}`}
-                    >
-                      {headerNode || label}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
+          <TableScroll>
+            <Table className="table-fixed min-w-[750px]">
+              <TableHead>
+                {tableHeaders.filter((h) => isColVisible(h.key)).map(({ key, label, headerNode, align, width }) => (
+                  <TableTh
+                    key={key}
+                    className={`${align} ${width || ""}`}
+                  >
+                    {headerNode || label}
+                  </TableTh>
+                ))}
+              </TableHead>
 
-              <tbody className="divide-y divide-gray-100 bg-white">
+              <TableBody>
                 {parties.length > 0 ? (
                   parties.map((party, index) => {
                     const active = isPartyActive(party);
@@ -357,42 +370,46 @@ export const PartyTable: React.FC<PartyTableProps> = ({
                         {/* Status Badge */}
                         {isColVisible("status") && (
                           <td className="py-2.5 px-2.5 text-right">
-                            <span
-                              className={`inline-flex items-center px-1.5 py-0.5 rounded-md text-[10px] font-semibold border ${
-                                active
-                                  ? "bg-emerald-100 text-emerald-800 border-emerald-300"
-                                  : "bg-rose-100 text-rose-800 border-rose-300"
-                              }`}
-                            >
-                              {active ? "Active" : "Inactive"}
-                            </span>
+                            {onToggleStatus ? (
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  onToggleStatus(party);
+                                }}
+                                className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-semibold border cursor-pointer hover:opacity-80 transition-all ${
+                                  active
+                                    ? "bg-emerald-100 text-emerald-800 border-emerald-300 hover:bg-emerald-200"
+                                    : "bg-rose-100 text-rose-800 border-rose-300 hover:bg-rose-200"
+                                }`}
+                                title="Click to toggle status"
+                              >
+                                {active ? "Active" : "Inactive"}
+                              </button>
+                            ) : (
+                              <span
+                                className={`inline-flex items-center px-1.5 py-0.5 rounded-md text-[10px] font-semibold border ${
+                                  active
+                                    ? "bg-emerald-100 text-emerald-800 border-emerald-300"
+                                    : "bg-rose-100 text-rose-800 border-rose-300"
+                                }`}
+                              >
+                                {active ? "Active" : "Inactive"}
+                              </span>
+                            )}
                           </td>
                         )}
 
                         {/* Actions: Eye, Edit */}
                         {isColVisible("action") && (
                           <td className="py-2 px-3 text-right">
-                            <div className="flex items-center justify-end gap-1.5">
-                              {/* Eye / View Icon */}
-                              <button
-                                type="button"
-                                onClick={() => onView(party)}
-                                title="Quick View Details"
-                                className="p-1 rounded-md hover:bg-sky-50 text-sky-600 transition-colors cursor-pointer"
-                              >
-                                <FiEye size={14} />
-                              </button>
-
-                              {/* Edit Icon */}
-                              <button
-                                type="button"
-                                onClick={() => onEdit(party)}
-                                title="Edit Party"
-                                className="p-1 rounded-md hover:bg-amber-50 text-amber-600 transition-colors cursor-pointer"
-                              >
-                                <FiEdit size={14} />
-                              </button>
-                            </div>
+                            <TableActionButtons
+                              onView={() => onView(party)}
+                              viewTitle="Quick View Details"
+                              onEdit={() => onEdit(party)}
+                              editTitle="Edit Party"
+                              className="justify-end"
+                            />
                           </td>
                         )}
                       </tr>
@@ -416,41 +433,26 @@ export const PartyTable: React.FC<PartyTableProps> = ({
                     </td>
                   </tr>
                 )}
-              </tbody>
-            </table>
-          </div>
+              </TableBody>
+            </Table>
+          </TableScroll>
 
           {/* Pagination Footer */}
           {!isLoading && parties.length > 0 && (
-            <div className="p-2.5 sm:p-3 border-t border-gray-100 bg-gray-50/50 flex flex-col sm:flex-row items-center justify-between gap-2.5">
-              <div className="flex items-center gap-2 text-xs text-gray-500">
-                <span>Show</span>
-                <select
-                  value={dataLimit}
-                  onChange={(e) => {
-                    setDataLimit(Number(e.target.value));
-                    setCurrentPageNumber(1);
-                  }}
-                  className="border border-gray-300 rounded px-1.5 py-0.5 text-xs bg-white text-gray-700 focus:outline-none focus:border-[var(--color-primary)] cursor-pointer"
-                >
-                  <option value={10}>10</option>
-                  <option value={20}>20</option>
-                  <option value={50}>50</option>
-                  <option value={100}>100</option>
-                </select>
-                <span>entries per page (Total {totalCount} parties)</span>
-              </div>
-
-              <Pagination
-                pageCount={pageCount}
-                currentPageNumber={currentPageNumber}
-                handlePagination={handlePagination}
-              />
-            </div>
+            <TablePaginationFooter
+              totalCount={totalCount}
+              pageCount={pageCount}
+              currentPageNumber={currentPageNumber}
+              dataLimit={dataLimit}
+              setDataLimit={setDataLimit}
+              setCurrentPageNumber={setCurrentPageNumber}
+              handlePagination={handlePagination}
+              entityLabel="parties"
+            />
           )}
         </>
       )}
-    </div>
+    </TableContainer>
   );
 };
 

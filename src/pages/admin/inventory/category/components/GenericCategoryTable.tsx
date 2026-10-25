@@ -5,6 +5,16 @@ import DeleteModal from "@/components/modal/DeleteModal";
 import TableSkeleton from "@/components/skeleton/TableSkeleton";
 import EmptyState from "@/components/empty-state/EmptyState";
 import Pagination from "@/components/pagination";
+import {
+  TableContainer,
+  TableScroll,
+  Table,
+  TableHead,
+  TableTh,
+  TableBody,
+  TableRow,
+  TableCell,
+} from "@/components/common";
 import { useAPI } from "@/hooks/useApi";
 
 export interface GenericCategoryItem {
@@ -202,38 +212,33 @@ export const GenericCategoryTable = <T extends GenericCategoryItem>({
   };
 
   return (
-    <div className="bg-white rounded-xl shadow-xs border border-gray-200 flex flex-col relative z-20 overflow-visible">
-      <div className="w-full overflow-x-auto relative z-10">
-        <table className="w-full text-left border-collapse min-w-[800px] text-xs">
-          <thead>
-            <tr className="bg-[#41BEF3] text-black text-xs font-semibold">
-              {tableHeaders.map(({ key, label }) => (
-                <th
-                  key={key}
-                  className={`py-2.5 px-3 text-left ${
-                    key === "sl" || key === "action" ? "text-center w-16" : ""
-                  }`}
-                >
-                  {label}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-100 bg-white">
+    <TableContainer>
+      <TableScroll>
+        <Table minWidth={800}>
+          <TableHead>
+            {tableHeaders.map(({ key, label }) => (
+              <TableTh
+                key={key}
+                align={key === "sl" || key === "action" ? "center" : "left"}
+                className={key === "sl" || key === "action" ? "w-16" : ""}
+              >
+                {label}
+              </TableTh>
+            ))}
+          </TableHead>
+          <TableBody>
             {dataList && dataList.length > 0 ? (
               dataList.map((data, index) => (
-                <tr key={data.id || index} className="hover:bg-sky-50/40 transition-colors group">
+                <TableRow key={data.id || index}>
                   {tableHeaders.map(({ key }) => (
-                    <td
+                    <TableCell
                       key={key}
-                      className={`py-2.5 px-3 text-xs ${
-                        key === "sl" || key === "action" ? "text-center" : ""
-                      }`}
+                      align={key === "sl" || key === "action" ? "center" : "left"}
                     >
                       {renderCellContent(key, data, index)}
-                    </td>
+                    </TableCell>
                   ))}
-                </tr>
+                </TableRow>
               ))
             ) : (
               <tr>
@@ -247,9 +252,9 @@ export const GenericCategoryTable = <T extends GenericCategoryItem>({
                 </td>
               </tr>
             )}
-          </tbody>
-        </table>
-      </div>
+          </TableBody>
+        </Table>
+      </TableScroll>
 
       {selectedCategory && (
         <DeleteModal
@@ -270,7 +275,7 @@ export const GenericCategoryTable = <T extends GenericCategoryItem>({
           />
         </div>
       )}
-    </div>
+    </TableContainer>
   );
 };
 

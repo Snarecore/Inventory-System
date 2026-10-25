@@ -3,9 +3,20 @@ import moment from "moment";
 import { FiEye, FiPrinter, FiDownload } from "react-icons/fi";
 import { FaPhone, FaCalendarAlt, FaFileExcel, FaSearch, FaShoppingBag } from "react-icons/fa";
 import Search from "@/components/table-components/Search";
-import EmptyState from "@/components/empty-state/EmptyState";
-import TableSkeleton from "@/components/skeleton/TableSkeleton";
-import Pagination from "@/components/pagination";
+import {
+  TableContainer,
+  TableToolbar,
+  TableScroll,
+  Table,
+  TableHead,
+  TableTh,
+  TableBody,
+  TableRow,
+  TableCell,
+  TablePaginationFooter,
+  TableSkeleton,
+  EmptyState,
+} from "@/components/common";
 import { formatMoney } from "@/utils/formatters";
 import { exportSalesToExcel } from "@/utils/excel-export";
 import { showSuccessToast, showErrorToast } from "@/utils/toast-utils";
@@ -106,9 +117,9 @@ export const SalesReportTable: React.FC<SalesReportTableProps> = ({
   );
 
   return (
-    <div className="bg-white rounded-xl shadow-xs border border-gray-200 overflow-hidden">
+    <TableContainer>
       {/* Top Filter Bar */}
-      <div className="p-3 border-b border-gray-200 flex flex-col md:flex-row gap-2.5 items-stretch md:items-center justify-between">
+      <TableToolbar>
         <div className="w-full md:w-64">
           <Search
             value={searchQuery}
@@ -159,10 +170,10 @@ export const SalesReportTable: React.FC<SalesReportTableProps> = ({
             <span>Export Excel</span>
           </button>
         </div>
-      </div>
+      </TableToolbar>
 
       {/* Table */}
-      <div className="overflow-x-auto w-full relative z-10">
+      <TableScroll>
         {isLoading ? (
           <TableSkeleton columnCount={11} rowCount={8} />
         ) : paginated.length === 0 ? (
@@ -171,25 +182,23 @@ export const SalesReportTable: React.FC<SalesReportTableProps> = ({
             description="There are no sales transactions matching the selected filters."
           />
         ) : (
-          <table className="w-full text-left border-collapse text-xs">
-            <thead>
-              <tr className="bg-[#41BEF3] text-black text-xs font-semibold">
-                <th className="py-2.5 px-3 text-center w-10">SL</th>
-                <th className="py-2.5 px-3">Invoice / Date</th>
-                <th className="py-2.5 px-3">Customer</th>
-                <th className="py-2.5 px-3 text-center">Items</th>
-                <th className="py-2.5 px-3 text-right">Subtotal</th>
-                <th className="py-2.5 px-3 text-right">Discount</th>
-                <th className="py-2.5 px-3 text-right">VAT/Del</th>
-                <th className="py-2.5 px-3 text-right">Grand Total</th>
-                <th className="py-2.5 px-3 text-right">Paid (৳)</th>
-                <th className="py-2.5 px-3 text-right">Due (৳)</th>
-                <th className="py-2.5 px-3 text-center">Payment</th>
-                <th className="py-2.5 px-3 text-center">Status</th>
-                <th className="py-2.5 px-3 text-center w-20">Action</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100 font-medium text-gray-700">
+          <Table>
+            <TableHead>
+              <TableTh align="center" width={40}>SL</TableTh>
+              <TableTh>Invoice / Date</TableTh>
+              <TableTh>Customer</TableTh>
+              <TableTh align="center">Items</TableTh>
+              <TableTh align="right">Subtotal</TableTh>
+              <TableTh align="right">Discount</TableTh>
+              <TableTh align="right">VAT/Del</TableTh>
+              <TableTh align="right">Grand Total</TableTh>
+              <TableTh align="right">Paid (৳)</TableTh>
+              <TableTh align="right">Due (৳)</TableTh>
+              <TableTh align="center">Payment</TableTh>
+              <TableTh align="center">Status</TableTh>
+              <TableTh align="center" className="w-20">Action</TableTh>
+            </TableHead>
+            <TableBody>
               {paginated.map((item: any, idx: number) => {
                 const grandTotal = Number(
                   item.grandTotal ?? item.grand_total ?? item.totalAmount ?? 0
@@ -329,7 +338,7 @@ export const SalesReportTable: React.FC<SalesReportTableProps> = ({
                   </tr>
                 );
               })}
-            </tbody>
+            </TableBody>
             {/* Summary Totals Row */}
             <tfoot className="bg-gray-50/90 font-bold text-black border-t-2 border-gray-200">
               <tr>
@@ -357,39 +366,25 @@ export const SalesReportTable: React.FC<SalesReportTableProps> = ({
                 <td colSpan={3}></td>
               </tr>
             </tfoot>
-          </table>
+          </Table>
         )}
-      </div>
+      </TableScroll>
 
       {/* Pagination Footer */}
       {!isLoading && paginated.length > 0 && (
-        <div className="p-2.5 sm:p-3 border-t border-gray-100 bg-gray-50/50 flex flex-col sm:flex-row items-center justify-between gap-2.5">
-          <div className="flex items-center gap-2 text-xs text-gray-500">
-            <span>Show</span>
-            <select
-              value={pageSize}
-              onChange={(e) => {
-                setPageSize(Number(e.target.value));
-                setCurrentPage(1);
-              }}
-              className="border border-gray-300 rounded px-1.5 py-0.5 text-xs bg-white text-gray-700 focus:outline-none focus:border-[var(--color-primary)] cursor-pointer"
-            >
-              <option value={10}>10</option>
-              <option value={15}>15</option>
-              <option value={20}>20</option>
-              <option value={50}>50</option>
-            </select>
-            <span>entries per page (Total {totalCount} records)</span>
-          </div>
-
-          <Pagination
-            pageCount={pageCount}
-            currentPageNumber={currentPage}
-            handlePagination={(data) => setCurrentPage(data.selected + 1)}
-          />
-        </div>
+        <TablePaginationFooter
+          totalCount={totalCount}
+          pageCount={pageCount}
+          currentPageNumber={currentPage}
+          dataLimit={pageSize}
+          setDataLimit={setPageSize}
+          setCurrentPageNumber={setCurrentPage}
+          handlePagination={(data) => setCurrentPage(data.selected + 1)}
+          pageSizeOptions={[10, 15, 20, 50]}
+          entityLabel="records"
+        />
       )}
-    </div>
+    </TableContainer>
   );
 };
 

@@ -1,6 +1,7 @@
 import React, { useMemo } from "react";
 import Modal from "@/components/modal/Modal";
 import Button from "@/components/button/Button";
+import TextInput from "@/components/form/TextInput";
 import { usePurchasesInvoicesDueQuery } from "@/hooks/usePurchasesInvoicesDue";
 import { usePaymentMutation } from "@/hooks/usePaymentMutation";
 import { sortPurchaseInvoicesFIFO } from "@/services/payment-service";
@@ -202,15 +203,13 @@ export const AddPaymentModal: React.FC<AddPaymentModalProps> = ({
         <div className="flex flex-col sm:flex-row items-stretch sm:items-end gap-2 pt-1 border-t border-gray-100">
           {/* Remark Input */}
           <div className="flex-1 min-w-0">
-            <label className="text-xs font-bold text-black block mb-0.5">
-              Remark / Notes
-            </label>
-            <input
-              type="text"
+            <TextInput
+              label="Remark / Notes"
               value={remark}
-              onChange={(e) => setRemark(e.target.value)}
+              onChange={(val) => setRemark(val)}
               placeholder="e.g. Paid in cash, cheque reference..."
-              className="w-full h-8 px-2.5 text-xs bg-white border border-gray-200 rounded-lg text-black font-semibold placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-[var(--primary-color)] focus:border-[var(--primary-color)]"
+              wrapperClass="!h-8 bg-white !border-gray-200"
+              inputClass="font-semibold text-black"
             />
           </div>
 

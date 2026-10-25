@@ -5,9 +5,20 @@ import moment from "moment";
 import * as XLSX from "xlsx";
 import Search from "@/components/table-components/Search";
 import DateRangePicker from "@/components/date-range-picker/DateRangePicker";
-import Pagination from "@/components/pagination";
-import TableSkeleton from "@/components/skeleton/TableSkeleton";
-import EmptyState from "@/components/empty-state/EmptyState";
+import {
+  TableContainer,
+  TableToolbar,
+  TableScroll,
+  Table,
+  TableHead,
+  TableTh,
+  TableBody,
+  TableRow,
+  TableCell,
+  TablePaginationFooter,
+  TableSkeleton,
+  EmptyState,
+} from "@/components/common";
 import ColumnVisibilityDropdown, { type ColumnItem } from "@/components/table-components/ColumnVisibilityDropdown";
 import { useDebounce } from "@/hooks/useDebounce";
 import { formatMoney } from "@/utils/formatters";
@@ -285,9 +296,9 @@ export const TradeSettlementHistoryTable = <T extends GenericSettlementHistoryIt
   };
 
   return (
-    <div className="bg-white rounded-xl shadow-xs border border-gray-200 flex flex-col relative z-20 overflow-visible">
+    <TableContainer>
       {/* Search and Filters Bar */}
-      <div className="p-2 sm:p-2.5 border-b border-gray-100 flex flex-wrap items-center justify-between gap-2 relative z-40 overflow-visible">
+      <TableToolbar>
         <div className="flex flex-wrap items-center gap-2 flex-1 min-w-0">
           <div className="w-full sm:w-auto">
             <DateRangePicker
@@ -355,10 +366,10 @@ export const TradeSettlementHistoryTable = <T extends GenericSettlementHistoryIt
             <span>Export</span>
           </button>
         </div>
-      </div>
+      </TableToolbar>
 
       {/* Main Table Content */}
-      <div className="overflow-x-auto w-full relative z-10">
+      <TableScroll>
         {isLoading ? (
           <TableSkeleton columnCount={activeVisibleColumnCount} rowCount={8} />
         ) : processedList.length === 0 ? (
@@ -367,27 +378,25 @@ export const TradeSettlementHistoryTable = <T extends GenericSettlementHistoryIt
             description={`There are no ${actionTitle.toLowerCase()} vouchers matching your selected search or date range.`}
           />
         ) : (
-          <table className="w-full text-left border-collapse text-xs">
-            <thead>
-              <tr className="bg-[#41BEF3] text-black text-xs font-semibold">
-                {isColVisible("expand") && <th className="py-2.5 px-3 text-center w-8"></th>}
-                {isColVisible("sl") && <th className="py-2.5 px-3 text-center w-10">SL</th>}
-                {isColVisible("date") && <th className="py-2.5 px-3">Date</th>}
-                {isColVisible("voucherNo") && <th className="py-2.5 px-3">Voucher No</th>}
-                {isColVisible("party") && <th className="py-2.5 px-3">{partyTitle}</th>}
-                {isColVisible("phone") && <th className="py-2.5 px-3">Phone</th>}
-                {isColVisible("method") && <th className="py-2.5 px-3 text-center">Method</th>}
-                {isColVisible("amount") && (
-                  <th className="py-2.5 px-3 text-right">
-                    {isCustomer ? "Collected (৳)" : "Paid (৳)"}
-                  </th>
-                )}
-                {isColVisible("bills") && <th className="py-2.5 px-3 text-center">Bills</th>}
-                {isColVisible("remark") && <th className="py-2.5 px-3">Remark</th>}
-                {isColVisible("receipt") && <th className="py-2.5 px-3 text-center w-16">Receipt</th>}
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100">
+          <Table>
+            <TableHead>
+              {isColVisible("expand") && <TableTh align="center" className="w-8" />}
+              {isColVisible("sl") && <TableTh align="center" width={40}>SL</TableTh>}
+              {isColVisible("date") && <TableTh>Date</TableTh>}
+              {isColVisible("voucherNo") && <TableTh>Voucher No</TableTh>}
+              {isColVisible("party") && <TableTh>{partyTitle}</TableTh>}
+              {isColVisible("phone") && <TableTh>Phone</TableTh>}
+              {isColVisible("method") && <TableTh align="center">Method</TableTh>}
+              {isColVisible("amount") && (
+                <TableTh align="right">
+                  {isCustomer ? "Collected (৳)" : "Paid (৳)"}
+                </TableTh>
+              )}
+              {isColVisible("bills") && <TableTh align="center">Bills</TableTh>}
+              {isColVisible("remark") && <TableTh>Remark</TableTh>}
+              {isColVisible("receipt") && <TableTh align="center" className="w-16">Receipt</TableTh>}
+            </TableHead>
+            <TableBody>
               {paginatedList.map((row, index) => {
                 const serialNumber = (currentPageNumber - 1) * dataLimit + index + 1;
                 const rowKey = row.id ?? index;
@@ -549,42 +558,25 @@ export const TradeSettlementHistoryTable = <T extends GenericSettlementHistoryIt
                   </React.Fragment>
                 );
               })}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
         )}
-      </div>
+      </TableScroll>
 
       {/* Pagination Footer */}
       {!isLoading && processedList.length > 0 && (
-        <div className="p-2.5 sm:p-3 border-t border-gray-100 bg-gray-50/50 flex flex-col sm:flex-row items-center justify-between gap-2.5">
-          <div className="flex items-center gap-2 text-xs text-gray-500">
-            <span>Show</span>
-            <select
-              value={dataLimit}
-              onChange={(e) => {
-                setDataLimit(Number(e.target.value));
-                setCurrentPageNumber(1);
-              }}
-              className="border border-gray-300 rounded px-1.5 py-0.5 text-xs bg-white text-gray-700 focus:outline-none focus:border-[var(--color-primary)] cursor-pointer"
-            >
-              <option value={10}>10</option>
-              <option value={20}>20</option>
-              <option value={50}>50</option>
-              <option value={100}>100</option>
-            </select>
-            <span>
-              entries per page (Total {totalCount} {actionTitle.toLowerCase()}s)
-            </span>
-          </div>
-
-          <Pagination
-            pageCount={pageCount}
-            currentPageNumber={currentPageNumber}
-            handlePagination={handlePagination}
-          />
-        </div>
+        <TablePaginationFooter
+          totalCount={totalCount}
+          pageCount={pageCount}
+          currentPageNumber={currentPageNumber}
+          dataLimit={dataLimit}
+          setDataLimit={setDataLimit}
+          setCurrentPageNumber={setCurrentPageNumber}
+          handlePagination={handlePagination}
+          entityLabel={`${actionTitle.toLowerCase()}s`}
+        />
       )}
-    </div>
+    </TableContainer>
   );
 };
 

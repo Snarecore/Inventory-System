@@ -1,15 +1,28 @@
 import React, { useState, useRef, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { FiEye, FiEdit, FiPrinter, FiChevronDown, FiCopy, FiCheck } from "react-icons/fi";
+import { FiChevronDown, FiCopy, FiCheck } from "react-icons/fi";
 import moment from "moment";
 import Search from "@/components/table-components/Search";
 import DateRangePicker from "@/components/date-range-picker/DateRangePicker";
 import EmptyState from "@/components/empty-state/EmptyState";
 import TableSkeleton from "@/components/skeleton/TableSkeleton";
 import Pagination from "@/components/pagination";
+import {
+  TableContainer,
+  TableToolbar,
+  TableScroll,
+  Table,
+  TableHead,
+  TableTh,
+  TableBody,
+  TableRow,
+  TableCell,
+  TablePaginationFooter,
+  TableActionButtons,
+} from "@/components/common";
 import ColumnVisibilityDropdown, { type ColumnItem } from "@/components/table-components/ColumnVisibilityDropdown";
 import type { SaleItem, PartyItem } from "@/types";
-import { FaSearch, FaFileExcel, FaUndoAlt } from "react-icons/fa";
+import { FaSearch, FaFileExcel } from "react-icons/fa";
 import { exportSalesToExcel } from "@/utils/excel-export";
 import { showSuccessToast, showErrorToast } from "@/utils/toast-utils";
 import { formatMoney } from "@/utils/formatters";
@@ -246,9 +259,9 @@ export const SaleTable: React.FC<SaleTableProps> = ({
   const activeVisibleColumnCount = availableColumns.filter((c) => isColVisible(c.key)).length;
 
   return (
-    <div className="bg-white rounded-xl shadow-xs border border-gray-200 flex flex-col relative z-20 overflow-visible">
+    <TableContainer>
       {/* Search and Filters Bar */}
-      <div className="p-2 sm:p-2.5 border-b border-gray-100 flex flex-wrap items-center justify-between gap-2 relative z-40 overflow-visible">
+      <TableToolbar>
         {/* Left Section: Compact Search Box + Filters Group */}
         <div className="flex flex-wrap items-center gap-2 flex-1 min-w-0">
           {/* Compact Search Box */}
@@ -420,10 +433,10 @@ export const SaleTable: React.FC<SaleTableProps> = ({
               <span>Export</span>
             </button>
           </div>
-        </div>
+        </TableToolbar>
 
         {/* Main Table Content */}
-        <div className="overflow-x-auto w-full relative z-10">
+        <TableScroll>
           {isLoading ? (
             <TableSkeleton columnCount={activeVisibleColumnCount} rowCount={8} />
           ) : sales.length === 0 ? (
@@ -432,36 +445,34 @@ export const SaleTable: React.FC<SaleTableProps> = ({
               description="There are no sales records matching your selected search or filters."
             />
           ) : (
-            <table className="w-full text-left border-collapse text-xs">
-              <thead>
-                <tr className="bg-[#41BEF3] text-black text-xs font-semibold">
-                  {isColVisible("sl") && <th className="py-2.5 px-3 text-center w-10">SL</th>}
-                  {isColVisible("orderId") && <th className="py-2.5 px-3 whitespace-nowrap">Order ID</th>}
-                  {isColVisible("customer") && (
-                    <th className="py-2.5 px-3">
-                      {renderSortHeader("Customer", "customer")}
-                    </th>
-                  )}
-                  {isColVisible("phone") && <th className="py-2.5 px-3">Phone</th>}
-                  {isColVisible("date") && <th className="py-2.5 px-3">Date</th>}
-                  {isColVisible("items") && <th className="py-2.5 px-3 text-center">Items</th>}
-                  {isColVisible("total") && (
-                    <th className="py-2.5 px-3 text-right">
-                      <div className="flex justify-end">
-                        {renderSortHeader("Total (৳)", "amount")}
-                      </div>
-                    </th>
-                  )}
-                  {isColVisible("paid") && <th className="py-2.5 px-3 text-right">Paid (৳)</th>}
-                  {isColVisible("due") && <th className="py-2.5 px-3 text-right">Due (৳)</th>}
-                  {isColVisible("method") && <th className="py-2.5 px-3 text-center">Method</th>}
-                  {isColVisible("status") && <th className="py-2.5 px-3 text-center">Payment Status</th>}
-                  {isColVisible("actions") && (
-                    <th className="py-2.5 px-3 text-center w-28">Actions</th>
-                  )}
-                </tr>
-              </thead>
-            <tbody className="divide-y divide-gray-100">
+            <Table>
+              <TableHead>
+                {isColVisible("sl") && <TableTh align="center" width={40}>SL</TableTh>}
+                {isColVisible("orderId") && <TableTh className="whitespace-nowrap">Order ID</TableTh>}
+                {isColVisible("customer") && (
+                  <TableTh>
+                    {renderSortHeader("Customer", "customer")}
+                  </TableTh>
+                )}
+                {isColVisible("phone") && <TableTh>Phone</TableTh>}
+                {isColVisible("date") && <TableTh>Date</TableTh>}
+                {isColVisible("items") && <TableTh align="center">Items</TableTh>}
+                {isColVisible("total") && (
+                  <TableTh align="right">
+                    <div className="flex justify-end">
+                      {renderSortHeader("Total (৳)", "amount")}
+                    </div>
+                  </TableTh>
+                )}
+                {isColVisible("paid") && <TableTh align="right">Paid (৳)</TableTh>}
+                {isColVisible("due") && <TableTh align="right">Due (৳)</TableTh>}
+                {isColVisible("method") && <TableTh align="center">Method</TableTh>}
+                {isColVisible("status") && <TableTh align="center">Payment Status</TableTh>}
+                {isColVisible("actions") && (
+                  <TableTh align="center" className="w-28">Actions</TableTh>
+                )}
+              </TableHead>
+            <TableBody>
               {sales.map((sale, index) => {
                 const serialNumber = (currentPageNumber - 1) * dataLimit + index + 1;
                 const itemsCount = Array.isArray(sale.salesDetails) && sale.salesDetails.length > 0
@@ -613,92 +624,43 @@ export const SaleTable: React.FC<SaleTableProps> = ({
                     {/* Actions */}
                     {isColVisible("actions") && (
                       <td className="py-2 px-3 text-center whitespace-nowrap">
-                        <div className="flex items-center justify-center gap-1.5">
-                          <button
-                            type="button"
-                            onClick={() => onView(sale)}
-                            title="View Invoice"
-                            className="p-1 rounded text-sky-600 hover:bg-sky-100 transition-colors cursor-pointer"
-                          >
-                            <FiEye size={14} />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => onPrint(sale)}
-                            title="Print Invoice"
-                            className="p-1 rounded text-gray-600 hover:bg-gray-100 transition-colors cursor-pointer"
-                          >
-                            <FiPrinter size={14} />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => onEdit(sale)}
-                            title="Edit Sale"
-                            className="p-1 rounded text-amber-600 hover:bg-amber-100 transition-colors cursor-pointer"
-                          >
-                            <FiEdit size={14} />
-                          </button>
-                          {isAlreadyReturned ? (
-                            <span
-                              title="This sale has already been returned"
-                              className="p-1 rounded text-gray-300 cursor-not-allowed inline-flex items-center"
-                            >
-                              <FaUndoAlt size={12} />
-                            </span>
-                          ) : (
-                            <button
-                              type="button"
-                              onClick={() =>
-                                navigate("/admin/create-sales-return", {
-                                  state: { sale },
-                                })
-                              }
-                              title="Return Sale / পণ্য ফেরত"
-                              className="p-1 rounded text-rose-600 hover:bg-rose-100 transition-colors cursor-pointer inline-flex items-center"
-                            >
-                              <FaUndoAlt size={12} />
-                            </button>
-                          )}
-                        </div>
+                        <TableActionButtons
+                          onView={() => onView(sale)}
+                          onPrint={() => onPrint(sale)}
+                          onEdit={() => onEdit(sale)}
+                          onReturn={() =>
+                            navigate("/admin/create-sales-return", {
+                              state: { sale },
+                            })
+                          }
+                          returnTitle="Return Sale / পণ্য ফেরত"
+                          isReturnDisabled={isAlreadyReturned}
+                          returnDisabledTitle="This sale has already been returned"
+                        />
                       </td>
                     )}
                   </tr>
                 );
               })}
-            </tbody>
-          </table>
-        )}
-      </div>
+              </TableBody>
+            </Table>
+          )}
+        </TableScroll>
 
       {/* Pagination Footer */}
-      {!isLoading && sales.length > 0 && (
-        <div className="p-2.5 sm:p-3 border-t border-gray-100 bg-gray-50/50 flex flex-col sm:flex-row items-center justify-between gap-2.5">
-          <div className="flex items-center gap-2 text-xs text-gray-500">
-            <span>Show</span>
-            <select
-              value={dataLimit}
-              onChange={(e) => {
-                setDataLimit(Number(e.target.value));
-                setCurrentPageNumber(1);
-              }}
-              className="border border-gray-300 rounded px-1.5 py-0.5 text-xs bg-white text-gray-700 focus:outline-none focus:border-[var(--color-primary)] cursor-pointer"
-            >
-              <option value={10}>10</option>
-              <option value={20}>20</option>
-              <option value={50}>50</option>
-              <option value={100}>100</option>
-            </select>
-            <span>entries per page (Total {totalCount} sales)</span>
-          </div>
-
-          <Pagination
-            pageCount={pageCount}
-            currentPageNumber={currentPageNumber}
-            handlePagination={handlePagination}
-          />
-        </div>
+      {!isLoading && (
+        <TablePaginationFooter
+          totalCount={totalCount}
+          pageCount={pageCount}
+          currentPageNumber={currentPageNumber}
+          dataLimit={dataLimit}
+          setDataLimit={setDataLimit}
+          setCurrentPageNumber={setCurrentPageNumber}
+          handlePagination={handlePagination}
+          entityLabel="sales"
+        />
       )}
-    </div>
+    </TableContainer>
   );
 };
 

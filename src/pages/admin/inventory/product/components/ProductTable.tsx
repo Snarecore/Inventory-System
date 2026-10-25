@@ -1,14 +1,26 @@
 import { useState, useMemo } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { FiEye, FiEdit, FiTrash2 } from "react-icons/fi";
 import { Link } from "react-router-dom";
-import Search from "@/components/table-components/Search";
-import DropdownFilter from "@/components/table-components/DropdownFilter";
-import EmptyState from "@/components/empty-state/EmptyState";
-import TableSkeleton from "@/components/skeleton/TableSkeleton";
-import Pagination from "@/components/pagination";
-import ColumnVisibilityDropdown, { type ColumnItem } from "@/components/table-components/ColumnVisibilityDropdown";
-import Modal from "@/components/modal/Modal";
-import DeleteModal from "@/components/modal/DeleteModal";
+import {
+  TableContainer,
+  TableToolbar,
+  TableScroll,
+  Table,
+  TableHead,
+  TableTh,
+  TableBody,
+  TableRow,
+  TableCell,
+  TablePaginationFooter,
+  TableSkeleton,
+  EmptyState,
+  Modal,
+  DeleteModal,
+  Search,
+  DropdownFilter,
+  ColumnVisibilityDropdown,
+} from "@/components/common";
 import { showErrorToast } from "@/utils/toast-utils";
 import { useAPI } from "@/hooks/useApi";
 import apiConfig from "@/config/api.json";
@@ -78,6 +90,7 @@ export const ProductTable = ({
     const [openDropdown, setOpenDropdown] = useState<string | null>(null);
     const [togglingId, setTogglingId] = useState<string | null>(null);
 
+    const queryClient = useQueryClient();
     const { handleApiMutation, postMutation } = useAPI();
     const insertProductUrl = apiConfig.inventory.insertProductUrl;
 
@@ -225,19 +238,59 @@ export const ProductTable = ({
                 updated_at: new Date().toISOString()
             });
 
-            await handleApiMutation({
+            // Optimistically update React Query cache in-memory: 0ms UI delay, 0 extra get-product-list calls!
+            queryClient.setQueryData([productListQueryKey], (oldData: any) => {
+                if (!oldData) return oldData;
+                const updateItem = (item: any) => {
+                    const itemId = String(item.id || item.product_id || item.pcode || "");
+                    if (itemId === targetId || (product.pcode && item.pcode === product.pcode)) {
+                        return {
+                            ...item,
+                            status: nextStatus,
+                            updated_at: new Date().toISOString(),
+                        };
+                    }
+                    return item;
+                };
+
+                if (Array.isArray(oldData.productsList)) {
+                    return {
+                        ...oldData,
+                        productsList: oldData.productsList.map(updateItem),
+                    };
+                }
+                if (Array.isArray(oldData.data)) {
+                    return {
+                        ...oldData,
+                        data: oldData.data.map(updateItem),
+                    };
+                }
+                if (Array.isArray(oldData)) {
+                    return oldData.map(updateItem);
+                }
+                return oldData;
+            });
+
+            const result = await handleApiMutation({
                 mutation: postMutation as any,
                 url: insertProductUrl,
                 body: {
                     accessUser: buildAccessUser(),
                     product: updatedProductPayload
                 },
-                invalidateQueryKey: [productListQueryKey, productQueryKey],
+                // Do not invalidate productListQueryKey to avoid redundant refetching of all products
+                invalidateQueryKey: [productQueryKey],
                 showSuccessMessage: true,
                 showErrorMessage: true
             });
+
+            // Revert cache if server rejected
+            if (!result?.success) {
+                queryClient.invalidateQueries({ queryKey: [productListQueryKey] });
+            }
         } catch (error) {
             console.error("Failed to toggle status:", error);
+            queryClient.invalidateQueries({ queryKey: [productListQueryKey] });
         } finally {
             setTogglingId(null);
         }
@@ -263,9 +316,9 @@ export const ProductTable = ({
     };
 
     return (
-        <div className="bg-white rounded-xl shadow-xs border border-gray-200 flex flex-col relative z-20 overflow-visible">
+        <TableContainer>
             {/* Table Header: Search (Left) & Controls/Filters (Right) */}
-            <div className="p-2 sm:p-2.5 border-b border-gray-100 flex flex-wrap items-center justify-between gap-2 relative z-40 overflow-visible">
+            <TableToolbar>
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 w-full">
                     {/* Left: Search Box */}
                     <div className="w-full sm:w-56">
@@ -326,7 +379,7 @@ export const ProductTable = ({
                         />
                     </div>
                 </div>
-            </div>
+            </TableToolbar>
 
             {/* Loading Skeleton */}
             {isLoading && products.length === 0 ? (
@@ -336,22 +389,20 @@ export const ProductTable = ({
             ) : (
                 <>
                     {/* Products Table */}
-                    <div className="w-full overflow-x-auto relative z-10">
-                        <table className="w-full text-left border-collapse min-w-[950px] text-xs">
-                            <thead>
-                                <tr className="bg-[#41BEF3] text-black text-xs font-semibold">
-                                    {tableHeaders.filter((h) => isColVisible(h.key)).map(({ key, label, align }) => (
-                                        <th
-                                            key={key}
-                                            className={`py-2.5 px-3 ${align} ${key === "sl" ? "w-10 text-center" : ""}`}
-                                        >
-                                            {label}
-                                        </th>
-                                    ))}
-                                </tr>
-                            </thead>
+                    <TableScroll>
+                        <Table minWidth={950}>
+                            <TableHead>
+                                {tableHeaders.filter((h) => isColVisible(h.key)).map(({ key, label, align }) => (
+                                    <TableTh
+                                        key={key}
+                                        className={`${align} ${key === "sl" ? "w-10 text-center" : ""}`}
+                                    >
+                                        {label}
+                                    </TableTh>
+                                ))}
+                            </TableHead>
 
-                            <tbody className="divide-y divide-gray-100 bg-white">
+                            <TableBody>
                                 {products.length > 0 ? (
                                     products.map((product, index) => {
                                         const qty = getQuantity(product);
@@ -508,37 +559,22 @@ export const ProductTable = ({
                                         </td>
                                     </tr>
                                 )}
-                            </tbody>
-                        </table>
-                    </div>
+                            </TableBody>
+                        </Table>
+                    </TableScroll>
 
                     {/* Pagination Footer */}
                     {!isLoading && products.length > 0 && (
-                        <div className="p-2.5 sm:p-3 border-t border-gray-100 bg-gray-50/50 flex flex-col sm:flex-row items-center justify-between gap-2.5">
-                            <div className="flex items-center gap-2 text-xs text-gray-500">
-                                <span>Show</span>
-                                <select
-                                    value={dataLimit}
-                                    onChange={(e) => {
-                                        setDataLimit(Number(e.target.value));
-                                        setCurrentPageNumber(1);
-                                    }}
-                                    className="border border-gray-300 rounded px-1.5 py-0.5 text-xs bg-white text-gray-700 focus:outline-none focus:border-[var(--color-primary)] cursor-pointer"
-                                >
-                                    <option value={10}>10</option>
-                                    <option value={20}>20</option>
-                                    <option value={50}>50</option>
-                                    <option value={100}>100</option>
-                                </select>
-                                <span>entries per page (Total {totalCount} products)</span>
-                            </div>
-
-                            <Pagination
-                                pageCount={pageCount}
-                                currentPageNumber={currentPageNumber}
-                                handlePagination={handlePagination}
-                            />
-                        </div>
+                        <TablePaginationFooter
+                            totalCount={totalCount}
+                            pageCount={pageCount}
+                            currentPageNumber={currentPageNumber}
+                            dataLimit={dataLimit}
+                            setDataLimit={setDataLimit}
+                            setCurrentPageNumber={setCurrentPageNumber}
+                            handlePagination={handlePagination}
+                            entityLabel="products"
+                        />
                     )}
                 </>
             )}
@@ -720,7 +756,7 @@ export const ProductTable = ({
                     onDelete={handleDelete}
                 />
             )}
-        </div>
+        </TableContainer>
     );
 };
 
