@@ -109,7 +109,7 @@ export function exportPurchasesToExcel(
 
     return {
       SL: index + 1,
-      "Invoice No": item.invoiceNo || `PUR-${item.id || index + 1}`,
+      "Order ID": item.orderNo || "",
       "Purchase Date":
         item.purchaseDate || (item.createdAt ? item.createdAt.substring(0, 10) : ""),
       "Supplier Name": item.supplierName || "Direct Supplier",
@@ -136,7 +136,7 @@ export function exportPurchasesToExcel(
 
   const totalRow = {
     SL: "TOTAL",
-    "Invoice No": `Total Invoices: ${purchases.length}`,
+    "Order ID": `Total Invoices: ${purchases.length}`,
     "Purchase Date": "",
     "Supplier Name": "",
     "Supplier Phone": "",
@@ -203,7 +203,7 @@ export function exportSalesToExcel(
 
     return {
       SL: index + 1,
-      "Invoice No": item.invoiceNo || `INV-${item.id || index + 1}`,
+      "Order ID": item.orderNo || "",
       "Sales Date": item.salesDate || todayStr,
       "Customer Name": item.customerName || "Walk-in Customer",
       "Customer Phone": item.customerPhone || "-",
@@ -224,7 +224,7 @@ export function exportSalesToExcel(
 
   const totalRow = {
     SL: "TOTAL",
-    "Invoice No": `Total Invoices: ${sales.length}`,
+    "Order ID": `Total Invoices: ${sales.length}`,
     "Sales Date": "",
     "Customer Name": "",
     "Customer Phone": "",
@@ -276,11 +276,12 @@ export function exportSalesReturnToExcel(
 
     return {
       SL: index + 1,
-      "Return No": item.returnNo || `RET-${item.id || index + 1}`,
-      "Return Date": item.returnDate || item.date || todayStr,
-      "Original Invoice": item.invoiceNo || "-",
-      "Customer Name": item.customerName || item.customer_name || "Walk-in Customer",
-      "Customer Phone": item.customerPhone || item.customer_phone || "-",
+      "Order ID": item.orderNo || "",
+      "Return No": item.returnNo || "",
+      "Return Date": item.returnDate || todayStr,
+      "Original Invoice": item.salesInvoiceNo || item.invoiceNo || "",
+      "Customer Name": item.customerName || "Walk-in Customer",
+      "Customer Phone": item.customerPhone || "",
       "Items Count": itemsCount,
       "Refund Channel": (item.paymentType || "CASH").toUpperCase(),
       "Return Value (BDT)": Number(returnAmount.toFixed(2)),
@@ -292,7 +293,8 @@ export function exportSalesReturnToExcel(
 
   const totalRow = {
     SL: "TOTAL",
-    "Return No": `Total Returns: ${returns.length}`,
+    "Order ID": `Total Returns: ${returns.length}`,
+    "Return No": "",
     "Return Date": "",
     "Original Invoice": "",
     "Customer Name": "",
@@ -339,11 +341,12 @@ export function exportPurchaseReturnToExcel(
 
     return {
       SL: index + 1,
-      "Return No": item.returnNo || `PR-${item.id ?? index + 1}`,
+      "Order ID": item.orderNo || "",
+      "Return No": item.returnNo || "",
       "Return Date": item.returnDate || todayStr,
-      "Original Invoice": item.purchaseInvoiceNo || item.invoiceNo || "-",
-      "Supplier Name": item.supplierName || "-",
-      "Supplier Phone": item.supplierPhone || "-",
+      "Original Invoice": item.purchaseInvoiceNo || item.invoiceNo || "",
+      "Supplier Name": item.supplierName || "Direct Supplier",
+      "Supplier Phone": item.supplierPhone || "",
       "Items Count": itemsCount,
       "Refund Channel": (item.paymentType || "CASH").toUpperCase(),
       "Return Value (BDT)": Number(returnAmount.toFixed(2)),
@@ -355,7 +358,8 @@ export function exportPurchaseReturnToExcel(
 
   const totalRow = {
     SL: "TOTAL",
-    "Return No": `Total Returns: ${returns.length}`,
+    "Order ID": `Total Returns: ${returns.length}`,
+    "Return No": "",
     "Return Date": "",
     "Original Invoice": "",
     "Supplier Name": "",

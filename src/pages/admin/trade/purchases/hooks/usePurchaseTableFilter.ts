@@ -127,12 +127,18 @@ export const usePurchaseTableFilter = ({
       // 1. Search Query
       if (debouncedSearch.trim()) {
         const q = debouncedSearch.toLowerCase().trim();
-        const inv = String(purchase.invoiceNo || "").toLowerCase();
         const ord = String(purchase.orderNo || "").toLowerCase();
+        const inv = String(purchase.invoiceNo || "").toLowerCase();
         const ch = String(purchase.challanNo || "").toLowerCase();
         const sName = String(purchase.supplierName || "").toLowerCase();
         const sPhone = String(purchase.supplierPhone || "").toLowerCase();
-        if (!inv.includes(q) && !ord.includes(q) && !ch.includes(q) && !sName.includes(q) && !sPhone.includes(q)) {
+        if (
+          !ord.includes(q) &&
+          !inv.includes(q) &&
+          !ch.includes(q) &&
+          !sName.includes(q) &&
+          !sPhone.includes(q)
+        ) {
           return false;
         }
       }

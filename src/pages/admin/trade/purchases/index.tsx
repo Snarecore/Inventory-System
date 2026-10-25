@@ -98,11 +98,11 @@ const Purchases: React.FC = () => {
             : [];
 
           rList.push({
-            id: item.id || item.returnId,
-            returnNo: item.returnNo || (item.orderNo ? `PR-${item.orderNo}` : `PR-${item.id}`),
+            id: item.id,
+            returnNo: item.returnNo || "",
             orderNo: item.orderNo || "",
-            purchaseInvoiceNo: item.purchaseInvoiceNo || item.invoiceNo || "-",
-            invoiceNo: item.purchaseInvoiceNo || item.invoiceNo || "-",
+            purchaseInvoiceNo: item.purchaseInvoiceNo || item.invoiceNo || "",
+            invoiceNo: item.invoiceNo || item.purchaseInvoiceNo || "",
             challanNo: item.challanNo || "",
             returnDate: item.returnDate || item.purchaseDate || moment().format("YYYY-MM-DD"),
             createdAt: item.createdAt || item.returnDate,

@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { FiEye, FiEdit, FiPrinter, FiChevronDown } from "react-icons/fi";
+import { FiEye, FiEdit, FiPrinter, FiChevronDown, FiCopy, FiCheck } from "react-icons/fi";
 import moment from "moment";
 import Search from "@/components/table-components/Search";
 import DateRangePicker from "@/components/date-range-picker/DateRangePicker";
@@ -89,6 +89,17 @@ export const SaleTable: React.FC<SaleTableProps> = ({
   const navigate = useNavigate();
   const [isCustomerDropdownOpen, setIsCustomerDropdownOpen] = useState<boolean>(false);
   const [customerSearchQuery, setCustomerSearchQuery] = useState<string>("");
+  const [copiedId, setCopiedId] = useState<string | number | null>(null);
+
+  const handleCopyOrderId = (text?: string, id?: string | number) => {
+    if (!text) return;
+    navigator.clipboard.writeText(text);
+    if (id !== undefined) setCopiedId(id);
+    showSuccessToast(`Copied Order ID: ${text}`);
+    setTimeout(() => {
+      setCopiedId(null);
+    }, 2000);
+  };
 
   const customerRef = useRef<HTMLDivElement>(null);
 
@@ -179,6 +190,7 @@ export const SaleTable: React.FC<SaleTableProps> = ({
   // Column Visibility Configuration
   const availableColumns: ColumnItem[] = [
     { key: "sl", label: "SL" },
+    { key: "orderId", label: "Order ID" },
     { key: "customer", label: "Customer" },
     { key: "phone", label: "Phone" },
     { key: "date", label: "Date" },
@@ -424,6 +436,7 @@ export const SaleTable: React.FC<SaleTableProps> = ({
               <thead>
                 <tr className="bg-[#41BEF3] text-black text-xs font-semibold">
                   {isColVisible("sl") && <th className="py-2.5 px-3 text-center w-10">SL</th>}
+                  {isColVisible("orderId") && <th className="py-2.5 px-3 whitespace-nowrap">Order ID</th>}
                   {isColVisible("customer") && (
                     <th className="py-2.5 px-3">
                       {renderSortHeader("Customer", "customer")}
@@ -485,13 +498,42 @@ export const SaleTable: React.FC<SaleTableProps> = ({
 
                 return (
                   <tr
-                    key={sale.id || sale.invoiceNo || index}
+                    key={sale.id}
                     className="hover:bg-sky-50/40 transition-colors group"
                   >
                     {/* SL */}
                     {isColVisible("sl") && (
                       <td className="py-2.5 px-3 text-center text-black text-xs font-normal">
                         {serialNumber}
+                      </td>
+                    )}
+
+                    {/* Order ID */}
+                    {isColVisible("orderId") && (
+                      <td className="py-2.5 px-3 text-black text-xs font-normal whitespace-nowrap">
+                        <div className="flex items-center gap-1.5 group/ord">
+                          <span
+                            onClick={() => onView(sale)}
+                            title="Click to view invoice"
+                            className="cursor-pointer hover:text-sky-600 font-medium transition-colors"
+                          >
+                            {sale.orderNo}
+                          </span>
+                          {sale.orderNo && (
+                            <button
+                              type="button"
+                              onClick={() => handleCopyOrderId(sale.orderNo, sale.id)}
+                              title="Copy Order ID"
+                              className="p-1 text-gray-400 hover:text-sky-600 transition-colors opacity-0 group-hover/ord:opacity-100 cursor-pointer"
+                            >
+                              {copiedId === sale.id ? (
+                                <FiCheck className="text-emerald-600 text-xs" />
+                              ) : (
+                                <FiCopy size={12} />
+                              )}
+                            </button>
+                          )}
+                        </div>
                       </td>
                     )}
 

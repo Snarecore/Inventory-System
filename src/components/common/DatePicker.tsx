@@ -14,8 +14,8 @@ export interface DatePickerProps {
   maxDate?: string | Date;
   label?: string;
   error?: string;
-  format?: string; // Internal value format, default "YYYY-MM-DD"
-  displayFormat?: string; // Format to display in input, default "YYYY-MM-DD"
+  format?: string; 
+  displayFormat?: string; 
   isClearable?: boolean;
   size?: "sm" | "md" | "lg";
   align?: "left" | "right";

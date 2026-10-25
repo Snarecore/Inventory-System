@@ -94,11 +94,11 @@ const Sales: React.FC = () => {
         const noteText = extractReturnRemarks(item);
 
         returnsList.push({
-          id: item.id || item.returnId,
-          returnNo: item.returnNo || (item.orderNo ? `RET-${item.orderNo}` : `RET-${item.id}`),
+          id: item.id,
+          returnNo: item.returnNo || "",
           orderNo: item.orderNo || "",
-          salesInvoiceNo: item.invoiceNo || item.salesInvoiceNo || "-",
-          invoiceNo: item.invoiceNo || item.salesInvoiceNo || "-",
+          salesInvoiceNo: item.salesInvoiceNo || item.invoiceNo || "",
+          invoiceNo: item.invoiceNo || item.salesInvoiceNo || "",
           returnDate: item.returnDate || item.salesDate || moment().format("YYYY-MM-DD"),
           createdAt: item.createdAt || item.returnDate,
           customerId: item.customerId,
@@ -191,11 +191,16 @@ const Sales: React.FC = () => {
     return rawSales.filter((sale: any) => {
       if (debouncedSearch.trim()) {
         const q = debouncedSearch.toLowerCase().trim();
-        const inv = String(sale.invoiceNo || "").toLowerCase();
         const ord = String(sale.orderNo || "").toLowerCase();
+        const inv = String(sale.invoiceNo || "").toLowerCase();
         const cName = String(sale.customerName || "").toLowerCase();
         const cPhone = String(sale.customerPhone || "").toLowerCase();
-        if (!inv.includes(q) && !ord.includes(q) && !cName.includes(q) && !cPhone.includes(q)) {
+        if (
+          !ord.includes(q) &&
+          !inv.includes(q) &&
+          !cName.includes(q) &&
+          !cPhone.includes(q)
+        ) {
           return false;
         }
       }
@@ -401,8 +406,8 @@ const Sales: React.FC = () => {
     return [...filteredReturns].sort((a, b) => {
       const timeA = new Date(a.createdAt || a.returnDate || 0).getTime();
       const timeB = new Date(b.createdAt || b.returnDate || 0).getTime();
-      const idA = Number(a.id || a.returnId || 0);
-      const idB = Number(b.id || b.returnId || 0);
+      const idA = Number(a.id || 0);
+      const idB = Number(b.id || 0);
       const amountA = Number(a.refundAmount ?? a.grandTotal ?? 0);
       const amountB = Number(b.refundAmount ?? b.grandTotal ?? 0);
 

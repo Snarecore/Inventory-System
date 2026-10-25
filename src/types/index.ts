@@ -105,6 +105,7 @@ export interface PurchaseDetailItem {
 export interface PurchaseItem {
   id?: string | number
   purchaseId?: string | number
+  orderNo?: string
   invoiceNo?: string
   supplierId?: string | number
   supplierName?: string
@@ -217,8 +218,8 @@ export interface SaleItem {
   id?: string | number;
   saleId?: string | number;
   sale_id?: string | number;
+  orderNo?: string;
   invoiceNo?: string;
-  invoice_no?: string;
   customerId?: string | number;
   customer_id?: string | number;
   customerName?: string;
@@ -297,7 +298,6 @@ export interface SalesReturnDetailItem {
 
 export interface SalesReturnItem {
   id?: string | number;
-  returnId?: string | number;
   returnNo?: string;
   orderNo?: string;
   salesInvoiceNo: string;
@@ -368,7 +368,6 @@ export interface PurchaseReturnDetailItem {
 
 export interface PurchaseReturnItem {
   id?: string | number;
-  returnId?: string | number;
   returnNo?: string;
   orderNo?: string;
   purchaseInvoiceNo: string;

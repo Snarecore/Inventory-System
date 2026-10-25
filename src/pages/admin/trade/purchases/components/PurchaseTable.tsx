@@ -1,7 +1,6 @@
 import React, { useState, useRef, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { FiEye, FiEdit, FiPrinter, FiChevronDown } from "react-icons/fi";
-import moment from "moment";
+import { FiEye, FiEdit, FiPrinter, FiChevronDown, FiCopy, FiCheck } from "react-icons/fi";
 import Search from "@/components/table-components/Search";
 import DateRangePicker from "@/components/date-range-picker/DateRangePicker";
 import EmptyState from "@/components/empty-state/EmptyState";
@@ -53,6 +52,7 @@ interface PurchaseTableProps {
 
 const AVAILABLE_COLUMNS: ColumnItem[] = [
   { key: "sl", label: "SL" },
+  { key: "orderId", label: "Order ID" },
   { key: "supplier", label: "Supplier" },
   { key: "phone", label: "Phone" },
   { key: "date", label: "Date" },
@@ -103,6 +103,17 @@ export const PurchaseTable: React.FC<PurchaseTableProps> = ({
   const navigate = useNavigate();
   const [isSupplierDropdownOpen, setIsSupplierDropdownOpen] = useState<boolean>(false);
   const [supplierSearchQuery, setSupplierSearchQuery] = useState<string>("");
+  const [copiedId, setCopiedId] = useState<string | number | null>(null);
+
+  const handleCopyOrderId = (text?: string, id?: string | number) => {
+    if (!text) return;
+    navigator.clipboard.writeText(text);
+    if (id !== undefined) setCopiedId(id);
+    showSuccessToast(`Copied Order ID: ${text}`);
+    setTimeout(() => {
+      setCopiedId(null);
+    }, 2000);
+  };
 
   const supplierRef = useRef<HTMLDivElement>(null);
 
@@ -426,6 +437,7 @@ export const PurchaseTable: React.FC<PurchaseTableProps> = ({
               <thead>
                 <tr className="bg-[#41BEF3] text-black text-xs font-semibold">
                   {isColVisible("sl") && <th className="py-2.5 px-3 text-center w-10">SL</th>}
+                  {isColVisible("orderId") && <th className="py-2.5 px-3 whitespace-nowrap">Order ID</th>}
                   {isColVisible("supplier") && (
                     <th className="py-2.5 px-3">
                       {renderSortHeader("Supplier", "supplier")}
@@ -483,13 +495,42 @@ export const PurchaseTable: React.FC<PurchaseTableProps> = ({
 
                   return (
                     <tr
-                      key={purchase.id || purchase.invoiceNo || index}
+                      key={purchase.id}
                       className="hover:bg-sky-50/40 transition-colors group"
                     >
                       {/* SL */}
                       {isColVisible("sl") && (
                         <td className="py-2.5 px-3 text-center text-black text-xs font-normal">
                           {serialNumber}
+                        </td>
+                      )}
+
+                      {/* Order ID */}
+                      {isColVisible("orderId") && (
+                        <td className="py-2.5 px-3 text-black text-xs font-normal whitespace-nowrap">
+                          <div className="flex items-center gap-1.5 group/ord">
+                            <span
+                              onClick={() => onView(purchase)}
+                              title="Click to view invoice"
+                              className="cursor-pointer hover:text-sky-600 font-medium transition-colors"
+                            >
+                              {purchase.orderNo}
+                            </span>
+                            {purchase.orderNo && (
+                              <button
+                                type="button"
+                                onClick={() => handleCopyOrderId(purchase.orderNo, purchase.id)}
+                                title="Copy Order ID"
+                                className="p-1 text-gray-400 hover:text-sky-600 transition-colors opacity-0 group-hover/ord:opacity-100 cursor-pointer"
+                              >
+                                {copiedId === purchase.id ? (
+                                  <FiCheck className="text-emerald-600 text-xs" />
+                                ) : (
+                                  <FiCopy size={12} />
+                                )}
+                              </button>
+                            )}
+                          </div>
                         </td>
                       )}
 

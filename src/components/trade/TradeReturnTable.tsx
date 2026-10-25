@@ -112,10 +112,11 @@ export function TradeReturnTable<T extends Record<string, any>>({
     });
   };
 
-  // Copy order / return no to clipboard
-  const handleCopyOrderId = (text: string, id: string | number) => {
+  // Copy order ID to clipboard
+  const handleCopyOrderId = (text?: string, id?: string | number) => {
+    if (!text) return;
     navigator.clipboard.writeText(text);
-    setCopiedId(id);
+    if (id !== undefined) setCopiedId(id);
     showSuccessToast(`Copied Order ID: ${text}`);
     setTimeout(() => {
       setCopiedId(null);
@@ -483,8 +484,7 @@ export function TradeReturnTable<T extends Record<string, any>>({
             </thead>
             <tbody className="divide-y divide-gray-100">
               {returns.map((item, index) => {
-                const rowKey = item.id || item.returnNo || index;
-                const isExpanded = expandedRows.has(rowKey);
+                const isExpanded = expandedRows.has(item.id);
                 const sl = (currentPageNumber - 1) * dataLimit + index + 1;
                 const refund = Number(item.refundAmount ?? item.grandTotal ?? item.totalAmount ?? 0);
                 const pType = String(item.paymentType || "CASH").toUpperCase();
@@ -514,17 +514,12 @@ export function TradeReturnTable<T extends Record<string, any>>({
                   statusBg = "bg-sky-100 text-sky-800 border-sky-300 font-semibold";
                 }
 
-                const partyName =
-                  item.customerName ||
-                  item.supplierName ||
-                  item.partyName ||
-                  (isCustomer ? "Walk-in Customer" : "Supplier");
-
-                const fallbackOrderId = isCustomer ? `RET-${item.id}` : `PR-${item.id}`;
-                const displayOrderId = item.orderNo ? `${item.orderNo}` : (item.returnNo || fallbackOrderId);
+                const partyName = isCustomer
+                  ? (item.customerName || "Walk-in Customer")
+                  : (item.supplierName || "Direct Supplier");
 
                 return (
-                  <React.Fragment key={rowKey}>
+                  <React.Fragment key={item.id}>
                     <tr className={`transition-colors group ${isExpanded ? "bg-sky-50/50" : "hover:bg-sky-50/40"}`}>
                       {/* SL */}
                       {isColVisible("sl") && (
@@ -542,20 +537,22 @@ export function TradeReturnTable<T extends Record<string, any>>({
                               title="Click to view voucher"
                               className="cursor-pointer hover:text-sky-600 transition-colors"
                             >
-                              {displayOrderId}
+                              {item.orderNo}
                             </span>
-                            <button
-                              type="button"
-                              onClick={() => handleCopyOrderId(String(displayOrderId), rowKey)}
-                              title="Copy Order ID"
-                              className="p-1 text-gray-400 hover:text-sky-600 transition-colors opacity-0 group-hover/ord:opacity-100 cursor-pointer"
-                            >
-                              {copiedId === rowKey ? (
-                                <FiCheck className="text-emerald-600 text-xs" />
-                              ) : (
-                                <FiCopy size={12} />
-                              )}
-                            </button>
+                            {item.orderNo && (
+                              <button
+                                type="button"
+                                onClick={() => handleCopyOrderId(item.orderNo, item.id)}
+                                title="Copy Order ID"
+                                className="p-1 text-gray-400 hover:text-sky-600 transition-colors opacity-0 group-hover/ord:opacity-100 cursor-pointer"
+                              >
+                                {copiedId === item.id ? (
+                                  <FiCheck className="text-emerald-600 text-xs" />
+                                ) : (
+                                  <FiCopy size={12} />
+                                )}
+                              </button>
+                            )}
                           </div>
                         </td>
                       )}
@@ -583,7 +580,7 @@ export function TradeReturnTable<T extends Record<string, any>>({
                         <td className="py-2.5 px-3 text-center w-24">
                           <button
                             type="button"
-                            onClick={() => toggleExpandRow(rowKey)}
+                            onClick={() => toggleExpandRow(item.id)}
                             className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-gray-100 hover:bg-sky-100 text-black rounded text-[11px] font-normal transition-colors cursor-pointer"
                             title="Click to view returned products"
                           >
