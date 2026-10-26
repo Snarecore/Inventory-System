@@ -1,10 +1,12 @@
 import React, { useState, useEffect, useMemo } from "react";
+import Button from "@/components/button/Button";
 import InputField from "@/components/form/TextInput";
 import SelectInput from "@/components/form/SelectField";
 import ImageUpload from "@/components/image/ImageUpload";
 import { uploadBusinessLogo, getFileViewUrl, generateFileRefNo } from "@/services/file-upload-service";
 import { useSaveBusinessProfileMutation } from "@/hooks/useBusinessProfile";
 import { showErrorToast, showSuccessToast } from "@/utils/toast-utils";
+import { FaBuilding } from "react-icons/fa";
 import type {
   BusinessProfileData,
   BusinessProfileSavePayload,
@@ -23,6 +25,8 @@ interface BusinessProfileFormProps {
 }
 
 const initialFormValues: BusinessProfileSavePayload = {
+  orgId: "",
+  branchId: "",
   businessName: "",
   businessType: "",
   businessOwnerName: "",
@@ -72,7 +76,12 @@ export const BusinessProfileForm: React.FC<BusinessProfileFormProps> = ({
         initialData.businessLogoRefNo ||
         "";
 
+      const resolvedOrgId = initialData.orgId != null ? String(initialData.orgId) : "";
+      const resolvedBranchId = initialData.branchId != null ? String(initialData.branchId) : "";
+
       setFormData({
+        orgId: resolvedOrgId,
+        branchId: resolvedBranchId,
         businessName: initialData.businessName || "",
         businessType: initialData.businessType || "",
         businessOwnerName: initialData.businessOwnerName || "",
@@ -183,7 +192,12 @@ export const BusinessProfileForm: React.FC<BusinessProfileFormProps> = ({
         initialData.businessLogoRefNo ||
         "";
 
+      const resolvedOrgId = initialData.orgId != null ? String(initialData.orgId) : "";
+      const resolvedBranchId = initialData.branchId != null ? String(initialData.branchId) : "";
+
       setFormData({
+        orgId: resolvedOrgId,
+        branchId: resolvedBranchId,
         businessName: initialData.businessName || "",
         businessType: initialData.businessType || "",
         businessOwnerName: initialData.businessOwnerName || "",
@@ -323,204 +337,241 @@ export const BusinessProfileForm: React.FC<BusinessProfileFormProps> = ({
   };
 
   return (
-    <form onSubmit={handleSubmitForm}>
-      {/* ── Clean CMS Card Container (Matches header-footer-cms & contact-page-cms) ── */}
-      <div className="bg-white rounded-lg border border-gray-200 p-6">
-        {/* ── Business Logo ── */}
-        <div className="mb-6">
-          <p className="block text-sm font-medium text-gray-700 mb-2">
-            Business Logo: <span className="text-red-500">*</span>
-            <span className="text-xs text-gray-500 ml-1">
-              (Recommended Size: 500*500 PX)
-            </span>
-            {isUploadingLogo && (
-              <span className="text-xs text-[var(--color-primary)] ml-2">Uploading...</span>
+    <form onSubmit={handleSubmitForm} className="flex flex-col gap-2.5">
+      {/* ── Card 1: Core Business Information ── */}
+      <div className="bg-white rounded-xl border border-gray-200 shadow-xs overflow-visible">
+        {/* Card Header Ribbon */}
+        <div className="flex justify-between items-center px-3.5 sm:px-4 py-2 select-none bg-gray-50/70 rounded-t-xl border-b border-gray-200 flex-wrap gap-1.5">
+          <div className="flex items-center gap-2 flex-wrap">
+            <h2 className="text-xs sm:text-sm font-bold text-black flex items-center gap-1.5">
+              <FaBuilding className="text-[var(--primary-color)] text-sm" />
+              Business Information
+            </h2>
+            {formData.orgId && (
+              <span className="text-[10px] font-semibold px-2 py-0.5 rounded-md bg-blue-50 text-blue-700 border border-blue-200">
+                Org #{formData.orgId}
+              </span>
             )}
-          </p>
-          <ImageUpload
-            value={logoDisplayUrl || (logoFile ? URL.createObjectURL(logoFile) : "")}
-            onChange={handleLogoChange}
-          />
+            {formData.branchId && (
+              <span className="text-[10px] font-semibold px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200">
+                Branch #{formData.branchId}
+              </span>
+            )}
+          </div>
+          {isUploadingLogo && (
+            <span className="text-[11px] font-semibold text-[var(--primary-color)] animate-pulse">
+              Uploading logo...
+            </span>
+          )}
         </div>
 
-        {/* ── Row 1: Business Name & Business Type ── */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-          <div>
-            <InputField
-              label="Business Name"
-              name="businessName"
-              value={formData.businessName}
-              onChange={(e: any) =>
-                handleFieldChange("businessName", typeof e === "string" ? e : e?.target?.value ?? "")
-              }
-              required
-              error={errors.businessName}
-              placeholder="e.g. Zia Enterprises"
-            />
-          </div>
-          <div>
-            <SelectInput
-              label="Business Type"
-              value={selectedTypeOption}
-              options={businessTypeOptions}
-              onChange={handleBusinessTypeChange}
-              placeholder="Select business type"
-            />
-          </div>
-        </div>
+        {/* Card Body */}
+        <div className="p-2.5 sm:p-3.5 flex flex-col gap-2 sm:gap-2.5">
+          {/* Top Section: Logo + Core Contact Fields */}
+          <div className="flex flex-col sm:flex-row items-start gap-3 sm:gap-4">
+            {/* Business Logo */}
+            <div className="shrink-0">
+              <label className="text-xs font-semibold text-black block mb-1">
+                Business Logo <span className="text-red-600">*</span>
+                <span className="text-[10px] font-normal text-gray-400 ml-1">(500×500 px)</span>
+              </label>
+              <ImageUpload
+                value={logoDisplayUrl || (logoFile ? URL.createObjectURL(logoFile) : "")}
+                onChange={handleLogoChange}
+                size="sm"
+              />
+            </div>
 
-        {/* ── Row 2: Owner Name & Phone Number ── */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-          <div>
-            <InputField
-              label="Owner Name"
-              name="businessOwnerName"
-              value={formData.businessOwnerName}
-              onChange={(e: any) =>
-                handleFieldChange("businessOwnerName", typeof e === "string" ? e : e?.target?.value ?? "")
-              }
-              required
-              error={errors.businessOwnerName}
-              placeholder="e.g. Zia"
-            />
-          </div>
-          <div>
-            <InputField
-              label="Phone Number"
-              name="businessPhone1"
-              value={formData.businessPhone1}
-              onChange={(e: any) =>
-                handleFieldChange("businessPhone1", typeof e === "string" ? e : e?.target?.value ?? "")
-              }
-              required
-              error={errors.businessPhone1}
-              placeholder="e.g. 01317020309"
-            />
-          </div>
-        </div>
+            {/* Core Fields Grid: 4 items per row beside logo */}
+            <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-2.5 w-full">
+              {/* Row 1, Col 1: Business Name */}
+              <div>
+                <InputField
+                  label="Business Name"
+                  name="businessName"
+                  value={formData.businessName}
+                  onChange={(e: any) =>
+                    handleFieldChange("businessName", typeof e === "string" ? e : e?.target?.value ?? "")
+                  }
+                  required
+                  error={errors.businessName}
+                  placeholder="e.g. Zia Enterprises"
+                />
+              </div>
 
-        {/* ── Row 3: Secondary Phone & Email ── */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-          <div>
-            <InputField
-              label="Secondary Phone"
-              name="businessPhone2"
-              value={formData.businessPhone2}
-              onChange={(e: any) =>
-                handleFieldChange("businessPhone2", typeof e === "string" ? e : e?.target?.value ?? "")
-              }
-              placeholder="e.g. 01800000000"
-            />
-          </div>
-          <div>
-            <InputField
-              label="Email"
-              name="businessEmail"
-              type="email"
-              value={formData.businessEmail}
-              onChange={(e: any) =>
-                handleFieldChange("businessEmail", typeof e === "string" ? e : e?.target?.value ?? "")
-              }
-              placeholder="company@example.com"
-            />
-          </div>
-        </div>
+              {/* Row 1, Col 2: Business Type */}
+              <div>
+                <SelectInput
+                  label="Business Type"
+                  value={selectedTypeOption}
+                  options={businessTypeOptions}
+                  onChange={handleBusinessTypeChange}
+                  placeholder="Select business type"
+                />
+              </div>
 
-        {/* ── Row 4: Website & Address ── */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-          <div>
-            <InputField
-              label="Website"
-              name="website"
-              value={formData.website}
-              onChange={(e: any) =>
-                handleFieldChange("website", typeof e === "string" ? e : e?.target?.value ?? "")
-              }
-              placeholder="https://example.com"
-            />
-          </div>
-          <div>
-            <InputField
-              label="Address"
-              name="address"
-              value={formData.address}
-              onChange={(e: any) =>
-                handleFieldChange("address", typeof e === "string" ? e : e?.target?.value ?? "")
-              }
-              placeholder="Business address"
-            />
-          </div>
-        </div>
+              {/* Row 1, Col 3: Owner Name */}
+              <div>
+                <InputField
+                  label="Owner Name"
+                  name="businessOwnerName"
+                  value={formData.businessOwnerName}
+                  onChange={(e: any) =>
+                    handleFieldChange("businessOwnerName", typeof e === "string" ? e : e?.target?.value ?? "")
+                  }
+                  required
+                  error={errors.businessOwnerName}
+                  placeholder="e.g. Zia"
+                />
+              </div>
 
-        {/* ── Row 5: Trade License, TIN, BIN ── */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-          <div>
-            <InputField
-              label="Trade License No"
-              name="tradeLicenseNo"
-              value={formData.tradeLicenseNo}
-              onChange={(e: any) =>
-                handleFieldChange("tradeLicenseNo", typeof e === "string" ? e : e?.target?.value ?? "")
-              }
-              placeholder="Trade license number"
-            />
-          </div>
-          <div>
-            <InputField
-              label="TIN No"
-              name="tinNo"
-              value={formData.tinNo}
-              onChange={(e: any) =>
-                handleFieldChange("tinNo", typeof e === "string" ? e : e?.target?.value ?? "")
-              }
-              placeholder="Tax identification number"
-            />
-          </div>
-          <div>
-            <InputField
-              label="BIN No"
-              name="binNo"
-              value={formData.binNo}
-              onChange={(e: any) =>
-                handleFieldChange("binNo", typeof e === "string" ? e : e?.target?.value ?? "")
-              }
-              placeholder="Business identification number"
-            />
-          </div>
-        </div>
+              {/* Row 1, Col 4: Phone Number */}
+              <div>
+                <InputField
+                  label="Phone Number"
+                  name="businessPhone1"
+                  value={formData.businessPhone1}
+                  onChange={(e: any) =>
+                    handleFieldChange("businessPhone1", typeof e === "string" ? e : e?.target?.value ?? "")
+                  }
+                  required
+                  error={errors.businessPhone1}
+                  placeholder="e.g. 01317020309"
+                />
+              </div>
 
-        {/* ── Row 6: Description ── */}
-        <div className="grid grid-cols-1 gap-6 mb-8">
-          <div>
-            <InputField
-              label="Description"
-              name="description"
-              value={formData.description}
-              onChange={(e: any) =>
-                handleFieldChange("description", typeof e === "string" ? e : e?.target?.value ?? "")
-              }
-              placeholder="About the business..."
-            />
+              {/* Row 2, Col 1: Secondary Phone */}
+              <div>
+                <InputField
+                  label="Secondary Phone"
+                  name="businessPhone2"
+                  value={formData.businessPhone2}
+                  onChange={(e: any) =>
+                    handleFieldChange("businessPhone2", typeof e === "string" ? e : e?.target?.value ?? "")
+                  }
+                  placeholder="e.g. 01800000000"
+                />
+              </div>
+
+              {/* Row 2, Col 2: Email */}
+              <div>
+                <InputField
+                  label="Email"
+                  name="businessEmail"
+                  type="email"
+                  value={formData.businessEmail}
+                  onChange={(e: any) =>
+                    handleFieldChange("businessEmail", typeof e === "string" ? e : e?.target?.value ?? "")
+                  }
+                  placeholder="company@example.com"
+                />
+              </div>
+
+              {/* Row 2, Col 3: Website */}
+              <div>
+                <InputField
+                  label="Website"
+                  name="website"
+                  value={formData.website}
+                  onChange={(e: any) =>
+                    handleFieldChange("website", typeof e === "string" ? e : e?.target?.value ?? "")
+                  }
+                  placeholder="https://example.com"
+                />
+              </div>
+
+              {/* Row 2, Col 4: Trade License No */}
+              <div>
+                <InputField
+                  label="Trade License No"
+                  name="tradeLicenseNo"
+                  value={formData.tradeLicenseNo}
+                  onChange={(e: any) =>
+                    handleFieldChange("tradeLicenseNo", typeof e === "string" ? e : e?.target?.value ?? "")
+                  }
+                  placeholder="Trade license number"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Bottom Row: TIN, BIN, Address, Description in 1 row (4 columns) */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-2.5">
+            {/* TIN No */}
+            <div>
+              <InputField
+                label="TIN No"
+                name="tinNo"
+                value={formData.tinNo}
+                onChange={(e: any) =>
+                  handleFieldChange("tinNo", typeof e === "string" ? e : e?.target?.value ?? "")
+                }
+                placeholder="Tax identification number"
+              />
+            </div>
+
+            {/* BIN No */}
+            <div>
+              <InputField
+                label="BIN No"
+                name="binNo"
+                value={formData.binNo}
+                onChange={(e: any) =>
+                  handleFieldChange("binNo", typeof e === "string" ? e : e?.target?.value ?? "")
+                }
+                placeholder="Business identification number"
+              />
+            </div>
+
+            {/* Address */}
+            <div>
+              <InputField
+                label="Address"
+                name="address"
+                value={formData.address}
+                onChange={(e: any) =>
+                  handleFieldChange("address", typeof e === "string" ? e : e?.target?.value ?? "")
+                }
+                placeholder="Business address"
+              />
+            </div>
+
+            {/* Description */}
+            <div>
+              <InputField
+                label="Description"
+                name="description"
+                value={formData.description}
+                onChange={(e: any) =>
+                  handleFieldChange("description", typeof e === "string" ? e : e?.target?.value ?? "")
+                }
+                placeholder="About the business..."
+              />
+            </div>
           </div>
         </div>
+      </div>
 
-        {/* ── Bottom Actions (Standard CMS Buttons) ── */}
-        <div className="flex justify-end gap-3">
-          <button
-            type="button"
-            onClick={handleReset}
-            className="px-4 py-2 text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50 cursor-pointer text-sm font-medium transition-colors"
-          >
-            Cancel
-          </button>
-          <button
-            type="submit"
-            disabled={isSaving || saveMutation.isPending || isUploadingLogo}
-            className="px-4 py-2 bg-[var(--color-primary)] text-white rounded-md hover:bg-[var(--color-light-primary)] cursor-pointer text-sm font-medium disabled:opacity-50 transition-colors"
-          >
-            {isSaving || saveMutation.isPending ? "Saving..." : "Save"}
-          </button>
-        </div>
+      {/* ── Bottom Action Bar (Matches ProductForm standard buttons) ── */}
+      <div className="bg-white shadow-xs rounded-xl border border-gray-200 p-2 sm:px-3 flex items-center justify-end gap-2">
+        <Button
+          label="Cancel"
+          onClick={handleReset}
+          color="#6b7280"
+          hoverColor="#4b5563"
+          disabled={isSaving}
+          buttonClass="!text-xs !py-1.5"
+        />
+        <Button
+          label={isSaving || saveMutation.isPending ? "Saving..." : "Save Changes"}
+          type="submit"
+          onClick={handleSubmitForm}
+          color="var(--primary-color)"
+          hoverColor="var(--primary-color-hover)"
+          isLoading={isSaving || saveMutation.isPending}
+          disabled={isSaving || saveMutation.isPending || isUploadingLogo}
+          buttonClass="!text-xs !py-1.5 font-bold"
+        />
       </div>
     </form>
   );

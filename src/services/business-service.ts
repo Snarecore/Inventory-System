@@ -82,6 +82,8 @@ export async function saveBusinessProfile(
 
   const body = {
     accessUser,
+    orgId: payload.orgId ? Number(payload.orgId) : accessUser.orgId,
+    branchId: payload.branchId ? Number(payload.branchId) : accessUser.branchId,
     businessName: payload.businessName?.trim() || "",
     businessType: payload.businessType?.trim() || "",
     businessOwnerName: payload.businessOwnerName?.trim() || "",

@@ -30,6 +30,8 @@ export interface BusinessProfileData {
 }
 
 export interface BusinessProfileSavePayload {
+  orgId?: number | string;
+  branchId?: number | string;
   businessName: string;
   businessType: string;
   businessOwnerName: string;
