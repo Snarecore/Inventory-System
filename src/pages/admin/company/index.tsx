@@ -6,11 +6,9 @@ import {
   useBusinessProfileQuery,
   useBusinessTypesQuery,
 } from "@/hooks/useBusinessProfile";
-import { getUserInfo } from "@/utils/auth-storage";
-import { FaExclamationTriangle, FaRedo, FaCodeBranch } from "react-icons/fa";
+import { FaExclamationTriangle, FaRedo } from "react-icons/fa";
 
 export const CompanyPage: React.FC = () => {
-  const userInfo = getUserInfo();
   const {
     data: businessProfile,
     isLoading,
@@ -44,7 +42,9 @@ export const CompanyPage: React.FC = () => {
           <div className="bg-white rounded-xl border border-gray-200 p-3 sm:p-4 space-y-3 animate-pulse">
             <div className="flex flex-col sm:flex-row items-start gap-3">
               <div className="h-20 w-20 bg-gray-100 rounded-lg shrink-0" />
-              <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5 w-full">
+              <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 w-full">
+                <div className="h-9 bg-gray-100 rounded-lg" />
+                <div className="h-9 bg-gray-100 rounded-lg" />
                 <div className="h-9 bg-gray-100 rounded-lg" />
                 <div className="h-9 bg-gray-100 rounded-lg" />
                 <div className="h-9 bg-gray-100 rounded-lg" />
@@ -78,7 +78,7 @@ export const CompanyPage: React.FC = () => {
           </div>
         ) : (
           <BusinessProfileForm
-            initialData={businessProfile}
+            initialData={businessProfile ?? null}
             businessTypes={businessTypes}
             onSuccess={() => refetch()}
           />

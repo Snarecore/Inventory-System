@@ -1,5 +1,4 @@
 export interface BusinessProfileData {
-  id?: number;
   orgId?: number;
   branchId?: number;
   businessName: string;
@@ -14,19 +13,9 @@ export interface BusinessProfileData {
   tinNo?: string | null;
   binNo?: string | null;
   businessLogo?: string | null;
-  businessLogoUrl?: string | null;
   businessLogoRefNo?: string | null;
+  businessLogoUrl?: string | null;
   description?: string | null;
-  status?: string | null;
-  addedBy?: string | null;
-  userId?: number | null;
-  addedDate?: string | null;
-  updatedBy?: string | null;
-  updatedDate?: string | null;
-  annualTurnover?: number | null;
-  annualIncome?: number | null;
-  annualProfit?: number | null;
-  businessCode?: string | null;
 }
 
 export interface BusinessProfileSavePayload {
@@ -51,14 +40,7 @@ export interface BusinessProfileSavePayload {
 
 export interface BusinessTypeItem {
   id: number;
-  sortOrder?: number;
   icon?: string;
   labelBn: string;
   labelEn: string;
-}
-
-export interface BusinessProfileApiResponse {
-  status: string;
-  msg: string;
-  data: BusinessProfileData | null;
 }
