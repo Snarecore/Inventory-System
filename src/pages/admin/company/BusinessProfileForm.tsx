@@ -330,7 +330,7 @@ export const BusinessProfileForm: React.FC<BusinessProfileFormProps> = ({
       </div>
 
       {/* ── Action Buttons ── */}
-      <div className="bg-white shadow-xs rounded-xl border border-gray-200 p-2 sm:px-3 flex items-center justify-end gap-2">
+      <div className="flex items-center justify-end gap-2">
         <Button
           type="button"
           label="Cancel"
@@ -341,7 +341,7 @@ export const BusinessProfileForm: React.FC<BusinessProfileFormProps> = ({
           buttonClass="!text-xs !py-1.5"
         />
         <Button
-          label={isSubmitting ? "Saving..." : "Save Changes"}
+          label={isSubmitting ? "Saving..." : "Save"}
           type="submit"
           color="var(--primary-color)"
           hoverColor="var(--primary-color-hover)"
