@@ -244,13 +244,17 @@ export const TradeInvoiceModal: React.FC<TradeInvoiceModalProps> = ({
             ${printContent}
           </div>
           <script>
+            var printed = false;
             function triggerPrint() {
+              if (printed) return;
+              printed = true;
               window.focus();
               window.print();
             }
             window.addEventListener('load', function() {
-              setTimeout(triggerPrint, 200);
+              setTimeout(triggerPrint, 250);
             });
+            setTimeout(triggerPrint, 600);
             window.onafterprint = function() {
               window.close();
             };
@@ -387,7 +391,7 @@ export const TradeInvoiceModal: React.FC<TradeInvoiceModalProps> = ({
             </div>
           </div>
 
-          {/* Customer Information Bar in Light Primary Background */}
+          {/* Customer Information Bar (Clean without background) */}
           <div
             style={{
               display: "flex",
@@ -395,11 +399,9 @@ export const TradeInvoiceModal: React.FC<TradeInvoiceModalProps> = ({
               justifyContent: "space-between",
               alignItems: "center",
               width: "100%",
-              backgroundColor: "#f0f5fc",
-              borderRadius: "4px",
-              padding: "6px 14px",
-              marginTop: "8px",
-              marginBottom: "14px",
+              padding: "6px 2px",
+              marginTop: "4px",
+              marginBottom: "10px",
               fontSize: "11px",
               fontWeight: 600,
               color: "#1e293b",
@@ -421,13 +423,13 @@ export const TradeInvoiceModal: React.FC<TradeInvoiceModalProps> = ({
             </div>
           </div>
 
-          {/* Items Table with Solid #01306B Header */}
+          {/* Items Table with Slate Gray Header */}
           <div style={{ width: "100%" }}>
             <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "11px" }}>
               <thead>
                 <tr
                   style={{
-                    backgroundColor: "#01306B",
+                    backgroundColor: "#475569",
                     color: "#ffffff",
                     fontWeight: 800,
                     fontSize: "11px",
@@ -437,7 +439,7 @@ export const TradeInvoiceModal: React.FC<TradeInvoiceModalProps> = ({
                     SL
                   </th>
                   <th style={{ textAlign: "left", padding: "6px 8px", borderRight: "1px solid rgba(255,255,255,0.2)" }}>
-                    Item / Service
+                    Item
                   </th>
                   <th style={{ textAlign: "center", width: "55px", padding: "6px 6px", borderRight: "1px solid rgba(255,255,255,0.2)" }}>
                     Qty
@@ -502,7 +504,7 @@ export const TradeInvoiceModal: React.FC<TradeInvoiceModalProps> = ({
             />
           </div>
 
-          {/* Bottom Section: Words & Seal (Left) + Totals Breakdown (Right) strictly side-by-side */}
+          {/* Bottom Section: Words & Notes (Left) + Totals Breakdown (Right) strictly side-by-side */}
           <div
             style={{
               display: "flex",
@@ -514,7 +516,7 @@ export const TradeInvoiceModal: React.FC<TradeInvoiceModalProps> = ({
               gap: "24px",
             }}
           >
-            {/* Left Column: Words & Shop Seal Box */}
+            {/* Left Column: Words & Notes */}
             <div
               style={{
                 flex: 1,
@@ -532,24 +534,6 @@ export const TradeInvoiceModal: React.FC<TradeInvoiceModalProps> = ({
                 <div style={{ fontWeight: 800, color: "#0f172a", fontSize: "11px", lineHeight: "1.4" }}>
                   {wordsAmount}
                 </div>
-              </div>
-
-              {/* Dotted Shop Seal Box */}
-              <div
-                style={{
-                  border: "1.5px dashed #94a3b8",
-                  borderRadius: "4px",
-                  width: "140px",
-                  height: "70px",
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  color: "#64748b",
-                  backgroundColor: "#fafafa",
-                }}
-              >
-                <span style={{ fontWeight: 600, fontSize: "11px" }}>Shop Seal</span>
               </div>
 
               {/* Customer Note if present */}
@@ -661,7 +645,7 @@ export const TradeInvoiceModal: React.FC<TradeInvoiceModalProps> = ({
                 </div>
               )}
 
-              {/* Total Due highlighted in Red Box */}
+              {/* Total Due highlighted in Red Box, or Centered PAID Badge */}
               {totalDue > 0 ? (
                 <div
                   style={{
@@ -685,24 +669,23 @@ export const TradeInvoiceModal: React.FC<TradeInvoiceModalProps> = ({
               ) : (
                 <div
                   style={{
-                    border: "2px solid #059669",
+                    border: "1.5px solid #059669",
                     borderRadius: "4px",
                     padding: "4px 10px",
                     marginTop: "4px",
                     display: "flex",
-                    justifyContent: "space-between",
+                    justifyContent: "center",
                     alignItems: "center",
                     width: "100%",
                     color: "#059669",
                     backgroundColor: "rgba(16, 185, 129, 0.08)",
+                    fontWeight: 900,
+                    letterSpacing: "1.5px",
+                    fontSize: "12px",
+                    textTransform: "uppercase",
                   }}
                 >
-                  <span style={{ fontWeight: 900, textTransform: "uppercase" }}>
-                    PAID
-                  </span>
-                  <span style={{ fontWeight: 900, fontFamily: "monospace", fontSize: "12px" }}>
-                    0.00
-                  </span>
+                  PAID
                 </div>
               )}
             </div>
