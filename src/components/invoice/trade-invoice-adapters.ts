@@ -40,15 +40,21 @@ const resolveAttachmentUrl = (raw: any): string | null => {
 
 export const normalizeSaleInvoice = (sale: any): TradeInvoiceData => {
   const s = sale || {};
-  const rawDetails = s.salesDetails || s.details || [];
+  const rawDetails =
+    s.salesDetails ||
+    s.saleDetails ||
+    s.details ||
+    s.items ||
+    s.productsList ||
+    [];
   const details: any[] = Array.isArray(rawDetails) ? rawDetails : [];
 
-  const delivery = Number(s.deliveryCharge ?? 0);
+  const delivery = Number(s.deliveryCharge ?? s.delivery_charge ?? 0);
   const discount = Number(s.discount ?? 0);
   const vat = Number(s.vat ?? 0);
 
   const items: TradeInvoiceLineItem[] = details.map((item: any, idx: number) => {
-    const price = Number(item.sellPrice ?? item.price ?? 0);
+    const price = Number(item.sellPrice ?? item.price ?? item.rate ?? item.unitPrice ?? 0);
     const qty = Number(item.quantity ?? item.qty ?? 1);
     const lineVat = Number(item.vat ?? 0);
     const lineDisc = Number(item.discount ?? 0);
@@ -56,9 +62,9 @@ export const normalizeSaleInvoice = (sale: any): TradeInvoiceData => {
 
     return {
       id: item.id || idx,
-      productName: item.productName || item.name || "Product",
-      productCode: item.productCode || item.pcode,
-      unit: item.secondary_unit || item.secondaryUnit || item.unit || "pcs",
+      productName: item.productName || item.product_name || item.name || "Product",
+      productCode: item.productCode || item.product_code || item.pcode,
+      unit: item.secondary_unit || item.secondaryUnit || item.unit || "Pcs",
       price,
       quantity: qty,
       discount: lineDisc,
@@ -68,36 +74,36 @@ export const normalizeSaleInvoice = (sale: any): TradeInvoiceData => {
   });
 
   const subtotal =
-    Number(s.totalAmount ?? 0) ||
+    Number(s.totalAmount ?? s.total_amount ?? 0) ||
     items.reduce((acc, it) => acc + it.total, 0);
 
-  const grandTotal = Number(s.grandTotal ?? (subtotal - discount + vat + delivery));
-  const paid = Number(s.paidAmount ?? s.cashReceived ?? 0);
-  const due = Number(s.dueAmount ?? 0);
-  const previousDue = Number(s.previousDue ?? 0);
+  const grandTotal = Number(s.grandTotal ?? s.grand_total ?? (subtotal - discount + vat + delivery));
+  const paid = Number(s.paidAmount ?? s.paid_amount ?? s.cashReceived ?? 0);
+  const due = Number(s.dueAmount ?? s.due_amount ?? Math.max(0, grandTotal - paid));
+  const previousDue = Number(s.previousDue ?? s.previous_due ?? 0);
 
   const isMulti =
     s.invType === "MULTI" ||
-    String(s.paymentType || "").toLowerCase() === "multi";
+    String(s.paymentType || s.payment_type || "").toLowerCase() === "multi";
 
   return {
     type: "SALE",
     invoiceTitle: "Sales Invoice Details",
-    invoiceNo: s.invoiceNo || `INV-${s.id || ""}`,
-    date: s.salesDate || s.createdAt,
+    invoiceNo: s.orderNo || s.invoiceNo || (s.id ? `ORD-${s.id}` : "INV-001"),
+    date: s.salesDate || s.saleDate || s.date || s.createdAt,
     status: s.status,
     partyTypeTitle: "Customer Information",
-    partyName: s.customerName || "Walk-in Customer",
-    partyPhone: s.customerPhone,
-    partyAddress: s.customerAddress,
-    paymentMethod: isMulti ? "MULTI (SPLIT)" : s.paymentType || "CASH",
-    cashAmount: Number(s.cashReceived || 0),
-    bankName: s.bankName,
-    bankAmount: Number(s.cardReceived || s.bankAmount || 0),
-    accountNo: s.accountNo,
-    mfsName: s.mfsName,
-    mfsAmount: Number(s.mfsReceived || s.mfsAmount || 0),
-    mfsPhone: s.mfsPhone,
+    partyName: s.customerName || s.customer_name || s.partyName || "Walk-in Customer",
+    partyPhone: s.customerPhone || s.customer_phone || s.phone,
+    partyAddress: s.customerAddress || s.customer_address || s.address,
+    paymentMethod: isMulti ? "MULTI (SPLIT)" : (s.paymentType || s.payment_type || "CASH").toUpperCase(),
+    cashAmount: Number(s.cashReceived || s.cashAmount || s.cash_received || 0),
+    bankName: s.bankName || s.bank_name,
+    bankAmount: Number(s.cardReceived || s.bankAmount || s.bank_received || 0),
+    accountNo: s.accountNo || s.account_no,
+    mfsName: s.mfsName || s.mfs_name,
+    mfsAmount: Number(s.mfsReceived || s.mfsAmount || s.mfs_received || 0),
+    mfsPhone: s.mfsPhone || s.mfs_phone,
     customerPaid: Number(s.customerPaid || 0),
     returnAmount: Number(s.returnAmount || 0),
     items,
@@ -110,7 +116,7 @@ export const normalizeSaleInvoice = (sale: any): TradeInvoiceData => {
     dueAmount: due,
     previousDue,
     totalDueWithCurrent: Number(due + previousDue),
-    notes: s.note || "",
+    notes: s.note || s.notes || "",
   };
 };
 

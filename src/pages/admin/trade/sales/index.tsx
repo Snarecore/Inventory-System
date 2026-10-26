@@ -55,6 +55,7 @@ const Sales: React.FC = () => {
   // Modals - Sales
   const [isSaleInvoiceModalOpen, setIsSaleInvoiceModalOpen] = useState<boolean>(false);
   const [selectedSaleForInvoice, setSelectedSaleForInvoice] = useState<SaleItem | null>(null);
+  const [autoPrintSaleModal, setAutoPrintSaleModal] = useState<boolean>(false);
 
   // Modals - Returns
   const [isReturnInvoiceModalOpen, setIsReturnInvoiceModalOpen] = useState<boolean>(false);
@@ -483,11 +484,13 @@ const Sales: React.FC = () => {
   // Actions - Sales
   const handleViewSale = (sale: SaleItem) => {
     setSelectedSaleForInvoice(sale);
+    setAutoPrintSaleModal(false);
     setIsSaleInvoiceModalOpen(true);
   };
 
   const handlePrintSale = (sale: SaleItem) => {
     setSelectedSaleForInvoice(sale);
+    setAutoPrintSaleModal(true);
     setIsSaleInvoiceModalOpen(true);
   };
 
@@ -680,8 +683,10 @@ const Sales: React.FC = () => {
         onClose={() => {
           setIsSaleInvoiceModalOpen(false);
           setSelectedSaleForInvoice(null);
+          setAutoPrintSaleModal(false);
         }}
         sale={selectedSaleForInvoice}
+        autoPrint={autoPrintSaleModal}
       />
 
       {/* Sales Return Invoice Modal */}

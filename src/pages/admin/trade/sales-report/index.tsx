@@ -42,6 +42,7 @@ const SalesReportPage: React.FC = () => {
   // Modals state
   const [selectedInvoice, setSelectedInvoice] = useState<SaleItem | null>(null);
   const [isInvoiceModalOpen, setIsInvoiceModalOpen] = useState<boolean>(false);
+  const [isAutoPrint, setIsAutoPrint] = useState<boolean>(false);
   const [isPrintSummaryOpen, setIsPrintSummaryOpen] = useState<boolean>(false);
 
   // Compute startDate and endDate formatted as YYYY-MM-DD
@@ -231,11 +232,13 @@ const SalesReportPage: React.FC = () => {
 
   const handleView = (item: SaleItem) => {
     setSelectedInvoice(item);
+    setIsAutoPrint(false);
     setIsInvoiceModalOpen(true);
   };
 
   const handlePrint = (item: SaleItem) => {
     setSelectedInvoice(item);
+    setIsAutoPrint(true);
     setIsInvoiceModalOpen(true);
   };
 
@@ -367,8 +370,10 @@ const SalesReportPage: React.FC = () => {
         onClose={() => {
           setIsInvoiceModalOpen(false);
           setSelectedInvoice(null);
+          setIsAutoPrint(false);
         }}
         sale={selectedInvoice}
+        autoPrint={isAutoPrint}
       />
 
       {/* ── Printable A4 Sales Report Sheet Modal ── */}
