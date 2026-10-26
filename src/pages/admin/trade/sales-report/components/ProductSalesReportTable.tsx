@@ -1,8 +1,19 @@
 import React, { useState, useMemo } from "react";
-import { FaBoxes, FaFileExcel, FaSearch } from "react-icons/fa";
+import { FaFileExcel } from "react-icons/fa";
+import { FiChevronDown } from "react-icons/fi";
 import Search from "@/components/table-components/Search";
-import EmptyState from "@/components/empty-state/EmptyState";
-import TablePaginationFooter from "@/components/table-components/TablePaginationFooter";
+import {
+  TableContainer,
+  TableToolbar,
+  TableScroll,
+  Table,
+  TableHead,
+  TableTh,
+  TableBody,
+  TablePaginationFooter,
+  TableSkeleton,
+  EmptyState,
+} from "@/components/common";
 import { formatMoney } from "@/utils/formatters";
 import * as XLSX from "xlsx";
 import { showSuccessToast, showErrorToast } from "@/utils/toast-utils";
@@ -12,6 +23,7 @@ import { useDebounce } from "@/hooks/useDebounce";
 
 interface ProductSalesReportTableProps {
   transactions: SaleItem[];
+  isLoading?: boolean;
 }
 
 interface ProductSummary {
@@ -27,9 +39,11 @@ interface ProductSummary {
 
 export const ProductSalesReportTable: React.FC<ProductSalesReportTableProps> = ({
   transactions,
+  isLoading,
 }) => {
   const [searchQuery, setSearchQuery] = useState("");
   const debouncedSearch = useDebounce(searchQuery, 250);
+  const [sortBy, setSortBy] = useState<string>("revenue_desc");
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
 
@@ -91,22 +105,40 @@ export const ProductSalesReportTable: React.FC<ProductSalesReportTableProps> = (
       }
     });
 
-    return Object.values(map).sort((a, b) => b.totalRevenue - a.totalRevenue);
+    return Object.values(map);
   }, [transactions]);
 
   // Overall total revenue from products
-  const grandProductRevenue = productSummaries.reduce((acc, p) => acc + p.totalRevenue, 0);
+  const grandProductRevenue = useMemo(
+    () => productSummaries.reduce((acc, p) => acc + p.totalRevenue, 0),
+    [productSummaries]
+  );
 
-  // Filtered
+  // Filter & Sort
   const filtered = useMemo(() => {
-    if (!debouncedSearch.trim()) return productSummaries;
-    const q = debouncedSearch.toLowerCase().trim();
-    return productSummaries.filter(
-      (p) =>
-        p.productName.toLowerCase().includes(q) ||
-        p.productCode.toLowerCase().includes(q)
-    );
-  }, [productSummaries, debouncedSearch]);
+    let list = productSummaries;
+    if (debouncedSearch.trim()) {
+      const q = debouncedSearch.toLowerCase().trim();
+      list = list.filter(
+        (p) =>
+          p.productName.toLowerCase().includes(q) ||
+          p.productCode.toLowerCase().includes(q)
+      );
+    }
+
+    const sorted = [...list];
+    if (sortBy === "revenue_desc") {
+      sorted.sort((a, b) => b.totalRevenue - a.totalRevenue);
+    } else if (sortBy === "revenue_asc") {
+      sorted.sort((a, b) => a.totalRevenue - b.totalRevenue);
+    } else if (sortBy === "qty_desc") {
+      sorted.sort((a, b) => b.totalQuantity - a.totalQuantity);
+    } else if (sortBy === "name_asc") {
+      sorted.sort((a, b) => a.productName.localeCompare(b.productName));
+    }
+
+    return sorted;
+  }, [productSummaries, debouncedSearch, sortBy]);
 
   const totalCount = filtered.length;
   const pageCount = Math.ceil(totalCount / pageSize) || 1;
@@ -122,15 +154,19 @@ export const ProductSalesReportTable: React.FC<ProductSalesReportTableProps> = (
     }
 
     try {
-      const data = productSummaries.map((p, idx) => ({
+      const data = filtered.map((p, idx) => ({
         "SL": idx + 1,
         "Product Code": p.productCode,
         "Product Name": p.productName,
         "Unit": p.unit,
         "Quantity Sold": p.totalQuantity,
+        "Invoices Sold": p.invoicesCount,
         "Total Revenue (BDT)": p.totalRevenue,
         "Discount (BDT)": p.totalDiscount,
-        "Invoices Sold": p.invoicesCount,
+        "Share of Sales":
+          grandProductRevenue > 0
+            ? `${((p.totalRevenue / grandProductRevenue) * 100).toFixed(1)}%`
+            : "0.0%",
       }));
 
       const ws = XLSX.utils.json_to_sheet(data);
@@ -147,73 +183,83 @@ export const ProductSalesReportTable: React.FC<ProductSalesReportTableProps> = (
   };
 
   return (
-    <div className="bg-white rounded-xl shadow-xs border border-gray-200 overflow-hidden">
-      {/* Header filter bar */}
-      <div className="p-3 border-b border-gray-200 flex flex-col sm:flex-row gap-2.5 items-stretch sm:items-center justify-between">
-        <div className="flex items-center gap-2">
-          <span className="p-1.5 rounded-lg bg-sky-50 text-[#009fe3]">
-            <FaBoxes size={14} />
-          </span>
-          <div>
-            <h3 className="text-xs font-bold text-gray-900">
-              Product-Wise Sales Summary (পণ্যভিত্তিক বিক্রির সারাংশ)
-            </h3>
-            <p className="text-[10px] text-gray-500">
-              Ranked by total revenue generated across selected transactions
-            </p>
-          </div>
+    <TableContainer>
+      {/* Top Filter Bar */}
+      <TableToolbar>
+        <div className="w-full sm:w-48 md:w-56 shrink-0">
+          <Search
+            searchQuery={searchQuery}
+            onSearchChange={(val) => {
+              setSearchQuery(val);
+              setCurrentPage(1);
+            }}
+            setSearchQuery={setSearchQuery}
+            placeholder="Search product code, name..."
+          />
         </div>
 
-        <div className="flex items-center gap-2">
-          <div className="w-full sm:w-56">
-            <Search
-              value={searchQuery}
+        <div className="flex flex-wrap items-center gap-2">
+          {/* Sort selector */}
+          <div className="relative w-40 shrink-0">
+            <select
+              value={sortBy}
               onChange={(e) => {
-                setSearchQuery(e.target.value);
+                setSortBy(e.target.value);
                 setCurrentPage(1);
               }}
-              placeholder="Search product..."
+              className="w-full h-8 pl-2.5 pr-6 text-xs border border-gray-200 rounded-lg bg-gray-50/50 hover:bg-white text-gray-800 font-medium focus:outline-none focus:border-[var(--primary-color)] cursor-pointer appearance-none"
+            >
+              <option value="revenue_desc">Highest Revenue</option>
+              <option value="revenue_asc">Lowest Revenue</option>
+              <option value="qty_desc">Highest Qty Sold</option>
+              <option value="name_asc">Product Name (A-Z)</option>
+            </select>
+            <FiChevronDown
+              className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none text-xs"
+              size={13}
             />
           </div>
 
           <button
             type="button"
             onClick={handleExport}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-lg transition-colors cursor-pointer shrink-0"
+            className="flex items-center gap-1.5 px-3 h-8 text-xs font-semibold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 rounded-lg transition-all shadow-2xs cursor-pointer shrink-0"
           >
-            <FaFileExcel className="text-emerald-600" />
-            <span>Export</span>
+            <FaFileExcel className="text-emerald-600" size={12} />
+            <span>Export Excel</span>
           </button>
         </div>
-      </div>
+      </TableToolbar>
 
       {/* Table */}
-      <div className="overflow-x-auto w-full">
-        {paginated.length === 0 ? (
+      <TableScroll>
+        {isLoading ? (
+          <TableSkeleton columnCount={8} rowCount={8} />
+        ) : paginated.length === 0 ? (
           <EmptyState
             title="No Product Sales Found"
             description="No line items found in the current transactions set."
           />
         ) : (
-          <table className="w-full text-left border-collapse text-xs">
-            <thead>
-              <tr className="bg-[#41BEF3] text-black text-xs font-semibold">
-                <th className="py-2.5 px-3 text-center w-10">SL</th>
-                <th className="py-2.5 px-3">Product Code</th>
-                <th className="py-2.5 px-3">Product Name</th>
-                <th className="py-2.5 px-3 text-right">Qty Sold</th>
-                <th className="py-2.5 px-3 text-center">Unit</th>
-                <th className="py-2.5 px-3 text-right">Avg Price</th>
-                <th className="py-2.5 px-3 text-right">Total Revenue</th>
-                <th className="py-2.5 px-3 text-right">% of Sales</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100 font-medium text-gray-700">
+          <Table>
+            <TableHead>
+              <TableTh align="center" width={40}>SL</TableTh>
+              <TableTh width={130}>Product Code</TableTh>
+              <TableTh>Product Description</TableTh>
+              <TableTh align="center" width={70}>Unit</TableTh>
+              <TableTh align="center" width={80}>Orders</TableTh>
+              <TableTh align="right" width={100}>Qty Sold</TableTh>
+              <TableTh align="right" width={110}>Avg Rate (৳)</TableTh>
+              <TableTh align="right" width={110}>Discounts (৳)</TableTh>
+              <TableTh align="right" width={130}>Net Revenue (৳)</TableTh>
+              <TableTh align="right" width={110}>Contribution</TableTh>
+            </TableHead>
+            <TableBody>
               {paginated.map((item, idx) => {
                 const sharePct =
                   grandProductRevenue > 0
-                    ? Math.round((item.totalRevenue / grandProductRevenue) * 100)
-                    : 0;
+                    ? ((item.totalRevenue / grandProductRevenue) * 100).toFixed(1)
+                    : "0.0";
                 const avgPrice =
                   item.totalQuantity > 0
                     ? Math.round(item.totalRevenue / item.totalQuantity)
@@ -227,63 +273,42 @@ export const ProductSalesReportTable: React.FC<ProductSalesReportTableProps> = (
                     <td className="py-2.5 px-3 text-center text-gray-700 font-semibold text-xs">
                       {(currentPage - 1) * pageSize + idx + 1}
                     </td>
-                    <td className="py-2.5 px-3  font-bold text-gray-800">
+                    <td className="py-2.5 px-3 font-bold font-mono text-xs text-gray-900">
                       {item.productCode}
                     </td>
                     <td className="py-2.5 px-3 font-semibold text-gray-900">
                       {item.productName}
                     </td>
-                    <td className="py-2.5 px-3 text-right font-black text-indigo-700">
-                      {item.totalQuantity}
-                    </td>
-                    <td className="py-2.5 px-3 text-center text-gray-500  text-[11px]">
+                    <td className="py-2.5 px-3 text-center text-gray-500 text-xs">
                       {item.unit}
                     </td>
-                    <td className="py-2.5 px-3 text-right text-gray-700">
+                    <td className="py-2.5 px-3 text-center font-mono text-xs text-gray-700">
+                      {item.invoicesCount}
+                    </td>
+                    <td className="py-2.5 px-3 text-right font-bold font-mono text-xs text-gray-900">
+                      {item.totalQuantity}
+                    </td>
+                    <td className="py-2.5 px-3 text-right font-mono text-xs text-gray-700">
                       ৳ {formatMoney(avgPrice)}
                     </td>
-                    <td className="py-2.5 px-3 text-right font-bold text-emerald-600 whitespace-nowrap">
+                    <td className="py-2.5 px-3 text-right font-mono text-xs text-gray-500">
+                      {item.totalDiscount > 0
+                        ? `৳ ${formatMoney(item.totalDiscount)}`
+                        : "N/A"}
+                    </td>
+                    <td className="py-2.5 px-3 text-right font-bold font-mono text-xs text-gray-900 whitespace-nowrap">
                       ৳ {formatMoney(item.totalRevenue)}
                     </td>
-                    <td className="py-2.5 px-3 text-right">
-                      <div className="flex items-center justify-end gap-2">
-                        <span className="font-bold text-gray-700 text-[11px]">
-                          {sharePct}%
-                        </span>
-                        <div className="w-12 bg-gray-100 rounded-full h-1.5 overflow-hidden">
-                          <div
-                            className="bg-[#009fe3] h-full rounded-full"
-                            style={{ width: `${Math.min(100, sharePct)}%` }}
-                          />
-                        </div>
-                      </div>
+                    <td className="py-2.5 px-3 text-right font-mono text-xs font-semibold text-gray-700">
+                      {sharePct}%
                     </td>
                   </tr>
                 );
               })}
-            </tbody>
-            {/* Table Summary Footer */}
-            <tfoot className="bg-gray-50/80 font-bold text-gray-800 border-t border-gray-200">
-              <tr>
-                <td colSpan={3} className="py-2.5 px-3 text-right  text-[11px]">
-                  Total Across Visible Products:
-                </td>
-                <td className="py-2.5 px-3 text-right text-indigo-800">
-                  {filtered.reduce((acc, p) => acc + p.totalQuantity, 0)}
-                </td>
-                <td colSpan={2}></td>
-                <td className="py-2.5 px-3 text-right text-emerald-700">
-                  ৳{" "}
-                  {formatMoney(
-                    filtered.reduce((acc, p) => acc + p.totalRevenue, 0)
-                  )}
-                </td>
-                <td className="py-2.5 px-3 text-right">100%</td>
-              </tr>
-            </tfoot>
-          </table>
+            </TableBody>
+          </Table>
         )}
-      </div>
+      </TableScroll>
 
       {/* Pagination Footer */}
       {paginated.length > 0 && (
@@ -299,7 +324,7 @@ export const ProductSalesReportTable: React.FC<ProductSalesReportTableProps> = (
           entityLabel="products"
         />
       )}
-    </div>
+    </TableContainer>
   );
 };
 

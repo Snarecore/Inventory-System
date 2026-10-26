@@ -278,10 +278,10 @@ export const menu = [
 				name: "Reports",
 				title: "Reports",
 				icon: FaChartBar,
-				path: "/reports/sales",
+				path: "/admin/reports/sales",
 				permissionKey: "reports.view",
 				subItems: [
-					{ id: 96, name: "Sales Reports", path: "/reports/sales", permissionKey: "reports.sales.view" },
+					{ id: 96, name: "Sales Reports", path: "/admin/reports/sales", permissionKey: "reports.sales.view" },
 					{ id: 97, name: "Purchase Reports", path: "/reports/purchase", permissionKey: "reports.purchase.view" },
 					{ id: 98, name: "Inventory Reports", path: "/reports/inventory", permissionKey: "reports.inventory.view" },
 					{ id: 99, name: "Customer Reports", path: "/reports/customer", permissionKey: "reports.customer.view" },

@@ -93,8 +93,16 @@ export const router = createBrowserRouter([
     element: <Navigate to="/admin/create-sale" replace />,
   },
   {
+    path: '/reports',
+    element: <Navigate to="/admin/reports/sales" replace />,
+  },
+  {
+    path: '/reports/sales',
+    element: <Navigate to="/admin/reports/sales" replace />,
+  },
+  {
     path: '/sales/reports',
-    element: <Navigate to="/admin/sales-report" replace />,
+    element: <Navigate to="/admin/reports/sales" replace />,
   },
   {
     path: '/sales/collection',
@@ -291,6 +299,10 @@ export const router = createBrowserRouter([
       },
       {
         path: 'sales-report',
+        element: withSuspense(SalesReport),
+      },
+      {
+        path: 'reports/sales',
         element: withSuspense(SalesReport),
       },
       {

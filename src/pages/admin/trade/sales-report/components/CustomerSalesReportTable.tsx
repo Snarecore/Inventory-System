@@ -1,8 +1,19 @@
 import React, { useState, useMemo } from "react";
-import { FaUserTie, FaFileExcel, FaPhone, FaMapMarkerAlt } from "react-icons/fa";
+import { FaFileExcel } from "react-icons/fa";
+import { FiChevronDown } from "react-icons/fi";
 import Search from "@/components/table-components/Search";
-import EmptyState from "@/components/empty-state/EmptyState";
-import TablePaginationFooter from "@/components/table-components/TablePaginationFooter";
+import {
+  TableContainer,
+  TableToolbar,
+  TableScroll,
+  Table,
+  TableHead,
+  TableTh,
+  TableBody,
+  TablePaginationFooter,
+  TableSkeleton,
+  EmptyState,
+} from "@/components/common";
 import { formatMoney } from "@/utils/formatters";
 import * as XLSX from "xlsx";
 import { showSuccessToast, showErrorToast } from "@/utils/toast-utils";
@@ -12,6 +23,7 @@ import { useDebounce } from "@/hooks/useDebounce";
 
 interface CustomerSalesReportTableProps {
   transactions: SaleItem[];
+  isLoading?: boolean;
 }
 
 interface CustomerSummary {
@@ -28,10 +40,12 @@ interface CustomerSummary {
 
 export const CustomerSalesReportTable: React.FC<CustomerSalesReportTableProps> = ({
   transactions,
+  isLoading,
 }) => {
   const [searchQuery, setSearchQuery] = useState("");
   const debouncedSearch = useDebounce(searchQuery, 250);
-  const [filterDueOnly, setFilterDueOnly] = useState(false);
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [sortBy, setSortBy] = useState<string>("billed_desc");
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
 
@@ -86,24 +100,42 @@ export const CustomerSalesReportTable: React.FC<CustomerSalesReportTableProps> =
       }
     });
 
-    return Object.values(map).sort((a, b) => b.totalBilled - a.totalBilled);
+    return Object.values(map);
   }, [transactions]);
 
-  // Filtered
+  // Filter & Sort
   const filtered = useMemo(() => {
-    return customerSummaries.filter((c) => {
-      if (filterDueOnly && c.totalDue <= 0) return false;
-      if (debouncedSearch.trim()) {
-        const q = debouncedSearch.toLowerCase().trim();
-        return (
+    let list = customerSummaries;
+
+    if (statusFilter === "due_only") {
+      list = list.filter((c) => c.totalDue > 0);
+    } else if (statusFilter === "cleared_only") {
+      list = list.filter((c) => c.totalDue <= 0);
+    }
+
+    if (debouncedSearch.trim()) {
+      const q = debouncedSearch.toLowerCase().trim();
+      list = list.filter(
+        (c) =>
           c.customerName.toLowerCase().includes(q) ||
           c.customerPhone.toLowerCase().includes(q) ||
           c.customerAddress.toLowerCase().includes(q)
-        );
-      }
-      return true;
-    });
-  }, [customerSummaries, debouncedSearch, filterDueOnly]);
+      );
+    }
+
+    const sorted = [...list];
+    if (sortBy === "billed_desc") {
+      sorted.sort((a, b) => b.totalBilled - a.totalBilled);
+    } else if (sortBy === "due_desc") {
+      sorted.sort((a, b) => b.totalDue - a.totalDue);
+    } else if (sortBy === "orders_desc") {
+      sorted.sort((a, b) => b.invoicesCount - a.invoicesCount);
+    } else if (sortBy === "name_asc") {
+      sorted.sort((a, b) => a.customerName.localeCompare(b.customerName));
+    }
+
+    return sorted;
+  }, [customerSummaries, debouncedSearch, statusFilter, sortBy]);
 
   const totalCount = filtered.length;
   const pageCount = Math.ceil(totalCount / pageSize) || 1;
@@ -119,18 +151,19 @@ export const CustomerSalesReportTable: React.FC<CustomerSalesReportTableProps> =
     }
 
     try {
-      const data = customerSummaries.map((c, idx) => ({
+      const data = filtered.map((c, idx) => ({
         "SL": idx + 1,
         "Customer Name": c.customerName,
         "Phone": c.customerPhone,
         "Address": c.customerAddress,
-        "Total Invoices": c.invoicesCount,
+        "Total Orders": c.invoicesCount,
         "Total Billed (BDT)": c.totalBilled,
         "Total Paid (BDT)": c.totalPaid,
         "Outstanding Due (BDT)": c.totalDue,
-        "Last Purchase Date": c.lastDate
+        "Last Order Date": c.lastDate
           ? moment(c.lastDate).format("DD MMM YYYY")
           : "-",
+        "Status": c.totalDue > 0 ? "Has Due" : "Settled",
       }));
 
       const ws = XLSX.utils.json_to_sheet(data);
@@ -147,81 +180,96 @@ export const CustomerSalesReportTable: React.FC<CustomerSalesReportTableProps> =
   };
 
   return (
-    <div className="bg-white rounded-xl shadow-xs border border-gray-200 overflow-hidden">
+    <TableContainer>
       {/* Top Filter Bar */}
-      <div className="p-3 border-b border-gray-200 flex flex-col sm:flex-row gap-2.5 items-stretch sm:items-center justify-between">
-        <div className="flex items-center gap-2">
-          <span className="p-1.5 rounded-lg bg-indigo-50 text-indigo-600">
-            <FaUserTie size={14} />
-          </span>
-          <div>
-            <h3 className="text-xs font-bold text-gray-900">
-              Customer-Wise Sales Analysis (কাস্টমারভিত্তিক হিসাব)
-            </h3>
-            <p className="text-[10px] text-gray-500">
-              Breakdown of total purchases, collections, and outstanding dues per customer
-            </p>
-          </div>
+      <TableToolbar>
+        <div className="w-full sm:w-48 md:w-56 shrink-0">
+          <Search
+            searchQuery={searchQuery}
+            onSearchChange={(val) => {
+              setSearchQuery(val);
+              setCurrentPage(1);
+            }}
+            setSearchQuery={setSearchQuery}
+            placeholder="Search customer name, phone, address..."
+          />
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          <label className="flex items-center gap-1.5 text-xs font-semibold text-gray-700 cursor-pointer bg-gray-50 px-2.5 py-1.5 rounded-lg border border-gray-200 hover:bg-gray-100">
-            <input
-              type="checkbox"
-              checked={filterDueOnly}
+          {/* Status filter */}
+          <div className="relative w-36 shrink-0">
+            <select
+              value={statusFilter}
               onChange={(e) => {
-                setFilterDueOnly(e.target.checked);
+                setStatusFilter(e.target.value);
                 setCurrentPage(1);
               }}
-              className="accent-[#009fe3] rounded cursor-pointer"
+              className="w-full h-8 pl-2.5 pr-6 text-xs border border-gray-200 rounded-lg bg-gray-50/50 hover:bg-white text-gray-800 font-medium focus:outline-none focus:border-[var(--primary-color)] cursor-pointer appearance-none"
+            >
+              <option value="all">All Customers</option>
+              <option value="due_only">With Outstanding Due</option>
+              <option value="cleared_only">Settled / Zero Due</option>
+            </select>
+            <FiChevronDown
+              className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none text-xs"
+              size={13}
             />
-            <span className="text-[11px]">Due Customers Only</span>
-          </label>
+          </div>
 
-          <div className="w-full sm:w-52">
-            <Search
-              value={searchQuery}
+          {/* Sort selector */}
+          <div className="relative w-36 shrink-0">
+            <select
+              value={sortBy}
               onChange={(e) => {
-                setSearchQuery(e.target.value);
+                setSortBy(e.target.value);
                 setCurrentPage(1);
               }}
-              placeholder="Search customer..."
+              className="w-full h-8 pl-2.5 pr-6 text-xs border border-gray-200 rounded-lg bg-gray-50/50 hover:bg-white text-gray-800 font-medium focus:outline-none focus:border-[var(--primary-color)] cursor-pointer appearance-none"
+            >
+              <option value="billed_desc">Highest Billed</option>
+              <option value="due_desc">Highest Due</option>
+              <option value="orders_desc">Most Orders</option>
+              <option value="name_asc">Name (A-Z)</option>
+            </select>
+            <FiChevronDown
+              className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none text-xs"
+              size={13}
             />
           </div>
 
           <button
             type="button"
             onClick={handleExport}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-lg transition-colors cursor-pointer shrink-0"
+            className="flex items-center gap-1.5 px-3 h-8 text-xs font-semibold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 rounded-lg transition-all shadow-2xs cursor-pointer shrink-0"
           >
-            <FaFileExcel className="text-emerald-600" />
-            <span>Export</span>
+            <FaFileExcel className="text-emerald-600" size={12} />
+            <span>Export Excel</span>
           </button>
         </div>
-      </div>
+      </TableToolbar>
 
       {/* Table */}
-      <div className="overflow-x-auto w-full">
-        {paginated.length === 0 ? (
+      <TableScroll>
+        {isLoading ? (
+          <TableSkeleton columnCount={8} rowCount={8} />
+        ) : paginated.length === 0 ? (
           <EmptyState
             title="No Customers Found"
-            description="No customers match the current search or filters."
+            description="No customer accounts match the current filter criteria."
           />
         ) : (
-          <table className="w-full text-left border-collapse text-xs">
-            <thead>
-              <tr className="bg-[#41BEF3] text-black text-xs font-semibold">
-                <th className="py-2.5 px-3 text-center w-10">SL</th>
-                <th className="py-2.5 px-3">Customer Information</th>
-                <th className="py-2.5 px-3 text-center">Invoices</th>
-                <th className="py-2.5 px-3 text-right">Total Billed</th>
-                <th className="py-2.5 px-3 text-right">Total Paid</th>
-                <th className="py-2.5 px-3 text-right">Outstanding Due</th>
-                <th className="py-2.5 px-3 text-center">Last Purchase</th>
-                <th className="py-2.5 px-3 text-center">Status</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100 font-medium text-gray-700">
+          <Table>
+            <TableHead>
+              <TableTh align="center" width={40}>SL</TableTh>
+              <TableTh>Customer Name & Details</TableTh>
+              <TableTh align="center" width={90}>Orders</TableTh>
+              <TableTh align="right" width={130}>Gross Billed (৳)</TableTh>
+              <TableTh align="right" width={130}>Total Paid (৳)</TableTh>
+              <TableTh align="right" width={130}>Outstanding Due (৳)</TableTh>
+              <TableTh align="center" width={120}>Last Order</TableTh>
+              <TableTh align="center" width={100}>Status</TableTh>
+            </TableHead>
+            <TableBody>
               {paginated.map((c, idx) => {
                 const hasDue = c.totalDue > 0;
 
@@ -234,93 +282,63 @@ export const CustomerSalesReportTable: React.FC<CustomerSalesReportTableProps> =
                       {(currentPage - 1) * pageSize + idx + 1}
                     </td>
                     <td className="py-2.5 px-3">
-                      <div className="font-bold text-gray-900">
+                      <div className="font-semibold text-gray-900 text-xs">
                         {c.customerName}
                       </div>
-                      <div className="flex flex-wrap items-center gap-2 text-[10px] text-gray-500 mt-0.5">
+                      <div className="text-[11px] text-gray-500 mt-0.5 flex flex-wrap items-center gap-2">
                         {c.customerPhone && (
-                          <span className="flex items-center gap-1">
-                            <FaPhone size={8} />
+                          <span className="font-mono text-gray-600">
                             {c.customerPhone}
                           </span>
                         )}
                         {c.customerAddress && (
-                          <span className="flex items-center gap-1">
-                            <FaMapMarkerAlt size={8} />
-                            {c.customerAddress}
+                          <span className="text-gray-400 truncate max-w-xs">
+                            • {c.customerAddress}
                           </span>
                         )}
                       </div>
                     </td>
-                    <td className="py-2.5 px-3 text-center font-bold text-gray-800">
+                    <td className="py-2.5 px-3 text-center font-mono text-xs text-gray-700">
                       {c.invoicesCount}
                     </td>
-                    <td className="py-2.5 px-3 text-right font-bold text-gray-900 whitespace-nowrap">
+                    <td className="py-2.5 px-3 text-right font-bold font-mono text-xs text-gray-900 whitespace-nowrap">
                       ৳ {formatMoney(c.totalBilled)}
                     </td>
-                    <td className="py-2.5 px-3 text-right font-bold text-emerald-600 whitespace-nowrap">
+                    <td className="py-2.5 px-3 text-right font-semibold font-mono text-xs text-emerald-700 whitespace-nowrap">
                       ৳ {formatMoney(c.totalPaid)}
                     </td>
-                    <td className="py-2.5 px-3 text-right font-black whitespace-nowrap">
+                    <td className="py-2.5 px-3 text-right font-mono text-xs whitespace-nowrap">
                       {hasDue ? (
-                        <span className="text-rose-600">
+                        <span className="text-rose-600 font-bold">
                           ৳ {formatMoney(c.totalDue)}
                         </span>
                       ) : (
-                        <span className="text-gray-400 font-medium">৳ 0</span>
+                        <span className="text-gray-400 font-normal">৳ 0</span>
                       )}
                     </td>
-                    <td className="py-2.5 px-3 text-center text-gray-600 whitespace-nowrap text-[11px]">
-                      {c.lastDate ? moment(c.lastDate).format("DD MMM, YYYY") : "-"}
+                    <td className="py-2.5 px-3 text-center text-gray-600 whitespace-nowrap text-xs">
+                      {c.lastDate
+                        ? moment(c.lastDate).format("DD MMM, YYYY")
+                        : "N/A"}
                     </td>
                     <td className="py-2.5 px-3 text-center">
-                      {hasDue ? (
-                        <span className="inline-block px-1.5 py-0.5 rounded-md text-[10px] font-semibold bg-rose-100 text-rose-800 border border-rose-300">
-                          Has Due
-                        </span>
-                      ) : (
-                        <span className="inline-block px-1.5 py-0.5 rounded-md text-[10px] font-semibold bg-emerald-100 text-emerald-800 border border-emerald-300">
-                          Cleared
-                        </span>
-                      )}
+                      <span
+                        className={`inline-block px-2 py-0.5 rounded-md text-[10px] font-semibold border ${
+                          hasDue
+                            ? "bg-rose-50 text-rose-700 border-rose-200"
+                            : "bg-emerald-50 text-emerald-700 border-emerald-200"
+                        }`}
+                      >
+                        {hasDue ? "Has Due" : "Settled"}
+                      </span>
                     </td>
                   </tr>
                 );
               })}
-            </tbody>
-            {/* Table Summary Footer */}
-            <tfoot className="bg-gray-50/80 font-bold text-gray-800 border-t border-gray-200">
-              <tr>
-                <td colSpan={2} className="py-2.5 px-3 text-right  text-[11px]">
-                  Total Across Visible Customers:
-                </td>
-                <td className="py-2.5 px-3 text-center text-indigo-800">
-                  {filtered.reduce((acc, c) => acc + c.invoicesCount, 0)}
-                </td>
-                <td className="py-2.5 px-3 text-right text-gray-900">
-                  ৳{" "}
-                  {formatMoney(
-                    filtered.reduce((acc, c) => acc + c.totalBilled, 0)
-                  )}
-                </td>
-                <td className="py-2.5 px-3 text-right text-emerald-700">
-                  ৳{" "}
-                  {formatMoney(
-                    filtered.reduce((acc, c) => acc + c.totalPaid, 0)
-                  )}
-                </td>
-                <td className="py-2.5 px-3 text-right text-rose-700">
-                  ৳{" "}
-                  {formatMoney(
-                    filtered.reduce((acc, c) => acc + c.totalDue, 0)
-                  )}
-                </td>
-                <td colSpan={2}></td>
-              </tr>
-            </tfoot>
-          </table>
+            </TableBody>
+          </Table>
         )}
-      </div>
+      </TableScroll>
 
       {/* Pagination Footer */}
       {paginated.length > 0 && (
@@ -336,7 +354,7 @@ export const CustomerSalesReportTable: React.FC<CustomerSalesReportTableProps> =
           entityLabel="customers"
         />
       )}
-    </div>
+    </TableContainer>
   );
 };
 

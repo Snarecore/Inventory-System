@@ -189,12 +189,12 @@ export const BusinessProfileForm: React.FC<BusinessProfileFormProps> = ({
             </h2>
             {formData.orgId && (
               <span className="text-[10px] font-semibold px-2 py-0.5 rounded-md bg-blue-50 text-blue-700 border border-blue-200">
-                Org #{formData.orgId}
+                Org {formData.orgId}
               </span>
             )}
             {formData.branchId && (
               <span className="text-[10px] font-semibold px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200">
-                Branch #{formData.branchId}
+                Branch {formData.branchId}
               </span>
             )}
           </div>
@@ -224,7 +224,7 @@ export const BusinessProfileForm: React.FC<BusinessProfileFormProps> = ({
                 onChange={updateField("businessName")}
                 required
                 error={errors.businessName}
-                placeholder="e.g. Zia Enterprises"
+                placeholder="e.g. Zia Enterprise"
               />
 
               <SelectInput
@@ -254,7 +254,7 @@ export const BusinessProfileForm: React.FC<BusinessProfileFormProps> = ({
                 onChange={updateField("businessPhone1")}
                 required
                 error={errors.businessPhone1}
-                placeholder="e.g. 01317020309"
+                placeholder="e.g. 01317090809"
               />
 
               <InputField

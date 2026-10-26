@@ -2,43 +2,33 @@ import React, { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import moment from "moment";
 import {
-  FaChartBar,
-  FaCalendarAlt,
-  FaFileAlt,
   FaPrint,
-  FaDatabase,
-  FaListAlt,
+  FaShoppingCart,
   FaBoxes,
   FaUserFriends,
-  FaMoneyCheckAlt,
-  FaChartPie,
 } from "react-icons/fa";
 import PageHeader from "@/components/page-header/PageHeader";
+import Button from "@/components/button/Button";
 import RefreshButton from "@/components/table-components/RefreshButton";
 import DateRangePicker from "@/components/date-range-picker/DateRangePicker";
-import SalesReportStats from "./components/SalesReportStats";
-import SalesReportCharts from "./components/SalesReportCharts";
+import TradeInvoiceStats from "@/components/trade/TradeInvoiceStats";
 import SalesReportTable from "./components/SalesReportTable";
 import ProductSalesReportTable from "./components/ProductSalesReportTable";
 import CustomerSalesReportTable from "./components/CustomerSalesReportTable";
-import PaymentChannelReportTable from "./components/PaymentChannelReportTable";
 import PrintableSalesReportModal from "./components/PrintableSalesReportModal";
 import SaleInvoiceModal from "@/pages/admin/trade/sales/components/SaleInvoiceModal";
 import apiConfig from "@/config/api.json";
 import { salesTransactionReportQueryKey } from "@/config/query-key";
 import { buildAccessUser } from "@/utils/access-user";
 import { postData } from "@/services/api-service";
-import {
-  mockSalesReportTransactions,
-  filterMockSalesByDateRange,
-} from "./data/mockSalesReportData";
+import { fetchSalesList, normalizeSaleRecord } from "@/pages/admin/trade/sales/hooks/useSalesQueries";
 import type { SaleItem } from "@/types";
 
-type ReportTab = "invoices" | "products" | "customers" | "channels";
+type ReportTab = "invoices" | "products" | "customers";
 
 const SalesReportPage: React.FC = () => {
   // Date range filters
-  const [dateRange, setDateRange] = useState<string>("thisMonth");
+  const [dateRange, setDateRange] = useState<string>("this_month");
   const [customStartDate, setCustomStartDate] = useState<string>(() =>
     moment().startOf("month").format("YYYY-MM-DD")
   );
@@ -46,22 +36,15 @@ const SalesReportPage: React.FC = () => {
     moment().endOf("month").format("YYYY-MM-DD")
   );
 
-  // Active sub-tab
+  // Active report tab
   const [activeTab, setActiveTab] = useState<ReportTab>("invoices");
-
-  // Show / Hide visual charts
-  const [showCharts, setShowCharts] = useState<boolean>(true);
-
-  // Data Mode toggle: "mock" or "live"
-  // Default to live data for production
-  const [useMockData, setUseMockData] = useState<boolean>(false);
 
   // Modals state
   const [selectedInvoice, setSelectedInvoice] = useState<SaleItem | null>(null);
   const [isInvoiceModalOpen, setIsInvoiceModalOpen] = useState<boolean>(false);
   const [isPrintSummaryOpen, setIsPrintSummaryOpen] = useState<boolean>(false);
 
-  // Compute startDate and endDate formatted as YYYY-MM-DD for /get-sale-transaction-report
+  // Compute startDate and endDate formatted as YYYY-MM-DD
   const { startDate, endDate } = useMemo(() => {
     let start = moment().startOf("month").format("YYYY-MM-DD");
     let end = moment().endOf("month").format("YYYY-MM-DD");
@@ -72,15 +55,24 @@ const SalesReportPage: React.FC = () => {
     } else if (dateRange === "yesterday") {
       start = moment().subtract(1, "day").format("YYYY-MM-DD");
       end = moment().subtract(1, "day").format("YYYY-MM-DD");
-    } else if (dateRange === "last7days") {
-      start = moment().subtract(7, "days").format("YYYY-MM-DD");
-      end = moment().format("YYYY-MM-DD");
-    } else if (dateRange === "thisMonth") {
+    } else if (dateRange === "this_week" || dateRange === "last7days") {
+      start = moment().startOf("week").format("YYYY-MM-DD");
+      end = moment().endOf("week").format("YYYY-MM-DD");
+    } else if (dateRange === "this_month" || dateRange === "thisMonth") {
       start = moment().startOf("month").format("YYYY-MM-DD");
       end = moment().endOf("month").format("YYYY-MM-DD");
-    } else if (dateRange === "lastMonth") {
+    } else if (dateRange === "last_month" || dateRange === "lastMonth") {
       start = moment().subtract(1, "month").startOf("month").format("YYYY-MM-DD");
       end = moment().subtract(1, "month").endOf("month").format("YYYY-MM-DD");
+    } else if (dateRange === "30_days") {
+      start = moment().subtract(30, "days").format("YYYY-MM-DD");
+      end = moment().format("YYYY-MM-DD");
+    } else if (dateRange === "this_year") {
+      start = moment().startOf("year").format("YYYY-MM-DD");
+      end = moment().endOf("year").format("YYYY-MM-DD");
+    } else if (dateRange === "all") {
+      start = "";
+      end = "";
     } else if (dateRange === "custom" && customStartDate && customEndDate) {
       start = customStartDate;
       end = customEndDate;
@@ -89,61 +81,91 @@ const SalesReportPage: React.FC = () => {
     return { startDate: start, endDate: end };
   }, [dateRange, customStartDate, customEndDate]);
 
-  // Fetch /get-sale-transaction-report from live API
+  // Fetch Sales Report transactions from live API
   const {
     data: liveReportData,
     isLoading: isLiveLoading,
     isFetching,
     refetch,
-  } = useQuery({
+  } = useQuery<SaleItem[]>({
     queryKey: [salesTransactionReportQueryKey, startDate, endDate],
     queryFn: async () => {
       const accessUser = buildAccessUser();
       const endpoint = apiConfig.sales.salesTransactionReportUrl;
 
-      const res: any = await postData({
-        url: endpoint,
-        body: {
-          accessUser,
-          startDate,
-          endDate,
-          fromDate: startDate,
-          toDate: endDate,
-        },
-      });
+      let rawList: any[] = [];
+      try {
+        const res: any = await postData({
+          url: endpoint,
+          body: {
+            accessUser,
+            startDate,
+            endDate,
+            fromDate: startDate,
+            toDate: endDate,
+          },
+        });
 
-      const list =
-        res?.saleTransactionReport ||
-        res?.transactionList ||
-        res?.saleList ||
-        res?.sales ||
-        res?.data ||
-        [];
+        const list =
+          res?.saleTransactionReport ||
+          res?.transactionList ||
+          res?.saleList ||
+          res?.sales ||
+          res?.data;
 
-      return Array.isArray(list) ? list : [];
+        if (Array.isArray(list) && list.length > 0) {
+          rawList = list;
+        }
+      } catch (err) {
+        console.warn("Failed fetching from get-sale-transaction-report, trying get-sale-list fallback:", err);
+      }
+
+      // Fallback to fetchSalesList if report endpoint returned no data or failed
+      if (rawList.length === 0) {
+        const allSales = await fetchSalesList();
+        rawList = allSales;
+      }
+
+      // Normalize and filter by date range
+      const normalized = (Array.isArray(rawList) ? rawList : []).map(normalizeSaleRecord);
+
+      if (!startDate || !endDate) {
+        return normalized.map((item, idx) => ({
+          ...item,
+          orderNo:
+            item.orderNo ||
+            (item.invoiceNo ? item.invoiceNo.replace("INV-", "SO-") : `SO-${1000 + (item.id || idx)}`),
+        }));
+      }
+
+      const start = moment(startDate).startOf("day");
+      const end = moment(endDate).endOf("day");
+
+      return normalized
+        .filter((item: any) => {
+          const dStr = item.salesDate || item.saleDate || item.date || item.createdAt;
+          if (!dStr) return true;
+          const d = moment(dStr);
+          return d.isBetween(start, end, undefined, "[]");
+        })
+        .map((item, idx) => ({
+          ...item,
+          orderNo:
+            item.orderNo ||
+            (item.invoiceNo ? item.invoiceNo.replace("INV-", "SO-") : `SO-${1000 + (item.id || idx)}`),
+        }));
     },
-    enabled: !useMockData,
     staleTime: 60 * 1000,
   });
 
-  // Effective transactions data based on mode
+  // Effective transactions data (pure live API)
   const transactions: SaleItem[] = useMemo(() => {
-    if (useMockData) {
-      return filterMockSalesByDateRange(
-        mockSalesReportTransactions,
-        startDate,
-        endDate
-      );
-    }
-    if (Array.isArray(liveReportData) && liveReportData.length > 0) {
-      return liveReportData;
-    }
-    return [];
-  }, [useMockData, liveReportData, startDate, endDate]);
+    return Array.isArray(liveReportData) ? liveReportData : [];
+  }, [liveReportData]);
 
-  const isLoading = !useMockData && isLiveLoading;
+  const isLoading = isLiveLoading || isFetching;
 
-  // Calculate Aggregates
+  // Calculate Financial Aggregates
   const stats = useMemo(() => {
     let totalSalesVolume = 0;
     let totalCollected = 0;
@@ -179,7 +201,6 @@ const SalesReportPage: React.FC = () => {
         bankCollected += paid;
       }
 
-      // Quantity count from lines
       const details =
         t.salesDetails ||
         t.saleDetails ||
@@ -219,187 +240,102 @@ const SalesReportPage: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-col gap-3 px-3 py-2 sm:px-4 sm:py-3 max-w-[1600px] mx-auto w-full">
-      {/* Page Header & Controls */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+    <div className="flex flex-col gap-2 sm:gap-2.5 px-3 py-1.5 sm:px-4 sm:py-2 max-w-[1600px] mx-auto w-full">
+      {/* ── Top Header & Global Actions ── */}
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2.5">
         <PageHeader
-          headerTitle="Sales Report & Analytics"
-          headerDescription="Audit breakdown of all sales revenue, payment channels, customers, and receivable collections"
+          headerTitle="Sales Report"
+          headerDescription="Sales transactions, collections, and financial summary"
         />
 
-        {/* Action Controls */}
-        <div className="flex flex-wrap items-center gap-2 self-start md:self-auto">
-          {/* Mock vs Live Data Toggle */}
-          <div className="flex items-center gap-1.5 bg-white border border-gray-200 rounded-lg p-1 shadow-2xs text-xs">
-            <button
-              type="button"
-              onClick={() => setUseMockData(true)}
-              className={`flex items-center gap-1 px-2.5 py-1 rounded-md font-semibold transition-all cursor-pointer ${
-                useMockData
-                  ? "bg-[#009fe3] text-white shadow-2xs"
-                  : "text-gray-600 hover:text-black"
-              }`}
-            >
-              <FaDatabase size={11} />
-              <span>Mock Data</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setUseMockData(false)}
-              className={`flex items-center gap-1 px-2.5 py-1 rounded-md font-semibold transition-all cursor-pointer ${
-                !useMockData
-                  ? "bg-[#009fe3] text-white shadow-2xs"
-                  : "text-gray-600 hover:text-black"
-              }`}
-            >
-              <span>Live API</span>
-            </button>
-          </div>
-
+        <div className="flex items-center flex-wrap sm:flex-nowrap gap-2 self-start md:self-auto shrink-0">
           {/* Date Range Picker */}
-          <DateRangePicker
-            startDate={customStartDate}
-            endDate={customEndDate}
-            selectedPreset={dateRange}
-            onPresetChange={(r) => setDateRange(r)}
-            onChange={({ startDate: s, endDate: e, label }) => {
-              if (s) setCustomStartDate(s);
-              if (e) setCustomEndDate(e);
-              if (label) setDateRange(label);
-            }}
-            size="sm"
-          />
-
-          {/* Print Summary Report */}
-          <button
-            type="button"
-            onClick={() => setIsPrintSummaryOpen(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-gray-700 bg-white hover:bg-gray-50 border border-gray-200 rounded-lg shadow-2xs transition-colors cursor-pointer"
-          >
-            <FaPrint className="text-gray-500" size={12} />
-            <span className="hidden sm:inline">Print Report</span>
-          </button>
+          <div className="w-36 sm:w-40 shrink-0">
+            <DateRangePicker
+              startDate={customStartDate}
+              endDate={customEndDate}
+              selectedPreset={dateRange}
+              onPresetChange={(r) => setDateRange(r)}
+              onChange={({ startDate: s, endDate: e, label }) => {
+                if (s) setCustomStartDate(s);
+                if (e) setCustomEndDate(e);
+                if (label) setDateRange(label);
+              }}
+              size="sm"
+            />
+          </div>
 
           {/* Refresh */}
           <RefreshButton
-            onClick={() => {
-              if (!useMockData) refetch();
-            }}
-            isLoading={isLoading || isFetching}
+            onClick={() => refetch()}
+            isLoading={isLoading}
+          />
+
+          {/* Print Summary Report */}
+          <Button
+            label="Print Report"
+            size="sm"
+            onClick={() => setIsPrintSummaryOpen(true)}
+            color="var(--primary-color)"
+            hoverColor="var(--primary-color-hover)"
+            className="h-8 rounded-md text-xs font-medium px-3 whitespace-nowrap shrink-0 flex items-center gap-1.5"
+            icon={<FaPrint className="text-white text-xs" />}
           />
         </div>
       </div>
 
-      {/* Date Period & Mock Mode Banner */}
-      <div className="flex flex-wrap items-center justify-between gap-2 text-xs font-semibold text-gray-600 bg-white px-3.5 py-2 rounded-xl border border-gray-200 shadow-2xs">
-        <div className="flex items-center gap-2">
-          <FaCalendarAlt className="text-[#009fe3] text-xs" />
-          <span>Active Report Window:</span>
-          <span className="font-bold text-gray-900">
-            {moment(startDate).format("DD MMM, YYYY")} -{" "}
-            {moment(endDate).format("DD MMM, YYYY")}
-          </span>
-          <span className="text-gray-400 font-normal">
-            ({transactions.length} transactions recorded)
-          </span>
-        </div>
-
-        <div className="flex items-center gap-2">
-          {useMockData ? (
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200">
-              <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
-              UI Prototype Mode (Mock Data Active)
-            </span>
-          ) : (
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-              Connected to Production API
-            </span>
-          )}
-
-          <button
-            type="button"
-            onClick={() => setShowCharts(!showCharts)}
-            className="text-[11px] font-semibold text-[#009fe3] cursor-pointer ml-1"
-          >
-            {showCharts ? "Hide Visual Charts" : "Show Visual Charts"}
-          </button>
-        </div>
-      </div>
-
-      {/* KPI Cards Grid */}
-      <SalesReportStats
-        totalSalesVolume={stats.totalSalesVolume}
-        totalCollected={stats.totalCollected}
+      {/* ── KPI Cards (Authentic Cash-Boi TradeInvoiceStats) ── */}
+      <TradeInvoiceStats
+        type="sale"
+        totalCount={stats.totalInvoices}
+        totalAmount={stats.totalSalesVolume}
+        totalPaid={stats.totalCollected}
         totalDue={stats.totalDue}
-        totalInvoices={stats.totalInvoices}
-        cashCollected={stats.cashCollected}
-        mfsCollected={stats.mfsCollected}
-        bankCollected={stats.bankCollected}
-        totalDiscount={stats.totalDiscount}
-        totalQuantitySold={stats.totalQuantitySold}
-        unpaidCount={stats.unpaidCount}
       />
 
-      {/* Visual Analytics Charts (Trend & Channel Mix) */}
-      {showCharts && <SalesReportCharts transactions={transactions} />}
-
-      {/* Navigation Sub-Tabs */}
-      <div className="flex items-center gap-1.5 border-b border-gray-200 pb-1 mt-1 overflow-x-auto">
+      {/* ── Unified Tab Switcher (Matches Sales & Purchases Page Design) ── */}
+      <div className="flex items-center gap-1.5 border-b border-gray-200/90 -my-0.5">
         <button
           type="button"
           onClick={() => setActiveTab("invoices")}
-          className={`flex items-center gap-2 px-3.5 py-2 text-xs font-bold rounded-lg transition-all cursor-pointer whitespace-nowrap ${
+          className={`flex items-center gap-1.5 px-3 sm:px-3.5 py-1 text-xs font-bold transition-all border-b-2 cursor-pointer ${
             activeTab === "invoices"
-              ? "bg-[#009fe3] text-white shadow-2xs"
-              : "text-gray-600 hover:text-black hover:bg-gray-100"
+              ? "border-[var(--color-primary)] text-[var(--color-primary)] bg-sky-50/50 rounded-t-md"
+              : "border-transparent text-gray-600 hover:text-black hover:bg-gray-50 rounded-t-md"
           }`}
         >
-          <FaListAlt size={13} />
-          <span>Invoices Audit List ({transactions.length})</span>
+          <FaShoppingCart size={11} />
+          <span>Sales Invoices ({transactions.length})</span>
         </button>
 
         <button
           type="button"
           onClick={() => setActiveTab("products")}
-          className={`flex items-center gap-2 px-3.5 py-2 text-xs font-bold rounded-lg transition-all cursor-pointer whitespace-nowrap ${
+          className={`flex items-center gap-1.5 px-3 sm:px-3.5 py-1 text-xs font-bold transition-all border-b-2 cursor-pointer ${
             activeTab === "products"
-              ? "bg-[#009fe3] text-white shadow-2xs"
-              : "text-gray-600 hover:text-black hover:bg-gray-100"
+              ? "border-[var(--color-primary)] text-[var(--color-primary)] bg-sky-50/50 rounded-t-md"
+              : "border-transparent text-gray-600 hover:text-black hover:bg-gray-50 rounded-t-md"
           }`}
         >
-          <FaBoxes size={13} />
-          <span>Product-Wise Sales Summary</span>
+          <FaBoxes size={11} />
+          <span>Product-Wise Sales</span>
         </button>
 
         <button
           type="button"
           onClick={() => setActiveTab("customers")}
-          className={`flex items-center gap-2 px-3.5 py-2 text-xs font-bold rounded-lg transition-all cursor-pointer whitespace-nowrap ${
+          className={`flex items-center gap-1.5 px-3 sm:px-3.5 py-1 text-xs font-bold transition-all border-b-2 cursor-pointer ${
             activeTab === "customers"
-              ? "bg-[#009fe3] text-white shadow-2xs"
-              : "text-gray-600 hover:text-black hover:bg-gray-100"
+              ? "border-[var(--color-primary)] text-[var(--color-primary)] bg-sky-50/50 rounded-t-md"
+              : "border-transparent text-gray-600 hover:text-black hover:bg-gray-50 rounded-t-md"
           }`}
         >
-          <FaUserFriends size={13} />
-          <span>Customer-Wise Sales Analysis</span>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => setActiveTab("channels")}
-          className={`flex items-center gap-2 px-3.5 py-2 text-xs font-bold rounded-lg transition-all cursor-pointer whitespace-nowrap ${
-            activeTab === "channels"
-              ? "bg-[#009fe3] text-white shadow-2xs"
-              : "text-gray-600 hover:text-black hover:bg-gray-100"
-          }`}
-        >
-          <FaMoneyCheckAlt size={13} />
-          <span>Payment Channel Reconciliation</span>
+          <FaUserFriends size={11} />
+          <span>Customer-Wise Sales</span>
         </button>
       </div>
 
-      {/* Active Tab Content */}
+      {/* ── Active Report View ── */}
       <div className="w-full">
         {activeTab === "invoices" && (
           <SalesReportTable
@@ -411,19 +347,21 @@ const SalesReportPage: React.FC = () => {
         )}
 
         {activeTab === "products" && (
-          <ProductSalesReportTable transactions={transactions} />
+          <ProductSalesReportTable
+            transactions={transactions}
+            isLoading={isLoading}
+          />
         )}
 
         {activeTab === "customers" && (
-          <CustomerSalesReportTable transactions={transactions} />
-        )}
-
-        {activeTab === "channels" && (
-          <PaymentChannelReportTable transactions={transactions} />
+          <CustomerSalesReportTable
+            transactions={transactions}
+            isLoading={isLoading}
+          />
         )}
       </div>
 
-      {/* Single Printable / Viewable Invoice Modal */}
+      {/* ── Single Invoice Modal Preview ── */}
       <SaleInvoiceModal
         isOpen={isInvoiceModalOpen}
         onClose={() => {
@@ -433,7 +371,7 @@ const SalesReportPage: React.FC = () => {
         sale={selectedInvoice}
       />
 
-      {/* Printable Period Sales Summary Report Sheet */}
+      {/* ── Printable A4 Sales Report Sheet Modal ── */}
       <PrintableSalesReportModal
         isOpen={isPrintSummaryOpen}
         onClose={() => setIsPrintSummaryOpen(false)}

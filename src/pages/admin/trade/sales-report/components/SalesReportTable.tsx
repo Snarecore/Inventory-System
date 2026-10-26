@@ -1,7 +1,7 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useRef, useEffect, useMemo } from "react";
 import moment from "moment";
-import { FiEye, FiPrinter, FiDownload } from "react-icons/fi";
-import { FaPhone, FaCalendarAlt, FaFileExcel, FaSearch, FaShoppingBag } from "react-icons/fa";
+import { FiEye, FiPrinter, FiChevronDown, FiCopy, FiCheck, FiRotateCcw } from "react-icons/fi";
+import { FaFileExcel, FaSearch } from "react-icons/fa";
 import Search from "@/components/table-components/Search";
 import {
   TableContainer,
@@ -11,12 +11,12 @@ import {
   TableHead,
   TableTh,
   TableBody,
-  TableRow,
-  TableCell,
   TablePaginationFooter,
   TableSkeleton,
+  TableActionButtons,
   EmptyState,
 } from "@/components/common";
+import ColumnVisibilityDropdown, { type ColumnItem } from "@/components/table-components/ColumnVisibilityDropdown";
 import { formatMoney } from "@/utils/formatters";
 import { exportSalesToExcel } from "@/utils/excel-export";
 import { showSuccessToast, showErrorToast } from "@/utils/toast-utils";
@@ -40,52 +40,195 @@ export const SalesReportTable: React.FC<SalesReportTableProps> = ({
   const debouncedSearch = useDebounce(searchQuery, 250);
   const [paymentFilter, setPaymentFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [customerFilter, setCustomerFilter] = useState<string>("all");
+  const [sortBy, setSortBy] = useState<string>("latest");
   const [currentPage, setCurrentPage] = useState<number>(1);
-  const [pageSize, setPageSize] = useState<number>(15);
+  const [pageSize, setPageSize] = useState<number>(10);
+  const [copiedId, setCopiedId] = useState<string | number | null>(null);
 
-  const handleExport = () => {
-    if (!transactions || transactions.length === 0) {
-      showErrorToast("No transactions to export");
-      return;
-    }
-    try {
-      exportSalesToExcel(transactions, {
-        fileName: `Sales_Transaction_Report_${moment().format("YYYY-MM-DD")}.xlsx`,
-        sheetName: "Sales Transactions",
-      });
-      showSuccessToast("Sales transaction report exported successfully");
-    } catch (e: any) {
-      showErrorToast(e?.message || "Export failed");
-    }
+  // Searchable customer dropdown state
+  const [isCustomerDropdownOpen, setIsCustomerDropdownOpen] = useState<boolean>(false);
+  const [customerSearchQuery, setCustomerSearchQuery] = useState<string>("");
+  const customerRef = useRef<HTMLDivElement>(null);
+
+  // Copy Order ID to clipboard
+  const handleCopyOrderId = (text?: string, id?: string | number) => {
+    if (!text) return;
+    navigator.clipboard.writeText(text);
+    if (id !== undefined) setCopiedId(id);
+    showSuccessToast(`Copied Order ID: ${text}`);
+    setTimeout(() => {
+      setCopiedId(null);
+    }, 2000);
   };
 
-  // Filtered
+  // Close customer dropdown on click outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (customerRef.current && !customerRef.current.contains(event.target as Node)) {
+        setIsCustomerDropdownOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  // Distinct customer list from transactions for dropdown
+  const customersList = useMemo(() => {
+    const map = new Map<string, { id: string; name: string; phone: string }>();
+    transactions.forEach((t: any) => {
+      const name = t.customerName || t.customer_name || t.partyName || "Walk-in Customer";
+      const phone = t.customerPhone || t.customer_phone || "";
+      const id = String(t.customerId || t.customer_id || name);
+      if (!map.has(name)) {
+        map.set(name, { id, name, phone });
+      }
+    });
+    return Array.from(map.values());
+  }, [transactions]);
+
+  const filteredCustomerOptions = useMemo(() => {
+    if (!customerSearchQuery.trim()) return customersList;
+    const q = customerSearchQuery.toLowerCase().trim();
+    return customersList.filter(
+      (c) => c.name.toLowerCase().includes(q) || c.phone.toLowerCase().includes(q)
+    );
+  }, [customersList, customerSearchQuery]);
+
+  const currentCustomerLabel = customerFilter === "all"
+    ? "All Customers"
+    : customerFilter;
+
+  // Available Columns Configuration
+  const availableColumns: ColumnItem[] = [
+    { key: "sl", label: "SL" },
+    { key: "orderId", label: "Order ID" },
+    { key: "customer", label: "Customer" },
+    { key: "phone", label: "Phone" },
+    { key: "date", label: "Date" },
+    { key: "items", label: "Items" },
+    { key: "subtotal", label: "Subtotal" },
+    { key: "discount", label: "Discount" },
+    { key: "vat", label: "VAT" },
+    { key: "total", label: "Grand Total" },
+    { key: "paid", label: "Paid" },
+    { key: "due", label: "Due" },
+    { key: "method", label: "Method" },
+    { key: "status", label: "Status" },
+    { key: "actions", label: "Actions" },
+  ];
+
+  const [visibleColumns, setVisibleColumns] = useState<Record<string, boolean>>(() => {
+    try {
+      const saved = localStorage.getItem("sales_report_table_columns");
+      if (saved) return JSON.parse(saved);
+    } catch {}
+    return {};
+  });
+
+  const isColVisible = (key: string) => visibleColumns[key] !== false;
+
+  const handleToggleColumn = (key: string) => {
+    setVisibleColumns((prev) => {
+      const currentlyVisible = prev[key] !== false;
+      const willBeVisible = !currentlyVisible;
+      const countAfter = availableColumns.filter((c) =>
+        c.key === key ? willBeVisible : prev[c.key] !== false
+      ).length;
+      if (countAfter === 0) return prev;
+      const next = { ...prev, [key]: willBeVisible };
+      try {
+        localStorage.setItem("sales_report_table_columns", JSON.stringify(next));
+      } catch {}
+      return next;
+    });
+  };
+
+  const handleResetColumns = () => {
+    const resetState: Record<string, boolean> = {};
+    availableColumns.forEach((c) => {
+      resetState[c.key] = true;
+    });
+    setVisibleColumns(resetState);
+    try {
+      localStorage.removeItem("sales_report_table_columns");
+    } catch {}
+  };
+
+  const activeVisibleColumnCount = availableColumns.filter((c) => isColVisible(c.key)).length;
+
+  const isAnyFilterActive =
+    searchQuery.trim() !== "" ||
+    customerFilter !== "all" ||
+    paymentFilter !== "all" ||
+    statusFilter !== "all" ||
+    sortBy !== "latest";
+
+  const handleResetFilters = () => {
+    setSearchQuery("");
+    setCustomerFilter("all");
+    setPaymentFilter("all");
+    setStatusFilter("all");
+    setSortBy("latest");
+    setCurrentPage(1);
+  };
+
+  // Filter & Sort
   const filtered = useMemo(() => {
-    return transactions.filter((t: any) => {
+    let list = transactions.filter((t: any) => {
       if (debouncedSearch.trim()) {
         const q = debouncedSearch.toLowerCase().trim();
+        const orderNo = String(t.orderNo || "").toLowerCase();
         const inv = String(t.invoiceNo || t.invoice_no || "").toLowerCase();
         const name = String(t.customerName || t.customer_name || "").toLowerCase();
         const phone = String(t.customerPhone || t.customer_phone || "").toLowerCase();
-        if (!inv.includes(q) && !name.includes(q) && !phone.includes(q)) return false;
+        if (!orderNo.includes(q) && !inv.includes(q) && !name.includes(q) && !phone.includes(q)) {
+          return false;
+        }
       }
+
+      if (customerFilter !== "all") {
+        const cName = String(t.customerName || t.customer_name || t.partyName || "Walk-in Customer");
+        if (cName.toLowerCase() !== customerFilter.toLowerCase()) return false;
+      }
+
       if (paymentFilter !== "all") {
         const p = String(t.paymentType || t.payment_type || "CASH").toUpperCase();
-        if (p !== paymentFilter) return false;
+        if (paymentFilter === "MFS") {
+          if (p !== "MFS" && p !== "BKASH" && p !== "NAGAD") return false;
+        } else if (paymentFilter === "BANK") {
+          if (p !== "BANK" && p !== "CARD") return false;
+        } else if (p !== paymentFilter) {
+          return false;
+        }
       }
+
       if (statusFilter !== "all") {
-        const s = String(t.status || "").toUpperCase();
         const gt = Number(t.grandTotal ?? t.grand_total ?? t.totalAmount ?? 0);
         const paid = Number(t.paidAmount ?? t.paid_amount ?? 0);
         const due = Number(t.dueAmount ?? t.due_amount ?? Math.max(0, gt - paid));
 
         if (statusFilter === "PAID" && (due > 0 || paid === 0)) return false;
         if (statusFilter === "PARTIAL" && (due === 0 || paid === 0)) return false;
-        if (statusFilter === "PENDING" && (paid > 0 && due === 0)) return false;
+        if (statusFilter === "DUE" && due === 0) return false;
       }
+
       return true;
     });
-  }, [transactions, debouncedSearch, paymentFilter, statusFilter]);
+
+    const sorted = [...list];
+    if (sortBy === "amount_high_to_low") {
+      sorted.sort((a: any, b: any) => Number(b.grandTotal ?? 0) - Number(a.grandTotal ?? 0));
+    } else if (sortBy === "amount_low_to_high") {
+      sorted.sort((a: any, b: any) => Number(a.grandTotal ?? 0) - Number(b.grandTotal ?? 0));
+    } else if (sortBy === "customer_a_to_z") {
+      sorted.sort((a: any, b: any) => String(a.customerName || "").localeCompare(String(b.customerName || "")));
+    } else if (sortBy === "customer_z_to_a") {
+      sorted.sort((a: any, b: any) => String(b.customerName || "").localeCompare(String(a.customerName || "")));
+    }
+
+    return sorted;
+  }, [transactions, debouncedSearch, customerFilter, paymentFilter, statusFilter, sortBy]);
 
   const totalCount = filtered.length;
   const pageCount = Math.ceil(totalCount / pageSize) || 1;
@@ -94,132 +237,274 @@ export const SalesReportTable: React.FC<SalesReportTableProps> = ({
     currentPage * pageSize
   );
 
-  // Compute column totals for visible filtered transactions
-  const totals = filtered.reduce(
-    (acc, item: any) => {
-      const gt = Number(item.grandTotal ?? item.grand_total ?? item.totalAmount ?? 0);
-      const paid = Number(item.paidAmount ?? item.paid_amount ?? 0);
-      const due = Number(item.dueAmount ?? item.due_amount ?? Math.max(0, gt - paid));
-      const sub = Number(item.totalAmount ?? item.total_amount ?? gt);
-      const disc = Number(item.discount ?? 0);
-      const vat = Number(item.vat ?? 0);
-      const del = Number(item.delivery_charge ?? item.deliveryCharge ?? 0);
+  const handleExport = () => {
+    if (!filtered || filtered.length === 0) {
+      showErrorToast("No sales records available to export");
+      return;
+    }
+    try {
+      exportSalesToExcel(filtered, {
+        fileName: `Sales_Report_${moment().format("YYYY-MM-DD")}.xlsx`,
+        sheetName: "Sales",
+      });
+      showSuccessToast(`Successfully exported ${filtered.length} sales to Excel!`);
+    } catch (e: any) {
+      showErrorToast(e?.message || "Export failed");
+    }
+  };
 
-      acc.subtotal += sub;
-      acc.discount += disc;
-      acc.vatDel += vat + del;
-      acc.grandTotal += gt;
-      acc.paid += paid;
-      acc.due += due;
-      return acc;
-    },
-    { subtotal: 0, discount: 0, vatDel: 0, grandTotal: 0, paid: 0, due: 0 }
-  );
+  const renderSortHeader = (label: string, activeKey: "customer" | "amount") => {
+    const isAsc =
+      sortBy === (activeKey === "customer" ? "customer_a_to_z" : "amount_low_to_high");
+    const isDesc =
+      sortBy === (activeKey === "customer" ? "customer_z_to_a" : "amount_high_to_low");
+
+    const handleClick = () => {
+      if (activeKey === "customer") {
+        setSortBy(isAsc ? "customer_z_to_a" : isDesc ? "latest" : "customer_a_to_z");
+      } else {
+        setSortBy(isAsc ? "amount_high_to_low" : isDesc ? "latest" : "amount_low_to_high");
+      }
+      setCurrentPage(1);
+    };
+
+    return (
+      <span
+        onClick={handleClick}
+        className="inline-flex items-center gap-1 select-none text-black cursor-pointer"
+      >
+        <span>{label}</span>
+        <FiChevronDown
+          size={11}
+          className={`text-black transition-transform duration-200 ${
+            isAsc ? "rotate-180" : ""
+          }`}
+        />
+      </span>
+    );
+  };
 
   return (
     <TableContainer>
       {/* Top Filter Bar */}
       <TableToolbar>
-        <div className="w-full md:w-64">
-          <Search
-            value={searchQuery}
-            onChange={(e) => {
-              setSearchQuery(e.target.value);
-              setCurrentPage(1);
-            }}
-            placeholder="Search invoice, customer, phone..."
-          />
+        {/* Left Section: Search & Dropdown Filters in uniform height */}
+        <div className="flex flex-wrap items-center gap-2 flex-1 min-w-0">
+          {/* Search Box */}
+          <div className="w-full sm:w-44 md:w-48 lg:w-52 shrink-0">
+            <Search
+              searchQuery={searchQuery}
+              onSearchChange={(val) => {
+                setSearchQuery(val);
+                setCurrentPage(1);
+              }}
+              setSearchQuery={setSearchQuery}
+              placeholder="Search order, customer..."
+            />
+          </div>
+
+          {/* Searchable Customer Filter */}
+          {customersList.length > 0 && (
+            <div className="relative w-[calc(50%-4px)] sm:w-36 shrink-0 z-50" ref={customerRef}>
+              <button
+                type="button"
+                onClick={() => setIsCustomerDropdownOpen(!isCustomerDropdownOpen)}
+                className="w-full h-8 px-2 flex items-center justify-between text-xs border border-gray-200 rounded-lg bg-gray-50/50 hover:bg-white text-black font-medium focus:outline-none focus:border-[var(--color-primary)] cursor-pointer"
+              >
+                <span className="truncate flex-1 text-left">{currentCustomerLabel}</span>
+                <FiChevronDown className="text-gray-500 shrink-0 ml-1 text-xs" size={13} />
+              </button>
+
+              {isCustomerDropdownOpen && (
+                <div className="absolute left-0 top-full mt-1 w-64 max-w-[calc(100vw-2rem)] bg-white rounded-lg shadow-2xl border border-gray-200 p-2 z-[99999]">
+                  <div className="relative mb-2">
+                    <FaSearch className="absolute left-2.5 top-2.5 text-gray-400 text-xs" />
+                    <input
+                      type="text"
+                      placeholder="Search customer name, phone..."
+                      value={customerSearchQuery}
+                      onChange={(e) => setCustomerSearchQuery(e.target.value)}
+                      className="w-full pl-7 pr-2 py-1.5 text-xs border border-[var(--color-primary)] rounded-md focus:outline-none focus:border-[var(--color-primary)] text-black"
+                      autoFocus
+                    />
+                  </div>
+
+                  <div className="max-h-48 overflow-y-auto divide-y divide-gray-100">
+                    <div
+                      onClick={() => {
+                        setCustomerFilter("all");
+                        setIsCustomerDropdownOpen(false);
+                        setCustomerSearchQuery("");
+                        setCurrentPage(1);
+                      }}
+                      className={`p-2 hover:bg-sky-50 cursor-pointer rounded-md transition-colors text-xs font-medium ${
+                        customerFilter === "all"
+                          ? "bg-sky-50 text-[var(--color-primary)] font-semibold"
+                          : "text-black"
+                      }`}
+                    >
+                      All Customers
+                    </div>
+
+                    {filteredCustomerOptions.length > 0 ? (
+                      filteredCustomerOptions.map((c) => {
+                        const isSelected = customerFilter.toLowerCase() === c.name.toLowerCase();
+                        return (
+                          <div
+                            key={c.id + c.name}
+                            onClick={() => {
+                              setCustomerFilter(c.name);
+                              setIsCustomerDropdownOpen(false);
+                              setCustomerSearchQuery("");
+                              setCurrentPage(1);
+                            }}
+                            className={`p-2 hover:bg-sky-50 cursor-pointer rounded-md transition-colors text-xs flex justify-between items-center ${
+                              isSelected
+                                ? "bg-sky-50 text-[var(--color-primary)] font-semibold"
+                                : "text-black"
+                            }`}
+                          >
+                            <span className="truncate">{c.name}</span>
+                            {c.phone && (
+                              <span className="text-[10px] text-gray-500 shrink-0 ml-1">
+                                ({c.phone})
+                              </span>
+                            )}
+                          </div>
+                        );
+                      })
+                    ) : (
+                      <div className="p-3 text-center text-gray-400 text-xs">No customer found</div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Status Filter */}
+          <div className="relative w-[calc(50%-4px)] sm:w-28 shrink-0">
+            <select
+              value={statusFilter}
+              onChange={(e) => {
+                setStatusFilter(e.target.value);
+                setCurrentPage(1);
+              }}
+              className="w-full h-8 pl-2.5 pr-6 text-xs border border-gray-200 rounded-lg bg-gray-50/50 hover:bg-white text-black font-medium focus:outline-none focus:border-[var(--color-primary)] cursor-pointer appearance-none"
+            >
+              <option value="all">All Status</option>
+              <option value="PAID">Paid</option>
+              <option value="PARTIAL">Partial</option>
+              <option value="DUE">Due / Credit</option>
+            </select>
+            <FiChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 text-black pointer-events-none text-xs" size={13} />
+          </div>
+
+          {/* Payment Method Filter */}
+          <div className="relative w-[calc(50%-4px)] sm:w-28 shrink-0">
+            <select
+              value={paymentFilter}
+              onChange={(e) => {
+                setPaymentFilter(e.target.value);
+                setCurrentPage(1);
+              }}
+              className="w-full h-8 pl-2.5 pr-6 text-xs border border-gray-200 rounded-lg bg-gray-50/50 hover:bg-white text-black font-medium focus:outline-none focus:border-[var(--color-primary)] cursor-pointer appearance-none"
+            >
+              <option value="all">All Methods</option>
+              <option value="CASH">Cash</option>
+              <option value="CREDIT">Credit</option>
+              <option value="MFS">MFS</option>
+              <option value="BANK">Bank</option>
+            </select>
+            <FiChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 text-black pointer-events-none text-xs" size={13} />
+          </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
-          {/* Payment filter */}
-          <select
-            value={paymentFilter}
-            onChange={(e) => {
-              setPaymentFilter(e.target.value);
-              setCurrentPage(1);
-            }}
-            className="text-xs font-semibold px-2.5 py-1.5 bg-gray-50 border border-gray-200 rounded-lg text-gray-700 focus:outline-none focus:ring-1 focus:ring-primary cursor-pointer"
-          >
-            <option value="all">All Payments</option>
-            <option value="CASH">Cash</option>
-            <option value="CREDIT">Credit / Due</option>
-          </select>
+        {/* Right Actions: Reset & Excel Export Button */}
+        <div className="flex items-center justify-end gap-1.5 sm:gap-2 shrink-0 w-full sm:w-auto pt-1 sm:pt-0 border-t sm:border-t-0 border-gray-100">
+          {isAnyFilterActive && (
+            <button
+              type="button"
+              onClick={handleResetFilters}
+              title="Reset all active filters"
+              className="flex-1 sm:flex-none flex items-center justify-center gap-1 px-2.5 h-8 text-[11px] sm:text-xs font-semibold text-rose-600 bg-rose-50 hover:bg-rose-100 border border-rose-200 rounded-lg transition-colors cursor-pointer shrink-0"
+            >
+              <FiRotateCcw size={12} />
+              <span>Reset</span>
+            </button>
+          )}
 
-          {/* Status filter */}
-          <select
-            value={statusFilter}
-            onChange={(e) => {
-              setStatusFilter(e.target.value);
-              setCurrentPage(1);
-            }}
-            className="text-xs font-semibold px-2.5 py-1.5 bg-gray-50 border border-gray-200 rounded-lg text-gray-700 focus:outline-none focus:ring-1 focus:ring-primary cursor-pointer"
-          >
-            <option value="all">All Status</option>
-            <option value="PAID">Fully Paid</option>
-            <option value="PARTIAL">Partially Paid</option>
-            <option value="PENDING">Pending / Due</option>
-          </select>
+          {/* Column Visibility Menu */}
+          <ColumnVisibilityDropdown
+            columns={availableColumns}
+            visibleColumns={visibleColumns}
+            onToggle={handleToggleColumn}
+            onReset={handleResetColumns}
+          />
 
+          {/* Excel Export Button */}
           <button
             type="button"
             onClick={handleExport}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-lg transition-colors cursor-pointer shrink-0"
+            title="Download Sales Report Excel"
+            className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3 h-8 text-[11px] sm:text-xs font-semibold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 rounded-lg transition-all shadow-xs cursor-pointer active:scale-95"
           >
-            <FaFileExcel className="text-emerald-600" />
-            <span>Export Excel</span>
+            <FaFileExcel className="text-emerald-600 shrink-0" size={12} />
+            <span>Excel</span>
           </button>
         </div>
       </TableToolbar>
 
-      {/* Table */}
+      {/* Main Table Content */}
       <TableScroll>
         {isLoading ? (
-          <TableSkeleton columnCount={11} rowCount={8} />
-        ) : paginated.length === 0 ? (
+          <TableSkeleton columnCount={activeVisibleColumnCount} rowCount={8} />
+        ) : filtered.length === 0 ? (
           <EmptyState
-            title="No Transactions Found"
-            description="There are no sales transactions matching the selected filters."
+            title="No Sales Transactions Found"
+            description="There are no sales records matching your selected search or filters."
+            buttonText={isAnyFilterActive ? "Reset Filters" : undefined}
+            onButtonClick={handleResetFilters}
           />
         ) : (
           <Table>
             <TableHead>
-              <TableTh align="center" width={40}>SL</TableTh>
-              <TableTh>Invoice / Date</TableTh>
-              <TableTh>Customer</TableTh>
-              <TableTh align="center">Items</TableTh>
-              <TableTh align="right">Subtotal</TableTh>
-              <TableTh align="right">Discount</TableTh>
-              <TableTh align="right">VAT/Del</TableTh>
-              <TableTh align="right">Grand Total</TableTh>
-              <TableTh align="right">Paid (৳)</TableTh>
-              <TableTh align="right">Due (৳)</TableTh>
-              <TableTh align="center">Payment</TableTh>
-              <TableTh align="center">Status</TableTh>
-              <TableTh align="center" className="w-20">Action</TableTh>
+              {isColVisible("sl") && <TableTh align="center" width={40}>SL</TableTh>}
+              {isColVisible("orderId") && <TableTh className="whitespace-nowrap">Order ID</TableTh>}
+              {isColVisible("customer") && (
+                <TableTh className="min-w-[120px]">
+                  {renderSortHeader("Customer", "customer")}
+                </TableTh>
+              )}
+              {isColVisible("phone") && <TableTh className="whitespace-nowrap">Phone</TableTh>}
+              {isColVisible("date") && <TableTh className="whitespace-nowrap">Date</TableTh>}
+              {isColVisible("items") && <TableTh align="center" className="whitespace-nowrap">Items</TableTh>}
+              {isColVisible("subtotal") && <TableTh align="right" className="whitespace-nowrap">Subtotal</TableTh>}
+              {isColVisible("discount") && <TableTh align="right" className="whitespace-nowrap">Discount</TableTh>}
+              {isColVisible("vat") && <TableTh align="right" className="whitespace-nowrap">VAT</TableTh>}
+              {isColVisible("total") && (
+                <TableTh align="right" className="whitespace-nowrap">
+                  <div className="flex justify-end">
+                    {renderSortHeader("Total", "amount")}
+                  </div>
+                </TableTh>
+              )}
+              {isColVisible("paid") && <TableTh align="right" className="whitespace-nowrap">Paid (৳)</TableTh>}
+              {isColVisible("due") && <TableTh align="right" className="whitespace-nowrap">Due (৳)</TableTh>}
+              {isColVisible("method") && <TableTh align="center" className="w-28 whitespace-nowrap">Method</TableTh>}
+              {isColVisible("status") && <TableTh align="center" className="w-28 whitespace-nowrap">Payment Status</TableTh>}
+              {isColVisible("actions") && <TableTh align="center" className="w-24 whitespace-nowrap">Actions</TableTh>}
             </TableHead>
             <TableBody>
               {paginated.map((item: any, idx: number) => {
-                const grandTotal = Number(
-                  item.grandTotal ?? item.grand_total ?? item.totalAmount ?? 0
-                );
+                const sl = (currentPage - 1) * pageSize + idx + 1;
+                const grandTotal = Number(item.grandTotal ?? item.grand_total ?? item.totalAmount ?? 0);
                 const paid = Number(item.paidAmount ?? item.paid_amount ?? 0);
-                const due = Number(
-                  item.dueAmount ?? item.due_amount ?? Math.max(0, grandTotal - paid)
-                );
-                const sub = Number(
-                  item.totalAmount ?? item.total_amount ?? grandTotal
-                );
+                const due = Number(item.dueAmount ?? item.due_amount ?? Math.max(0, grandTotal - paid));
+                const sub = Number(item.totalAmount ?? item.total_amount ?? grandTotal);
                 const disc = Number(item.discount ?? 0);
                 const vat = Number(item.vat ?? 0);
-                const del = Number(
-                  item.delivery_charge ?? item.deliveryCharge ?? 0
-                );
-                const pType = (
-                  item.paymentType ||
-                  item.payment_type ||
-                  "CASH"
-                ).toUpperCase();
+                const pType = (item.paymentType || item.payment_type || "CASH").toUpperCase();
 
                 const details =
                   item.salesDetails ||
@@ -228,150 +513,195 @@ export const SalesReportTable: React.FC<SalesReportTableProps> = ({
                   item.items ||
                   item.productsList ||
                   [];
-                const itemsCount = Array.isArray(details) ? details.length : 0;
+                const itemsCount = Array.isArray(details) && details.length > 0 ? details.length : Number(item.itemsCount || 1);
 
                 const isFullyPaid = due <= 0 && grandTotal > 0;
                 const isPartial = due > 0 && paid > 0;
 
+                const orderDisplay = item.orderNo || item.invoiceNo || `ORD-${item.id}`;
+
                 return (
                   <tr
                     key={item.id || item.invoiceNo || idx}
-                    className="hover:bg-sky-50/40 transition-colors"
+                    className="hover:bg-sky-50/40 transition-colors group"
                   >
-                    <td className="py-2.5 px-3 text-center text-gray-700 font-semibold text-xs">
-                      {(currentPage - 1) * pageSize + idx + 1}
-                    </td>
-                    <td className="py-2.5 px-3">
-                      <div className="font-bold text-black">
-                        {item.invoiceNo || item.invoice_no || `INV-${item.id}`}
-                      </div>
-                      <div className="text-[10px] text-gray-500 flex items-center gap-1 mt-0.5">
-                        <FaCalendarAlt size={9} />
-                        {item.salesDate || item.saleDate || item.date
-                          ? moment(
-                              item.salesDate || item.saleDate || item.date
-                            ).format("DD MMM YYYY")
-                          : "-"}
-                      </div>
-                    </td>
-                    <td className="py-2.5 px-3">
-                      <div className="font-semibold text-black">
-                        {item.customerName ||
-                          item.customer_name ||
-                          "Walk-in Customer"}
-                      </div>
-                      {(item.customerPhone || item.customer_phone) && (
-                        <div className="text-[10px] text-gray-500 flex items-center gap-1 mt-0.5">
-                          <FaPhone size={8} />
-                          {item.customerPhone || item.customer_phone}
+                    {/* SL */}
+                    {isColVisible("sl") && (
+                      <td className="py-2.5 px-3 text-center text-black text-xs font-normal">
+                        {sl}
+                      </td>
+                    )}
+
+                    {/* Order ID - Exactly as in Purchase Return List */}
+                    {isColVisible("orderId") && (
+                      <td className="py-2.5 px-3 text-black text-xs font-normal whitespace-nowrap">
+                        <div className="flex items-center gap-1.5 group/ord">
+                          <span
+                            onClick={() => onView(item)}
+                            title="Click to view invoice"
+                            className="cursor-pointer hover:text-sky-600 font-medium transition-colors"
+                          >
+                            {orderDisplay}
+                          </span>
+                          {orderDisplay && (
+                            <button
+                              type="button"
+                              onClick={() => handleCopyOrderId(orderDisplay, item.id)}
+                              title="Copy Order ID"
+                              className="p-1 text-gray-400 hover:text-sky-600 transition-colors opacity-0 group-hover/ord:opacity-100 cursor-pointer"
+                            >
+                              {copiedId === item.id ? (
+                                <FiCheck className="text-emerald-600 text-xs" />
+                              ) : (
+                                <FiCopy size={12} />
+                              )}
+                            </button>
+                          )}
                         </div>
-                      )}
-                    </td>
-                    <td className="py-2.5 px-3 text-center">
-                      <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-gray-100 text-gray-700 text-[10px] font-semibold">
-                        <FaShoppingBag size={8} className="text-gray-500" />
-                        {itemsCount > 0 ? `${itemsCount} items` : "1 item"}
-                      </span>
-                    </td>
-                    <td className="py-2.5 px-3 text-right text-gray-700 font-medium">
-                      ৳ {formatMoney(sub)}
-                    </td>
-                    <td className="py-2.5 px-3 text-right text-rose-600 font-medium">
-                      {disc > 0 ? `-৳ ${formatMoney(disc)}` : "-"}
-                    </td>
-                    <td className="py-2.5 px-3 text-right text-gray-600 font-medium">
-                      {vat + del > 0 ? `+৳ ${formatMoney(vat + del)}` : "-"}
-                    </td>
-                    <td className="py-2.5 px-3 text-right font-bold text-black whitespace-nowrap">
-                      ৳ {formatMoney(grandTotal)}
-                    </td>
-                    <td className="py-2.5 px-3 text-right font-bold text-emerald-600 whitespace-nowrap">
-                      ৳ {formatMoney(paid)}
-                    </td>
-                    <td className="py-2.5 px-3 text-right font-bold whitespace-nowrap">
-                      {due > 0 ? (
-                        <span className="text-rose-600 font-bold">
-                          ৳ {formatMoney(due)}
+                      </td>
+                    )}
+
+                    {/* Customer */}
+                    {isColVisible("customer") && (
+                      <td className="py-2.5 px-3 text-black text-xs font-normal whitespace-nowrap">
+                        <span className="font-medium text-black">
+                          {item.customerName || item.customer_name || "Walk-in Customer"}
                         </span>
-                      ) : (
-                        <span className="text-gray-400 font-medium">৳ 0</span>
-                      )}
-                    </td>
-                    <td className="py-2.5 px-3 text-center">
-                      <span className="inline-block px-1.5 py-0.5 text-[10px] font-semibold bg-sky-100 text-sky-900 border border-sky-300 rounded-md">
-                        {pType}
-                      </span>
-                    </td>
-                    <td className="py-2.5 px-3 text-center">
-                      <span
-                        className={`inline-block px-1.5 py-0.5 text-[10px] font-semibold border rounded-md ${
-                          isFullyPaid
-                            ? "bg-emerald-100 text-emerald-800 border-emerald-300"
-                            : isPartial
-                            ? "bg-amber-100 text-amber-800 border-amber-300"
-                            : "bg-rose-100 text-rose-800 border-rose-300"
-                        }`}
-                      >
-                        {isFullyPaid ? "Paid" : isPartial ? "Partial" : "Due"}
-                      </span>
-                    </td>
-                    <td className="py-2 px-3 text-center whitespace-nowrap">
-                      <div className="flex items-center justify-center gap-1.5">
-                        <button
-                          type="button"
-                          onClick={() => onView(item)}
-                          className="p-1 text-sky-600 hover:bg-sky-100 rounded transition-colors cursor-pointer"
-                          title="View Invoice"
+                      </td>
+                    )}
+
+                    {/* Phone */}
+                    {isColVisible("phone") && (
+                      <td className="py-2.5 px-3 text-black text-xs font-normal whitespace-nowrap">
+                        {item.customerPhone || item.customer_phone || (
+                          <span className="text-gray-400 font-normal">N/A</span>
+                        )}
+                      </td>
+                    )}
+
+                    {/* Date */}
+                    {isColVisible("date") && (
+                      <td className="py-2.5 px-3 text-black text-xs font-normal whitespace-nowrap">
+                        {item.salesDate || item.saleDate || item.date ? (
+                          moment(item.salesDate || item.saleDate || item.date).format("DD MMM YYYY")
+                        ) : (
+                          <span className="text-gray-400 font-normal">N/A</span>
+                        )}
+                      </td>
+                    )}
+
+                    {/* Items */}
+                    {isColVisible("items") && (
+                      <td className="py-2.5 px-3 text-center whitespace-nowrap">
+                        <span className="inline-block px-2 py-0.5 rounded bg-gray-100 text-gray-700 text-xs font-medium whitespace-nowrap">
+                          {itemsCount > 0 ? `${itemsCount} ${itemsCount === 1 ? "item" : "items"}` : "1 item"}
+                        </span>
+                      </td>
+                    )}
+
+                    {/* Subtotal */}
+                    {isColVisible("subtotal") && (
+                      <td className="py-2.5 px-3 text-right text-black text-xs font-normal whitespace-nowrap">
+                        ৳ {formatMoney(sub)}
+                      </td>
+                    )}
+
+                    {/* Discount */}
+                    {isColVisible("discount") && (
+                      <td className="py-2.5 px-3 text-right text-xs font-normal whitespace-nowrap">
+                        {disc > 0 ? (
+                          <span className="text-rose-600 font-medium">-৳ {formatMoney(disc)}</span>
+                        ) : (
+                          <span className="text-gray-400 font-normal">N/A</span>
+                        )}
+                      </td>
+                    )}
+
+                    {/* VAT */}
+                    {isColVisible("vat") && (
+                      <td className="py-2.5 px-3 text-right text-gray-600 text-xs font-normal whitespace-nowrap">
+                        {vat > 0 ? (
+                          `+৳ ${formatMoney(vat)}`
+                        ) : (
+                          <span className="text-gray-400 font-normal">N/A</span>
+                        )}
+                      </td>
+                    )}
+
+                    {/* Grand Total */}
+                    {isColVisible("total") && (
+                      <td className="py-2.5 px-3 text-right font-bold text-black text-xs whitespace-nowrap">
+                        ৳ {formatMoney(grandTotal)}
+                      </td>
+                    )}
+
+                    {/* Paid */}
+                    {isColVisible("paid") && (
+                      <td className="py-2.5 px-3 text-right font-semibold text-emerald-600 text-xs whitespace-nowrap">
+                        ৳ {formatMoney(paid)}
+                      </td>
+                    )}
+
+                    {/* Due */}
+                    {isColVisible("due") && (
+                      <td className="py-2.5 px-3 text-right text-xs whitespace-nowrap">
+                        {due > 0 ? (
+                          <span className="text-rose-600 font-bold">
+                            ৳ {formatMoney(due)}
+                          </span>
+                        ) : (
+                          <span className="text-gray-400 font-normal">৳ 0</span>
+                        )}
+                      </td>
+                    )}
+
+                    {/* Payment Type */}
+                    {isColVisible("method") && (
+                      <td className="py-2.5 px-3 text-center w-28 whitespace-nowrap">
+                        <span className="inline-block px-1.5 py-0.5 text-[10px] border rounded-md bg-sky-100 text-sky-900 border-sky-300 font-semibold">
+                          {pType}
+                        </span>
+                      </td>
+                    )}
+
+                    {/* Status */}
+                    {isColVisible("status") && (
+                      <td className="py-2.5 px-3 text-center w-28 whitespace-nowrap">
+                        <span
+                          className={`inline-block px-1.5 py-0.5 text-[10px] border rounded-md font-semibold ${
+                            isFullyPaid
+                              ? "bg-emerald-100 text-emerald-800 border-emerald-300"
+                              : isPartial
+                              ? "bg-amber-100 text-amber-800 border-amber-300"
+                              : "bg-rose-100 text-rose-800 border-rose-300"
+                          }`}
                         >
-                          <FiEye size={14} />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => onPrint(item)}
-                          className="p-1 text-emerald-600 hover:bg-emerald-100 rounded transition-colors cursor-pointer"
-                          title="Print Receipt"
-                        >
-                          <FiPrinter size={14} />
-                        </button>
-                      </div>
-                    </td>
+                          {isFullyPaid ? "Paid" : isPartial ? "Partial" : "Due"}
+                        </span>
+                      </td>
+                    )}
+
+                    {/* Actions */}
+                    {isColVisible("actions") && (
+                      <td className="py-2 px-3 text-center w-24 whitespace-nowrap">
+                        <TableActionButtons
+                          onView={() => onView(item)}
+                          onPrint={() => onPrint(item)}
+                          viewTitle="View Invoice"
+                          printTitle="Print Receipt"
+                        />
+                      </td>
+                    )}
                   </tr>
                 );
               })}
             </TableBody>
-            {/* Summary Totals Row */}
-            <tfoot className="bg-gray-50/90 font-bold text-black border-t-2 border-gray-200">
-              <tr>
-                <td colSpan={4} className="py-2.5 px-3 text-right text-[11px]">
-                  Filtered Totals ({filtered.length} Invoices):
-                </td>
-                <td className="py-2.5 px-3 text-right text-gray-700">
-                  ৳ {formatMoney(totals.subtotal)}
-                </td>
-                <td className="py-2.5 px-3 text-right text-rose-600">
-                  {totals.discount > 0 ? `-৳ ${formatMoney(totals.discount)}` : "-"}
-                </td>
-                <td className="py-2.5 px-3 text-right text-gray-600">
-                  {totals.vatDel > 0 ? `+৳ ${formatMoney(totals.vatDel)}` : "-"}
-                </td>
-                <td className="py-2.5 px-3 text-right text-black font-black">
-                  ৳ {formatMoney(totals.grandTotal)}
-                </td>
-                <td className="py-2.5 px-3 text-right text-emerald-700 font-black">
-                  ৳ {formatMoney(totals.paid)}
-                </td>
-                <td className="py-2.5 px-3 text-right text-rose-700 font-black">
-                  ৳ {formatMoney(totals.due)}
-                </td>
-                <td colSpan={3}></td>
-              </tr>
-            </tfoot>
           </Table>
         )}
       </TableScroll>
 
       {/* Pagination Footer */}
-      {!isLoading && paginated.length > 0 && (
+      {!isLoading && filtered.length > 0 && (
         <TablePaginationFooter
           totalCount={totalCount}
           pageCount={pageCount}
@@ -381,7 +711,7 @@ export const SalesReportTable: React.FC<SalesReportTableProps> = ({
           setCurrentPageNumber={setCurrentPage}
           handlePagination={(data) => setCurrentPage(data.selected + 1)}
           pageSizeOptions={[10, 15, 20, 50]}
-          entityLabel="records"
+          entityLabel="orders"
         />
       )}
     </TableContainer>

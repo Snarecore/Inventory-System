@@ -179,7 +179,8 @@ export const PrintableSalesReportModal: React.FC<PrintableSalesReportModalProps>
               <thead>
                 <tr className="bg-gray-100 text-gray-800 font-bold">
                   <th className="py-2 px-2 text-center w-8">SL</th>
-                  <th className="py-2 px-2">Invoice / Date</th>
+                  <th className="py-2 px-2">Order ID</th>
+                  <th className="py-2 px-2">Date</th>
                   <th className="py-2 px-2">Customer</th>
                   <th className="py-2 px-2 text-right">Grand Total</th>
                   <th className="py-2 px-2 text-right">Paid</th>
@@ -197,11 +198,11 @@ export const PrintableSalesReportModal: React.FC<PrintableSalesReportModalProps>
                   return (
                     <tr key={idx}>
                       <td className="py-1.5 px-2 text-center">{idx + 1}</td>
-                      <td className="py-1.5 px-2  font-semibold">
-                        {t.invoiceNo || `INV-${t.id}`}
-                        <div className="text-[10px] text-gray-400 font-sans">
-                          {t.salesDate || t.date}
-                        </div>
+                      <td className="py-1.5 px-2 font-semibold">
+                        {t.orderNo || t.invoiceNo || `ORD-${t.id}`}
+                      </td>
+                      <td className="py-1.5 px-2 text-gray-600">
+                        {t.salesDate || t.date ? moment(t.salesDate || t.date).format("DD MMM YYYY") : "-"}
                       </td>
                       <td className="py-1.5 px-2">
                         {t.customerName || "Walk-in Customer"}
