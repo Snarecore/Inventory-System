@@ -26,8 +26,8 @@ export const CompanyPage: React.FC = () => {
       {/* ── Page Header (Standard Project CMS Header) ── */}
       <div className="flex items-center justify-between flex-wrap gap-2">
         <PageHeader
-          headerTitle="Company CMS"
-          headerDescription="Manage company information and business logo"
+          headerTitle="Business Profile"
+          headerDescription="Manage business profile, company information and business logo"
         />
         <div className="flex items-center gap-2">
           <RefreshButton

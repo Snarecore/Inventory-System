@@ -176,6 +176,14 @@ export const router = createBrowserRouter([
     path: '/administration',
     element: <Navigate to="/admin/company" replace />,
   },
+  {
+    path: '/settings',
+    element: <Navigate to="/admin/company" replace />,
+  },
+  {
+    path: '/settings/business-profile',
+    element: <Navigate to="/admin/company" replace />,
+  },
 
   {
     path: '/',

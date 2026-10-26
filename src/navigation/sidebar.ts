@@ -317,10 +317,9 @@ export const menu = [
 				name: "Administration",
 				title: "Administration",
 				icon: FaShieldAlt,
-				path: "/admin/company",
+				path: "/admin/users",
 				permissionKey: "admin.view",
 				subItems: [
-					{ id: 110, name: "Company", path: "/admin/company", permissionKey: "admin.company.view" },
 					{ id: 111, name: "Financial Year", path: "/admin/financial-year", permissionKey: "admin.financial_year.view" },
 					{ id: 112, name: "Numbering", path: "/admin/numbering", permissionKey: "admin.numbering.view" },
 					{ id: 113, name: "Users", path: "/admin/users", permissionKey: "admin.users.view" },
@@ -335,9 +334,10 @@ export const menu = [
 				name: "Settings",
 				title: "Settings",
 				icon: FaCog,
-				path: "/settings/system",
+				path: "/admin/company",
 				permissionKey: "settings.view",
 				subItems: [
+					{ id: 110, name: "Business Profile", path: "/admin/company", permissionKey: "settings.business_profile.view" },
 					{ id: 118, name: "System Settings", path: "/settings/system", permissionKey: "settings.system.view" },
 					{ id: 119, name: "Payment Methods", path: "/settings/payment-methods", permissionKey: "settings.payment_methods.view" },
 					{ id: 120, name: "Tax / VAT", path: "/settings/tax", permissionKey: "settings.tax.view" },
