@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState } from "react";
 import PageHeader from "@/components/page-header/PageHeader";
 import { Button, RefreshButton, DeleteModal } from "@/components/common";
 import ProductCategoryTable from "./components/ProductCategoryTable";
@@ -20,7 +20,7 @@ export const ProductCategoryPage: React.FC = () => {
 
   // TanStack Query to fetch product categories
   const { data, isLoading, refetch } = useProductCategoryListQuery();
-  const categories = useMemo(() => data?.categoryList ?? [], [data?.categoryList]);
+  const categories = data?.categoryList || [];
 
   // Mutations
   const statusMutation = useUpdateProductCategoryStatusMutation();

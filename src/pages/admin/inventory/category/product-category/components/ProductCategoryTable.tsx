@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState } from "react";
 import {
   Search,
   EmptyState,
@@ -52,54 +52,45 @@ export const ProductCategoryTable: React.FC<ProductCategoryTableProps> = ({
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
 
-  // Compute status counts in a single pass (memoized)
-  const { statusAllCount, statusActiveCount, statusInactiveCount } = useMemo(() => {
-    let active = 0;
-    let inactive = 0;
-    for (const c of categories) {
-      const st = (c.status || "").toLowerCase();
-      if (st === "active") active++;
-      else if (st === "inactive") inactive++;
-    }
-    return {
-      statusAllCount: categories.length,
-      statusActiveCount: active,
-      statusInactiveCount: inactive,
-    };
-  }, [categories]);
+  // Compute status counts in a single pass
+  let statusActiveCount = 0;
+  let statusInactiveCount = 0;
+  const statusAllCount = categories.length;
 
-  // Status tabs configuration: All -> Active -> Inactive (memoized)
-  const statusTabs = useMemo(
-    () => [
-      { label: "All", value: "", count: statusAllCount },
-      { label: "Active", value: "Active", count: statusActiveCount, icon: FaCheckCircle },
-      { label: "Inactive", value: "Inactive", count: statusInactiveCount, icon: FaTimesCircle },
-    ],
-    [statusAllCount, statusActiveCount, statusInactiveCount]
-  );
+  for (const c of categories) {
+    const st = (c.status || "").toLowerCase();
+    if (st === "active") statusActiveCount++;
+    else if (st === "inactive") statusInactiveCount++;
+  }
 
-  // Filter and sort list (memoized)
-  const sorted = useMemo(() => {
-    const term = searchQuery.trim().toLowerCase();
-    const filtered = categories.filter((item) => {
-      const matchesSearch =
-        !term ||
-        (item.name || "").toLowerCase().includes(term) ||
-        (item.description || "").toLowerCase().includes(term);
+  // Status tabs configuration: All -> Active -> Inactive
+  const statusTabs = [
+    { label: "All", value: "", count: statusAllCount },
+    { label: "Active", value: "Active", count: statusActiveCount, icon: FaCheckCircle },
+    { label: "Inactive", value: "Inactive", count: statusInactiveCount, icon: FaTimesCircle },
+  ];
 
-      const matchesStatus =
-        !statusFilter || (item.status || "").toLowerCase() === statusFilter.toLowerCase();
+  // Filter list
+  const term = searchQuery.trim().toLowerCase();
+  const filtered = categories.filter((item) => {
+    const matchesSearch =
+      !term ||
+      (item.name || "").toLowerCase().includes(term) ||
+      (item.description || "").toLowerCase().includes(term);
 
-      return matchesSearch && matchesStatus;
-    });
+    const matchesStatus =
+      !statusFilter || (item.status || "").toLowerCase() === statusFilter.toLowerCase();
 
-    return [...filtered].sort((a, b) => {
-      const factor = sortDir === "asc" ? 1 : -1;
-      const valA = String(a[sortKey] || "").toLowerCase();
-      const valB = String(b[sortKey] || "").toLowerCase();
-      return valA.localeCompare(valB) * factor;
-    });
-  }, [categories, searchQuery, statusFilter, sortKey, sortDir]);
+    return matchesSearch && matchesStatus;
+  });
+
+  // Sort list
+  const sorted = [...filtered].sort((a, b) => {
+    const factor = sortDir === "asc" ? 1 : -1;
+    const valA = String(a[sortKey] || "").toLowerCase();
+    const valB = String(b[sortKey] || "").toLowerCase();
+    return valA.localeCompare(valB) * factor;
+  });
 
   // Pagination slice
   const totalCount = sorted.length;
@@ -137,7 +128,7 @@ export const ProductCategoryTable: React.FC<ProductCategoryTableProps> = ({
   };
 
   const handleExport = () => {
-    const dataToExport = sorted.length > 0 ? sorted : categories;
+    const dataToExport = filtered.length > 0 ? filtered : categories;
     if (!dataToExport || dataToExport.length === 0) {
       showErrorToast("No product category records available to export");
       return;
