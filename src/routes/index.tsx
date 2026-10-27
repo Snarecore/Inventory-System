@@ -47,17 +47,17 @@ const Company = React.lazy(() => import('@/pages/admin/company'))
 const FinancialCategory = React.lazy(() => import('@/pages/admin/finance/category'))
 
 
-const LoadingFallback = () => (
-  <div className="flex h-64 w-full items-center justify-center">
-    <div className="h-8 w-8 animate-spin rounded-full border-4 border-solid border-primary border-t-transparent"></div>
-  </div>
-)
-
 const withSuspense = (Component: React.ComponentType) => (
-  <Suspense fallback={<LoadingFallback />}>
+  <Suspense
+    fallback={
+      <div className="flex h-64 w-full items-center justify-center">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-solid border-primary border-t-transparent"></div>
+      </div>
+    }
+  >
     <Component />
   </Suspense>
-)
+);
 
 export const router = createBrowserRouter([
   // Public Frontend Routes
@@ -252,6 +252,14 @@ export const router = createBrowserRouter([
       },
       {
         path: 'main-category',
+        element: withSuspense(MainCategory),
+      },
+      {
+        path: 'product-category',
+        element: withSuspense(MainCategory),
+      },
+      {
+        path: 'product-categories',
         element: withSuspense(MainCategory),
       },
       {

@@ -1,5 +1,5 @@
 import * as XLSX from "xlsx";
-import type { PurchaseItem, PurchaseReturnItem, CategoryItem } from "@/types";
+import type { PurchaseItem, PurchaseReturnItem, CategoryItem, ProductCategoryItem } from "@/types";
 import { isCategoryAdmin, normalizeCategoryType } from "@/services/category-service";
 
 export interface GenericExcelExportOptions {
@@ -410,4 +410,39 @@ export function exportCategoriesToExcel(
 
   buildAndDownloadExcel(rows, totalRow, { fileName, sheetName });
 }
+
+/**
+ * Enterprise standard Excel export for Product Categories
+ */
+export function exportProductCategoriesToExcel(
+  categories: ProductCategoryItem[],
+  options?: GenericExcelExportOptions
+): void {
+  if (!categories || categories.length === 0) {
+    throw new Error("No product category records available to export");
+  }
+
+  const todayStr = new Date().toISOString().substring(0, 10);
+  const fileName = options?.fileName || `Product_Categories_${todayStr}.xlsx`;
+  const sheetName = options?.sheetName || "Product Categories";
+
+  const rows = categories.map((item, index) => {
+    return {
+      SL: index + 1,
+      "Category Name": item.name || "",
+      Description: item.description || "—",
+      Status: item.status || "Active",
+    };
+  });
+
+  const totalRow = {
+    SL: "TOTAL",
+    "Category Name": `Total Categories: ${categories.length}`,
+    Description: "",
+    Status: "",
+  };
+
+  buildAndDownloadExcel(rows, totalRow, { fileName, sheetName });
+}
+
 

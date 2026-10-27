@@ -113,5 +113,12 @@
         "insertCategoryUrl": "insert-category-info",
         "updateCategoryUrl": "update-category-info",
         "updateCategoryStatusUrl": "update-category-status"
+    },
+    "productCategory": {
+        "getProductCategoriesListUrl": "get-product-categories-list",
+        "insertProductCategoriesUrl": "insert-product-categories",
+        "updateProductCategoriesUrl": "update-product-categories",
+        "updateProductCategoriesStatusUrl": "update-product-categories-status",
+        "deleteProductCategoriesUrl": "delete-product-categories"
     }
 }
