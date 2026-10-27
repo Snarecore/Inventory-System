@@ -1,6 +1,6 @@
 import * as XLSX from "xlsx";
-import type { PurchaseItem, PurchaseReturnItem } from "@/types";
-import { getUserInfo } from "./auth-storage";
+import type { PurchaseItem, PurchaseReturnItem, CategoryItem } from "@/types";
+import { isCategoryAdmin, normalizeCategoryType } from "@/services/category-service";
 
 export interface GenericExcelExportOptions {
   fileName?: string;
@@ -374,3 +374,40 @@ export function exportPurchaseReturnToExcel(
 
   buildAndDownloadExcel(rows, totalRow, { fileName, sheetName });
 }
+
+/**
+ * Enterprise standard Excel export for Categories
+ */
+export function exportCategoriesToExcel(
+  categories: CategoryItem[],
+  options?: GenericExcelExportOptions
+): void {
+  if (!categories || categories.length === 0) {
+    throw new Error("No category records available to export");
+  }
+
+  const todayStr = new Date().toISOString().substring(0, 10);
+  const fileName = options?.fileName || `Financial_Categories_${todayStr}.xlsx`;
+  const sheetName = options?.sheetName || "Categories";
+
+  const rows = categories.map((item, index) => {
+    return {
+      SL: index + 1,
+      "Category Name": item.categoryName || "",
+      Type: normalizeCategoryType(item.type),
+      Status: item.status || "Active",
+      "System Default": isCategoryAdmin(item) ? "Yes" : "No",
+    };
+  });
+
+  const totalRow = {
+    SL: "TOTAL",
+    "Category Name": `Total Categories: ${categories.length}`,
+    Type: "",
+    Status: "",
+    "System Default": "",
+  };
+
+  buildAndDownloadExcel(rows, totalRow, { fileName, sheetName });
+}
+

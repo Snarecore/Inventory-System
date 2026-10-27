@@ -1,8 +1,6 @@
 import React, { useState, useEffect } from "react";
-import Modal from "@/components/modal/Modal";
-import Button from "@/components/button/Button";
-import InputField from "@/components/form/TextInput";
-import CurrencyInput from "@/components/form/CurrencyInput";
+import { AnimatePresence, motion } from "framer-motion";
+import { Button, TextInput as InputField } from "@/components/common";
 import {
   useInsertCategoryMutation,
   useUpdateCategoryMutation,
@@ -10,6 +8,8 @@ import {
 import { isCategoryAdmin, normalizeCategoryType } from "@/services/category-service";
 import type { CategoryItem, CategoryType } from "@/types";
 import { showErrorToast } from "@/utils/toast-utils";
+import { TiDelete } from "react-icons/ti";
+import { FaLayerGroup, FaArrowDown, FaArrowUp } from "react-icons/fa";
 
 interface CategoryFormModalProps {
   isOpen: boolean;
@@ -18,40 +18,46 @@ interface CategoryFormModalProps {
   existingCategories?: CategoryItem[];
 }
 
-const TYPE_OPTIONS: { label: string; value: CategoryType }[] = [
-  { label: "Expense", value: "Expense" },
-  { label: "Income", value: "Income" },
-  { label: "Cash", value: "Cash" },
+const TYPE_OPTIONS: {
+  label: string;
+  value: CategoryType;
+  icon: React.ComponentType<{ className?: string }>;
+  activeColor: string;
+}[] = [
+  {
+    label: "Expense",
+    value: "Expense",
+    icon: FaArrowDown,
+    activeColor: "border-rose-400 bg-rose-50 text-rose-700 ring-1 ring-rose-400",
+  },
+  {
+    label: "Income",
+    value: "Income",
+    icon: FaArrowUp,
+    activeColor: "border-sky-400 bg-sky-50 text-sky-700 ring-1 ring-sky-400",
+  },
 ];
 
-export const CategoryFormModal: React.FC<CategoryFormModalProps> = ({
-  isOpen,
-  onClose,
+interface FormContentProps {
+  categoryToEdit?: CategoryItem | null;
+  existingCategories: CategoryItem[];
+  onClose: () => void;
+}
+
+const CategoryFormContent: React.FC<FormContentProps> = ({
   categoryToEdit,
-  existingCategories = [],
+  existingCategories,
+  onClose,
 }) => {
-  const [categoryName, setCategoryName] = useState("");
-  const [categoryType, setCategoryType] = useState<CategoryType>("Expense");
-  const [openingBalance, setOpeningBalance] = useState<string | number>(0);
+  const [categoryName, setCategoryName] = useState(categoryToEdit?.categoryName || "");
+  const [categoryType, setCategoryType] = useState<CategoryType>(
+    categoryToEdit && normalizeCategoryType(String(categoryToEdit.type || "")) === "Income"
+      ? "Income"
+      : "Expense"
+  );
   const [nameError, setNameError] = useState("");
 
   const isEditing = Boolean(categoryToEdit);
-
-  // Sync state when modal opens or categoryToEdit changes
-  useEffect(() => {
-    if (isOpen) {
-      if (categoryToEdit) {
-        setCategoryName(categoryToEdit.categoryName || "");
-        setCategoryType(normalizeCategoryType(String(categoryToEdit.type || "Expense")));
-        setOpeningBalance(Number(categoryToEdit.openingBalance || 0));
-      } else {
-        setCategoryName("");
-        setCategoryType("Expense");
-        setOpeningBalance(0);
-      }
-      setNameError("");
-    }
-  }, [isOpen, categoryToEdit]);
 
   const insertMutation = useInsertCategoryMutation({
     onSuccess: () => onClose(),
@@ -92,8 +98,6 @@ export const CategoryFormModal: React.FC<CategoryFormModalProps> = ({
       return;
     }
 
-    const numBalance = categoryType === "Cash" ? Math.max(0, Number(openingBalance || 0)) : 0;
-
     if (isEditing && categoryToEdit) {
       if (isCategoryAdmin(categoryToEdit)) {
         showErrorToast("Default system category cannot be edited");
@@ -103,51 +107,46 @@ export const CategoryFormModal: React.FC<CategoryFormModalProps> = ({
         categoryId: categoryToEdit.categoryId,
         categoryName: trimmedName,
         categoryType,
-        openingBalance: numBalance,
+        openingBalance: 0,
       });
     } else {
       insertMutation.mutate({
         categoryName: trimmedName,
         categoryType,
-        openingBalance: numBalance,
+        openingBalance: 0,
         transactionDate: new Date().toISOString(),
       });
     }
   };
 
-  const isCash = categoryType === "Cash";
-
   return (
-    <Modal
-      isOpen={isOpen}
-      onClose={onClose}
-      title={isEditing ? "Edit Category" : "Add New Category"}
-      maxWidth="max-w-md"
-      footerButtons={
-        <div className="flex items-center justify-end gap-2.5 w-full">
-          <Button
-            label="Cancel"
-            onClick={onClose}
-            color="var(--color-secondary)"
-            hoverColor="var(--color-secondary-hover)"
-            disabled={isSaving}
-          />
-          <Button
-            label={isEditing ? "Update Category" : "Save Category"}
-            onClick={() => handleSubmit()}
-            color="var(--color-primary)"
-            hoverColor="var(--color-primary-hover)"
-            isLoading={isSaving}
-            disabled={isSaving}
-          />
+    <>
+      {/* Header */}
+      <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between bg-white shrink-0">
+        <div className="flex items-center gap-2">
+          <div className="p-1.5 rounded-lg bg-sky-50 text-[var(--color-primary)]">
+            <FaLayerGroup size={14} />
+          </div>
+          <h2 className="text-sm font-bold text-gray-900 leading-tight">
+            {isEditing ? "Edit Category" : "Add New Category"}
+          </h2>
         </div>
-      }
-    >
-      <form onSubmit={handleSubmit} className="space-y-4 pt-1">
+        <button
+          type="button"
+          onClick={onClose}
+          className="p-1 rounded-lg text-gray-400 hover:text-red-500 hover:bg-gray-100 transition-colors cursor-pointer"
+          title="Close"
+        >
+          <TiDelete className="text-2xl text-red-500" />
+        </button>
+      </div>
+
+      {/* Body */}
+      <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-4 space-y-3.5">
         {/* Category Name */}
         <div>
           <InputField
-            label="Category Name *"
+            label="Category Name"
             placeholder="e.g. Office Rent, Electricity, Tea/Snacks"
             value={categoryName}
             onChange={handleNameChange}
@@ -160,41 +159,106 @@ export const CategoryFormModal: React.FC<CategoryFormModalProps> = ({
         {/* Category Type */}
         <div>
           <label className="block text-xs font-semibold text-gray-800 mb-1.5">
-            Category Type *
+            Category Type <span className="text-red-500">*</span>
           </label>
-          <div className="relative">
-            <select
-              value={categoryType}
-              onChange={(e) => setCategoryType(e.target.value as CategoryType)}
-              className="w-full border border-gray-300 rounded-md px-3 py-2 text-xs bg-white text-gray-800 focus:outline-none focus:border-[var(--color-primary)] cursor-pointer"
-            >
-              {TYPE_OPTIONS.map((opt) => (
-                <option key={opt.value} value={opt.value}>
-                  {opt.label}
-                </option>
-              ))}
-            </select>
+          <div className="grid grid-cols-2 gap-2">
+            {TYPE_OPTIONS.map((opt) => {
+              const isSelected = categoryType === opt.value;
+              const Icon = opt.icon;
+              return (
+                <button
+                  key={opt.value}
+                  type="button"
+                  onClick={() => setCategoryType(opt.value)}
+                  className={`flex items-center justify-center gap-1.5 py-2 px-2 rounded-lg border text-xs font-semibold transition-all cursor-pointer ${
+                    isSelected
+                      ? opt.activeColor
+                      : "border-gray-200 bg-gray-50/60 text-gray-600 hover:border-gray-300 hover:bg-gray-100"
+                  }`}
+                >
+                  <Icon className="text-xs shrink-0" />
+                  <span>{opt.label}</span>
+                </button>
+              );
+            })}
           </div>
         </div>
-
-        {/* Opening Balance (Applicable only for Cash category) */}
-        {isCash && (
-          <div className="p-3 rounded-lg border border-gray-200 bg-gray-50/50 space-y-1">
-            <CurrencyInput
-              label="Opening Balance"
-              value={openingBalance}
-              onChange={(val) => setOpeningBalance(val)}
-              currencySymbol="৳"
-              placeholder="0.00"
-              className="w-full"
-            />
-            <p className="text-[10px] text-gray-500">
-              * An opening balance entry will be generated automatically for this cash category.
-            </p>
-          </div>
-        )}
       </form>
-    </Modal>
+
+      {/* Footer */}
+      <div className="px-4 py-2.5 border-t border-gray-100 bg-gray-50/80 flex items-center justify-end gap-2 shrink-0">
+        <Button
+          label="Cancel"
+          onClick={onClose}
+          color="var(--color-secondary)"
+          hoverColor="var(--color-secondary-hover)"
+          disabled={isSaving}
+        />
+        <Button
+          label={isEditing ? "Update Category" : "Save Category"}
+          onClick={() => handleSubmit()}
+          color="var(--color-primary)"
+          hoverColor="var(--color-primary-hover)"
+          isLoading={isSaving}
+          disabled={isSaving}
+        />
+      </div>
+    </>
+  );
+};
+
+export const CategoryFormModal: React.FC<CategoryFormModalProps> = ({
+  isOpen,
+  onClose,
+  categoryToEdit,
+  existingCategories = [],
+}) => {
+  // Handle ESC key to close
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        onClose();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isOpen, onClose]);
+
+  return (
+    <AnimatePresence>
+      {isOpen && (
+        <div className="fixed inset-0 z-50 overflow-hidden">
+          {/* Backdrop */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            onClick={onClose}
+            className="fixed inset-0 bg-black/40 backdrop-blur-[2px] cursor-pointer"
+          />
+
+          {/* Sidebar Drawer Container */}
+          <div className="fixed inset-y-0 right-0 max-w-full flex pointer-events-none">
+            <motion.div
+              key={categoryToEdit ? `edit-${categoryToEdit.categoryId}` : "create"}
+              initial={{ x: "100%" }}
+              animate={{ x: 0 }}
+              exit={{ x: "100%" }}
+              transition={{ type: "spring", damping: 28, stiffness: 280 }}
+              className="w-screen max-w-[320px] bg-white shadow-2xl flex flex-col pointer-events-auto border-l border-gray-200"
+            >
+              <CategoryFormContent
+                categoryToEdit={categoryToEdit}
+                existingCategories={existingCategories}
+                onClose={onClose}
+              />
+            </motion.div>
+          </div>
+        </div>
+      )}
+    </AnimatePresence>
   );
 };
 

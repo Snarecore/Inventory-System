@@ -1,8 +1,8 @@
 import React, { useState } from "react";
-import Search from "@/components/table-components/Search";
-import EmptyState from "@/components/empty-state/EmptyState";
-import TableSkeleton from "@/components/skeleton/TableSkeleton";
 import {
+  Search,
+  EmptyState,
+  TableSkeleton,
   TableContainer,
   TableToolbar,
   TableScroll,
@@ -14,14 +14,16 @@ import {
   TableCell,
   TablePaginationFooter,
   TableActionButtons,
+  ExcelExportButton,
 } from "@/components/common";
 import { isCategoryAdmin, normalizeCategoryType } from "@/services/category-service";
 import type { CategoryItem } from "@/types";
+import { exportCategoriesToExcel } from "@/utils/excel-export";
+import { showSuccessToast, showErrorToast } from "@/utils/toast-utils";
 import {
   FaLayerGroup,
   FaArrowDown,
   FaArrowUp,
-  FaWallet,
   FaCheckCircle,
   FaTimesCircle,
 } from "react-icons/fa";
@@ -46,12 +48,10 @@ export const CategoryTable: React.FC<CategoryTableProps> = ({
 }) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState("");
-  const [statusFilter, setStatusFilter] = useState("Active");
+  const [statusFilter, setStatusFilter] = useState("");
 
   // Sorting
-  const [sortKey, setSortKey] = useState<"categoryName" | "type" | "openingBalance" | "status">(
-    "categoryName"
-  );
+  const [sortKey, setSortKey] = useState<"categoryName" | "type" | "status">("categoryName");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
 
   // Pagination
@@ -61,7 +61,6 @@ export const CategoryTable: React.FC<CategoryTableProps> = ({
   // Compute category counts in a single pass
   let expenseCount = 0;
   let incomeCount = 0;
-  let cashCount = 0;
   let statusActiveCount = 0;
   let statusInactiveCount = 0;
   let statusAllCount = 0;
@@ -70,7 +69,6 @@ export const CategoryTable: React.FC<CategoryTableProps> = ({
     const t = normalizeCategoryType(c.type);
     if (t === "Expense") expenseCount++;
     else if (t === "Income") incomeCount++;
-    else if (t === "Cash") cashCount++;
 
     const matchesCurrentType = !typeFilter || t.toLowerCase() === typeFilter.toLowerCase();
     if (matchesCurrentType) {
@@ -98,20 +96,13 @@ export const CategoryTable: React.FC<CategoryTableProps> = ({
       icon: FaArrowUp,
       iconColor: "text-sky-500",
     },
-    {
-      label: "Cash",
-      value: "Cash",
-      count: cashCount,
-      icon: FaWallet,
-      iconColor: "text-purple-500",
-    },
   ];
 
-  // Status tabs configuration
+  // Status tabs configuration: All -> Active -> Inactive
   const statusTabs = [
+    { label: "All", value: "", count: statusAllCount },
     { label: "Active", value: "Active", count: statusActiveCount, icon: FaCheckCircle },
     { label: "Inactive", value: "Inactive", count: statusInactiveCount, icon: FaTimesCircle },
-    { label: "All", value: "", count: statusAllCount },
   ];
 
   // Filter list
@@ -133,9 +124,6 @@ export const CategoryTable: React.FC<CategoryTableProps> = ({
   // Sort list
   const sorted = [...filtered].sort((a, b) => {
     const factor = sortDir === "asc" ? 1 : -1;
-    if (sortKey === "openingBalance") {
-      return (Number(a.openingBalance || 0) - Number(b.openingBalance || 0)) * factor;
-    }
     const valA = String(a[sortKey] || "").toLowerCase();
     const valB = String(b[sortKey] || "").toLowerCase();
     return valA.localeCompare(valB) * factor;
@@ -176,12 +164,20 @@ export const CategoryTable: React.FC<CategoryTableProps> = ({
     );
   };
 
-  const formatMoney = (val?: string | number) => {
-    const num = Number(val || 0);
-    return `৳ ${num.toLocaleString("en-BD", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  const handleExport = () => {
+    const dataToExport = filtered.length > 0 ? filtered : categories;
+    if (!dataToExport || dataToExport.length === 0) {
+      showErrorToast("No category records available to export");
+      return;
+    }
+    try {
+      exportCategoriesToExcel(dataToExport);
+      showSuccessToast(`Successfully exported ${dataToExport.length} categories to Excel!`);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Failed to export Excel file";
+      showErrorToast(msg);
+    }
   };
-
-  const hasActiveFilters = Boolean(searchQuery || typeFilter !== "" || statusFilter !== "Active");
 
   return (
     <div className="flex flex-col gap-2 w-full">
@@ -201,7 +197,7 @@ export const CategoryTable: React.FC<CategoryTableProps> = ({
               className={`flex items-center gap-1.5 px-3 sm:px-3.5 py-1.5 text-xs font-bold transition-all border-b-2 cursor-pointer whitespace-nowrap ${
                 isActive
                   ? "border-[var(--color-primary)] text-[var(--color-primary)] bg-sky-50/50 rounded-t-md"
-                  : "border-transparent text-gray-600 hover:text-black hover:bg-gray-50 rounded-t-md"
+                  : "border-transparent text-gray-700 hover:text-black hover:bg-gray-50 rounded-t-md"
               }`}
             >
               <Icon
@@ -240,9 +236,8 @@ export const CategoryTable: React.FC<CategoryTableProps> = ({
               />
             </div>
 
-            {/* Status Segmented Tabs */}
-            <div className="flex items-center gap-2 self-start sm:self-auto">
-              <span className="text-xs font-medium text-gray-500 hidden sm:inline">Status:</span>
+            {/* Right Group: Status Segmented Tabs & Reusable Excel Export Button */}
+            <div className="flex items-center gap-2 self-start sm:self-auto flex-wrap">
               <div className="inline-flex items-center rounded-lg border border-gray-200 p-0.5 bg-gray-50 h-8">
                 {statusTabs.map((tab) => {
                   const isActive = statusFilter === tab.value;
@@ -295,6 +290,12 @@ export const CategoryTable: React.FC<CategoryTableProps> = ({
                   );
                 })}
               </div>
+
+              {/* Reusable Excel Export Button */}
+              <ExcelExportButton
+                onClick={handleExport}
+                title="Download Categories Excel Report"
+              />
             </div>
           </div>
         </TableToolbar>
@@ -303,10 +304,10 @@ export const CategoryTable: React.FC<CategoryTableProps> = ({
         <TableScroll>
           {isLoading && categories.length === 0 ? (
             <div className="p-3">
-              <TableSkeleton columnCount={6} rowCount={8} />
+              <TableSkeleton columnCount={5} rowCount={8} />
             </div>
           ) : (
-            <Table minWidth={750}>
+            <Table minWidth={700}>
               <TableHead>
                 <TableTh width={60} align="center">
                   SL
@@ -316,9 +317,6 @@ export const CategoryTable: React.FC<CategoryTableProps> = ({
                 </TableTh>
                 <TableTh width={140}>
                   {renderSortHeader("Type", "type")}
-                </TableTh>
-                <TableTh width={160} align="right">
-                  {renderSortHeader("Opening Balance", "openingBalance", "right")}
                 </TableTh>
                 <TableTh width={120} align="center">
                   {renderSortHeader("Status", "status", "center")}
@@ -368,24 +366,11 @@ export const CategoryTable: React.FC<CategoryTableProps> = ({
                             className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-semibold border ${
                               normType === "Expense"
                                 ? "bg-rose-100 text-rose-800 border-rose-300"
-                                : normType === "Income"
-                                ? "bg-sky-100 text-sky-800 border-sky-300"
-                                : "bg-purple-100 text-purple-800 border-purple-300"
+                                : "bg-sky-100 text-sky-800 border-sky-300"
                             }`}
                           >
                             {normType}
                           </span>
-                        </TableCell>
-
-                        {/* Opening Balance */}
-                        <TableCell align="right">
-                          {normType === "Cash" ? (
-                            <span className="font-semibold text-gray-900">
-                              {formatMoney(item.openingBalance)}
-                            </span>
-                          ) : (
-                            <span className="text-gray-400 select-none">-</span>
-                          )}
                         </TableCell>
 
                         {/* Status Toggle Badge */}
@@ -435,29 +420,12 @@ export const CategoryTable: React.FC<CategoryTableProps> = ({
                   })
                 ) : (
                   <tr>
-                    <td colSpan={6} className="py-12 text-center">
+                    <td colSpan={5} className="py-12 text-center">
                       <EmptyState
-                        title={
-                          hasActiveFilters
-                            ? "No categories matching your criteria"
-                            : "No categories available"
-                        }
-                        description={
-                          hasActiveFilters
-                            ? "Try resetting search or switching tabs to view categories."
-                            : "Click '+ Add Category' below to create your first financial category."
-                        }
-                        buttonText={hasActiveFilters ? "Reset Filters" : "+ Add Category"}
-                        onButtonClick={
-                          hasActiveFilters
-                            ? () => {
-                                setSearchQuery("");
-                                setTypeFilter("");
-                                setStatusFilter("Active");
-                                setCurrentPage(1);
-                              }
-                            : onAddNew
-                        }
+                        title="No categories found"
+                        description="There are no categories matching your search or filters."
+                        buttonText="+ Add Category"
+                        onButtonClick={onAddNew}
                       />
                     </td>
                   </tr>

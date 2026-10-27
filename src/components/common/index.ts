@@ -34,6 +34,7 @@ export { default as EmptyState } from "@/components/empty-state/EmptyState";
 export { default as Search } from "@/components/table-components/Search";
 export { default as DropdownFilter } from "@/components/table-components/DropdownFilter";
 export { default as RefreshButton } from "@/components/table-components/RefreshButton";
+export { default as ExcelExportButton } from "@/components/table-components/ExcelExportButton";
 export { default as ColumnVisibilityDropdown } from "@/components/table-components/ColumnVisibilityDropdown";
 export { default as TablePaginationFooter } from "@/components/table-components/TablePaginationFooter";
 export { default as TableActionButtons } from "@/components/table-components/TableActionButtons";
