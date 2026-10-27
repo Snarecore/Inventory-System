@@ -57,3 +57,4 @@ export const insertPaymentQueryKey = "insert-payment";
 export const paymentReportQueryKey = "get-payment-report";
 export const businessProfileQueryKey = "business-profile";
 export const businessTypesQueryKey = "get-business-types";
+export const categoryListQueryKey = "get-category-list";

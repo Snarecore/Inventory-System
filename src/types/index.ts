@@ -410,3 +410,4 @@ export interface PurchaseReturnItem {
 
 export * from './collection.types';
 export * from './business.types';
+export * from './category.types';

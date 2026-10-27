@@ -107,5 +107,11 @@
         "businessProfileUrl": "business-profile",
         "businessProfileSaveUrl": "business-profile-save",
         "businessTypesUrl": "get-business-types"
+    },
+    "category": {
+        "getCategoryListUrl": "get-category-list",
+        "insertCategoryUrl": "insert-category-info",
+        "updateCategoryUrl": "update-category-info",
+        "updateCategoryStatusUrl": "update-category-status"
     }
 }

@@ -50,14 +50,12 @@ export const menu = [
 
 			{
 				id: 205,
-				name: "Expense Category",
-				title: "Expense Category",
+				name: "Financial Category",
+				title: "Financial Category",
 				icon: FaReceipt,
-				path: "/expenses/categories",
+				path: "/admin/financial-categories",
 				permissionKey: "category.expenses.view",
-				subItems: [
-					{ id: 206, name: "Expense Categories", path: "/expenses/categories", permissionKey: "expenses.categories.view" },
-				],
+				subItems: [],
 			},
 		],
 	},

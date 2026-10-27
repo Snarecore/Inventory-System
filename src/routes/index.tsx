@@ -44,6 +44,7 @@ const CreatePurchaseReturn = React.lazy(() => import('@/pages/admin/trade/purcha
 const CustomerCollection = React.lazy(() => import('@/pages/admin/trade/customer-collection'))
 const SupplierPayment = React.lazy(() => import('@/pages/admin/trade/supplier-payment'))
 const Company = React.lazy(() => import('@/pages/admin/company'))
+const FinancialCategory = React.lazy(() => import('@/pages/admin/finance/category'))
 
 
 const LoadingFallback = () => (
@@ -171,6 +172,18 @@ export const router = createBrowserRouter([
   {
     path: '/payment',
     element: <Navigate to="/admin/supplier-payment" replace />,
+  },
+  {
+    path: '/expenses/categories',
+    element: <Navigate to="/admin/financial-categories" replace />,
+  },
+  {
+    path: '/finance/categories',
+    element: <Navigate to="/admin/financial-categories" replace />,
+  },
+  {
+    path: '/category',
+    element: <Navigate to="/admin/financial-categories" replace />,
   },
   {
     path: '/company',
@@ -344,6 +357,18 @@ export const router = createBrowserRouter([
       {
         path: 'payment',
         element: <Navigate to="/admin/supplier-payment" replace />,
+      },
+      {
+        path: 'financial-categories',
+        element: withSuspense(FinancialCategory),
+      },
+      {
+        path: 'categories',
+        element: withSuspense(FinancialCategory),
+      },
+      {
+        path: 'expense-categories',
+        element: withSuspense(FinancialCategory),
       },
 
       {
