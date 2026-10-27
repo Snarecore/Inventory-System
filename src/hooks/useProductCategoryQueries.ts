@@ -29,6 +29,7 @@ export const useProductCategoryListQuery = () => {
 
 /**
  * Hook to insert a new product category
+ * Performs 1 authoritative GET fetch on create to guarantee valid database ID, sequence & sync
  */
 export const useInsertProductCategoryMutation = (options?: { onSuccess?: () => void }) => {
   const queryClient = useQueryClient();
@@ -47,7 +48,7 @@ export const useInsertProductCategoryMutation = (options?: { onSuccess?: () => v
 };
 
 /**
- * Hook to update an existing product category
+ * Hook to update an existing product category (direct cache update, no get API call)
  */
 export const useUpdateProductCategoryMutation = (options?: { onSuccess?: () => void }) => {
   const queryClient = useQueryClient();
@@ -55,7 +56,27 @@ export const useUpdateProductCategoryMutation = (options?: { onSuccess?: () => v
   return useMutation({
     mutationFn: (payload: UpdateProductCategoryPayload) => updateProductCategory(payload),
     onSuccess: (res, vars) => {
-      queryClient.invalidateQueries({ queryKey: [productCategoryListQueryKey] });
+      // Direct cache update: update item in cache directly without calling get API
+      queryClient.setQueriesData<ProductCategoryListResponse>(
+        { queryKey: [productCategoryListQueryKey] },
+        (oldData) => {
+          if (!oldData || !Array.isArray(oldData.categoryList)) return oldData;
+          return {
+            ...oldData,
+            categoryList: oldData.categoryList.map((item) =>
+              item.id === vars.id
+                ? {
+                    ...item,
+                    name: vars.name,
+                    description: vars.description !== undefined ? vars.description : item.description,
+                    status: vars.status || item.status,
+                    sortOrder: vars.sortOrder !== undefined ? vars.sortOrder : item.sortOrder,
+                  }
+                : item
+            ),
+          };
+        }
+      );
       showSuccessToast(res?.msg || `Category "${vars.name}" updated successfully`);
       if (options?.onSuccess) options.onSuccess();
     },
@@ -66,7 +87,7 @@ export const useUpdateProductCategoryMutation = (options?: { onSuccess?: () => v
 };
 
 /**
- * Hook to update product category status (Active / Inactive)
+ * Hook to update product category status (direct cache update, no get API call)
  */
 export const useUpdateProductCategoryStatusMutation = () => {
   const queryClient = useQueryClient();
@@ -74,7 +95,19 @@ export const useUpdateProductCategoryStatusMutation = () => {
   return useMutation({
     mutationFn: (payload: UpdateProductCategoryStatusPayload) => updateProductCategoryStatus(payload),
     onSuccess: (res, vars) => {
-      queryClient.invalidateQueries({ queryKey: [productCategoryListQueryKey] });
+      // Direct cache update: update status in cache directly without calling get API
+      queryClient.setQueriesData<ProductCategoryListResponse>(
+        { queryKey: [productCategoryListQueryKey] },
+        (oldData) => {
+          if (!oldData || !Array.isArray(oldData.categoryList)) return oldData;
+          return {
+            ...oldData,
+            categoryList: oldData.categoryList.map((item) =>
+              item.id === vars.id ? { ...item, status: vars.status } : item
+            ),
+          };
+        }
+      );
       showSuccessToast(res?.msg || `Category status changed to ${vars.status}`);
     },
     onError: (err: any) => {
@@ -84,15 +117,25 @@ export const useUpdateProductCategoryStatusMutation = () => {
 };
 
 /**
- * Hook to delete a product category
+ * Hook to delete a product category (direct cache update, no get API call)
  */
 export const useDeleteProductCategoryMutation = (options?: { onSuccess?: () => void }) => {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: (payload: DeleteProductCategoryPayload) => deleteProductCategory(payload),
-    onSuccess: (res) => {
-      queryClient.invalidateQueries({ queryKey: [productCategoryListQueryKey] });
+    onSuccess: (res, vars) => {
+      // Direct cache update: remove item from cache directly without calling get API
+      queryClient.setQueriesData<ProductCategoryListResponse>(
+        { queryKey: [productCategoryListQueryKey] },
+        (oldData) => {
+          if (!oldData || !Array.isArray(oldData.categoryList)) return oldData;
+          return {
+            ...oldData,
+            categoryList: oldData.categoryList.filter((item) => item.id !== vars.id),
+          };
+        }
+      );
       showSuccessToast(res?.msg || "Category deleted successfully");
       if (options?.onSuccess) options.onSuccess();
     },

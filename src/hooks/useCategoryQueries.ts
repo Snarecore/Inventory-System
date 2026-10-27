@@ -28,6 +28,7 @@ export const useCategoryListQuery = (params?: FetchCategoryListParams) => {
 
 /**
  * Hook to insert a new financial category
+ * Performs 1 authoritative GET fetch on create to guarantee valid database ID & sync
  */
 export const useInsertCategoryMutation = (options?: { onSuccess?: () => void }) => {
   const queryClient = useQueryClient();
@@ -46,7 +47,7 @@ export const useInsertCategoryMutation = (options?: { onSuccess?: () => void }) 
 };
 
 /**
- * Hook to update an existing financial category
+ * Hook to update an existing financial category (direct cache update, no get API call)
  */
 export const useUpdateCategoryMutation = (options?: { onSuccess?: () => void }) => {
   const queryClient = useQueryClient();
@@ -54,7 +55,27 @@ export const useUpdateCategoryMutation = (options?: { onSuccess?: () => void }) 
   return useMutation({
     mutationFn: (payload: UpdateCategoryPayload) => updateCategory(payload),
     onSuccess: (res, vars) => {
-      queryClient.invalidateQueries({ queryKey: [categoryListQueryKey] });
+      // Direct cache update: update item in cache directly without calling get API
+      queryClient.setQueriesData<CategoryListResponse>(
+        { queryKey: [categoryListQueryKey] },
+        (oldData) => {
+          if (!oldData || !Array.isArray(oldData.categoryList)) return oldData;
+          return {
+            ...oldData,
+            categoryList: oldData.categoryList.map((item) =>
+              item.categoryId === vars.categoryId
+                ? {
+                    ...item,
+                    categoryName: vars.categoryName,
+                    type: vars.categoryType || item.type,
+                    openingBalance:
+                      vars.openingBalance !== undefined ? vars.openingBalance : item.openingBalance,
+                  }
+                : item
+            ),
+          };
+        }
+      );
       showSuccessToast(res?.msg || `"${vars.categoryName}" category updated successfully`);
       if (options?.onSuccess) options.onSuccess();
     },
@@ -65,7 +86,7 @@ export const useUpdateCategoryMutation = (options?: { onSuccess?: () => void }) 
 };
 
 /**
- * Hook to toggle category status (Active / Inactive)
+ * Hook to toggle category status (direct cache update, no get API call)
  */
 export const useUpdateCategoryStatusMutation = () => {
   const queryClient = useQueryClient();
@@ -73,7 +94,19 @@ export const useUpdateCategoryStatusMutation = () => {
   return useMutation({
     mutationFn: (payload: UpdateCategoryStatusPayload) => updateCategoryStatus(payload),
     onSuccess: (res, vars) => {
-      queryClient.invalidateQueries({ queryKey: [categoryListQueryKey] });
+      // Direct cache update: update status in cache directly without calling get API
+      queryClient.setQueriesData<CategoryListResponse>(
+        { queryKey: [categoryListQueryKey] },
+        (oldData) => {
+          if (!oldData || !Array.isArray(oldData.categoryList)) return oldData;
+          return {
+            ...oldData,
+            categoryList: oldData.categoryList.map((item) =>
+              item.categoryId === vars.categoryId ? { ...item, status: vars.status } : item
+            ),
+          };
+        }
+      );
       showSuccessToast(res?.msg || `Category status changed to ${vars.status}`);
     },
     onError: (err: any) => {
