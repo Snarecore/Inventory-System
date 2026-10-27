@@ -1,4 +1,4 @@
-export type CategoryType = "Income" | "Expense" | "Cash";
+export type CategoryType = "Income" | "Expense";
 export type CategoryStatus = "Active" | "Inactive";
 
 export interface CategoryItem {

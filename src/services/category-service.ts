@@ -20,13 +20,11 @@ export const isCategoryAdmin = (item?: CategoryItem | null): boolean => {
 };
 
 /**
- * Normalizes category type casing (e.g. "CASH" -> "Cash", "INCOME" -> "Income", "EXPENSE" -> "Expense")
+ * Normalizes category type casing (e.g. "INCOME" -> "Income", "EXPENSE" -> "Expense")
  */
-export const normalizeCategoryType = (rawType?: string): "Income" | "Expense" | "Cash" => {
+export const normalizeCategoryType = (rawType?: string): "Income" | "Expense" => {
   const upper = String(rawType || "").trim().toUpperCase();
   if (upper === "INCOME") return "Income";
-  if (upper === "EXPENSE") return "Expense";
-  if (upper === "CASH") return "Cash";
   return "Expense";
 };
 
@@ -66,7 +64,7 @@ export const fetchCategoryList = async (
 };
 
 /**
- * Inserts a new financial category (Income, Expense, Cash)
+ * Inserts a new financial category (Income, Expense)
  */
 export const insertCategory = async (
   payload: InsertCategoryPayload
@@ -74,12 +72,11 @@ export const insertCategory = async (
   const accessUser = buildAccessUser();
   const url = apiConfig.category.insertCategoryUrl;
 
-  const isCash = payload.categoryType === "Cash";
   const body = {
     accessUser,
     categoryName: payload.categoryName.trim(),
     categoryType: payload.categoryType,
-    openingBalance: isCash ? Number(payload.openingBalance || 0) : 0,
+    openingBalance: Number(payload.openingBalance || 0),
     transactionDate: payload.transactionDate || new Date().toISOString(),
   };
 
@@ -92,7 +89,7 @@ export const insertCategory = async (
 };
 
 /**
- * Updates category name, type, or cash opening balance
+ * Updates category name and type
  */
 export const updateCategory = async (
   payload: UpdateCategoryPayload
@@ -100,13 +97,12 @@ export const updateCategory = async (
   const accessUser = buildAccessUser();
   const url = apiConfig.category.updateCategoryUrl;
 
-  const isCash = payload.categoryType === "Cash";
   const body = {
     accessUser,
     categoryId: payload.categoryId,
     categoryName: payload.categoryName.trim(),
     categoryType: payload.categoryType,
-    openingBalance: isCash ? Number(payload.openingBalance || 0) : 0,
+    openingBalance: Number(payload.openingBalance || 0),
     transactionDate: payload.transactionDate || "",
   };
 

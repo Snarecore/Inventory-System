@@ -446,7 +446,7 @@ export const CategoryTable: React.FC<CategoryTableProps> = ({
               setPageSize(limit);
               setCurrentPage(1);
             }}
-            setCurrentPageNumber={(p) => setCurrentPage(p)}
+            setCurrentPageNumber={setCurrentPage}
             handlePagination={(d) => setCurrentPage(d.selected + 1)}
             entityLabel="categories"
             pageSizeOptions={[10, 20, 50, 100]}
