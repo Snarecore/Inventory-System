@@ -15,8 +15,6 @@ import {
 	FaCheckCircle,
 	FaShieldAlt,
 	FaCog,
-	FaUndoAlt,
-	FaReply,
 } from "react-icons/fa";
 import { BiCube } from "react-icons/bi";
 import { TbTablePlus } from "react-icons/tb";
@@ -50,8 +48,8 @@ export const menu = [
 
 			{
 				id: 205,
-				name: "Financial Category",
-				title: "Financial Category",
+				name: "Expense & Income",
+				title: "Expense & Income",
 				icon: FaReceipt,
 				path: "/admin/financial-categories",
 				permissionKey: "category.expenses.view",

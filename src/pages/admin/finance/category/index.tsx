@@ -72,7 +72,7 @@ export const CategoryPage: React.FC = () => {
       {/* Header */}
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <PageHeader
-          headerTitle="Financial Categories"
+          headerTitle="Expense & Income Categories"
           headerDescription="Manage Income and Expense categories for accounting and vouchers"
         />
         <div className="flex items-center gap-2">

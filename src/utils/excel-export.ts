@@ -387,7 +387,7 @@ export function exportCategoriesToExcel(
   }
 
   const todayStr = new Date().toISOString().substring(0, 10);
-  const fileName = options?.fileName || `Financial_Categories_${todayStr}.xlsx`;
+  const fileName = options?.fileName || `Expense_Income_Categories_${todayStr}.xlsx`;
   const sheetName = options?.sheetName || "Categories";
 
   const rows = categories.map((item, index) => {
