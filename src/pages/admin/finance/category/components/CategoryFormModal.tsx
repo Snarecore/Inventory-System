@@ -92,6 +92,8 @@ export const CategoryFormModal: React.FC<CategoryFormModalProps> = ({
       return;
     }
 
+    const numBalance = categoryType === "Cash" ? Math.max(0, Number(openingBalance || 0)) : 0;
+
     if (isEditing && categoryToEdit) {
       if (isCategoryAdmin(categoryToEdit)) {
         showErrorToast("Default system category cannot be edited");
@@ -101,13 +103,13 @@ export const CategoryFormModal: React.FC<CategoryFormModalProps> = ({
         categoryId: categoryToEdit.categoryId,
         categoryName: trimmedName,
         categoryType,
-        openingBalance: categoryType === "Cash" ? Number(openingBalance || 0) : 0,
+        openingBalance: numBalance,
       });
     } else {
       insertMutation.mutate({
         categoryName: trimmedName,
         categoryType,
-        openingBalance: categoryType === "Cash" ? Number(openingBalance || 0) : 0,
+        openingBalance: numBalance,
         transactionDate: new Date().toISOString(),
       });
     }
@@ -173,35 +175,24 @@ export const CategoryFormModal: React.FC<CategoryFormModalProps> = ({
               ))}
             </select>
           </div>
-          <p className="text-[11px] text-gray-500 mt-1">
-            {categoryType === "Expense" && "Used for booking business expenditures and daily costs."}
-            {categoryType === "Income" && "Used for booking auxiliary and non-trade incomes."}
-            {categoryType === "Cash" && "Used for cash drawer and cash balance account tracking."}
-          </p>
         </div>
 
-        {/* Opening Balance (Enabled only for Cash category) */}
-        <div>
-          {isCash ? (
-            <div className="p-3 rounded-lg border border-gray-200 bg-gray-50/50 space-y-1">
-              <CurrencyInput
-                label="Opening Balance"
-                value={openingBalance}
-                onChange={(val) => setOpeningBalance(val)}
-                currencySymbol="৳"
-                placeholder="0.00"
-                className="w-full"
-              />
-              <p className="text-[10px] text-gray-500">
-                * An opening balance financial entry will be generated automatically for this cash drawer.
-              </p>
-            </div>
-          ) : (
-            <div className="p-2.5 rounded-lg bg-gray-50 border border-gray-200 text-[11px] text-gray-400 italic">
-              Opening balance is only applicable for Cash categories.
-            </div>
-          )}
-        </div>
+        {/* Opening Balance (Applicable only for Cash category) */}
+        {isCash && (
+          <div className="p-3 rounded-lg border border-gray-200 bg-gray-50/50 space-y-1">
+            <CurrencyInput
+              label="Opening Balance"
+              value={openingBalance}
+              onChange={(val) => setOpeningBalance(val)}
+              currencySymbol="৳"
+              placeholder="0.00"
+              className="w-full"
+            />
+            <p className="text-[10px] text-gray-500">
+              * An opening balance entry will be generated automatically for this cash category.
+            </p>
+          </div>
+        )}
       </form>
     </Modal>
   );

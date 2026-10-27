@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import Search from "@/components/table-components/Search";
-import DropdownFilter from "@/components/table-components/DropdownFilter";
 import EmptyState from "@/components/empty-state/EmptyState";
 import TableSkeleton from "@/components/skeleton/TableSkeleton";
 import {
@@ -17,7 +16,15 @@ import {
   TableActionButtons,
 } from "@/components/common";
 import { isCategoryAdmin, normalizeCategoryType } from "@/services/category-service";
-import type { CategoryItem, CategoryType } from "@/types";
+import type { CategoryItem } from "@/types";
+import {
+  FaLayerGroup,
+  FaArrowDown,
+  FaArrowUp,
+  FaWallet,
+  FaCheckCircle,
+  FaTimesCircle,
+} from "react-icons/fa";
 import { FiChevronDown, FiLock } from "react-icons/fi";
 
 interface CategoryTableProps {
@@ -29,31 +36,17 @@ interface CategoryTableProps {
   togglingId?: number | null;
 }
 
-const typeOptions = [
-  { label: "All Types", value: "" },
-  { label: "Expense", value: "Expense" },
-  { label: "Income", value: "Income" },
-  { label: "Cash", value: "Cash" },
-];
-
-const statusOptions = [
-  { label: "All Status", value: "" },
-  { label: "Active", value: "Active" },
-  { label: "Inactive", value: "Inactive" },
-];
-
 export const CategoryTable: React.FC<CategoryTableProps> = ({
   categories,
   isLoading,
-  onAddNew: _onAddNew,
+  onAddNew,
   onEdit,
   onToggleStatus,
   togglingId,
 }) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState("");
-  const [statusFilter, setStatusFilter] = useState("");
-  const [openDropdown, setOpenDropdown] = useState<string | null>(null);
+  const [statusFilter, setStatusFilter] = useState("Active");
 
   // Sorting
   const [sortKey, setSortKey] = useState<"categoryName" | "type" | "openingBalance" | "status">(
@@ -64,6 +57,62 @@ export const CategoryTable: React.FC<CategoryTableProps> = ({
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
+
+  // Compute category counts in a single pass
+  let expenseCount = 0;
+  let incomeCount = 0;
+  let cashCount = 0;
+  let statusActiveCount = 0;
+  let statusInactiveCount = 0;
+  let statusAllCount = 0;
+
+  for (const c of categories) {
+    const t = normalizeCategoryType(c.type);
+    if (t === "Expense") expenseCount++;
+    else if (t === "Income") incomeCount++;
+    else if (t === "Cash") cashCount++;
+
+    const matchesCurrentType = !typeFilter || t.toLowerCase() === typeFilter.toLowerCase();
+    if (matchesCurrentType) {
+      statusAllCount++;
+      const st = (c.status || "").toLowerCase();
+      if (st === "active") statusActiveCount++;
+      else if (st === "inactive") statusInactiveCount++;
+    }
+  }
+
+  // Type tabs configuration
+  const typeTabs = [
+    { label: "All Types", value: "", count: categories.length, icon: FaLayerGroup },
+    {
+      label: "Expense",
+      value: "Expense",
+      count: expenseCount,
+      icon: FaArrowDown,
+      iconColor: "text-rose-500",
+    },
+    {
+      label: "Income",
+      value: "Income",
+      count: incomeCount,
+      icon: FaArrowUp,
+      iconColor: "text-sky-500",
+    },
+    {
+      label: "Cash",
+      value: "Cash",
+      count: cashCount,
+      icon: FaWallet,
+      iconColor: "text-purple-500",
+    },
+  ];
+
+  // Status tabs configuration
+  const statusTabs = [
+    { label: "Active", value: "Active", count: statusActiveCount, icon: FaCheckCircle },
+    { label: "Inactive", value: "Inactive", count: statusInactiveCount, icon: FaTimesCircle },
+    { label: "All", value: "", count: statusAllCount },
+  ];
 
   // Filter list
   const term = searchQuery.trim().toLowerCase();
@@ -132,227 +181,311 @@ export const CategoryTable: React.FC<CategoryTableProps> = ({
     return `৳ ${num.toLocaleString("en-BD", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   };
 
+  const hasActiveFilters = Boolean(searchQuery || typeFilter !== "" || statusFilter !== "Active");
+
   return (
-    <TableContainer className="w-full">
-      {/* Table Toolbar */}
-      <TableToolbar>
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 w-full">
-          {/* Search Box */}
-          <div className="w-full sm:w-72">
-            <Search
-              searchQuery={searchQuery}
-              onSearchChange={(val) => {
-                setSearchQuery(val);
+    <div className="flex flex-col gap-2 w-full">
+      {/* Category Type Tabs (Standard Cash-Boi Tab Pattern) */}
+      <div className="flex items-center gap-1.5 border-b border-gray-200/90 -my-0.5 overflow-x-auto scrollbar-none">
+        {typeTabs.map((tab) => {
+          const isActive = typeFilter === tab.value;
+          const Icon = tab.icon;
+          return (
+            <button
+              key={tab.value}
+              type="button"
+              onClick={() => {
+                setTypeFilter(tab.value);
                 setCurrentPage(1);
               }}
-              placeholder="Search by category name or type..."
-            />
-          </div>
+              className={`flex items-center gap-1.5 px-3 sm:px-3.5 py-1.5 text-xs font-bold transition-all border-b-2 cursor-pointer whitespace-nowrap ${
+                isActive
+                  ? "border-[var(--color-primary)] text-[var(--color-primary)] bg-sky-50/50 rounded-t-md"
+                  : "border-transparent text-gray-600 hover:text-black hover:bg-gray-50 rounded-t-md"
+              }`}
+            >
+              <Icon
+                size={12}
+                className={isActive ? "text-[var(--color-primary)]" : tab.iconColor || "text-gray-500"}
+              />
+              <span>{tab.label}</span>
+              <span
+                className={`text-[10px] px-1.5 py-0.2 rounded-full font-semibold transition-colors ${
+                  isActive
+                    ? "bg-[var(--color-primary)] text-white"
+                    : "bg-gray-100 text-gray-600"
+                }`}
+              >
+                {tab.count}
+              </span>
+            </button>
+          );
+        })}
+      </div>
 
-          {/* Filters */}
-          <div className="flex flex-wrap items-center gap-2">
-            {/* Type Dropdown */}
-            <DropdownFilter
-              title="Category Type"
-              options={typeOptions}
-              selectedOption={typeOptions.find((o) => o.value === typeFilter) || null}
-              isOpen={openDropdown === "type"}
-              onToggle={() => setOpenDropdown(openDropdown === "type" ? null : "type")}
-              onSelect={(selected) => {
-                setTypeFilter(selected.value);
-                setCurrentPage(1);
-                setOpenDropdown(null);
-              }}
-            />
+      {/* Main Table Container */}
+      <TableContainer className="w-full">
+        {/* Table Toolbar */}
+        <TableToolbar>
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 w-full">
+            {/* Search Box */}
+            <div className="w-full sm:w-72">
+              <Search
+                searchQuery={searchQuery}
+                onSearchChange={(val) => {
+                  setSearchQuery(val);
+                  setCurrentPage(1);
+                }}
+                placeholder="Search by category name..."
+              />
+            </div>
 
-            {/* Status Dropdown */}
-            <DropdownFilter
-              title="Status"
-              options={statusOptions}
-              selectedOption={statusOptions.find((o) => o.value === statusFilter) || null}
-              isOpen={openDropdown === "status"}
-              onToggle={() => setOpenDropdown(openDropdown === "status" ? null : "status")}
-              onSelect={(selected) => {
-                setStatusFilter(selected.value);
-                setCurrentPage(1);
-                setOpenDropdown(null);
-              }}
-            />
-          </div>
-        </div>
-      </TableToolbar>
-
-      {/* Main Table Content */}
-      <TableScroll>
-        {isLoading && categories.length === 0 ? (
-          <div className="p-3">
-            <TableSkeleton columnCount={6} rowCount={8} />
-          </div>
-        ) : (
-          <Table minWidth={750}>
-            <TableHead>
-              <TableTh width={60} align="center">
-                SL
-              </TableTh>
-              <TableTh>
-                {renderSortHeader("Category Name", "categoryName")}
-              </TableTh>
-              <TableTh width={140}>
-                {renderSortHeader("Type", "type")}
-              </TableTh>
-              <TableTh width={160} align="right">
-                {renderSortHeader("Opening Balance", "openingBalance", "right")}
-              </TableTh>
-              <TableTh width={120} align="center">
-                {renderSortHeader("Status", "status", "center")}
-              </TableTh>
-              <TableTh width={100} align="center">
-                Action
-              </TableTh>
-            </TableHead>
-
-            <TableBody>
-              {paginatedRows.length > 0 ? (
-                paginatedRows.map((item, index) => {
-                  const isAdmin = isCategoryAdmin(item);
-                  const normType = normalizeCategoryType(item.type);
-                  const isActive = (item.status || "").toLowerCase() === "active";
-                  const isToggling = togglingId === item.categoryId;
-                  const sl = (safeCurrentPage - 1) * pageSize + index + 1;
-
+            {/* Status Segmented Tabs */}
+            <div className="flex items-center gap-2 self-start sm:self-auto">
+              <span className="text-xs font-medium text-gray-500 hidden sm:inline">Status:</span>
+              <div className="inline-flex items-center rounded-lg border border-gray-200 p-0.5 bg-gray-50 h-8">
+                {statusTabs.map((tab) => {
+                  const isActive = statusFilter === tab.value;
+                  const Icon = tab.icon;
                   return (
-                    <TableRow key={item.categoryId || index}>
-                      {/* SL */}
-                      <TableCell align="center" className="text-gray-500 font-normal">
-                        {sl}
-                      </TableCell>
-
-                      {/* Category Name */}
-                      <TableCell>
-                        <div className="flex items-center gap-1.5 min-w-0">
-                          <span className="font-medium text-black truncate">
-                            {item.categoryName}
-                          </span>
-                          {isAdmin && (
-                            <span
-                              className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded font-semibold bg-amber-100 text-amber-800 border border-amber-300 shrink-0"
-                              title="System default category — locked"
-                            >
-                              <FiLock size={10} />
-                              Default
-                            </span>
-                          )}
-                        </div>
-                      </TableCell>
-
-                      {/* Type Badge */}
-                      <TableCell>
-                        <span
-                          className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-semibold border ${
-                            normType === "Expense"
-                              ? "bg-rose-100 text-rose-800 border-rose-300"
-                              : normType === "Income"
-                              ? "bg-sky-100 text-sky-800 border-sky-300"
-                              : "bg-purple-100 text-purple-800 border-purple-300"
-                          }`}
-                        >
-                          {normType}
-                        </span>
-                      </TableCell>
-
-                      {/* Opening Balance */}
-                      <TableCell align="right">
-                        {normType === "Cash" ? (
-                          <span className="font-semibold text-gray-900">
-                            {formatMoney(item.openingBalance)}
-                          </span>
-                        ) : (
-                          <span className="text-gray-400 select-none">-</span>
-                        )}
-                      </TableCell>
-
-                      {/* Status Toggle Badge */}
-                      <TableCell align="center">
-                        <button
-                          type="button"
-                          onClick={() => !isAdmin && onToggleStatus(item)}
-                          disabled={isAdmin || isToggling}
-                          className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-semibold border transition-all ${
-                            isAdmin
-                              ? "bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed"
-                              : isToggling
-                              ? "bg-gray-100 text-gray-500 border-gray-300 cursor-wait"
-                              : isActive
-                              ? "bg-emerald-100 text-emerald-800 border-emerald-300 hover:bg-emerald-200 cursor-pointer"
-                              : "bg-rose-100 text-rose-800 border-rose-300 hover:bg-rose-200 cursor-pointer"
-                          }`}
-                          title={isAdmin ? "System default category status cannot be changed" : "Click to toggle status"}
-                        >
-                          {isToggling ? "Updating..." : isActive ? "Active" : "Inactive"}
-                        </button>
-                      </TableCell>
-
-                      {/* Action: Edit */}
-                      <TableCell align="center">
-                        {isAdmin ? (
-                          <span
-                            className="p-1 rounded text-gray-300 cursor-not-allowed inline-flex items-center justify-center"
-                            title="Default category cannot be edited"
-                          >
-                            <FiLock size={14} />
-                          </span>
-                        ) : (
-                          <TableActionButtons
-                            onEdit={() => onEdit(item)}
-                            editTitle="Edit Category"
-                            className="justify-center"
-                          />
-                        )}
-                      </TableCell>
-                    </TableRow>
+                    <button
+                      key={tab.value}
+                      type="button"
+                      onClick={() => {
+                        setStatusFilter(tab.value);
+                        setCurrentPage(1);
+                      }}
+                      className={`h-7 px-3 rounded-md text-xs font-bold transition-all cursor-pointer whitespace-nowrap flex items-center gap-1.5 ${
+                        isActive
+                          ? tab.value === "Active"
+                            ? "bg-white text-emerald-600 shadow-xs"
+                            : tab.value === "Inactive"
+                            ? "bg-white text-rose-600 shadow-xs"
+                            : "bg-white text-[var(--color-primary)] shadow-xs"
+                          : "text-gray-600 hover:text-black"
+                      }`}
+                    >
+                      {Icon && (
+                        <Icon
+                          size={11}
+                          className={
+                            isActive
+                              ? tab.value === "Active"
+                                ? "text-emerald-600"
+                                : "text-rose-600"
+                              : "text-gray-400"
+                          }
+                        />
+                      )}
+                      <span>{tab.label}</span>
+                      <span
+                        className={`text-[10px] px-1.5 py-0.2 rounded-full font-semibold ${
+                          isActive
+                            ? tab.value === "Active"
+                              ? "bg-emerald-100 text-emerald-700"
+                              : tab.value === "Inactive"
+                              ? "bg-rose-100 text-rose-700"
+                              : "bg-sky-100 text-sky-700"
+                            : "bg-gray-200/70 text-gray-600"
+                        }`}
+                      >
+                        {tab.count}
+                      </span>
+                    </button>
                   );
-                })
-              ) : (
-                <tr>
-                  <td colSpan={6} className="py-12 text-center">
-                    <EmptyState
-                      title={
-                        searchQuery || typeFilter || statusFilter
-                          ? "No categories matching your search or filters"
-                          : "No categories available"
-                      }
-                      description={
-                        searchQuery || typeFilter || statusFilter
-                          ? "Try clearing the search or filters to see all categories."
-                          : "Click 'Add Category' above to create your first financial category."
-                      }
-                    />
-                  </td>
-                </tr>
-              )}
-            </TableBody>
-          </Table>
-        )}
-      </TableScroll>
+                })}
+              </div>
+            </div>
+          </div>
+        </TableToolbar>
 
-      {/* Pagination Footer */}
-      {!isLoading && totalCount > 0 && (
-        <TablePaginationFooter
-          totalCount={totalCount}
-          pageCount={pageCount}
-          currentPageNumber={safeCurrentPage}
-          dataLimit={pageSize}
-          setDataLimit={(limit) => {
-            setPageSize(limit);
-            setCurrentPage(1);
-          }}
-          setCurrentPageNumber={(p) => setCurrentPage(p)}
-          handlePagination={(d) => setCurrentPage(d.selected + 1)}
-          entityLabel="categories"
-          pageSizeOptions={[10, 20, 50, 100]}
-        />
-      )}
-    </TableContainer>
+        {/* Main Table Content */}
+        <TableScroll>
+          {isLoading && categories.length === 0 ? (
+            <div className="p-3">
+              <TableSkeleton columnCount={6} rowCount={8} />
+            </div>
+          ) : (
+            <Table minWidth={750}>
+              <TableHead>
+                <TableTh width={60} align="center">
+                  SL
+                </TableTh>
+                <TableTh>
+                  {renderSortHeader("Category Name", "categoryName")}
+                </TableTh>
+                <TableTh width={140}>
+                  {renderSortHeader("Type", "type")}
+                </TableTh>
+                <TableTh width={160} align="right">
+                  {renderSortHeader("Opening Balance", "openingBalance", "right")}
+                </TableTh>
+                <TableTh width={120} align="center">
+                  {renderSortHeader("Status", "status", "center")}
+                </TableTh>
+                <TableTh width={100} align="center">
+                  Action
+                </TableTh>
+              </TableHead>
+
+              <TableBody>
+                {paginatedRows.length > 0 ? (
+                  paginatedRows.map((item, index) => {
+                    const isAdmin = isCategoryAdmin(item);
+                    const normType = normalizeCategoryType(item.type);
+                    const isActive = (item.status || "").toLowerCase() === "active";
+                    const isToggling = togglingId === item.categoryId;
+                    const sl = (safeCurrentPage - 1) * pageSize + index + 1;
+
+                    return (
+                      <TableRow key={item.categoryId || index}>
+                        {/* SL */}
+                        <TableCell align="center" className="text-gray-500 font-normal">
+                          {sl}
+                        </TableCell>
+
+                        {/* Category Name */}
+                        <TableCell>
+                          <div className="flex items-center gap-1.5 min-w-0">
+                            <span className="font-medium text-black truncate">
+                              {item.categoryName}
+                            </span>
+                            {isAdmin && (
+                              <span
+                                className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded font-semibold bg-amber-100 text-amber-800 border border-amber-300 shrink-0"
+                                title="System default category — locked"
+                              >
+                                <FiLock size={10} />
+                                Default
+                              </span>
+                            )}
+                          </div>
+                        </TableCell>
+
+                        {/* Type Badge */}
+                        <TableCell>
+                          <span
+                            className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-semibold border ${
+                              normType === "Expense"
+                                ? "bg-rose-100 text-rose-800 border-rose-300"
+                                : normType === "Income"
+                                ? "bg-sky-100 text-sky-800 border-sky-300"
+                                : "bg-purple-100 text-purple-800 border-purple-300"
+                            }`}
+                          >
+                            {normType}
+                          </span>
+                        </TableCell>
+
+                        {/* Opening Balance */}
+                        <TableCell align="right">
+                          {normType === "Cash" ? (
+                            <span className="font-semibold text-gray-900">
+                              {formatMoney(item.openingBalance)}
+                            </span>
+                          ) : (
+                            <span className="text-gray-400 select-none">-</span>
+                          )}
+                        </TableCell>
+
+                        {/* Status Toggle Badge */}
+                        <TableCell align="center">
+                          <button
+                            type="button"
+                            onClick={() => !isAdmin && onToggleStatus(item)}
+                            disabled={isAdmin || isToggling}
+                            className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-semibold border transition-all ${
+                              isAdmin
+                                ? "bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed"
+                                : isToggling
+                                ? "bg-gray-100 text-gray-500 border-gray-300 cursor-wait"
+                                : isActive
+                                ? "bg-emerald-100 text-emerald-800 border-emerald-300 hover:bg-emerald-200 cursor-pointer"
+                                : "bg-rose-100 text-rose-800 border-rose-300 hover:bg-rose-200 cursor-pointer"
+                            }`}
+                            title={
+                              isAdmin
+                                ? "System default category status cannot be changed"
+                                : "Click to toggle status"
+                            }
+                          >
+                            {isToggling ? "Updating..." : isActive ? "Active" : "Inactive"}
+                          </button>
+                        </TableCell>
+
+                        {/* Action: Edit */}
+                        <TableCell align="center">
+                          {isAdmin ? (
+                            <span
+                              className="p-1 rounded text-gray-300 cursor-not-allowed inline-flex items-center justify-center"
+                              title="Default category cannot be edited"
+                            >
+                              <FiLock size={14} />
+                            </span>
+                          ) : (
+                            <TableActionButtons
+                              onEdit={() => onEdit(item)}
+                              editTitle="Edit Category"
+                              className="justify-center"
+                            />
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })
+                ) : (
+                  <tr>
+                    <td colSpan={6} className="py-12 text-center">
+                      <EmptyState
+                        title={
+                          hasActiveFilters
+                            ? "No categories matching your criteria"
+                            : "No categories available"
+                        }
+                        description={
+                          hasActiveFilters
+                            ? "Try resetting search or switching tabs to view categories."
+                            : "Click '+ Add Category' below to create your first financial category."
+                        }
+                        buttonText={hasActiveFilters ? "Reset Filters" : "+ Add Category"}
+                        onButtonClick={
+                          hasActiveFilters
+                            ? () => {
+                                setSearchQuery("");
+                                setTypeFilter("");
+                                setStatusFilter("Active");
+                                setCurrentPage(1);
+                              }
+                            : onAddNew
+                        }
+                      />
+                    </td>
+                  </tr>
+                )}
+              </TableBody>
+            </Table>
+          )}
+        </TableScroll>
+
+        {/* Pagination Footer */}
+        {!isLoading && totalCount > 0 && (
+          <TablePaginationFooter
+            totalCount={totalCount}
+            pageCount={pageCount}
+            currentPageNumber={safeCurrentPage}
+            dataLimit={pageSize}
+            setDataLimit={(limit) => {
+              setPageSize(limit);
+              setCurrentPage(1);
+            }}
+            setCurrentPageNumber={(p) => setCurrentPage(p)}
+            handlePagination={(d) => setCurrentPage(d.selected + 1)}
+            entityLabel="categories"
+            pageSizeOptions={[10, 20, 50, 100]}
+          />
+        )}
+      </TableContainer>
+    </div>
   );
 };
 
