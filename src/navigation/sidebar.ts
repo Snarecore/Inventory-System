@@ -15,6 +15,7 @@ import {
 	FaCheckCircle,
 	FaShieldAlt,
 	FaCog,
+	FaLandmark,
 } from "react-icons/fa";
 import { BiCube } from "react-icons/bi";
 import { TbTablePlus } from "react-icons/tb";
@@ -189,6 +190,18 @@ export const menu = [
 		sectionName: "Finance",
 		items: [
 			{
+				id: 700,
+				name: "Banking",
+				title: "Banking",
+				icon: FaLandmark,
+				path: "/admin/banks",
+				permissionKey: "accounts.cash_bank.view",
+				subItems: [
+					{ id: 701, name: "Bank Accounts", path: "/admin/banks", permissionKey: "accounts.cash_bank.view" },
+					{ id: 702, name: "Add Bank Account", path: "/admin/create-bank", permissionKey: "accounts.cash_bank.view" },
+				],
+			},
+			{
 				id: 9,
 				name: "Accounts",
 				title: "Accounts",
@@ -202,7 +215,6 @@ export const menu = [
 					{ id: 69, name: "Receipt Voucher", path: "/accounts/receipt-voucher", permissionKey: "accounts.receipt_voucher.view" },
 					{ id: 70, name: "Contra Voucher", path: "/accounts/contra-voucher", permissionKey: "accounts.contra_voucher.view" },
 					{ id: 71, name: "General Ledger", path: "/accounts/general-ledger", permissionKey: "accounts.general_ledger.view" },
-					{ id: 72, name: "Cash & Bank", path: "/accounts/cash-bank", permissionKey: "accounts.cash_bank.view" },
 					{ id: 73, name: "Bank Reconciliation", path: "/accounts/bank-reconciliation", permissionKey: "accounts.bank_recon.view" },
 				],
 			},

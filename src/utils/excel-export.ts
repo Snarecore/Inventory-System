@@ -1,5 +1,5 @@
 import * as XLSX from "xlsx";
-import type { PurchaseItem, PurchaseReturnItem, CategoryItem, ProductCategoryItem } from "@/types";
+import type { PurchaseItem, PurchaseReturnItem, CategoryItem, ProductCategoryItem, BankAccountItem } from "@/types";
 import { isCategoryAdmin, normalizeCategoryType } from "@/services/category-service";
 
 export interface GenericExcelExportOptions {
@@ -440,6 +440,55 @@ export function exportProductCategoriesToExcel(
     "Category Name": `Total Categories: ${categories.length}`,
     Description: "",
     Status: "",
+  };
+
+  buildAndDownloadExcel(rows, totalRow, { fileName, sheetName });
+}
+
+/**
+ * Enterprise standard Excel export for Bank Accounts
+ */
+export function exportBankAccountsToExcel(
+  bankAccounts: BankAccountItem[],
+  options?: GenericExcelExportOptions
+): void {
+  if (!bankAccounts || bankAccounts.length === 0) {
+    throw new Error("No bank account records available to export");
+  }
+
+  const todayStr = new Date().toISOString().substring(0, 10);
+  const fileName = options?.fileName || `Bank_Accounts_${todayStr}.xlsx`;
+  const sheetName = options?.sheetName || "Bank Accounts";
+
+  let totalBalance = 0;
+
+  const rows = bankAccounts.map((item, index) => {
+    const bal = Number(item.currentBalance || 0);
+    totalBalance += bal;
+
+    return {
+      SL: index + 1,
+      "Bank Name": item.bankName || "—",
+      "Account Name": item.bankAccountName || "—",
+      "Account Number": item.accountNo || "—",
+      Branch: item.branchName || "—",
+      "Current Balance": bal,
+      Status: item.status || "Active",
+      "Has Card": item.hasCard ? "Yes" : "No",
+      "Card Type": item.cardType ? item.cardType.toUpperCase() : "—",
+    };
+  });
+
+  const totalRow = {
+    SL: "TOTAL",
+    "Bank Name": `Total Accounts: ${bankAccounts.length}`,
+    "Account Name": "",
+    "Account Number": "",
+    Branch: "",
+    "Current Balance": totalBalance,
+    Status: "",
+    "Has Card": "",
+    "Card Type": "",
   };
 
   buildAndDownloadExcel(rows, totalRow, { fileName, sheetName });

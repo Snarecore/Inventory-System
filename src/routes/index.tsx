@@ -45,6 +45,8 @@ const CustomerCollection = React.lazy(() => import('@/pages/admin/trade/customer
 const SupplierPayment = React.lazy(() => import('@/pages/admin/trade/supplier-payment'))
 const Company = React.lazy(() => import('@/pages/admin/company'))
 const FinancialCategory = React.lazy(() => import('@/pages/admin/finance/category'))
+const BankPage = React.lazy(() => import('@/pages/admin/finance/bank'))
+const CreateBankPage = React.lazy(() => import('@/pages/admin/finance/bank/create-bank'))
 
 
 const withSuspense = (Component: React.ComponentType) => (
@@ -184,6 +186,30 @@ export const router = createBrowserRouter([
   {
     path: '/category',
     element: <Navigate to="/admin/financial-categories" replace />,
+  },
+  {
+    path: '/banks',
+    element: <Navigate to="/admin/banks" replace />,
+  },
+  {
+    path: '/bank-accounts',
+    element: <Navigate to="/admin/banks" replace />,
+  },
+  {
+    path: '/create-bank',
+    element: <Navigate to="/admin/create-bank" replace />,
+  },
+  {
+    path: '/add-bank',
+    element: <Navigate to="/admin/create-bank" replace />,
+  },
+  {
+    path: '/accounts/cash-bank',
+    element: <Navigate to="/admin/banks" replace />,
+  },
+  {
+    path: '/accounts/chart-of-accounts',
+    element: <Navigate to="/admin/banks" replace />,
   },
   {
     path: '/company',
@@ -377,6 +403,30 @@ export const router = createBrowserRouter([
       {
         path: 'expense-categories',
         element: withSuspense(FinancialCategory),
+      },
+      {
+        path: 'banks',
+        element: withSuspense(BankPage),
+      },
+      {
+        path: 'bank-accounts',
+        element: withSuspense(BankPage),
+      },
+      {
+        path: 'cash-bank',
+        element: withSuspense(BankPage),
+      },
+      {
+        path: 'create-bank',
+        element: withSuspense(CreateBankPage),
+      },
+      {
+        path: 'banks/create',
+        element: withSuspense(CreateBankPage),
+      },
+      {
+        path: 'add-bank',
+        element: withSuspense(CreateBankPage),
       },
 
       {
