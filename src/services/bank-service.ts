@@ -73,7 +73,6 @@ export const fetchBankInfoList = async (): Promise<BankInfoListResponse> => {
     cardType: item.cardType || null,
     cardNumber: item.cardNumber || null,
     balanceDate: item.balanceDate || "",
-    transactionDate: item.transactionDate || "",
   }));
 
   return {
@@ -127,12 +126,11 @@ export const insertBankAccount = async (
     bankName: payload.bankName.trim(),
     accountNo: payload.accountNo.trim(),
     openingBalance: Number(payload.openingBalance || 0),
-    balanceDate: payload.balanceDate || toNaiveIso(new Date()),
+    balanceDate: payload.balanceDate ? toNaiveIso(payload.balanceDate) : toNaiveIso(new Date()),
     hasCard,
     cardType: hasCard && payload.cardType ? payload.cardType.trim().toLowerCase() : null,
     cardNumber: hasCard && payload.cardNumber ? String(payload.cardNumber).replace(/\D/g, "") : null,
     status: payload.status || "Active",
-    transactionDate: payload.transactionDate ? toNaiveIso(payload.transactionDate) : toNaiveIso(new Date()),
   };
 
   const res: any = await postData<BankAccountActionResponse>({ url, body });
@@ -163,12 +161,11 @@ export const updateBankAccount = async (
     bankName: payload.bankName.trim(),
     accountNo: payload.accountNo.trim(),
     openingBalance: Number(payload.openingBalance || 0),
-    balanceDate: payload.balanceDate || toNaiveIso(new Date()),
+    balanceDate: payload.balanceDate ? toNaiveIso(payload.balanceDate) : toNaiveIso(new Date()),
     hasCard,
     cardType: hasCard && payload.cardType ? payload.cardType.trim().toLowerCase() : null,
     cardNumber: hasCard && payload.cardNumber ? String(payload.cardNumber).replace(/\D/g, "") : null,
     status: payload.status || "Active",
-    transactionDate: payload.transactionDate ? toNaiveIso(payload.transactionDate) : toNaiveIso(new Date()),
   };
 
   const res: any = await postData<BankAccountActionResponse>({ url, body });

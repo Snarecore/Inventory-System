@@ -14,7 +14,6 @@ export interface BankAccountItem {
   cardType?: string | null;
   cardNumber?: string | null;
   balanceDate?: string;
-  transactionDate?: string;
 }
 
 export interface BankNameItem {
@@ -45,7 +44,6 @@ export interface InsertBankAccountPayload {
   cardType?: string | null;
   cardNumber?: string | null;
   status: BankAccountStatus | string;
-  transactionDate: string;
 }
 
 export interface UpdateBankAccountPayload extends InsertBankAccountPayload {

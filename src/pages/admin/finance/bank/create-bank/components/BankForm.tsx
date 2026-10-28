@@ -19,7 +19,7 @@ const getInitialForm = () => {
   const d = new Date(), pad = (n: number) => String(n).padStart(2, "0");
   return {
     bankName: "", bankAccountName: "", accountNo: "", openingBalance: "",
-    transactionDate: `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`,
+    balanceDate: `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`,
     status: "Active" as "Active" | "Inactive", hasCard: false, cardType: "debit" as "debit" | "credit", cardNumber: "",
   };
 };
@@ -54,7 +54,7 @@ export const BankForm: React.FC<BankFormProps> = ({ onSuccessNavigate, onCancel 
       bankAccountName: existing.bankAccountName || "",
       accountNo: existing.accountNo || "",
       openingBalance: existing.openingBalance !== undefined ? String(existing.openingBalance) : String(existing.currentBalance ?? ""),
-      transactionDate: existing.transactionDate ? existing.transactionDate.substring(0, 10) : "",
+      balanceDate: existing.balanceDate ? existing.balanceDate.substring(0, 10) : "",
       status: (existing.status as "Active" | "Inactive") || "Active",
       hasCard: Boolean(existing.hasCard),
       cardType: (existing.cardType as "debit" | "credit") || "debit",
@@ -89,7 +89,7 @@ export const BankForm: React.FC<BankFormProps> = ({ onSuccessNavigate, onCancel 
       if (duplicate) errs.accountNo = `Account "${form.accountNo.trim()}" is already registered`;
     }
     if (form.openingBalance !== "" && (isNaN(Number(form.openingBalance)) || Number(form.openingBalance) < 0)) errs.openingBalance = "Please enter a valid positive balance";
-    if (!form.transactionDate) errs.transactionDate = "Transaction date is required";
+    if (!form.balanceDate) errs.balanceDate = "Opening date is required";
     if (form.hasCard) {
       const d = form.cardNumber.replace(/\D/g, "");
       if (!d || d.length < 12 || d.length > 19) errs.cardNumber = "Card number must be 12-19 digits";
@@ -108,12 +108,11 @@ export const BankForm: React.FC<BankFormProps> = ({ onSuccessNavigate, onCancel 
       bankName: form.bankName.trim(),
       accountNo: form.accountNo.trim(),
       openingBalance: Number(form.openingBalance || 0),
-      balanceDate: "",
+      balanceDate: form.balanceDate,
       hasCard: form.hasCard,
       cardType: form.hasCard ? form.cardType : null,
       cardNumber: form.hasCard ? form.cardNumber.replace(/\D/g, "") : null,
       status: form.status,
-      transactionDate: form.transactionDate,
     };
 
     if (isEdit && id) {
@@ -130,8 +129,8 @@ export const BankForm: React.FC<BankFormProps> = ({ onSuccessNavigate, onCancel 
       {/* Sticky Header */}
       <div className="sticky top-0 z-40 bg-[#F6F6F6] py-2 sm:py-2.5 -mt-2 sm:-mt-2.5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5 border-b border-gray-200">
         <div className="flex items-center gap-2">
-          <h1 className="text-sm sm:text-base lg:text-lg font-bold text-[var(--primary-color)] flex items-center gap-1.5 shrink-0">
-            <FaLandmark className="text-[var(--primary-color)]" size={18} />
+          <h1 color="text-[var(--primary-color)]" className="text-sm sm:text-base lg:text-lg font-bold  flex items-center gap-1.5 shrink-0">
+            <FaLandmark color="text-[var(--primary-color)]" size={18} />
             <span>{isEdit ? "Edit Bank Account" : "Add New Bank Account"}</span>
           </h1>
           <span className="text-[10px] sm:text-xs px-2.5 py-0.5 rounded-full bg-[var(--primary-color-light)] text-[var(--primary-color)] font-medium">
@@ -187,15 +186,16 @@ export const BankForm: React.FC<BankFormProps> = ({ onSuccessNavigate, onCancel 
               inputClass="font-bold [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
             />
             <div>
-              <label className="text-xs font-semibold text-black block mb-1">Transaction Date <span className="text-rose-500">*</span></label>
+              <label className="text-xs font-semibold text-black block mb-1">Opening Date <span className="text-rose-500">*</span></label>
               <DatePicker
-                value={form.transactionDate}
-                onChange={(dateStr) => setField("transactionDate", dateStr || new Date().toISOString().substring(0, 10))}
+                value={form.balanceDate}
+                onChange={(dateStr) => setField("balanceDate", dateStr || new Date().toISOString().substring(0, 10))}
+                disabled={isEdit}
                 size="md"
                 isClearable={false}
                 displayFormat="DD MMM, YYYY"
                 placeholder="Select date"
-                error={errors.transactionDate}
+                error={errors.balanceDate}
               />
             </div>
             <div>
