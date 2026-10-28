@@ -186,9 +186,9 @@ const ProductCategoryFormContent: React.FC<FormContentProps> = ({
         <Button
           label="Cancel"
           onClick={onClose}
-          color="var(--color-secondary)"
-          hoverColor="var(--color-secondary-hover)"
+          variant="outline"
           disabled={isSaving}
+          buttonClass="!bg-white hover:!bg-gray-50 !border-gray-300 !text-gray-700 shadow-2xs font-medium !rounded-md !py-[0.4rem] !px-4 text-xs sm:text-sm"
         />
         <Button
           label={isEditing ? "Update Category" : "Save Category"}

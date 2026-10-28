@@ -21,6 +21,8 @@ export * from "@/components/date-range-picker/DateRangePicker";
 
 // Modals
 export { default as Modal } from "@/components/modal/Modal";
+export { default as DrawerModal } from "@/components/modal/DrawerModal";
+export * from "@/components/modal/DrawerModal";
 export { default as ConfirmModal } from "@/components/modal/ConfirmModal";
 export { default as DeleteModal } from "@/components/modal/DeleteModal";
 

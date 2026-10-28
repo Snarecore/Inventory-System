@@ -1,6 +1,5 @@
-import React, { useState, useEffect } from "react";
-import { AnimatePresence, motion } from "framer-motion";
-import { Button, TextInput as InputField } from "@/components/common";
+import React, { useState } from "react";
+import { DrawerModal, Button, TextInput as InputField } from "@/components/common";
 import {
   useInsertCategoryMutation,
   useUpdateCategoryMutation,
@@ -8,7 +7,6 @@ import {
 import { isCategoryAdmin, normalizeCategoryType } from "@/services/category-service";
 import type { CategoryItem, CategoryType } from "@/types";
 import { showErrorToast } from "@/utils/toast-utils";
-import { TiDelete } from "react-icons/ti";
 import { FaLayerGroup, FaArrowDown, FaArrowUp } from "react-icons/fa";
 
 interface CategoryFormModalProps {
@@ -38,17 +36,13 @@ const TYPE_OPTIONS: {
   },
 ];
 
-interface FormContentProps {
-  categoryToEdit?: CategoryItem | null;
-  existingCategories: CategoryItem[];
-  onClose: () => void;
-}
-
-const CategoryFormContent: React.FC<FormContentProps> = ({
-  categoryToEdit,
-  existingCategories,
+export const CategoryFormModal: React.FC<CategoryFormModalProps> = ({
+  isOpen,
   onClose,
+  categoryToEdit,
+  existingCategories = [],
 }) => {
+  const [prevCategoryToEdit, setPrevCategoryToEdit] = useState(categoryToEdit);
   const [categoryName, setCategoryName] = useState(categoryToEdit?.categoryName || "");
   const [categoryType, setCategoryType] = useState<CategoryType>(
     categoryToEdit && normalizeCategoryType(String(categoryToEdit.type || "")) === "Income"
@@ -56,6 +50,17 @@ const CategoryFormContent: React.FC<FormContentProps> = ({
       : "Expense"
   );
   const [nameError, setNameError] = useState("");
+
+  if (categoryToEdit !== prevCategoryToEdit) {
+    setPrevCategoryToEdit(categoryToEdit);
+    setCategoryName(categoryToEdit?.categoryName || "");
+    setCategoryType(
+      categoryToEdit && normalizeCategoryType(String(categoryToEdit.type || "")) === "Income"
+        ? "Income"
+        : "Expense"
+    );
+    setNameError("");
+  }
 
   const isEditing = Boolean(categoryToEdit);
 
@@ -120,145 +125,75 @@ const CategoryFormContent: React.FC<FormContentProps> = ({
   };
 
   return (
-    <>
-      {/* Header */}
-      <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between bg-white shrink-0">
-        <div className="flex items-center gap-2">
-          <div className="p-1.5 rounded-lg bg-sky-50 text-[var(--color-primary)]">
-            <FaLayerGroup size={14} />
-          </div>
-          <h2 className="text-sm font-bold text-gray-900 leading-tight">
-            {isEditing ? "Edit Category" : "Add New Category"}
-          </h2>
-        </div>
-        <button
-          type="button"
-          onClick={onClose}
-          className="p-1 rounded-lg text-gray-400 hover:text-red-500 hover:bg-gray-100 transition-colors cursor-pointer"
-          title="Close"
-        >
-          <TiDelete className="text-2xl text-red-500" />
-        </button>
-      </div>
-
-      {/* Body */}
-      <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-4 space-y-3.5">
-        {/* Category Name */}
-        <div>
-          <InputField
-            label="Category Name"
-            placeholder="e.g. Office Rent, Electricity, Tea/Snacks"
-            value={categoryName}
-            onChange={handleNameChange}
-            error={nameError}
-            required
-            autoFocus
-          />
-        </div>
-
-        {/* Category Type */}
-        <div>
-          <label className="block text-xs font-semibold text-gray-800 mb-1.5">
-            Category Type <span className="text-red-500">*</span>
-          </label>
-          <div className="grid grid-cols-2 gap-2">
-            {TYPE_OPTIONS.map((opt) => {
-              const isSelected = categoryType === opt.value;
-              const Icon = opt.icon;
-              return (
-                <button
-                  key={opt.value}
-                  type="button"
-                  onClick={() => setCategoryType(opt.value)}
-                  className={`flex items-center justify-center gap-1.5 py-2 px-2 rounded-lg border text-xs font-semibold transition-all cursor-pointer ${
-                    isSelected
-                      ? opt.activeColor
-                      : "border-gray-200 bg-gray-50/60 text-gray-600 hover:border-gray-300 hover:bg-gray-100"
-                  }`}
-                >
-                  <Icon className="text-xs shrink-0" />
-                  <span>{opt.label}</span>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      </form>
-
-      {/* Footer */}
-      <div className="px-4 py-2.5 border-t border-gray-100 bg-gray-50/80 flex items-center justify-end gap-2 shrink-0">
-        <Button
-          label="Cancel"
-          onClick={onClose}
-          color="var(--color-secondary)"
-          hoverColor="var(--color-secondary-hover)"
-          disabled={isSaving}
-        />
-        <Button
-          label={isEditing ? "Update Category" : "Save Category"}
-          onClick={() => handleSubmit()}
-          color="var(--color-primary)"
-          hoverColor="var(--color-primary-hover)"
-          isLoading={isSaving}
-          disabled={isSaving}
-        />
-      </div>
-    </>
-  );
-};
-
-export const CategoryFormModal: React.FC<CategoryFormModalProps> = ({
-  isOpen,
-  onClose,
-  categoryToEdit,
-  existingCategories = [],
-}) => {
-  // Handle ESC key to close
-  useEffect(() => {
-    if (!isOpen) return;
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        onClose();
-      }
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isOpen, onClose]);
-
-  return (
-    <AnimatePresence>
-      {isOpen && (
-        <div className="fixed inset-0 z-50 overflow-hidden">
-          {/* Backdrop */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
+    <DrawerModal
+      isOpen={isOpen}
+      onClose={onClose}
+      title={isEditing ? "Edit Category" : "Add New Category"}
+      icon={<FaLayerGroup size={14} />}
+      maxWidth="max-w-[320px]"
+      contentKey={categoryToEdit ? `edit-${categoryToEdit.categoryId}` : "create"}
+      onSubmit={handleSubmit}
+      footerButtons={
+        <>
+          <Button
+            label="Cancel"
             onClick={onClose}
-            className="fixed inset-0 bg-black/40 backdrop-blur-[2px] cursor-pointer"
+            variant="outline"
+            disabled={isSaving}
+            buttonClass="!bg-white hover:!bg-gray-50 !border-gray-300 !text-gray-700 shadow-2xs font-medium !rounded-md !py-[0.4rem] !px-4 text-xs sm:text-sm"
           />
+          <Button
+            label={isEditing ? "Update Category" : "Save Category"}
+            type="submit"
+            color="var(--color-primary)"
+            hoverColor="var(--color-primary-hover)"
+            isLoading={isSaving}
+            disabled={isSaving}
+          />
+        </>
+      }
+    >
+      {/* Category Name */}
+      <div>
+        <InputField
+          label="Category Name"
+          placeholder="e.g. Office Rent, Electricity, Tea/Snacks"
+          value={categoryName}
+          onChange={handleNameChange}
+          error={nameError}
+          required
+          autoFocus
+        />
+      </div>
 
-          {/* Sidebar Drawer Container */}
-          <div className="fixed inset-y-0 right-0 max-w-full flex pointer-events-none">
-            <motion.div
-              key={categoryToEdit ? `edit-${categoryToEdit.categoryId}` : "create"}
-              initial={{ x: "100%" }}
-              animate={{ x: 0 }}
-              exit={{ x: "100%" }}
-              transition={{ type: "spring", damping: 28, stiffness: 280 }}
-              className="w-screen max-w-[320px] bg-white shadow-2xl flex flex-col pointer-events-auto border-l border-gray-200"
-            >
-              <CategoryFormContent
-                categoryToEdit={categoryToEdit}
-                existingCategories={existingCategories}
-                onClose={onClose}
-              />
-            </motion.div>
-          </div>
+      {/* Category Type */}
+      <div>
+        <label className="block text-xs font-semibold text-gray-800 mb-1.5">
+          Category Type <span className="text-red-500">*</span>
+        </label>
+        <div className="grid grid-cols-2 gap-2">
+          {TYPE_OPTIONS.map((opt) => {
+            const isSelected = categoryType === opt.value;
+            const Icon = opt.icon;
+            return (
+              <button
+                key={opt.value}
+                type="button"
+                onClick={() => setCategoryType(opt.value)}
+                className={`flex items-center justify-center gap-1.5 py-2 px-2 rounded-lg border text-xs font-semibold transition-all cursor-pointer ${
+                  isSelected
+                    ? opt.activeColor
+                    : "border-gray-200 bg-gray-50/60 text-gray-600 hover:border-gray-300 hover:bg-gray-100"
+                }`}
+              >
+                <Icon className="text-xs shrink-0" />
+                <span>{opt.label}</span>
+              </button>
+            );
+          })}
         </div>
-      )}
-    </AnimatePresence>
+      </div>
+    </DrawerModal>
   );
 };
 
