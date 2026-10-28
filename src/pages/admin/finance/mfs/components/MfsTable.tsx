@@ -212,13 +212,13 @@ export const MfsTable: React.FC<MfsTableProps> = ({ mfsAccounts, isLoading, onAd
                       </TableCell>
 
                       <TableCell>
-                        <span className="font-mono text-xs text-gray-900 font-medium">
+                        <span className="text-xs text-gray-900 font-medium">
                           {item.phoneNumber || "N/A"}
                         </span>
                       </TableCell>
 
                       <TableCell align="right">
-                        <span className="text-black text-xs font-bold font-mono">
+                        <span className="text-black text-xs font-bold">
                           ৳ {formatMoney(item.currentBalance)}
                         </span>
                       </TableCell>

@@ -307,7 +307,7 @@ export const MfsForm: React.FC<MfsFormProps> = ({
                 <span className="text-[9px] uppercase tracking-widest text-white/70 block">
                   Wallet Number
                 </span>
-                <span className="text-sm font-bold tracking-widest text-white font-mono block">
+                <span className="text-sm font-bold tracking-widest text-white block">
                   {form.phoneNumber || "01XXXXXXXXX"}
                 </span>
               </div>
@@ -324,7 +324,7 @@ export const MfsForm: React.FC<MfsFormProps> = ({
                   <span className="text-[9px] uppercase tracking-wider text-white/70 block">
                     Balance
                   </span>
-                  <span className="text-xs sm:text-sm font-bold text-emerald-300 font-mono">
+                  <span className="text-xs sm:text-sm font-bold text-emerald-300">
                     ৳ {formattedBalance}
                   </span>
                 </div>
@@ -345,13 +345,13 @@ export const MfsForm: React.FC<MfsFormProps> = ({
               </div>
               <div className="flex items-center justify-between gap-2">
                 <span className="text-black font-semibold">Phone Number:</span>
-                <span className="font-bold text-gray-900 bg-white px-2 py-0.5 rounded border border-gray-200 font-mono">
+                <span className="font-bold text-gray-900 bg-white px-2 py-0.5 rounded border border-gray-200">
                   {form.phoneNumber || "—"}
                 </span>
               </div>
               <div className="flex items-center justify-between gap-2 pt-2 border-t border-gray-200">
                 <span className="text-black font-bold">Balance:</span>
-                <span className="font-extrabold text-[var(--color-primary)] text-base font-mono">
+                <span className="font-extrabold text-[var(--color-primary)] text-base">
                   ৳ {formattedBalance}
                 </span>
               </div>
