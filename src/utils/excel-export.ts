@@ -1,5 +1,5 @@
 import * as XLSX from "xlsx";
-import type { PurchaseItem, PurchaseReturnItem, CategoryItem, ProductCategoryItem, BankAccountItem } from "@/types";
+import type { PurchaseItem, PurchaseReturnItem, CategoryItem, ProductCategoryItem, BankAccountItem, MfsUserItem } from "@/types";
 import { isCategoryAdmin, normalizeCategoryType } from "@/services/category-service";
 
 export interface GenericExcelExportOptions {
@@ -40,7 +40,7 @@ const getItemsCount = (p: any): number => {
  */
 export function buildAndDownloadExcel<T extends Record<string, any>>(
   rows: T[],
-  totalRow: T,
+  totalRow: Record<string, any>,
   options: GenericExcelExportOptions
 ): void {
   if (!rows || rows.length === 0) {
@@ -493,5 +493,51 @@ export function exportBankAccountsToExcel(
 
   buildAndDownloadExcel(rows, totalRow, { fileName, sheetName });
 }
+
+/**
+ * Senior Developer Standard: Export MFS Wallets to Excel
+ */
+export function exportMfsAccountsToExcel(
+  mfsAccounts: MfsUserItem[],
+  options?: GenericExcelExportOptions
+): void {
+  if (!mfsAccounts || mfsAccounts.length === 0) {
+    throw new Error("No MFS account records available to export");
+  }
+
+  const todayStr = new Date().toISOString().substring(0, 10);
+  const fileName = options?.fileName || `MFS_Accounts_${todayStr}.xlsx`;
+  const sheetName = options?.sheetName || "MFS Accounts";
+
+  let totalBalance = 0;
+
+  const rows = mfsAccounts.map((item, index) => {
+    const bal = Number(item.currentBalance || 0);
+    totalBalance += bal;
+
+    return {
+      SL: index + 1,
+      Provider: item.method || "—",
+      "Account Name": item.name || "—",
+      "Phone Number": item.phoneNumber || "—",
+      "Opening Balance": Number(item.openingBalance || 0),
+      "Current Balance": bal,
+      Status: item.status || "Active",
+    };
+  });
+
+  const totalRow = {
+    SL: "TOTAL",
+    Provider: `Total Accounts: ${mfsAccounts.length}`,
+    "Account Name": "",
+    "Phone Number": "",
+    "Opening Balance": "",
+    "Current Balance": totalBalance,
+    Status: "",
+  };
+
+  buildAndDownloadExcel(rows, totalRow, { fileName, sheetName });
+}
+
 
 

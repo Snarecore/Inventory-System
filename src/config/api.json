@@ -70,7 +70,9 @@
     },
     "mfs": {
         "mfsUserListUrl": "mfs-user-list",
-        "insertMfsUserUrl": "insert-mfs-user"
+        "insertMfsUserUrl": "insert-mfs-user",
+        "updateMfsUserUrl": "mfs-user-update",
+        "updateMfsUserStatusUrl": "mfs-user-status-update"
     },
     "pageMeta": {
         "pageMetaUrl": "page-meta"

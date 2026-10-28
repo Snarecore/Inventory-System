@@ -1,4 +1,4 @@
-import { useQuery, useMutation, useQueryClient, type UseQueryOptions, type UseMutationOptions } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient, type UseQueryOptions } from "@tanstack/react-query";
 import { bankInfoListQueryKey, bankNameListQueryKey } from "@/config/query-key";
 import {
   fetchBankInfoList,
@@ -14,6 +14,17 @@ import type {
   BankAccountActionResponse,
 } from "@/types";
 import { showSuccessToast, showErrorToast } from "@/utils/toast-utils";
+
+export interface BankMutationCallbacks<TData = BankAccountActionResponse, TVariables = unknown> {
+  onSuccess?: (data: TData, variables: TVariables, context?: unknown) => void;
+  onError?: (error: Error, variables: TVariables, context?: unknown) => void;
+  onSettled?: (
+    data: TData | undefined,
+    error: Error | null,
+    variables: TVariables,
+    context?: unknown
+  ) => void;
+}
 
 /**
  * Hook to fetch registered bank accounts (/get-bank-info-list)
@@ -48,7 +59,7 @@ export const useBankNameListQuery = (
  * Hook to insert a new bank account (/insert-bank-account)
  */
 export const useInsertBankAccountMutation = (
-  options?: UseMutationOptions<BankAccountActionResponse, Error, InsertBankAccountPayload>
+  options?: BankMutationCallbacks<BankAccountActionResponse, InsertBankAccountPayload>
 ) => {
   const queryClient = useQueryClient();
 
@@ -92,7 +103,6 @@ export const useInsertBankAccountMutation = (
       showErrorToast(error?.message || "Failed to create bank account");
       options?.onError?.(error, variables, context);
     },
-    ...options,
   });
 };
 
@@ -100,7 +110,7 @@ export const useInsertBankAccountMutation = (
  * Hook to update an existing bank account (/update-bank-account)
  */
 export const useUpdateBankAccountMutation = (
-  options?: UseMutationOptions<BankAccountActionResponse, Error, UpdateBankAccountPayload>
+  options?: BankMutationCallbacks<BankAccountActionResponse, UpdateBankAccountPayload>
 ) => {
   const queryClient = useQueryClient();
 
@@ -148,6 +158,5 @@ export const useUpdateBankAccountMutation = (
       showErrorToast(error?.message || "Failed to update bank account");
       options?.onError?.(error, variables, context);
     },
-    ...options,
   });
 };

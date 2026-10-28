@@ -47,6 +47,8 @@ const Company = React.lazy(() => import('@/pages/admin/company'))
 const FinancialCategory = React.lazy(() => import('@/pages/admin/finance/category'))
 const BankPage = React.lazy(() => import('@/pages/admin/finance/bank'))
 const CreateBankPage = React.lazy(() => import('@/pages/admin/finance/bank/create-bank'))
+const MfsPage = React.lazy(() => import('@/pages/admin/finance/mfs'))
+const CreateMfsPage = React.lazy(() => import('@/pages/admin/finance/mfs/create-mfs'))
 
 
 const withSuspense = (Component: React.ComponentType) => (
@@ -210,6 +212,22 @@ export const router = createBrowserRouter([
   {
     path: '/accounts/chart-of-accounts',
     element: <Navigate to="/admin/banks" replace />,
+  },
+  {
+    path: '/mfs',
+    element: <Navigate to="/admin/mfs" replace />,
+  },
+  {
+    path: '/mfs-list',
+    element: <Navigate to="/admin/mfs" replace />,
+  },
+  {
+    path: '/create-mfs',
+    element: <Navigate to="/admin/create-mfs" replace />,
+  },
+  {
+    path: '/add-mfs',
+    element: <Navigate to="/admin/create-mfs" replace />,
   },
   {
     path: '/company',
@@ -435,6 +453,30 @@ export const router = createBrowserRouter([
       {
         path: 'banks/edit/:id',
         element: withSuspense(CreateBankPage),
+      },
+      {
+        path: 'mfs',
+        element: withSuspense(MfsPage),
+      },
+      {
+        path: 'mfs-list',
+        element: withSuspense(MfsPage),
+      },
+      {
+        path: 'create-mfs',
+        element: withSuspense(CreateMfsPage),
+      },
+      {
+        path: 'add-mfs',
+        element: withSuspense(CreateMfsPage),
+      },
+      {
+        path: 'edit-mfs/:id',
+        element: withSuspense(CreateMfsPage),
+      },
+      {
+        path: 'mfs/edit/:id',
+        element: withSuspense(CreateMfsPage),
       },
 
       {

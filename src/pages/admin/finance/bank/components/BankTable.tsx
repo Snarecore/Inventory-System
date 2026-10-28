@@ -22,7 +22,9 @@ import { formatMoney } from "@/utils/formatters";
 import { exportBankAccountsToExcel } from "@/utils/excel-export";
 import { showSuccessToast, showErrorToast } from "@/utils/toast-utils";
 import { useUpdateBankAccountMutation } from "@/hooks/useBankQueries";
-import { FaCreditCard, FaCheckCircle, FaTimesCircle } from "react-icons/fa";
+import { useDebounce } from "@/hooks/useDebounce";
+import { AccountStatusBadge, AccountStatusTabs } from "@/pages/admin/finance/components";
+import { FaCreditCard } from "react-icons/fa";
 import { FiChevronDown } from "react-icons/fi";
 
 interface BankTableProps {
@@ -44,21 +46,34 @@ export const BankTable: React.FC<BankTableProps> = ({ bankAccounts, isLoading, o
 
   const updateMutation = useUpdateBankAccountMutation();
 
-  // Status counts in single pass without memo
-  let activeCount = 0, inactiveCount = 0;
-  for (const b of bankAccounts) {
-    const s = (b.status || "").toLowerCase();
-    if (s === "active") activeCount++;
-    else if (s === "inactive") inactiveCount++;
-  }
+  const debouncedSearch = useDebounce(searchQuery, 300);
 
-  // Filter & Sort
-  const term = searchQuery.trim().toLowerCase();
-  const filtered = bankAccounts.filter((item) => {
-    const matchSearch = !term || `${item.bankName} ${item.bankAccountName} ${item.accountNo}`.toLowerCase().includes(term);
-    const matchStatus = !statusFilter || item.status?.toLowerCase() === statusFilter.toLowerCase();
-    return matchSearch && matchStatus;
-  });
+  // Single-pass optimization: Filter and count in one single loop without useMemo
+  const term = debouncedSearch.trim().toLowerCase();
+  const hasStatusFilter = Boolean(statusFilter);
+  const statusFilterLower = statusFilter.toLowerCase();
+
+  let activeCount = 0;
+  let inactiveCount = 0;
+  const filtered: BankAccountItem[] = [];
+
+  for (let i = 0; i < bankAccounts.length; i++) {
+    const item = bankAccounts[i];
+    const statusLower = (item.status || "").toLowerCase();
+
+    // 1. Tab count collection
+    if (statusLower === "active") activeCount++;
+    else if (statusLower === "inactive") inactiveCount++;
+
+    // 2. Filter criteria checks
+    if (hasStatusFilter && statusLower !== statusFilterLower) continue;
+    if (term) {
+      const searchTarget = `${item.bankName} ${item.bankAccountName} ${item.accountNo}`.toLowerCase();
+      if (!searchTarget.includes(term)) continue;
+    }
+
+    filtered.push(item);
+  }
 
   const sorted = [...filtered].sort((a, b) => {
     const factor = sortDir === "asc" ? 1 : -1;
@@ -116,12 +131,6 @@ export const BankTable: React.FC<BankTableProps> = ({ bankAccounts, isLoading, o
     }
   };
 
-  const statusTabs = [
-    { label: "All Accounts", value: "", count: bankAccounts.length },
-    { label: "Active", value: "Active", count: activeCount, icon: FaCheckCircle, text: "text-emerald-600", badge: "bg-emerald-100 text-emerald-700" },
-    { label: "Inactive", value: "Inactive", count: inactiveCount, icon: FaTimesCircle, text: "text-rose-600", badge: "bg-rose-100 text-rose-700" },
-  ];
-
   return (
     <TableContainer className="w-full">
       <TableToolbar>
@@ -130,28 +139,17 @@ export const BankTable: React.FC<BankTableProps> = ({ bankAccounts, isLoading, o
             <Search searchQuery={searchQuery} onSearchChange={(v) => { setSearchQuery(v); setCurrentPage(1); }} placeholder="Search bank, account name, no..." />
           </div>
           <div className="flex items-center gap-2 self-start sm:self-auto flex-wrap">
-            <div className="inline-flex items-center rounded-lg border border-gray-200 p-0.5 bg-gray-50 h-8">
-              {statusTabs.map((tab) => {
-                const active = statusFilter === tab.value;
-                const Icon = tab.icon;
-                return (
-                  <button
-                    key={tab.value}
-                    type="button"
-                    onClick={() => { setStatusFilter(tab.value); setCurrentPage(1); }}
-                    className={`h-7 px-3 rounded-md text-xs font-bold transition-all cursor-pointer whitespace-nowrap flex items-center gap-1.5 ${
-                      active ? `bg-white shadow-xs ${tab.text || "text-[var(--color-primary)]"}` : "text-gray-600 hover:text-black"
-                    }`}
-                  >
-                    {Icon && <Icon size={11} className={active ? tab.text : "text-gray-400"} />}
-                    <span>{tab.label}</span>
-                    <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-semibold ${active ? (tab.badge || "bg-sky-100 text-sky-700") : "bg-gray-200/70 text-gray-600"}`}>
-                      {tab.count}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
+            <AccountStatusTabs
+              currentStatus={statusFilter}
+              onChangeStatus={(st) => {
+                setStatusFilter(st);
+                setCurrentPage(1);
+              }}
+              totalCount={bankAccounts.length}
+              activeCount={activeCount}
+              inactiveCount={inactiveCount}
+              allLabel="All Accounts"
+            />
             <ExcelExportButton onClick={handleExport} title="Download Bank Accounts Excel Report" />
           </div>
         </div>
@@ -175,7 +173,6 @@ export const BankTable: React.FC<BankTableProps> = ({ bankAccounts, isLoading, o
             <TableBody>
               {rows.length > 0 ? (
                 rows.map((item, idx) => {
-                  const isActive = (item.status || "").toLowerCase() === "active";
                   return (
                     <TableRow key={item.bankId || idx}>
                       <TableCell align="center" className="text-black font-normal">{(safeCurrentPage - 1) * pageSize + idx + 1}</TableCell>
@@ -193,17 +190,11 @@ export const BankTable: React.FC<BankTableProps> = ({ bankAccounts, isLoading, o
                         ) : <span className="text-gray-400 text-xs">N/A</span>}
                       </TableCell>
                       <TableCell align="center">
-                        <button
-                          type="button"
-                          onClick={() => handleToggleStatus(item)}
+                        <AccountStatusBadge
+                          status={item.status}
+                          onToggle={() => handleToggleStatus(item)}
                           disabled={updateMutation.isPending}
-                          className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-semibold border cursor-pointer transition-all hover:opacity-80 ${
-                            isActive ? "bg-emerald-100 text-emerald-800 border-emerald-300" : "bg-rose-100 text-rose-800 border-rose-300"
-                          }`}
-                          title={`Click to switch to ${isActive ? "Inactive" : "Active"}`}
-                        >
-                          {item.status || "Inactive"}
-                        </button>
+                        />
                       </TableCell>
                       <TableCell align="center">
                         <TableActionButtons
