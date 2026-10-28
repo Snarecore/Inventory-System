@@ -55,12 +55,8 @@ export const BankTable: React.FC<BankTableProps> = ({ bankAccounts, isLoading, o
   // Filter & Sort
   const term = searchQuery.trim().toLowerCase();
   const filtered = bankAccounts.filter((item) => {
-    const matchSearch = !term ||
-      (item.bankName || "").toLowerCase().includes(term) ||
-      (item.bankAccountName || "").toLowerCase().includes(term) ||
-      (item.accountNo || "").toLowerCase().includes(term) ||
-      (item.branchName || "").toLowerCase().includes(term);
-    const matchStatus = !statusFilter || (item.status || "").toLowerCase() === statusFilter.toLowerCase();
+    const matchSearch = !term || `${item.bankName} ${item.bankAccountName} ${item.accountNo}`.toLowerCase().includes(term);
+    const matchStatus = !statusFilter || item.status?.toLowerCase() === statusFilter.toLowerCase();
     return matchSearch && matchStatus;
   });
 
