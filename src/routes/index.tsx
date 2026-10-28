@@ -428,6 +428,14 @@ export const router = createBrowserRouter([
         path: 'add-bank',
         element: withSuspense(CreateBankPage),
       },
+      {
+        path: 'edit-bank/:id',
+        element: withSuspense(CreateBankPage),
+      },
+      {
+        path: 'banks/edit/:id',
+        element: withSuspense(CreateBankPage),
+      },
 
       {
         path: 'customers',

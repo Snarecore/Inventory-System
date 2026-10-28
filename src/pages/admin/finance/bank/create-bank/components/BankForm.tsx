@@ -1,8 +1,13 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { FaLandmark, FaCreditCard, FaCheckCircle } from "react-icons/fa";
 import { Button, ConfirmModal, TextInput, SelectInput, DatePicker } from "@/components/common";
-import { useBankNameListQuery, useBankInfoListQuery, useInsertBankAccountMutation } from "@/hooks/useBankQueries";
+import {
+  useBankNameListQuery,
+  useBankInfoListQuery,
+  useInsertBankAccountMutation,
+  useUpdateBankAccountMutation,
+} from "@/hooks/useBankQueries";
 import { toNaiveIso } from "@/services/bank-service";
 import { showErrorToast, showDeleteToast } from "@/utils/toast-utils";
 
@@ -22,21 +27,51 @@ const getInitialForm = () => {
 
 export const BankForm: React.FC<BankFormProps> = ({ onSuccessNavigate, onCancel }) => {
   const navigate = useNavigate();
+  const { id } = useParams<{ id?: string }>();
+  const isEdit = Boolean(id);
+
   const [form, setForm] = useState(getInitialForm());
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isResetModalOpen, setIsResetModalOpen] = useState(false);
+  const [syncedId, setSyncedId] = useState<string | null>(null);
 
   const { data: bankNameData, isLoading: isBankLoading } = useBankNameListQuery();
   const { data: bankInfoData } = useBankInfoListQuery();
 
   const bankList = bankNameData?.bankNameList || [];
-  const existingAccounts = (bankInfoData?.bankAccounts || []).map((a) => (a.accountNo || "").trim().toLowerCase());
+  const existingAccounts = bankInfoData?.bankAccounts || [];
   const bankOptions = bankList.map((b) => ({ label: `${b.bankName}${b.bankShortCode ? ` (${b.bankShortCode})` : ""}`, value: b.bankName }));
   const selectedBankOption = form.bankName ? bankOptions.find((o) => o.value === form.bankName) || { label: form.bankName, value: form.bankName } : null;
+
+  // Sync state during render when edit data is ready
+  const existing = id && existingAccounts.length
+    ? existingAccounts.find((a) => String(a.bankId) === String(id))
+    : null;
+
+  if (id && existing && syncedId !== id) {
+    setSyncedId(id);
+    setForm({
+      bankName: existing.bankName || "",
+      bankAccountName: existing.bankAccountName || "",
+      accountNo: existing.accountNo || "",
+      openingBalance: existing.openingBalance !== undefined ? String(existing.openingBalance) : String(existing.currentBalance ?? ""),
+      transactionDate: existing.transactionDate ? existing.transactionDate.substring(0, 10) : "",
+      status: (existing.status as "Active" | "Inactive") || "Active",
+      hasCard: Boolean(existing.hasCard),
+      cardType: (existing.cardType as "debit" | "credit") || "debit",
+      cardNumber: existing.cardNumber ? String(existing.cardNumber).replace(/(.{4})/g, "$1 ").trim() : "",
+    });
+  }
 
   const insertMutation = useInsertBankAccountMutation({
     onSuccess: () => (onSuccessNavigate ? onSuccessNavigate() : navigate("/admin/banks")),
   });
+
+  const updateMutation = useUpdateBankAccountMutation({
+    onSuccess: () => (onSuccessNavigate ? onSuccessNavigate() : navigate("/admin/banks")),
+  });
+
+  const isPending = insertMutation.isPending || updateMutation.isPending;
 
   const setField = (field: string, val: unknown) => {
     setForm((prev) => ({ ...prev, [field]: val }));
@@ -48,7 +83,12 @@ export const BankForm: React.FC<BankFormProps> = ({ onSuccessNavigate, onCancel 
     if (!form.bankName.trim()) errs.bankName = "Please select a bank";
     if (!form.bankAccountName.trim()) errs.bankAccountName = "Account holder name is required";
     if (!form.accountNo.trim()) errs.accountNo = "Account number is required";
-    else if (existingAccounts.includes(form.accountNo.trim().toLowerCase())) errs.accountNo = `Account "${form.accountNo.trim()}" is already registered`;
+    else {
+      const duplicate = existingAccounts.some(
+        (a) => a.accountNo.trim().toLowerCase() === form.accountNo.trim().toLowerCase() && (!isEdit || String(a.bankId) !== String(id))
+      );
+      if (duplicate) errs.accountNo = `Account "${form.accountNo.trim()}" is already registered`;
+    }
     if (form.openingBalance !== "" && (isNaN(Number(form.openingBalance)) || Number(form.openingBalance) < 0)) errs.openingBalance = "Please enter a valid positive balance";
     if (!form.transactionDate) errs.transactionDate = "Transaction date is required";
     if (form.hasCard) {
@@ -61,17 +101,27 @@ export const BankForm: React.FC<BankFormProps> = ({ onSuccessNavigate, onCancel 
 
   const handleSubmit = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
-    if (insertMutation.isPending) return;
+    if (isPending) return;
     if (!validate()) return showErrorToast(Object.values(errors)[0] || "Please fill all required fields correctly");
 
-    insertMutation.mutate({
-      bankName: form.bankName.trim(), bankAccountName: form.bankAccountName.trim(),
-      accountNo: form.accountNo.trim(), openingBalance: Number(form.openingBalance || 0),
-      balanceDate: toNaiveIso(new Date()), hasCard: form.hasCard,
+    const payload = {
+      bankAccountName: form.bankAccountName.trim(),
+      bankName: form.bankName.trim(),
+      accountNo: form.accountNo.trim(),
+      openingBalance: Number(form.openingBalance || 0),
+      balanceDate: toNaiveIso(new Date()),
+      hasCard: form.hasCard,
       cardType: form.hasCard ? form.cardType : null,
       cardNumber: form.hasCard ? form.cardNumber.replace(/\D/g, "") : null,
-      status: form.status, transactionDate: toNaiveIso(form.transactionDate),
-    });
+      status: form.status,
+      transactionDate: toNaiveIso(form.transactionDate),
+    };
+
+    if (isEdit && id) {
+      updateMutation.mutate({ bankId: Number(id), ...payload });
+    } else {
+      insertMutation.mutate(payload);
+    }
   };
 
   const formattedBalance = Number(form.openingBalance || 0).toLocaleString("en-BD", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -82,16 +132,23 @@ export const BankForm: React.FC<BankFormProps> = ({ onSuccessNavigate, onCancel 
       <div className="sticky top-0 z-40 bg-[#F6F6F6] py-2 sm:py-2.5 -mt-2 sm:-mt-2.5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5 border-b border-gray-200">
         <div className="flex items-center gap-2">
           <h1 className="text-sm sm:text-base lg:text-lg font-bold text-[var(--primary-color)] flex items-center gap-1.5 shrink-0">
-            <FaLandmark className="text-[var(--primary-color)]" size={18} /><span>Add New Bank Account</span>
+            <FaLandmark className="text-[var(--primary-color)]" size={18} />
+            <span>{isEdit ? "Edit Bank Account" : "Add New Bank Account"}</span>
           </h1>
           <span className="text-[10px] sm:text-xs px-2.5 py-0.5 rounded-full bg-[var(--primary-color-light)] text-[var(--primary-color)] font-medium">
-            {form.accountNo ? `ACC: ${form.accountNo}` : "New Account"}
+            {form.accountNo ? `ACC: ${form.accountNo}` : isEdit ? "Editing" : "New Account"}
           </span>
         </div>
         <div className="flex items-center gap-2">
           <button type="button" onClick={() => setIsResetModalOpen(true)} className="px-3 py-1.5 text-xs text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg cursor-pointer">Reset</button>
           <button type="button" onClick={() => (onCancel ? onCancel() : navigate("/admin/banks"))} className="px-3 py-1.5 text-xs text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg cursor-pointer">Cancel</button>
-          <Button label={insertMutation.isPending ? "Saving..." : "Save Bank Account"} onClick={() => handleSubmit()} color="var(--primary-color)" disabled={insertMutation.isPending} buttonClass="!text-xs !py-1.5 !w-auto justify-center font-normal !text-white" />
+          <Button
+            label={isPending ? (isEdit ? "Updating..." : "Saving...") : (isEdit ? "Update Bank Account" : "Save Bank Account")}
+            onClick={() => handleSubmit()}
+            color="var(--primary-color)"
+            disabled={isPending}
+            buttonClass="!text-xs !py-1.5 !w-auto justify-center font-normal !text-white"
+          />
         </div>
       </div>
 
@@ -100,7 +157,10 @@ export const BankForm: React.FC<BankFormProps> = ({ onSuccessNavigate, onCancel 
         {/* Left Inputs (8 cols) */}
         <div className="lg:col-span-8 bg-white p-3.5 sm:p-4 rounded-xl border border-gray-200 shadow-xs flex flex-col gap-3.5">
           <div className="border-b border-gray-100 pb-2 flex items-center justify-between">
-            <h2 className="text-xs sm:text-sm font-bold text-gray-800 flex items-center gap-2"><FaLandmark className="text-[var(--primary-color)]" size={14} /><span>Bank Account Information</span></h2>
+            <h2 className="text-xs sm:text-sm font-bold text-gray-800 flex items-center gap-2">
+              <FaLandmark className="text-[var(--primary-color)]" size={14} />
+              <span>Bank Account Information</span>
+            </h2>
             <span className="text-[11px] text-gray-400">Fields marked with <span className="text-rose-500">*</span> are required</span>
           </div>
 
@@ -111,7 +171,7 @@ export const BankForm: React.FC<BankFormProps> = ({ onSuccessNavigate, onCancel 
               {errors.bankName && <p className="text-[11px] text-rose-600 font-medium mt-1">{errors.bankName}</p>}
             </div>
             <TextInput label="Account Holder Name" required value={form.bankAccountName} placeholder="e.g. Main Operation Account" onChange={(val) => setField("bankAccountName", val)} error={errors.bankAccountName} />
-            <TextInput label="Account Number" required value={form.accountNo} placeholder="e.g. 123456789012" onChange={(val) => setField("accountNo", val)} error={errors.accountNo} inputClass="font-mono font-bold" />
+            <TextInput label="Account Number" required value={form.accountNo} placeholder="e.g. 123456789012" onChange={(val) => setField("accountNo", val)} error={errors.accountNo} inputClass="font-bold" />
           </div>
 
           {/* Row 2: Opening Balance (TextInput), Transaction Date (DatePicker), Account Status */}
@@ -125,7 +185,7 @@ export const BankForm: React.FC<BankFormProps> = ({ onSuccessNavigate, onCancel 
               onChange={(val) => setField("openingBalance", val)}
               error={errors.openingBalance}
               icon={<span className="text-gray-500 font-bold text-xs select-none">৳</span>}
-              inputClass="font-mono font-bold [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+              inputClass="font-bold [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
             />
             <div>
               <label className="text-xs font-semibold text-black block mb-1">Transaction Date <span className="text-rose-500">*</span></label>
@@ -177,7 +237,7 @@ export const BankForm: React.FC<BankFormProps> = ({ onSuccessNavigate, onCancel 
                   placeholder="0000 0000 0000 0000"
                   onChange={(val) => setField("cardNumber", val.replace(/\D/g, "").slice(0, 16).replace(/(.{4})/g, "$1 ").trim())}
                   error={errors.cardNumber}
-                  inputClass="font-mono font-bold tracking-wider"
+                  inputClass="font-bold tracking-wider"
                 />
               </div>
             )}
@@ -203,7 +263,7 @@ export const BankForm: React.FC<BankFormProps> = ({ onSuccessNavigate, onCancel 
               </div>
               <div className="my-2">
                 <span className="text-[9px] uppercase tracking-widest text-blue-200/70 block">Account Number</span>
-                <span className="font-mono text-sm font-bold tracking-widest text-white block">{form.accountNo ? form.accountNo.replace(/(.{4})/g, "$1 ").trim() : "•••• •••• ••••"}</span>
+                <span className="text-sm font-bold tracking-widest text-white block">{form.accountNo ? form.accountNo.replace(/(.{4})/g, "$1 ").trim() : "•••• •••• ••••"}</span>
               </div>
               <div className="flex items-end justify-between gap-2 pt-2 border-t border-white/10">
                 <div className="min-w-0">
@@ -212,7 +272,7 @@ export const BankForm: React.FC<BankFormProps> = ({ onSuccessNavigate, onCancel 
                 </div>
                 <div className="text-right shrink-0">
                   <span className="text-[9px] uppercase tracking-wider text-blue-200/70 block">Opening Balance</span>
-                  <span className="font-mono text-xs sm:text-sm font-bold text-emerald-300">৳ {formattedBalance}</span>
+                  <span className="text-xs sm:text-sm font-bold text-emerald-300">৳ {formattedBalance}</span>
                 </div>
               </div>
             </div>
@@ -221,12 +281,12 @@ export const BankForm: React.FC<BankFormProps> = ({ onSuccessNavigate, onCancel 
             <div className="flex flex-col gap-2 p-2 rounded-lg bg-gray-50 border border-gray-200 text-xs">
               <div className="flex items-center justify-between gap-2"><span className="text-black font-semibold">Bank Name:</span><span className="font-bold text-black truncate text-right max-w-[170px]">{form.bankName || "—"}</span></div>
               <div className="flex items-center justify-between gap-2"><span className="text-black font-semibold">Account Title:</span><span className="font-semibold text-gray-800 truncate text-right max-w-[170px]">{form.bankAccountName || "—"}</span></div>
-              <div className="flex items-center justify-between gap-2"><span className="text-black font-semibold">Account Number:</span><span className="font-mono font-bold text-gray-900 bg-white px-2 py-0.5 rounded border border-gray-200">{form.accountNo || "—"}</span></div>
-              <div className="flex items-center justify-between gap-2 pt-2 border-t border-gray-200"><span className="text-black font-bold">Opening Balance:</span><span className="font-mono font-extrabold text-[var(--primary-color)] text-base">৳ {formattedBalance}</span></div>
+              <div className="flex items-center justify-between gap-2"><span className="text-black font-semibold">Account Number:</span><span className="font-bold text-gray-900 bg-white px-2 py-0.5 rounded border border-gray-200">{form.accountNo || "—"}</span></div>
+              <div className="flex items-center justify-between gap-2 pt-2 border-t border-gray-200"><span className="text-black font-bold">Opening Balance:</span><span className="font-extrabold text-[var(--primary-color)] text-base">৳ {formattedBalance}</span></div>
               {form.hasCard && form.cardNumber && (
                 <div className="flex items-center justify-between gap-2 pt-2 border-t border-gray-200">
                   <span className="text-black font-semibold flex items-center gap-1"><FaCreditCard size={11} className="text-gray-700" /><span>Card ({form.cardType}):</span></span>
-                  <span className="font-mono text-gray-800 font-semibold">{form.cardNumber}</span>
+                  <span className="text-gray-800 font-semibold">{form.cardNumber}</span>
                 </div>
               )}
             </div>

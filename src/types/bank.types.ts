@@ -54,6 +54,10 @@ export interface InsertBankAccountPayload {
   transactionDate: string;
 }
 
+export interface UpdateBankAccountPayload extends InsertBankAccountPayload {
+  bankId: number;
+}
+
 export interface BankAccountActionResponse {
   status: string;
   msg: string;

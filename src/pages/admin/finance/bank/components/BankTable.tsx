@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Search,
   EmptyState,
@@ -14,11 +15,13 @@ import {
   TableCell,
   TablePaginationFooter,
   ExcelExportButton,
+  TableActionButtons,
 } from "@/components/common";
 import type { BankAccountItem } from "@/types";
 import { formatMoney } from "@/utils/formatters";
 import { exportBankAccountsToExcel } from "@/utils/excel-export";
 import { showSuccessToast, showErrorToast } from "@/utils/toast-utils";
+import { useUpdateBankAccountMutation } from "@/hooks/useBankQueries";
 import { FaCreditCard, FaCheckCircle, FaTimesCircle } from "react-icons/fa";
 import { FiChevronDown } from "react-icons/fi";
 
@@ -31,12 +34,15 @@ interface BankTableProps {
 type SortKey = "bankName" | "bankAccountName" | "currentBalance" | "status";
 
 export const BankTable: React.FC<BankTableProps> = ({ bankAccounts, isLoading, onAddNew }) => {
+  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [sortKey, setSortKey] = useState<SortKey>("bankName");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
+
+  const updateMutation = useUpdateBankAccountMutation();
 
   // Status counts in single pass without memo
   let activeCount = 0, inactiveCount = 0;
@@ -86,6 +92,23 @@ export const BankTable: React.FC<BankTableProps> = ({ bankAccounts, isLoading, o
       <FiChevronDown size={11} className={`text-black transition-transform duration-200 ${sortKey === key && sortDir === "asc" ? "rotate-180" : ""}`} />
     </span>
   );
+
+  const handleToggleStatus = (item: BankAccountItem) => {
+    const nextStatus = (item.status || "").toLowerCase() === "active" ? "Inactive" : "Active";
+    updateMutation.mutate({
+      bankId: item.bankId,
+      bankName: item.bankName,
+      bankAccountName: item.bankAccountName,
+      accountNo: item.accountNo,
+      openingBalance: Number(item.openingBalance ?? item.currentBalance ?? 0),
+      balanceDate: item.balanceDate || "",
+      hasCard: Boolean(item.hasCard),
+      cardType: item.cardType || null,
+      cardNumber: item.cardNumber || null,
+      status: nextStatus,
+      transactionDate: item.transactionDate || "",
+    });
+  };
 
   const handleExport = () => {
     const data = filtered.length > 0 ? filtered : bankAccounts;
@@ -141,7 +164,7 @@ export const BankTable: React.FC<BankTableProps> = ({ bankAccounts, isLoading, o
 
       <TableScroll>
         {isLoading && bankAccounts.length === 0 ? (
-          <div className="p-3"><TableSkeleton columnCount={7} rowCount={6} /></div>
+          <div className="p-3"><TableSkeleton columnCount={8} rowCount={6} /></div>
         ) : (
           <Table minWidth={800}>
             <TableHead>
@@ -152,6 +175,7 @@ export const BankTable: React.FC<BankTableProps> = ({ bankAccounts, isLoading, o
               <TableTh width={140} align="right">{renderSort("Balance", "currentBalance", "right")}</TableTh>
               <TableTh width={90} align="center">Card</TableTh>
               <TableTh width={100} align="center">{renderSort("Status", "status", "center")}</TableTh>
+              <TableTh width={80} align="center">Action</TableTh>
             </TableHead>
             <TableBody>
               {rows.length > 0 ? (
@@ -161,33 +185,43 @@ export const BankTable: React.FC<BankTableProps> = ({ bankAccounts, isLoading, o
                     <TableRow key={item.bankId || idx}>
                       <TableCell align="center" className="text-black font-normal">{(safeCurrentPage - 1) * pageSize + idx + 1}</TableCell>
                       <TableCell>
-                        <div className="flex items-center gap-2 min-w-0">
-                          <div className="min-w-0">
-                            <span className=" text-black block truncate text-xs">{item.bankName}</span>
-                          </div>
-                        </div>
+                        <span className="text-black block truncate text-xs font-semibold">{item.bankName}</span>
                       </TableCell>
                       <TableCell><span className="font-medium text-black truncate block">{item.bankAccountName || "N/A"}</span></TableCell>
-                      <TableCell><span className="text-xs text-black px-2 py-0.5 inline-block">{item.accountNo || "N/A"}</span></TableCell>
-                      <TableCell align="right"><span className=" text-black">৳ {formatMoney(item.currentBalance)}</span></TableCell>
+                      <TableCell><span className="text-xs text-black font-medium px-2 py-0.5 inline-block">{item.accountNo || "N/A"}</span></TableCell>
+                      <TableCell align="right"><span className="text-black text-xs font-bold">৳ {formatMoney(item.currentBalance)}</span></TableCell>
                       <TableCell align="center">
                         {item.hasCard ? (
                           <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200 uppercase" title={`Card: ${item.cardType || "Card"}`}>
                             <FaCreditCard size={10} /><span>{item.cardType || "Card"}</span>
                           </span>
-                        ) : <span className="text-black text-xs">N/A</span>}
+                        ) : <span className="text-gray-400 text-xs">N/A</span>}
                       </TableCell>
                       <TableCell align="center">
-                        <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-semibold border ${isActive ? "bg-emerald-100 text-emerald-800 border-emerald-300" : "bg-rose-100 text-rose-800 border-rose-300"}`}>
+                        <button
+                          type="button"
+                          onClick={() => handleToggleStatus(item)}
+                          disabled={updateMutation.isPending}
+                          className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-semibold border cursor-pointer transition-all hover:opacity-80 ${
+                            isActive ? "bg-emerald-100 text-emerald-800 border-emerald-300" : "bg-rose-100 text-rose-800 border-rose-300"
+                          }`}
+                          title={`Click to switch to ${isActive ? "Inactive" : "Active"}`}
+                        >
                           {item.status || "Inactive"}
-                        </span>
+                        </button>
+                      </TableCell>
+                      <TableCell align="center">
+                        <TableActionButtons
+                          onEdit={() => navigate(`/admin/edit-bank/${item.bankId}`)}
+                          editTitle="Edit Bank Account"
+                        />
                       </TableCell>
                     </TableRow>
                   );
                 })
               ) : (
                 <tr>
-                  <td colSpan={7} className="py-12 text-center">
+                  <td colSpan={8} className="py-12 text-center">
                     <EmptyState title="No bank accounts found" description="There are no bank accounts registered yet or matching your search." buttonText="+ Add Bank Account" onButtonClick={onAddNew} />
                   </td>
                 </tr>

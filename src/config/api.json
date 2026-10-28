@@ -65,7 +65,8 @@
     "bank": {
         "bankInfoListUrl": "get-bank-info-list",
         "bankNameListUrl": "get-bank-name-list",
-        "insertBankAccountUrl": "insert-bank-account"
+        "insertBankAccountUrl": "insert-bank-account",
+        "updateBankAccountUrl": "update-bank-account"
     },
     "mfs": {
         "mfsUserListUrl": "mfs-user-list",

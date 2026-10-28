@@ -4,11 +4,13 @@ import {
   fetchBankInfoList,
   fetchBankNameList,
   insertBankAccount,
+  updateBankAccount,
 } from "@/services/bank-service";
 import type {
   BankInfoListResponse,
   BankNameListResponse,
   InsertBankAccountPayload,
+  UpdateBankAccountPayload,
   BankAccountActionResponse,
 } from "@/types";
 import { showSuccessToast, showErrorToast } from "@/utils/toast-utils";
@@ -37,7 +39,7 @@ export const useBankNameListQuery = (
   return useQuery<BankNameListResponse, Error>({
     queryKey: [bankNameListQueryKey],
     queryFn: fetchBankNameList,
-    staleTime: 30 * 60 * 1000, // 30 mins staleTime for static master list
+    staleTime: 30 * 60 * 1000,
     ...options,
   });
 };
@@ -78,7 +80,7 @@ export const useInsertBankAccountMutation = (
         };
       });
 
-      // 2. Invalidate and refetch all queries across all components
+      // 2. Invalidate and refetch all queries
       await queryClient.invalidateQueries({
         queryKey: [bankInfoListQueryKey],
         refetchType: "all",
@@ -89,6 +91,63 @@ export const useInsertBankAccountMutation = (
     },
     onError: (error, variables, context) => {
       showErrorToast(error?.message || "Failed to create bank account");
+      options?.onError?.(error, variables, context);
+    },
+    ...options,
+  });
+};
+
+/**
+ * Hook to update an existing bank account (/update-bank-account)
+ */
+export const useUpdateBankAccountMutation = (
+  options?: UseMutationOptions<BankAccountActionResponse, Error, UpdateBankAccountPayload>
+) => {
+  const queryClient = useQueryClient();
+
+  return useMutation<BankAccountActionResponse, Error, UpdateBankAccountPayload>({
+    mutationFn: updateBankAccount,
+    onSuccess: async (data, variables, context) => {
+      // 1. Optimistic Cache Update: Immediately update account in the cache
+      queryClient.setQueryData<BankInfoListResponse>([bankInfoListQueryKey], (old) => {
+        if (!old) return old;
+        const currentList = Array.isArray(old.bankAccounts) ? old.bankAccounts : [];
+        const updatedList = currentList.map((acc) => {
+          if (acc.bankId === variables.bankId) {
+            return {
+              ...acc,
+              bankName: variables.bankName,
+              bankAccountName: variables.bankAccountName,
+              accountNo: variables.accountNo,
+              currentBalance: Number(variables.openingBalance || 0),
+              openingBalance: Number(variables.openingBalance || 0),
+              status: variables.status || "Active",
+              hasCard: Boolean(variables.hasCard),
+              cardType: variables.cardType || null,
+              cardNumber: variables.cardNumber || null,
+              balanceDate: variables.balanceDate || acc.balanceDate,
+              transactionDate: variables.transactionDate || acc.transactionDate,
+            };
+          }
+          return acc;
+        });
+        return {
+          ...old,
+          bankAccounts: updatedList,
+        };
+      });
+
+      // 2. Invalidate and refetch all queries
+      await queryClient.invalidateQueries({
+        queryKey: [bankInfoListQueryKey],
+        refetchType: "all",
+      });
+
+      showSuccessToast(data?.msg || "Bank account updated successfully!");
+      options?.onSuccess?.(data, variables, context);
+    },
+    onError: (error, variables, context) => {
+      showErrorToast(error?.message || "Failed to update bank account");
       options?.onError?.(error, variables, context);
     },
     ...options,

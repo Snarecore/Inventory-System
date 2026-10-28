@@ -7,6 +7,7 @@ import type {
   BankInfoListResponse,
   BankNameListResponse,
   InsertBankAccountPayload,
+  UpdateBankAccountPayload,
   BankAccountActionResponse,
 } from "@/types";
 
@@ -145,3 +146,40 @@ export const insertBankAccount = async (
 
   return res;
 };
+
+/**
+ * 4. UPDATE BANK ACCOUNT (/update-bank-account)
+ * Updates an existing bank account using only actual required backend keys.
+ */
+export const updateBankAccount = async (
+  payload: UpdateBankAccountPayload
+): Promise<BankAccountActionResponse> => {
+  const accessUser = buildAccessUser();
+  const url = apiConfig.bank?.updateBankAccountUrl || "update-bank-account";
+
+  const hasCard = Boolean(payload.hasCard);
+  const body = {
+    accessUser,
+    bankId: Number(payload.bankId),
+    bankAccountName: payload.bankAccountName.trim(),
+    bankName: payload.bankName.trim(),
+    accountNo: payload.accountNo.trim(),
+    openingBalance: Number(payload.openingBalance || 0),
+    balanceDate: payload.balanceDate || toNaiveIso(new Date()),
+    hasCard,
+    cardType: hasCard && payload.cardType ? payload.cardType.trim().toLowerCase() : null,
+    cardNumber: hasCard && payload.cardNumber ? String(payload.cardNumber).replace(/\D/g, "") : null,
+    status: payload.status || "Active",
+    transactionDate: payload.transactionDate ? toNaiveIso(payload.transactionDate) : toNaiveIso(new Date()),
+  };
+
+  const res: any = await postData<BankAccountActionResponse>({ url, body });
+
+  if (res?.error || String(res?.status).toLowerCase() === "error") {
+    const msg = describeSaveError(res?.msg || res?.message, payload.accountNo);
+    throw new Error(msg);
+  }
+
+  return res;
+};
+
