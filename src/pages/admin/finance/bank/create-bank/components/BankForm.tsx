@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { FaLandmark, FaCreditCard, FaCheckCircle } from "react-icons/fa";
+import { FaLandmark, FaCreditCard } from "react-icons/fa";
 import { Button, ConfirmModal, TextInput, SelectInput, DatePicker } from "@/components/common";
 import {
   useBankNameListQuery,
@@ -138,14 +138,26 @@ export const BankForm: React.FC<BankFormProps> = ({ onSuccessNavigate, onCancel 
           </span>
         </div>
         <div className="flex items-center gap-2">
-          <button type="button" onClick={() => setIsResetModalOpen(true)} className="px-3 py-1.5 text-xs text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg cursor-pointer">Reset</button>
-          <button type="button" onClick={() => (onCancel ? onCancel() : navigate("/admin/banks"))} className="px-3 py-1.5 text-xs text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg cursor-pointer">Cancel</button>
+          <button
+            type="button"
+            onClick={() => setIsResetModalOpen(true)}
+            className="px-3 py-1.5 text-xs font-semibold text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200 rounded-lg transition-colors cursor-pointer shadow-2xs"
+          >
+            Reset
+          </button>
+          <button
+            type="button"
+            onClick={() => (onCancel ? onCancel() : navigate("/admin/banks"))}
+            className="px-3 py-1.5 text-xs font-semibold text-gray-700 bg-white hover:bg-gray-50 border border-gray-300 rounded-lg transition-colors cursor-pointer shadow-2xs"
+          >
+            Cancel
+          </button>
           <Button
             label={isPending ? (isEdit ? "Updating..." : "Saving...") : (isEdit ? "Update Bank Account" : "Save Bank Account")}
             onClick={() => handleSubmit()}
             color="var(--primary-color)"
             disabled={isPending}
-            buttonClass="!text-xs !py-1.5 !w-auto justify-center font-normal !text-white"
+            buttonClass="!text-xs !py-1.5 !w-auto justify-center font-medium !text-white"
           />
         </div>
       </div>
@@ -247,7 +259,7 @@ export const BankForm: React.FC<BankFormProps> = ({ onSuccessNavigate, onCancel 
         <div className="lg:col-span-4 lg:sticky lg:top-16 flex flex-col gap-2.5">
           <div className="bg-white p-2.5 sm:p-3 rounded-xl border border-gray-200 shadow-xs flex flex-col gap-2">
             <div className="flex items-center justify-between pb-1.5 border-b border-gray-100">
-              <span className="text-xs font-bold text-black flex items-center gap-1.5"><FaCheckCircle className="text-emerald-500" size={13} /><span>Account Summary</span></span>
+              <span className="text-xs font-bold text-black flex items-center gap-1.5"><span>Account Summary</span></span>
               <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold border ${form.status === "Active" ? "bg-emerald-50 text-emerald-700 border-emerald-200" : "bg-rose-50 text-rose-700 border-rose-200"}`}>{form.status}</span>
             </div>
 
