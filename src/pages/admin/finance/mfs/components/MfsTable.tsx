@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from "react";
+import React, { useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Search,
@@ -23,7 +23,7 @@ import { exportMfsAccountsToExcel } from "@/utils/excel-export";
 import { showSuccessToast, showErrorToast } from "@/utils/toast-utils";
 import { useUpdateMfsUserStatusMutation } from "@/hooks/useMfsQueries";
 import { useDebounce } from "@/hooks/useDebounce";
-import { methodMeta } from "@/services/mfs-service";
+import { MFS_METHODS, methodMeta } from "@/services/mfs-service";
 import MfsLogo from "./MfsLogo";
 import { AccountStatusBadge, AccountStatusTabs } from "@/pages/admin/finance/components";
 import { FiChevronDown } from "react-icons/fi";
@@ -48,15 +48,8 @@ export const MfsTable: React.FC<MfsTableProps> = ({ mfsAccounts, isLoading, onAd
 
   const updateStatusMutation = useUpdateMfsUserStatusMutation();
 
-  // 1. Search Debounce (300ms) prevents re-calculating filter pipeline on every keystroke
   const debouncedSearch = useDebounce(searchQuery, 300);
 
-  // Reset to page 1 when any filter condition changes
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [debouncedSearch, statusFilter, methodFilter]);
-
-  // 2. Single-pass optimization: Filter and count in one loop without useMemo
   const term = debouncedSearch.trim().toLowerCase();
   const hasStatusFilter = Boolean(statusFilter);
   const statusFilterLower = statusFilter.toLowerCase();
@@ -67,17 +60,18 @@ export const MfsTable: React.FC<MfsTableProps> = ({ mfsAccounts, isLoading, onAd
   let inactiveCount = 0;
   const filtered: MfsUserItem[] = [];
 
-  for (let i = 0; i < mfsAccounts.length; i++) {
-    const item = mfsAccounts[i];
+  for (const item of mfsAccounts) {
     const statusLower = (item.status || "").toLowerCase();
-
-    // Collect tab counts
     if (statusLower === "active") activeCount++;
     else if (statusLower === "inactive") inactiveCount++;
 
-    // Apply filters
     if (hasStatusFilter && statusLower !== statusFilterLower) continue;
-    if (hasMethodFilter && (item.method || "").toLowerCase() !== methodFilterLower) continue;
+    if (
+      hasMethodFilter &&
+      methodMeta(item.method).value.toLowerCase() !== methodFilterLower
+    ) {
+      continue;
+    }
     if (term) {
       const searchTarget = `${item.name} ${item.method} ${item.phoneNumber}`.toLowerCase();
       if (!searchTarget.includes(term)) continue;
@@ -86,7 +80,6 @@ export const MfsTable: React.FC<MfsTableProps> = ({ mfsAccounts, isLoading, onAd
     filtered.push(item);
   }
 
-  // Direct sort
   const sorted = [...filtered].sort((a, b) => {
     const factor = sortDir === "asc" ? 1 : -1;
     if (sortKey === "currentBalance") {
@@ -97,7 +90,6 @@ export const MfsTable: React.FC<MfsTableProps> = ({ mfsAccounts, isLoading, onAd
     return valA.localeCompare(valB) * factor;
   });
 
-  // Pagination slice
   const totalCount = sorted.length;
   const pageCount = Math.max(1, Math.ceil(totalCount / pageSize));
   const safeCurrentPage = Math.min(currentPage, pageCount);
@@ -145,8 +137,8 @@ export const MfsTable: React.FC<MfsTableProps> = ({ mfsAccounts, isLoading, onAd
     [updateStatusMutation]
   );
 
-  const handleExport = useCallback(() => {
-    const dataToExport = filtered.length > 0 ? filtered : mfsAccounts;
+  const handleExport = () => {
+    const dataToExport = filtered;
     if (!dataToExport.length) return showErrorToast("No MFS accounts available to export");
     try {
       exportMfsAccountsToExcel(dataToExport);
@@ -154,7 +146,7 @@ export const MfsTable: React.FC<MfsTableProps> = ({ mfsAccounts, isLoading, onAd
     } catch (err: unknown) {
       showErrorToast(err instanceof Error ? err.message : "Failed to export Excel file");
     }
-  }, [filtered, mfsAccounts]);
+  };
 
   return (
     <TableContainer className="w-full">
@@ -164,27 +156,37 @@ export const MfsTable: React.FC<MfsTableProps> = ({ mfsAccounts, isLoading, onAd
             <div className="w-full">
               <Search
                 searchQuery={searchQuery}
-                onSearchChange={setSearchQuery}
+                onSearchChange={(value) => {
+                  setSearchQuery(value);
+                  setCurrentPage(1);
+                }}
                 placeholder="Search wallet, provider, phone..."
               />
             </div>
             <select
               value={methodFilter}
-              onChange={(e) => setMethodFilter(e.target.value)}
+              onChange={(e) => {
+                setMethodFilter(e.target.value);
+                setCurrentPage(1);
+              }}
               className="h-8 px-2.5 rounded-lg border border-gray-200 bg-white text-xs font-semibold text-gray-700 outline-none focus:border-[var(--color-primary)] cursor-pointer"
             >
               <option value="ALL">All Providers</option>
-              <option value="Bkash">bKash</option>
-              <option value="Nagad">Nagad</option>
-              <option value="Rocket">Rocket</option>
-              <option value="Upay">Upay</option>
+              {MFS_METHODS.map((method) => (
+                <option key={method.value} value={method.value}>
+                  {method.label}
+                </option>
+              ))}
             </select>
           </div>
 
           <div className="flex items-center gap-2 self-start sm:self-auto flex-wrap">
             <AccountStatusTabs
               currentStatus={statusFilter}
-              onChangeStatus={setStatusFilter}
+              onChangeStatus={(status) => {
+                setStatusFilter(status);
+                setCurrentPage(1);
+              }}
               totalCount={mfsAccounts.length}
               activeCount={activeCount}
               inactiveCount={inactiveCount}

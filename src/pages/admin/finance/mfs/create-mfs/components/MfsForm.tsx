@@ -28,6 +28,8 @@ const getInitialForm = (data?: MfsUserItem | null) => ({
   status: (data?.status as "Active" | "Inactive") || "Active",
 });
 
+type MfsFormState = ReturnType<typeof getInitialForm>;
+
 export const MfsForm: React.FC<MfsFormProps> = ({
   initialData,
   onSuccessNavigate,
@@ -52,7 +54,7 @@ export const MfsForm: React.FC<MfsFormProps> = ({
 
   const isPending = insertMutation.isPending || updateMutation.isPending;
 
-  const setField = useCallback((field: string, val: string) => {
+  const setField = useCallback(<K extends keyof MfsFormState>(field: K, val: MfsFormState[K]) => {
     setForm((prev) => ({ ...prev, [field]: val }));
     setErrors((prev) => (prev[field] ? { ...prev, [field]: "" } : prev));
   }, []);
@@ -65,7 +67,7 @@ export const MfsForm: React.FC<MfsFormProps> = ({
     [setField]
   );
 
-  const validate = useCallback((): boolean => {
+  const validate = useCallback((): Record<string, string> => {
     const errs: Record<string, string> = {};
     if (!form.method.trim()) errs.method = "Please select an MFS provider";
     if (!form.name.trim()) errs.name = "Account holder name is required";
@@ -85,15 +87,18 @@ export const MfsForm: React.FC<MfsFormProps> = ({
     }
 
     setErrors(errs);
-    return Object.keys(errs).length === 0;
+    return errs;
   }, [form]);
 
   const handleSubmit = useCallback(
     (e?: React.FormEvent) => {
       if (e) e.preventDefault();
       if (isPending) return;
-      if (!validate()) {
-        return showErrorToast(Object.values(errors)[0] || "Please fill all required fields correctly");
+      const validationErrors = validate();
+      if (Object.keys(validationErrors).length > 0) {
+        return showErrorToast(
+          Object.values(validationErrors)[0] || "Please fill all required fields correctly"
+        );
       }
 
       const balanceNum = Number(form.openingBalance || 0);
@@ -119,7 +124,7 @@ export const MfsForm: React.FC<MfsFormProps> = ({
         });
       }
     },
-    [isPending, validate, errors, isEdit, id, form, initialData, updateMutation, insertMutation]
+    [isPending, validate, isEdit, id, form, initialData, updateMutation, insertMutation]
   );
 
   const brand = methodMeta(form.method);
@@ -225,7 +230,7 @@ export const MfsForm: React.FC<MfsFormProps> = ({
               inputClass="font-bold tracking-wider"
             />
             <TextInput
-              label={isEdit ? "Opening Balance (৳)" : "Opening Balance (৳)"}
+              label="Opening Balance (৳)"
               type="number"
               step="any"
               value={form.openingBalance}
