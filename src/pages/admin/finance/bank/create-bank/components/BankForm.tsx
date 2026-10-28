@@ -1,9 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { FaLandmark, FaCreditCard, FaCheckCircle } from "react-icons/fa";
-import Button from "@/components/button/Button";
-import ConfirmModal from "@/components/modal/ConfirmModal";
-import SelectInput from "@/components/form/SelectField";
+import { Button, ConfirmModal, TextInput, SelectInput, DatePicker } from "@/components/common";
 import { useBankNameListQuery, useBankInfoListQuery, useInsertBankAccountMutation } from "@/hooks/useBankQueries";
 import { toNaiveIso } from "@/services/bank-service";
 import { showErrorToast, showDeleteToast } from "@/utils/toast-utils";
@@ -17,21 +15,10 @@ const getInitialForm = () => {
   const d = new Date(), pad = (n: number) => String(n).padStart(2, "0");
   return {
     bankName: "", bankAccountName: "", accountNo: "", openingBalance: "",
-    transactionDate: `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`,
+    transactionDate: `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`,
     status: "Active" as "Active" | "Inactive", hasCard: false, cardType: "debit" as "debit" | "credit", cardNumber: "",
   };
 };
-
-const inputCls = (err?: string) =>
-  `w-full h-9 px-2.5 py-1.5 text-xs border rounded-lg bg-white font-medium text-black focus:outline-none focus:border-[var(--primary-color)] transition-all ${
-    err ? "border-rose-400 bg-rose-50/30" : "border-gray-300"
-  }`;
-
-const FieldLabel: React.FC<{ label: string; required?: boolean }> = ({ label, required }) => (
-  <label className="text-xs font-semibold text-black block mb-1">
-    {label} {required && <span className="text-rose-500">*</span>}
-  </label>
-);
 
 export const BankForm: React.FC<BankFormProps> = ({ onSuccessNavigate, onCancel }) => {
   const navigate = useNavigate();
@@ -78,16 +65,12 @@ export const BankForm: React.FC<BankFormProps> = ({ onSuccessNavigate, onCancel 
     if (!validate()) return showErrorToast(Object.values(errors)[0] || "Please fill all required fields correctly");
 
     insertMutation.mutate({
-      bankName: form.bankName.trim(),
-      bankAccountName: form.bankAccountName.trim(),
-      accountNo: form.accountNo.trim(),
-      openingBalance: Number(form.openingBalance || 0),
-      balanceDate: toNaiveIso(new Date()),
-      hasCard: form.hasCard,
+      bankName: form.bankName.trim(), bankAccountName: form.bankAccountName.trim(),
+      accountNo: form.accountNo.trim(), openingBalance: Number(form.openingBalance || 0),
+      balanceDate: toNaiveIso(new Date()), hasCard: form.hasCard,
       cardType: form.hasCard ? form.cardType : null,
       cardNumber: form.hasCard ? form.cardNumber.replace(/\D/g, "") : null,
-      status: form.status,
-      transactionDate: toNaiveIso(form.transactionDate),
+      status: form.status, transactionDate: toNaiveIso(form.transactionDate),
     });
   };
 
@@ -95,7 +78,7 @@ export const BankForm: React.FC<BankFormProps> = ({ onSuccessNavigate, onCancel 
 
   return (
     <div className="flex flex-col gap-2.5 px-2.5 py-2 sm:px-4 sm:py-2.5 max-w-[1600px] mx-auto w-full">
-      {/* Header */}
+      {/* Sticky Header */}
       <div className="sticky top-0 z-40 bg-[#F6F6F6] py-2 sm:py-2.5 -mt-2 sm:-mt-2.5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5 border-b border-gray-200">
         <div className="flex items-center gap-2">
           <h1 className="text-sm sm:text-base lg:text-lg font-bold text-[var(--primary-color)] flex items-center gap-1.5 shrink-0">
@@ -117,53 +100,47 @@ export const BankForm: React.FC<BankFormProps> = ({ onSuccessNavigate, onCancel 
         {/* Left Inputs (8 cols) */}
         <div className="lg:col-span-8 bg-white p-3.5 sm:p-4 rounded-xl border border-gray-200 shadow-xs flex flex-col gap-3.5">
           <div className="border-b border-gray-100 pb-2 flex items-center justify-between">
-            <h2 className="text-xs sm:text-sm font-bold text-black flex items-center gap-2"><FaLandmark className="text-[var(--primary-color)]" size={14} /><span>Bank Account Information</span></h2>
+            <h2 className="text-xs sm:text-sm font-bold text-gray-800 flex items-center gap-2"><FaLandmark className="text-[var(--primary-color)]" size={14} /><span>Bank Account Information</span></h2>
             <span className="text-[11px] text-gray-400">Fields marked with <span className="text-rose-500">*</span> are required</span>
           </div>
 
-          {/* Row 1: 3 Fields */}
+          {/* Row 1: Bank Name (SelectInput), Account Holder Name (TextInput), Account Number (TextInput) */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             <div className="relative z-30">
               <SelectInput label="Bank Name" value={selectedBankOption} options={bankOptions} onChange={(opt) => setField("bankName", opt.value)} placeholder="-- Choose Bank --" required disabled={isBankLoading} />
               {errors.bankName && <p className="text-[11px] text-rose-600 font-medium mt-1">{errors.bankName}</p>}
             </div>
-            <div>
-              <FieldLabel label="Account Holder Name" required />
-              <input type="text" value={form.bankAccountName} placeholder="e.g. Main Operation Account" onChange={(e) => setField("bankAccountName", e.target.value)} className={inputCls(errors.bankAccountName)} />
-              {errors.bankAccountName && <p className="text-[11px] text-rose-600 font-medium mt-1">{errors.bankAccountName}</p>}
-            </div>
-            <div>
-              <FieldLabel label="Account Number" required />
-              <input type="text" value={form.accountNo} placeholder="e.g. 123456789012" onChange={(e) => setField("accountNo", e.target.value)} className={`${inputCls(errors.accountNo)} font-bold`} />
-              {errors.accountNo && <p className="text-[11px] text-rose-600 font-medium mt-1">{errors.accountNo}</p>}
-            </div>
+            <TextInput label="Account Holder Name" required value={form.bankAccountName} placeholder="e.g. Main Operation Account" onChange={(val) => setField("bankAccountName", val)} error={errors.bankAccountName} />
+            <TextInput label="Account Number" required value={form.accountNo} placeholder="e.g. 123456789012" onChange={(val) => setField("accountNo", val)} error={errors.accountNo} inputClass="font-mono font-bold" />
           </div>
 
-          {/* Row 2: 3 Fields */}
+          {/* Row 2: Opening Balance (TextInput), Transaction Date (DatePicker), Account Status */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            <TextInput
+              label="Opening Balance (৳)"
+              type="number"
+              step="any"
+              value={form.openingBalance}
+              placeholder="0"
+              onChange={(val) => setField("openingBalance", val)}
+              error={errors.openingBalance}
+              icon={<span className="text-gray-500 font-bold text-xs select-none">৳</span>}
+              inputClass="font-mono font-bold [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+            />
             <div>
-              <FieldLabel label="Opening Balance (৳)" />
-              <div className="relative flex items-center">
-                <span className="absolute left-2.5 text-gray-500 font-bold text-xs select-none">৳</span>
-                <input
-                  type="number"
-                  step="any"
-                  value={form.openingBalance}
-                  placeholder="0"
-                  onWheel={(e) => e.currentTarget.blur()}
-                  onChange={(e) => setField("openingBalance", e.target.value)}
-                  className={`${inputCls(errors.openingBalance)} pl-7 font-bold [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none`}
-                />
-              </div>
-              {errors.openingBalance && <p className="text-[11px] text-rose-600 font-medium mt-1">{errors.openingBalance}</p>}
+              <label className="text-xs font-semibold text-black block mb-1">Transaction Date <span className="text-rose-500">*</span></label>
+              <DatePicker
+                value={form.transactionDate}
+                onChange={(dateStr) => setField("transactionDate", dateStr || new Date().toISOString().substring(0, 10))}
+                size="md"
+                isClearable={false}
+                displayFormat="DD MMM, YYYY"
+                placeholder="Select date"
+                error={errors.transactionDate}
+              />
             </div>
             <div>
-              <FieldLabel label="Transaction Date" required />
-              <input type="datetime-local" value={form.transactionDate} onChange={(e) => setField("transactionDate", e.target.value)} className={inputCls(errors.transactionDate)} />
-              {errors.transactionDate && <p className="text-[11px] text-rose-600 font-medium mt-1">{errors.transactionDate}</p>}
-            </div>
-            <div>
-              <FieldLabel label="Account Status" required />
+              <label className="text-xs font-semibold text-black block mb-1">Account Status <span className="text-rose-500">*</span></label>
               <div className="grid grid-cols-2 gap-1 p-0.5 bg-gray-100 rounded-lg border border-gray-300 h-9">
                 {(["Active", "Inactive"] as const).map((st) => (
                   <button key={st} type="button" onClick={() => setField("status", st)} className={`rounded-md text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${form.status === st ? (st === "Active" ? "bg-white text-emerald-700 shadow-xs" : "bg-white text-rose-700 shadow-xs") : "text-gray-500 hover:text-black"}`}>
@@ -186,31 +163,28 @@ export const BankForm: React.FC<BankFormProps> = ({ onSuccessNavigate, onCancel 
             {form.hasCard && (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3 bg-gray-50 border border-gray-200 rounded-lg">
                 <div>
-                  <FieldLabel label="Card Type" />
+                  <label className="text-xs font-semibold text-black block mb-1">Card Type</label>
                   <div className="grid grid-cols-2 gap-1 p-0.5 bg-white rounded-lg border border-gray-300 h-9">
                     {(["debit", "credit"] as const).map((t) => (
                       <button key={t} type="button" onClick={() => setField("cardType", t)} className={`rounded-md text-xs font-bold uppercase transition-all cursor-pointer flex items-center justify-center ${form.cardType === t ? "bg-[var(--primary-color)] text-white shadow-xs" : "text-gray-600 hover:text-black"}`}>{t} Card</button>
                     ))}
                   </div>
                 </div>
-                <div>
-                  <FieldLabel label="Card Number" required />
-                  <input
-                    type="text"
-                    value={form.cardNumber}
-                    placeholder="0000 0000 0000 0000"
-                    maxLength={19}
-                    onChange={(e) => setField("cardNumber", e.target.value.replace(/\D/g, "").slice(0, 16).replace(/(.{4})/g, "$1 ").trim())}
-                    className={`${inputCls(errors.cardNumber)} font-bold tracking-wider`}
-                  />
-                  {errors.cardNumber && <p className="text-[11px] text-rose-600 font-medium mt-1">{errors.cardNumber}</p>}
-                </div>
+                <TextInput
+                  label="Card Number"
+                  required
+                  value={form.cardNumber}
+                  placeholder="0000 0000 0000 0000"
+                  onChange={(val) => setField("cardNumber", val.replace(/\D/g, "").slice(0, 16).replace(/(.{4})/g, "$1 ").trim())}
+                  error={errors.cardNumber}
+                  inputClass="font-mono font-bold tracking-wider"
+                />
               </div>
             )}
           </div>
         </div>
 
-        {/* Right: Account Summary (4 cols) */}
+        {/* Right Summary Partition (4 cols) */}
         <div className="lg:col-span-4 lg:sticky lg:top-16 flex flex-col gap-2.5">
           <div className="bg-white p-2.5 sm:p-3 rounded-xl border border-gray-200 shadow-xs flex flex-col gap-2">
             <div className="flex items-center justify-between pb-1.5 border-b border-gray-100">
@@ -229,7 +203,7 @@ export const BankForm: React.FC<BankFormProps> = ({ onSuccessNavigate, onCancel 
               </div>
               <div className="my-2">
                 <span className="text-[9px] uppercase tracking-widest text-blue-200/70 block">Account Number</span>
-                <span className="text-sm font-bold tracking-widest text-white block">{form.accountNo ? form.accountNo.replace(/(.{4})/g, "$1 ").trim() : "•••• •••• ••••"}</span>
+                <span className="font-mono text-sm font-bold tracking-widest text-white block">{form.accountNo ? form.accountNo.replace(/(.{4})/g, "$1 ").trim() : "•••• •••• ••••"}</span>
               </div>
               <div className="flex items-end justify-between gap-2 pt-2 border-t border-white/10">
                 <div className="min-w-0">
@@ -238,7 +212,7 @@ export const BankForm: React.FC<BankFormProps> = ({ onSuccessNavigate, onCancel 
                 </div>
                 <div className="text-right shrink-0">
                   <span className="text-[9px] uppercase tracking-wider text-blue-200/70 block">Opening Balance</span>
-                  <span className="text-xs sm:text-sm font-bold text-emerald-300">৳ {formattedBalance}</span>
+                  <span className="font-mono text-xs sm:text-sm font-bold text-emerald-300">৳ {formattedBalance}</span>
                 </div>
               </div>
             </div>
@@ -246,13 +220,13 @@ export const BankForm: React.FC<BankFormProps> = ({ onSuccessNavigate, onCancel 
             {/* Key-Value Breakdown */}
             <div className="flex flex-col gap-2 p-2 rounded-lg bg-gray-50 border border-gray-200 text-xs">
               <div className="flex items-center justify-between gap-2"><span className="text-black font-semibold">Bank Name:</span><span className="font-bold text-black truncate text-right max-w-[170px]">{form.bankName || "—"}</span></div>
-              <div className="flex items-center justify-between gap-2"><span className="text-black font-semibold">Account Title:</span><span className="font-semibold text-black truncate text-right max-w-[170px]">{form.bankAccountName || "—"}</span></div>
-              <div className="flex items-center justify-between gap-2"><span className="text-black font-semibold">Account Number:</span><span className="font-bold text-gray-900 bg-white px-2 py-0.5 rounded border border-gray-200">{form.accountNo || "—"}</span></div>
-              <div className="flex items-center justify-between gap-2 pt-2 border-t border-gray-200"><span className="text-black font-bold">Opening Balance:</span><span className="font-extrabold text-[var(--primary-color)] text-base">৳ {formattedBalance}</span></div>
+              <div className="flex items-center justify-between gap-2"><span className="text-black font-semibold">Account Title:</span><span className="font-semibold text-gray-800 truncate text-right max-w-[170px]">{form.bankAccountName || "—"}</span></div>
+              <div className="flex items-center justify-between gap-2"><span className="text-black font-semibold">Account Number:</span><span className="font-mono font-bold text-gray-900 bg-white px-2 py-0.5 rounded border border-gray-200">{form.accountNo || "—"}</span></div>
+              <div className="flex items-center justify-between gap-2 pt-2 border-t border-gray-200"><span className="text-black font-bold">Opening Balance:</span><span className="font-mono font-extrabold text-[var(--primary-color)] text-base">৳ {formattedBalance}</span></div>
               {form.hasCard && form.cardNumber && (
                 <div className="flex items-center justify-between gap-2 pt-2 border-t border-gray-200">
                   <span className="text-black font-semibold flex items-center gap-1"><FaCreditCard size={11} className="text-gray-700" /><span>Card ({form.cardType}):</span></span>
-                  <span className="text-black font-semibold">{form.cardNumber}</span>
+                  <span className="font-mono text-gray-800 font-semibold">{form.cardNumber}</span>
                 </div>
               )}
             </div>

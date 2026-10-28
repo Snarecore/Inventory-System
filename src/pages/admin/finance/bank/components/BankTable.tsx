@@ -19,7 +19,7 @@ import type { BankAccountItem } from "@/types";
 import { formatMoney } from "@/utils/formatters";
 import { exportBankAccountsToExcel } from "@/utils/excel-export";
 import { showSuccessToast, showErrorToast } from "@/utils/toast-utils";
-import { FaLandmark, FaCreditCard, FaCheckCircle, FaTimesCircle } from "react-icons/fa";
+import { FaCreditCard, FaCheckCircle, FaTimesCircle } from "react-icons/fa";
 import { FiChevronDown } from "react-icons/fi";
 
 interface BankTableProps {
