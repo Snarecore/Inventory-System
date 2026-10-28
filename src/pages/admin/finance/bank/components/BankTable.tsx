@@ -184,7 +184,7 @@ export const BankTable: React.FC<BankTableProps> = ({ bankAccounts, isLoading, o
                         <span className="text-black block truncate text-xs font-semibold">{item.bankName}</span>
                       </TableCell>
                       <TableCell><span className="font-medium text-black truncate block">{item.bankAccountName || "N/A"}</span></TableCell>
-                      <TableCell><span className="text-xs text-black font-medium px-2 py-0.5 inline-block">{item.accountNo || "N/A"}</span></TableCell>
+                      <TableCell><span className="text-xs text-black font-medium truncate block">{item.accountNo || "N/A"}</span></TableCell>
                       <TableCell align="right"><span className="text-black text-xs font-bold">৳ {formatMoney(item.currentBalance)}</span></TableCell>
                       <TableCell align="center">
                         {item.hasCard ? (

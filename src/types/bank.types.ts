@@ -15,18 +15,12 @@ export interface BankAccountItem {
   cardNumber?: string | null;
   balanceDate?: string;
   transactionDate?: string;
-  bankLogo?: string;
 }
 
 export interface BankNameItem {
   id?: number;
   bankName: string;
   bankShortCode?: string;
-  bankType?: string;
-  headquarters?: string;
-  founded?: string;
-  founder?: string;
-  website?: string;
 }
 
 export interface BankInfoListResponse {

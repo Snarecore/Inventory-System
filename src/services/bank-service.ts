@@ -16,6 +16,7 @@ import type {
  * Prevents timezone offset shifts (Bangladesh UTC+6) from altering the transaction date.
  */
 export const toNaiveIso = (date: Date | string): string => {
+  if (typeof date === "string" && date.includes("T")) return date;
   const d = date instanceof Date ? date : new Date(date);
   if (Number.isNaN(d.getTime())) return "";
   const pad = (n: number) => String(n).padStart(2, "0");
@@ -27,17 +28,14 @@ export const toNaiveIso = (date: Date | string): string => {
 };
 
 /**
- * Formats backend error messages for duplicate accounts or branch errors
+ * Formats backend error messages for duplicate accounts
  */
 export const describeSaveError = (rawMsg?: string, accountNo?: string): string => {
   const msg = String(rawMsg || "").trim();
   if (msg.toLowerCase().includes("bank account already exists")) {
-    return `Account "${accountNo}" is already saved for this branch.`;
+    return `Account "${accountNo}" is already saved.`;
   }
-  if (msg.toLowerCase().includes("branch not found")) {
-    return "Branch not found for the given branchId under this organization.";
-  }
-  return msg || "Failed to insert bank account. Please check the provided details.";
+  return msg || "Failed to save bank account. Please check the provided details.";
 };
 
 /**

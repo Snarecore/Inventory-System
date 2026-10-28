@@ -10,9 +10,7 @@ import { FaPlus, FaLandmark, FaWallet, FaCheckCircle, FaTimesCircle } from "reac
 
 export const BankPage: React.FC = () => {
   const navigate = useNavigate();
-  const { data, isLoading, refetch, isRefetching } = useBankInfoListQuery({
-    refetchOnMount: "always",
-  });
+  const { data, isLoading, refetch, isRefetching } = useBankInfoListQuery();
   const accounts = data?.bankAccounts || [];
 
   // Single pass calculation without memo

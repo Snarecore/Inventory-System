@@ -8,8 +8,7 @@ import {
   useInsertBankAccountMutation,
   useUpdateBankAccountMutation,
 } from "@/hooks/useBankQueries";
-import { toNaiveIso } from "@/services/bank-service";
-import { showErrorToast, showDeleteToast } from "@/utils/toast-utils";
+import { showErrorToast, showSuccessToast } from "@/utils/toast-utils";
 
 interface BankFormProps {
   onSuccessNavigate?: () => void;
@@ -109,12 +108,12 @@ export const BankForm: React.FC<BankFormProps> = ({ onSuccessNavigate, onCancel 
       bankName: form.bankName.trim(),
       accountNo: form.accountNo.trim(),
       openingBalance: Number(form.openingBalance || 0),
-      balanceDate: toNaiveIso(new Date()),
+      balanceDate: "",
       hasCard: form.hasCard,
       cardType: form.hasCard ? form.cardType : null,
       cardNumber: form.hasCard ? form.cardNumber.replace(/\D/g, "") : null,
       status: form.status,
-      transactionDate: toNaiveIso(form.transactionDate),
+      transactionDate: form.transactionDate,
     };
 
     if (isEdit && id) {
@@ -303,7 +302,7 @@ export const BankForm: React.FC<BankFormProps> = ({ onSuccessNavigate, onCancel 
           setForm(getInitialForm());
           setErrors({});
           setIsResetModalOpen(false);
-          showDeleteToast("Bank account form reset successfully!");
+          showSuccessToast("Bank account form reset successfully!");
         }}
         confirmText="Reset Form"
         cancelText="Keep Editing"
