@@ -23,7 +23,7 @@ import { exportMfsAccountsToExcel } from "@/utils/excel-export";
 import { showSuccessToast, showErrorToast } from "@/utils/toast-utils";
 import { useUpdateMfsUserStatusMutation } from "@/hooks/useMfsQueries";
 import { useDebounce } from "@/hooks/useDebounce";
-import { MFS_METHODS, methodMeta } from "@/services/mfs-service";
+import { methodMeta } from "@/services/mfs-service";
 import MfsLogo from "./MfsLogo";
 import { AccountStatusBadge, AccountStatusTabs } from "@/pages/admin/finance/components";
 import { FiChevronDown } from "react-icons/fi";
@@ -40,7 +40,6 @@ export const MfsTable: React.FC<MfsTableProps> = ({ mfsAccounts, isLoading, onAd
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
-  const [methodFilter, setMethodFilter] = useState("ALL");
   const [sortKey, setSortKey] = useState<SortKey>("method");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
   const [currentPage, setCurrentPage] = useState(1);
@@ -53,8 +52,6 @@ export const MfsTable: React.FC<MfsTableProps> = ({ mfsAccounts, isLoading, onAd
   const term = debouncedSearch.trim().toLowerCase();
   const hasStatusFilter = Boolean(statusFilter);
   const statusFilterLower = statusFilter.toLowerCase();
-  const hasMethodFilter = methodFilter !== "ALL";
-  const methodFilterLower = methodFilter.toLowerCase();
 
   let activeCount = 0;
   let inactiveCount = 0;
@@ -66,12 +63,6 @@ export const MfsTable: React.FC<MfsTableProps> = ({ mfsAccounts, isLoading, onAd
     else if (statusLower === "inactive") inactiveCount++;
 
     if (hasStatusFilter && statusLower !== statusFilterLower) continue;
-    if (
-      hasMethodFilter &&
-      methodMeta(item.method).value.toLowerCase() !== methodFilterLower
-    ) {
-      continue;
-    }
     if (term) {
       const searchTarget = `${item.name} ${item.method} ${item.phoneNumber}`.toLowerCase();
       if (!searchTarget.includes(term)) continue;
@@ -152,32 +143,15 @@ export const MfsTable: React.FC<MfsTableProps> = ({ mfsAccounts, isLoading, onAd
     <TableContainer className="w-full">
       <TableToolbar>
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 w-full">
-          <div className="flex items-center gap-2 flex-1 max-w-md">
-            <div className="w-full">
-              <Search
-                searchQuery={searchQuery}
-                onSearchChange={(value) => {
-                  setSearchQuery(value);
-                  setCurrentPage(1);
-                }}
-                placeholder="Search wallet, provider, phone..."
-              />
-            </div>
-            <select
-              value={methodFilter}
-              onChange={(e) => {
-                setMethodFilter(e.target.value);
+          <div className="w-full sm:w-72">
+            <Search
+              searchQuery={searchQuery}
+              onSearchChange={(value) => {
+                setSearchQuery(value);
                 setCurrentPage(1);
               }}
-              className="h-8 px-2.5 rounded-lg border border-gray-200 bg-white text-xs font-semibold text-gray-700 outline-none focus:border-[var(--color-primary)] cursor-pointer"
-            >
-              <option value="ALL">All Providers</option>
-              {MFS_METHODS.map((method) => (
-                <option key={method.value} value={method.value}>
-                  {method.label}
-                </option>
-              ))}
-            </select>
+              placeholder="Search wallet, provider, phone..."
+            />
           </div>
 
           <div className="flex items-center gap-2 self-start sm:self-auto flex-wrap">
