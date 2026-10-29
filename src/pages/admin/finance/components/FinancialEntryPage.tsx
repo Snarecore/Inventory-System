@@ -62,7 +62,7 @@ export const FinancialEntryPage: React.FC<FinancialEntryPageProps> = ({ mode }) 
       amountLabel: isExpense ? "Expense Amount" : "Income Amount",
       categoryPlaceholder: isExpense ? "Select expense category..." : "Select income category...",
       accountSectionLabel: isExpense ? "Payment From" : "Deposit To",
-      submitLabel: isExpense ? "Save Expense" : "Save Income",
+      submitLabel: isExpense ? "Save" : "Save",
       previewVerb: isExpense ? "Saving" : "Depositing",
       previewPreposition: isExpense ? "from" : "to",
       recentTitle: isExpense ? "Recent Expenses" : "Recent Income",
@@ -589,7 +589,7 @@ export const FinancialEntryPage: React.FC<FinancialEntryPageProps> = ({ mode }) 
                 )}
               </div>
 
-              <div className="flex items-center gap-2 self-end sm:self-auto shrink-0">
+              <div className="flex items-center gap-1.5 self-end sm:self-auto shrink-0">
                 <button
                   type="button"
                   onClick={() => {
@@ -599,7 +599,7 @@ export const FinancialEntryPage: React.FC<FinancialEntryPageProps> = ({ mode }) 
                     setErrors({});
                   }}
                   disabled={insertMutation.isPending}
-                  className="px-3.5 py-1.5 text-xs font-semibold text-gray-700 bg-white hover:bg-gray-50 border border-gray-300 rounded-lg transition-all cursor-pointer shadow-2xs disabled:opacity-50"
+                  className="px-2.5 py-1.5 text-xs font-semibold text-gray-700 bg-white hover:bg-gray-50 border border-gray-300 rounded-lg transition-all cursor-pointer shadow-2xs disabled:opacity-50"
                 >
                   Cancel
                 </button>
@@ -611,7 +611,7 @@ export const FinancialEntryPage: React.FC<FinancialEntryPageProps> = ({ mode }) 
                   disabled={insertMutation.isPending}
                   color="var(--color-primary)"
                   hoverColor="var(--color-primary-hover)"
-                  buttonClass="!text-xs !py-1.5 !px-4 !rounded-lg font-semibold shadow-2xs !text-white"
+                  buttonClass="!text-xs !py-1.5 !px-3 !rounded-lg font-semibold shadow-2xs !text-white"
                 />
               </div>
             </div>
@@ -623,22 +623,13 @@ export const FinancialEntryPage: React.FC<FinancialEntryPageProps> = ({ mode }) 
           {/* Card 1: LIVE BALANCES */}
           <div className="bg-white rounded-xl border border-gray-200 shadow-2xs p-3 sm:p-3.5 flex flex-col gap-2.5">
             {/* Header */}
-            <div className="flex items-center justify-between pb-2 border-b border-gray-100">
-              <div className="flex items-center gap-2">
-                <div className="w-7 h-7 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center text-xs shrink-0">
-                  <FaWallet />
-                </div>
-                <div>
-                  <h3 className="text-xs sm:text-sm font-bold text-black tracking-wide uppercase">
-                    Live Balances
-                  </h3>
-                  <p className="text-[11px] text-gray-700 font-medium">Real-time ledger standing</p>
-                </div>
+            <div className="flex items-center gap-2 pb-2 border-b border-gray-100">
+              <div className="w-7 h-7 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center text-xs shrink-0">
+                <FaWallet />
               </div>
-              <span className="text-[10px] font-bold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-300 flex items-center gap-1">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                Live
-              </span>
+              <h3 className="text-xs sm:text-sm font-bold text-black tracking-wide uppercase">
+                Live Balances
+              </h3>
             </div>
 
             {/* 3 Mini Balance Cards */}
