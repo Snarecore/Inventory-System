@@ -197,10 +197,8 @@ export const menu = [
 				path: "/admin/banks",
 				permissionKey: "accounts.cash_bank.view",
 				subItems: [
-					{ id: 701, name: "Bank Accounts", path: "/admin/banks", permissionKey: "accounts.cash_bank.view" },
-					{ id: 702, name: "Add Bank Account", path: "/admin/create-bank", permissionKey: "accounts.cash_bank.view" },
-					{ id: 703, name: "MFS Accounts", path: "/admin/mfs", permissionKey: "accounts.cash_bank.view" },
-					{ id: 704, name: "Add MFS Account", path: "/admin/create-mfs", permissionKey: "accounts.cash_bank.view" },
+					{ id: 701, name: "Bank", path: "/admin/banks", permissionKey: "accounts.cash_bank.view" },
+					{ id: 703, name: "MFS", path: "/admin/mfs", permissionKey: "accounts.cash_bank.view" },
 				],
 			},
 			{
