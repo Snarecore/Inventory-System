@@ -52,4 +52,9 @@ export const TradeStatsCards: React.FC<TradeStatsCardsProps> = ({ cards }) => {
   );
 };
 
+export type StatCardItem = TradeStatCardItem;
+export type StatsCardsProps = TradeStatsCardsProps;
+export const StatsCards = TradeStatsCards;
+
 export default TradeStatsCards;
+

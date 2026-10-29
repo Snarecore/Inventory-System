@@ -1,8 +1,7 @@
 import React, { useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import PageHeader from "@/components/page-header/PageHeader";
-import { Button, RefreshButton } from "@/components/common";
-import TradeStatsCards from "@/components/trade/TradeStatsCards";
+import { Button, RefreshButton, StatsCards } from "@/components/common";
 import MfsTable from "./components/MfsTable";
 import { useMfsUserListQuery } from "@/hooks/useMfsQueries";
 import { formatMoney } from "@/utils/formatters";
@@ -84,7 +83,7 @@ export const MfsPage: React.FC = () => {
         </div>
       </div>
 
-      <TradeStatsCards cards={statCards} />
+      <StatsCards cards={statCards} />
       <MfsTable
         mfsAccounts={accounts}
         isLoading={isLoading}
