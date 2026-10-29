@@ -1,10 +1,11 @@
-import React, { useCallback } from "react";
+import React, { useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import PageHeader from "@/components/page-header/PageHeader";
 import { Button, RefreshButton, StatsCards } from "@/components/common";
 import MfsTable from "./components/MfsTable";
 import { useMfsUserListQuery } from "@/hooks/useMfsQueries";
 import { formatMoney } from "@/utils/formatters";
+import { calculateAccountMetrics } from "../utils/finance-metrics";
 import { FaPlus, FaMobileAlt, FaWallet, FaCheckCircle, FaTimesCircle } from "react-icons/fa";
 
 export const MfsPage: React.FC = () => {
@@ -12,17 +13,10 @@ export const MfsPage: React.FC = () => {
   const { data, isLoading, refetch, isRefetching } = useMfsUserListQuery();
   const accounts = data?.mfsUsers || [];
 
-  // Single pass calculation without useMemo
-  let active = 0;
-  let inactive = 0;
-  let totalBalance = 0;
-
-  for (const m of accounts) {
-    const st = (m.status || "").toLowerCase();
-    if (st === "active") active++;
-    else if (st === "inactive") inactive++;
-    totalBalance += Number(m.currentBalance || 0);
-  }
+  const { active, inactive, totalBalance } = useMemo(
+    () => calculateAccountMetrics(accounts),
+    [accounts]
+  );
 
   // Cards design styled identically to Sales (SaleStats / TradeInvoiceStats)
   const statCards = [

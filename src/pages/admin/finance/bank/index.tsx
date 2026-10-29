@@ -1,10 +1,11 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import PageHeader from "@/components/page-header/PageHeader";
 import { Button, RefreshButton, StatsCards } from "@/components/common";
 import BankTable from "./components/BankTable";
 import { useBankInfoListQuery } from "@/hooks/useBankQueries";
 import { formatMoney } from "@/utils/formatters";
+import { calculateAccountMetrics } from "../utils/finance-metrics";
 import { FaPlus, FaLandmark, FaWallet, FaCheckCircle, FaTimesCircle } from "react-icons/fa";
 
 export const BankPage: React.FC = () => {
@@ -12,14 +13,10 @@ export const BankPage: React.FC = () => {
   const { data, isLoading, refetch, isRefetching } = useBankInfoListQuery();
   const accounts = data?.bankAccounts || [];
 
-  // Single pass calculation without memo
-  let active = 0, inactive = 0, total = 0;
-  for (const b of accounts) {
-    const st = (b.status || "").toLowerCase();
-    if (st === "active") active++;
-    else if (st === "inactive") inactive++;
-    total += Number(b.currentBalance || 0);
-  }
+  const { active, inactive, totalBalance } = useMemo(
+    () => calculateAccountMetrics(accounts),
+    [accounts]
+  );
 
   const statCards = [
     {
@@ -48,7 +45,7 @@ export const BankPage: React.FC = () => {
     },
     {
       title: "Total Balance",
-      value: `৳ ${formatMoney(total)}`,
+      value: `৳ ${formatMoney(totalBalance)}`,
       icon: FaWallet,
       color: "text-purple-600",
       bg: "bg-purple-50/60 border-purple-300 hover:border-purple-400",

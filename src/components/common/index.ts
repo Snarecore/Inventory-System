@@ -61,7 +61,8 @@ export {
 } from "@/components/table-components/Table";
 
 // Stats & Metrics Cards
-export { default as StatsCards, default as TradeStatsCards, StatsCards as CommonStatsCards } from "@/components/trade/TradeStatsCards";
-export * from "@/components/trade/TradeStatsCards";
+export { default as StatsCards, default as TradeStatsCards } from "./StatsCards";
+export * from "./StatsCards";
+
 
 
