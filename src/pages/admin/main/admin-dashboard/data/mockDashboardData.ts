@@ -15,6 +15,7 @@ export const mockKpiData: DashboardKpiData = {
   totalPayable: 215000,
   cashBalance: 96450,
   bankBalance: 782000,
+  mfsBalance: 172792,
 };
 
 export const mockSalesData: Record<SalesTimeframe, { points: SalesDataPoint[]; summary: { total: number; average: number } }> = {

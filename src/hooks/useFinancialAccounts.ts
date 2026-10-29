@@ -51,9 +51,9 @@ export const extractBankAccounts = (raw: any): BankAccountItem[] => {
     bankName: b.bankName || b.name || "Bank",
     accountNo: b.accountNo || b.accountNumber || b.bankAccountNumber || b.bankAccountNo || "-",
     bankAccountName: b.bankAccountName || b.accountName || "-",
-    balance: Number(b.currentBalance ?? b.balance ?? b.openingBalance ?? 0),
-    currentBalance: Number(b.currentBalance ?? b.balance ?? b.openingBalance ?? 0),
-    status: b.status || "Active",
+    balance: Number(b.currentBalance ?? b.balance ?? 0),
+    currentBalance: Number(b.currentBalance ?? b.balance ?? 0),
+    status: b.status ? String(b.status).trim() : "Inactive",
   }));
 };
 
@@ -78,9 +78,9 @@ export const extractMfsAccounts = (raw: any): MfsAccountItem[] => {
     mfsPhone: m.phoneNumber || m.phone || m.mfsPhone || "",
     phone: m.phoneNumber || m.phone || m.mfsPhone || "",
     accountNo: m.phoneNumber || m.phone || m.accountNo || "",
-    balance: Number(m.currentBalance ?? m.balance ?? m.openingBalance ?? 0),
-    currentBalance: Number(m.currentBalance ?? m.balance ?? m.openingBalance ?? 0),
-    status: m.status || "Active",
+    balance: Number(m.currentBalance ?? m.balance ?? 0),
+    currentBalance: Number(m.currentBalance ?? m.balance ?? 0),
+    status: m.status ? String(m.status).trim() : "Inactive",
   }));
 };
 
