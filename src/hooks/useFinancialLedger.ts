@@ -22,15 +22,28 @@ export const useFinancialLedger = () => {
     async (params: PostTradeFinancialParams) => {
       const outcome = await postTradeFinancialEntries(params);
 
-      // Invalidate live balance caches if any money was moved
+      // Selectively invalidate live balance caches for accounts where money actually moved
       if (params.tenders && params.tenders.some((t) => Number(t.amount || 0) > 0)) {
-        await Promise.all([
-          queryClient.invalidateQueries({ queryKey: [cashBalanceQueryKey] }),
-          queryClient.invalidateQueries({ queryKey: [bankInfoListQueryKey] }),
-          queryClient.invalidateQueries({ queryKey: [mfsUserListQueryKey] }),
+        const promises: Promise<any>[] = [
           queryClient.invalidateQueries({ queryKey: [financialTransactionQueryKey] }),
-          queryClient.invalidateQueries({ queryKey: [dashboardQueryKey] }),
-        ]);
+          queryClient.invalidateQueries({ queryKey: [dashboardQueryKey], refetchType: "none" }),
+        ];
+
+        const hasCash = params.tenders.some(
+          (t) => Number(t.amount || 0) > 0 && t.leg?.accountType?.toUpperCase() === "CASH"
+        );
+        const hasBank = params.tenders.some(
+          (t) => Number(t.amount || 0) > 0 && t.leg?.accountType?.toUpperCase() === "BANK"
+        );
+        const hasMfs = params.tenders.some(
+          (t) => Number(t.amount || 0) > 0 && t.leg?.accountType?.toUpperCase() === "MFS"
+        );
+
+        if (hasCash) promises.push(queryClient.invalidateQueries({ queryKey: [cashBalanceQueryKey] }));
+        if (hasBank) promises.push(queryClient.invalidateQueries({ queryKey: [bankInfoListQueryKey] }));
+        if (hasMfs) promises.push(queryClient.invalidateQueries({ queryKey: [mfsUserListQueryKey] }));
+
+        await Promise.all(promises);
       }
 
       return outcome;

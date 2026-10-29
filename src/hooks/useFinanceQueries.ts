@@ -53,13 +53,28 @@ export const useInsertFinancialTransactionMutation = (options?: {
       postSingleFinancialTransaction(payload),
     onSuccess: (res, vars) => {
       if (res.ok) {
-        // Invalidate all related financial balances and reports
-        queryClient.invalidateQueries({ queryKey: [cashBalanceQueryKey] });
-        queryClient.invalidateQueries({ queryKey: [bankInfoListQueryKey] });
-        queryClient.invalidateQueries({ queryKey: [mfsUserListQueryKey] });
-        queryClient.invalidateQueries({ queryKey: [dashboardQueryKey] });
+        // Selectively invalidate ONLY the affected balance cache based on payment account type
+        const accountType = vars.accountType?.toUpperCase();
+        if (vars.type === "TRANSFER") {
+          queryClient.invalidateQueries({ queryKey: [cashBalanceQueryKey] });
+          queryClient.invalidateQueries({ queryKey: [bankInfoListQueryKey] });
+          queryClient.invalidateQueries({ queryKey: [mfsUserListQueryKey] });
+        } else if (accountType === "CASH") {
+          queryClient.invalidateQueries({ queryKey: [cashBalanceQueryKey] });
+        } else if (accountType === "BANK") {
+          queryClient.invalidateQueries({ queryKey: [bankInfoListQueryKey] });
+        } else if (accountType === "MFS") {
+          queryClient.invalidateQueries({ queryKey: [mfsUserListQueryKey] });
+        } else {
+          // Fallback if unspecified
+          queryClient.invalidateQueries({ queryKey: [cashBalanceQueryKey] });
+          queryClient.invalidateQueries({ queryKey: [bankInfoListQueryKey] });
+          queryClient.invalidateQueries({ queryKey: [mfsUserListQueryKey] });
+        }
+
         queryClient.invalidateQueries({ queryKey: [financialTransactionQueryKey] });
-        queryClient.invalidateQueries({ queryKey: [financeDashboardQueryKey] });
+        queryClient.invalidateQueries({ queryKey: [dashboardQueryKey], refetchType: "none" });
+        queryClient.invalidateQueries({ queryKey: [financeDashboardQueryKey], refetchType: "none" });
 
         showSuccessToast(res.msg || `${vars.type === "INCOME" ? "Income" : "Expense"} recorded successfully`);
         if (options?.onSuccess) options.onSuccess(res);
