@@ -82,6 +82,7 @@ export const useInsertBankAccountMutation = (
           cardType: variables.cardType || null,
           cardNumber: variables.cardNumber || null,
           balanceDate: variables.balanceDate || "",
+          transactionDate: variables.transactionDate || variables.balanceDate || "",
         };
         const currentList = Array.isArray(old.bankAccounts) ? old.bankAccounts : [];
         return {
@@ -135,6 +136,7 @@ export const useUpdateBankAccountMutation = (
               cardType: variables.cardType || null,
               cardNumber: variables.cardNumber || null,
               balanceDate: variables.balanceDate || acc.balanceDate,
+              transactionDate: variables.transactionDate || variables.balanceDate || acc.transactionDate,
             };
           }
           return acc;

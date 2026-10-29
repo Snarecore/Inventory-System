@@ -113,6 +113,7 @@ export const BankTable: React.FC<BankTableProps> = ({ bankAccounts, isLoading, o
       accountNo: item.accountNo,
       openingBalance: Number(item.openingBalance ?? item.currentBalance ?? 0),
       balanceDate: item.balanceDate || "",
+      transactionDate: item.transactionDate || item.balanceDate || "",
       hasCard: Boolean(item.hasCard),
       cardType: item.cardType || null,
       cardNumber: item.cardNumber || null,

@@ -16,7 +16,18 @@ import type {
  * Prevents timezone offset shifts (Bangladesh UTC+6) from altering the transaction date.
  */
 export const toNaiveIso = (date: Date | string): string => {
-  if (typeof date === "string" && date.includes("T")) return date;
+  if (!date) return "";
+  if (typeof date === "string") {
+    const trimmed = date.trim();
+    if (trimmed.includes("T")) {
+      return trimmed.replace(/Z$/, "");
+    }
+    if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
+      const now = new Date();
+      const pad = (n: number) => String(n).padStart(2, "0");
+      return `${trimmed}T${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}.${String(now.getMilliseconds()).padStart(3, "0")}`;
+    }
+  }
   const d = date instanceof Date ? date : new Date(date);
   if (Number.isNaN(d.getTime())) return "";
   const pad = (n: number) => String(n).padStart(2, "0");
@@ -28,12 +39,15 @@ export const toNaiveIso = (date: Date | string): string => {
 };
 
 /**
- * Formats backend error messages for duplicate accounts
+ * Formats backend error messages for duplicate accounts or server errors
  */
 export const describeSaveError = (rawMsg?: string, accountNo?: string): string => {
   const msg = String(rawMsg || "").trim();
   if (msg.toLowerCase().includes("bank account already exists")) {
-    return `Account "${accountNo}" is already saved.`;
+    return `Account "${accountNo}" is already saved for this branch.`;
+  }
+  if (msg.toLowerCase().includes("branch not found")) {
+    return "Branch not found for the given branchId under this organization.";
   }
   return msg || "Failed to save bank account. Please check the provided details.";
 };
@@ -73,6 +87,7 @@ export const fetchBankInfoList = async (): Promise<BankInfoListResponse> => {
     cardType: item.cardType || null,
     cardNumber: item.cardNumber || null,
     balanceDate: item.balanceDate || "",
+    transactionDate: item.transactionDate || item.balanceDate || "",
   }));
 
   return {
@@ -111,7 +126,7 @@ export const fetchBankNameList = async (): Promise<BankNameListResponse> => {
 
 /**
  * 3. INSERT BANK ACCOUNT (/insert-bank-account)
- * Registers a new bank account sending only actual required backend keys.
+ * Registers a new bank account sending all required backend keys including transactionDate.
  */
 export const insertBankAccount = async (
   payload: InsertBankAccountPayload
@@ -120,17 +135,21 @@ export const insertBankAccount = async (
   const url = apiConfig.bank?.insertBankAccountUrl || "insert-bank-account";
 
   const hasCard = Boolean(payload.hasCard);
+  const txDate = payload.transactionDate || payload.balanceDate || new Date();
+  const balDate = payload.balanceDate || new Date();
+
   const body = {
     accessUser,
     bankAccountName: payload.bankAccountName.trim(),
     bankName: payload.bankName.trim(),
     accountNo: payload.accountNo.trim(),
     openingBalance: Number(payload.openingBalance || 0),
-    balanceDate: payload.balanceDate ? toNaiveIso(payload.balanceDate) : toNaiveIso(new Date()),
+    balanceDate: toNaiveIso(balDate),
     hasCard,
     cardType: hasCard && payload.cardType ? payload.cardType.trim().toLowerCase() : null,
     cardNumber: hasCard && payload.cardNumber ? String(payload.cardNumber).replace(/\D/g, "") : null,
     status: payload.status || "Active",
+    transactionDate: toNaiveIso(txDate),
   };
 
   const res: any = await postData<BankAccountActionResponse>({ url, body });
@@ -145,7 +164,7 @@ export const insertBankAccount = async (
 
 /**
  * 4. UPDATE BANK ACCOUNT (/update-bank-account)
- * Updates an existing bank account using only actual required backend keys.
+ * Updates an existing bank account using actual required backend keys.
  */
 export const updateBankAccount = async (
   payload: UpdateBankAccountPayload
@@ -154,6 +173,9 @@ export const updateBankAccount = async (
   const url = apiConfig.bank?.updateBankAccountUrl || "update-bank-account";
 
   const hasCard = Boolean(payload.hasCard);
+  const txDate = payload.transactionDate || payload.balanceDate || new Date();
+  const balDate = payload.balanceDate || new Date();
+
   const body = {
     accessUser,
     bankId: Number(payload.bankId),
@@ -161,11 +183,12 @@ export const updateBankAccount = async (
     bankName: payload.bankName.trim(),
     accountNo: payload.accountNo.trim(),
     openingBalance: Number(payload.openingBalance || 0),
-    balanceDate: payload.balanceDate ? toNaiveIso(payload.balanceDate) : toNaiveIso(new Date()),
+    balanceDate: toNaiveIso(balDate),
     hasCard,
     cardType: hasCard && payload.cardType ? payload.cardType.trim().toLowerCase() : null,
     cardNumber: hasCard && payload.cardNumber ? String(payload.cardNumber).replace(/\D/g, "") : null,
     status: payload.status || "Active",
+    transactionDate: toNaiveIso(txDate),
   };
 
   const res: any = await postData<BankAccountActionResponse>({ url, body });
@@ -177,4 +200,3 @@ export const updateBankAccount = async (
 
   return res;
 };
-

@@ -109,6 +109,7 @@ export const BankForm: React.FC<BankFormProps> = ({ onSuccessNavigate, onCancel 
       accountNo: form.accountNo.trim(),
       openingBalance: Number(form.openingBalance || 0),
       balanceDate: form.balanceDate,
+      transactionDate: form.balanceDate,
       hasCard: form.hasCard,
       cardType: form.hasCard ? form.cardType : null,
       cardNumber: form.hasCard ? form.cardNumber.replace(/\D/g, "") : null,

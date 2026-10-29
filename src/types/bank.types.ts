@@ -14,6 +14,7 @@ export interface BankAccountItem {
   cardType?: string | null;
   cardNumber?: string | null;
   balanceDate?: string;
+  transactionDate?: string;
 }
 
 export interface BankNameItem {
@@ -40,6 +41,7 @@ export interface InsertBankAccountPayload {
   accountNo: string;
   openingBalance: number;
   balanceDate: string;
+  transactionDate?: string;
   hasCard: boolean;
   cardType?: string | null;
   cardNumber?: string | null;
