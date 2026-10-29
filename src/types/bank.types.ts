@@ -40,6 +40,7 @@ export interface InsertBankAccountPayload {
   bankName: string;
   accountNo: string;
   openingBalance: number;
+  currentBalance?: number;
   balanceDate: string;
   transactionDate?: string;
   hasCard: boolean;
@@ -50,6 +51,7 @@ export interface InsertBankAccountPayload {
 
 export interface UpdateBankAccountPayload extends InsertBankAccountPayload {
   bankId: number;
+  id?: number;
 }
 
 export interface BankAccountActionResponse {

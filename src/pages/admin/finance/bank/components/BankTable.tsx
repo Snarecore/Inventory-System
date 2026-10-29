@@ -108,10 +108,12 @@ export const BankTable: React.FC<BankTableProps> = ({ bankAccounts, isLoading, o
     const nextStatus = (item.status || "").toLowerCase() === "active" ? "Inactive" : "Active";
     updateMutation.mutate({
       bankId: item.bankId,
+      id: item.bankId,
       bankName: item.bankName,
       bankAccountName: item.bankAccountName,
       accountNo: item.accountNo,
-      openingBalance: Number(item.openingBalance ?? item.currentBalance ?? 0),
+      openingBalance: Number(item.openingBalance ?? 0),
+      currentBalance: Number(item.currentBalance ?? item.openingBalance ?? 0),
       balanceDate: item.balanceDate || "",
       transactionDate: item.transactionDate || item.balanceDate || "",
       hasCard: Boolean(item.hasCard),

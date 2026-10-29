@@ -23,7 +23,7 @@ const getInitialForm = (data?: MfsUserItem | null) => ({
   phoneNumber: data?.phoneNumber || "",
   method: data?.method || "Bkash",
   openingBalance: data
-    ? String(data.openingBalance ?? data.currentBalance ?? "")
+    ? String(data.currentBalance ?? data.openingBalance ?? "")
     : "",
   status: (data?.status as "Active" | "Inactive") || "Active",
 });
@@ -110,7 +110,7 @@ export const MfsForm: React.FC<MfsFormProps> = ({
           phoneNumber: form.phoneNumber.trim(),
           method: form.method.trim(),
           openingBalance: balanceNum,
-          currentBalance: initialData ? Number(initialData.currentBalance ?? balanceNum) : balanceNum,
+          currentBalance: balanceNum,
           status: form.status,
         });
       } else {

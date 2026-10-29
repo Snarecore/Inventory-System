@@ -129,8 +129,16 @@ export const useUpdateBankAccountMutation = (
               bankName: variables.bankName,
               bankAccountName: variables.bankAccountName,
               accountNo: variables.accountNo,
-              currentBalance: Number(variables.openingBalance || 0),
-              openingBalance: Number(variables.openingBalance || 0),
+              currentBalance:
+                variables.currentBalance !== undefined
+                  ? Number(variables.currentBalance)
+                  : variables.openingBalance !== undefined
+                  ? Number(variables.openingBalance)
+                  : acc.currentBalance,
+              openingBalance:
+                variables.openingBalance !== undefined
+                  ? Number(variables.openingBalance)
+                  : acc.openingBalance,
               status: variables.status || "Active",
               hasCard: Boolean(variables.hasCard),
               cardType: variables.cardType || null,

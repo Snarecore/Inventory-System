@@ -53,8 +53,11 @@ export const BankForm: React.FC<BankFormProps> = ({ onSuccessNavigate, onCancel 
       bankName: existing.bankName || "",
       bankAccountName: existing.bankAccountName || "",
       accountNo: existing.accountNo || "",
-      openingBalance: existing.openingBalance !== undefined ? String(existing.openingBalance) : String(existing.currentBalance ?? ""),
-      balanceDate: existing.balanceDate ? existing.balanceDate.substring(0, 10) : "",
+      openingBalance:
+        existing.currentBalance !== undefined && existing.currentBalance !== null
+          ? String(existing.currentBalance)
+          : String(existing.openingBalance ?? ""),
+      balanceDate: existing.balanceDate ? existing.balanceDate.substring(0, 10) : new Date().toISOString().substring(0, 10),
       status: (existing.status as "Active" | "Inactive") || "Active",
       hasCard: Boolean(existing.hasCard),
       cardType: (existing.cardType as "debit" | "credit") || "debit",
@@ -95,19 +98,25 @@ export const BankForm: React.FC<BankFormProps> = ({ onSuccessNavigate, onCancel 
       if (!d || d.length < 12 || d.length > 19) errs.cardNumber = "Card number must be 12-19 digits";
     }
     setErrors(errs);
-    return Object.keys(errs).length === 0;
+    if (Object.keys(errs).length > 0) {
+      showErrorToast(Object.values(errs)[0]);
+      return false;
+    }
+    return true;
   };
 
   const handleSubmit = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     if (isPending) return;
-    if (!validate()) return showErrorToast(Object.values(errors)[0] || "Please fill all required fields correctly");
+    if (!validate()) return;
 
+    const opening = Number(form.openingBalance || 0);
     const payload = {
       bankAccountName: form.bankAccountName.trim(),
       bankName: form.bankName.trim(),
       accountNo: form.accountNo.trim(),
-      openingBalance: Number(form.openingBalance || 0),
+      openingBalance: opening,
+      currentBalance: opening,
       balanceDate: form.balanceDate,
       transactionDate: form.balanceDate,
       hasCard: form.hasCard,
@@ -117,7 +126,7 @@ export const BankForm: React.FC<BankFormProps> = ({ onSuccessNavigate, onCancel 
     };
 
     if (isEdit && id) {
-      updateMutation.mutate({ bankId: Number(id), ...payload });
+      updateMutation.mutate({ bankId: Number(id), id: Number(id), ...payload });
     } else {
       insertMutation.mutate(payload);
     }

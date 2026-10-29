@@ -137,13 +137,16 @@ export const insertBankAccount = async (
   const hasCard = Boolean(payload.hasCard);
   const txDate = payload.transactionDate || payload.balanceDate || new Date();
   const balDate = payload.balanceDate || new Date();
+  const opening = Number(payload.openingBalance || 0);
+  const current = payload.currentBalance !== undefined ? Number(payload.currentBalance) : opening;
 
   const body = {
     accessUser,
     bankAccountName: payload.bankAccountName.trim(),
     bankName: payload.bankName.trim(),
     accountNo: payload.accountNo.trim(),
-    openingBalance: Number(payload.openingBalance || 0),
+    openingBalance: opening,
+    currentBalance: current,
     balanceDate: toNaiveIso(balDate),
     hasCard,
     cardType: hasCard && payload.cardType ? payload.cardType.trim().toLowerCase() : null,
@@ -175,14 +178,18 @@ export const updateBankAccount = async (
   const hasCard = Boolean(payload.hasCard);
   const txDate = payload.transactionDate || payload.balanceDate || new Date();
   const balDate = payload.balanceDate || new Date();
+  const opening = Number(payload.openingBalance || 0);
+  const current = payload.currentBalance !== undefined ? Number(payload.currentBalance) : opening;
 
   const body = {
     accessUser,
     bankId: Number(payload.bankId),
+    id: Number(payload.bankId),
     bankAccountName: payload.bankAccountName.trim(),
     bankName: payload.bankName.trim(),
     accountNo: payload.accountNo.trim(),
-    openingBalance: Number(payload.openingBalance || 0),
+    openingBalance: opening,
+    currentBalance: current,
     balanceDate: toNaiveIso(balDate),
     hasCard,
     cardType: hasCard && payload.cardType ? payload.cardType.trim().toLowerCase() : null,

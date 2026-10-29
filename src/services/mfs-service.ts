@@ -131,14 +131,17 @@ export const updateMfsUser = async (
   const accessUser = buildAccessUser();
   const url = apiConfig.mfs?.updateMfsUserUrl || "mfs-user-update";
 
+  const opening = Number(payload.openingBalance || 0);
+  const current = payload.currentBalance !== undefined ? Number(payload.currentBalance) : opening;
+
   const body = {
     accessUser,
     id: Number(payload.id),
     name: payload.name.trim(),
     phoneNumber: sanitizeDigits(payload.phoneNumber).slice(0, 11),
     method: payload.method.trim(),
-    openingBalance: Number(payload.openingBalance || 0),
-    currentBalance: Number(payload.currentBalance ?? payload.openingBalance ?? 0),
+    openingBalance: opening,
+    currentBalance: current,
     status: payload.status || "Active",
   };
 
