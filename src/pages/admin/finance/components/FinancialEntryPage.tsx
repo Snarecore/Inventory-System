@@ -41,17 +41,9 @@ const getTodayString = () => {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 };
 
-const getYesterdayString = () => {
-  const d = new Date();
-  d.setDate(d.getDate() - 1);
-  const pad = (n: number) => String(n).padStart(2, "0");
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
-};
-
 export const FinancialEntryPage: React.FC<FinancialEntryPageProps> = ({ mode }) => {
   const isExpense = mode === "EXPENSE";
   const todayStr = useMemo(() => getTodayString(), []);
-  const yesterdayStr = useMemo(() => getYesterdayString(), []);
 
   // Configuration determined strictly by mode
   const config = useMemo(() => {
@@ -328,32 +320,6 @@ export const FinancialEntryPage: React.FC<FinancialEntryPageProps> = ({ mode }) 
                   </h3>
                   <p className="text-[11px] text-gray-700 font-medium">{config.detailsCardSubtitle}</p>
                 </div>
-              </div>
-
-              {/* Quick Date Chips */}
-              <div className="flex items-center gap-1">
-                <button
-                  type="button"
-                  onClick={() => setDate(todayStr)}
-                  className={`px-2.5 py-0.5 text-xs font-semibold rounded-lg transition-colors cursor-pointer border ${
-                    date === todayStr
-                      ? "bg-[var(--color-primary)] text-white border-[var(--color-primary)] shadow-2xs"
-                      : "bg-white hover:bg-gray-50 text-black border-gray-300"
-                  }`}
-                >
-                  Today
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setDate(yesterdayStr)}
-                  className={`px-2.5 py-0.5 text-xs font-semibold rounded-lg transition-colors cursor-pointer border ${
-                    date === yesterdayStr
-                      ? "bg-[var(--color-primary)] text-white border-[var(--color-primary)] shadow-2xs"
-                      : "bg-white hover:bg-gray-50 text-black border-gray-300"
-                  }`}
-                >
-                  Yesterday
-                </button>
               </div>
             </div>
 
