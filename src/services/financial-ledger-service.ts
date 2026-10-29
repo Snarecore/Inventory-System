@@ -89,12 +89,10 @@ export const bankLeg = (bank: BankAccountItem | any): TenderLeg => ({
  * MFS (bKash / Nagad / Rocket) leg builder
  */
 export const mfsLeg = (wallet: MfsAccountItem | any): TenderLeg => {
-  const method = wallet?.mfsName || wallet?.method || "MFS";
-  const holder = wallet?.mfsPhone || wallet?.mobileNo || wallet?.holder || "";
+  const method = wallet?.method || "MFS";
+  const holder = wallet?.phoneNumber || wallet?.name || "";
   const nameLabel = [method, holder].filter(Boolean).join(" - ") || "MFS";
-  const numericId = wallet?.id !== undefined && wallet?.id !== null && wallet?.id !== ""
-    ? String(wallet.id)
-    : wallet?.mfsId ? String(wallet.mfsId) : null;
+  const numericId = wallet?.id != null ? String(wallet.id) : null;
 
   return {
     accountType: "MFS",
@@ -109,7 +107,7 @@ export const mfsLeg = (wallet: MfsAccountItem | any): TenderLeg => {
 export const postSingleFinancialTransaction = async (
   payload: Omit<FinancialTransactionPayload, "accessUser" | "osType">
 ): Promise<FinancialTransactionResult> => {
-  const endpoint = apiConfig.finance?.insertFinancialTransactionUrl || "insert-financial-transaction";
+  const endpoint = apiConfig.finance?.insertFinancialTransactionUrl;
   const billRef = payload.bill_ref || `${Date.now()}${Math.floor(100 + Math.random() * 900)}`;
 
   try {
@@ -214,4 +212,83 @@ export const postTradeFinancialEntries = async ({
 
   const allSucceeded = results.every((r) => r.ok);
   return { allSucceeded, results };
+};
+
+export interface FinanceDashboardParams {
+  startDate?: string;
+  endDate?: string;
+}
+
+export interface FinanceDashboardResult {
+  totalExpense?: number;
+  totalIncome?: number;
+  expenseDetails?: any[];
+  incomeDetails?: any[];
+  [key: string]: any;
+}
+
+/**
+ * Fetches dashboard financial summary (from /site/admin-dashboard).
+ * Requires DD-MM-YYYY format dates as verified in cash-boi_v2.
+ */
+export const fetchFinanceDashboard = async (
+  params?: FinanceDashboardParams
+): Promise<FinanceDashboardResult> => {
+  const url = apiConfig.dashboard?.adminDashboardUrl || "site/admin-dashboard";
+  const now = new Date();
+  const pad = (n: number) => String(n).padStart(2, "0");
+  const monthStart = `01-${pad(now.getMonth() + 1)}-${now.getFullYear()}`;
+  const monthEndObj = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+  const monthEnd = `${pad(monthEndObj.getDate())}-${pad(now.getMonth() + 1)}-${now.getFullYear()}`;
+
+  const body = {
+    accessUser: buildAccessUser(),
+    startDate: params?.startDate || monthStart,
+    endDate: params?.endDate || monthEnd,
+  };
+
+  try {
+    const res: any = await postData({ url, body });
+    return res || {};
+  } catch (error) {
+    console.error("Failed to load finance dashboard:", error);
+    return {};
+  }
+};
+
+export interface FetchFinancialTransactionsParams {
+  startDate?: string;
+  endDate?: string;
+  type?: "EXPENSE" | "INCOME" | "TRANSFER";
+}
+
+/**
+ * Fetches transactions from financial ledger (/get-financial-transaction).
+ * Filters out deleted rows (isDeleted === 'Y').
+ */
+export const fetchFinancialTransactions = async (
+  params?: FetchFinancialTransactionsParams
+): Promise<any[]> => {
+  const url = apiConfig.finance?.getFinancialTransactionUrl || "get-financial-transaction";
+  const body = {
+    accessUser: buildAccessUser(),
+    startDate: params?.startDate || "",
+    endDate: params?.endDate || "",
+    type: params?.type || "",
+  };
+
+  try {
+    const res: any = await postData({ url, body });
+    const list: any[] = Array.isArray(res?.financialTransactionList)
+      ? res.financialTransactionList
+      : Array.isArray(res?.data)
+      ? res.data
+      : Array.isArray(res)
+      ? res
+      : [];
+    return list.filter((r) => r && r.isDeleted !== "Y");
+  } catch (error) {
+    console.error("Failed to fetch financial transactions:", error);
+    return [];
+  }
 };

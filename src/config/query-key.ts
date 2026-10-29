@@ -59,3 +59,4 @@ export const paymentReportQueryKey = "get-payment-report";
 export const businessProfileQueryKey = "business-profile";
 export const businessTypesQueryKey = "get-business-types";
 export const categoryListQueryKey = "get-category-list";
+export const financeDashboardQueryKey = "finance-dashboard";

@@ -193,7 +193,7 @@ export const buildCollectionPayload = ({
 export const postCollection = async (
   payload: CollectionRequestPayload
 ): Promise<{ success: boolean; msg: string; data?: any }> => {
-  const endpoint = apiConfig.collection?.insertCollectionUrl || "insert-collection";
+  const endpoint = apiConfig.collection?.insertCollectionUrl;
 
   try {
     const res: any = await postData({

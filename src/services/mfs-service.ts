@@ -57,7 +57,7 @@ export const describeMfsSaveError = (rawMsg?: string, phone?: string): string =>
  */
 export const fetchMfsUserList = async (): Promise<MfsUserListResponse> => {
   const accessUser = buildAccessUser();
-  const url = apiConfig.mfs?.mfsUserListUrl || "mfs-user-list";
+  const url = apiConfig.mfs?.mfsUserListUrl;
 
   const res: any = await postData<MfsUserListResponse>({ url, body: { accessUser } });
 

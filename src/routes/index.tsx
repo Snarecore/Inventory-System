@@ -49,6 +49,8 @@ const BankPage = React.lazy(() => import('@/pages/admin/finance/bank'))
 const CreateBankPage = React.lazy(() => import('@/pages/admin/finance/bank/create-bank'))
 const MfsPage = React.lazy(() => import('@/pages/admin/finance/mfs'))
 const CreateMfsPage = React.lazy(() => import('@/pages/admin/finance/mfs/create-mfs'))
+const ExpensePage = React.lazy(() => import('@/pages/admin/finance/expense'))
+const IncomePage = React.lazy(() => import('@/pages/admin/finance/income'))
 
 
 const withSuspense = (Component: React.ComponentType) => (
@@ -180,6 +182,26 @@ export const router = createBrowserRouter([
   {
     path: '/expenses/categories',
     element: <Navigate to="/admin/financial-categories" replace />,
+  },
+  {
+    path: '/expense',
+    element: <Navigate to="/admin/expense" replace />,
+  },
+  {
+    path: '/expenses',
+    element: <Navigate to="/admin/expense" replace />,
+  },
+  {
+    path: '/expenses/entry',
+    element: <Navigate to="/admin/expense" replace />,
+  },
+  {
+    path: '/income',
+    element: <Navigate to="/admin/income" replace />,
+  },
+  {
+    path: '/incomes',
+    element: <Navigate to="/admin/income" replace />,
   },
   {
     path: '/finance/categories',
@@ -421,6 +443,22 @@ export const router = createBrowserRouter([
       {
         path: 'expense-categories',
         element: withSuspense(FinancialCategory),
+      },
+      {
+        path: 'expense',
+        element: withSuspense(ExpensePage),
+      },
+      {
+        path: 'expenses',
+        element: <Navigate to="/admin/expense" replace />,
+      },
+      {
+        path: 'income',
+        element: withSuspense(IncomePage),
+      },
+      {
+        path: 'incomes',
+        element: <Navigate to="/admin/income" replace />,
       },
       {
         path: 'banks',

@@ -58,7 +58,7 @@ export const describeSaveError = (rawMsg?: string, accountNo?: string): string =
  */
 export const fetchBankInfoList = async (): Promise<BankInfoListResponse> => {
   const accessUser = buildAccessUser();
-  const url = apiConfig.bank?.bankInfoListUrl || "get-bank-info-list";
+  const url = apiConfig.bank?.bankInfoListUrl;
 
   const res: any = await postData<BankInfoListResponse>({ url, body: { accessUser } });
 
