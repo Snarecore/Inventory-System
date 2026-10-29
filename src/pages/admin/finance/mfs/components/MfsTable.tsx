@@ -58,11 +58,17 @@ export const MfsTable: React.FC<MfsTableProps> = ({ mfsAccounts, isLoading, onAd
   const filtered: MfsUserItem[] = [];
 
   for (const item of mfsAccounts) {
-    const statusLower = (item.status || "").toLowerCase();
-    if (statusLower === "active") activeCount++;
-    else if (statusLower === "inactive") inactiveCount++;
+    const isItemActive = (item.status || "").toLowerCase() === "active";
+    if (isItemActive) {
+      activeCount++;
+    } else {
+      inactiveCount++;
+    }
 
-    if (hasStatusFilter && statusLower !== statusFilterLower) continue;
+    if (hasStatusFilter) {
+      if (statusFilterLower === "active" && !isItemActive) continue;
+      if (statusFilterLower === "inactive" && isItemActive) continue;
+    }
     if (term) {
       const searchTarget = `${item.name} ${item.method} ${item.phoneNumber}`.toLowerCase();
       if (!searchTarget.includes(term)) continue;

@@ -79,8 +79,8 @@ export const fetchMfsUserList = async (): Promise<MfsUserListResponse> => {
     phoneNumber: item.phoneNumber || item.phone || item.mobileNumber || "",
     method: item.method || item.provider || item.mfsMethod || "Bkash",
     openingBalance: Number(item.openingBalance ?? 0),
-    currentBalance: Number(item.currentBalance ?? item.balance ?? item.openingBalance ?? 0),
-    status: item.status || "Active",
+    currentBalance: Number(item.currentBalance ?? item.balance ?? 0),
+    status: item.status ? String(item.status).trim() : "Inactive",
   }));
 
   return {

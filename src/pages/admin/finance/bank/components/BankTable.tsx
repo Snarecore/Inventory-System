@@ -59,14 +59,20 @@ export const BankTable: React.FC<BankTableProps> = ({ bankAccounts, isLoading, o
 
   for (let i = 0; i < bankAccounts.length; i++) {
     const item = bankAccounts[i];
-    const statusLower = (item.status || "").toLowerCase();
+    const isItemActive = (item.status || "").toLowerCase() === "active";
 
     // 1. Tab count collection
-    if (statusLower === "active") activeCount++;
-    else if (statusLower === "inactive") inactiveCount++;
+    if (isItemActive) {
+      activeCount++;
+    } else {
+      inactiveCount++;
+    }
 
     // 2. Filter criteria checks
-    if (hasStatusFilter && statusLower !== statusFilterLower) continue;
+    if (hasStatusFilter) {
+      if (statusFilterLower === "active" && !isItemActive) continue;
+      if (statusFilterLower === "inactive" && isItemActive) continue;
+    }
     if (term) {
       const searchTarget = `${item.bankName} ${item.bankAccountName} ${item.accountNo}`.toLowerCase();
       if (!searchTarget.includes(term)) continue;

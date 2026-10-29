@@ -1,7 +1,7 @@
 import React from 'react';
 import { FiShoppingCart } from 'react-icons/fi';
 import { IoCubeOutline } from 'react-icons/io5';
-import { FaStore, FaUserFriends, FaMoneyBillWave, FaUniversity, FaMobileAlt } from 'react-icons/fa';
+import { FaStore, FaUserFriends, FaMoneyBillWave, FaUniversity } from 'react-icons/fa';
 import { MotionDiv } from '@/utils/framer.motion';
 import { DashboardKpiData } from '../types/dashboard.types';
 
@@ -103,23 +103,6 @@ export const KpiCardsGrid: React.FC<KpiCardsGridProps> = ({ data }) => {
           </div>
         </div>
       </MotionDiv>
-
-      {/* 7. MFS Balance - Pink/Magenta (matching cash-boi_v2) */}
-      {typeof data.mfsBalance === 'number' && (
-        <MotionDiv>
-          <div className="px-4 py-4 rounded-md bg-[#db2777] text-white shadow-sm hover:shadow-md transition-all duration-300">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-[24px] font-bold">{formatCurrency(data.mfsBalance)}</p>
-                <p className="text-sm">MFS Balance</p>
-              </div>
-              <div className="text-5xl hover:scale-120 transition-all ease-in duration-300">
-                <FaMobileAlt />
-              </div>
-            </div>
-          </div>
-        </MotionDiv>
-      )}
     </div>
   );
 };

@@ -19,10 +19,13 @@ export const calculateAccountMetrics = <
   let totalBalance = 0;
 
   for (const item of items) {
-    const st = String(item.status || "").toLowerCase();
-    if (st === "active") active++;
-    else if (st === "inactive") inactive++;
-    totalBalance += Number(item.currentBalance ?? item.balance ?? 0);
+    const isItemActive = String(item.status || "").toLowerCase() === "active";
+    if (isItemActive) {
+      active++;
+      totalBalance += Number(item.currentBalance ?? item.balance ?? 0);
+    } else {
+      inactive++;
+    }
   }
 
   return {
