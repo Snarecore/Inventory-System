@@ -123,18 +123,23 @@ export const useUpdateBankAccountMutation = (
         if (!old) return old;
         const currentList = Array.isArray(old.bankAccounts) ? old.bankAccounts : [];
         const updatedList = currentList.map((acc) => {
-          if (acc.bankId === variables.bankId) {
+          if (
+            String(acc.bankId) === String(variables.bankId) ||
+            Number(acc.bankId) === Number(variables.bankId)
+          ) {
+            const nextBal =
+              variables.currentBalance !== undefined
+                ? Number(variables.currentBalance)
+                : variables.openingBalance !== undefined
+                ? Number(variables.openingBalance)
+                : acc.currentBalance;
             return {
               ...acc,
               bankName: variables.bankName,
               bankAccountName: variables.bankAccountName,
               accountNo: variables.accountNo,
-              currentBalance:
-                variables.currentBalance !== undefined
-                  ? Number(variables.currentBalance)
-                  : variables.openingBalance !== undefined
-                  ? Number(variables.openingBalance)
-                  : acc.currentBalance,
+              currentBalance: nextBal,
+              balance: nextBal,
               openingBalance:
                 variables.openingBalance !== undefined
                   ? Number(variables.openingBalance)

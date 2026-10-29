@@ -118,7 +118,7 @@ export const fetchMfsAccounts = async (): Promise<any> => {
 
 /**
  * Enterprise standard hook for fetching and caching Bank Accounts.
- * Shared across Trade, Purchase, Sale, and Return modules (5-minute staleTime).
+ * Defaults to real-time refetching on mount and window focus.
  */
 export const useBankAccountsQuery = (
   options?: Omit<UseQueryOptions<any>, "queryKey" | "queryFn">
@@ -126,14 +126,16 @@ export const useBankAccountsQuery = (
   return useQuery({
     queryKey: [bankInfoListQueryKey],
     queryFn: fetchBankAccounts,
-    staleTime: 5 * 60 * 1000,
+    staleTime: 0,
+    refetchOnMount: "always",
+    refetchOnWindowFocus: true,
     ...options,
   });
 };
 
 /**
  * Enterprise standard hook for fetching and caching MFS Accounts.
- * Shared across Trade, Purchase, Sale, and Return modules (5-minute staleTime).
+ * Defaults to real-time refetching on mount and window focus.
  */
 export const useMfsAccountsQuery = (
   options?: Omit<UseQueryOptions<any>, "queryKey" | "queryFn">
@@ -141,17 +143,24 @@ export const useMfsAccountsQuery = (
   return useQuery({
     queryKey: [mfsUserListQueryKey],
     queryFn: fetchMfsAccounts,
-    staleTime: 5 * 60 * 1000,
+    staleTime: 0,
+    refetchOnMount: "always",
+    refetchOnWindowFocus: true,
     ...options,
   });
 };
 
+export interface UseFinancialAccountsOptions {
+  bankOptions?: Omit<UseQueryOptions<any>, "queryKey" | "queryFn">;
+  mfsOptions?: Omit<UseQueryOptions<any>, "queryKey" | "queryFn">;
+}
+
 /**
  * Composite hook that provides normalized Bank and MFS accounts with shared caching.
  */
-export const useFinancialAccounts = () => {
-  const bankQuery = useBankAccountsQuery();
-  const mfsQuery = useMfsAccountsQuery();
+export const useFinancialAccounts = (options?: UseFinancialAccountsOptions) => {
+  const bankQuery = useBankAccountsQuery(options?.bankOptions);
+  const mfsQuery = useMfsAccountsQuery(options?.mfsOptions);
 
   const registeredBankAccounts = useMemo(() => {
     return extractBankAccounts(bankQuery.data);

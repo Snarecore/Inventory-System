@@ -40,7 +40,9 @@ export const useMfsUserListQuery = (
   return useQuery<MfsUserListResponse, Error>({
     queryKey: [mfsUserListQueryKey],
     queryFn: fetchMfsUserList,
-    staleTime: 1000 * 60 * 2,
+    staleTime: 0,
+    refetchOnMount: "always",
+    refetchOnWindowFocus: true,
     ...options,
   });
 };
@@ -92,10 +94,9 @@ export const useInsertMfsUserMutation = (
       options?.onError?.(error, variables, context);
     },
     onSettled: async (data, error, variables, context) => {
-      // Mark as stale in background without triggering an immediate eager network hammer
       await queryClient.invalidateQueries({
         queryKey: [mfsUserListQueryKey],
-        refetchType: "none",
+        refetchType: "all",
       });
       options?.onSettled?.(data, error, variables, context);
     },
@@ -121,14 +122,19 @@ export const useUpdateMfsUserMutation = (
         if (!old) return old;
         const currentList = Array.isArray(old.mfsUsers) ? old.mfsUsers : [];
         const updatedList = currentList.map((mfs) => {
-          if (mfs.id === variables.id) {
+          if (
+            String(mfs.id) === String(variables.id) ||
+            Number(mfs.id) === Number(variables.id)
+          ) {
+            const nextBal = Number(variables.currentBalance ?? variables.openingBalance ?? 0);
             return {
               ...mfs,
               name: variables.name,
               phoneNumber: variables.phoneNumber,
               method: variables.method,
               openingBalance: Number(variables.openingBalance || 0),
-              currentBalance: Number(variables.currentBalance ?? variables.openingBalance ?? 0),
+              currentBalance: nextBal,
+              balance: nextBal,
               status: variables.status || "Active",
             };
           }
@@ -155,10 +161,9 @@ export const useUpdateMfsUserMutation = (
       options?.onError?.(error, variables, context);
     },
     onSettled: async (data, error, variables, context) => {
-      // Gentle invalidation without hammering weak networks
       await queryClient.invalidateQueries({
         queryKey: [mfsUserListQueryKey],
-        refetchType: "none",
+        refetchType: "all",
       });
       options?.onSettled?.(data, error, variables, context);
     },
@@ -187,7 +192,10 @@ export const useUpdateMfsUserStatusMutation = (
         if (!old) return old;
         const currentList = Array.isArray(old.mfsUsers) ? old.mfsUsers : [];
         const updatedList = currentList.map((mfs) => {
-          if (mfs.id === variables.id) {
+          if (
+            String(mfs.id) === String(variables.id) ||
+            Number(mfs.id) === Number(variables.id)
+          ) {
             return {
               ...mfs,
               status: variables.status,
@@ -216,10 +224,9 @@ export const useUpdateMfsUserStatusMutation = (
       options?.onError?.(error, variables, context);
     },
     onSettled: async (data, error, variables, context) => {
-      // 5. Invalidate softly without triggering a heavy immediate network re-download
       await queryClient.invalidateQueries({
         queryKey: [mfsUserListQueryKey],
-        refetchType: "none",
+        refetchType: "all",
       });
       options?.onSettled?.(data, error, variables, context);
     },

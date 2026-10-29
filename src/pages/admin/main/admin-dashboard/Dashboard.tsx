@@ -10,21 +10,34 @@ import { useCashBalanceQuery } from '@/hooks/useCashBalance';
 import { useFinancialAccounts } from '@/hooks/useFinancialAccounts';
 
 const AdminDashboard: React.FC = () => {
-  const { data: liveCashBalance } = useCashBalanceQuery();
-  const { registeredBankAccounts } = useFinancialAccounts();
+  const { data: liveCashBalance } = useCashBalanceQuery({
+    staleTime: 0,
+    refetchOnMount: "always",
+    refetchOnWindowFocus: true,
+  });
+  const { registeredBankAccounts, bankQuery } = useFinancialAccounts({
+    bankOptions: {
+      staleTime: 0,
+      refetchOnMount: "always",
+      refetchOnWindowFocus: true,
+    },
+  });
 
   const kpiData = useMemo(() => {
     const liveBank = registeredBankAccounts.reduce(
-      (sum, b) => sum + (Number(b.balance) || 0),
+      (sum, b) => sum + (Number(b.balance ?? b.currentBalance) || 0),
       0
     );
 
     return {
       ...mockKpiData,
       cashBalance: typeof liveCashBalance === 'number' ? liveCashBalance : mockKpiData.cashBalance,
-      bankBalance: liveBank > 0 ? liveBank : mockKpiData.bankBalance,
+      bankBalance:
+        bankQuery.isSuccess && (registeredBankAccounts.length > 0 || liveBank > 0)
+          ? liveBank
+          : mockKpiData.bankBalance,
     };
-  }, [liveCashBalance, registeredBankAccounts]);
+  }, [liveCashBalance, registeredBankAccounts, bankQuery.isSuccess]);
 
   return (
     <div className="flex flex-col gap-4 sm:gap-4.5 p-4 sm:p-5 bg-[#f8fafc]">
