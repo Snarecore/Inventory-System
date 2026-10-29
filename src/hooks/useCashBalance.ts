@@ -55,7 +55,7 @@ export const useCashBalanceQuery = (
     queryFn: fetchCashBalance,
     staleTime: 0,
     refetchOnMount: "always",
-    refetchOnWindowFocus: true,
+    refetchOnWindowFocus: false,
     ...options,
   });
 };

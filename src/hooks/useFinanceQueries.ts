@@ -28,7 +28,7 @@ export const useFinanceDashboardQuery = (params?: FinanceDashboardParams) => {
     queryFn: () => fetchFinanceDashboard(params),
     staleTime: 1000 * 30, // 30 seconds
     refetchOnMount: "always",
-    refetchOnWindowFocus: true,
+    refetchOnWindowFocus: false,
   });
 };
 
@@ -38,7 +38,7 @@ export const useFinancialTransactionsQuery = (params?: FetchFinancialTransaction
     queryFn: () => fetchFinancialTransactions(params),
     staleTime: 1000 * 30,
     refetchOnMount: "always",
-    refetchOnWindowFocus: true,
+    refetchOnWindowFocus: false,
   });
 };
 
