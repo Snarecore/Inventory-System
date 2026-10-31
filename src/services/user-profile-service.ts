@@ -46,7 +46,7 @@ export async function getUserProfile(
   })) as any;
 
   if (res?.error) {
-    throw new Error(res?.msg || res?.message || "Failed to load user profile");
+    throw new Error(res?.msg || "Failed to load user profile");
   }
 
   const rawData = res?.profile ?? res;
@@ -235,30 +235,9 @@ export async function updateUserPinWithProfile(
   }
 
   const payload: UpdateUserProfilePayload = {
-    id: profileToUpdate.id,
-    accountType: profileToUpdate.accountType,
-    fullName: profileToUpdate.fullName,
+    ...profileToUpdate,
     phoneNumber: profileToUpdate.phoneNumber || phone,
-    email: profileToUpdate.email,
-    divisionId: profileToUpdate.divisionId,
-    divisionName: profileToUpdate.divisionName,
-    districtId: profileToUpdate.districtId,
-    districtName: profileToUpdate.districtName,
-    upazilaId: profileToUpdate.upazilaId,
-    upazilaName: profileToUpdate.upazilaName,
-    address: profileToUpdate.address,
     pin: newPin,
-    isInventory: profileToUpdate.isInventory,
-    pinRequiredFor: profileToUpdate.pinRequiredFor,
-    isSilentMode: profileToUpdate.isSilentMode,
-    balanceCheckEnabled: profileToUpdate.balanceCheckEnabled,
-    status: profileToUpdate.status,
-    profileCompletionPercentage: profileToUpdate.profileCompletionPercentage,
-    addedBy: profileToUpdate.addedBy,
-    addedDate: profileToUpdate.addedDate,
-    updatedBy: profileToUpdate.updatedBy,
-    userId: profileToUpdate.userId,
-    updatedDate: profileToUpdate.updatedDate,
   };
 
   return await updateUserProfile(payload);

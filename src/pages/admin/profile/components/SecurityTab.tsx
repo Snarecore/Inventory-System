@@ -179,7 +179,7 @@ export const SecurityTab: React.FC<SecurityTabProps> = ({ phone, profile }) => {
       <div className="bg-slate-50 border border-slate-200 rounded-lg p-2.5 flex items-center justify-between gap-3">
         <div className="flex items-center gap-3">
           <div>
-            <span className="text-[10px] font-bold text-black uppercase tracking-wider block leading-tight">
+            <span className="text-[11px] font-semibold text-black block leading-tight">
               Current Login PIN
             </span>
             <div className="flex items-center gap-2 mt-0.5">
@@ -207,7 +207,7 @@ export const SecurityTab: React.FC<SecurityTabProps> = ({ phone, profile }) => {
           <div className="hidden sm:block h-6 w-px bg-gray-300" />
 
           <div className="text-[11px] text-black">
-            <span className="text-[10px] text-black font-bold uppercase tracking-wider block leading-tight">
+            <span className="text-[11px] text-black font-semibold block leading-tight">
               Registered Phone
             </span>
             <span className="font-mono font-bold text-black text-xs">
