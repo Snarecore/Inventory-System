@@ -24,21 +24,29 @@ const AdminDashboard: React.FC = () => {
 
   const {
     registeredBankAccounts,
+    registeredMfsAccounts,
     bankQuery,
+    mfsQuery,
   } = useFinancialAccounts({
     bankOptions: {
       staleTime: 0,
       refetchOnMount: "always",
       refetchOnWindowFocus: false,
     },
+    mfsOptions: {
+      staleTime: 0,
+      refetchOnMount: "always",
+      refetchOnWindowFocus: false,
+    },
   });
 
-  const isRefreshing = isRefetchingCash || bankQuery.isRefetching;
+  const isRefreshing = isRefetchingCash || bankQuery.isRefetching || mfsQuery.isRefetching;
 
   const handleRefresh = async () => {
     await Promise.all([
       refetchCash(),
       bankQuery.refetch(),
+      mfsQuery.refetch(),
     ]);
   };
 
@@ -51,6 +59,14 @@ const AdminDashboard: React.FC = () => {
         0
       );
 
+    // Following cash-boi-v2: Only active MFS accounts count toward standing MFS balance
+    const liveMfs = registeredMfsAccounts
+      .filter((m) => String(m.status || '').toLowerCase() === 'active')
+      .reduce(
+        (sum, m) => sum + (Number(m.currentBalance ?? m.openingBalance ?? 0) || 0),
+        0
+      );
+
     return {
       ...mockKpiData,
       cashBalance: typeof liveCashBalance === 'number' ? liveCashBalance : mockKpiData.cashBalance,
@@ -59,11 +75,18 @@ const AdminDashboard: React.FC = () => {
         : registeredBankAccounts.length > 0
         ? liveBank
         : mockKpiData.bankBalance,
+      mfsBalance: mfsQuery.isSuccess
+        ? liveMfs
+        : registeredMfsAccounts.length > 0
+        ? liveMfs
+        : (mockKpiData.mfsBalance ?? 0),
     };
   }, [
     liveCashBalance,
     registeredBankAccounts,
+    registeredMfsAccounts,
     bankQuery.isSuccess,
+    mfsQuery.isSuccess,
   ]);
 
   return (
