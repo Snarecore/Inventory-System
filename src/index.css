@@ -25,6 +25,8 @@
   --brand-primary-dark: #001a3d;
   --brand-secondary: #01306B;
   --ui-on-accent: #ffffff;
+  --table-header-bg: var(--primary-color);
+  --table-header-text: var(--ui-on-accent);
   /* Secondary brand accent (logo Cerulean) and its readable foreground.
      AppearanceProvider overwrites both at runtime; these are the values used
      before that first paint, and if scripting is unavailable. */
@@ -544,8 +546,8 @@
   .ui-table th {
     font-size: var(--ui-label-size);
     font-weight: 600;
-    color: var(--ui-text-muted);
-    background-color: var(--ui-surface-muted);
+    color: var(--table-header-text, var(--ui-on-accent, #ffffff));
+    background-color: var(--table-header-bg, var(--primary-color));
     text-align: start;
   }
 

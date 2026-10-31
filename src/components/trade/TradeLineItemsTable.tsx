@@ -51,7 +51,7 @@ export const TradeLineItemsTable: React.FC<TradeLineItemsTableProps> = ({
       >
         <table className="ui-table w-full min-w-[720px] text-left border-collapse">
           <thead>
-            <tr className="text-[11px] font-semibold [&>th]:sticky [&>th]:top-0 [&>th]:z-10 [&>th]:bg-[var(--ui-accent-2)] [&>th]:text-[var(--ui-on-accent-2)] [&>th]:shadow-[inset_0_-1px_0_var(--ui-border)]">
+            <tr className="text-[11px] font-semibold [&>th]:sticky [&>th]:top-0 [&>th]:z-10 [&>th]:bg-[var(--table-header-bg,var(--primary-color))] [&>th]:text-[var(--table-header-text,var(--ui-on-accent,#ffffff))] [&>th]:shadow-[inset_0_-1px_0_var(--ui-border)]">
               <th className="text-center w-10 whitespace-nowrap">SL</th>
               <th className="w-full min-w-[180px]">Product</th>
               <th className="text-center w-16 whitespace-nowrap">Unit</th>

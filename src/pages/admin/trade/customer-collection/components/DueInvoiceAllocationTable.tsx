@@ -115,7 +115,7 @@ export const DueInvoiceAllocationTable: React.FC<DueInvoiceAllocationTableProps>
       {/* Table */}
       <div className="border border-[var(--ui-border)] rounded-lg max-h-52 overflow-x-auto overflow-y-auto">
         <table className="w-full text-left text-xs border-collapse">
-          <thead className="bg-[var(--ui-surface-sunken)] text-[var(--ui-text)] font-semibold sticky top-0 z-10 border-b border-[var(--ui-border)] whitespace-nowrap">
+          <thead className="bg-[var(--table-header-bg,var(--primary-color))] text-[var(--table-header-text,var(--ui-on-accent,#ffffff))] font-semibold sticky top-0 z-10 border-b border-[var(--ui-border)] whitespace-nowrap">
             <tr>
               {isManualMode && (
                 <th className="py-1 px-2 text-center w-8 shrink-0 whitespace-nowrap">

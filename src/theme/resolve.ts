@@ -110,6 +110,8 @@ export const appearanceToCssVars = (r: ResolvedAppearance): Record<string, strin
     '--brand-primary-dark': p.accentDark,
     '--brand-secondary': p.accent,
     '--ui-on-accent': readableOn(p.accent),
+    '--table-header-bg': p.accent,
+    '--table-header-text': readableOn(p.accent),
 
     // --- chrome ---
     '--ui-surface': p.surface,

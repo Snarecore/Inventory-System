@@ -149,14 +149,14 @@ export const CategoryTable: React.FC<CategoryTableProps> = ({
     return (
       <span
         onClick={() => handleSort(key)}
-        className={`inline-flex items-center gap-1 select-none text-black cursor-pointer ${
+        className={`inline-flex items-center gap-1 select-none text-current cursor-pointer ${
           align === "right" ? "justify-end w-full" : align === "center" ? "justify-center w-full" : ""
         }`}
       >
         <span>{label}</span>
         <FiChevronDown
           size={11}
-          className={`text-black transition-transform duration-200 ${
+          className={`text-current transition-transform duration-200 ${
             isActive && sortDir === "asc" ? "rotate-180" : ""
           }`}
         />

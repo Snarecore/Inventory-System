@@ -191,7 +191,7 @@ export const CollectionReceiptModal: React.FC<CollectionReceiptModalProps> = ({
         {receiptData.allocations.length > 0 && (
           <div className="border border-gray-200 rounded-lg overflow-hidden">
             <table className="w-full text-left text-xs">
-              <thead className="bg-[#41BEF3] text-black font-semibold">
+              <thead className="bg-[var(--table-header-bg,var(--primary-color))] text-[var(--table-header-text,var(--ui-on-accent,#ffffff))] font-semibold">
                 <tr>
                   <th className="py-2 px-2.5">Invoice No</th>
                   <th className="py-2 px-2.5 text-right">Amount Paid (৳)</th>

@@ -17,7 +17,7 @@ export const TableSkeleton: React.FC<TableSkeletonProps> = ({
   return (
     <div className={`w-full overflow-hidden animate-pulse bg-[var(--ui-surface)] border border-[var(--ui-border)] rounded-xl p-3 ${className}`}>
       {/* Skeleton Header */}
-      <div className="h-9 bg-[var(--ui-accent-2)]/20 rounded-lg mb-3 flex items-center px-3 gap-3">
+      <div className="h-9 bg-[var(--table-header-bg,var(--primary-color))]/15 rounded-lg mb-3 flex items-center px-3 gap-3">
         {Array.from({ length: cols }).map((_, i) => (
           <div
             key={i}

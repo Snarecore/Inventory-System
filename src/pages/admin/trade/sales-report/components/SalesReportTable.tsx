@@ -271,12 +271,12 @@ export const SalesReportTable: React.FC<SalesReportTableProps> = ({
     return (
       <span
         onClick={handleClick}
-        className="inline-flex items-center gap-1 select-none text-[var(--ui-text)] cursor-pointer"
+        className="inline-flex items-center gap-1 select-none text-current cursor-pointer"
       >
         <span>{label}</span>
         <FiChevronDown
           size={11}
-          className={`text-[var(--ui-text)] transition-transform duration-200 ${
+          className={`text-current transition-transform duration-200 ${
             isAsc ? "rotate-180" : ""
           }`}
         />

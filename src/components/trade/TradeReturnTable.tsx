@@ -210,14 +210,14 @@ export function TradeReturnTable<T extends Record<string, any>>({
     return (
       <span
         onClick={setSortBy ? handleClick : undefined}
-        className={`inline-flex items-center gap-1 select-none text-[var(--ui-text)] ${
+        className={`inline-flex items-center gap-1 select-none text-current ${
           setSortBy ? "cursor-pointer" : ""
         }`}
       >
         <span>{label}</span>
         <FiChevronDown
           size={11}
-          className={`text-[var(--ui-text)] transition-transform duration-200 ${
+          className={`text-current transition-transform duration-200 ${
             isAsc ? "rotate-180" : ""
           }`}
         />
@@ -693,7 +693,7 @@ export function TradeReturnTable<T extends Record<string, any>>({
                               <div className="overflow-x-auto">
                                 <table className="w-full text-left text-xs border-collapse">
                                   <thead>
-                                    <tr className="bg-[var(--ui-surface-muted)] text-[var(--ui-text)] font-semibold border-b border-[var(--ui-border)] text-[11px]">
+                                    <tr className="bg-[var(--table-header-bg,var(--primary-color))] text-[var(--table-header-text,var(--ui-on-accent,#ffffff))] font-semibold border-b border-[var(--ui-border)] text-[11px]">
                                       <th className="py-1.5 px-2 text-center w-8">SL</th>
                                       <th className="py-1.5 px-2">Product Name</th>
                                       <th className="py-1.5 px-2">Product Code</th>

@@ -1401,7 +1401,7 @@ export const SalesReturnForm: React.FC = () => {
           <div className="overflow-x-auto w-full">
             <table className="w-full text-xs text-left border-collapse min-w-[960px]">
               <thead>
-                <tr className="bg-[var(--ui-accent-2)] text-[var(--ui-text)] border-b border-[var(--ui-border)] text-[11px] font-semibold shadow-xs">
+                <tr className="bg-[var(--table-header-bg,var(--primary-color))] text-[var(--table-header-text,var(--ui-on-accent,#ffffff))] border-b border-[var(--ui-border)] text-[11px] font-semibold shadow-xs">
                   <th className="py-2 px-3 text-center w-10 whitespace-nowrap">Select</th>
                   <th className="py-2 px-3 min-w-[200px]">Product Description</th>
                   <th className="py-2 px-2 text-center w-16 whitespace-nowrap">Unit</th>

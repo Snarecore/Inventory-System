@@ -150,12 +150,12 @@ export const TradePartyDueTable = <T extends GenericTradePartyDue>({
     return (
       <span
         onClick={handleClick}
-        className="inline-flex items-center gap-1 select-none text-[var(--ui-text)] cursor-pointer hover:opacity-80 transition-opacity"
+        className="inline-flex items-center gap-1 select-none text-current cursor-pointer hover:opacity-80 transition-opacity"
       >
         <span>{label}</span>
         <FiChevronDown
           size={12}
-          className={`text-[var(--ui-text)] transition-transform duration-150 ${isAsc ? "rotate-180" : ""}`}
+          className={`text-current transition-transform duration-150 ${isAsc ? "rotate-180" : ""}`}
         />
       </span>
     );

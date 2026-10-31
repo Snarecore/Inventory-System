@@ -365,7 +365,7 @@ export const PaymentReceiptModal: React.FC<PaymentReceiptModalProps> = ({
           {receiptData.allocations.length > 0 && (
             <div className="border border-gray-200 rounded-md overflow-hidden">
               <table className="w-full text-left text-[11px] border-collapse">
-                <thead className="bg-gray-100 text-gray-700 font-bold border-b border-gray-200">
+                <thead className="bg-[var(--table-header-bg,var(--primary-color))] text-[var(--table-header-text,var(--ui-on-accent,#ffffff))] font-semibold border-b border-gray-200">
                   <tr>
                     <th className="py-1 px-2 w-7">#</th>
                     <th className="py-1 px-2">Invoice No</th>

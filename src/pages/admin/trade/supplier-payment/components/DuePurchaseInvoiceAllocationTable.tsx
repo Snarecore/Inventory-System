@@ -83,7 +83,7 @@ export const DuePurchaseInvoiceAllocationTable: React.FC<DuePurchaseInvoiceAlloc
             <col className="w-[14%]" />
             <col className="w-[14%]" />
           </colgroup>
-          <thead className="bg-[var(--ui-surface-sunken)] text-[var(--ui-text)] font-semibold sticky top-0 z-10 border-b border-[var(--ui-border)] whitespace-nowrap">
+          <thead className="bg-[var(--table-header-bg,var(--primary-color))] text-[var(--table-header-text,var(--ui-on-accent,#ffffff))] font-semibold sticky top-0 z-10 border-b border-[var(--ui-border)] whitespace-nowrap">
             <tr>
               {isManualMode && (
                 <th className="py-1 px-1.5 text-center w-7 shrink-0 whitespace-nowrap">

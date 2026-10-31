@@ -101,7 +101,7 @@ const VendorTable = ({
             <div className="w-full overflow-x-auto relative z-10">
                 <table className="w-full text-left border-collapse min-w-[900px] text-xs">
                     <thead>
-                        <tr className="bg-[var(--ui-accent-2)] text-[var(--ui-text)] text-xs font-semibold">
+                        <tr className="bg-[var(--table-header-bg,var(--primary-color))] text-[var(--table-header-text,var(--ui-on-accent,#ffffff))] text-xs font-semibold">
                             {tableHeaders.map(({ key, label }) => (
                                 <th key={key} className={`py-2.5 px-3 text-left ${key === "id" ? "w-10 text-center" : ""}`}>
                                     {label}

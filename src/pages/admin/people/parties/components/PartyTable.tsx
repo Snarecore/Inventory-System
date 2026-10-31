@@ -101,14 +101,14 @@ export const PartyTable: React.FC<PartyTableProps> = ({
     return (
       <span
         onClick={setSortBy ? handleClick : undefined}
-        className={`inline-flex items-center gap-1 select-none text-[var(--ui-text)] ${
+        className={`inline-flex items-center gap-1 select-none text-current ${
           setSortBy ? "cursor-pointer" : ""
         }`}
       >
         <span>{label}</span>
         <FiChevronDown
           size={11}
-          className={`text-[var(--ui-text)] transition-transform duration-200 ${
+          className={`text-current transition-transform duration-200 ${
             isAsc ? "rotate-180" : ""
           }`}
         />
