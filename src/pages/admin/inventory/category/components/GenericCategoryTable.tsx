@@ -123,10 +123,10 @@ export const GenericCategoryTable = <T extends GenericCategoryItem>({
           <img
             src={data.image}
             alt="category"
-            className="w-10 h-10 object-cover rounded-md p-0.5 border border-gray-100 hover:scale-105 transition-all ease-in-out duration-300"
+            className="w-10 h-10 object-cover rounded-md p-0.5 border border-[var(--ui-border)] hover:scale-105 transition-all ease-in-out duration-300"
           />
         ) : (
-          <span className="text-xs text-gray-400">No Image</span>
+          <span className="text-xs text-[var(--ui-text-subtle)]">No Image</span>
         );
 
       case "bannerImage":
@@ -134,23 +134,23 @@ export const GenericCategoryTable = <T extends GenericCategoryItem>({
           <img
             src={data.bannerImage}
             alt="banner"
-            className="w-20 h-9 object-cover rounded-md shadow-xs border border-gray-200 hover:scale-105 transition-all ease-in-out duration-300"
+            className="w-20 h-9 object-cover rounded-md shadow-xs border border-[var(--ui-border)] hover:scale-105 transition-all ease-in-out duration-300"
           />
         ) : (
-          <span className="text-xs text-gray-400">No Banner</span>
+          <span className="text-xs text-[var(--ui-text-subtle)]">No Banner</span>
         );
 
       case "name":
-        return <span className="font-medium text-black">{data.name}</span>;
+        return <span className="font-medium text-[var(--ui-text)]">{data.name}</span>;
 
       case "mainCategoryName":
-        return <span className="text-gray-700">{data.mainCategoryName || "-"}</span>;
+        return <span className="text-[var(--ui-text)]">{data.mainCategoryName || "-"}</span>;
 
       case "firstCategoryName":
-        return <span className="text-gray-700">{data.firstCategoryName || "-"}</span>;
+        return <span className="text-[var(--ui-text)]">{data.firstCategoryName || "-"}</span>;
 
       case "secondCategoryName":
-        return <span className="text-gray-700">{data.secondCategoryName || "-"}</span>;
+        return <span className="text-[var(--ui-text)]">{data.secondCategoryName || "-"}</span>;
 
       case "status": {
         const isActive = Boolean(data.status);
@@ -163,9 +163,9 @@ export const GenericCategoryTable = <T extends GenericCategoryItem>({
                 onChange={() => handleToggleStatus(data)}
                 className="sr-only peer"
               />
-              <div className="w-8 h-4.5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:bg-[var(--color-primary)] relative transition-all duration-200">
+              <div className="w-8 h-4.5 bg-[var(--ui-border)] peer-focus:outline-none rounded-full peer peer-checked:bg-[var(--color-primary)] relative transition-all duration-200">
                 <div
-                  className={`absolute top-[2px] left-[2px] w-3.5 h-3.5 bg-white rounded-full transition-transform duration-200 ${
+                  className={`absolute top-[2px] left-[2px] w-3.5 h-3.5 bg-[var(--ui-surface)] rounded-full transition-transform duration-200 ${
                     isActive ? "translate-x-3.5" : "translate-x-0"
                   }`}
                 />
@@ -174,8 +174,8 @@ export const GenericCategoryTable = <T extends GenericCategoryItem>({
             <span
               className={`text-[11px] font-semibold px-2 py-0.5 rounded border ${
                 isActive
-                  ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                  : "bg-rose-50 text-rose-700 border-rose-200"
+                  ? "bg-[var(--ui-success-light)] text-[var(--ui-success-dark)] border-[var(--ui-success-border)]"
+                  : "bg-[var(--ui-danger-light)] text-[var(--ui-danger-dark)] border-[var(--ui-danger-border)]"
               }`}
             >
               {isActive ? "Active" : "Inactive"}
@@ -190,7 +190,7 @@ export const GenericCategoryTable = <T extends GenericCategoryItem>({
             <button
               type="button"
               onClick={() => onEdit(data)}
-              className="p-1 rounded text-amber-600 hover:bg-amber-100 transition-colors cursor-pointer"
+              className="p-1 rounded text-[var(--ui-warning)] hover:bg-[var(--ui-warning-border)] transition-colors cursor-pointer"
               title="Edit"
             >
               <FaEdit size={14} />
@@ -198,7 +198,7 @@ export const GenericCategoryTable = <T extends GenericCategoryItem>({
             <button
               type="button"
               onClick={() => openDeleteModal(data)}
-              className="p-1 rounded text-rose-600 hover:bg-rose-100 transition-colors cursor-pointer"
+              className="p-1 rounded text-[var(--ui-danger)] hover:bg-[var(--ui-danger-border)] transition-colors cursor-pointer"
               title="Delete"
             >
               <FiTrash2 size={14} />
@@ -267,7 +267,7 @@ export const GenericCategoryTable = <T extends GenericCategoryItem>({
       )}
 
       {pageCount > 1 && (
-        <div className="p-2.5 sm:p-3 border-t border-gray-100 bg-gray-50/50 flex justify-end">
+        <div className="p-2.5 sm:p-3 border-t border-[var(--ui-border)] bg-[var(--ui-surface-muted)]/50 flex justify-end">
           <Pagination
             pageCount={pageCount}
             currentPageNumber={currentPageNumber}

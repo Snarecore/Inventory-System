@@ -230,16 +230,16 @@ const Products = () => {
             <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2.5 w-full">
                 {/* 1. Total Products - Blue */}
                 <MotionDiv delay={0.05}>
-                    <div className="p-3 rounded-xl border bg-blue-50/60 border-blue-300 hover:border-blue-400 flex items-center justify-between gap-2.5 transition-all shadow-xs h-full">
+                    <div className="p-3 rounded-xl border bg-[var(--primary-color-light)]/60 border-[var(--primary-color-muted)] hover:border-[var(--primary-color-muted)] flex items-center justify-between gap-2.5 transition-all shadow-xs h-full">
                         <div className="flex flex-col min-w-0">
-                            <span className="text-[11px] font-semibold text-black tracking-wider truncate">
+                            <span className="text-[11px] font-semibold text-[var(--ui-text)] tracking-wider truncate">
                                 Total Products
                             </span>
-                            <span className="text-base sm:text-lg font-bold truncate mt-0.5 text-blue-600">
+                            <span className="text-base sm:text-lg font-bold truncate mt-0.5 text-[var(--primary-color)]">
                                 {metrics.total}
                             </span>
                         </div>
-                        <div className="p-2 rounded-lg shrink-0 bg-blue-100 text-blue-600">
+                        <div className="p-2 rounded-lg shrink-0 bg-[var(--primary-color-muted)] text-[var(--primary-color)]">
                             <IoCubeOutline size={18} />
                         </div>
                     </div>
@@ -247,16 +247,16 @@ const Products = () => {
 
                 {/* 2. Active Products - Emerald */}
                 <MotionDiv delay={0.1}>
-                    <div className="p-3 rounded-xl border bg-emerald-50/60 border-emerald-300 hover:border-emerald-400 flex items-center justify-between gap-2.5 transition-all shadow-xs h-full">
+                    <div className="p-3 rounded-xl border bg-[var(--ui-success-light)]/60 border-[var(--ui-success-border)] hover:border-[var(--ui-success-border)] flex items-center justify-between gap-2.5 transition-all shadow-xs h-full">
                         <div className="flex flex-col min-w-0">
-                            <span className="text-[11px] font-semibold text-black tracking-wider truncate">
+                            <span className="text-[11px] font-semibold text-[var(--ui-text)] tracking-wider truncate">
                                 Active Products
                             </span>
-                            <span className="text-base sm:text-lg font-bold truncate mt-0.5 text-emerald-600">
+                            <span className="text-base sm:text-lg font-bold truncate mt-0.5 text-[var(--ui-success)]">
                                 {metrics.activeCount}
                             </span>
                         </div>
-                        <div className="p-2 rounded-lg shrink-0 bg-emerald-100 text-emerald-600">
+                        <div className="p-2 rounded-lg shrink-0 bg-[var(--ui-success-border)] text-[var(--ui-success)]">
                             <FiCheckCircle size={18} />
                         </div>
                     </div>
@@ -264,16 +264,16 @@ const Products = () => {
 
                 {/* 3. Inactive Products - Rose */}
                 <MotionDiv delay={0.15}>
-                    <div className="p-3 rounded-xl border bg-rose-50/60 border-rose-300 hover:border-rose-400 flex items-center justify-between gap-2.5 transition-all shadow-xs h-full">
+                    <div className="p-3 rounded-xl border bg-[var(--ui-danger-light)]/60 border-[var(--ui-danger-border)] hover:border-[var(--ui-danger-border)] flex items-center justify-between gap-2.5 transition-all shadow-xs h-full">
                         <div className="flex flex-col min-w-0">
-                            <span className="text-[11px] font-semibold text-black tracking-wider truncate">
+                            <span className="text-[11px] font-semibold text-[var(--ui-text)] tracking-wider truncate">
                                 Inactive Products
                             </span>
-                            <span className="text-base sm:text-lg font-bold truncate mt-0.5 text-rose-600">
+                            <span className="text-base sm:text-lg font-bold truncate mt-0.5 text-[var(--ui-danger)]">
                                 {metrics.inactiveCount}
                             </span>
                         </div>
-                        <div className="p-2 rounded-lg shrink-0 bg-rose-100 text-rose-600">
+                        <div className="p-2 rounded-lg shrink-0 bg-[var(--ui-danger-border)] text-[var(--ui-danger)]">
                             <FiXCircle size={18} />
                         </div>
                     </div>
@@ -281,16 +281,16 @@ const Products = () => {
 
                 {/* 4. Low Stock Alert - Amber */}
                 <MotionDiv delay={0.2}>
-                    <div className="p-3 rounded-xl border bg-amber-50/60 border-amber-300 hover:border-amber-400 flex items-center justify-between gap-2.5 transition-all shadow-xs h-full">
+                    <div className="p-3 rounded-xl border bg-[var(--ui-warning-light)]/60 border-[var(--ui-warning-border)] hover:border-[var(--ui-warning-border)] flex items-center justify-between gap-2.5 transition-all shadow-xs h-full">
                         <div className="flex flex-col min-w-0">
-                            <span className="text-[11px] font-semibold text-black tracking-wider truncate">
+                            <span className="text-[11px] font-semibold text-[var(--ui-text)] tracking-wider truncate">
                                 Low Stock Alert
                             </span>
-                            <span className="text-base sm:text-lg font-bold truncate mt-0.5 text-amber-600">
+                            <span className="text-base sm:text-lg font-bold truncate mt-0.5 text-[var(--ui-warning)]">
                                 {metrics.lowStockCount}
                             </span>
                         </div>
-                        <div className="p-2 rounded-lg shrink-0 bg-amber-100 text-amber-600">
+                        <div className="p-2 rounded-lg shrink-0 bg-[var(--ui-warning-border)] text-[var(--ui-warning)]">
                             <FiAlertTriangle size={18} />
                         </div>
                     </div>
@@ -298,16 +298,16 @@ const Products = () => {
 
                 {/* 5. Stock Valuation - Purple */}
                 <MotionDiv delay={0.25}>
-                    <div className="p-3 rounded-xl border bg-purple-50/60 border-purple-300 hover:border-purple-400 flex items-center justify-between gap-2.5 transition-all shadow-xs h-full">
+                    <div className="p-3 rounded-xl border bg-[var(--ui-info-light)]/60 border-[var(--ui-info-border)] hover:border-[var(--ui-info-border)] flex items-center justify-between gap-2.5 transition-all shadow-xs h-full">
                         <div className="flex flex-col min-w-0">
-                            <span className="text-[11px] font-semibold text-black tracking-wider truncate">
+                            <span className="text-[11px] font-semibold text-[var(--ui-text)] tracking-wider truncate">
                                 Stock Valuation
                             </span>
-                            <span className="text-base sm:text-lg font-bold truncate mt-0.5 text-purple-600">
+                            <span className="text-base sm:text-lg font-bold truncate mt-0.5 text-[var(--ui-info)]">
                                 ৳ {metrics.totalStockValue.toLocaleString('en-IN')}
                             </span>
                         </div>
-                        <div className="p-2 rounded-lg shrink-0 bg-purple-100 text-purple-600">
+                        <div className="p-2 rounded-lg shrink-0 bg-[var(--ui-info-border)] text-[var(--ui-info)]">
                             <FaMoneyBillWave size={18} />
                         </div>
                     </div>

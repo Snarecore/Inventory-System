@@ -37,18 +37,18 @@ export const PolicyCmsForm: React.FC<PolicyCmsFormProps> = ({
 
   return (
     <div>
-      <div className="bg-white rounded-lg border border-gray-200 p-6">
+      <div className="bg-[var(--ui-surface)] rounded-lg border border-[var(--ui-border)] p-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
           <div>
-            <label className="block text-[14px] font-medium text-[#212b36] mb-1">
-              Page Title<span className="text-red-500">*</span>
+            <label className="block text-[14px] font-medium text-[var(--ui-text)] mb-1">
+              Page Title<span className="text-[var(--ui-danger)]">*</span>
             </label>
             <input
               type="text"
               name="title"
               value={fieldValues.title}
               onChange={handleChange}
-              className="w-full p-2 border border-gray-300 rounded-md focus:ring-[var(--color-primary)] focus:outline-none"
+              className="w-full p-2 border border-[var(--ui-border-strong)] rounded-md focus:ring-[var(--color-primary)] focus:outline-none"
               required
             />
           </div>
@@ -66,7 +66,7 @@ export const PolicyCmsForm: React.FC<PolicyCmsFormProps> = ({
           <button
             type="button"
             onClick={onCancel}
-            className="px-4 py-2 text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50 cursor-pointer"
+            className="px-4 py-2 text-[var(--ui-text-muted)] border border-[var(--ui-border-strong)] rounded-md hover:bg-[var(--ui-surface-muted)] cursor-pointer"
           >
             Cancel
           </button>

@@ -38,23 +38,23 @@ const ProductMultipleImage: React.FC<ProductImageProps> = ({ value, onChange }) 
 
 	return (
 		<>
-			<div className="px-4 sm:px-4 md:py-3 border-b border-gray-200">
+			<div className="px-4 sm:px-4 md:py-3 border-b border-[var(--ui-border)]">
 				<div className="flex items-center gap-2 mb-2">
-					<p className="text-base font-bold text-[#212b36]">
+					<p className="text-base font-bold text-[var(--ui-text)]">
 						Product Images
 					</p>
 					<div>
-						<span className="px-2.5 py-0.5 rounded-md text-xs font-medium bg-[var(--primary-color-light)] text-black border border-[var(--primary-color)]">
+						<span className="px-2.5 py-0.5 rounded-md text-xs font-medium bg-[var(--primary-color-light)] text-[var(--ui-text)] border border-[var(--primary-color)]">
 							Recommended Size: 626×621 PX
 						</span>
 					</div>
 				</div>
-				<p className="text-sm text-gray-600 leading-relaxed">You can upload up to 5 additional images to showcase your product from different angles or perspectives.</p>
+				<p className="text-sm text-[var(--ui-text-muted)] leading-relaxed">You can upload up to 5 additional images to showcase your product from different angles or perspectives.</p>
 			</div>
 			<div className="flex flex-wrap gap-4 px-8 pb-2 pt-4">
 				<label
 					htmlFor={`${id}-multi-upload`}
-					className="w-[120px] h-[120px] flex items-center justify-center flex-col gap-2 border border-dashed border-[#e6eaed] text-sm rounded-md cursor-pointer hover:border-[var(--primary-color)] transition-all ease-in-out duration-300"
+					className="w-[120px] h-[120px] flex items-center justify-center flex-col gap-2 border border-dashed border-[var(--ui-border)] text-sm rounded-md cursor-pointer hover:border-[var(--primary-color)] transition-all ease-in-out duration-300"
 				>
 					<IoCloudUploadOutline size={20} />
 					<p className="font-semibold text-center">Upload Images</p>
@@ -76,14 +76,14 @@ const ProductMultipleImage: React.FC<ProductImageProps> = ({ value, onChange }) 
 								src={src}
 								alt={`Product image ${index + 1}`}
 								aria-label={`Product image preview ${index + 1}`}
-								className="w-full h-full object-cover rounded-lg border border-gray-300"
+								className="w-full h-full object-cover rounded-lg border border-[var(--ui-border-strong)]"
 								onError={(e) => {
 									e.currentTarget.src = "/images/fallback.png";
 								}}
 							/>
 							<button
 								onClick={() => removeImage(index)}
-								className="absolute top-1 right-1 bg-red-500 text-white rounded-md cursor-pointer hover:bg-red-600 hover:text-white transition-all duration-300"
+								className="absolute top-1 right-1 bg-[var(--ui-danger)] text-white rounded-md cursor-pointer hover:bg-[var(--ui-danger)] hover:text-white transition-all duration-300"
 								aria-label={`Remove image ${index + 1}`}
 							>
 								<IoCloseSharp size={14} />

@@ -541,9 +541,9 @@ const Purchases: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setIsChallanSettingsOpen(true)}
-                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-700 bg-white hover:bg-gray-50 border border-gray-200 rounded-lg shadow-xs transition-colors cursor-pointer"
+                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-[var(--ui-text)] bg-[var(--ui-surface)] hover:bg-[var(--ui-surface-muted)] border border-[var(--ui-border)] rounded-lg shadow-xs transition-colors cursor-pointer"
               >
-                <FaSlidersH className="text-gray-500" size={13} />
+                <FaSlidersH className="text-[var(--ui-text-muted)]" size={13} />
                 <span className="hidden sm:inline">Challan Settings</span>
               </button>
               <Button
@@ -584,7 +584,7 @@ const Purchases: React.FC = () => {
       )}
 
       {/* Unified Tab Switcher: Purchases List vs Purchase Returns List */}
-      <div className="flex items-center gap-1.5 border-b border-gray-200/90 -my-0.5">
+      <div className="flex items-center gap-1.5 border-b border-[var(--ui-border)]/90 -my-0.5">
         <button
           type="button"
           onClick={() => {
@@ -594,8 +594,8 @@ const Purchases: React.FC = () => {
           }}
           className={`flex items-center gap-1.5 px-3 sm:px-3.5 py-1 text-xs font-bold transition-all border-b-2 cursor-pointer ${
             activeTab === "purchases"
-              ? "border-[var(--color-primary)] text-[var(--color-primary)] bg-sky-50/50 rounded-t-md"
-              : "border-transparent text-gray-600 hover:text-black hover:bg-gray-50 rounded-t-md"
+              ? "border-[var(--color-primary)] text-[var(--color-primary)] bg-[var(--primary-color-light)]/50 rounded-t-md"
+              : "border-transparent text-[var(--ui-text-muted)] hover:text-[var(--ui-text)] hover:bg-[var(--ui-surface-muted)] rounded-t-md"
           }`}
         >
           <FaShoppingBag size={11} />
@@ -611,8 +611,8 @@ const Purchases: React.FC = () => {
           }}
           className={`flex items-center gap-1.5 px-3 sm:px-3.5 py-1 text-xs font-bold transition-all border-b-2 cursor-pointer ${
             activeTab === "returns"
-              ? "border-[var(--color-primary)] text-[var(--color-primary)] bg-sky-50/50 rounded-t-md"
-              : "border-transparent text-gray-600 hover:text-black hover:bg-gray-50 rounded-t-md"
+              ? "border-[var(--color-primary)] text-[var(--color-primary)] bg-[var(--primary-color-light)]/50 rounded-t-md"
+              : "border-transparent text-[var(--ui-text-muted)] hover:text-[var(--ui-text)] hover:bg-[var(--ui-surface-muted)] rounded-t-md"
           }`}
         >
           <FaUndoAlt size={11} />

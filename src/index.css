@@ -1,5 +1,15 @@
 @import "tailwindcss";
+
+/* ============================================================================
+   Design tokens
+   ----------------------------------------------------------------------------
+   These are the fallback values. At runtime AppearanceProvider overwrites them
+   on <html> from the active theme + user overrides, so anything built on these
+   variables restyles without a rebuild. See src/theme/.
+   ========================================================================== */
 :root {
+  /* Brand ramp — also consumed by the @theme mapping below, so overriding
+     --primary-color at runtime re-colours every bg-primary/text-primary use. */
   --primary-color: #01306B;
   --primary-color-hover: #012452;
   --primary-color-light: #f0f5fc;
@@ -14,12 +24,89 @@
   --brand-primary-light: #f0f5fc;
   --brand-primary-dark: #001a3d;
   --brand-secondary: #01306B;
+  --ui-on-accent: #ffffff;
+  /* Secondary brand accent (logo Cerulean) and its readable foreground.
+     AppearanceProvider overwrites both at runtime; these are the values used
+     before that first paint, and if scripting is unavailable. */
+  --ui-accent-2: #079cdb;
+  --ui-on-accent-2: #0f172a;
+
+  /* Chrome */
+  --ui-surface: #ffffff;
+  --ui-surface-muted: #f8fafc;
+  --ui-surface-sunken: #eef2f7;
+  --ui-border: #e2e8f0;
+  --ui-border-strong: #cbd5e1;
+  --ui-text: #0f172a;
+  --ui-text-muted: #475569;
+  --ui-text-subtle: #94a3b8;
+  /* Status colours carry meaning (danger / success / warning / info), so they
+     stay constant across themes rather than following the accent. */
+  --ui-danger: #dc2626;
+  --ui-danger-light: #fef2f2;
+  --ui-danger-border: #fecaca;
+  --ui-danger-dark: #991b1b;
+  --ui-success: #16a34a;
+  --ui-success-light: #f0fdf4;
+  --ui-success-border: #bbf7d0;
+  --ui-success-dark: #15803d;
+  --ui-warning: #d97706;
+  --ui-warning-light: #fffbeb;
+  --ui-warning-border: #fde68a;
+  --ui-warning-dark: #b45309;
+  --ui-info: #0284c7;
+  --ui-info-light: #f0f9ff;
+  --ui-info-border: #bae6fd;
+  --ui-info-dark: #075985;
+
+  /* Density */
+  --ui-control-h: 38px;
+  /* Derived sizes for dense screens (trade forms, inline toolbars). Ratios are
+     chosen so the defaults land on the 36px / 28px these screens used before,
+     while still tracking the density setting. */
+  --ui-control-h-sm: calc(var(--ui-control-h) * 0.95);
+  --ui-control-h-xs: calc(var(--ui-control-h) * 0.74);
+  /* Font sizes paired with the heights above. A pinned height without a
+     matching size leaves oversized text (and placeholders) in a small box. */
+  --ui-font-size-sm: calc(var(--ui-font-size) - 1px);
+  --ui-font-size-xs: calc(var(--ui-font-size) - 3px);
+  --ui-control-px: 12px;
+  --ui-field-gap: 16px;
+  --ui-section-gap: 24px;
+
+  /* Typography */
+  --ui-font-family: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+  --ui-font-size: 14px;
+  --ui-label-size: 12px;
+  --ui-heading-size: 1.25rem;
+
+  /* Shape */
+  --ui-radius-sm: 6px;
+  --ui-radius: 10px;
+  --ui-radius-lg: 16px;
+  --ui-border-width: 1px;
+
+  /* Elevation */
+  --ui-shadow-card: 0 10px 30px -18px rgba(15, 23, 42, 0.35), 0 4px 12px -7px rgba(15, 23, 42, 0.16);
+  --ui-shadow-control: 0 2px 8px -4px rgba(15, 23, 42, 0.18);
+  /* Floating layers (dropdowns, popovers) keep a shadow even on the Flat
+     elevation setting — it conveys layering, not decoration. */
+  --ui-shadow-popover: 0 16px 36px -12px rgba(15, 23, 42, 0.28), 0 4px 12px -6px rgba(15, 23, 42, 0.14);
+
+  /* Tables & page chrome */
+  --ui-table-row-h: 44px;
+  --ui-table-cell-px: 14px;
+  --ui-table-cell-py: 10px;
+  --ui-page-padding: 24px;
+
+  /* Derived */
+  --ui-focus-ring: color-mix(in srgb, var(--primary-color) 18%, transparent);
 }
 
 @theme {
   /* Global Typography */
-  --font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  --font-body: "Plus Jakarta Sans", sans-serif;
+  --font-sans: var(--ui-font-family);
+  --font-body: var(--ui-font-family);
 
   --color-primary: var(--primary-color);
   --color-primary-hover: var(--primary-color-hover);
@@ -40,26 +127,431 @@
   /* Gradient Colors for Banners / Logos / Hero */
   --color-brand-from: var(--primary-color);
   --color-brand-to: var(--primary-color);
+
+  /* Token-backed aliases so utilities can reach the appearance system */
+  --color-surface: var(--ui-surface);
+  --color-surface-muted: var(--ui-surface-muted);
+  --color-surface-sunken: var(--ui-surface-sunken);
+  --color-ui-border: var(--ui-border);
+  --color-ui-border-strong: var(--ui-border-strong);
+  --color-ui-text: var(--ui-text);
+  --color-ui-text-muted: var(--ui-text-muted);
+  --color-ui-text-subtle: var(--ui-text-subtle);
+  --color-on-accent: var(--ui-on-accent);
+
+  --radius-ui-sm: var(--ui-radius-sm);
+  --radius-ui: var(--ui-radius);
+  --radius-ui-lg: var(--ui-radius-lg);
+
+  --spacing-control: var(--ui-control-h);
+  --spacing-page: var(--ui-page-padding);
 }
 
 @layer base {
   :root {
     color-scheme: light;
-    font-family: "Plus Jakarta Sans", sans-serif;
+    font-family: var(--ui-font-family);
   }
 
   *, ::before, ::after {
-    font-family: "Plus Jakarta Sans", sans-serif;
+    font-family: var(--ui-font-family);
   }
 
   html, body, button, input, select, textarea, table, th, td, h1, h2, h3, h4, h5, h6, p, span, a {
-    font-family: "Plus Jakarta Sans", sans-serif;
+    font-family: var(--ui-font-family);
+  }
+
+  html {
+    font-size: var(--ui-font-size);
   }
 
   body {
-    @apply m-0 min-h-screen bg-white text-slate-800 antialiased selection:bg-primary selection:text-white;
-    font-family: "Plus Jakarta Sans", sans-serif;
+    @apply m-0 min-h-screen antialiased;
+    background:
+      radial-gradient(circle at top left, color-mix(in srgb, var(--primary-color) 7%, transparent), transparent 28%),
+      linear-gradient(180deg, color-mix(in srgb, var(--ui-surface-muted) 75%, white), var(--ui-surface));
+    color: var(--ui-text);
+    font-family: var(--ui-font-family);
+    font-size: var(--ui-font-size);
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  }
+
+  ::selection {
+    background: color-mix(in srgb, var(--primary-color) 18%, transparent);
+    color: var(--ui-text);
+  }
+
+  #root {
+    min-height: 100vh;
+  }
+}
+
+/* ============================================================================
+   Form primitives
+   ----------------------------------------------------------------------------
+   Defined in the components layer so any Tailwind utility passed through a
+   component's `className` prop still wins (utilities layer sorts later).
+   ========================================================================== */
+@layer components {
+  .ui-field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    width: 100%;
+  }
+
+  .ui-label {
+    display: block;
+    font-size: var(--ui-label-size);
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    color: var(--ui-text-muted);
+    line-height: 1.4;
+  }
+
+  .ui-label-required::after {
+    content: " *";
+    color: var(--ui-danger);
+  }
+
+  /* Shared shell for input / select / textarea */
+  .ui-control {
+    width: 100%;
+    min-width: 0;
+    height: var(--ui-control-h);
+    padding-inline: var(--ui-control-px);
+    font-size: var(--ui-font-size);
+    font-family: var(--ui-font-family);
+    color: var(--ui-text);
+    background-color: rgba(255, 255, 255, 0.92);
+    border: var(--ui-border-width) solid var(--ui-border);
+    border-radius: var(--ui-radius);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4), var(--ui-shadow-control);
+    outline: none;
+    transition: border-color 150ms ease, box-shadow 150ms ease, background-color 150ms ease,
+      transform 150ms ease;
+  }
+
+  .ui-control::placeholder {
+    color: var(--ui-text-subtle);
+  }
+
+  .ui-control:hover:not(:disabled):not(:read-only) {
+    border-color: var(--ui-border-strong);
+  }
+
+  .ui-control:focus,
+  .ui-control:focus-visible {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px var(--ui-focus-ring), inset 0 1px 0 rgba(255, 255, 255, 0.35);
+  }
+
+  .ui-control:disabled {
+    background-color: var(--ui-surface-sunken);
+    color: var(--ui-text-subtle);
+    cursor: not-allowed;
+  }
+
+  .ui-control:read-only:not(:focus) {
+    background-color: var(--ui-surface-muted);
+  }
+
+  .ui-control[aria-invalid="true"],
+  .ui-control.is-invalid {
+    border-color: var(--ui-danger);
+  }
+
+  .ui-control[aria-invalid="true"]:focus,
+  .ui-control.is-invalid:focus {
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--ui-danger) 18%, transparent);
+  }
+
+  /* Shell variant: border lives on a wrapper, the real input sits inside.
+     Used by components that render adornments as siblings of the input. */
+  .ui-control-shell {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .ui-control:focus-within {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px var(--ui-focus-ring), inset 0 1px 0 rgba(255, 255, 255, 0.35);
+  }
+
+  .ui-control[aria-invalid="true"]:focus-within,
+  .ui-control.is-invalid:focus-within {
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--ui-danger) 18%, transparent);
+  }
+
+  /* Bare input for use inside .ui-control-shell */
+  .ui-control-bare {
+    flex: 1 1 auto;
+    width: 100%;
+    min-width: 0;
+    height: 100%;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    font-family: inherit;
+    font-size: inherit;
+    color: inherit;
+    outline: none;
+  }
+
+  .ui-control-bare::placeholder {
+    color: var(--ui-text-subtle);
+  }
+
+  .ui-control-bare:disabled {
+    cursor: not-allowed;
+    color: var(--ui-text-subtle);
+  }
+
+  /* Compact control sizes. Each sets height AND font size together so text and
+     placeholders stay proportionate to the box — defined after .ui-control so
+     they win on equal specificity. .ui-control-bare inherits the size, which
+     is what carries it through to the placeholder. */
+  .ui-control-sm {
+    height: var(--ui-control-h-sm);
+    font-size: var(--ui-font-size-sm);
+  }
+
+  .ui-control-xs {
+    height: var(--ui-control-h-xs);
+    font-size: var(--ui-font-size-xs);
+    padding-inline: calc(var(--ui-control-px) * 0.7);
+  }
+
+  .ui-control-xs.ui-select,
+  .ui-control-sm.ui-select {
+    background-size: 14px 14px;
+    background-position: right calc(var(--ui-control-px) * 0.7) center;
+    padding-inline-end: calc(var(--ui-control-px) * 0.7 + 18px);
+  }
+
+  /* Textarea opts out of the fixed control height */
+  .ui-control-multiline {
+    height: auto;
+    min-height: calc(var(--ui-control-h) * 2);
+    padding-block: calc(var(--ui-control-px) * 0.6);
+    line-height: 1.55;
+    resize: vertical;
+  }
+
+  /* Icon affordances */
+  .ui-control-with-icon {
+    padding-inline-start: calc(var(--ui-control-px) * 2 + 16px);
+  }
+
+  .ui-control-with-suffix {
+    padding-inline-end: calc(var(--ui-control-px) * 2 + 16px);
+  }
+
+  .ui-field-icon {
+    position: absolute;
+    inset-block-start: 50%;
+    transform: translateY(-50%);
+    inset-inline-start: var(--ui-control-px);
+    display: flex;
+    align-items: center;
+    pointer-events: none;
+    color: var(--ui-text-subtle);
+  }
+
+  .ui-field-suffix {
+    position: absolute;
+    inset-block-start: 50%;
+    transform: translateY(-50%);
+    inset-inline-end: var(--ui-control-px);
+    display: flex;
+    align-items: center;
+    color: var(--ui-text-subtle);
+  }
+
+  /* Native select arrow */
+  .ui-select {
+    appearance: none;
+    padding-inline-end: calc(var(--ui-control-px) * 2 + 12px);
+    background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%2394a3b8' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 6l4 4 4-4'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right var(--ui-control-px) center;
+    background-size: 16px 16px;
+  }
+
+  [dir="rtl"] .ui-select {
+    background-position: left var(--ui-control-px) center;
+  }
+
+  .ui-help {
+    font-size: var(--ui-label-size);
+    line-height: 1.45;
+    color: var(--ui-text-subtle);
+  }
+
+  .ui-error {
+    font-size: var(--ui-label-size);
+    font-weight: 500;
+    line-height: 1.45;
+    color: var(--ui-danger);
+      border-radius: var(--ui-radius-sm);
+    }
+
+  /* ---- Buttons ---- */
+  .ui-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    height: var(--ui-control-h);
+    padding-inline: calc(var(--ui-control-px) * 1.5);
+    font-family: var(--ui-font-family);
+    font-size: var(--ui-font-size);
+    font-weight: 600;
+    line-height: 1;
+    white-space: nowrap;
+    border: var(--ui-border-width) solid transparent;
+    border-radius: var(--ui-radius);
+    cursor: pointer;
+    box-shadow: var(--ui-shadow-control);
+    transition: transform 150ms ease, background-color 150ms ease, border-color 150ms ease,
+      color 150ms ease, box-shadow 150ms ease;
+  }
+
+  .ui-btn:hover:not(:disabled) {
+    transform: translateY(-1px);
+  }
+
+  .ui-btn:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px var(--ui-focus-ring), var(--ui-shadow-control);
+  }
+
+  .ui-btn:disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+    transform: none;
+  }
+
+  .ui-btn-primary {
+    background-color: var(--primary-color);
+    color: var(--ui-on-accent);
+    box-shadow: 0 6px 18px -10px color-mix(in srgb, var(--primary-color) 75%, black);
+  }
+
+  .ui-btn-primary:hover:not(:disabled) {
+    background-color: var(--primary-color-hover);
+    box-shadow: 0 8px 22px -12px color-mix(in srgb, var(--primary-color) 80%, black);
+  }
+
+  .ui-btn-secondary {
+    background-color: var(--ui-surface);
+    border-color: var(--ui-border-strong);
+    color: var(--ui-text);
+  }
+
+  .ui-btn-secondary:hover:not(:disabled) {
+    background-color: var(--ui-surface-muted);
+    border-color: var(--ui-border-strong);
+  }
+
+  /* Text uses the dark end of the ramp: a mid-tone accent such as the brand
+     cyan fails AA at small sizes when painted straight onto its own tint. */
+  .ui-btn-subtle {
+    background-color: var(--primary-color-light);
+    color: var(--primary-color-dark);
+  }
+
+  .ui-btn-subtle:hover:not(:disabled) {
+    background-color: var(--primary-color-muted);
+  }
+
+  .ui-btn-ghost {
+    background-color: transparent;
+    color: var(--ui-text-muted);
+  }
+
+  .ui-btn-ghost:hover:not(:disabled) {
+    background-color: var(--ui-surface-muted);
+    color: var(--ui-text);
+  }
+
+  .ui-btn-danger {
+    background-color: var(--ui-danger);
+    color: #ffffff;
+  }
+
+  .ui-btn-danger:hover:not(:disabled) {
+    background-color: color-mix(in srgb, var(--ui-danger) 85%, black);
+  }
+
+  /* ---- Surfaces ---- */
+  .ui-card {
+    background-color: var(--ui-surface);
+    border: var(--ui-border-width) solid var(--ui-border);
+    border-radius: var(--ui-radius-lg);
+    box-shadow: var(--ui-shadow-card);
+    background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.16), transparent);
+  }
+
+  .admin-shell {
+    background-image:
+      radial-gradient(circle at top left, color-mix(in srgb, var(--primary-color) 8%, transparent), transparent 26%),
+      radial-gradient(circle at bottom right, color-mix(in srgb, var(--ui-accent-2) 9%, transparent), transparent 30%),
+      linear-gradient(180deg, color-mix(in srgb, var(--ui-surface-muted) 70%, white), var(--ui-surface-muted));
+  }
+
+  .admin-main {
+    background: transparent;
+  }
+
+  .premium-panel {
+    background: linear-gradient(180deg, rgba(255,255,255,0.96), rgba(255,255,255,0.92));
+    border: 1px solid var(--ui-border);
+    border-radius: var(--ui-radius-lg);
+    box-shadow: var(--ui-shadow-card);
+  }
+
+  .admin-header-strip {
+    background: rgba(255,255,255,0.8);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    box-shadow: 0 10px 30px -24px rgba(15, 23, 42, 0.45);
+  }
+
+  /* ---- Table density ----
+     Opt-in via .ui-table so existing bespoke tables are not disturbed. */
+  .ui-table th,
+  .ui-table td {
+    padding-inline: var(--ui-table-cell-px);
+    padding-block: var(--ui-table-cell-py);
+    font-size: var(--ui-font-size);
+  }
+
+  .ui-table tbody tr {
+    height: var(--ui-table-row-h);
+    transition: background-color 150ms ease;
+  }
+
+  .ui-table tbody tr:hover {
+    background-color: var(--ui-surface-muted);
+  }
+
+  [data-table-row-style="striped"] .ui-table tbody tr:nth-child(even) {
+    background-color: var(--ui-surface-muted);
+  }
+
+  .ui-table th {
+    font-size: var(--ui-label-size);
+    font-weight: 600;
+    color: var(--ui-text-muted);
+    background-color: var(--ui-surface-muted);
+    text-align: start;
+  }
+
+  .ui-page {
+    max-width: var(--ui-content-max-width, 1440px);
+    padding: clamp(16px, 2vw, 28px);
   }
 }
 
@@ -141,4 +633,218 @@ input[type="number"]::-webkit-inner-spin-button {
 input[type="number"] {
   -moz-appearance: textfield;
   appearance: textfield;
+}
+/* ============================================================================
+   Presentation variants
+   ----------------------------------------------------------------------------
+   Driven by data-attributes that AppearanceProvider writes onto <html>.
+   Each block only overrides what that variant changes.
+   ========================================================================== */
+
+/* ---- Field style ---- */
+[data-field-style="filled"] .ui-control {
+  background-color: var(--ui-surface-sunken);
+  border-color: transparent;
+}
+[data-field-style="filled"] .ui-control:hover:not(:disabled):not(:read-only) {
+  background-color: var(--ui-surface-muted);
+  border-color: transparent;
+}
+[data-field-style="filled"] .ui-control:focus,
+[data-field-style="filled"] .ui-control:focus-within {
+  background-color: var(--ui-surface);
+  border-color: var(--primary-color);
+}
+
+[data-field-style="soft"] .ui-control {
+  background-color: var(--ui-surface-muted);
+}
+[data-field-style="soft"] .ui-control:focus,
+[data-field-style="soft"] .ui-control:focus-within {
+  background-color: var(--ui-surface);
+}
+
+[data-field-style="underlined"] .ui-control {
+  border-width: 0 0 var(--ui-border-width) 0;
+  border-radius: 0;
+  background-color: transparent;
+  padding-inline: 0;
+  box-shadow: none;
+}
+[data-field-style="underlined"] .ui-control:focus,
+[data-field-style="underlined"] .ui-control:focus-within {
+  border-bottom-color: var(--primary-color);
+  border-bottom-width: 2px;
+  box-shadow: none;
+}
+[data-field-style="underlined"] .ui-field-icon {
+  inset-inline-start: 0;
+}
+[data-field-style="underlined"] .ui-control-with-icon {
+  padding-inline-start: 24px;
+}
+[data-field-style="underlined"] .ui-select {
+  background-position: right 0 center;
+  padding-inline-end: 20px;
+}
+
+/* ---- Label placement ----
+   Grid keeps the label in column 1 and everything else (field wrapper, help
+   text, error) in column 2, so messages stay aligned under the input. */
+[data-label-placement="left"] .ui-field {
+  display: grid;
+  grid-template-columns: minmax(7rem, 11rem) minmax(0, 1fr);
+  align-items: center;
+  column-gap: 12px;
+  row-gap: 4px;
+}
+[data-label-placement="left"] .ui-field > *:not(.ui-label) {
+  grid-column: 2;
+}
+[data-label-placement="left"] .ui-label {
+  grid-column: 1;
+  grid-row: 1;
+  margin-bottom: 0;
+}
+
+/* Stack again on small screens — inline labels do not fit a phone. */
+@media (max-width: 640px) {
+  [data-label-placement="left"] .ui-field {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
+
+/* ---- Label case ---- */
+[data-label-case="upper"] .ui-label {
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-size: calc(var(--ui-label-size) - 1px);
+}
+
+/* ---- Required indicator ---- */
+[data-required-style="none"] .ui-label-required::after {
+  content: none;
+}
+[data-required-style="text"] .ui-label-required::after {
+  content: " (required)";
+  color: var(--ui-text-subtle);
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+/* ---- Focus style ---- */
+[data-focus-style="border"] .ui-control:focus,
+[data-focus-style="border"] .ui-control:focus-within {
+  box-shadow: none;
+  border-color: var(--primary-color);
+  border-width: 2px;
+}
+[data-focus-style="glow"] .ui-control:focus,
+[data-focus-style="glow"] .ui-control:focus-within {
+  box-shadow: 0 0 0 5px var(--ui-focus-ring), inset 0 1px 0 rgba(255, 255, 255, 0.35);
+}
+[data-focus-style="underline"] .ui-control:focus,
+[data-focus-style="underline"] .ui-control:focus-within {
+  box-shadow: inset 0 -2px 0 0 var(--primary-color);
+  border-color: var(--ui-border-strong);
+}
+
+/* ---- Button style ---- */
+[data-button-style="soft"] .ui-btn-primary {
+  background-color: var(--primary-color-light);
+  color: var(--primary-color);
+  border-color: var(--primary-color-muted);
+  box-shadow: none;
+}
+[data-button-style="soft"] .ui-btn-primary:hover:not(:disabled) {
+  background-color: var(--primary-color-muted);
+}
+[data-button-style="outline"] .ui-btn-primary {
+  background-color: transparent;
+  color: var(--primary-color);
+  border-color: var(--primary-color);
+  box-shadow: none;
+}
+[data-button-style="outline"] .ui-btn-primary:hover:not(:disabled) {
+  background-color: var(--primary-color-light);
+}
+
+/* ---- Validation feedback ---- */
+[data-validation-style="soft"] .ui-control[aria-invalid="true"],
+[data-validation-style="soft"] .ui-control.is-invalid {
+  background-color: var(--ui-danger-light);
+}
+[data-validation-style="soft"] .ui-error {
+  padding: 3px 8px;
+  border-inline-start: 3px solid var(--ui-danger);
+  background-color: var(--ui-danger-light);
+}
+[data-validation-style="callout"] .ui-error {
+  padding: 6px 10px;
+  border: 1px solid var(--ui-danger-border);
+  border-radius: var(--ui-radius);
+  background-color: var(--ui-danger-light);
+}
+
+/* ---- Dialogs ---- */
+[data-dialog-style] .ui-modal-panel {
+  border-radius: var(--ui-radius-lg);
+  box-shadow: var(--ui-shadow-card);
+}
+[data-dialog-style="outlined"] .ui-modal-panel {
+  border: 1px solid var(--ui-border-strong);
+}
+[data-dialog-style="accent"] .ui-modal-panel {
+  border: 1px solid var(--ui-border);
+  border-top: 4px solid var(--primary-color);
+}
+
+/* ---- Reduced motion ----
+   Also honours the OS-level preference regardless of this setting. */
+[data-reduce-motion="true"] *,
+[data-reduce-motion="true"] *::before,
+[data-reduce-motion="true"] *::after {
+  transition-duration: 0ms !important;
+  animation-duration: 0ms !important;
+  animation-iteration-count: 1 !important;
+  scroll-behavior: auto !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0ms !important;
+    animation-duration: 0ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ============================================================================
+   SolaimanLipi — optional self-hosted copy
+   ----------------------------------------------------------------------------
+   The font picker loads SolaimanLipi from a community CDN. To drop the external
+   dependency, put solaimanlipi.woff2 in public/fonts/ and these rules take over
+   (local() wins first if the user already has the font installed). With neither
+   present the declaration is simply unused and the stack falls through to
+   Nirmala UI / Noto Sans Bengali.
+   ========================================================================== */
+@font-face {
+  font-family: "SolaimanLipi";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: local("SolaimanLipi"), url("/fonts/solaimanlipi.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "SolaimanLipi";
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: local("SolaimanLipi Bold"), local("SolaimanLipi"),
+    url("/fonts/solaimanlipi-bold.woff2") format("woff2");
 }

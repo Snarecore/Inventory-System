@@ -120,8 +120,8 @@ const CategoryForm = ({ isOpen, onClose, editData, fetchData }: any) => {
         >
             <div className="space-y-4">
                 <div>
-                    <h3 className="block text-sm font-medium text-gray-700">Image:
-                        <span className="text-xs text-gray-500 ml-1">(Width: 80px)</span>
+                    <h3 className="block text-sm font-medium text-[var(--ui-text)]">Image:
+                        <span className="text-xs text-[var(--ui-text-muted)] ml-1">(Width: 80px)</span>
                     </h3>
                     <ImageUpload
                         value={
@@ -135,8 +135,8 @@ const CategoryForm = ({ isOpen, onClose, editData, fetchData }: any) => {
                     />
                 </div>
                 <div>
-                    <h3 className="block text-sm font-medium text-gray-700">Banner Image:
-                        <span className="text-xs text-gray-500 ml-1">(Recommended Size: 1920x192 PX)</span>
+                    <h3 className="block text-sm font-medium text-[var(--ui-text)]">Banner Image:
+                        <span className="text-xs text-[var(--ui-text-muted)] ml-1">(Recommended Size: 1920x192 PX)</span>
                     </h3>
                     <ImageUpload
                         value={

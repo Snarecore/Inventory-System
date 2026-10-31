@@ -97,11 +97,11 @@ const HeroSliderTable = ({
 	if (isLoading && (!dataList || dataList.length === 0)) return <TableSkeleton />;
 
 	return (
-		<div className="bg-white rounded-xl shadow-xs border border-gray-200 flex flex-col relative z-20 overflow-visible">
+		<div className="bg-[var(--ui-surface)] rounded-xl shadow-xs border border-[var(--ui-border)] flex flex-col relative z-20 overflow-visible">
 			<div className="w-full overflow-x-auto relative z-10">
 				<table className="w-full text-left border-collapse min-w-[900px] text-xs">
 					<thead>
-						<tr className="bg-[#41BEF3] text-black text-xs font-semibold">
+						<tr className="bg-[var(--ui-accent-2)] text-[var(--ui-text)] text-xs font-semibold">
 							{tableHeaders.map(({ key, label }) => (
 								<th key={key} className={`py-2.5 px-3 text-left ${key === "id" ? "w-10 text-center" : ""}`}>
 									{label}
@@ -109,26 +109,26 @@ const HeroSliderTable = ({
 							))}
 						</tr>
 					</thead>
-					<tbody className="divide-y divide-gray-100 bg-white">
+					<tbody className="divide-y divide-[var(--ui-border)] bg-[var(--ui-surface)]">
 						{dataList && dataList.length > 0 ? (
 							dataList.map((data, index) => {
 								const isActive = Boolean(data.status);
 								return (
 									<tr
 										key={data.id || index}
-										className="hover:bg-sky-50/40 transition-colors group"
+										className="hover:bg-[var(--primary-color-light)]/40 transition-colors group"
 									>
-										<td className="py-2.5 px-3 text-center font-normal text-xs text-black">
+										<td className="py-2.5 px-3 text-center font-normal text-xs text-[var(--ui-text)]">
 											{(currentPageNumber - 1) * 10 + index + 1}
 										</td>
 										<td className="py-2.5 px-3">
 											<img
 												src={data.image || "https://images.pexels.com/photos/996329/pexels-photo-996329.jpeg"}
 												alt="image"
-												className="h-10 w-16 object-cover rounded-md shadow-xs border border-gray-100"
+												className="h-10 w-16 object-cover rounded-md shadow-xs border border-[var(--ui-border)]"
 											/>
 										</td>
-										<td className="py-2.5 px-3 text-blue-500 cursor-pointer">
+										<td className="py-2.5 px-3 text-[var(--primary-color)] cursor-pointer">
 											<a href={data.link} target="_blank" rel="noreferrer">
 												{data.link || "N/A"}
 											</a>
@@ -142,9 +142,9 @@ const HeroSliderTable = ({
 														onChange={() => handleToggleStatus(data)}
 														className="sr-only peer"
 													/>
-													<div className="w-8 h-4.5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:bg-[var(--color-primary)] relative transition-all duration-200">
+													<div className="w-8 h-4.5 bg-[var(--ui-border)] peer-focus:outline-none rounded-full peer peer-checked:bg-[var(--color-primary)] relative transition-all duration-200">
 														<div
-															className={`absolute top-[2px] left-[2px] w-3.5 h-3.5 bg-white rounded-full transition-transform duration-200 ${
+															className={`absolute top-[2px] left-[2px] w-3.5 h-3.5 bg-[var(--ui-surface)] rounded-full transition-transform duration-200 ${
 																isActive ? "translate-x-3.5" : "translate-x-0"
 															}`}
 														/>
@@ -153,8 +153,8 @@ const HeroSliderTable = ({
 												<span
 													className={`text-[11px] font-semibold px-2 py-0.5 rounded border ${
 														isActive
-															? "bg-emerald-50 text-emerald-700 border-emerald-200"
-															: "bg-rose-50 text-rose-700 border-rose-200"
+															? "bg-[var(--ui-success-light)] text-[var(--ui-success-dark)] border-[var(--ui-success-border)]"
+															: "bg-[var(--ui-danger-light)] text-[var(--ui-danger-dark)] border-[var(--ui-danger-border)]"
 													}`}
 												>
 													{isActive ? "Active" : "Inactive"}
@@ -166,7 +166,7 @@ const HeroSliderTable = ({
 												<button
 													type="button"
 													onClick={() => onEdit(data)}
-													className="p-1 rounded text-amber-600 hover:bg-amber-100 transition-colors cursor-pointer"
+													className="p-1 rounded text-[var(--ui-warning)] hover:bg-[var(--ui-warning-border)] transition-colors cursor-pointer"
 													title="Edit"
 												>
 													<FaEdit size={14} />
@@ -175,7 +175,7 @@ const HeroSliderTable = ({
 												<button
 													type="button"
 													onClick={() => openDeleteModal(data)}
-													className="p-1 rounded text-rose-600 hover:bg-rose-100 transition-colors cursor-pointer"
+													className="p-1 rounded text-[var(--ui-danger)] hover:bg-[var(--ui-danger-border)] transition-colors cursor-pointer"
 													title="Delete"
 												>
 													<FiTrash2 size={14} />
@@ -215,7 +215,7 @@ const HeroSliderTable = ({
 			)}
 
 			{pageCount > 1 && (
-				<div className="p-2.5 sm:p-3 border-t border-gray-100 bg-gray-50/50 flex justify-end">
+				<div className="p-2.5 sm:p-3 border-t border-[var(--ui-border)] bg-[var(--ui-surface-muted)]/50 flex justify-end">
 					<Pagination
 						pageCount={pageCount}
 						currentPageNumber={currentPageNumber}

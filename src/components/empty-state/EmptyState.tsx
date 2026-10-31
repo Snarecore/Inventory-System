@@ -26,7 +26,7 @@ const EmptyState: React.FC<EmptyStateProps> = ({
                 <p className="font-semibold text-lg">{title}</p>
             )}
             {description && (
-                <p className="text-gray-600 text-sm">{description}</p>
+                <p className="text-[var(--ui-text-muted)] text-sm">{description}</p>
             )}
             {buttonText && onButtonClick && (
                 <div className='mt-2'>

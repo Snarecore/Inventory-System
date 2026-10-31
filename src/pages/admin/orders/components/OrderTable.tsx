@@ -137,8 +137,8 @@ const OrderTable = ({
 	// if (isFetching || isLoading) return <TableSkeleton />;
 
 	return (
-		<div className="bg-white rounded-xl shadow-xs border border-gray-200 flex flex-col relative z-20 overflow-visible">
-			<div className="p-2 sm:p-2.5 border-b border-gray-100 flex flex-wrap items-center justify-end gap-2 relative z-40 overflow-visible">
+		<div className="bg-[var(--ui-surface)] rounded-xl shadow-xs border border-[var(--ui-border)] flex flex-col relative z-20 overflow-visible">
+			<div className="p-2 sm:p-2.5 border-b border-[var(--ui-border)] flex flex-wrap items-center justify-end gap-2 relative z-40 overflow-visible">
 				<div className="flex flex-wrap items-center gap-2">
 					{(Object.entries(dropdownOptions) as [keyof typeof selectedFilters, any][]).map(([key, options]) => (
 						<DropdownFilter
@@ -182,7 +182,7 @@ const OrderTable = ({
 			<div className="w-full overflow-x-auto relative z-10">
 				<table className="w-full text-left border-collapse min-w-[900px] text-xs">
 					<thead>
-						<tr className="bg-[#41BEF3] text-black text-xs font-semibold">
+						<tr className="bg-[var(--ui-accent-2)] text-[var(--ui-text)] text-xs font-semibold">
 							{tableHeaders.map(({ key, label }) => (
 								<th key={key} className={`py-2.5 px-3 text-left ${key === "id" ? "w-10 text-center" : ""}`}>
 									{label}
@@ -190,29 +190,29 @@ const OrderTable = ({
 							))}
 						</tr>
 					</thead>
-					<tbody className="divide-y divide-gray-100 bg-white">
+					<tbody className="divide-y divide-[var(--ui-border)] bg-[var(--ui-surface)]">
 						{dataList?.length > 0 ? (
 							dataList?.map((data, index) => (
-								<tr key={data.id} className="hover:bg-sky-50/40 transition-colors group">
-									<td className="py-2.5 px-3 text-center font-normal text-xs text-black">
+								<tr key={data.id} className="hover:bg-[var(--primary-color-light)]/40 transition-colors group">
+									<td className="py-2.5 px-3 text-center font-normal text-xs text-[var(--ui-text)]">
 										{index + 1}
 									</td>
-									<td className="py-2.5 px-3 font-normal text-xs text-black">
+									<td className="py-2.5 px-3 font-normal text-xs text-[var(--ui-text)]">
 										{data.orderId}
 									</td>
-									<td className="py-2.5 px-3 font-normal text-xs text-black">
+									<td className="py-2.5 px-3 font-normal text-xs text-[var(--ui-text)]">
 										৳{Number(data.totalAmount || 0).toLocaleString("en-IN")}
 									</td>
 									<td className="py-2.5 px-3">
-										<span className={`px-2 py-0.5 text-[11px] font-semibold rounded-md inline-flex items-center w-fit border ${data.paymentStatus === "Paid" ? "bg-emerald-50 text-emerald-700 border-emerald-200" : "bg-rose-50 text-rose-700 border-rose-200"}`}>
+										<span className={`px-2 py-0.5 text-[11px] font-semibold rounded-md inline-flex items-center w-fit border ${data.paymentStatus === "Paid" ? "bg-[var(--ui-success-light)] text-[var(--ui-success-dark)] border-[var(--ui-success-border)]" : "bg-[var(--ui-danger-light)] text-[var(--ui-danger-dark)] border-[var(--ui-danger-border)]"}`}>
 											{data.paymentStatus}
 										</span>
 									</td>
-									<td className="py-2.5 px-3 font-normal text-xs text-black">
+									<td className="py-2.5 px-3 font-normal text-xs text-[var(--ui-text)]">
 										{formatDate(data?.createdAt)}
 									</td>
 									<td className="py-2.5 px-3">
-										<span className={`px-2 py-0.5 text-[11px] font-semibold rounded-md inline-flex items-center w-fit border ${data.status === "Completed" ? "bg-emerald-50 text-emerald-700 border-emerald-200" : "bg-rose-50 text-rose-700 border-rose-200"}`}>
+										<span className={`px-2 py-0.5 text-[11px] font-semibold rounded-md inline-flex items-center w-fit border ${data.status === "Completed" ? "bg-[var(--ui-success-light)] text-[var(--ui-success-dark)] border-[var(--ui-success-border)]" : "bg-[var(--ui-danger-light)] text-[var(--ui-danger-dark)] border-[var(--ui-danger-border)]"}`}>
 											{data.status}
 										</span>
 									</td>
@@ -222,7 +222,7 @@ const OrderTable = ({
 												type="button"
 												onClick={() => handleInvoice(data)}
 												title="View Order"
-												className="p-1 rounded text-sky-600 hover:bg-sky-100 transition-colors cursor-pointer"
+												className="p-1 rounded text-[var(--primary-color)] hover:bg-[var(--primary-color-muted)] transition-colors cursor-pointer"
 											>
 												<FiEye size={14} />
 											</button>
@@ -230,7 +230,7 @@ const OrderTable = ({
 												type="button"
 												onClick={() => openDeleteModal(data)}
 												title="Delete Order"
-												className="p-1 rounded text-rose-600 hover:bg-rose-100 transition-colors cursor-pointer"
+												className="p-1 rounded text-[var(--ui-danger)] hover:bg-[var(--ui-danger-border)] transition-colors cursor-pointer"
 											>
 												<FiTrash2 size={14} />
 											</button>

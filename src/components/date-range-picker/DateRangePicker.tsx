@@ -307,18 +307,18 @@ export const DateRangePicker: React.FC<DateRangePickerProps> = ({
         onClick={() => !disabled && setIsOpen(!isOpen)}
         className={`w-full flex items-center justify-between border rounded-lg transition-all cursor-pointer select-none ${
           disabled
-            ? "bg-gray-100 text-gray-400 cursor-not-allowed border-gray-200"
+            ? "bg-[var(--ui-surface-sunken)] text-[var(--ui-text-subtle)] cursor-not-allowed border-[var(--ui-border)]"
             : isFiltered
-            ? "border-[var(--color-primary)] bg-sky-50/70 text-[var(--color-primary)] font-semibold"
-            : "border-gray-200 bg-gray-50/50 hover:bg-white text-black font-medium focus:border-[var(--color-primary)]"
+            ? "border-[var(--color-primary)] bg-[var(--primary-color-light)]/70 text-[var(--color-primary)] font-semibold"
+            : "border-[var(--ui-border)] bg-[var(--ui-surface-muted)]/50 hover:bg-[var(--ui-surface)] text-[var(--ui-text)] font-medium focus:border-[var(--color-primary)]"
         } ${sizeClasses[size]}`}
       >
         <div className="flex items-center gap-1.5 truncate mr-1">
-          <FaCalendarAlt className="text-gray-600 shrink-0 text-[11px]" />
-          <span className="truncate text-black font-medium">{displayLabel || placeholder}</span>
+          <FaCalendarAlt className="text-[var(--ui-text-muted)] shrink-0 text-[11px]" />
+          <span className="truncate text-[var(--ui-text)] font-medium">{displayLabel || placeholder}</span>
         </div>
         <FiChevronDown
-          className={`text-gray-500 shrink-0 text-xs transition-transform duration-200 ${
+          className={`text-[var(--ui-text-muted)] shrink-0 text-xs transition-transform duration-200 ${
             isOpen ? "rotate-180" : ""
           }`}
         />
@@ -329,18 +329,18 @@ export const DateRangePicker: React.FC<DateRangePickerProps> = ({
         <div
           className={`absolute ${
             align === "right" ? "right-0" : "left-0"
-          } top-full mt-1 w-72 bg-white rounded-xl shadow-2xl border border-gray-200 p-3 z-[99999] animate-in fade-in zoom-in-95 duration-150 select-none`}
+          } top-full mt-1 w-72 bg-[var(--ui-surface)] rounded-xl shadow-2xl border border-[var(--ui-border)] p-3 z-[99999] animate-in fade-in zoom-in-95 duration-150 select-none`}
         >
           {/* Quick Filters Header */}
           <div className="flex items-center justify-between mb-1.5 px-0.5">
-            <span className="text-[10px] font-bold text-black uppercase tracking-wider">
+            <span className="text-[10px] font-bold text-[var(--ui-text)] uppercase tracking-wider">
               Quick Filters
             </span>
             {isFiltered && (
               <button
                 type="button"
                 onClick={handleClear}
-                className="text-[10px] font-semibold text-rose-600 hover:text-rose-700 cursor-pointer"
+                className="text-[10px] font-semibold text-[var(--ui-danger)] hover:text-[var(--ui-danger-dark)] cursor-pointer"
               >
                 Reset
               </button>
@@ -358,8 +358,8 @@ export const DateRangePicker: React.FC<DateRangePickerProps> = ({
                   onClick={() => handleSelectPreset(p.value)}
                   className={`px-1.5 py-1 text-[10.5px] rounded-md text-center transition-all cursor-pointer font-medium truncate ${
                     isSelected
-                      ? "bg-sky-50 text-[var(--color-primary)] border border-[var(--color-primary)] font-bold"
-                      : "bg-gray-50/90 hover:bg-sky-50 text-black border border-gray-200 hover:border-sky-300"
+                      ? "bg-[var(--primary-color-light)] text-[var(--color-primary)] border border-[var(--color-primary)] font-bold"
+                      : "bg-[var(--ui-surface-muted)]/90 hover:bg-[var(--primary-color-light)] text-[var(--ui-text)] border border-[var(--ui-border)] hover:border-[var(--primary-color-muted)]"
                   }`}
                 >
                   {p.label}
@@ -369,13 +369,13 @@ export const DateRangePicker: React.FC<DateRangePickerProps> = ({
           </div>
 
           {/* Dedicated Start Date & End Date Inputs Section */}
-          <div className="pt-2 border-t border-gray-100 mb-2.5">
-            <div className="text-[10px] font-bold text-black uppercase tracking-wider mb-1.5 px-0.5">
+          <div className="pt-2 border-t border-[var(--ui-border)] mb-2.5">
+            <div className="text-[10px] font-bold text-[var(--ui-text)] uppercase tracking-wider mb-1.5 px-0.5">
               Custom Date Range
             </div>
             <div className="grid grid-cols-2 gap-1.5">
               <div>
-                <label className="text-[10px] font-medium text-black block mb-0.5">
+                <label className="text-[10px] font-medium text-[var(--ui-text)] block mb-0.5">
                   Start Date
                 </label>
                 <input
@@ -390,11 +390,11 @@ export const DateRangePicker: React.FC<DateRangePickerProps> = ({
                     }
                     emitChange(val, rangeEnd, "custom");
                   }}
-                  className="w-full px-2 py-1 text-xs border border-gray-300 rounded-md focus:outline-none focus:border-[var(--color-primary)] text-black font-normal bg-white"
+                  className="w-full px-2 py-1 text-xs border border-[var(--ui-border-strong)] rounded-md focus:outline-none focus:border-[var(--color-primary)] text-[var(--ui-text)] font-normal bg-[var(--ui-surface)]"
                 />
               </div>
               <div>
-                <label className="text-[10px] font-medium text-black block mb-0.5">
+                <label className="text-[10px] font-medium text-[var(--ui-text)] block mb-0.5">
                   End Date
                 </label>
                 <input
@@ -410,16 +410,16 @@ export const DateRangePicker: React.FC<DateRangePickerProps> = ({
                     }
                     emitChange(rangeStart, val, "custom");
                   }}
-                  className="w-full px-2 py-1 text-xs border border-gray-300 rounded-md focus:outline-none focus:border-[var(--color-primary)] text-black font-normal bg-white"
+                  className="w-full px-2 py-1 text-xs border border-[var(--ui-border-strong)] rounded-md focus:outline-none focus:border-[var(--color-primary)] text-[var(--ui-text)] font-normal bg-[var(--ui-surface)]"
                 />
               </div>
             </div>
           </div>
 
           {/* Interactive Calendar Picker Section */}
-          <div className="pt-2 border-t border-gray-100">
+          <div className="pt-2 border-t border-[var(--ui-border)]">
             <div className="flex items-center justify-between mb-1.5 px-0.5">
-              <span className="text-xs font-bold text-black">
+              <span className="text-xs font-bold text-[var(--ui-text)]">
                 {viewDate.format("MMMM YYYY")}
               </span>
 
@@ -427,7 +427,7 @@ export const DateRangePicker: React.FC<DateRangePickerProps> = ({
                 <button
                   type="button"
                   onClick={handlePrevMonth}
-                  className="p-1 text-black hover:bg-gray-100 rounded transition-colors cursor-pointer"
+                  className="p-1 text-[var(--ui-text)] hover:bg-[var(--ui-surface-sunken)] rounded transition-colors cursor-pointer"
                   title="Previous Month"
                 >
                   <FaChevronLeft size={9} />
@@ -435,7 +435,7 @@ export const DateRangePicker: React.FC<DateRangePickerProps> = ({
                 <button
                   type="button"
                   onClick={handleNextMonth}
-                  className="p-1 text-black hover:bg-gray-100 rounded transition-colors cursor-pointer"
+                  className="p-1 text-[var(--ui-text)] hover:bg-[var(--ui-surface-sunken)] rounded transition-colors cursor-pointer"
                   title="Next Month"
                 >
                   <FaChevronRight size={9} />
@@ -446,7 +446,7 @@ export const DateRangePicker: React.FC<DateRangePickerProps> = ({
             {/* Day Header (Su, Mo, Tu, We, Th, Fr, Sa) */}
             <div className="grid grid-cols-7 mb-0.5 text-center">
               {daysOfWeek.map((d) => (
-                <span key={d} className="text-[10px] font-bold text-black py-0.5">
+                <span key={d} className="text-[10px] font-bold text-[var(--ui-text)] py-0.5">
                   {d}
                 </span>
               ))}
@@ -461,9 +461,9 @@ export const DateRangePicker: React.FC<DateRangePickerProps> = ({
                   <div
                     key={idx}
                     className={`flex items-center justify-center p-0 relative ${
-                      isInRange ? "bg-sky-100/70" : ""
-                    } ${isStart && (rangeEnd || hoverDate) ? "rounded-l-md bg-sky-100/70" : ""} ${
-                      isEnd && rangeStart ? "rounded-r-md bg-sky-100/70" : ""
+                      isInRange ? "bg-[var(--primary-color-muted)]/70" : ""
+                    } ${isStart && (rangeEnd || hoverDate) ? "rounded-l-md bg-[var(--primary-color-muted)]/70" : ""} ${
+                      isEnd && rangeStart ? "rounded-r-md bg-[var(--primary-color-muted)]/70" : ""
                     }`}
                   >
                     <button
@@ -474,12 +474,12 @@ export const DateRangePicker: React.FC<DateRangePickerProps> = ({
                         isStart || isEnd
                           ? "bg-[var(--color-primary)] text-white font-bold shadow-xs z-10"
                           : isInRange
-                          ? "text-black font-semibold"
+                          ? "text-[var(--ui-text)] font-semibold"
                           : isToday
-                          ? "border border-[var(--color-primary)] text-black font-bold hover:bg-sky-50"
+                          ? "border border-[var(--color-primary)] text-[var(--ui-text)] font-bold hover:bg-[var(--primary-color-light)]"
                           : isCurrentMonth
-                          ? "text-black font-normal hover:bg-gray-100"
-                          : "text-gray-300 hover:bg-gray-50"
+                          ? "text-[var(--ui-text)] font-normal hover:bg-[var(--ui-surface-sunken)]"
+                          : "text-[var(--ui-text-subtle)] hover:bg-[var(--ui-surface-muted)]"
                       }`}
                     >
                       {dayNum}
@@ -491,11 +491,11 @@ export const DateRangePicker: React.FC<DateRangePickerProps> = ({
           </div>
 
           {/* Footer: Clear & Apply buttons */}
-          <div className="flex items-center justify-between pt-2.5 mt-2 border-t border-gray-100 text-xs font-semibold px-0.5">
+          <div className="flex items-center justify-between pt-2.5 mt-2 border-t border-[var(--ui-border)] text-xs font-semibold px-0.5">
             <button
               type="button"
               onClick={handleClear}
-              className="text-[11px] text-gray-500 hover:text-black transition-colors cursor-pointer py-0.5 font-medium"
+              className="text-[11px] text-[var(--ui-text-muted)] hover:text-[var(--ui-text)] transition-colors cursor-pointer py-0.5 font-medium"
             >
               Clear All
             </button>
@@ -505,7 +505,7 @@ export const DateRangePicker: React.FC<DateRangePickerProps> = ({
                 emitChange(rangeStart, rangeEnd, activePreset || "custom");
                 setIsOpen(false);
               }}
-              className="px-3 py-1 text-xs bg-[#41BEF3] hover:bg-[#28b3f0] text-black rounded-lg font-semibold transition-all cursor-pointer shadow-2xs active:scale-95"
+              className="px-3 py-1 text-xs bg-[var(--ui-accent-2)] hover:bg-[var(--ui-accent-2)] text-[var(--ui-text)] rounded-lg font-semibold transition-all cursor-pointer shadow-2xs active:scale-95"
             >
               Apply
             </button>

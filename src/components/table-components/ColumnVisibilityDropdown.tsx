@@ -44,20 +44,20 @@ export const ColumnVisibilityDropdown: React.FC<ColumnVisibilityDropdownProps> =
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full sm:w-auto flex items-center justify-center gap-1.5 px-2.5 h-8 text-[11px] sm:text-xs font-medium text-black bg-gray-50/80 hover:bg-gray-100 border border-gray-200 rounded-lg transition-colors cursor-pointer"
+        className="w-full sm:w-auto flex items-center justify-center gap-1.5 px-2.5 h-8 text-[11px] sm:text-xs font-medium text-[var(--ui-text)] bg-[var(--ui-surface-muted)]/80 hover:bg-[var(--ui-surface-sunken)] border border-[var(--ui-border)] rounded-lg transition-colors cursor-pointer"
         title="Customize visible columns"
       >
-        <BsColumnsGap className="text-black text-xs shrink-0" />
+        <BsColumnsGap className="text-[var(--ui-text)] text-xs shrink-0" />
         <span className="truncate">Columns</span>
-        <span className="text-[10px] text-gray-600 font-semibold bg-gray-200/80 px-1.5 py-0.2 rounded-full">
+        <span className="text-[10px] text-[var(--ui-text-muted)] font-semibold bg-[var(--ui-border)]/80 px-1.5 py-0.2 rounded-full">
           {visibleCount}/{columns.length}
         </span>
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 top-full mt-1 w-52 bg-white rounded-lg shadow-2xl border border-gray-100 py-1.5 z-[99999] animate-in fade-in zoom-in-95 duration-100">
-          <div className="flex items-center justify-between px-3 py-1.5 border-b border-gray-100 mb-1">
-            <span className="text-xs font-semibold text-black">
+        <div className="absolute right-0 top-full mt-1 w-52 bg-[var(--ui-surface)] rounded-lg shadow-2xl border border-[var(--ui-border)] py-1.5 z-[99999] animate-in fade-in zoom-in-95 duration-100">
+          <div className="flex items-center justify-between px-3 py-1.5 border-b border-[var(--ui-border)] mb-1">
+            <span className="text-xs font-semibold text-[var(--ui-text)]">
               Columns ({visibleCount}/{columns.length})
             </span>
             <button
@@ -69,21 +69,21 @@ export const ColumnVisibilityDropdown: React.FC<ColumnVisibilityDropdownProps> =
             </button>
           </div>
 
-          <div className="max-h-64 overflow-y-auto divide-y divide-gray-50">
+          <div className="max-h-64 overflow-y-auto divide-y divide-[var(--ui-border)]">
             {columns.map((col) => {
               const isChecked = visibleColumns[col.key] !== false;
               return (
                 <label
                   key={col.key}
-                  className="flex items-center gap-2 px-3 py-1.5 hover:bg-sky-50/60 cursor-pointer text-xs select-none transition-colors"
+                  className="flex items-center gap-2 px-3 py-1.5 hover:bg-[var(--primary-color-light)]/60 cursor-pointer text-xs select-none transition-colors"
                 >
                   <input
                     type="checkbox"
                     checked={isChecked}
                     onChange={() => onToggle(col.key)}
-                    className="rounded border-gray-300 text-[var(--color-primary)] focus:ring-0 accent-[var(--color-primary)] w-3.5 h-3.5 cursor-pointer"
+                    className="rounded border-[var(--ui-border-strong)] text-[var(--color-primary)] focus:ring-0 accent-[var(--color-primary)] w-3.5 h-3.5 cursor-pointer"
                   />
-                  <span className={`truncate text-xs ${isChecked ? "text-black font-medium" : "text-gray-400 font-normal"}`}>
+                  <span className={`truncate text-xs ${isChecked ? "text-[var(--ui-text)] font-medium" : "text-[var(--ui-text-subtle)] font-normal"}`}>
                     {col.label}
                   </span>
                 </label>

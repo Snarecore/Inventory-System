@@ -1,21 +1,47 @@
 import { z } from "zod";
 
-export const PhoneStepSchema = z.object({
-  phone: z
+// Bangladeshi mobile formats (e.g. 017xxxxxxxx, 88017xxxxxxxx, +88017xxxxxxxx)
+const BD_MOBILE_PATTERN = /^(?:\+?88)?01[3-9]\d{8}$/;
+// Fallback for other international numbers entered as plain digits
+const PLAIN_DIGITS_PATTERN = /^\d{10,14}$/;
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[A-Za-z]{2,}$/;
+
+/** An identifier is treated as an email as soon as it contains "@" */
+export const isEmailIdentifier = (value: string): boolean => value.includes("@");
+
+/** Lowercase emails; strip spaces and dashes from numbers */
+export const normalizeIdentifier = (value: string): string => {
+  const trimmed = value.trim();
+  return isEmailIdentifier(trimmed)
+    ? trimmed.toLowerCase()
+    : trimmed.replace(/[\s-]/g, "");
+};
+
+export const IdentifierStepSchema = z.object({
+  identifier: z
     .string()
     .trim()
-    .min(1, "Mobile number is required")
-    .refine(
-      (val) => {
-        // Strip out spaces and dashes
-        const clean = val.replace(/[\s-]/g, "");
-        // Accept Bangladeshi mobile formats (e.g. 017xxxxxxxx, 88017xxxxxxxx, +88017xxxxxxxx) or 10-14 digits
-        return /^(?:\+?88)?01[3-9]\d{8}$/.test(clean) || /^\d{10,14}$/.test(clean);
-      },
-      {
-        message: "Please enter a valid mobile number",
+    .min(1, "Mobile number or email is required")
+    .superRefine((val, ctx) => {
+      const clean = normalizeIdentifier(val);
+
+      if (isEmailIdentifier(clean)) {
+        if (!EMAIL_PATTERN.test(clean)) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: "Please enter a valid email address",
+          });
+        }
+        return;
       }
-    ),
+
+      if (!BD_MOBILE_PATTERN.test(clean) && !PLAIN_DIGITS_PATTERN.test(clean)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Please enter a valid mobile number or email address",
+        });
+      }
+    }),
   rememberMe: z.boolean().default(true),
 });
 
@@ -28,5 +54,5 @@ export const PinStepSchema = z.object({
     .regex(/^\d+$/, "PIN must contain only numbers"),
 });
 
-export type PhoneStepFormData = z.infer<typeof PhoneStepSchema>;
+export type IdentifierStepFormData = z.infer<typeof IdentifierStepSchema>;
 export type PinStepFormData = z.infer<typeof PinStepSchema>;

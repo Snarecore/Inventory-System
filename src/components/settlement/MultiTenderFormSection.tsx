@@ -55,8 +55,8 @@ export const MultiTenderFormSection: React.FC<MultiTenderFormSectionProps> = ({
       <div className="grid grid-cols-1 sm:grid-cols-[1.1fr_1.1fr_1.7fr_1.1fr] gap-1.5 sm:gap-2 items-end">
         {/* Payment Amount */}
         <div>
-          <label className="text-xs font-bold text-black whitespace-nowrap block mb-0.5">
-            Amount (৳) <span className="text-red-500">*</span>
+          <label className="text-xs font-bold text-[var(--ui-text)] whitespace-nowrap block mb-0.5">
+            Amount (৳) <span className="text-[var(--ui-danger)]">*</span>
           </label>
           <input
             type="number"
@@ -68,7 +68,7 @@ export const MultiTenderFormSection: React.FC<MultiTenderFormSectionProps> = ({
             onWheel={(e) => e.currentTarget.blur()}
             onFocus={(e) => e.target.select()}
             placeholder="0.00"
-            className="w-full h-8 px-2 text-xs bg-white border border-gray-200 rounded-lg text-black font-bold focus:outline-none focus:ring-1 focus:ring-[var(--primary-color)] focus:border-[var(--primary-color)] [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+            className="w-full h-8 px-2 text-xs bg-[var(--ui-surface)] border border-[var(--ui-border)] rounded-lg text-[var(--ui-text)] font-bold focus:outline-none focus:ring-1 focus:ring-[var(--primary-color)] focus:border-[var(--primary-color)] [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
             required={numericDiscount <= 0 && numericTotalPaid <= 0}
           />
         </div>
@@ -76,7 +76,7 @@ export const MultiTenderFormSection: React.FC<MultiTenderFormSectionProps> = ({
         {/* Total Discount */}
         <div>
           <label
-            className="text-xs font-bold text-black whitespace-nowrap block mb-0.5"
+            className="text-xs font-bold text-[var(--ui-text)] whitespace-nowrap block mb-0.5"
             title="Discount / ছাড়"
           >
             Discount (৳)
@@ -92,14 +92,14 @@ export const MultiTenderFormSection: React.FC<MultiTenderFormSectionProps> = ({
             onWheel={(e) => e.currentTarget.blur()}
             onFocus={(e) => e.target.select()}
             placeholder="0.00"
-            className="w-full h-8 px-2 text-xs bg-white border border-gray-200 rounded-lg text-black font-bold focus:outline-none focus:ring-1 focus:ring-amber-500 focus:border-amber-500 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+            className="w-full h-8 px-2 text-xs bg-[var(--ui-surface)] border border-[var(--ui-border)] rounded-lg text-[var(--ui-text)] font-bold focus:outline-none focus:ring-1 focus:ring-[var(--ui-warning)] focus:border-[var(--ui-warning)] [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
           />
         </div>
 
         {/* Payment Mode (Cash, Bank, MFS) */}
         <div>
-          <label className="text-xs font-bold text-black whitespace-nowrap block mb-0.5">
-            Payment Mode <span className="text-red-500">*</span>
+          <label className="text-xs font-bold text-[var(--ui-text)] whitespace-nowrap block mb-0.5">
+            Payment Mode <span className="text-[var(--ui-danger)]">*</span>
           </label>
           <div className="grid grid-cols-3 gap-1 h-8">
             {/* 1. Cash */}
@@ -108,14 +108,14 @@ export const MultiTenderFormSection: React.FC<MultiTenderFormSectionProps> = ({
               onClick={() => handlePaymentModeChange("Cash")}
               className={`h-8 py-0 px-2 rounded-lg border font-semibold text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer box-border leading-none whitespace-nowrap shrink-0 ${
                 paymentMode === "Cash"
-                  ? "border-emerald-500 bg-emerald-50 text-emerald-900 font-bold shadow-xs"
-                  : "border-gray-200 bg-gray-50/70 hover:bg-white text-gray-700 hover:border-gray-300"
+                  ? "border-[var(--ui-success)] bg-[var(--ui-success-light)] text-[var(--ui-success-dark)] font-bold shadow-xs"
+                  : "border-[var(--ui-border)] bg-[var(--ui-surface-muted)]/70 hover:bg-[var(--ui-surface)] text-[var(--ui-text)] hover:border-[var(--ui-border-strong)]"
               }`}
             >
               <FaMoneyBillWave
                 size={11}
                 className={
-                  paymentMode === "Cash" ? "text-emerald-600 shrink-0" : "text-emerald-500 shrink-0"
+                  paymentMode === "Cash" ? "text-[var(--ui-success)] shrink-0" : "text-[var(--ui-success)] shrink-0"
                 }
               />
               <span>Cash</span>
@@ -127,14 +127,14 @@ export const MultiTenderFormSection: React.FC<MultiTenderFormSectionProps> = ({
               onClick={() => handlePaymentModeChange("Bank")}
               className={`h-8 py-0 px-2 rounded-lg border font-semibold text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer box-border leading-none whitespace-nowrap shrink-0 ${
                 paymentMode === "Bank"
-                  ? "border-sky-500 bg-sky-50 text-sky-900 font-bold shadow-xs"
-                  : "border-gray-200 bg-gray-50/70 hover:bg-white text-gray-700 hover:border-gray-300"
+                  ? "border-[var(--primary-color)] bg-[var(--primary-color-light)] text-[var(--primary-color-dark)] font-bold shadow-xs"
+                  : "border-[var(--ui-border)] bg-[var(--ui-surface-muted)]/70 hover:bg-[var(--ui-surface)] text-[var(--ui-text)] hover:border-[var(--ui-border-strong)]"
               }`}
             >
               <FaCreditCard
                 size={11}
                 className={
-                  paymentMode === "Bank" ? "text-sky-600 shrink-0" : "text-sky-500 shrink-0"
+                  paymentMode === "Bank" ? "text-[var(--primary-color)] shrink-0" : "text-[var(--primary-color)] shrink-0"
                 }
               />
               <span>Bank</span>
@@ -146,14 +146,14 @@ export const MultiTenderFormSection: React.FC<MultiTenderFormSectionProps> = ({
               onClick={() => handlePaymentModeChange("MFS")}
               className={`h-8 py-0 px-2 rounded-lg border font-semibold text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer box-border leading-none whitespace-nowrap shrink-0 ${
                 paymentMode === "MFS"
-                  ? "border-purple-500 bg-purple-50 text-purple-900 font-bold shadow-xs"
-                  : "border-gray-200 bg-gray-50/70 hover:bg-white text-gray-700 hover:border-gray-300"
+                  ? "border-[var(--ui-info)] bg-[var(--ui-info-light)] text-[var(--ui-info-dark)] font-bold shadow-xs"
+                  : "border-[var(--ui-border)] bg-[var(--ui-surface-muted)]/70 hover:bg-[var(--ui-surface)] text-[var(--ui-text)] hover:border-[var(--ui-border-strong)]"
               }`}
             >
               <FaMobileAlt
                 size={11}
                 className={
-                  paymentMode === "MFS" ? "text-purple-600 shrink-0" : "text-purple-500 shrink-0"
+                  paymentMode === "MFS" ? "text-[var(--ui-info)] shrink-0" : "text-[var(--ui-info)] shrink-0"
                 }
               />
               <span>MFS</span>
@@ -163,8 +163,8 @@ export const MultiTenderFormSection: React.FC<MultiTenderFormSectionProps> = ({
 
         {/* Date Picker */}
         <div>
-          <label className="text-xs font-bold text-black block mb-0.5">
-            {dateLabel} <span className="text-red-500">*</span>
+          <label className="text-xs font-bold text-[var(--ui-text)] block mb-0.5">
+            {dateLabel} <span className="text-[var(--ui-danger)]">*</span>
           </label>
           <DatePicker
             value={settlementDate}
@@ -174,7 +174,7 @@ export const MultiTenderFormSection: React.FC<MultiTenderFormSectionProps> = ({
             isClearable={false}
             displayFormat="DD MMM, YYYY"
             placeholder="Select date"
-            inputClassName="border-gray-200 hover:border-gray-300 font-bold text-black"
+            inputClassName="border-[var(--ui-border)] hover:border-[var(--ui-border-strong)] font-bold text-[var(--ui-text)]"
           />
         </div>
       </div>
@@ -190,17 +190,17 @@ export const MultiTenderFormSection: React.FC<MultiTenderFormSectionProps> = ({
         >
           {/* Bank Account Selector */}
           {(paymentMode === "Bank" || numericBank > 0) && (
-            <div className="px-2.5 py-1 rounded-md border border-sky-200 bg-sky-50/50 flex items-center gap-2">
-              <label className="text-[11px] font-semibold text-sky-950 flex items-center gap-1.5 whitespace-nowrap shrink-0">
-                <FaCreditCard size={11} className="text-sky-600" />
-                Select Bank Account <span className="text-red-500">*</span>:
+            <div className="px-2.5 py-1 rounded-md border border-[var(--primary-color-muted)] bg-[var(--primary-color-light)]/50 flex items-center gap-2">
+              <label className="text-[11px] font-semibold text-[var(--primary-color-dark)] flex items-center gap-1.5 whitespace-nowrap shrink-0">
+                <FaCreditCard size={11} className="text-[var(--primary-color)]" />
+                Select Bank Account <span className="text-[var(--ui-danger)]">*</span>:
               </label>
               <div className="relative flex-1">
                 <select
                   value={selectedBankId}
                   onChange={(e) => setSelectedBankId(e.target.value)}
                   disabled={isAccountsLoading}
-                  className="w-full h-7 px-2 pr-7 text-xs bg-white border border-sky-300 rounded text-black focus:outline-none focus:ring-1 focus:ring-sky-500 focus:border-sky-500 appearance-none cursor-pointer"
+                  className="w-full h-7 px-2 pr-7 text-xs bg-[var(--ui-surface)] border border-[var(--primary-color-muted)] rounded text-[var(--ui-text)] focus:outline-none focus:ring-1 focus:ring-[var(--primary-color)] focus:border-[var(--primary-color)] appearance-none cursor-pointer"
                   required={numericBank > 0}
                 >
                   {registeredBankAccounts.length === 0 ? (
@@ -213,7 +213,7 @@ export const MultiTenderFormSection: React.FC<MultiTenderFormSectionProps> = ({
                     ))
                   )}
                 </select>
-                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-1.5 text-sky-600">
+                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-1.5 text-[var(--primary-color)]">
                   <RiArrowDropDownLine className="text-lg" />
                 </div>
               </div>
@@ -222,17 +222,17 @@ export const MultiTenderFormSection: React.FC<MultiTenderFormSectionProps> = ({
 
           {/* MFS Account Selector */}
           {(paymentMode === "MFS" || numericMfs > 0) && (
-            <div className="px-2.5 py-1 rounded-md border border-purple-200 bg-purple-50/50 flex items-center gap-2">
-              <label className="text-[11px] font-semibold text-purple-950 flex items-center gap-1.5 whitespace-nowrap shrink-0">
-                <FaMobileAlt size={11} className="text-purple-600" />
-                Select MFS Account <span className="text-red-500">*</span>:
+            <div className="px-2.5 py-1 rounded-md border border-[var(--ui-info-border)] bg-[var(--ui-info-light)]/50 flex items-center gap-2">
+              <label className="text-[11px] font-semibold text-[var(--ui-info-dark)] flex items-center gap-1.5 whitespace-nowrap shrink-0">
+                <FaMobileAlt size={11} className="text-[var(--ui-info)]" />
+                Select MFS Account <span className="text-[var(--ui-danger)]">*</span>:
               </label>
               <div className="relative flex-1">
                 <select
                   value={selectedMfsId}
                   onChange={(e) => setSelectedMfsId(e.target.value)}
                   disabled={isAccountsLoading}
-                  className="w-full h-7 px-2 pr-7 text-xs bg-white border border-purple-300 rounded text-black focus:outline-none focus:ring-1 focus:ring-purple-500 focus:border-purple-500 appearance-none cursor-pointer"
+                  className="w-full h-7 px-2 pr-7 text-xs bg-[var(--ui-surface)] border border-[var(--ui-info-border)] rounded text-[var(--ui-text)] focus:outline-none focus:ring-1 focus:ring-[var(--ui-info)] focus:border-[var(--ui-info)] appearance-none cursor-pointer"
                   required={numericMfs > 0}
                 >
                   {registeredMfsAccounts.length === 0 ? (
@@ -245,7 +245,7 @@ export const MultiTenderFormSection: React.FC<MultiTenderFormSectionProps> = ({
                     ))
                   )}
                 </select>
-                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-1.5 text-purple-600">
+                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-1.5 text-[var(--ui-info)]">
                   <RiArrowDropDownLine className="text-lg" />
                 </div>
               </div>

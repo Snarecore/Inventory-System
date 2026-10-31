@@ -78,8 +78,8 @@ const SeoForm = ({ isOpen, onClose, editData }: PageMetaFormProps) => {
             }
         >
             <div className="space-y-6">
-                <div className="bg-gray-50 p-6 rounded-lg border border-gray-200">
-                    <p className="text-xl font-semibold text-gray-700 mb-4">Basic Information</p>
+                <div className="bg-[var(--ui-surface-muted)] p-6 rounded-lg border border-[var(--ui-border)]">
+                    <p className="text-xl font-semibold text-[var(--ui-text)] mb-4">Basic Information</p>
                     <div className="space-y-4">
                         <div className="grid grid-cols-1 gap-6">
                             <InputField
@@ -102,7 +102,7 @@ const SeoForm = ({ isOpen, onClose, editData }: PageMetaFormProps) => {
                             />
                         </div>
                         <div className="grid grid-cols-1 gap-2">
-                            <p>Meta Description <span className="text-red-500 font-bold">*</span></p>
+                            <p>Meta Description <span className="text-[var(--ui-danger)] font-bold">*</span></p>
                             <textarea
                                 label="Meta Description"
                                 type="textarea"
@@ -111,7 +111,7 @@ const SeoForm = ({ isOpen, onClose, editData }: PageMetaFormProps) => {
                                 required
                                 rows={4}
                                 onChange={handleChange}
-                                className="border border-gray-300 bg-white rounded-md p-2 text-justify"
+                                className="border border-[var(--ui-border-strong)] bg-[var(--ui-surface)] rounded-md p-2 text-justify"
                             />
                         </div>
                         <div className="grid grid-cols-1 gap-6">

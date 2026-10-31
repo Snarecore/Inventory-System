@@ -334,7 +334,7 @@ export const TradeSettlementHistoryTable = <T extends GenericSettlementHistoryIt
                 setPaymentModeFilter(e.target.value);
                 setCurrentPageNumber(1);
               }}
-              className="h-8 pl-2.5 pr-7 text-xs bg-white border border-gray-200 rounded-lg text-black focus:outline-none focus:ring-1 focus:ring-[var(--primary-color)] appearance-none cursor-pointer font-medium"
+              className="h-8 pl-2.5 pr-7 text-xs bg-[var(--ui-surface)] border border-[var(--ui-border)] rounded-lg text-[var(--ui-text)] focus:outline-none focus:ring-1 focus:ring-[var(--primary-color)] appearance-none cursor-pointer font-medium"
             >
               <option value="all">All Methods</option>
               <option value="cash">Cash</option>
@@ -342,13 +342,13 @@ export const TradeSettlementHistoryTable = <T extends GenericSettlementHistoryIt
               <option value="mfs">MFS</option>
             </select>
             <FiChevronDown
-              className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none text-xs"
+              className="absolute right-2 top-1/2 -translate-y-1/2 text-[var(--ui-text-muted)] pointer-events-none text-xs"
               size={13}
             />
           </div>
         </div>
 
-        <div className="flex items-center justify-end gap-1.5 sm:gap-2 shrink-0 w-full sm:w-auto pt-1 sm:pt-0 border-t sm:border-t-0 border-gray-100">
+        <div className="flex items-center justify-end gap-1.5 sm:gap-2 shrink-0 w-full sm:w-auto pt-1 sm:pt-0 border-t sm:border-t-0 border-[var(--ui-border)]">
           <ColumnVisibilityDropdown
             columns={availableColumns}
             visibleColumns={visibleColumns}
@@ -360,9 +360,9 @@ export const TradeSettlementHistoryTable = <T extends GenericSettlementHistoryIt
             type="button"
             onClick={handleExport}
             title="Download Excel Report"
-            className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3 h-8 text-[11px] sm:text-xs font-semibold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 rounded-lg transition-all shadow-xs cursor-pointer active:scale-95"
+            className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3 h-8 text-[11px] sm:text-xs font-semibold text-[var(--ui-success-dark)] bg-[var(--ui-success-light)] hover:bg-[var(--ui-success-border)] border border-[var(--ui-success-border)] rounded-lg transition-all shadow-xs cursor-pointer active:scale-95"
           >
-            <FaFileExcel className="text-emerald-600 shrink-0" size={12} />
+            <FaFileExcel className="text-[var(--ui-success)] shrink-0" size={12} />
             <span>Export</span>
           </button>
         </div>
@@ -406,7 +406,7 @@ export const TradeSettlementHistoryTable = <T extends GenericSettlementHistoryIt
 
                 return (
                   <React.Fragment key={rowKey}>
-                    <tr className="hover:bg-sky-50/40 transition-colors group">
+                    <tr className="hover:bg-[var(--primary-color-light)]/40 transition-colors group">
                       {/* Expand Chevron */}
                       {isColVisible("expand") && (
                         <td className="py-2.5 px-3 text-center">
@@ -414,7 +414,7 @@ export const TradeSettlementHistoryTable = <T extends GenericSettlementHistoryIt
                             <button
                               type="button"
                               onClick={() => toggleRow(rowKey)}
-                              className="p-1 rounded hover:bg-gray-200 text-gray-500 hover:text-black transition-colors cursor-pointer"
+                              className="p-1 rounded hover:bg-[var(--ui-border)] text-[var(--ui-text-muted)] hover:text-[var(--ui-text)] transition-colors cursor-pointer"
                               title={isExpanded ? "Collapse bills" : "Expand settled bills"}
                             >
                               <FiChevronRight
@@ -425,42 +425,42 @@ export const TradeSettlementHistoryTable = <T extends GenericSettlementHistoryIt
                               />
                             </button>
                           ) : (
-                            <span className="text-gray-300">-</span>
+                            <span className="text-[var(--ui-text-subtle)]">-</span>
                           )}
                         </td>
                       )}
 
                       {/* SL */}
                       {isColVisible("sl") && (
-                        <td className="py-2.5 px-3 text-center text-black text-xs font-normal">
+                        <td className="py-2.5 px-3 text-center text-[var(--ui-text)] text-xs font-normal">
                           {serialNumber}
                         </td>
                       )}
 
                       {/* Date */}
                       {isColVisible("date") && (
-                        <td className="py-2.5 px-3 text-black text-xs font-normal whitespace-nowrap">
+                        <td className="py-2.5 px-3 text-[var(--ui-text)] text-xs font-normal whitespace-nowrap">
                           {getVoucherDate(row)}
                         </td>
                       )}
 
                       {/* Voucher No */}
                       {isColVisible("voucherNo") && (
-                        <td className="py-2.5 px-3 text-black text-xs font-semibold whitespace-nowrap">
+                        <td className="py-2.5 px-3 text-[var(--ui-text)] text-xs font-semibold whitespace-nowrap">
                           {getVoucherNo(row, index)}
                         </td>
                       )}
 
                       {/* Party */}
                       {isColVisible("party") && (
-                        <td className="py-2.5 px-3 text-black text-xs font-semibold whitespace-nowrap">
+                        <td className="py-2.5 px-3 text-[var(--ui-text)] text-xs font-semibold whitespace-nowrap">
                           {getPartyName(row)}
                         </td>
                       )}
 
                       {/* Phone */}
                       {isColVisible("phone") && (
-                        <td className="py-2.5 px-3 text-black text-xs font-normal whitespace-nowrap">
+                        <td className="py-2.5 px-3 text-[var(--ui-text)] text-xs font-normal whitespace-nowrap">
                           {getPartyPhone(row)}
                         </td>
                       )}
@@ -471,10 +471,10 @@ export const TradeSettlementHistoryTable = <T extends GenericSettlementHistoryIt
                           <span
                             className={`inline-block px-2 py-0.5 rounded text-[11px] font-semibold ${
                               String(row.paymentMode).toLowerCase().includes("cash")
-                                ? "bg-emerald-50 text-emerald-800 border border-emerald-200"
+                                ? "bg-[var(--ui-success-light)] text-[var(--ui-success-dark)] border border-[var(--ui-success-border)]"
                                 : String(row.paymentMode).toLowerCase().includes("bank")
-                                ? "bg-sky-50 text-sky-800 border border-sky-200"
-                                : "bg-purple-50 text-purple-800 border border-purple-200"
+                                ? "bg-[var(--primary-color-light)] text-[var(--primary-color-dark)] border border-[var(--primary-color-muted)]"
+                                : "bg-[var(--ui-info-light)] text-[var(--ui-info-dark)] border border-[var(--ui-info-border)]"
                             }`}
                           >
                             {row.paymentMode || "Cash"}
@@ -484,7 +484,7 @@ export const TradeSettlementHistoryTable = <T extends GenericSettlementHistoryIt
 
                       {/* Amount */}
                       {isColVisible("amount") && (
-                        <td className="py-2.5 px-3 text-right font-bold text-black text-xs whitespace-nowrap">
+                        <td className="py-2.5 px-3 text-right font-bold text-[var(--ui-text)] text-xs whitespace-nowrap">
                           ৳ {formatMoney(totalAmt)}
                         </td>
                       )}
@@ -492,7 +492,7 @@ export const TradeSettlementHistoryTable = <T extends GenericSettlementHistoryIt
                       {/* Bills Count */}
                       {isColVisible("bills") && (
                         <td className="py-2.5 px-3 text-center">
-                          <span className="inline-block px-1.5 py-0.5 bg-gray-100 text-black rounded text-[11px] font-normal">
+                          <span className="inline-block px-1.5 py-0.5 bg-[var(--ui-surface-sunken)] text-[var(--ui-text)] rounded text-[11px] font-normal">
                             {details.length} bill{details.length !== 1 ? "s" : ""}
                           </span>
                         </td>
@@ -500,8 +500,8 @@ export const TradeSettlementHistoryTable = <T extends GenericSettlementHistoryIt
 
                       {/* Remark */}
                       {isColVisible("remark") && (
-                        <td className="py-2.5 px-3 text-black text-xs font-normal truncate max-w-[150px]">
-                          {row.remark || <span className="text-gray-400">-</span>}
+                        <td className="py-2.5 px-3 text-[var(--ui-text)] text-xs font-normal truncate max-w-[150px]">
+                          {row.remark || <span className="text-[var(--ui-text-subtle)]">-</span>}
                         </td>
                       )}
 
@@ -511,7 +511,7 @@ export const TradeSettlementHistoryTable = <T extends GenericSettlementHistoryIt
                           <button
                             type="button"
                             onClick={() => handlePrintHistoricalReceipt(row, index)}
-                            className="inline-flex items-center justify-center p-1.5 text-gray-700 hover:text-black bg-gray-100 hover:bg-gray-200 rounded-md transition-colors cursor-pointer"
+                            className="inline-flex items-center justify-center p-1.5 text-[var(--ui-text)] hover:text-[var(--ui-text)] bg-[var(--ui-surface-sunken)] hover:bg-[var(--ui-border)] rounded-md transition-colors cursor-pointer"
                             title="Print Money Receipt"
                           >
                             <FiPrinter size={13} />
@@ -522,29 +522,29 @@ export const TradeSettlementHistoryTable = <T extends GenericSettlementHistoryIt
 
                     {/* Accordion Row */}
                     {isExpanded && details.length > 0 && (
-                      <tr className="bg-sky-50/20">
+                      <tr className="bg-[var(--primary-color-light)]/20">
                         <td
                           colSpan={activeVisibleColumnCount}
-                          className="px-6 py-2 border-b border-gray-100"
+                          className="px-6 py-2 border-b border-[var(--ui-border)]"
                         >
-                          <div className="bg-white rounded-lg border border-gray-200 p-2.5 space-y-1.5">
-                            <span className="text-[11px] font-semibold text-gray-700">
+                          <div className="bg-[var(--ui-surface)] rounded-lg border border-[var(--ui-border)] p-2.5 space-y-1.5">
+                            <span className="text-[11px] font-semibold text-[var(--ui-text)]">
                               Settled Bills Breakdown:
                             </span>
                             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
                               {details.map((detail: any, di: number) => (
                                 <div
                                   key={di}
-                                  className="p-2 rounded bg-gray-50 border border-gray-200 text-xs flex items-center justify-between"
+                                  className="p-2 rounded bg-[var(--ui-surface-muted)] border border-[var(--ui-border)] text-xs flex items-center justify-between"
                                 >
-                                  <span className="font-semibold text-black">
+                                  <span className="font-semibold text-[var(--ui-text)]">
                                     #{detail.invoiceNo}
                                   </span>
                                   <div className="text-right">
-                                    <span className="text-emerald-700 font-bold block">
+                                    <span className="text-[var(--ui-success-dark)] font-bold block">
                                       Paid: ৳ {formatMoney(detail.paidAmount)}
                                     </span>
-                                    <span className="text-gray-500 text-[10px]">
+                                    <span className="text-[var(--ui-text-muted)] text-[10px]">
                                       Due Left: ৳ {formatMoney(detail.dueAmount)}
                                     </span>
                                   </div>

@@ -150,12 +150,12 @@ export const TradePartyDueTable = <T extends GenericTradePartyDue>({
     return (
       <span
         onClick={handleClick}
-        className="inline-flex items-center gap-1 select-none text-black cursor-pointer hover:opacity-80 transition-opacity"
+        className="inline-flex items-center gap-1 select-none text-[var(--ui-text)] cursor-pointer hover:opacity-80 transition-opacity"
       >
         <span>{label}</span>
         <FiChevronDown
           size={12}
-          className={`text-black transition-transform duration-150 ${isAsc ? "rotate-180" : ""}`}
+          className={`text-[var(--ui-text)] transition-transform duration-150 ${isAsc ? "rotate-180" : ""}`}
         />
       </span>
     );
@@ -277,7 +277,7 @@ export const TradePartyDueTable = <T extends GenericTradePartyDue>({
           </div>
         </div>
 
-        <div className="flex items-center justify-end gap-1.5 sm:gap-2 shrink-0 w-full sm:w-auto pt-1 sm:pt-0 border-t sm:border-t-0 border-gray-100">
+        <div className="flex items-center justify-end gap-1.5 sm:gap-2 shrink-0 w-full sm:w-auto pt-1 sm:pt-0 border-t sm:border-t-0 border-[var(--ui-border)]">
           <ColumnVisibilityDropdown
             columns={availableColumns}
             visibleColumns={visibleColumns}
@@ -289,9 +289,9 @@ export const TradePartyDueTable = <T extends GenericTradePartyDue>({
             type="button"
             onClick={handleExport}
             title="Download Excel Report"
-            className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3 h-8 text-[11px] sm:text-xs font-semibold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 rounded-lg transition-all shadow-xs cursor-pointer active:scale-95"
+            className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3 h-8 text-[11px] sm:text-xs font-semibold text-[var(--ui-success-dark)] bg-[var(--ui-success-light)] hover:bg-[var(--ui-success-border)] border border-[var(--ui-success-border)] rounded-lg transition-all shadow-xs cursor-pointer active:scale-95"
           >
-            <FaFileExcel className="text-emerald-600 shrink-0" size={12} />
+            <FaFileExcel className="text-[var(--ui-success)] shrink-0" size={12} />
             <span>Export</span>
           </button>
         </div>
@@ -343,32 +343,32 @@ export const TradePartyDueTable = <T extends GenericTradePartyDue>({
                 return (
                   <tr
                     key={String(partyId || index)}
-                    className="hover:bg-sky-50/40 transition-colors group"
+                    className="hover:bg-[var(--primary-color-light)]/40 transition-colors group"
                   >
                     {/* SL */}
                     {isColVisible("sl") && (
-                      <td className="py-2.5 px-3 text-center text-black text-xs font-normal">
+                      <td className="py-2.5 px-3 text-center text-[var(--ui-text)] text-xs font-normal">
                         {serialNumber}
                       </td>
                     )}
 
                     {/* Party ID */}
                     {showIdColumn && isColVisible("partyId") && (
-                      <td className="py-2.5 px-3 text-black text-xs font-medium whitespace-nowrap">
-                        {partyId ? partyId : <span className="text-gray-400">-</span>}
+                      <td className="py-2.5 px-3 text-[var(--ui-text)] text-xs font-medium whitespace-nowrap">
+                        {partyId ? partyId : <span className="text-[var(--ui-text-subtle)]">-</span>}
                       </td>
                     )}
 
                     {/* Party Name */}
                     {isColVisible("name") && (
-                      <td className="py-2.5 px-3 text-black text-xs font-semibold whitespace-nowrap">
+                      <td className="py-2.5 px-3 text-[var(--ui-text)] text-xs font-semibold whitespace-nowrap">
                         {getPartyName(party)}
                       </td>
                     )}
 
                     {/* Phone */}
                     {isColVisible("phone") && (
-                      <td className="py-2.5 px-3 text-black text-xs font-normal whitespace-nowrap">
+                      <td className="py-2.5 px-3 text-[var(--ui-text)] text-xs font-normal whitespace-nowrap">
                         {partyPhone ? (
                           <a
                             href={`tel:${partyPhone}`}
@@ -377,22 +377,22 @@ export const TradePartyDueTable = <T extends GenericTradePartyDue>({
                             {partyPhone}
                           </a>
                         ) : (
-                          <span className="text-gray-400">-</span>
+                          <span className="text-[var(--ui-text-subtle)]">-</span>
                         )}
                       </td>
                     )}
 
                     {/* Address */}
                     {isColVisible("address") && (
-                      <td className="py-2.5 px-3 text-black text-xs font-normal truncate max-w-[200px]">
-                        {partyAddress || <span className="text-gray-400">-</span>}
+                      <td className="py-2.5 px-3 text-[var(--ui-text)] text-xs font-normal truncate max-w-[200px]">
+                        {partyAddress || <span className="text-[var(--ui-text-subtle)]">-</span>}
                       </td>
                     )}
 
                     {/* Invoices Count */}
                     {isColVisible("invoices") && (
                       <td className="py-2.5 px-3 text-center whitespace-nowrap">
-                        <span className="inline-block px-1.5 py-0.5 bg-gray-100 text-black rounded text-[11px] font-normal">
+                        <span className="inline-block px-1.5 py-0.5 bg-[var(--ui-surface-sunken)] text-[var(--ui-text)] rounded text-[11px] font-normal">
                           {getInvoiceCount(party)}
                         </span>
                       </td>
@@ -400,7 +400,7 @@ export const TradePartyDueTable = <T extends GenericTradePartyDue>({
 
                     {/* Total Due */}
                     {isColVisible("due") && (
-                      <td className="py-2.5 px-3 text-right text-rose-600 font-semibold text-xs whitespace-nowrap">
+                      <td className="py-2.5 px-3 text-right text-[var(--ui-danger)] font-semibold text-xs whitespace-nowrap">
                         ৳ {formatMoney(dueAmount)}
                       </td>
                     )}

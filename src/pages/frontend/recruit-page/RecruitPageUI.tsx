@@ -45,17 +45,17 @@ const RecruitPageUI = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-[var(--ui-surface-muted)]">
       {/* Main Form */}
       <div className="py-12 px-4 sm:px-6 lg:px-8">
         <div className="max-w-5xl mx-auto">
-          <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
+          <div className="bg-[var(--ui-surface)] rounded-2xl shadow-xl overflow-hidden">
             <div className="bg-gradient-to-r from-secondary to-secondary-light p-8 text-white">
             <MotionDiv>
             <h2 className="text-3xl font-bold mb-2">Recruitment Partnership</h2>
             </MotionDiv>
              <MotionDiv>
-             <p className="text-red-100">
+             <p className="text-[var(--ui-danger-light)]">
                 Partner with us to find the best talent for your organization
               </p>
              </MotionDiv>
@@ -67,7 +67,7 @@ const RecruitPageUI = () => {
                 <div className="lg:col-span-2 space-y-6">
                   <div>
                    <MotionDiv>
-                   <h3 className="text-xl font-semibold text-black mb-4 flex items-center">
+                   <h3 className="text-xl font-semibold text-[var(--ui-text)] mb-4 flex items-center">
                       <Building2 className="w-5 h-5 mr-2 text-primary" />
                       Company Information
                     </h3>
@@ -77,7 +77,7 @@ const RecruitPageUI = () => {
                       <MotionDiv className="md:col-span-2">
                         <label
                           htmlFor="companyName"
-                          className="block text-sm font-medium text-gray-700 mb-1"
+                          className="block text-sm font-medium text-[var(--ui-text)] mb-1"
                         >
                           Company Name *
                         </label>
@@ -88,7 +88,7 @@ const RecruitPageUI = () => {
                           required
                           value={formData.companyName}
                           onChange={handleInputChange}
-                          className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-secondary focus:border-transparent transition-all"
+                          className="w-full border border-[var(--ui-border-strong)] rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-secondary focus:border-transparent transition-all"
                           placeholder="Enter your company name"
                         />
                       </MotionDiv>
@@ -96,7 +96,7 @@ const RecruitPageUI = () => {
                       <MotionDiv>
                         <label
                           htmlFor="businessEmail"
-                          className="block text-sm font-medium text-gray-700 mb-1"
+                          className="block text-sm font-medium text-[var(--ui-text)] mb-1"
                         >
                           Business Email *
                         </label>
@@ -107,7 +107,7 @@ const RecruitPageUI = () => {
                           required
                           value={formData.businessEmail}
                           onChange={handleInputChange}
-                          className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-secondary focus:border-transparent transition-all"
+                          className="w-full border border-[var(--ui-border-strong)] rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-secondary focus:border-transparent transition-all"
                           placeholder="company@domain.com"
                         />
                       </MotionDiv>
@@ -115,7 +115,7 @@ const RecruitPageUI = () => {
                       <MotionDiv>
                         <label
                           htmlFor="contactEmail"
-                          className="block text-sm font-medium text-gray-700 mb-1"
+                          className="block text-sm font-medium text-[var(--ui-text)] mb-1"
                         >
                           Contact Email *
                         </label>
@@ -126,7 +126,7 @@ const RecruitPageUI = () => {
                           required
                           value={formData.contactEmail}
                           onChange={handleInputChange}
-                          className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-secondary focus:border-transparent transition-all"
+                          className="w-full border border-[var(--ui-border-strong)] rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-secondary focus:border-transparent transition-all"
                           placeholder="hr@company.com"
                         />
                       </MotionDiv>
@@ -134,7 +134,7 @@ const RecruitPageUI = () => {
                       <MotionDiv>
                         <label
                           htmlFor="phoneNumber"
-                          className="block text-sm font-medium text-gray-700 mb-1"
+                          className="block text-sm font-medium text-[var(--ui-text)] mb-1"
                         >
                           Phone Number *
                         </label>
@@ -145,7 +145,7 @@ const RecruitPageUI = () => {
                           required
                           value={formData.phoneNumber}
                           onChange={handleInputChange}
-                          className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-secondary focus:border-transparent transition-all"
+                          className="w-full border border-[var(--ui-border-strong)] rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-secondary focus:border-transparent transition-all"
                           placeholder="Enter contact number"
                         />
                       </MotionDiv>
@@ -153,9 +153,9 @@ const RecruitPageUI = () => {
                       <MotionDiv>
                         <label
                           htmlFor="website"
-                          className="block text-sm font-medium text-gray-700 mb-1"
+                          className="block text-sm font-medium text-[var(--ui-text)] mb-1"
                         >
-                          Website <span className="text-gray-400">(optional)</span>
+                          Website <span className="text-[var(--ui-text-subtle)]">(optional)</span>
                         </label>
                         <input
                           type="url"
@@ -163,7 +163,7 @@ const RecruitPageUI = () => {
                           name="website"
                           value={formData.website}
                           onChange={handleInputChange}
-                          className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-secondary focus:border-transparent transition-all"
+                          className="w-full border border-[var(--ui-border-strong)] rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-secondary focus:border-transparent transition-all"
                           placeholder="https://www.company.com"
                         />
                       </MotionDiv>
@@ -171,7 +171,7 @@ const RecruitPageUI = () => {
                       <MotionDiv>
                         <label
                           htmlFor="country"
-                          className="block text-sm font-medium text-gray-700 mb-1"
+                          className="block text-sm font-medium text-[var(--ui-text)] mb-1"
                         >
                           Country *
                         </label>
@@ -181,7 +181,7 @@ const RecruitPageUI = () => {
                           required
                           value={formData.country}
                           onChange={handleInputChange}
-                          className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-secondary focus:border-transparent transition-all"
+                          className="w-full border border-[var(--ui-border-strong)] rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-secondary focus:border-transparent transition-all"
                         >
                           <option value="">Select Country</option>
                           <option value="bangladesh">Bangladesh</option>
@@ -198,7 +198,7 @@ const RecruitPageUI = () => {
                       <MotionDiv>
                         <label
                           htmlFor="companySize"
-                          className="block text-sm font-medium text-gray-700 mb-1"
+                          className="block text-sm font-medium text-[var(--ui-text)] mb-1"
                         >
                           Company Size *
                         </label>
@@ -208,7 +208,7 @@ const RecruitPageUI = () => {
                           required
                           value={formData.companySize}
                           onChange={handleInputChange}
-                          className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-secondary focus:border-transparent transition-all"
+                          className="w-full border border-[var(--ui-border-strong)] rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-secondary focus:border-transparent transition-all"
                         >
                           <option value="">Select Company Size</option>
                           <option value="1-10">1-10 employees</option>
@@ -223,7 +223,7 @@ const RecruitPageUI = () => {
                       <MotionDiv>
                         <label
                           htmlFor="industry"
-                          className="block text-sm font-medium text-gray-700 mb-1"
+                          className="block text-sm font-medium text-[var(--ui-text)] mb-1"
                         >
                           Industry *
                         </label>
@@ -233,7 +233,7 @@ const RecruitPageUI = () => {
                           required
                           value={formData.industry}
                           onChange={handleInputChange}
-                          className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-secondary focus:border-transparent transition-all"
+                          className="w-full border border-[var(--ui-border-strong)] rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-secondary focus:border-transparent transition-all"
                         >
                           <option value="">Select Industry</option>
                           <option value="technology">Technology</option>
@@ -251,7 +251,7 @@ const RecruitPageUI = () => {
                     <MotionDiv className="mt-4">
                       <label
                         htmlFor="address"
-                        className="block text-sm font-medium text-gray-700 mb-1"
+                        className="block text-sm font-medium text-[var(--ui-text)] mb-1"
                       >
                         Company Address *
                       </label>
@@ -262,7 +262,7 @@ const RecruitPageUI = () => {
                         rows={3}
                         value={formData.address}
                         onChange={handleInputChange}
-                        className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-secondary focus:border-transparent transition-all resize-none"
+                        className="w-full border border-[var(--ui-border-strong)] rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-secondary focus:border-transparent transition-all resize-none"
                         placeholder="Enter complete company address"
                       />
                     </MotionDiv>
@@ -271,7 +271,7 @@ const RecruitPageUI = () => {
                   {/* Job Requirements */}
                   <div>
                    <MotionDiv>
-                   <h3 className="text-xl font-semibold text-black mb-4 flex items-center">
+                   <h3 className="text-xl font-semibold text-[var(--ui-text)] mb-4 flex items-center">
                       <MapPin className="w-5 h-5 mr-2 text-primary" />
                       Recruitment Requirements
                     </h3>
@@ -280,7 +280,7 @@ const RecruitPageUI = () => {
                     <MotionDiv>
                       <label
                         htmlFor="jobDescription"
-                        className="block text-sm font-medium text-gray-700 mb-1"
+                        className="block text-sm font-medium text-[var(--ui-text)] mb-1"
                       >
                         Job Description & Requirements *
                       </label>
@@ -291,7 +291,7 @@ const RecruitPageUI = () => {
                         rows={6}
                         value={formData.jobDescription}
                         onChange={handleInputChange}
-                        className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-secondary focus:border-transparent transition-all resize-none"
+                        className="w-full border border-[var(--ui-border-strong)] rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-secondary focus:border-transparent transition-all resize-none"
                         placeholder="Describe the positions you're looking to fill, required qualifications, experience level, and any specific requirements..."
                       />
                     </MotionDiv>
@@ -301,20 +301,20 @@ const RecruitPageUI = () => {
                 {/* Right Column - Document Uploads */}
                 <div className="space-y-6">
                   <MotionDiv>
-                    <h3 className="text-xl font-semibold text-black mb-4 flex items-center">
+                    <h3 className="text-xl font-semibold text-[var(--ui-text)] mb-4 flex items-center">
                       <Upload className="w-5 h-5 mr-2 text-primary" />
                       Relevant Documents
                     </h3>
 
                     {/* Company Profile */}
                     <div className="mb-6">
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <label className="block text-sm font-medium text-[var(--ui-text)] mb-2">
                         Company Profile *
                       </label>
-                      <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-secondary transition-colors cursor-pointer">
-                        <Building2 className="w-8 h-8 mx-auto mb-2 text-gray-400" />
-                        <p className="text-sm text-gray-600">Upload company profile</p>
-                        <p className="text-xs text-gray-400 mt-1">PDF, DOC up to 5MB</p>
+                      <div className="border-2 border-dashed border-[var(--ui-border-strong)] rounded-lg p-6 text-center hover:border-secondary transition-colors cursor-pointer">
+                        <Building2 className="w-8 h-8 mx-auto mb-2 text-[var(--ui-text-subtle)]" />
+                        <p className="text-sm text-[var(--ui-text-muted)]">Upload company profile</p>
+                        <p className="text-xs text-[var(--ui-text-subtle)] mt-1">PDF, DOC up to 5MB</p>
                         <input
                           type="file"
                           accept=".pdf,.doc,.docx"
@@ -328,13 +328,13 @@ const RecruitPageUI = () => {
 
                     {/* Job Description Document */}
                     <div className="mb-6">
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <label className="block text-sm font-medium text-[var(--ui-text)] mb-2">
                         Detailed Job Description
                       </label>
-                      <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-secondary transition-colors cursor-pointer">
-                        <Upload className="w-8 h-8 mx-auto mb-2 text-gray-400" />
-                        <p className="text-sm text-gray-600">Upload job description</p>
-                        <p className="text-xs text-gray-400 mt-1">PDF, DOC up to 5MB</p>
+                      <div className="border-2 border-dashed border-[var(--ui-border-strong)] rounded-lg p-6 text-center hover:border-secondary transition-colors cursor-pointer">
+                        <Upload className="w-8 h-8 mx-auto mb-2 text-[var(--ui-text-subtle)]" />
+                        <p className="text-sm text-[var(--ui-text-muted)]">Upload job description</p>
+                        <p className="text-xs text-[var(--ui-text-subtle)] mt-1">PDF, DOC up to 5MB</p>
                         <input
                           type="file"
                           accept=".pdf,.doc,.docx"
@@ -348,13 +348,13 @@ const RecruitPageUI = () => {
 
                     {/* Additional Documents */}
                     <div className="mb-6">
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <label className="block text-sm font-medium text-[var(--ui-text)] mb-2">
                         Additional Documents
                       </label>
-                      <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-secondary transition-colors cursor-pointer">
-                        <Upload className="w-8 h-8 mx-auto mb-2 text-gray-400" />
-                        <p className="text-sm text-gray-600">Upload additional docs</p>
-                        <p className="text-xs text-gray-400 mt-1">PDF, DOC up to 5MB</p>
+                      <div className="border-2 border-dashed border-[var(--ui-border-strong)] rounded-lg p-6 text-center hover:border-secondary transition-colors cursor-pointer">
+                        <Upload className="w-8 h-8 mx-auto mb-2 text-[var(--ui-text-subtle)]" />
+                        <p className="text-sm text-[var(--ui-text-muted)]">Upload additional docs</p>
+                        <p className="text-xs text-[var(--ui-text-subtle)] mt-1">PDF, DOC up to 5MB</p>
                         <input
                           type="file"
                           accept=".pdf,.doc,.docx"
@@ -367,9 +367,9 @@ const RecruitPageUI = () => {
                     </div>
 
                     {/* Partnership Benefits */}
-                    <div className="bg-gray-50 rounded-lg p-4 mt-6">
-                      <h4 className="font-semibold text-black mb-2">Partnership Benefits</h4>
-                      <ul className="text-sm text-gray-600 space-y-1">
+                    <div className="bg-[var(--ui-surface-muted)] rounded-lg p-4 mt-6">
+                      <h4 className="font-semibold text-[var(--ui-text)] mb-2">Partnership Benefits</h4>
+                      <ul className="text-sm text-[var(--ui-text-muted)] space-y-1">
                         <li>• Access to pre-screened candidates</li>
                         <li>• Reduced hiring time and costs</li>
                         <li>• Quality assurance guarantee</li>
@@ -381,7 +381,7 @@ const RecruitPageUI = () => {
               </div>
 
               {/* Submit Button */}
-              <MotionDiv className="mt-8 pt-6 border-t border-gray-200">
+              <MotionDiv className="mt-8 pt-6 border-t border-[var(--ui-border)]">
                 <div className="flex justify-center">
                   <button
                     type="submit"
@@ -390,7 +390,7 @@ const RecruitPageUI = () => {
                     Proceed with Partnership
                   </button>
                 </div>
-                <p className="text-center text-sm text-gray-500 mt-3">
+                <p className="text-center text-sm text-[var(--ui-text-muted)] mt-3">
                   Our team will review your submission and contact you within 24-48 hours
                 </p>
               </MotionDiv>

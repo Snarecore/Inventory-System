@@ -6,7 +6,7 @@ const ProductImageSlider = ({ images }: { images: string[] }) => {
 
 	if (!images || images.length === 0) {
 		return (
-			<div className="w-full h-64 bg-gray-100 flex items-center justify-center">
+			<div className="w-full h-64 bg-[var(--ui-surface-sunken)] flex items-center justify-center">
 				No images available
 			</div>
 		);
@@ -31,13 +31,13 @@ const ProductImageSlider = ({ images }: { images: string[] }) => {
 
 				<button
 					onClick={prevSlide}
-					className="absolute left-0 top-1/2 -translate-y-1/2 bg-gray-200 hover:bg-gray-300 text-black px-2 py-1 rounded-l cursor-pointer"
+					className="absolute left-0 top-1/2 -translate-y-1/2 bg-[var(--ui-border)] hover:bg-[var(--ui-border-strong)] text-[var(--ui-text)] px-2 py-1 rounded-l cursor-pointer"
 				>
 					<IoIosArrowBack />
 				</button>
 				<button
 					onClick={nextSlide}
-					className="absolute right-0 top-1/2 -translate-y-1/2 bg-gray-200 hover:bg-gray-300 text-black px-2 py-1 rounded-r cursor-pointer"
+					className="absolute right-0 top-1/2 -translate-y-1/2 bg-[var(--ui-border)] hover:bg-[var(--ui-border-strong)] text-[var(--ui-text)] px-2 py-1 rounded-r cursor-pointer"
 				>
 					<IoIosArrowForward />
 				</button>
@@ -47,7 +47,7 @@ const ProductImageSlider = ({ images }: { images: string[] }) => {
 				{images.map((_, index) => (
 					<div
 						key={index}
-						className={`w-2 h-2 rounded-full ${index === current ? "bg-[var(--color-green-primary)]" : "bg-gray-300"
+						className={`w-2 h-2 rounded-full ${index === current ? "bg-[var(--color-green-primary)]" : "bg-[var(--ui-border-strong)]"
 							}`}
 					></div>
 				))}

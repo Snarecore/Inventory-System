@@ -204,14 +204,14 @@ export const CustomerCollection: React.FC = () => {
 
         <div className="flex items-center gap-2 self-end sm:self-auto">
           {/* Tab Switcher */}
-          <div className="inline-flex items-center rounded-lg border border-gray-200 p-0.5 bg-gray-50 h-8">
+          <div className="inline-flex items-center rounded-lg border border-[var(--ui-border)] p-0.5 bg-[var(--ui-surface-muted)] h-8">
             <button
               type="button"
               onClick={() => setActiveTab("dues")}
               className={`px-3 py-1 text-xs font-semibold rounded-md transition-all cursor-pointer ${
                 activeTab === "dues"
                   ? "bg-[var(--primary-color)] text-white shadow-xs font-bold"
-                  : "text-gray-600 hover:text-black"
+                  : "text-[var(--ui-text-muted)] hover:text-[var(--ui-text)]"
               }`}
             >
               Customer Dues ({customers.length})
@@ -222,7 +222,7 @@ export const CustomerCollection: React.FC = () => {
               className={`px-3 py-1 text-xs font-semibold rounded-md transition-all cursor-pointer ${
                 activeTab === "history"
                   ? "bg-[var(--primary-color)] text-white shadow-xs font-bold"
-                  : "text-gray-600 hover:text-black"
+                  : "text-[var(--ui-text-muted)] hover:text-[var(--ui-text)]"
               }`}
             >
               Collection History

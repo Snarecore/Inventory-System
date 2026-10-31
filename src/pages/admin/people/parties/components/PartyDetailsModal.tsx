@@ -42,24 +42,24 @@ export const PartyDetailsModal: React.FC<PartyDetailsModalProps> = ({
       title="Party Quick View"
       maxWidth="w-full max-w-2xl"
     >
-      <div className="space-y-3.5 text-black">
+      <div className="space-y-3.5 text-[var(--ui-text)]">
         {/* Header info - single line */}
-        <div className="flex flex-wrap items-center justify-between gap-2 pb-2.5 border-b border-gray-200">
+        <div className="flex flex-wrap items-center justify-between gap-2 pb-2.5 border-b border-[var(--ui-border)]">
           <div className="flex flex-wrap items-center gap-2.5">
-            <h3 className="text-base font-semibold text-black">
+            <h3 className="text-base font-semibold text-[var(--ui-text)]">
               {name}
             </h3>
             <span
               className={`inline-flex items-center px-1.5 py-0.5 rounded-md text-[10px] font-semibold border ${
                 isSupplier
-                  ? "bg-purple-100 text-purple-800 border-purple-300"
-                  : "bg-sky-100 text-sky-800 border-sky-300"
+                  ? "bg-[var(--ui-info-border)] text-[var(--ui-info-dark)] border-[var(--ui-info-border)]"
+                  : "bg-[var(--primary-color-muted)] text-[var(--primary-color-dark)] border-[var(--primary-color-muted)]"
               }`}
             >
               {isSupplier ? "Supplier" : "Customer"}
             </span>
             {partyCode && (
-              <span className="text-xs   text-gray-500">
+              <span className="text-xs   text-[var(--ui-text-muted)]">
                 (Code: {partyCode})
               </span>
             )}
@@ -68,8 +68,8 @@ export const PartyDetailsModal: React.FC<PartyDetailsModalProps> = ({
             <span
               className={`inline-flex items-center px-1.5 py-0.5 rounded-md text-[10px] font-semibold border ${
                 isActive
-                  ? "bg-emerald-100 text-emerald-800 border-emerald-300"
-                  : "bg-rose-100 text-rose-800 border-rose-300"
+                  ? "bg-[var(--ui-success-border)] text-[var(--ui-success-dark)] border-[var(--ui-success-border)]"
+                  : "bg-[var(--ui-danger-border)] text-[var(--ui-danger-dark)] border-[var(--ui-danger-border)]"
               }`}
             >
               {isActive ? "Active" : "Inactive"}
@@ -79,19 +79,19 @@ export const PartyDetailsModal: React.FC<PartyDetailsModalProps> = ({
 
         {/* Financial & Balances */}
         <div>
-          <h4 className="text-xs font-semibold tracking-wider text-black mb-1.5">
+          <h4 className="text-xs font-semibold tracking-wider text-[var(--ui-text)] mb-1.5">
             Financial & Account Summary
           </h4>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-            <div className="px-3 py-2 bg-gray-50 rounded-lg border border-gray-200">
-              <span className="text-xs text-black block mb-0.5">Opening Balance / Due</span>
-              <span className="text-sm font-semibold text-black">
+            <div className="px-3 py-2 bg-[var(--ui-surface-muted)] rounded-lg border border-[var(--ui-border)]">
+              <span className="text-xs text-[var(--ui-text)] block mb-0.5">Opening Balance / Due</span>
+              <span className="text-sm font-semibold text-[var(--ui-text)]">
                 ৳{balance.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
               </span>
             </div>
-            <div className="px-3 py-2 bg-gray-50 rounded-lg border border-gray-200">
-              <span className="text-xs text-black block mb-0.5">Credit Limit</span>
-              <span className="text-sm font-medium text-black">
+            <div className="px-3 py-2 bg-[var(--ui-surface-muted)] rounded-lg border border-[var(--ui-border)]">
+              <span className="text-xs text-[var(--ui-text)] block mb-0.5">Credit Limit</span>
+              <span className="text-sm font-medium text-[var(--ui-text)]">
                 {creditLimit ? `৳${Number(creditLimit).toLocaleString("en-IN")}` : "No Limit Set"}
               </span>
             </div>
@@ -100,27 +100,27 @@ export const PartyDetailsModal: React.FC<PartyDetailsModalProps> = ({
 
         {/* Contact Information */}
         <div>
-          <h4 className="text-xs font-semibold tracking-wider text-black mb-1.5">
+          <h4 className="text-xs font-semibold tracking-wider text-[var(--ui-text)] mb-1.5">
             Contact Information
           </h4>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-            <div className="px-3 py-2 bg-gray-50 rounded-lg border border-gray-200">
-              <span className="text-xs text-black block mb-0.5">Primary Phone</span>
-              <span className="text-sm font-medium text-black">{phone}</span>
+            <div className="px-3 py-2 bg-[var(--ui-surface-muted)] rounded-lg border border-[var(--ui-border)]">
+              <span className="text-xs text-[var(--ui-text)] block mb-0.5">Primary Phone</span>
+              <span className="text-sm font-medium text-[var(--ui-text)]">{phone}</span>
             </div>
-            <div className="px-3 py-2 bg-gray-50 rounded-lg border border-gray-200">
-              <span className="text-xs text-black block mb-0.5">Email Address</span>
-              <span className="text-sm font-medium text-black truncate block">{email}</span>
+            <div className="px-3 py-2 bg-[var(--ui-surface-muted)] rounded-lg border border-[var(--ui-border)]">
+              <span className="text-xs text-[var(--ui-text)] block mb-0.5">Email Address</span>
+              <span className="text-sm font-medium text-[var(--ui-text)] truncate block">{email}</span>
             </div>
             {altPhone && altPhone !== "—" && (
-              <div className="px-3 py-2 bg-gray-50 rounded-lg border border-gray-200">
-                <span className="text-xs text-black block mb-0.5">Alternative Phone</span>
-                <span className="text-sm font-medium text-black">{altPhone}</span>
+              <div className="px-3 py-2 bg-[var(--ui-surface-muted)] rounded-lg border border-[var(--ui-border)]">
+                <span className="text-xs text-[var(--ui-text)] block mb-0.5">Alternative Phone</span>
+                <span className="text-sm font-medium text-[var(--ui-text)]">{altPhone}</span>
               </div>
             )}
-            <div className="px-3 py-2 bg-gray-50 rounded-lg border border-gray-200 sm:col-span-2">
-              <span className="text-xs text-black block mb-0.5">Address / Location</span>
-              <span className="text-xs font-medium text-black">{fullAddress}</span>
+            <div className="px-3 py-2 bg-[var(--ui-surface-muted)] rounded-lg border border-[var(--ui-border)] sm:col-span-2">
+              <span className="text-xs text-[var(--ui-text)] block mb-0.5">Address / Location</span>
+              <span className="text-xs font-medium text-[var(--ui-text)]">{fullAddress}</span>
             </div>
           </div>
         </div>
@@ -128,21 +128,21 @@ export const PartyDetailsModal: React.FC<PartyDetailsModalProps> = ({
         {/* Note / Remarks (if any) */}
         {note && (
           <div>
-            <h4 className="text-xs font-semibold tracking-wider text-black mb-1.5">
+            <h4 className="text-xs font-semibold tracking-wider text-[var(--ui-text)] mb-1.5">
               Note / Remarks
             </h4>
-            <div className="px-3 py-2 bg-gray-50 rounded-lg border border-gray-200 text-xs font-medium text-black">
+            <div className="px-3 py-2 bg-[var(--ui-surface-muted)] rounded-lg border border-[var(--ui-border)] text-xs font-medium text-[var(--ui-text)]">
               {note}
             </div>
           </div>
         )}
 
         {/* Footer Actions */}
-        <div className="pt-2.5 border-t border-gray-200 flex justify-end gap-2.5">
+        <div className="pt-2.5 border-t border-[var(--ui-border)] flex justify-end gap-2.5">
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-1.5 text-xs font-medium text-black bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors cursor-pointer"
+            className="px-4 py-1.5 text-xs font-medium text-[var(--ui-text)] bg-[var(--ui-surface-sunken)] hover:bg-[var(--ui-border)] rounded-lg transition-colors cursor-pointer"
           >
             Close
           </button>

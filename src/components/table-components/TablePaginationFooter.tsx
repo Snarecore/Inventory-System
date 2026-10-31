@@ -30,9 +30,9 @@ export const TablePaginationFooter: React.FC<TablePaginationFooterProps> = ({
 
   return (
     <div
-      className={`p-2.5 sm:p-3 border-t border-gray-100 bg-gray-50/50 flex flex-col sm:flex-row items-center justify-between gap-2.5 ${className}`}
+      className={`p-2.5 sm:p-3 border-t border-[var(--ui-border)] bg-[var(--ui-surface-muted)]/50 flex flex-col sm:flex-row items-center justify-between gap-2.5 ${className}`}
     >
-      <div className="flex items-center gap-2 text-xs text-gray-500">
+      <div className="flex items-center gap-2 text-xs text-[var(--ui-text-muted)]">
         <span>Show</span>
         {setDataLimit && (
           <select
@@ -41,7 +41,7 @@ export const TablePaginationFooter: React.FC<TablePaginationFooterProps> = ({
               setDataLimit(Number(e.target.value));
               if (setCurrentPageNumber) setCurrentPageNumber(1);
             }}
-            className="border border-gray-300 rounded px-1.5 py-0.5 text-xs bg-white text-gray-700 focus:outline-none focus:border-[var(--color-primary)] cursor-pointer"
+            className="border border-[var(--ui-border-strong)] rounded px-1.5 py-0.5 text-xs bg-[var(--ui-surface)] text-[var(--ui-text)] focus:outline-none focus:border-[var(--color-primary)] cursor-pointer"
           >
             {pageSizeOptions.map((opt) => (
               <option key={opt} value={opt}>

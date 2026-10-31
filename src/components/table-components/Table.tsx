@@ -1,15 +1,15 @@
 import React, { ReactNode } from "react";
 
 export const TABLE_CLASSES = {
-  container: "bg-white rounded-xl shadow-xs border border-gray-200 flex flex-col relative z-20 overflow-visible",
-  toolbar: "p-2 sm:p-2.5 border-b border-gray-100 flex flex-wrap items-center justify-between gap-2 relative z-40 overflow-visible",
+  container: "bg-[var(--ui-surface)] rounded-xl shadow-xs border border-[var(--ui-border)] flex flex-col relative z-20 overflow-visible",
+  toolbar: "p-2 sm:p-2.5 border-b border-[var(--ui-border)] flex flex-wrap items-center justify-between gap-2 relative z-40 overflow-visible",
   scroll: "w-full overflow-x-auto relative z-10",
-  table: "w-full text-left border-collapse text-xs",
-  headerRow: "bg-[#41BEF3] text-black text-xs font-semibold",
-  headerCell: "py-2.5 px-3 text-black text-xs font-semibold select-none",
-  body: "divide-y divide-gray-100 bg-white",
-  row: "hover:bg-sky-50/40 transition-colors group",
-  cell: "py-2.5 px-3 text-black text-xs font-normal",
+  table: "ui-table w-full text-left border-collapse text-xs",
+  headerRow: "bg-[var(--ui-accent-2)] text-[var(--ui-text)] text-xs font-semibold",
+  headerCell: "py-2.5 px-3 text-[var(--ui-text)] text-xs font-semibold select-none",
+  body: "divide-y divide-[var(--ui-border)] bg-[var(--ui-surface)]",
+  row: "hover:bg-[var(--primary-color-light)]/40 transition-colors group",
+  cell: "py-2.5 px-3 text-[var(--ui-text)] text-xs font-normal",
 } as const;
 
 // 1. TableContainer (Outer card wrapper)

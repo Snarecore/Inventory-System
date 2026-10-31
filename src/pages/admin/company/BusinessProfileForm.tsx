@@ -179,21 +179,21 @@ export const BusinessProfileForm: React.FC<BusinessProfileFormProps> = ({
   return (
     <form onSubmit={handleSubmitForm} className="flex flex-col gap-2.5">
       {/* ── Business Information Card ── */}
-      <div className="bg-white rounded-xl border border-gray-200 shadow-xs overflow-visible">
+      <div className="bg-[var(--ui-surface)] rounded-xl border border-[var(--ui-border)] shadow-xs overflow-visible">
         {/* Card Header Ribbon */}
-        <div className="flex justify-between items-center px-3.5 sm:px-4 py-2 select-none bg-gray-50/70 rounded-t-xl border-b border-gray-200 flex-wrap gap-1.5">
+        <div className="flex justify-between items-center px-3.5 sm:px-4 py-2 select-none bg-[var(--ui-surface-muted)]/70 rounded-t-xl border-b border-[var(--ui-border)] flex-wrap gap-1.5">
           <div className="flex items-center gap-2 flex-wrap">
-            <h2 className="text-xs sm:text-sm font-bold text-black flex items-center gap-1.5">
+            <h2 className="text-xs sm:text-sm font-bold text-[var(--ui-text)] flex items-center gap-1.5">
               <FaBuilding className="text-[var(--primary-color)] text-sm" />
               Business Information
             </h2>
             {formData.orgId && (
-              <span className="text-[10px] font-semibold px-2 py-0.5 rounded-md bg-blue-50 text-blue-700 border border-blue-200">
+              <span className="text-[10px] font-semibold px-2 py-0.5 rounded-md bg-[var(--primary-color-light)] text-[var(--primary-color-dark)] border border-[var(--primary-color-muted)]">
                 Org {formData.orgId}
               </span>
             )}
             {formData.branchId && (
-              <span className="text-[10px] font-semibold px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200">
+              <span className="text-[10px] font-semibold px-2 py-0.5 rounded-md bg-[var(--ui-success-light)] text-[var(--ui-success-dark)] border border-[var(--ui-success-border)]">
                 Branch {formData.branchId}
               </span>
             )}
@@ -205,9 +205,9 @@ export const BusinessProfileForm: React.FC<BusinessProfileFormProps> = ({
           {/* Top Section: Logo + 8 fields (4x2 grid) */}
           <div className="flex flex-col sm:flex-row items-start gap-3 sm:gap-4">
             <div className="shrink-0">
-              <label className="text-xs font-semibold text-black block mb-1">
-                Business Logo <span className="text-red-600">*</span>
-                <span className="text-[10px] font-normal text-gray-400 ml-1">(500×500 px)</span>
+              <label className="text-xs font-semibold text-[var(--ui-text)] block mb-1">
+                Business Logo <span className="text-[var(--ui-danger)]">*</span>
+                <span className="text-[10px] font-normal text-[var(--ui-text-subtle)] ml-1">(500×500 px)</span>
               </label>
               <ImageUpload
                 value={logoFile || formData.businessLogoUrl || getFileViewUrl(formData.businessLogo)}

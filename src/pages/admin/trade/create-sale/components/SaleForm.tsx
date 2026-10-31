@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo, useRef, useCallback } from "react"
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { FiChevronDown, FiRefreshCw } from "react-icons/fi";
-import { FaCalculator } from "react-icons/fa";
+import { FaCalculator, FaUserCircle } from "react-icons/fa";
 import Button from "@/components/button/Button";
 import DeleteModal from "@/components/modal/DeleteModal";
 import ConfirmModal from "@/components/modal/ConfirmModal";
@@ -992,9 +992,9 @@ export const CreateSaleForm: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-col gap-2.5 px-2.5 py-2 sm:px-4 sm:py-2.5 max-w-[1600px] mx-auto w-full">
+    <div className="flex w-full flex-col gap-2 px-2 py-1.5 sm:px-3 sm:py-2">
       {/* Top Header Bar */}
-      <div className="sticky top-0 z-30 bg-[#F6F6F6] py-2 sm:py-2.5 -mt-2 sm:-mt-2.5 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-2.5 border-b border-gray-200">
+      <div className="sticky top-0 z-30 bg-[var(--ui-surface-muted)] py-2 sm:py-2.5 -mt-2 sm:-mt-2.5 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-2.5 border-b border-[var(--ui-border)]">
         {/* Left Side: Title & Invoice Badge */}
         <div className="flex items-center justify-between gap-2 w-full lg:w-auto">
           <div className="flex flex-col lg:flex-row lg:items-center gap-1 lg:gap-2.5 min-w-0">
@@ -1012,14 +1012,14 @@ export const CreateSaleForm: React.FC = () => {
             <button
               type="button"
               onClick={handleReset}
-              className="px-2.5 py-1.5 text-xs font-normal text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors cursor-pointer"
+              className="ui-btn ui-btn-ghost h-[var(--ui-control-h-xs)] px-2.5 text-[length:var(--ui-font-size-xs)] font-normal"
             >
               Reset
             </button>
             <button
               type="button"
               onClick={() => navigate("/admin/sales")}
-              className="px-2.5 py-1.5 text-xs font-normal text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors cursor-pointer"
+              className="ui-btn ui-btn-ghost h-[var(--ui-control-h-xs)] px-2.5 text-[length:var(--ui-font-size-xs)] font-normal"
             >
               Cancel
             </button>
@@ -1032,42 +1032,34 @@ export const CreateSaleForm: React.FC = () => {
             <button
               type="button"
               onClick={handleReset}
-              className="px-3 py-1.5 text-xs font-normal text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors cursor-pointer"
+              className="ui-btn ui-btn-secondary h-[var(--ui-control-h-xs)] px-3 text-[length:var(--ui-font-size-xs)] font-normal"
             >
               Reset
             </button>
             <button
               type="button"
               onClick={() => navigate("/admin/sales")}
-              className="px-3 py-1.5 text-xs font-normal text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors cursor-pointer"
+              className="ui-btn ui-btn-secondary h-[var(--ui-control-h-xs)] px-3 text-[length:var(--ui-font-size-xs)] font-normal"
             >
               Cancel
             </button>
           </div>
 
-          {/* Save & Save & Print Buttons */}
-          <div className="grid grid-cols-2 lg:flex lg:items-center gap-2 w-full lg:w-auto">
-            <Button
-              label={isSubmitting ? "Saving..." : isEditMode ? "Update Sale" : "Save Sale"}
-              onClick={() => handlePreSubmit(false)}
-              color="var(--primary-color)"
-              disabled={isSubmitting}
-              buttonClass="!text-xs !py-1.5 !w-full lg:!w-fit justify-center font-normal !text-white"
-            />
-            <Button
-              label="Save & Print"
-              onClick={() => handlePreSubmit(true)}
-              color="#059669"
-              disabled={isSubmitting}
-              buttonClass="!text-xs !py-1.5 !w-full lg:!w-fit justify-center font-normal !text-white"
-            />
-          </div>
         </div>
       </div>
 
-
-      {/* Grid: Customer & Meta Details */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-3 gap-2.5 bg-white p-2.5 sm:p-3 rounded-xl border border-gray-200 shadow-xs">
+      {/* Workspace: entry flow on the left, pinned summary rail on the right.
+          The rail keeps totals, payment and the save actions in view while the
+          item list grows, so nothing critical falls below the fold. */}
+      <div className="grid grid-cols-1 items-start gap-2 xl:grid-cols-12">
+        {/* ---------- Entry column (scrolls) ---------- */}
+        <div className="flex flex-col gap-2 xl:col-span-8">
+      {/* Customer & invoice meta */}
+      <div className="ui-card p-2 sm:p-2.5">
+        <h3 className="mb-1.5 text-[12px] font-semibold uppercase tracking-wide text-[var(--ui-text-muted)]">
+          Customer &amp; Invoice
+        </h3>
+        <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-3">
         {/* Customer Selector */}
         <TradePartySelector
           partyType="customer"
@@ -1089,8 +1081,8 @@ export const CreateSaleForm: React.FC = () => {
         {/* Invoice No */}
         <div>
           <div className="flex items-center justify-between mb-1">
-            <label className="text-[11px] font-bold text-black tracking-wider block">
-              Invoice No <span className="text-rose-500">*</span>
+            <label className="ui-label block">
+              Invoice No <span className="text-[var(--ui-danger)]">*</span>
             </label>
             {!isEditMode && (
               <button
@@ -1111,7 +1103,7 @@ export const CreateSaleForm: React.FC = () => {
             )}
           </div>
           <div
-            className="w-full h-9 px-2.5 py-1.5 text-xs border border-gray-300 rounded-lg bg-gray-200 font-bold text-black flex items-center justify-between select-text cursor-default"
+            className="w-full h-[var(--ui-control-h-sm)] px-2.5 py-1.5 text-[length:var(--ui-font-size-sm)] border border-[var(--ui-border-strong)] rounded-[var(--ui-radius)] bg-[var(--ui-border)] font-bold text-[var(--ui-text)] flex items-center justify-between select-text cursor-default"
             title="Auto-generated Invoice Number"
           >
             <span className="truncate">{invoiceNo || "N/A"}</span>
@@ -1125,7 +1117,7 @@ export const CreateSaleForm: React.FC = () => {
                     showSuccessToast("New invoice number generated");
                   }
                 }}
-                className="p-1 text-gray-500 hover:text-[var(--primary-color)] transition-colors cursor-pointer rounded shrink-0 ml-1"
+                className="p-1 text-[var(--ui-text-muted)] hover:text-[var(--primary-color)] transition-colors cursor-pointer rounded-[var(--ui-radius-sm)] shrink-0 ml-1"
                 title="Generate new invoice number"
               >
                 <FiRefreshCw size={12} />
@@ -1136,8 +1128,8 @@ export const CreateSaleForm: React.FC = () => {
 
         {/* Sales Date */}
         <div>
-          <label className="text-[11px] font-bold text-black tracking-wider block mb-1">
-            Sales Date <span className="text-rose-500">*</span>
+          <label className="ui-label block mb-1">
+            Sales Date <span className="text-[var(--ui-danger)]">*</span>
           </label>
           <DatePicker
             value={salesDate}
@@ -1148,6 +1140,8 @@ export const CreateSaleForm: React.FC = () => {
             placeholder="Select sales date"
           />
         </div>
+        </div>
+
       </div>
 
       {/* Product Live Search & Barcode Scan Bar */}
@@ -1172,12 +1166,9 @@ export const CreateSaleForm: React.FC = () => {
         emptyMessage="No items in sales cart. Search and add products above or scan barcodes."
       />
 
-      {/* Financial Summary & Split Payment Breakdown */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-2.5 items-start">
-        {/* Left Column: Overall Discounts, VAT, Delivery & Remarks */}
-        <div className="lg:col-span-5 bg-white p-2.5 sm:p-3 rounded-xl border border-gray-200 shadow-xs flex flex-col gap-2">
+        <div className="ui-card flex flex-col gap-2 p-2 sm:p-2.5">
           <div className="flex flex-col gap-2">
-            <h3 className="text-xs font-bold text-black">
+            <h3 className="text-[13px] font-semibold text-[var(--ui-text)]">
               Discounts & Extra Charges
             </h3>
 
@@ -1204,15 +1195,15 @@ export const CreateSaleForm: React.FC = () => {
           </div>
 
           {/* Notes / Remarks */}
-          <div className="mt-1.5 pt-1.5 border-t border-gray-100 flex flex-col" ref={notesDropdownRef}>
+          <div className="mt-1.5 pt-1.5 border-t border-[var(--ui-border)] flex flex-col" ref={notesDropdownRef}>
             <div className="h-5 flex items-center justify-between gap-1 mb-1">
-              <span className="text-[11px] font-semibold text-black truncate">
+              <span className="text-[11px] font-semibold text-[var(--ui-text)] truncate">
                 Notes / Remarks
               </span>
               <button
                 type="button"
                 onClick={() => setIsNotesDropdownOpen(!isNotesDropdownOpen)}
-                className="text-[11px] font-semibold text-black bg-gray-100 hover:bg-gray-200 px-1.5 py-0.5 rounded-md border border-gray-300 transition-all flex items-center gap-1 cursor-pointer shadow-2xs h-5"
+                className="text-[11px] font-semibold text-[var(--ui-text)] bg-[var(--ui-surface-sunken)] hover:bg-[var(--ui-border)] px-1.5 py-0.5 rounded-[var(--ui-radius-sm)] border border-[var(--ui-border-strong)] transition-all flex items-center gap-1 cursor-pointer shadow-[var(--ui-shadow-control)] h-5"
               >
                 <span>+ Presets</span>
                 <FiChevronDown
@@ -1228,19 +1219,19 @@ export const CreateSaleForm: React.FC = () => {
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
                 placeholder="Type notes or click '+ Presets' to add..."
-                className="w-full h-[84px] p-2.5 text-xs border border-gray-300/80 rounded-xl focus:outline-none focus:border-[var(--primary-color)] focus:ring-2 focus:ring-[var(--primary-color)]/15 resize-none text-black font-medium bg-slate-50/40 hover:bg-white focus:bg-white placeholder:text-gray-400 transition-all shadow-2xs leading-relaxed"
+                className="ui-control ui-control-multiline ui-control-sm h-[84px] resize-none font-medium leading-relaxed"
               />
 
               {isNotesDropdownOpen && (
-                <div className="absolute right-0 bottom-full mb-1.5 w-full bg-white rounded-xl shadow-xl border border-gray-200 z-40 overflow-hidden divide-y divide-gray-100">
-                  <div className="px-3 py-1.5 bg-gray-50 flex items-center justify-between">
-                    <span className="text-[11px] font-semibold text-gray-700">
+                <div className="absolute right-0 bottom-full mb-1.5 w-full bg-[var(--ui-surface)] rounded-[var(--ui-radius-lg)] shadow-[var(--ui-shadow-popover)] border border-[var(--ui-border)] z-40 overflow-hidden divide-y divide-[var(--ui-border)]">
+                  <div className="px-3 py-1.5 bg-[var(--ui-surface-muted)] flex items-center justify-between">
+                    <span className="text-[11px] font-semibold text-[var(--ui-text)]">
                       Choose a preset:
                     </span>
-                    <span className="text-[10px] text-gray-400">Click to add</span>
+                    <span className="text-[10px] text-[var(--ui-text-subtle)]">Click to add</span>
                   </div>
 
-                  <div className="flex flex-col py-1 divide-y divide-gray-50">
+                  <div className="flex flex-col py-1 divide-y divide-[var(--ui-border)]">
                     {[
                       "Goods delivered in good condition",
                       "Cash received on delivery",
@@ -1259,10 +1250,10 @@ export const CreateSaleForm: React.FC = () => {
                           });
                           setIsNotesDropdownOpen(false);
                         }}
-                        className="px-3 py-2 text-[11px] text-left text-black hover:bg-sky-50 hover:text-[var(--color-primary)] font-medium transition-colors flex items-center justify-between cursor-pointer group"
+                        className="px-3 py-2 text-[11px] text-left text-[var(--ui-text)] hover:bg-[var(--primary-color-light)] hover:text-[var(--primary-color)] font-medium transition-colors flex items-center justify-between cursor-pointer group"
                       >
                         <span className="truncate">{preset}</span>
-                        <span className="text-[10px] text-gray-400 group-hover:text-[var(--color-primary)] font-semibold shrink-0 ml-2">
+                        <span className="text-[10px] text-[var(--ui-text-subtle)] group-hover:text-[var(--primary-color)] font-semibold shrink-0 ml-2">
                           + Add
                         </span>
                       </button>
@@ -1274,35 +1265,42 @@ export const CreateSaleForm: React.FC = () => {
           </div>
         </div>
 
-        {/* Right Column: Financial Totals & Split Payments */}
-        <div className="lg:col-span-7 bg-white p-2.5 sm:p-3 rounded-xl border border-gray-200 shadow-xs flex flex-col gap-2">
-          {/* Detailed Financial Summary Ribbon */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 bg-gray-50/90 py-1.5 px-2.5 rounded-lg border border-gray-200/90 shadow-2xs">
-            <div>
-              <span className="text-[10px] text-black  font-bold block tracking-wider leading-tight">Subtotal</span>
-              <span className="text-xs font-bold text-black block text-right leading-tight mt-0.5">
+        </div>
+
+        {/* ---------- Summary rail (pinned on wide screens) ---------- */}
+        <aside className="flex flex-col gap-2 xl:sticky xl:top-[3.5rem] xl:col-span-4">
+        <div className="ui-card flex flex-col gap-2 p-2 sm:p-2.5">
+          {/* Financial summary, read as an invoice ledger: labels left, figures
+              right-aligned on tabular numerals so the columns line up, with a
+              rule separating the payable total. */}
+          <dl className="rounded-[var(--ui-radius)] border border-[var(--ui-border)] bg-[var(--ui-surface-muted)] px-3 py-2 shadow-[var(--ui-shadow-control)]">
+            <div className="flex items-baseline justify-between gap-3 py-0.5">
+              <dt className="text-[11px] font-medium text-[var(--ui-text-muted)]">Subtotal</dt>
+              <dd className="text-xs font-semibold tabular-nums text-[var(--ui-text)]">
                 ৳ {formatMoney(rawSubtotal)}
-              </span>
+              </dd>
             </div>
-            <div>
-              <span className="text-[10px] text-black  font-bold block tracking-wider leading-tight">Discount</span>
-              <span className="text-xs font-bold text-rose-600 block text-right leading-tight mt-0.5">
-                - ৳ {formatMoney(totalDiscount)}
-              </span>
+            <div className="flex items-baseline justify-between gap-3 py-0.5">
+              <dt className="text-[11px] font-medium text-[var(--ui-text-muted)]">Discount</dt>
+              <dd className="text-xs font-semibold tabular-nums text-[var(--ui-danger)]">
+                − ৳ {formatMoney(totalDiscount)}
+              </dd>
             </div>
-            <div>
-              <span className="text-[10px] text-black  font-bold block tracking-wider leading-tight">VAT + Delivery</span>
-              <span className="text-xs font-bold text-black block text-right leading-tight mt-0.5">
+            <div className="flex items-baseline justify-between gap-3 py-0.5">
+              <dt className="text-[11px] font-medium text-[var(--ui-text-muted)]">VAT + Delivery</dt>
+              <dd className="text-xs font-semibold tabular-nums text-[var(--ui-text)]">
                 + ৳ {formatMoney(totalVat + calculatedDelivery)}
-              </span>
+              </dd>
             </div>
-            <div className="bg-sky-50 border border-sky-200/80 px-1.5 py-0.5 rounded text-right flex flex-col justify-center">
-              <span className="text-[10px] text-black  font-bold block tracking-wider leading-tight">Grand Total</span>
-              <span className="text-xs sm:text-[13px] font-extrabold text-[var(--color-primary)] block leading-tight mt-0.5">
+            <div className="mt-1.5 flex items-baseline justify-between gap-3 border-t border-[var(--ui-border-strong)] pt-1.5">
+              <dt className="text-[11px] font-bold uppercase tracking-wider text-[var(--ui-text)]">
+                Grand Total
+              </dt>
+              <dd className="text-sm font-extrabold tabular-nums tabular-nums text-[var(--primary-color)]">
                 ৳ {formatMoney(grandTotal)}
-              </span>
+              </dd>
             </div>
-          </div>
+          </dl>
 
           {/* Unified Payment Section */}
           <TradePaymentSection
@@ -1313,66 +1311,94 @@ export const CreateSaleForm: React.FC = () => {
             title="Payment Collected"
             bankLabel="BANK"
           />
+          {/* Settlement summary: who, then paid vs short */}
+          {/* Who this settlement belongs to. Shown above the Paid / Short row
+              so the amounts are always read against a named party — walk-in
+              counter sales fall back to whatever was typed in the quick fields. */}
+          <div className="flex items-center justify-between gap-2 border-t border-[var(--ui-border)]/90 pt-1.5">
+            <div className="flex min-w-0 items-center gap-1.5">
+              <FaUserCircle size={12} className="shrink-0 text-[var(--ui-text-subtle)]" />
+              <span className="truncate text-[11px] font-semibold text-[var(--ui-text)]">
+                {isWalkIn
+                  ? walkInName.trim() || "Walk-in Customer"
+                  : selectedCustomer?.name || selectedCustomer?.partyName || "—"}
+              </span>
+              {(isWalkIn ? walkInPhone.trim() : selectedCustomer?.phone || selectedCustomer?.phoneNumber) && (
+                <span className="truncate text-[10px] tabular-nums text-[var(--ui-text-muted)]">
+                  · {isWalkIn ? walkInPhone.trim() : selectedCustomer?.phone || selectedCustomer?.phoneNumber}
+                </span>
+              )}
+              {isWalkIn && (
+                <span className="shrink-0 rounded-[var(--ui-radius-sm)] bg-[var(--ui-success-border)] px-1 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-[var(--ui-success-dark)]">
+                  Counter
+                </span>
+              )}
+            </div>
+            {!isWalkIn && customerApiId && previousDue > 0 && (
+              <span className="shrink-0 text-[10px] font-semibold tabular-nums text-[var(--ui-danger-dark)]">
+                Previous due ৳ {formatMoney(previousDue)}
+              </span>
+            )}
+          </div>
 
-          {/* Financial Settlement Summary Ribbon (Matching Professional ERP Standard) */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 border-t border-gray-200/90 pt-1.5 items-center">
+          <div className="grid grid-cols-1 items-center gap-1.5 sm:grid-cols-2">
             {/* Total Paid Card with status badge */}
-            <div className="bg-emerald-50/90 px-2.5 py-1 rounded-md border border-emerald-200/90 flex items-center justify-between shadow-2xs">
+            <div className="bg-[var(--ui-success-light)]/90 px-2.5 py-1 rounded-[var(--ui-radius-sm)] border border-[var(--ui-success-border)]/90 flex items-center justify-between shadow-[var(--ui-shadow-control)]">
               <div className="flex items-center gap-1.5">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 inline-block" />
-                <span className="text-[10.5px] font-bold text-emerald-950 tracking-wide">
+                <span className="w-1.5 h-1.5 rounded-full bg-[var(--ui-success)] inline-block" />
+                <span className="text-[11px] font-bold text-[var(--ui-success-dark)] tracking-wide">
                   Total Paid
                 </span>
-                <span className="text-[9.5px] font-semibold px-1 py-0.2 rounded bg-emerald-100 text-emerald-800">
+                <span className="text-[10px] font-semibold px-1 py-0.5 rounded-[var(--ui-radius-sm)] bg-[var(--ui-success-border)] text-[var(--ui-success-dark)]">
                   {totalPaid >= grandTotal && grandTotal > 0 ? "PAID" : totalPaid > 0 ? "PARTIAL" : "UNPAID"}
                 </span>
               </div>
-              <span className="text-xs sm:text-[13px] font-extrabold text-emerald-800">
+              <span className="text-xs sm:text-[13px] font-extrabold tabular-nums text-[var(--ui-success-dark)]">
                 ৳ {formatMoney(totalPaid)}
               </span>
             </div>
 
-            {/* Due Balance Card or Change Return */}
+            {/* Short (unpaid remainder) or Change Return */}
             {changeReturnAmount > 0 ? (
-              <div className="bg-sky-50/90 px-2.5 py-1 rounded-md border border-sky-200/90 flex items-center justify-between shadow-2xs">
+              <div className="bg-[var(--primary-color-light)]/90 px-2.5 py-1 rounded-[var(--ui-radius-sm)] border border-[var(--primary-color-muted)]/90 flex items-center justify-between shadow-[var(--ui-shadow-control)]">
                 <div className="flex items-center gap-1.5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-sky-600 inline-block" />
-                  <span className="text-[10.5px] font-bold text-sky-950 tracking-wide">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[var(--primary-color)] inline-block" />
+                  <span className="text-[11px] font-bold text-[var(--primary-color-dark)] tracking-wide">
                     Change / ফেরত
                   </span>
                 </div>
-                <span className="text-xs sm:text-[13px] font-extrabold text-sky-700">
+                <span className="text-xs sm:text-[13px] font-extrabold tabular-nums text-[var(--primary-color-dark)]">
                   ৳ {formatMoney(changeReturnAmount)}
                 </span>
               </div>
             ) : (
               <div
-                className={`px-2.5 py-1 rounded-md border flex items-center justify-between transition-colors shadow-2xs ${
-                  dueAmount > 0 ? "bg-rose-50/90 border-rose-200/90" : "bg-gray-50 border-gray-200"
+                className={`px-2.5 py-1 rounded-[var(--ui-radius-sm)] border flex items-center justify-between transition-colors shadow-[var(--ui-shadow-control)] ${
+                  dueAmount > 0 ? "bg-[var(--ui-danger-light)]/90 border-[var(--ui-danger-border)]/90" : "bg-[var(--ui-surface-muted)] border-[var(--ui-border)]"
                 }`}
               >
                 <div className="flex items-center gap-1.5">
                   <span
                     className={`w-1.5 h-1.5 rounded-full inline-block ${
-                      dueAmount > 0 ? "bg-rose-600" : "bg-gray-400"
+                      dueAmount > 0 ? "bg-[var(--ui-danger)]" : "bg-[var(--ui-text-subtle)]"
                     }`}
                   />
                   <span
-                    className={`text-[10.5px] font-bold tracking-wide ${
-                      dueAmount > 0 ? "text-rose-950" : "text-gray-700"
+                    className={`text-[11px] font-bold tracking-wide ${
+                      dueAmount > 0 ? "text-[var(--ui-danger-dark)]" : "text-[var(--ui-text)]"
                     }`}
                   >
-                    Due Balance
+                    Short
                   </span>
                   {dueAmount > 0 && (
-                    <span className="text-[9.5px] font-semibold px-1 py-0.2 rounded bg-rose-100 text-rose-800">
-                      DUE
+                    <span className="text-[10px] font-semibold px-1 py-0.5 rounded-[var(--ui-radius-sm)] bg-[var(--ui-danger-border)] text-[var(--ui-danger-dark)]">
+                      SHORT
                     </span>
                   )}
                 </div>
                 <span
                   className={`text-xs sm:text-[13px] font-extrabold ${
-                    dueAmount > 0 ? "text-rose-600" : "text-black"
+                    dueAmount > 0 ? "text-[var(--ui-danger)]" : "text-[var(--ui-text)]"
                   }`}
                 >
                   ৳ {formatMoney(dueAmount)}
@@ -1381,6 +1407,25 @@ export const CreateSaleForm: React.FC = () => {
             )}
           </div>
         </div>
+
+          {/* Primary actions live with the totals they commit */}
+          <div className="ui-card flex flex-col gap-2 p-2 sm:p-2.5">
+            <Button
+              label={isSubmitting ? "Saving..." : isEditMode ? "Update Sale" : "Save Sale"}
+              onClick={() => handlePreSubmit(false)}
+              color="var(--primary-color)"
+              disabled={isSubmitting}
+              buttonClass="!w-full justify-center !py-2 text-[length:var(--ui-font-size-sm)] font-semibold !text-white"
+            />
+            <Button
+              label="Save & Print"
+              onClick={() => handlePreSubmit(true)}
+              color="#059669"
+              disabled={isSubmitting}
+              buttonClass="!w-full justify-center !py-2 text-[length:var(--ui-font-size-sm)] font-semibold !text-white"
+            />
+          </div>
+        </aside>
       </div>
 
       {/* Save Confirm Modal */}
@@ -1413,8 +1458,8 @@ export const CreateSaleForm: React.FC = () => {
           message="Are you sure you want to clear all product items, customer details, and payment inputs? This cannot be undone."
           confirmText="Reset Everything"
           cancelText="Keep Editing"
-          iconBgColor="bg-rose-100"
-          confirmButtonColor="bg-rose-600 hover:bg-rose-700"
+          iconBgColor="bg-[var(--ui-danger-border)]"
+          confirmButtonColor="bg-[var(--ui-danger)] hover:bg-[var(--ui-danger-dark)]"
           onClose={() => setIsResetModalOpen(false)}
           onConfirm={handleConfirmReset}
         />

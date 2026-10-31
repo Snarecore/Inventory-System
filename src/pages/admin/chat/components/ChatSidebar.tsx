@@ -25,9 +25,9 @@ const ChatSidebar = ({ setSelectedUser, selectedUser }: any) => {
     // }, [])
 
     return (
-        <div className="h-full flex flex-col bg-white">
-            <div className="px-4 py-3.5 border-b border-gray-200">
-                <p className="text-xl font-bold text-black">Chats</p>
+        <div className="h-full flex flex-col bg-[var(--ui-surface)]">
+            <div className="px-4 py-3.5 border-b border-[var(--ui-border)]">
+                <p className="text-xl font-bold text-[var(--ui-text)]">Chats</p>
             </div>
 
             <div className="flex-1 p-2">
@@ -36,8 +36,8 @@ const ChatSidebar = ({ setSelectedUser, selectedUser }: any) => {
                         <div
                             key={user.id}
                             onClick={() => setSelectedUser(user)}
-                            className={`flex items-center px-4 py-3 hover:bg-gray-50 cursor-pointer transition-all duration-200 rounded-lg ${selectedUser?.id === user.id
-                                ? "bg-orange-50 border-r-2 border-orange-500"
+                            className={`flex items-center px-4 py-3 hover:bg-[var(--ui-surface-muted)] cursor-pointer transition-all duration-200 rounded-lg ${selectedUser?.id === user.id
+                                ? "bg-[var(--ui-warning-light)] border-r-2 border-[var(--ui-warning)]"
                                 : ""
                                 }`}
                         >
@@ -65,7 +65,7 @@ const ChatSidebar = ({ setSelectedUser, selectedUser }: any) => {
                                 <p className="font-semibold">
                                     {user.participantTwo?.name}
                                 </p>
-                                <p className="text-sm text-gray-700">{user.participantTwo?.phone}</p>
+                                <p className="text-sm text-[var(--ui-text)]">{user.participantTwo?.phone}</p>
                             </div>
                         </div>
                     ))}

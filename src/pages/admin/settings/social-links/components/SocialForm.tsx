@@ -72,7 +72,7 @@ const SocialForm = ({ isOpen, onClose, editData }: any) => {
         >
             <div className="space-y-4">
                 <div>
-                    <p className="block text-sm font-medium text-gray-700">Image (Recommended Size: 512*512 PX)</p>
+                    <p className="block text-sm font-medium text-[var(--ui-text)]">Image (Recommended Size: 512*512 PX)</p>
                     <ImageUpload
                         value={
                             typeof fieldValues.icon === "string"

@@ -96,7 +96,7 @@ const Header = ({ sidebarClick }: { sidebarClick: boolean }) => {
             ? "lg:left-20"
             : "lg:left-52"
             }`}>
-            <div className="flex lg:hidden items-center justify-between px-4 h-12 bg-white border-b border-gray-200 transition-all ease-in-out duration-300">
+            <div className="flex lg:hidden items-center justify-between px-4 h-12 admin-header-strip border-b border-[var(--ui-border)] transition-all ease-in-out duration-300">
                 {showSidebarMenu ? (
                     <IoClose
                         size={24}
@@ -130,43 +130,43 @@ const Header = ({ sidebarClick }: { sidebarClick: boolean }) => {
 
                     {showMenuDropdown && (
                         <MotionDiv>
-                            <div className="absolute top-7 right-0 w-44 bg-white shadow-lg rounded-md border border-gray-200 z-50 dropdown-menu p-1">
-                                <div className="flex items-center gap-2 bg-gray-50 border border-gray-100 p-1.5 rounded mb-1">
+                            <div className="absolute top-7 right-0 w-44 bg-[var(--ui-surface)] shadow-lg rounded-md border border-[var(--ui-border)] z-50 dropdown-menu p-1">
+                                <div className="flex items-center gap-2 bg-[var(--ui-surface-muted)] border border-[var(--ui-border)] p-1.5 rounded mb-1">
                                     <img
                                         src="/avatar.png"
                                         alt="user"
                                         className="w-6 h-6 rounded object-cover shrink-0"
                                     />
                                     <div className="flex items-center gap-1.5 min-w-0">
-                                        <span className="text-xs font-semibold text-gray-800 truncate">
+                                        <span className="text-xs font-semibold text-[var(--ui-text)] truncate">
                                             {displayName}
                                         </span>
-                                        <span className="text-[9px] font-bold text-[#0369a1] bg-[#e0f2fe] border border-[#38bdf8] uppercase tracking-wider px-1.5 py-0.5 rounded leading-none shrink-0">
+                                        <span className="text-[9px] font-bold text-[var(--primary-color-dark)] bg-[var(--primary-color-light)] border border-[var(--primary-color-muted)] uppercase tracking-wider px-1.5 py-0.5 rounded leading-none shrink-0">
                                             {displayRole}
                                         </span>
                                     </div>
                                 </div>
                                 <div className="space-y-0.5">
                                     <MenuItem
-                                        icon={<FaUserCircle size={13} className="text-gray-500" />}
+                                        icon={<FaUserCircle size={13} className="text-[var(--ui-text-muted)]" />}
                                         text="My Profile"
-                                        className="text-xs text-gray-700 font-medium hover:bg-gray-100"
+                                        className="text-xs text-[var(--ui-text)] font-medium hover:bg-[var(--ui-surface-sunken)]"
                                         onClick={handleOpenCompanyProfile}
                                     />
                                     <MenuItem
-                                        icon={<FaCog size={13} className="text-gray-500" />}
+                                        icon={<FaCog size={13} className="text-[var(--ui-text-muted)]" />}
                                         text="Settings"
-                                        className="text-xs text-gray-700 font-medium hover:bg-gray-100"
+                                        className="text-xs text-[var(--ui-text)] font-medium hover:bg-[var(--ui-surface-sunken)]"
                                         onClick={handleOpenCompanyProfile}
                                     />
                                 </div>
 
-                                <div className="my-1 border-t border-gray-100" />
+                                <div className="my-1 border-t border-[var(--ui-border)]" />
 
                                 <MenuItem
                                     icon={<FaSignOutAlt size={13} />}
                                     text="Logout"
-                                    className="text-red-500 text-xs font-medium hover:bg-red-50"
+                                    className="text-[var(--ui-danger)] text-xs font-medium hover:bg-[var(--ui-danger-light)]"
                                     onClick={handleLogout}
                                 />
                             </div>
@@ -176,13 +176,13 @@ const Header = ({ sidebarClick }: { sidebarClick: boolean }) => {
 
                 {showSidebarMenu && (
                     <div
-                        className={`fixed top-12 left-0 w-full h-[calc(100vh-48px)] border-t border-gray-200 overflow-auto bg-white shadow-lg transform transition-all duration-300 ease-in-out ${showSidebarMenu ? "translate-x-0 opacity-100" : "-translate-x-full opacity-0"
+                        className={`fixed top-12 left-0 w-full h-[calc(100vh-48px)] border-t border-[var(--ui-border)] overflow-auto bg-[var(--ui-surface)] shadow-lg transform transition-all duration-300 ease-in-out ${showSidebarMenu ? "translate-x-0 opacity-100" : "-translate-x-full opacity-0"
                             }`}
                     >
                         <div className="p-4">
                             {menu.map((section) => (
                                 <div key={section.sectionName} className="p-2 mb-2">
-                                    <p className="text-[12px] text-[#092c4c] font-bold mb-2">
+                                    <p className="text-[12px] text-[var(--primary-color-dark)] font-bold mb-2">
                                         {section.sectionName}
                                     </p>
 
@@ -205,15 +205,15 @@ const Header = ({ sidebarClick }: { sidebarClick: boolean }) => {
                                                             }
                                                         }}
                                                         className={`w-full group px-[12px] py-[8px] flex items-center justify-between cursor-pointer rounded-md transition-all mb-[2px] ${isOpen || isParentActive
-                                                            ? "bg-[#FFF7F0] text-[var(--color-primary)]"
-                                                            : "hover:bg-gray-100"
+                                                            ? "bg-[var(--ui-warning-light)] text-[var(--color-primary)]"
+                                                            : "hover:bg-[var(--ui-surface-sunken)]"
                                                             }`}
                                                     >
                                                         <div className="flex items-center gap-2">
                                                             <span
                                                                 className={`text-[18px] transition-all ${isOpen || isParentActive
                                                                     ? "text-[var(--color-primary)]"
-                                                                    : "text-[#5b6670] group-hover:text-[var(--color-primary)]"
+                                                                    : "text-[var(--ui-text-muted)] group-hover:text-[var(--color-primary)]"
                                                                     }`}
                                                             >
                                                                 <Icon />
@@ -221,18 +221,18 @@ const Header = ({ sidebarClick }: { sidebarClick: boolean }) => {
                                                             <span
                                                                 className={`text-[14px] font-medium transition-all ${isOpen || isParentActive
                                                                     ? "text-[var(--color-primary)]"
-                                                                    : "text-[#5b6670] group-hover:text-[var(--color-primary)]"
+                                                                    : "text-[var(--ui-text-muted)] group-hover:text-[var(--color-primary)]"
                                                                     }`}
                                                             >
                                                                 {item.name}
                                                             </span>
                                                         </div>
 
-                                                        <span className="text-xl bg-gray-100 rounded-full">
+                                                        <span className="text-xl bg-[var(--ui-surface-sunken)] rounded-full">
                                                             {isOpen ? (
                                                                 <RiArrowDropDownLine className="text-[var(--color-primary)]" />
                                                             ) : (
-                                                                <RiArrowDropRightLine className="text-gray-600" />
+                                                                <RiArrowDropRightLine className="text-[var(--ui-text-muted)]" />
                                                             )}
                                                         </span>
                                                     </div>
@@ -241,15 +241,15 @@ const Header = ({ sidebarClick }: { sidebarClick: boolean }) => {
                                                         to={item.path}
                                                         onClick={closeSidebarWithTransition}
                                                         className={`w-full group px-[12px] py-[8px] flex items-center justify-between cursor-pointer rounded-md transition-all mb-[2px] ${pathname === item.path
-                                                            ? "bg-[#FFF7F0] text-[var(--color-primary)]"
-                                                            : "hover:bg-gray-100"
+                                                            ? "bg-[var(--ui-warning-light)] text-[var(--color-primary)]"
+                                                            : "hover:bg-[var(--ui-surface-sunken)]"
                                                             }`}
                                                     >
                                                         <div className="flex items-center gap-2">
                                                             <span
                                                                 className={`text-[18px] transition-all ${pathname === item.path
                                                                     ? "text-[var(--color-primary)]"
-                                                                    : "text-[#5b6670] group-hover:text-[var(--color-primary)]"
+                                                                    : "text-[var(--ui-text-muted)] group-hover:text-[var(--color-primary)]"
                                                                     }`}
                                                             >
                                                                 <Icon />
@@ -257,7 +257,7 @@ const Header = ({ sidebarClick }: { sidebarClick: boolean }) => {
                                                             <span
                                                                 className={`text-[14px] font-medium transition-all ${pathname === item.path
                                                                     ? "text-[var(--color-primary)]"
-                                                                    : "text-[#5b6670] group-hover:text-[var(--color-primary)]"
+                                                                    : "text-[var(--ui-text-muted)] group-hover:text-[var(--color-primary)]"
                                                                     }`}
                                                             >
                                                                 {item.name}
@@ -277,8 +277,8 @@ const Header = ({ sidebarClick }: { sidebarClick: boolean }) => {
                                                                         to={subItem.path}
                                                                         onClick={closeSidebarWithTransition}
                                                                         className={`block w-full rounded-md pl-6 py-2.5 p-2 text-[13px] transition-all 
-                                                                            hover:bg-gray-100 hover:text-[var(--color-primary)] 
-                                                                            ${isActive ? "text-[var(--color-primary)] font-medium" : "text-[#646b72]"}`}
+                                                                            hover:bg-[var(--ui-surface-sunken)] hover:text-[var(--color-primary)] 
+                                                                            ${isActive ? "text-[var(--color-primary)] font-medium" : "text-[var(--ui-text-muted)]"}`}
                                                                     >
                                                                         <span className="flex justify-start items-center gap-2">
                                                                             <GoDotFill className="text-[10px]" />
@@ -304,11 +304,11 @@ const Header = ({ sidebarClick }: { sidebarClick: boolean }) => {
                 <div className="" onClick={() => {}}></div>
             )}
 
-            <div className="hidden lg:flex justify-end items-center px-4 h-12 bg-white border-b border-gray-200">
+            <div className="hidden lg:flex justify-end items-center px-4 h-12 admin-header-strip border-b border-[var(--ui-border)]">
                 <div className="relative">
                     <div
                         ref={userImageRef}
-                        className="hidden lg:flex items-center gap-2 cursor-pointer bg-gray-100 border border-gray-200 px-2.5 py-1 rounded-md select-none"
+                        className="hidden lg:flex items-center gap-2 cursor-pointer bg-[var(--ui-surface)]/80 border border-[var(--ui-border)] px-2.5 py-1 rounded-xl select-none shadow-[0_8px_18px_-14px_rgba(15,23,42,0.35)]"
                         onClick={() => setShowUserDropdown(!showUserDropdown)}>
                         <MotionDiv className="flex items-center gap-2">
                             <img
@@ -316,12 +316,12 @@ const Header = ({ sidebarClick }: { sidebarClick: boolean }) => {
                                 alt="user"
                                 className="w-7 h-7 rounded object-cover"
                             />
-                            <span className="text-sm font-medium text-gray-800">
+                            <span className="text-sm font-medium text-[var(--ui-text)]">
                                 {displayName}
                             </span>
                             <IoChevronDown
                                 size={14}
-                                className={`text-gray-600 transition-transform duration-200 ${
+                                className={`text-[var(--ui-text-muted)] transition-transform duration-200 ${
                                     showUserDropdown ? "rotate-180" : ""
                                 }`}
                             />
@@ -332,24 +332,24 @@ const Header = ({ sidebarClick }: { sidebarClick: boolean }) => {
                         ref={dropdownRef}
                         aria-hidden={!showUserDropdown}
                         className={[
-                            "absolute top-[calc(100%+4px)] right-0 w-44 bg-white shadow-lg rounded-md border border-gray-200 p-1 z-50",
+                            "absolute top-[calc(100%+4px)] right-0 w-44 bg-[var(--ui-surface)] shadow-lg rounded-md border border-[var(--ui-border)] p-1 z-50",
                             "origin-top-right transition-all duration-200 ease-out transform",
                             showUserDropdown
                                 ? "opacity-100 translate-y-0 scale-100"
                                 : "opacity-0 translate-y-1 scale-95 pointer-events-none",
                         ].join(" ")}
                     >
-                        <div className="flex items-center gap-2 bg-gray-50 border border-gray-100 p-1.5 rounded mb-1">
+                        <div className="flex items-center gap-2 bg-[var(--ui-surface-muted)] border border-[var(--ui-border)] p-1.5 rounded mb-1">
                             <img
                                 src="/avatar.png"
                                 alt="user"
                                 className="w-6 h-6 rounded object-cover shrink-0"
                             />
                             <div className="flex items-center gap-1.5 min-w-0">
-                                <span className="text-xs font-semibold text-gray-800 truncate">
+                                <span className="text-xs font-semibold text-[var(--ui-text)] truncate">
                                     {displayName}
                                 </span>
-                                <span className="text-[9px] font-bold text-[#0369a1] bg-[#e0f2fe] border border-[#38bdf8] uppercase tracking-wider px-1.5 py-0.5 rounded leading-none shrink-0">
+                                <span className="text-[9px] font-bold text-[var(--primary-color-dark)] bg-[var(--primary-color-light)] border border-[var(--primary-color-muted)] uppercase tracking-wider px-1.5 py-0.5 rounded leading-none shrink-0">
                                     {displayRole}
                                 </span>
                             </div>
@@ -357,25 +357,25 @@ const Header = ({ sidebarClick }: { sidebarClick: boolean }) => {
 
                         <div className="space-y-0.5">
                             <MenuItem
-                                icon={<FaUserCircle size={13} className="text-gray-500" />}
+                                icon={<FaUserCircle size={13} className="text-[var(--ui-text-muted)]" />}
                                 text="My Profile"
-                                className="text-xs text-gray-700 font-medium hover:bg-gray-100"
+                                className="text-xs text-[var(--ui-text)] font-medium hover:bg-[var(--ui-surface-sunken)]"
                                 onClick={handleOpenCompanyProfile}
                             />
                             <MenuItem
-                                icon={<FaCog size={13} className="text-gray-500" />}
+                                icon={<FaCog size={13} className="text-[var(--ui-text-muted)]" />}
                                 text="Settings"
-                                className="text-xs text-gray-700 font-medium hover:bg-gray-100"
+                                className="text-xs text-[var(--ui-text)] font-medium hover:bg-[var(--ui-surface-sunken)]"
                                 onClick={handleOpenCompanyProfile}
                             />
                         </div>
 
-                        <div className="my-1 border-t border-gray-100" />
+                        <div className="my-1 border-t border-[var(--ui-border)]" />
 
                         <MenuItem
                             icon={<FaSignOutAlt size={13} />}
                             text="Logout"
-                            className="text-red-500 text-xs font-medium hover:bg-red-50"
+                            className="text-[var(--ui-danger)] text-xs font-medium hover:bg-[var(--ui-danger-light)]"
                             onClick={handleLogout}
                         />
                     </div>

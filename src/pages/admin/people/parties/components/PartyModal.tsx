@@ -150,20 +150,20 @@ const PartyModal: React.FC<PartyModalProps> = ({
       <form onSubmit={handleSubmit} className="flex flex-col gap-2.5 text-left">
         {/* Party Type Segmented Selector */}
         <div>
-          <label className="text-xs font-semibold text-gray-700 block mb-1">
-            Party Type <span className="text-red-500">*</span>
+          <label className="text-xs font-semibold text-[var(--ui-text)] block mb-1">
+            Party Type <span className="text-[var(--ui-danger)]">*</span>
           </label>
-          <div className="grid grid-cols-2 gap-1.5 p-1 bg-gray-100/90 rounded-xl border border-gray-200">
+          <div className="grid grid-cols-2 gap-1.5 p-1 bg-[var(--ui-surface-sunken)]/90 rounded-xl border border-[var(--ui-border)]">
             <button
               type="button"
               onClick={() => setPartyType("CUSTOMER")}
               className={`flex items-center justify-center gap-2 py-1.5 px-3 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                 partyType === "CUSTOMER"
-                  ? "bg-white text-[var(--primary-color)] shadow-xs border border-[var(--primary-color)]/30"
-                  : "text-gray-600 hover:text-black hover:bg-white/50 border border-transparent"
+                  ? "bg-[var(--ui-surface)] text-[var(--primary-color)] shadow-xs border border-[var(--primary-color)]/30"
+                  : "text-[var(--ui-text-muted)] hover:text-[var(--ui-text)] hover:bg-[var(--ui-surface)]/50 border border-transparent"
               }`}
             >
-              <FaUserTie className={partyType === "CUSTOMER" ? "text-[var(--primary-color)] text-xs" : "text-gray-400 text-xs"} />
+              <FaUserTie className={partyType === "CUSTOMER" ? "text-[var(--primary-color)] text-xs" : "text-[var(--ui-text-subtle)] text-xs"} />
               Customer
             </button>
             <button
@@ -171,11 +171,11 @@ const PartyModal: React.FC<PartyModalProps> = ({
               onClick={() => setPartyType("SUPPLIER")}
               className={`flex items-center justify-center gap-2 py-1.5 px-3 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                 partyType === "SUPPLIER"
-                  ? "bg-white text-emerald-600 shadow-xs border border-emerald-200"
-                  : "text-gray-600 hover:text-black hover:bg-white/50 border border-transparent"
+                  ? "bg-[var(--ui-surface)] text-[var(--ui-success)] shadow-xs border border-[var(--ui-success-border)]"
+                  : "text-[var(--ui-text-muted)] hover:text-[var(--ui-text)] hover:bg-[var(--ui-surface)]/50 border border-transparent"
               }`}
             >
-              <FaTruck className={partyType === "SUPPLIER" ? "text-emerald-500 text-xs" : "text-gray-400 text-xs"} />
+              <FaTruck className={partyType === "SUPPLIER" ? "text-[var(--ui-success)] text-xs" : "text-[var(--ui-text-subtle)] text-xs"} />
               Supplier
             </button>
           </div>
@@ -192,7 +192,7 @@ const PartyModal: React.FC<PartyModalProps> = ({
               onChange={(val: any) => setPartyName(typeof val === "string" ? val : (val?.target?.value ?? ""))}
               required
               message={errors.partyName}
-              icon={partyType === "CUSTOMER" ? <FaUserTie className="text-gray-400 text-xs" /> : <FaTruck className="text-gray-400 text-xs" />}
+              icon={partyType === "CUSTOMER" ? <FaUserTie className="text-[var(--ui-text-subtle)] text-xs" /> : <FaTruck className="text-[var(--ui-text-subtle)] text-xs" />}
             />
           </div>
 
@@ -205,7 +205,7 @@ const PartyModal: React.FC<PartyModalProps> = ({
               onChange={(val: any) => setPartyPhone(typeof val === "string" ? val : (val?.target?.value ?? ""))}
               required
               message={errors.partyPhone}
-              icon={<FaPhone className="text-gray-400 text-xs" />}
+              icon={<FaPhone className="text-[var(--ui-text-subtle)] text-xs" />}
             />
           </div>
 
@@ -217,7 +217,7 @@ const PartyModal: React.FC<PartyModalProps> = ({
               placeholder="e.g. info@domain.com"
               value={partyEmail}
               onChange={(val: any) => setPartyEmail(typeof val === "string" ? val : (val?.target?.value ?? ""))}
-              icon={<FaEnvelope className="text-gray-400 text-xs" />}
+              icon={<FaEnvelope className="text-[var(--ui-text-subtle)] text-xs" />}
             />
           </div>
 
@@ -228,7 +228,7 @@ const PartyModal: React.FC<PartyModalProps> = ({
               placeholder="Street address, city, district..."
               value={partyAddress}
               onChange={(val: any) => setPartyAddress(typeof val === "string" ? val : (val?.target?.value ?? ""))}
-              icon={<FaMapMarkerAlt className="text-gray-400 text-xs" />}
+              icon={<FaMapMarkerAlt className="text-[var(--ui-text-subtle)] text-xs" />}
             />
           </div>
 
@@ -240,23 +240,23 @@ const PartyModal: React.FC<PartyModalProps> = ({
               placeholder="0.00"
               value={openingBalance}
               onChange={(val: any) => setOpeningBalance(typeof val === "string" ? val : (val?.target?.value ?? ""))}
-              icon={<FaMoneyBillWave className="text-gray-400 text-xs" />}
+              icon={<FaMoneyBillWave className="text-[var(--ui-text-subtle)] text-xs" />}
             />
           </div>
 
           {/* Row 3, Col 2: Status */}
           <div>
-            <label className="text-xs font-semibold text-gray-700 block mb-1">Status</label>
+            <label className="text-xs font-semibold text-[var(--ui-text)] block mb-1">Status</label>
             <div className="relative">
               <select
                 value={status}
                 onChange={(e) => setStatus(e.target.value as "active" | "inactive")}
-                className="w-full h-9 px-2.5 pr-8 text-xs bg-white border border-gray-200 rounded-lg text-black focus:outline-none focus:ring-1 focus:ring-[var(--primary-color,#009fe3)] focus:border-[var(--primary-color,#009fe3)] appearance-none cursor-pointer"
+                className="w-full h-9 px-2.5 pr-8 text-xs bg-[var(--ui-surface)] border border-[var(--ui-border)] rounded-lg text-[var(--ui-text)] focus:outline-none focus:ring-1 focus:ring-[var(--primary-color,#009fe3)] focus:border-[var(--primary-color,#009fe3)] appearance-none cursor-pointer"
               >
                 <option value="active">Active</option>
                 <option value="inactive">Inactive</option>
               </select>
-              <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-500">
+              <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-[var(--ui-text-muted)]">
                 <RiArrowDropDownLine className="text-xl" />
               </div>
             </div>
@@ -264,7 +264,7 @@ const PartyModal: React.FC<PartyModalProps> = ({
         </div>
 
         {/* Action Buttons */}
-        <div className="flex justify-end items-center gap-2 mt-1 pt-2.5 border-t border-gray-100">
+        <div className="flex justify-end items-center gap-2 mt-1 pt-2.5 border-t border-[var(--ui-border)]">
           <Button
             label="Cancel"
             onClick={onClose}

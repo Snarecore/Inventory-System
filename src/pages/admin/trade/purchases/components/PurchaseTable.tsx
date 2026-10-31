@@ -199,14 +199,14 @@ export const PurchaseTable: React.FC<PurchaseTableProps> = ({
     return (
       <span
         onClick={setSortBy ? handleClick : undefined}
-        className={`inline-flex items-center gap-1 select-none text-black ${
+        className={`inline-flex items-center gap-1 select-none text-[var(--ui-text)] ${
           setSortBy ? "cursor-pointer" : ""
         }`}
       >
         <span>{label}</span>
         <FiChevronDown
           size={11}
-          className={`text-black transition-transform duration-200 ${
+          className={`text-[var(--ui-text)] transition-transform duration-200 ${
             isAsc ? "rotate-180" : ""
           }`}
         />
@@ -304,27 +304,27 @@ export const PurchaseTable: React.FC<PurchaseTableProps> = ({
               <button
                 type="button"
                 onClick={() => setIsSupplierDropdownOpen(!isSupplierDropdownOpen)}
-                className="w-full h-8 px-2 flex items-center justify-between text-xs border border-gray-200 rounded-lg bg-gray-50/50 hover:bg-white text-black font-medium focus:outline-none focus:border-[var(--color-primary)] cursor-pointer"
+                className="w-full h-8 px-2 flex items-center justify-between text-xs border border-[var(--ui-border)] rounded-lg bg-[var(--ui-surface-muted)]/50 hover:bg-[var(--ui-surface)] text-[var(--ui-text)] font-medium focus:outline-none focus:border-[var(--color-primary)] cursor-pointer"
               >
                 <span className="truncate flex-1 text-left">{currentSupplierLabel}</span>
-                <FiChevronDown className="text-gray-500 shrink-0 ml-1 text-xs" size={13} />
+                <FiChevronDown className="text-[var(--ui-text-muted)] shrink-0 ml-1 text-xs" size={13} />
               </button>
 
               {isSupplierDropdownOpen && (
-                <div className="absolute left-0 top-full mt-1 w-64 max-w-[calc(100vw-2rem)] bg-white rounded-lg shadow-2xl border border-gray-200 p-2 z-[99999]">
+                <div className="absolute left-0 top-full mt-1 w-64 max-w-[calc(100vw-2rem)] bg-[var(--ui-surface)] rounded-lg shadow-2xl border border-[var(--ui-border)] p-2 z-[99999]">
                   <div className="relative mb-2">
-                    <FaSearch className="absolute left-2.5 top-2.5 text-gray-400 text-xs" />
+                    <FaSearch className="absolute left-2.5 top-2.5 text-[var(--ui-text-subtle)] text-xs" />
                     <input
                       type="text"
                       placeholder="Search supplier name, phone..."
                       value={supplierSearchQuery}
                       onChange={(e) => setSupplierSearchQuery(e.target.value)}
-                      className="w-full pl-7 pr-2 py-1.5 text-xs border border-[var(--color-primary)] rounded-md focus:outline-none focus:border-[var(--color-primary)] text-black"
+                      className="w-full pl-7 pr-2 py-1.5 text-xs border border-[var(--color-primary)] rounded-md focus:outline-none focus:border-[var(--color-primary)] text-[var(--ui-text)]"
                       autoFocus
                     />
                   </div>
 
-                  <div className="max-h-48 overflow-y-auto divide-y divide-gray-100">
+                  <div className="max-h-48 overflow-y-auto divide-y divide-[var(--ui-border)]">
                     <div
                       onClick={() => {
                         setSupplierFilter("");
@@ -332,8 +332,8 @@ export const PurchaseTable: React.FC<PurchaseTableProps> = ({
                         setSupplierSearchQuery("");
                         setCurrentPageNumber(1);
                       }}
-                      className={`p-2 hover:bg-sky-50 cursor-pointer rounded-md transition-colors text-xs font-medium ${
-                        !supplierFilter ? "bg-sky-50 text-[var(--color-primary)] font-semibold" : "text-black"
+                      className={`p-2 hover:bg-[var(--primary-color-light)] cursor-pointer rounded-md transition-colors text-xs font-medium ${
+                        !supplierFilter ? "bg-[var(--primary-color-light)] text-[var(--color-primary)] font-semibold" : "text-[var(--ui-text)]"
                       }`}
                     >
                       All Suppliers
@@ -355,13 +355,13 @@ export const PurchaseTable: React.FC<PurchaseTableProps> = ({
                               setSupplierSearchQuery("");
                               setCurrentPageNumber(1);
                             }}
-                            className={`p-2 hover:bg-sky-50 cursor-pointer rounded-md transition-colors text-xs flex justify-between items-center ${
-                              isSelected ? "bg-sky-50 text-[var(--color-primary)] font-semibold" : "text-black"
+                            className={`p-2 hover:bg-[var(--primary-color-light)] cursor-pointer rounded-md transition-colors text-xs flex justify-between items-center ${
+                              isSelected ? "bg-[var(--primary-color-light)] text-[var(--color-primary)] font-semibold" : "text-[var(--ui-text)]"
                             }`}
                           >
                             <span className="truncate">{sName}</span>
                             {sPhone && (
-                              <span className="text-[10px] text-gray-500 shrink-0 ml-1">
+                              <span className="text-[10px] text-[var(--ui-text-muted)] shrink-0 ml-1">
                                 ({sPhone})
                               </span>
                             )}
@@ -369,7 +369,7 @@ export const PurchaseTable: React.FC<PurchaseTableProps> = ({
                         );
                       })
                     ) : (
-                      <div className="p-3 text-center text-gray-400 text-xs">No supplier found</div>
+                      <div className="p-3 text-center text-[var(--ui-text-subtle)] text-xs">No supplier found</div>
                     )}
                   </div>
                 </div>
@@ -385,14 +385,14 @@ export const PurchaseTable: React.FC<PurchaseTableProps> = ({
                 setStatusFilter(e.target.value);
                 setCurrentPageNumber(1);
               }}
-              className="w-full h-8 pl-2.5 pr-6 text-xs border border-gray-200 rounded-lg bg-gray-50/50 hover:bg-white text-black font-medium focus:outline-none focus:border-[var(--color-primary)] cursor-pointer appearance-none"
+              className="w-full h-8 pl-2.5 pr-6 text-xs border border-[var(--ui-border)] rounded-lg bg-[var(--ui-surface-muted)]/50 hover:bg-[var(--ui-surface)] text-[var(--ui-text)] font-medium focus:outline-none focus:border-[var(--color-primary)] cursor-pointer appearance-none"
             >
               <option value="">All Status</option>
               <option value="PAID">Paid</option>
               <option value="PARTIAL">Partial</option>
               <option value="DUE">Due / Credit</option>
             </select>
-            <FiChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none text-xs" size={13} />
+            <FiChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 text-[var(--ui-text-muted)] pointer-events-none text-xs" size={13} />
           </div>
 
           {/* Payment Method Filter */}
@@ -403,18 +403,18 @@ export const PurchaseTable: React.FC<PurchaseTableProps> = ({
                 setPaymentMethodFilter(e.target.value);
                 setCurrentPageNumber(1);
               }}
-              className="w-full h-8 pl-2.5 pr-6 text-xs border border-gray-200 rounded-lg bg-gray-50/50 hover:bg-white text-black font-medium focus:outline-none focus:border-[var(--color-primary)] cursor-pointer appearance-none"
+              className="w-full h-8 pl-2.5 pr-6 text-xs border border-[var(--ui-border)] rounded-lg bg-[var(--ui-surface-muted)]/50 hover:bg-[var(--ui-surface)] text-[var(--ui-text)] font-medium focus:outline-none focus:border-[var(--color-primary)] cursor-pointer appearance-none"
             >
               <option value="all">All Methods</option>
               <option value="CASH">Cash</option>
               <option value="CREDIT">Credit</option>
             </select>
-            <FiChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none text-xs" size={13} />
+            <FiChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 text-[var(--ui-text-muted)] pointer-events-none text-xs" size={13} />
           </div>
         </div>
 
         {/* Right Actions: Column Visibility, Export */}
-        <div className="flex items-center justify-end gap-1.5 sm:gap-2 shrink-0 w-full sm:w-auto pt-1 sm:pt-0 border-t sm:border-t-0 border-gray-100">
+        <div className="flex items-center justify-end gap-1.5 sm:gap-2 shrink-0 w-full sm:w-auto pt-1 sm:pt-0 border-t sm:border-t-0 border-[var(--ui-border)]">
           {/* Column Visibility Menu */}
           <ColumnVisibilityDropdown
             columns={availableColumns}
@@ -428,9 +428,9 @@ export const PurchaseTable: React.FC<PurchaseTableProps> = ({
               type="button"
               onClick={handleExport}
               title="Download Excel Report"
-              className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3 h-8 text-[11px] sm:text-xs font-semibold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 rounded-lg transition-all shadow-xs cursor-pointer active:scale-95"
+              className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3 h-8 text-[11px] sm:text-xs font-semibold text-[var(--ui-success-dark)] bg-[var(--ui-success-light)] hover:bg-[var(--ui-success-border)] border border-[var(--ui-success-border)] rounded-lg transition-all shadow-xs cursor-pointer active:scale-95"
             >
-              <FaFileExcel className="text-emerald-600 shrink-0" size={12} />
+              <FaFileExcel className="text-[var(--ui-success)] shrink-0" size={12} />
               <span>Export</span>
             </button>
           </div>
@@ -484,13 +484,13 @@ export const PurchaseTable: React.FC<PurchaseTableProps> = ({
                   const paymentType = (purchase.paymentType || "CASH").toUpperCase();
 
                   let statusBadge = "Paid";
-                  let statusBg = "bg-emerald-100 text-emerald-800 border-emerald-300 font-semibold";
+                  let statusBg = "bg-[var(--ui-success-border)] text-[var(--ui-success-dark)] border-[var(--ui-success-border)] font-semibold";
                   if (dueAmount > 0 && paidAmount > 0) {
                     statusBadge = "Partial";
-                    statusBg = "bg-amber-100 text-amber-800 border-amber-300 font-semibold";
+                    statusBg = "bg-[var(--ui-warning-border)] text-[var(--ui-warning-dark)] border-[var(--ui-warning-border)] font-semibold";
                   } else if (dueAmount > 0 && paidAmount === 0) {
                     statusBadge = "Due";
-                    statusBg = "bg-rose-100 text-rose-800 border-rose-300 font-semibold";
+                    statusBg = "bg-[var(--ui-danger-border)] text-[var(--ui-danger-dark)] border-[var(--ui-danger-border)] font-semibold";
                   }
 
                   const isAlreadyReturned = Boolean(
@@ -507,23 +507,23 @@ export const PurchaseTable: React.FC<PurchaseTableProps> = ({
                   return (
                     <tr
                       key={purchase.id}
-                      className="hover:bg-sky-50/40 transition-colors group"
+                      className="hover:bg-[var(--primary-color-light)]/40 transition-colors group"
                     >
                       {/* SL */}
                       {isColVisible("sl") && (
-                        <td className="py-2.5 px-3 text-center text-black text-xs font-normal">
+                        <td className="py-2.5 px-3 text-center text-[var(--ui-text)] text-xs font-normal">
                           {serialNumber}
                         </td>
                       )}
 
                       {/* Order ID */}
                       {isColVisible("orderId") && (
-                        <td className="py-2.5 px-3 text-black text-xs font-normal whitespace-nowrap">
+                        <td className="py-2.5 px-3 text-[var(--ui-text)] text-xs font-normal whitespace-nowrap">
                           <div className="flex items-center gap-1.5 group/ord">
                             <span
                               onClick={() => onView(purchase)}
                               title="Click to view invoice"
-                              className="cursor-pointer hover:text-sky-600 font-medium transition-colors"
+                              className="cursor-pointer hover:text-[var(--primary-color)] font-medium transition-colors"
                             >
                               {purchase.orderNo}
                             </span>
@@ -532,10 +532,10 @@ export const PurchaseTable: React.FC<PurchaseTableProps> = ({
                                 type="button"
                                 onClick={() => handleCopyOrderId(purchase.orderNo, purchase.id)}
                                 title="Copy Order ID"
-                                className="p-1 text-gray-400 hover:text-sky-600 transition-colors opacity-0 group-hover/ord:opacity-100 cursor-pointer"
+                                className="p-1 text-[var(--ui-text-subtle)] hover:text-[var(--primary-color)] transition-colors opacity-0 group-hover/ord:opacity-100 cursor-pointer"
                               >
                                 {copiedId === purchase.id ? (
-                                  <FiCheck className="text-emerald-600 text-xs" />
+                                  <FiCheck className="text-[var(--ui-success)] text-xs" />
                                 ) : (
                                   <FiCopy size={12} />
                                 )}
@@ -547,22 +547,22 @@ export const PurchaseTable: React.FC<PurchaseTableProps> = ({
 
                       {/* Supplier */}
                       {isColVisible("supplier") && (
-                        <td className="py-2.5 px-3 text-black text-xs font-normal whitespace-nowrap">
+                        <td className="py-2.5 px-3 text-[var(--ui-text)] text-xs font-normal whitespace-nowrap">
                           {purchase.supplierName || "Direct Supplier"}
                         </td>
                       )}
 
                       {/* Phone */}
                       {isColVisible("phone") && (
-                        <td className="py-2.5 px-3 text-black text-xs font-normal whitespace-nowrap">
+                        <td className="py-2.5 px-3 text-[var(--ui-text)] text-xs font-normal whitespace-nowrap">
                           {purchase.supplierPhone || "-"}
                         </td>
                       )}
 
                       {/* Date */}
                       {isColVisible("date") && (
-                        <td className="py-2.5 px-3 text-black text-xs font-normal whitespace-nowrap">
-                          <span className="flex items-center gap-1 text-[11px] text-black font-normal">
+                        <td className="py-2.5 px-3 text-[var(--ui-text)] text-xs font-normal whitespace-nowrap">
+                          <span className="flex items-center gap-1 text-[11px] text-[var(--ui-text)] font-normal">
                             {purchase.purchaseDate || (purchase.createdAt ? purchase.createdAt.substring(0, 10) : "N/A")}
                           </span>
                         </td>
@@ -571,7 +571,7 @@ export const PurchaseTable: React.FC<PurchaseTableProps> = ({
                       {/* Items */}
                       {isColVisible("items") && (
                         <td className="py-2.5 px-3 text-center">
-                          <span className="inline-block px-1.5 py-0.5 bg-gray-100 text-black rounded text-[11px] font-normal">
+                          <span className="inline-block px-1.5 py-0.5 bg-[var(--ui-surface-sunken)] text-[var(--ui-text)] rounded text-[11px] font-normal">
                             {itemsCount}
                           </span>
                         </td>
@@ -579,21 +579,21 @@ export const PurchaseTable: React.FC<PurchaseTableProps> = ({
 
                       {/* Grand Total */}
                       {isColVisible("total") && (
-                        <td className="py-2.5 px-3 text-right text-black text-xs font-normal">
+                        <td className="py-2.5 px-3 text-right text-[var(--ui-text)] text-xs font-normal">
                           ৳ {formatMoney(grandTotal)}
                         </td>
                       )}
 
                       {/* Paid */}
                       {isColVisible("paid") && (
-                        <td className="py-2.5 px-3 text-right text-black text-xs font-normal">
+                        <td className="py-2.5 px-3 text-right text-[var(--ui-text)] text-xs font-normal">
                           ৳ {formatMoney(paidAmount)}
                         </td>
                       )}
 
                       {/* Due */}
                       {isColVisible("due") && (
-                        <td className="py-2.5 px-3 text-right text-black text-xs font-normal">
+                        <td className="py-2.5 px-3 text-right text-[var(--ui-text)] text-xs font-normal">
                           ৳ {formatMoney(dueAmount)}
                         </td>
                       )}
@@ -601,7 +601,7 @@ export const PurchaseTable: React.FC<PurchaseTableProps> = ({
                       {/* Method */}
                       {isColVisible("method") && (
                         <td className="py-2.5 px-3 text-center">
-                          <span className="inline-block px-1.5 py-0.5 text-[10px] font-semibold bg-sky-100 text-sky-900 border border-sky-300 rounded-md">
+                          <span className="inline-block px-1.5 py-0.5 text-[10px] font-semibold bg-[var(--primary-color-muted)] text-[var(--primary-color-dark)] border border-[var(--primary-color-muted)] rounded-md">
                             {paymentType}
                           </span>
                         </td>

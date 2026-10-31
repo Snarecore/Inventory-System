@@ -55,37 +55,37 @@ export default function HowWeWorkPage() {
       icon: Globe,
       title: "Visa Application Guidance",
       description: "Expert guidance to navigate the complex visa application process and maximize your chances of success.",
-      color: "text-blue-600"
+      color: "text-[var(--primary-color)]"
     },
     {
       icon: FileText,
       title: "Document Preparation",
       description: "Professional assistance in preparing all required documents, forms, and supporting materials required for your application.",
-      color: "text-green-600"
+      color: "text-[var(--ui-success)]"
     },
     {
       icon: Users,
       title: "Interview Coaching",
       description: "One-on-one coaching sessions to help you prepare effective interview questions and prepare a compelling case for immigration officers.",
-      color: "text-purple-600"
+      color: "text-[var(--ui-info)]"
     },
     {
       icon: Plane,
       title: "Travel & Relocation Support",
       description: "We handle all the logistics of your travel and relocation experience, including flight arrangements, finding flights to arranging housing, so you can focus on starting your new life abroad.",
-      color: "text-orange-600"
+      color: "text-[var(--ui-warning)]"
     },
     {
       icon: Shield,
       title: "Post-Arrival Assistance",
       description: "Our team helps you get settled in your new country, including registering with local authorities, setting up bank accounts and more.",
-      color: "text-teal-600"
+      color: "text-[var(--ui-info)]"
     },
     {
       icon: CheckCircle,
       title: "Ongoing Check-ins",
       description: "We maintain regular contact to ensure you're adapting well to your new life and are able to access resources and put your initial support.",
-      color: "text-red-600"
+      color: "text-[var(--ui-danger)]"
     }
   ];
 
@@ -97,9 +97,9 @@ export default function HowWeWorkPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-[var(--ui-surface-muted)]">
       {/* Navigation */}
-      <nav className="bg-white shadow-sm sticky top-0 z-50">
+      <nav className="bg-[var(--ui-surface)] shadow-sm sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 md:px-8">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center">
@@ -123,14 +123,14 @@ export default function HowWeWorkPage() {
             <h1 className="text-5xl md:text-6xl font-bold mb-6 text-white">
               How We Work
             </h1>
-            <p className="text-xl md:text-2xl mb-8 max-w-3xl mx-auto text-gray-100">
+            <p className="text-xl md:text-2xl mb-8 max-w-3xl mx-auto text-[var(--ui-surface)]">
               Our systematic approach to career development and education consultancy ensures your success every step of the way.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <button className="bg-[var(--secondary-color)] hover:bg-[var(--secondary-color-light)] text-white px-8 py-4 rounded-lg font-medium transition-colors duration-200">
                 Start Your Journey
               </button>
-              <button className="border-2 border-white text-white hover:bg-white hover:text-[var(--primary-color)] px-8 py-4 rounded-lg font-medium transition-all duration-200">
+              <button className="border-2 border-[var(--ui-surface)] text-white hover:bg-[var(--ui-surface)] hover:text-[var(--primary-color)] px-8 py-4 rounded-lg font-medium transition-all duration-200">
                 Learn More
               </button>
             </div>
@@ -139,7 +139,7 @@ export default function HowWeWorkPage() {
       </section>
 
       {/* Statistics Section */}
-      <section className="py-16 bg-white">
+      <section className="py-16 bg-[var(--ui-surface)]">
         <div className="max-w-7xl mx-auto px-4 md:px-8">
           <div className="text-center mb-12">
             <h2 className="text-3xl md:text-4xl font-bold mb-4">Study. Travel. Live</h2>
@@ -163,7 +163,7 @@ export default function HowWeWorkPage() {
       </section>
 
       {/* Our Process Section */}
-      <section className="py-20 bg-gray-50">
+      <section className="py-20 bg-[var(--ui-surface-muted)]">
         <div className="max-w-7xl mx-auto px-4 md:px-8">
           <div className="text-center mb-16">
             <h2 className="text-4xl md:text-5xl font-bold mb-6">Our Proven Process</h2>
@@ -210,7 +210,7 @@ export default function HowWeWorkPage() {
       </section>
 
       {/* Services Section */}
-      <section className="py-20 bg-white">
+      <section className="py-20 bg-[var(--ui-surface)]">
         <div className="max-w-7xl mx-auto px-4 md:px-8">
           <div className="text-center mb-16">
             <h2 className="text-4xl md:text-5xl font-bold mb-6">Our Comprehensive Services</h2>
@@ -222,7 +222,7 @@ export default function HowWeWorkPage() {
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
             {services.map((service, index) => (
               <div key={index} className="service-card group">
-                <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
+                <div className="w-16 h-16 rounded-full bg-[var(--ui-surface-sunken)] flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
                   <service.icon className={`w-8 h-8 ${service.color}`} />
                 </div>
                 <h3 className="text-xl font-bold mb-4">{service.title}</h3>
@@ -251,7 +251,7 @@ export default function HowWeWorkPage() {
       </section>
 
       {/* CTA Section */}
-      <section className="py-20 bg-gray-900 text-white">
+      <section className="py-20 bg-[var(--ui-text)] text-white">
         <div className="max-w-7xl mx-auto px-4 md:px-8">
           <div className="text-center">
             <h2 className="text-4xl md:text-5xl font-bold mb-6">
@@ -259,10 +259,10 @@ export default function HowWeWorkPage() {
             </h2>
             <div className="flex justify-center mb-8">
               <div className="flex space-x-2">
-                <div className="w-8 h-8 bg-red-500 rounded-full"></div>
-                <div className="w-8 h-8 bg-yellow-500 rounded-full"></div>
-                <div className="w-8 h-8 bg-green-500 rounded-full"></div>
-                <div className="w-8 h-8 bg-blue-500 rounded-full"></div>
+                <div className="w-8 h-8 bg-[var(--ui-danger)] rounded-full"></div>
+                <div className="w-8 h-8 bg-[var(--ui-warning)] rounded-full"></div>
+                <div className="w-8 h-8 bg-[var(--ui-success)] rounded-full"></div>
+                <div className="w-8 h-8 bg-[var(--primary-color)] rounded-full"></div>
               </div>
             </div>
             <button className="btn-primary text-lg px-8 py-4">
@@ -327,7 +327,7 @@ export default function HowWeWorkPage() {
                 <input 
                   type="email" 
                   placeholder="Enter your email"
-                  className="flex-1 px-4 py-2 rounded-l-lg text-black focus:outline-none focus:ring-2 focus:ring-[var(--secondary-color)]"
+                  className="flex-1 px-4 py-2 rounded-l-lg text-[var(--ui-text)] focus:outline-none focus:ring-2 focus:ring-[var(--secondary-color)]"
                 />
                 <button className="bg-[var(--secondary-color)] hover:bg-[var(--secondary-color-light)] px-4 py-2 rounded-r-lg transition-colors">
                   Subscribe
@@ -339,7 +339,7 @@ export default function HowWeWorkPage() {
             </div>
           </div>
           
-          <div className="border-t border-gray-700 mt-12 pt-8 text-center text-[var(--gray-color)]">
+          <div className="border-t border-[var(--ui-text-muted)] mt-12 pt-8 text-center text-[var(--gray-color)]">
             <p>&copy; 2024 The Benchmark. All rights reserved.</p>
           </div>
         </div>

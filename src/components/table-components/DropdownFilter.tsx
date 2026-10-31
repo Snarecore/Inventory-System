@@ -36,7 +36,7 @@ const DropdownFilter: React.FC<DropdownFilterProps> = ({
 		<div className="relative inline-block" ref={dropdownRef}>
 			{/* Trigger */}
 			<div
-				className={`border border-gray-200 px-2.5 rounded-md cursor-pointer inline-flex justify-between items-center gap-1 h-[32px] text-xs text-black w-full sm:w-fit
+				className={`border border-[var(--ui-border)] px-2.5 rounded-md cursor-pointer inline-flex justify-between items-center gap-1 h-[32px] text-xs text-[var(--ui-text)] w-full sm:w-fit
           ${isOpen ? "bg-[var(--color-primary)] text-white" : "hover:bg-[var(--color-primary)] hover:text-white transition-all ease-in duration-300"}`}
 				onClick={onToggle}
 				role="button"
@@ -52,7 +52,7 @@ const DropdownFilter: React.FC<DropdownFilterProps> = ({
 			{isOpen && (
 				<div
 					className="absolute top-full right-0 mt-1 min-w-full w-max whitespace-nowrap
-						   bg-white border border-gray-200 rounded-md shadow-lg z-50
+						   bg-[var(--ui-surface)] border border-[var(--ui-border)] rounded-md shadow-lg z-50
 						   max-h-60 overflow-auto dropdownScrollbar p-2"
 					role="listbox"
 				>

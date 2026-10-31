@@ -120,16 +120,16 @@ export const HeroSlider: React.FC = () => {
     <Container as="section">
       {/* Main Banner Card */}
       <div
-        className="relative overflow-hidden rounded-2xl bg-[#f4f9fd] border border-sky-100"
+        className="relative overflow-hidden rounded-2xl bg-[var(--primary-color-light)] border border-[var(--primary-color-muted)]"
         onMouseEnter={() => setIsPaused(true)}
         onMouseLeave={() => setIsPaused(false)}
       >
         {/* Soft Background Tint */}
-        <div className="absolute right-0 top-0 w-1/2 h-full bg-gradient-to-bl from-sky-100/50 via-sky-50/20 to-transparent pointer-events-none" />
+        <div className="absolute right-0 top-0 w-1/2 h-full bg-gradient-to-bl from-[var(--primary-color-muted)]/50 via-[var(--primary-color-light)]/20 to-transparent pointer-events-none" />
 
         {/* Floating Tag Top-Right */}
-        <div className="absolute top-5 right-6 hidden md:flex items-center gap-2 text-xs font-semibold text-[#154674] bg-white px-3.5 py-1.5 rounded-lg border border-slate-200">
-          <HiOutlineCheckCircle className="h-4 w-4 text-[#009fe3]" />
+        <div className="absolute top-5 right-6 hidden md:flex items-center gap-2 text-xs font-semibold text-[var(--primary-color-dark)] bg-[var(--ui-surface)] px-3.5 py-1.5 rounded-lg border border-[var(--ui-border)]">
+          <HiOutlineCheckCircle className="h-4 w-4 text-[var(--primary-color)]" />
           <span>সব হিসাব এক জায়গায়</span>
         </div>
 
@@ -139,19 +139,19 @@ export const HeroSlider: React.FC = () => {
             {/* Left Column: Text & CTAs */}
             <div className="lg:col-span-6 space-y-5 text-left">
               {/* Badge */}
-              <div className="inline-flex items-center gap-2 rounded-lg bg-[#e6f4fe] px-3.5 py-1 text-xs font-semibold text-[#009fe3] border border-sky-200/80">
+              <div className="inline-flex items-center gap-2 rounded-lg bg-[var(--primary-color-light)] px-3.5 py-1 text-xs font-semibold text-[var(--primary-color)] border border-[var(--primary-color-muted)]/80">
                 <span>{slide.badge}</span>
               </div>
 
               {/* Headings */}
-              <h1 className="text-3xl sm:text-4xl lg:text-[46px] font-extrabold tracking-tight text-[#0d2a4a] leading-[1.25]">
+              <h1 className="text-3xl sm:text-4xl lg:text-[46px] font-extrabold tracking-tight text-[var(--primary-color-dark)] leading-[1.25]">
                 {slide.titleLine1} 
                 {slide.titleLine2} <br />
-                <span className="text-[#009fe3]">{slide.titleHighlight}</span>
+                <span className="text-[var(--primary-color)]">{slide.titleHighlight}</span>
               </h1>
 
               {/* Description */}
-              <p className="text-sm sm:text-base text-slate-600 max-w-xl leading-relaxed">
+              <p className="text-sm sm:text-base text-[var(--ui-text-muted)] max-w-xl leading-relaxed">
                 {slide.description}
               </p>
 
@@ -160,7 +160,7 @@ export const HeroSlider: React.FC = () => {
                 {/* Primary Button */}
                 <Link
                   to={slide.primaryBtnTo}
-                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#009fe3] hover:bg-[#0087c2] text-white px-4 py-2.5 text-sm font-semibold border border-[#008fcb] transition-colors cursor-pointer"
+                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-[var(--primary-color)] hover:bg-[var(--primary-color-hover)] text-white px-4 py-2.5 text-sm font-semibold border border-[var(--primary-color)] transition-colors cursor-pointer"
                 >
                   <span>{slide.primaryBtnText}</span>
                   <HiOutlineArrowNarrowRight className="h-4 w-4" />
@@ -169,7 +169,7 @@ export const HeroSlider: React.FC = () => {
                 {/* Secondary Button */}
                 <Link
                   to={slide.secondaryBtnTo}
-                  className="inline-flex items-center justify-center gap-2 rounded-xl border border-[#009fe3] text-[#009fe3] bg-white hover:bg-sky-50 px-4 py-2.5 text-sm font-semibold transition-colors cursor-pointer"
+                  className="inline-flex items-center justify-center gap-2 rounded-xl border border-[var(--primary-color)] text-[var(--primary-color)] bg-[var(--ui-surface)] hover:bg-[var(--primary-color-light)] px-4 py-2.5 text-sm font-semibold transition-colors cursor-pointer"
                 >
                   <span>{slide.secondaryBtnText}</span>
                   <HiOutlinePlay className="h-3.5 w-3.5 fill-current" />
@@ -192,14 +192,14 @@ export const HeroSlider: React.FC = () => {
                 <button
                   onClick={prevSlide}
                   aria-label="Previous Slide"
-                  className="h-7 w-7 rounded-lg bg-white border border-slate-200 text-slate-600 hover:text-[#009fe3] hover:border-sky-300 flex items-center justify-center transition-colors cursor-pointer shadow-xs"
+                  className="h-7 w-7 rounded-lg bg-[var(--ui-surface)] border border-[var(--ui-border)] text-[var(--ui-text-muted)] hover:text-[var(--primary-color)] hover:border-[var(--primary-color-muted)] flex items-center justify-center transition-colors cursor-pointer shadow-xs"
                 >
                   <HiOutlineChevronLeft className="h-3.5 w-3.5" />
                 </button>
                 <button
                   onClick={nextSlide}
                   aria-label="Next Slide"
-                  className="h-7 w-7 rounded-lg bg-white border border-slate-200 text-slate-600 hover:text-[#009fe3] hover:border-sky-300 flex items-center justify-center transition-colors cursor-pointer shadow-xs"
+                  className="h-7 w-7 rounded-lg bg-[var(--ui-surface)] border border-[var(--ui-border)] text-[var(--ui-text-muted)] hover:text-[var(--primary-color)] hover:border-[var(--primary-color-muted)] flex items-center justify-center transition-colors cursor-pointer shadow-xs"
                 >
                   <HiOutlineChevronRight className="h-3.5 w-3.5" />
                 </button>
@@ -209,8 +209,8 @@ export const HeroSlider: React.FC = () => {
         </div>
 
         {/* Bottom Trust Stats Bar with Vertical Divider Lines */}
-        <div className="relative z-10 border-t border-sky-100 bg-white px-6 py-5 sm:px-10">
-          <div className="grid grid-cols-2 md:grid-cols-4 divide-y md:divide-y-0 md:divide-x divide-slate-200">
+        <div className="relative z-10 border-t border-[var(--primary-color-muted)] bg-[var(--ui-surface)] px-6 py-5 sm:px-10">
+          <div className="grid grid-cols-2 md:grid-cols-4 divide-y md:divide-y-0 md:divide-x divide-[var(--ui-border)]">
             {trustStats.map((item, idx) => {
               const Icon = item.icon
               return (
@@ -220,14 +220,14 @@ export const HeroSlider: React.FC = () => {
                     idx > 0 ? 'md:pl-6 lg:pl-8' : ''
                   } ${idx % 2 === 1 ? 'pl-4 md:pl-6 lg:pl-8' : ''}`}
                 >
-                  <div className="h-10 w-10 rounded-xl bg-[#e0f2fe] text-[#009fe3] flex items-center justify-center shrink-0">
+                  <div className="h-10 w-10 rounded-xl bg-[var(--primary-color-light)] text-[var(--primary-color)] flex items-center justify-center shrink-0">
                     <Icon className="h-5 w-5" />
                   </div>
                   <div>
-                    <div className="text-base font-bold text-[#0d2a4a] leading-tight">
+                    <div className="text-base font-bold text-[var(--primary-color-dark)] leading-tight">
                       {item.value}
                     </div>
-                    <div className="text-xs text-slate-500 font-medium">
+                    <div className="text-xs text-[var(--ui-text-muted)] font-medium">
                       {item.label}
                     </div>
                   </div>

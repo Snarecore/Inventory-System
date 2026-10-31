@@ -3,16 +3,18 @@ import { LoginPayload, LoginApiResponse } from "./login.types";
 
 export const loginApi = {
   /**
-   * Check if phone number is registered and retrieve user profile & pin
-   * @param phoneNumber Mobile phone number
+   * Check if an identifier is registered and retrieve user profile & pin.
+   * NOTE: the API only exposes an "authentication.phone_number" field, so an
+   * email identifier is sent through that same field.
+   * @param identifier Mobile number or email address
    * @returns LoginApiResponse containing user details & PIN
    */
-  checkUser: async (phoneNumber: string): Promise<LoginApiResponse> => {
+  checkUser: async (identifier: string): Promise<LoginApiResponse> => {
     const res = await postData<LoginApiResponse>({
       url: "authorization-check-user",
       body: {
         authentication: {
-          phone_number: phoneNumber,
+          phone_number: identifier,
         },
       },
     });

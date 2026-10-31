@@ -271,12 +271,12 @@ export const SalesReportTable: React.FC<SalesReportTableProps> = ({
     return (
       <span
         onClick={handleClick}
-        className="inline-flex items-center gap-1 select-none text-black cursor-pointer"
+        className="inline-flex items-center gap-1 select-none text-[var(--ui-text)] cursor-pointer"
       >
         <span>{label}</span>
         <FiChevronDown
           size={11}
-          className={`text-black transition-transform duration-200 ${
+          className={`text-[var(--ui-text)] transition-transform duration-200 ${
             isAsc ? "rotate-180" : ""
           }`}
         />
@@ -309,27 +309,27 @@ export const SalesReportTable: React.FC<SalesReportTableProps> = ({
               <button
                 type="button"
                 onClick={() => setIsCustomerDropdownOpen(!isCustomerDropdownOpen)}
-                className="w-full h-8 px-2 flex items-center justify-between text-xs border border-gray-200 rounded-lg bg-gray-50/50 hover:bg-white text-black font-medium focus:outline-none focus:border-[var(--color-primary)] cursor-pointer"
+                className="w-full h-8 px-2 flex items-center justify-between text-xs border border-[var(--ui-border)] rounded-lg bg-[var(--ui-surface-muted)]/50 hover:bg-[var(--ui-surface)] text-[var(--ui-text)] font-medium focus:outline-none focus:border-[var(--color-primary)] cursor-pointer"
               >
                 <span className="truncate flex-1 text-left">{currentCustomerLabel}</span>
-                <FiChevronDown className="text-gray-500 shrink-0 ml-1 text-xs" size={13} />
+                <FiChevronDown className="text-[var(--ui-text-muted)] shrink-0 ml-1 text-xs" size={13} />
               </button>
 
               {isCustomerDropdownOpen && (
-                <div className="absolute left-0 top-full mt-1 w-64 max-w-[calc(100vw-2rem)] bg-white rounded-lg shadow-2xl border border-gray-200 p-2 z-[99999]">
+                <div className="absolute left-0 top-full mt-1 w-64 max-w-[calc(100vw-2rem)] bg-[var(--ui-surface)] rounded-lg shadow-2xl border border-[var(--ui-border)] p-2 z-[99999]">
                   <div className="relative mb-2">
-                    <FaSearch className="absolute left-2.5 top-2.5 text-gray-400 text-xs" />
+                    <FaSearch className="absolute left-2.5 top-2.5 text-[var(--ui-text-subtle)] text-xs" />
                     <input
                       type="text"
                       placeholder="Search customer name, phone..."
                       value={customerSearchQuery}
                       onChange={(e) => setCustomerSearchQuery(e.target.value)}
-                      className="w-full pl-7 pr-2 py-1.5 text-xs border border-[var(--color-primary)] rounded-md focus:outline-none focus:border-[var(--color-primary)] text-black"
+                      className="w-full pl-7 pr-2 py-1.5 text-xs border border-[var(--color-primary)] rounded-md focus:outline-none focus:border-[var(--color-primary)] text-[var(--ui-text)]"
                       autoFocus
                     />
                   </div>
 
-                  <div className="max-h-48 overflow-y-auto divide-y divide-gray-100">
+                  <div className="max-h-48 overflow-y-auto divide-y divide-[var(--ui-border)]">
                     <div
                       onClick={() => {
                         setCustomerFilter("all");
@@ -337,10 +337,10 @@ export const SalesReportTable: React.FC<SalesReportTableProps> = ({
                         setCustomerSearchQuery("");
                         setCurrentPage(1);
                       }}
-                      className={`p-2 hover:bg-sky-50 cursor-pointer rounded-md transition-colors text-xs font-medium ${
+                      className={`p-2 hover:bg-[var(--primary-color-light)] cursor-pointer rounded-md transition-colors text-xs font-medium ${
                         customerFilter === "all"
-                          ? "bg-sky-50 text-[var(--color-primary)] font-semibold"
-                          : "text-black"
+                          ? "bg-[var(--primary-color-light)] text-[var(--color-primary)] font-semibold"
+                          : "text-[var(--ui-text)]"
                       }`}
                     >
                       All Customers
@@ -358,15 +358,15 @@ export const SalesReportTable: React.FC<SalesReportTableProps> = ({
                               setCustomerSearchQuery("");
                               setCurrentPage(1);
                             }}
-                            className={`p-2 hover:bg-sky-50 cursor-pointer rounded-md transition-colors text-xs flex justify-between items-center ${
+                            className={`p-2 hover:bg-[var(--primary-color-light)] cursor-pointer rounded-md transition-colors text-xs flex justify-between items-center ${
                               isSelected
-                                ? "bg-sky-50 text-[var(--color-primary)] font-semibold"
-                                : "text-black"
+                                ? "bg-[var(--primary-color-light)] text-[var(--color-primary)] font-semibold"
+                                : "text-[var(--ui-text)]"
                             }`}
                           >
                             <span className="truncate">{c.name}</span>
                             {c.phone && (
-                              <span className="text-[10px] text-gray-500 shrink-0 ml-1">
+                              <span className="text-[10px] text-[var(--ui-text-muted)] shrink-0 ml-1">
                                 ({c.phone})
                               </span>
                             )}
@@ -374,7 +374,7 @@ export const SalesReportTable: React.FC<SalesReportTableProps> = ({
                         );
                       })
                     ) : (
-                      <div className="p-3 text-center text-gray-400 text-xs">No customer found</div>
+                      <div className="p-3 text-center text-[var(--ui-text-subtle)] text-xs">No customer found</div>
                     )}
                   </div>
                 </div>
@@ -390,14 +390,14 @@ export const SalesReportTable: React.FC<SalesReportTableProps> = ({
                 setStatusFilter(e.target.value);
                 setCurrentPage(1);
               }}
-              className="w-full h-8 pl-2.5 pr-6 text-xs border border-gray-200 rounded-lg bg-gray-50/50 hover:bg-white text-black font-medium focus:outline-none focus:border-[var(--color-primary)] cursor-pointer appearance-none"
+              className="w-full h-8 pl-2.5 pr-6 text-xs border border-[var(--ui-border)] rounded-lg bg-[var(--ui-surface-muted)]/50 hover:bg-[var(--ui-surface)] text-[var(--ui-text)] font-medium focus:outline-none focus:border-[var(--color-primary)] cursor-pointer appearance-none"
             >
               <option value="all">All Status</option>
               <option value="PAID">Paid</option>
               <option value="PARTIAL">Partial</option>
               <option value="DUE">Due / Credit</option>
             </select>
-            <FiChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 text-black pointer-events-none text-xs" size={13} />
+            <FiChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 text-[var(--ui-text)] pointer-events-none text-xs" size={13} />
           </div>
 
           {/* Payment Method Filter */}
@@ -408,7 +408,7 @@ export const SalesReportTable: React.FC<SalesReportTableProps> = ({
                 setPaymentFilter(e.target.value);
                 setCurrentPage(1);
               }}
-              className="w-full h-8 pl-2.5 pr-6 text-xs border border-gray-200 rounded-lg bg-gray-50/50 hover:bg-white text-black font-medium focus:outline-none focus:border-[var(--color-primary)] cursor-pointer appearance-none"
+              className="w-full h-8 pl-2.5 pr-6 text-xs border border-[var(--ui-border)] rounded-lg bg-[var(--ui-surface-muted)]/50 hover:bg-[var(--ui-surface)] text-[var(--ui-text)] font-medium focus:outline-none focus:border-[var(--color-primary)] cursor-pointer appearance-none"
             >
               <option value="all">All Methods</option>
               <option value="CASH">Cash</option>
@@ -416,18 +416,18 @@ export const SalesReportTable: React.FC<SalesReportTableProps> = ({
               <option value="MFS">MFS</option>
               <option value="BANK">Bank</option>
             </select>
-            <FiChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 text-black pointer-events-none text-xs" size={13} />
+            <FiChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 text-[var(--ui-text)] pointer-events-none text-xs" size={13} />
           </div>
         </div>
 
         {/* Right Actions: Reset & Excel Export Button */}
-        <div className="flex items-center justify-end gap-1.5 sm:gap-2 shrink-0 w-full sm:w-auto pt-1 sm:pt-0 border-t sm:border-t-0 border-gray-100">
+        <div className="flex items-center justify-end gap-1.5 sm:gap-2 shrink-0 w-full sm:w-auto pt-1 sm:pt-0 border-t sm:border-t-0 border-[var(--ui-border)]">
           {isAnyFilterActive && (
             <button
               type="button"
               onClick={handleResetFilters}
               title="Reset all active filters"
-              className="flex-1 sm:flex-none flex items-center justify-center gap-1 px-2.5 h-8 text-[11px] sm:text-xs font-semibold text-rose-600 bg-rose-50 hover:bg-rose-100 border border-rose-200 rounded-lg transition-colors cursor-pointer shrink-0"
+              className="flex-1 sm:flex-none flex items-center justify-center gap-1 px-2.5 h-8 text-[11px] sm:text-xs font-semibold text-[var(--ui-danger)] bg-[var(--ui-danger-light)] hover:bg-[var(--ui-danger-border)] border border-[var(--ui-danger-border)] rounded-lg transition-colors cursor-pointer shrink-0"
             >
               <FiRotateCcw size={12} />
               <span>Reset</span>
@@ -447,9 +447,9 @@ export const SalesReportTable: React.FC<SalesReportTableProps> = ({
             type="button"
             onClick={handleExport}
             title="Download Sales Report Excel"
-            className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3 h-8 text-[11px] sm:text-xs font-semibold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 rounded-lg transition-all shadow-xs cursor-pointer active:scale-95"
+            className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3 h-8 text-[11px] sm:text-xs font-semibold text-[var(--ui-success-dark)] bg-[var(--ui-success-light)] hover:bg-[var(--ui-success-border)] border border-[var(--ui-success-border)] rounded-lg transition-all shadow-xs cursor-pointer active:scale-95"
           >
-            <FaFileExcel className="text-emerald-600 shrink-0" size={12} />
+            <FaFileExcel className="text-[var(--ui-success)] shrink-0" size={12} />
             <span>Excel</span>
           </button>
         </div>
@@ -523,23 +523,23 @@ export const SalesReportTable: React.FC<SalesReportTableProps> = ({
                 return (
                   <tr
                     key={item.id || item.invoiceNo || idx}
-                    className="hover:bg-sky-50/40 transition-colors group"
+                    className="hover:bg-[var(--primary-color-light)]/40 transition-colors group"
                   >
                     {/* SL */}
                     {isColVisible("sl") && (
-                      <td className="py-2.5 px-3 text-center text-black text-xs font-normal">
+                      <td className="py-2.5 px-3 text-center text-[var(--ui-text)] text-xs font-normal">
                         {sl}
                       </td>
                     )}
 
                     {/* Order ID - Exactly as in Purchase Return List */}
                     {isColVisible("orderId") && (
-                      <td className="py-2.5 px-3 text-black text-xs font-normal whitespace-nowrap">
+                      <td className="py-2.5 px-3 text-[var(--ui-text)] text-xs font-normal whitespace-nowrap">
                         <div className="flex items-center gap-1.5 group/ord">
                           <span
                             onClick={() => onView(item)}
                             title="Click to view invoice"
-                            className="cursor-pointer hover:text-sky-600 font-medium transition-colors"
+                            className="cursor-pointer hover:text-[var(--primary-color)] font-medium transition-colors"
                           >
                             {orderDisplay}
                           </span>
@@ -548,10 +548,10 @@ export const SalesReportTable: React.FC<SalesReportTableProps> = ({
                               type="button"
                               onClick={() => handleCopyOrderId(orderDisplay, item.id)}
                               title="Copy Order ID"
-                              className="p-1 text-gray-400 hover:text-sky-600 transition-colors opacity-0 group-hover/ord:opacity-100 cursor-pointer"
+                              className="p-1 text-[var(--ui-text-subtle)] hover:text-[var(--primary-color)] transition-colors opacity-0 group-hover/ord:opacity-100 cursor-pointer"
                             >
                               {copiedId === item.id ? (
-                                <FiCheck className="text-emerald-600 text-xs" />
+                                <FiCheck className="text-[var(--ui-success)] text-xs" />
                               ) : (
                                 <FiCopy size={12} />
                               )}
@@ -563,8 +563,8 @@ export const SalesReportTable: React.FC<SalesReportTableProps> = ({
 
                     {/* Customer */}
                     {isColVisible("customer") && (
-                      <td className="py-2.5 px-3 text-black text-xs font-normal whitespace-nowrap">
-                        <span className="font-medium text-black">
+                      <td className="py-2.5 px-3 text-[var(--ui-text)] text-xs font-normal whitespace-nowrap">
+                        <span className="font-medium text-[var(--ui-text)]">
                           {item.customerName || item.customer_name || "Walk-in Customer"}
                         </span>
                       </td>
@@ -572,20 +572,20 @@ export const SalesReportTable: React.FC<SalesReportTableProps> = ({
 
                     {/* Phone */}
                     {isColVisible("phone") && (
-                      <td className="py-2.5 px-3 text-black text-xs font-normal whitespace-nowrap">
+                      <td className="py-2.5 px-3 text-[var(--ui-text)] text-xs font-normal whitespace-nowrap">
                         {item.customerPhone || item.customer_phone || (
-                          <span className="text-gray-400 font-normal">N/A</span>
+                          <span className="text-[var(--ui-text-subtle)] font-normal">N/A</span>
                         )}
                       </td>
                     )}
 
                     {/* Date */}
                     {isColVisible("date") && (
-                      <td className="py-2.5 px-3 text-black text-xs font-normal whitespace-nowrap">
+                      <td className="py-2.5 px-3 text-[var(--ui-text)] text-xs font-normal whitespace-nowrap">
                         {item.salesDate || item.saleDate || item.date ? (
                           moment(item.salesDate || item.saleDate || item.date).format("DD MMM YYYY")
                         ) : (
-                          <span className="text-gray-400 font-normal">N/A</span>
+                          <span className="text-[var(--ui-text-subtle)] font-normal">N/A</span>
                         )}
                       </td>
                     )}
@@ -593,7 +593,7 @@ export const SalesReportTable: React.FC<SalesReportTableProps> = ({
                     {/* Items */}
                     {isColVisible("items") && (
                       <td className="py-2.5 px-3 text-center whitespace-nowrap">
-                        <span className="inline-block px-2 py-0.5 rounded bg-gray-100 text-gray-700 text-xs font-medium whitespace-nowrap">
+                        <span className="inline-block px-2 py-0.5 rounded bg-[var(--ui-surface-sunken)] text-[var(--ui-text)] text-xs font-medium whitespace-nowrap">
                           {itemsCount > 0 ? `${itemsCount} ${itemsCount === 1 ? "item" : "items"}` : "1 item"}
                         </span>
                       </td>
@@ -601,7 +601,7 @@ export const SalesReportTable: React.FC<SalesReportTableProps> = ({
 
                     {/* Subtotal */}
                     {isColVisible("subtotal") && (
-                      <td className="py-2.5 px-3 text-right text-black text-xs font-normal whitespace-nowrap">
+                      <td className="py-2.5 px-3 text-right text-[var(--ui-text)] text-xs font-normal whitespace-nowrap">
                         ৳ {formatMoney(sub)}
                       </td>
                     )}
@@ -610,34 +610,34 @@ export const SalesReportTable: React.FC<SalesReportTableProps> = ({
                     {isColVisible("discount") && (
                       <td className="py-2.5 px-3 text-right text-xs font-normal whitespace-nowrap">
                         {disc > 0 ? (
-                          <span className="text-rose-600 font-medium">-৳ {formatMoney(disc)}</span>
+                          <span className="text-[var(--ui-danger)] font-medium">-৳ {formatMoney(disc)}</span>
                         ) : (
-                          <span className="text-gray-400 font-normal">N/A</span>
+                          <span className="text-[var(--ui-text-subtle)] font-normal">N/A</span>
                         )}
                       </td>
                     )}
 
                     {/* VAT */}
                     {isColVisible("vat") && (
-                      <td className="py-2.5 px-3 text-right text-gray-600 text-xs font-normal whitespace-nowrap">
+                      <td className="py-2.5 px-3 text-right text-[var(--ui-text-muted)] text-xs font-normal whitespace-nowrap">
                         {vat > 0 ? (
                           `+৳ ${formatMoney(vat)}`
                         ) : (
-                          <span className="text-gray-400 font-normal">N/A</span>
+                          <span className="text-[var(--ui-text-subtle)] font-normal">N/A</span>
                         )}
                       </td>
                     )}
 
                     {/* Grand Total */}
                     {isColVisible("total") && (
-                      <td className="py-2.5 px-3 text-right font-bold text-black text-xs whitespace-nowrap">
+                      <td className="py-2.5 px-3 text-right font-bold text-[var(--ui-text)] text-xs whitespace-nowrap">
                         ৳ {formatMoney(grandTotal)}
                       </td>
                     )}
 
                     {/* Paid */}
                     {isColVisible("paid") && (
-                      <td className="py-2.5 px-3 text-right font-semibold text-emerald-600 text-xs whitespace-nowrap">
+                      <td className="py-2.5 px-3 text-right font-semibold text-[var(--ui-success)] text-xs whitespace-nowrap">
                         ৳ {formatMoney(paid)}
                       </td>
                     )}
@@ -646,11 +646,11 @@ export const SalesReportTable: React.FC<SalesReportTableProps> = ({
                     {isColVisible("due") && (
                       <td className="py-2.5 px-3 text-right text-xs whitespace-nowrap">
                         {due > 0 ? (
-                          <span className="text-rose-600 font-bold">
+                          <span className="text-[var(--ui-danger)] font-bold">
                             ৳ {formatMoney(due)}
                           </span>
                         ) : (
-                          <span className="text-gray-400 font-normal">৳ 0</span>
+                          <span className="text-[var(--ui-text-subtle)] font-normal">৳ 0</span>
                         )}
                       </td>
                     )}
@@ -658,7 +658,7 @@ export const SalesReportTable: React.FC<SalesReportTableProps> = ({
                     {/* Payment Type */}
                     {isColVisible("method") && (
                       <td className="py-2.5 px-3 text-center w-28 whitespace-nowrap">
-                        <span className="inline-block px-1.5 py-0.5 text-[10px] border rounded-md bg-sky-100 text-sky-900 border-sky-300 font-semibold">
+                        <span className="inline-block px-1.5 py-0.5 text-[10px] border rounded-md bg-[var(--primary-color-muted)] text-[var(--primary-color-dark)] border-[var(--primary-color-muted)] font-semibold">
                           {pType}
                         </span>
                       </td>
@@ -670,10 +670,10 @@ export const SalesReportTable: React.FC<SalesReportTableProps> = ({
                         <span
                           className={`inline-block px-1.5 py-0.5 text-[10px] border rounded-md font-semibold ${
                             isFullyPaid
-                              ? "bg-emerald-100 text-emerald-800 border-emerald-300"
+                              ? "bg-[var(--ui-success-border)] text-[var(--ui-success-dark)] border-[var(--ui-success-border)]"
                               : isPartial
-                              ? "bg-amber-100 text-amber-800 border-amber-300"
-                              : "bg-rose-100 text-rose-800 border-rose-300"
+                              ? "bg-[var(--ui-warning-border)] text-[var(--ui-warning-dark)] border-[var(--ui-warning-border)]"
+                              : "bg-[var(--ui-danger-border)] text-[var(--ui-danger-dark)] border-[var(--ui-danger-border)]"
                           }`}
                         >
                           {isFullyPaid ? "Paid" : isPartial ? "Partial" : "Due"}

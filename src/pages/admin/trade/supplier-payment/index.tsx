@@ -210,14 +210,14 @@ export const SupplierPayment: React.FC = () => {
 
         <div className="flex items-center gap-2 self-end sm:self-auto">
           {/* Tab Switcher */}
-          <div className="inline-flex items-center rounded-lg border border-gray-200 p-0.5 bg-gray-50 h-8">
+          <div className="inline-flex items-center rounded-lg border border-[var(--ui-border)] p-0.5 bg-[var(--ui-surface-muted)] h-8">
             <button
               type="button"
               onClick={() => setActiveTab("dues")}
               className={`h-7 px-3 rounded-md text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
                 activeTab === "dues"
-                  ? "bg-white text-[var(--primary-color)] shadow-xs"
-                  : "text-gray-600 hover:text-black"
+                  ? "bg-[var(--ui-surface)] text-[var(--primary-color)] shadow-xs"
+                  : "text-[var(--ui-text-muted)] hover:text-[var(--ui-text)]"
               }`}
             >
               Supplier Dues ({suppliers.length})
@@ -227,8 +227,8 @@ export const SupplierPayment: React.FC = () => {
               onClick={() => setActiveTab("history")}
               className={`h-7 px-3 rounded-md text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
                 activeTab === "history"
-                  ? "bg-white text-[var(--primary-color)] shadow-xs"
-                  : "text-gray-600 hover:text-black"
+                  ? "bg-[var(--ui-surface)] text-[var(--primary-color)] shadow-xs"
+                  : "text-[var(--ui-text-muted)] hover:text-[var(--ui-text)]"
               }`}
             >
               Payment History

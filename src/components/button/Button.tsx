@@ -15,18 +15,23 @@ export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElemen
   children?: React.ReactNode;
 }
 
+/**
+ * Variants map onto the token-backed .ui-btn-* classes, so colour, radius and
+ * border weight all follow the active appearance theme.
+ */
 const variantStyles: Record<string, string> = {
-  primary: "bg-primary hover:bg-primary-hover text-white shadow-sm shadow-primary/20 focus:ring-primary",
-  secondary: "bg-slate-100 hover:bg-slate-200 text-slate-800 focus:ring-slate-400 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-100",
-  outline: "border border-slate-300 hover:border-primary hover:text-primary text-slate-700 focus:ring-primary dark:border-slate-700 dark:text-slate-200 dark:hover:border-primary dark:hover:text-primary-light",
-  ghost: "text-slate-700 hover:bg-slate-100 focus:ring-slate-400 dark:text-slate-300 dark:hover:bg-slate-800",
-  danger: "bg-rose-600 hover:bg-rose-700 text-white shadow-sm shadow-rose-500/20 focus:ring-rose-500 dark:bg-rose-500 dark:hover:bg-rose-600",
+  primary: "ui-btn-primary",
+  secondary: "ui-btn-secondary",
+  outline: "ui-btn-secondary",
+  ghost: "ui-btn-ghost",
+  danger: "ui-btn-danger",
 };
 
+/** Sizes are derived from the density token rather than fixed pixels. */
 const sizeStyles: Record<string, string> = {
-  sm: "text-xs px-3.5 py-1.5 gap-1.5",
-  md: "text-sm px-4 py-2.5 gap-2",
-  lg: "text-base px-6 py-3 gap-2.5 font-semibold",
+  sm: "h-[calc(var(--ui-control-h)-6px)] px-3 gap-1.5 text-[calc(var(--ui-font-size)-1px)]",
+  md: "h-[var(--ui-control-h)] px-4 gap-2",
+  lg: "h-[calc(var(--ui-control-h)+6px)] px-6 gap-2.5 text-[calc(var(--ui-font-size)+1px)]",
 };
 
 export const Button: React.FC<ButtonProps> = ({
@@ -58,11 +63,12 @@ export const Button: React.FC<ButtonProps> = ({
   const effectiveHoverColor = getHoverColor();
   const hasCustomColor = Boolean(color);
 
-  const baseStyles =
-    "inline-flex items-center justify-center font-medium rounded-xl transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer active:scale-[0.98]";
+  const baseStyles = "ui-btn active:scale-[0.98]";
 
+  // Legacy call sites pass neither `variant` nor `size`; they keep their
+  // full-width-on-mobile behaviour but pick up token height, radius and font.
   const legacyStyles =
-    "flex items-center justify-center sm:w-fit w-full py-[0.4rem] px-2 text-[14px] font-normal text-white rounded-md transition-all duration-200 ease-in-out cursor-pointer hover:shadow-xs active:scale-[0.98]";
+    "ui-btn ui-btn-primary w-full font-normal sm:w-fit active:scale-[0.98]";
 
   const finalClass = cn(
     variant || size ? baseStyles : legacyStyles,

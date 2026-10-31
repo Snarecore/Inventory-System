@@ -113,7 +113,7 @@ const Footer = () => {
           </div>
         </div>
 
-        <div className="border-t border-gray-700 mt-12 pt-8 text-center">
+        <div className="border-t border-[var(--ui-text-muted)] mt-12 pt-8 text-center">
           <p className=" !text-gray-light">
             &copy; 2024 Admin Panel. All rights reserved.
           </p>

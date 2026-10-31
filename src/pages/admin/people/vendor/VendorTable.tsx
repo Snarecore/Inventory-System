@@ -97,11 +97,11 @@ const VendorTable = ({
 
 
     return (
-        <div className="bg-white rounded-xl shadow-xs border border-gray-200 flex flex-col relative z-20 overflow-visible">
+        <div className="bg-[var(--ui-surface)] rounded-xl shadow-xs border border-[var(--ui-border)] flex flex-col relative z-20 overflow-visible">
             <div className="w-full overflow-x-auto relative z-10">
                 <table className="w-full text-left border-collapse min-w-[900px] text-xs">
                     <thead>
-                        <tr className="bg-[#41BEF3] text-black text-xs font-semibold">
+                        <tr className="bg-[var(--ui-accent-2)] text-[var(--ui-text)] text-xs font-semibold">
                             {tableHeaders.map(({ key, label }) => (
                                 <th key={key} className={`py-2.5 px-3 text-left ${key === "id" ? "w-10 text-center" : ""}`}>
                                     {label}
@@ -109,23 +109,23 @@ const VendorTable = ({
                             ))}
                         </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-100 bg-white">
+                    <tbody className="divide-y divide-[var(--ui-border)] bg-[var(--ui-surface)]">
                         {dataList?.length > 0 ? (
                             dataList?.map((data, index) => (
                                 <tr
                                     key={data.id}
-                                    className="hover:bg-sky-50/40 transition-colors group"
+                                    className="hover:bg-[var(--primary-color-light)]/40 transition-colors group"
                                 >
-                                    <td className="py-2.5 px-3 text-center font-normal text-xs text-black">
+                                    <td className="py-2.5 px-3 text-center font-normal text-xs text-[var(--ui-text)]">
                                         {index + 1}
                                     </td>
-                                    <td className="py-2.5 px-3 font-normal text-xs text-black">
+                                    <td className="py-2.5 px-3 font-normal text-xs text-[var(--ui-text)]">
                                         {data.name}
                                     </td>
-                                    <td className="py-2.5 px-3 font-normal text-xs text-black">
+                                    <td className="py-2.5 px-3 font-normal text-xs text-[var(--ui-text)]">
                                         {data.email}
                                     </td>
-                                    <td className="py-2.5 px-3 font-normal text-xs text-black">
+                                    <td className="py-2.5 px-3 font-normal text-xs text-[var(--ui-text)]">
                                         {data.phone}
                                     </td>
 
@@ -137,7 +137,7 @@ const VendorTable = ({
                                                     setSelectedVendorForMessage(data);
                                                     setIsMessageModalOpen(true);
                                                 }}
-                                                className="p-1 rounded text-sky-600 hover:bg-sky-100 transition-colors cursor-pointer"
+                                                className="p-1 rounded text-[var(--primary-color)] hover:bg-[var(--primary-color-muted)] transition-colors cursor-pointer"
                                                 title="Message"
                                             >
                                                 <FaFacebookMessenger size={14} />
@@ -145,7 +145,7 @@ const VendorTable = ({
                                             <button
                                                 type="button"
                                                 onClick={() => openDeleteModal(data)}
-                                                className="p-1 rounded text-rose-600 hover:bg-rose-100 transition-colors cursor-pointer"
+                                                className="p-1 rounded text-[var(--ui-danger)] hover:bg-[var(--ui-danger-border)] transition-colors cursor-pointer"
                                                 title="Delete"
                                             >
                                                 <FiTrash2 size={14} />
@@ -213,9 +213,9 @@ const VendorTable = ({
                                     value={fieldValues.message}
                                     required
                                     onChange={handleChange} /> */}
-                                <p>Message <span className="text-red-500 font-bold">*</span></p>
+                                <p>Message <span className="text-[var(--ui-danger)] font-bold">*</span></p>
                                 <textarea
-                                    className="w-full border border-gray-300 rounded-md p-2 mt-1"
+                                    className="w-full border border-[var(--ui-border-strong)] rounded-md p-2 mt-1"
                                     name="content"
                                     value={fieldValues.content}
                                     required

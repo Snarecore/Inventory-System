@@ -162,12 +162,12 @@ export const AddPaymentModal: React.FC<AddPaymentModalProps> = ({
     >
       <form onSubmit={handleSubmit} className="space-y-1.5">
         {/* Supplier Info Strip */}
-        <div className="flex items-center justify-between gap-2.5 py-1 px-2.5 bg-gray-50 border border-gray-200 rounded-lg text-xs whitespace-nowrap">
+        <div className="flex items-center justify-between gap-2.5 py-1 px-2.5 bg-[var(--ui-surface-muted)] border border-[var(--ui-border)] rounded-lg text-xs whitespace-nowrap">
           {/* Supplier Name & Phone */}
           <div className="flex items-center gap-1.5 min-w-0">
-            <span className="font-bold text-black truncate">{supplier.supplierName}</span>
+            <span className="font-bold text-[var(--ui-text)] truncate">{supplier.supplierName}</span>
             {supplier.supplierPhone && (
-              <span className="text-gray-500 text-[11px] truncate">
+              <span className="text-[var(--ui-text-muted)] text-[11px] truncate">
                 ({supplier.supplierPhone})
               </span>
             )}
@@ -175,8 +175,8 @@ export const AddPaymentModal: React.FC<AddPaymentModalProps> = ({
 
           {/* Total Due */}
           <div className="flex items-center gap-1.5 shrink-0">
-            <span className="text-gray-500 text-[11px] font-medium">Total Due:</span>
-            <span className="text-sm font-bold text-rose-600">
+            <span className="text-[var(--ui-text-muted)] text-[11px] font-medium">Total Due:</span>
+            <span className="text-sm font-bold text-[var(--ui-danger)]">
               ৳ {formatMoney(effectiveMaxDue)}
             </span>
           </div>
@@ -200,7 +200,7 @@ export const AddPaymentModal: React.FC<AddPaymentModalProps> = ({
         />
 
         {/* Remark & Action Buttons in One Row */}
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-end gap-2 pt-1 border-t border-gray-100">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-end gap-2 pt-1 border-t border-[var(--ui-border)]">
           {/* Remark Input */}
           <div className="flex-1 min-w-0">
             <TextInput
@@ -208,8 +208,8 @@ export const AddPaymentModal: React.FC<AddPaymentModalProps> = ({
               value={remark}
               onChange={(val) => setRemark(val)}
               placeholder="e.g. Paid in cash, cheque reference..."
-              wrapperClass="!h-8 bg-white !border-gray-200"
-              inputClass="font-semibold text-black"
+              wrapperClass="!h-8 bg-[var(--ui-surface)] !border-[var(--ui-border)]"
+              inputClass="font-semibold text-[var(--ui-text)]"
             />
           </div>
 

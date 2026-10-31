@@ -115,9 +115,9 @@ const ChatWindow = ({ selectedUser }: { selectedUser: SelectedUser }) => {
     };
 
     return (
-        <div className="h-full flex flex-col bg-gray-50">
+        <div className="h-full flex flex-col bg-[var(--ui-surface-muted)]">
 
-            <div className="bg-white px-6 py-2 border-b border-gray-200 flex items-center justify-between">
+            <div className="bg-[var(--ui-surface)] px-6 py-2 border-b border-[var(--ui-border)] flex items-center justify-between">
                 <div className="flex items-center space-x-3">
                     <div className="w-10 h-10 rounded-full overflow-hidden">
                         <img
@@ -129,7 +129,7 @@ const ChatWindow = ({ selectedUser }: { selectedUser: SelectedUser }) => {
                                 target.style.display = 'none';
                                 const parent = target.parentElement;
                                 if (parent) {
-                                    parent.className = 'w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center text-white font-semibold';
+                                    parent.className = 'w-10 h-10 bg-[var(--primary-color)] rounded-full flex items-center justify-center text-white font-semibold';
                                     parent.textContent = 'AL';
                                 }
                             }}
@@ -137,7 +137,7 @@ const ChatWindow = ({ selectedUser }: { selectedUser: SelectedUser }) => {
                     </div>
                     <div>
                         <p className="font-semibold">{selectedUser?.participantTwo?.name}</p>
-                        <p className="text-sm text-gray-500">{selectedUser?.participantTwo?.email}</p>
+                        <p className="text-sm text-[var(--ui-text-muted)]">{selectedUser?.participantTwo?.email}</p>
                     </div>
                 </div>
             </div>
@@ -168,17 +168,17 @@ const ChatWindow = ({ selectedUser }: { selectedUser: SelectedUser }) => {
 
                                 <div className="flex flex-col">
                                     <div className={`px-4 py-2 rounded-2xl ${msg.isMe
-                                        ? 'bg-blue-500 text-white rounded-br-md'
-                                        : 'bg-white text-black rounded-bl-md border border-gray-200'
+                                        ? 'bg-[var(--primary-color)] text-white rounded-br-md'
+                                        : 'bg-[var(--ui-surface)] text-[var(--ui-text)] rounded-bl-md border border-[var(--ui-border)]'
                                         }`}>
                                         <p className="text-sm whitespace-pre-line">{msg.content}</p>
                                     </div>
                                     <div className={`flex items-center mt-1 space-x-1 ${msg.isMe ? 'justify-end' : 'justify-start ml-1'}`}>
-                                        <span className="text-xs text-gray-500">{formatDate(msg.createdAt)}</span>
-                                        {msg.isMe && <span className="text-xs text-gray-500">You</span>}
+                                        <span className="text-xs text-[var(--ui-text-muted)]">{formatDate(msg.createdAt)}</span>
+                                        {msg.isMe && <span className="text-xs text-[var(--ui-text-muted)]">You</span>}
                                         {msg.isMe && (
-                                            <div className="w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center">
-                                                <div className="w-2 h-2 bg-white rounded-full"></div>
+                                            <div className="w-4 h-4 bg-[var(--primary-color)] rounded-full flex items-center justify-center">
+                                                <div className="w-2 h-2 bg-[var(--ui-surface)] rounded-full"></div>
                                             </div>
                                         )}
                                     </div>
@@ -189,7 +189,7 @@ const ChatWindow = ({ selectedUser }: { selectedUser: SelectedUser }) => {
                 ))}
             </div>
 
-            <div className="bg-white px-6 py-4 border-t border-gray-200">
+            <div className="bg-[var(--ui-surface)] px-6 py-4 border-t border-[var(--ui-border)]">
                 <div className="flex items-center space-x-3">
                     <div className="flex-1 relative">
                         <input
@@ -199,12 +199,12 @@ const ChatWindow = ({ selectedUser }: { selectedUser: SelectedUser }) => {
                             onChange={handleChange}
                             onKeyPress={handleKeyPress}
                             placeholder="Type Your Message"
-                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            className="w-full px-4 py-3 border border-[var(--ui-border-strong)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)] focus:border-transparent"
                         />
                     </div>
                     <button
                         onClick={handleSubmitMessage}
-                        className="bg-orange-500 hover:bg-orange-600 text-white p-1.5 rounded-lg transition-colors cursor-pointer"
+                        className="bg-[var(--ui-warning)] hover:bg-[var(--ui-warning)] text-white p-1.5 rounded-lg transition-colors cursor-pointer"
                     >
                         <LuSend className="w-4 h-5" />
                     </button>

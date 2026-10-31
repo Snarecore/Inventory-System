@@ -35,7 +35,7 @@ export const TenderBreakdownPortal: React.FC<TenderBreakdownPortalProps> = ({
     const estimatedHeight = 118;
 
     const modalEl =
-      targetEl.closest(".bg-white.rounded-xl") || document.querySelector(".bg-white.rounded-xl");
+      targetEl.closest(".bg-[var(--ui-surface)].rounded-xl") || document.querySelector(".bg-[var(--ui-surface)].rounded-xl");
     const modalRect = modalEl?.getBoundingClientRect();
 
     const buttonCenter = rect.left + rect.width / 2;
@@ -131,8 +131,8 @@ export const TenderBreakdownPortal: React.FC<TenderBreakdownPortalProps> = ({
         onClick={handleToggleBreakdown}
         className={`p-0.5 rounded transition-colors cursor-pointer inline-flex items-center justify-center ${
           isBreakdownOpen
-            ? "bg-black text-white"
-            : "hover:bg-gray-200 text-gray-700 hover:text-black"
+            ? "bg-[var(--ui-text)] text-white"
+            : "hover:bg-[var(--ui-border)] text-[var(--ui-text)] hover:text-[var(--ui-text)]"
         }`}
         title="Click to view payment breakdown (Cash, Bank, MFS)"
       >
@@ -155,24 +155,24 @@ export const TenderBreakdownPortal: React.FC<TenderBreakdownPortalProps> = ({
               zIndex: 99999,
               width: "250px",
             }}
-            className="bg-white border border-gray-200 rounded-lg shadow-xl p-2 text-xs select-none animate-in fade-in zoom-in-95 duration-100"
+            className="bg-[var(--ui-surface)] border border-[var(--ui-border)] rounded-lg shadow-xl p-2 text-xs select-none animate-in fade-in zoom-in-95 duration-100"
           >
             {/* Tooltip Arrow */}
             <div
               style={{ left: `${dropdownCoords.arrowLeft}px` }}
-              className={`absolute -translate-x-1/2 w-2 h-2 bg-white border-gray-200 transform rotate-45 pointer-events-none ${
+              className={`absolute -translate-x-1/2 w-2 h-2 bg-[var(--ui-surface)] border-[var(--ui-border)] transform rotate-45 pointer-events-none ${
                 dropdownCoords.isPlacementTop
                   ? "-bottom-1 border-b border-r"
                   : "-top-1 border-t border-l"
               }`}
             />
 
-            <div className="flex items-center justify-between pb-1 mb-1 border-b border-gray-100 font-semibold text-gray-800">
+            <div className="flex items-center justify-between pb-1 mb-1 border-b border-[var(--ui-border)] font-semibold text-[var(--ui-text)]">
               <span>{title}</span>
               <button
                 type="button"
                 onClick={() => setIsBreakdownOpen(false)}
-                className="text-gray-400 hover:text-black cursor-pointer text-xs"
+                className="text-[var(--ui-text-subtle)] hover:text-[var(--ui-text)] cursor-pointer text-xs"
               >
                 ✕
               </button>
@@ -180,46 +180,46 @@ export const TenderBreakdownPortal: React.FC<TenderBreakdownPortalProps> = ({
 
             <div className="space-y-1">
               {/* Cash Leg */}
-              <div className="flex items-center justify-between py-0.5 px-1 rounded hover:bg-gray-50">
-                <span className="flex items-center gap-1.5 text-gray-600">
-                  <FaMoneyBillWave className="text-emerald-600" size={11} />
+              <div className="flex items-center justify-between py-0.5 px-1 rounded hover:bg-[var(--ui-surface-muted)]">
+                <span className="flex items-center gap-1.5 text-[var(--ui-text-muted)]">
+                  <FaMoneyBillWave className="text-[var(--ui-success)]" size={11} />
                   Cash:
                 </span>
-                <span className="font-semibold text-black">
+                <span className="font-semibold text-[var(--ui-text)]">
                   ৳ {formatMoney(cashAmount)}
                 </span>
               </div>
 
               {/* Bank Leg */}
-              <div className="flex items-center justify-between py-0.5 px-1 rounded hover:bg-gray-50">
+              <div className="flex items-center justify-between py-0.5 px-1 rounded hover:bg-[var(--ui-surface-muted)]">
                 <span
-                  className="flex items-center gap-1.5 text-gray-600 truncate max-w-[140px]"
+                  className="flex items-center gap-1.5 text-[var(--ui-text-muted)] truncate max-w-[140px]"
                   title={tenderBreakdown?.bankName}
                 >
-                  <FaCreditCard className="text-sky-600 shrink-0" size={11} />
+                  <FaCreditCard className="text-[var(--primary-color)] shrink-0" size={11} />
                   <span className="truncate">Bank:</span>
                 </span>
-                <span className="font-semibold text-black">
+                <span className="font-semibold text-[var(--ui-text)]">
                   ৳ {formatMoney(bankAmount)}
                 </span>
               </div>
 
               {/* MFS Leg */}
-              <div className="flex items-center justify-between py-0.5 px-1 rounded hover:bg-gray-50">
+              <div className="flex items-center justify-between py-0.5 px-1 rounded hover:bg-[var(--ui-surface-muted)]">
                 <span
-                  className="flex items-center gap-1.5 text-gray-600 truncate max-w-[140px]"
+                  className="flex items-center gap-1.5 text-[var(--ui-text-muted)] truncate max-w-[140px]"
                   title={tenderBreakdown?.mfsName}
                 >
-                  <FaMobileAlt className="text-purple-600 shrink-0" size={11} />
+                  <FaMobileAlt className="text-[var(--ui-info)] shrink-0" size={11} />
                   <span className="truncate">MFS:</span>
                 </span>
-                <span className="font-semibold text-black">
+                <span className="font-semibold text-[var(--ui-text)]">
                   ৳ {formatMoney(mfsAmount)}
                 </span>
               </div>
 
               {/* Total Row */}
-              <div className="pt-1 mt-1 border-t border-gray-100 flex items-center justify-between font-bold text-black">
+              <div className="pt-1 mt-1 border-t border-[var(--ui-border)] flex items-center justify-between font-bold text-[var(--ui-text)]">
                 <span>{totalLabel}</span>
                 <span>৳ {formatMoney(totalAmount)}</span>
               </div>

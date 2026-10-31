@@ -207,7 +207,7 @@ export const ProductSalesReportTable: React.FC<ProductSalesReportTableProps> = (
                 setSortBy(e.target.value);
                 setCurrentPage(1);
               }}
-              className="w-full h-8 pl-2.5 pr-6 text-xs border border-gray-200 rounded-lg bg-gray-50/50 hover:bg-white text-gray-800 font-medium focus:outline-none focus:border-[var(--primary-color)] cursor-pointer appearance-none"
+              className="w-full h-8 pl-2.5 pr-6 text-xs border border-[var(--ui-border)] rounded-lg bg-[var(--ui-surface-muted)]/50 hover:bg-[var(--ui-surface)] text-[var(--ui-text)] font-medium focus:outline-none focus:border-[var(--primary-color)] cursor-pointer appearance-none"
             >
               <option value="revenue_desc">Highest Revenue</option>
               <option value="revenue_asc">Lowest Revenue</option>
@@ -215,7 +215,7 @@ export const ProductSalesReportTable: React.FC<ProductSalesReportTableProps> = (
               <option value="name_asc">Product Name (A-Z)</option>
             </select>
             <FiChevronDown
-              className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none text-xs"
+              className="absolute right-2 top-1/2 -translate-y-1/2 text-[var(--ui-text-subtle)] pointer-events-none text-xs"
               size={13}
             />
           </div>
@@ -223,9 +223,9 @@ export const ProductSalesReportTable: React.FC<ProductSalesReportTableProps> = (
           <button
             type="button"
             onClick={handleExport}
-            className="flex items-center gap-1.5 px-3 h-8 text-xs font-semibold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 rounded-lg transition-all shadow-2xs cursor-pointer shrink-0"
+            className="flex items-center gap-1.5 px-3 h-8 text-xs font-semibold text-[var(--ui-success-dark)] bg-[var(--ui-success-light)] hover:bg-[var(--ui-success-border)] border border-[var(--ui-success-border)] rounded-lg transition-all shadow-2xs cursor-pointer shrink-0"
           >
-            <FaFileExcel className="text-emerald-600" size={12} />
+            <FaFileExcel className="text-[var(--ui-success)]" size={12} />
             <span>Export Excel</span>
           </button>
         </div>
@@ -268,38 +268,38 @@ export const ProductSalesReportTable: React.FC<ProductSalesReportTableProps> = (
                 return (
                   <tr
                     key={item.productCode + idx}
-                    className="hover:bg-sky-50/40 transition-colors"
+                    className="hover:bg-[var(--primary-color-light)]/40 transition-colors"
                   >
-                    <td className="py-2.5 px-3 text-center text-gray-700 font-semibold text-xs">
+                    <td className="py-2.5 px-3 text-center text-[var(--ui-text)] font-semibold text-xs">
                       {(currentPage - 1) * pageSize + idx + 1}
                     </td>
-                    <td className="py-2.5 px-3 font-bold font-mono text-xs text-gray-900">
+                    <td className="py-2.5 px-3 font-bold font-mono text-xs text-[var(--ui-text)]">
                       {item.productCode}
                     </td>
-                    <td className="py-2.5 px-3 font-semibold text-gray-900">
+                    <td className="py-2.5 px-3 font-semibold text-[var(--ui-text)]">
                       {item.productName}
                     </td>
-                    <td className="py-2.5 px-3 text-center text-gray-500 text-xs">
+                    <td className="py-2.5 px-3 text-center text-[var(--ui-text-muted)] text-xs">
                       {item.unit}
                     </td>
-                    <td className="py-2.5 px-3 text-center font-mono text-xs text-gray-700">
+                    <td className="py-2.5 px-3 text-center font-mono text-xs text-[var(--ui-text)]">
                       {item.invoicesCount}
                     </td>
-                    <td className="py-2.5 px-3 text-right font-bold font-mono text-xs text-gray-900">
+                    <td className="py-2.5 px-3 text-right font-bold font-mono text-xs text-[var(--ui-text)]">
                       {item.totalQuantity}
                     </td>
-                    <td className="py-2.5 px-3 text-right font-mono text-xs text-gray-700">
+                    <td className="py-2.5 px-3 text-right font-mono text-xs text-[var(--ui-text)]">
                       ৳ {formatMoney(avgPrice)}
                     </td>
-                    <td className="py-2.5 px-3 text-right font-mono text-xs text-gray-500">
+                    <td className="py-2.5 px-3 text-right font-mono text-xs text-[var(--ui-text-muted)]">
                       {item.totalDiscount > 0
                         ? `৳ ${formatMoney(item.totalDiscount)}`
                         : "N/A"}
                     </td>
-                    <td className="py-2.5 px-3 text-right font-bold font-mono text-xs text-gray-900 whitespace-nowrap">
+                    <td className="py-2.5 px-3 text-right font-bold font-mono text-xs text-[var(--ui-text)] whitespace-nowrap">
                       ৳ {formatMoney(item.totalRevenue)}
                     </td>
-                    <td className="py-2.5 px-3 text-right font-mono text-xs font-semibold text-gray-700">
+                    <td className="py-2.5 px-3 text-right font-mono text-xs font-semibold text-[var(--ui-text)]">
                       {sharePct}%
                     </td>
                   </tr>

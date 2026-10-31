@@ -26,9 +26,9 @@ const TextEditor = ({ value = '', onChange }: TextEditorProps) => {
 
     return (
         <div className="w-full hover:cursor-pointer hover:border-[var(--primary-color)]">
-            <label className="text-sm font-medium text-[#212b36] flex gap-1">
+            <label className="text-sm font-medium text-[var(--ui-text)] flex gap-1">
                 Description
-                <span className="text-red-500">*</span>
+                <span className="text-[var(--ui-danger)]">*</span>
             </label>
             <ReactQuill
                 value={value}

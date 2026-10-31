@@ -179,6 +179,73 @@ export const useTradeProductSearch = ({
     setIsDropdownOpen(false);
   }, []);
 
+
+  /* ------------------------------------------------------------------
+     Unified field: one input that serves both a barcode scanner and
+     manual product search.
+
+     A scanner types the whole code in milliseconds and usually sends
+     Enter, so every keystroke is first tested for an exact barcode /
+     product-code match. On a hit the product is added and the field
+     clears, exactly as the dedicated barcode box behaved. Anything that
+     is not an exact code simply drives the normal search dropdown.
+     ------------------------------------------------------------------ */
+  const handleUnifiedChange = useCallback(
+    (val: string) => {
+      const trimmed = val.trim();
+
+      // Exact code -> add immediately and clear (scanner path).
+      if (trimmed && findProductByBarcode(trimmed)) {
+        const added = processBarcodeMatch(trimmed);
+        if (added) {
+          setSearchQuery("");
+          setIsDropdownOpen(false);
+          return;
+        }
+      }
+
+      // Otherwise just update the query. The list is deliberately NOT opened
+      // here -- focusing or typing in the field should not drop a panel over
+      // the screen. Only the "Add Product" button opens it; if it is already
+      // open, typing filters it live.
+      setSearchQuery(val);
+    },
+    [findProductByBarcode, processBarcodeMatch]
+  );
+
+  const handleUnifiedKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLInputElement>) => {
+      if (e.key !== "Enter") return;
+      const code = searchQuery.trim();
+      if (!code) return;
+
+      // Prefer an exact code match, then fall back to search behaviour so a
+      // typed partial name still resolves the way it always did.
+      if (findProductByBarcode(code)) {
+        e.preventDefault();
+        if (processBarcodeMatch(code)) {
+          setSearchQuery("");
+          setIsDropdownOpen(false);
+          return;
+        }
+      }
+      handleKeyDownSearch(e);
+    },
+    [searchQuery, findProductByBarcode, processBarcodeMatch, handleKeyDownSearch]
+  );
+
+  const handleUnifiedPaste = useCallback(
+    (e: React.ClipboardEvent<HTMLInputElement>) => {
+      const pasted = e.clipboardData.getData("text").trim();
+      if (!pasted) return;
+      if (findProductByBarcode(pasted) && processBarcodeMatch(pasted)) {
+        e.preventDefault();
+        setSearchQuery("");
+        setIsDropdownOpen(false);
+      }
+    },
+    [findProductByBarcode, processBarcodeMatch]
+  );
   return {
     searchQuery,
     setSearchQuery,
@@ -192,6 +259,9 @@ export const useTradeProductSearch = ({
     handleBarcodeScan,
     handleBarcodePaste,
     handleKeyDownSearch,
+    handleUnifiedChange,
+    handleUnifiedKeyDown,
+    handleUnifiedPaste,
     resetSearch,
   };
 };

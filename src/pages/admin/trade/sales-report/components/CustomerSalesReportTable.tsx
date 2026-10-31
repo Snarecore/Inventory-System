@@ -204,14 +204,14 @@ export const CustomerSalesReportTable: React.FC<CustomerSalesReportTableProps> =
                 setStatusFilter(e.target.value);
                 setCurrentPage(1);
               }}
-              className="w-full h-8 pl-2.5 pr-6 text-xs border border-gray-200 rounded-lg bg-gray-50/50 hover:bg-white text-gray-800 font-medium focus:outline-none focus:border-[var(--primary-color)] cursor-pointer appearance-none"
+              className="w-full h-8 pl-2.5 pr-6 text-xs border border-[var(--ui-border)] rounded-lg bg-[var(--ui-surface-muted)]/50 hover:bg-[var(--ui-surface)] text-[var(--ui-text)] font-medium focus:outline-none focus:border-[var(--primary-color)] cursor-pointer appearance-none"
             >
               <option value="all">All Customers</option>
               <option value="due_only">With Outstanding Due</option>
               <option value="cleared_only">Settled / Zero Due</option>
             </select>
             <FiChevronDown
-              className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none text-xs"
+              className="absolute right-2 top-1/2 -translate-y-1/2 text-[var(--ui-text-subtle)] pointer-events-none text-xs"
               size={13}
             />
           </div>
@@ -224,7 +224,7 @@ export const CustomerSalesReportTable: React.FC<CustomerSalesReportTableProps> =
                 setSortBy(e.target.value);
                 setCurrentPage(1);
               }}
-              className="w-full h-8 pl-2.5 pr-6 text-xs border border-gray-200 rounded-lg bg-gray-50/50 hover:bg-white text-gray-800 font-medium focus:outline-none focus:border-[var(--primary-color)] cursor-pointer appearance-none"
+              className="w-full h-8 pl-2.5 pr-6 text-xs border border-[var(--ui-border)] rounded-lg bg-[var(--ui-surface-muted)]/50 hover:bg-[var(--ui-surface)] text-[var(--ui-text)] font-medium focus:outline-none focus:border-[var(--primary-color)] cursor-pointer appearance-none"
             >
               <option value="billed_desc">Highest Billed</option>
               <option value="due_desc">Highest Due</option>
@@ -232,7 +232,7 @@ export const CustomerSalesReportTable: React.FC<CustomerSalesReportTableProps> =
               <option value="name_asc">Name (A-Z)</option>
             </select>
             <FiChevronDown
-              className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none text-xs"
+              className="absolute right-2 top-1/2 -translate-y-1/2 text-[var(--ui-text-subtle)] pointer-events-none text-xs"
               size={13}
             />
           </div>
@@ -240,9 +240,9 @@ export const CustomerSalesReportTable: React.FC<CustomerSalesReportTableProps> =
           <button
             type="button"
             onClick={handleExport}
-            className="flex items-center gap-1.5 px-3 h-8 text-xs font-semibold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 rounded-lg transition-all shadow-2xs cursor-pointer shrink-0"
+            className="flex items-center gap-1.5 px-3 h-8 text-xs font-semibold text-[var(--ui-success-dark)] bg-[var(--ui-success-light)] hover:bg-[var(--ui-success-border)] border border-[var(--ui-success-border)] rounded-lg transition-all shadow-2xs cursor-pointer shrink-0"
           >
-            <FaFileExcel className="text-emerald-600" size={12} />
+            <FaFileExcel className="text-[var(--ui-success)]" size={12} />
             <span>Export Excel</span>
           </button>
         </div>
@@ -276,47 +276,47 @@ export const CustomerSalesReportTable: React.FC<CustomerSalesReportTableProps> =
                 return (
                   <tr
                     key={c.customerName + idx}
-                    className="hover:bg-sky-50/40 transition-colors"
+                    className="hover:bg-[var(--primary-color-light)]/40 transition-colors"
                   >
-                    <td className="py-2.5 px-3 text-center text-gray-700 font-semibold text-xs">
+                    <td className="py-2.5 px-3 text-center text-[var(--ui-text)] font-semibold text-xs">
                       {(currentPage - 1) * pageSize + idx + 1}
                     </td>
                     <td className="py-2.5 px-3">
-                      <div className="font-semibold text-gray-900 text-xs">
+                      <div className="font-semibold text-[var(--ui-text)] text-xs">
                         {c.customerName}
                       </div>
-                      <div className="text-[11px] text-gray-500 mt-0.5 flex flex-wrap items-center gap-2">
+                      <div className="text-[11px] text-[var(--ui-text-muted)] mt-0.5 flex flex-wrap items-center gap-2">
                         {c.customerPhone && (
-                          <span className="font-mono text-gray-600">
+                          <span className="font-mono text-[var(--ui-text-muted)]">
                             {c.customerPhone}
                           </span>
                         )}
                         {c.customerAddress && (
-                          <span className="text-gray-400 truncate max-w-xs">
+                          <span className="text-[var(--ui-text-subtle)] truncate max-w-xs">
                             • {c.customerAddress}
                           </span>
                         )}
                       </div>
                     </td>
-                    <td className="py-2.5 px-3 text-center font-mono text-xs text-gray-700">
+                    <td className="py-2.5 px-3 text-center font-mono text-xs text-[var(--ui-text)]">
                       {c.invoicesCount}
                     </td>
-                    <td className="py-2.5 px-3 text-right font-bold font-mono text-xs text-gray-900 whitespace-nowrap">
+                    <td className="py-2.5 px-3 text-right font-bold font-mono text-xs text-[var(--ui-text)] whitespace-nowrap">
                       ৳ {formatMoney(c.totalBilled)}
                     </td>
-                    <td className="py-2.5 px-3 text-right font-semibold font-mono text-xs text-emerald-700 whitespace-nowrap">
+                    <td className="py-2.5 px-3 text-right font-semibold font-mono text-xs text-[var(--ui-success-dark)] whitespace-nowrap">
                       ৳ {formatMoney(c.totalPaid)}
                     </td>
                     <td className="py-2.5 px-3 text-right font-mono text-xs whitespace-nowrap">
                       {hasDue ? (
-                        <span className="text-rose-600 font-bold">
+                        <span className="text-[var(--ui-danger)] font-bold">
                           ৳ {formatMoney(c.totalDue)}
                         </span>
                       ) : (
-                        <span className="text-gray-400 font-normal">৳ 0</span>
+                        <span className="text-[var(--ui-text-subtle)] font-normal">৳ 0</span>
                       )}
                     </td>
-                    <td className="py-2.5 px-3 text-center text-gray-600 whitespace-nowrap text-xs">
+                    <td className="py-2.5 px-3 text-center text-[var(--ui-text-muted)] whitespace-nowrap text-xs">
                       {c.lastDate
                         ? moment(c.lastDate).format("DD MMM, YYYY")
                         : "N/A"}
@@ -325,8 +325,8 @@ export const CustomerSalesReportTable: React.FC<CustomerSalesReportTableProps> =
                       <span
                         className={`inline-block px-2 py-0.5 rounded-md text-[10px] font-semibold border ${
                           hasDue
-                            ? "bg-rose-50 text-rose-700 border-rose-200"
-                            : "bg-emerald-50 text-emerald-700 border-emerald-200"
+                            ? "bg-[var(--ui-danger-light)] text-[var(--ui-danger-dark)] border-[var(--ui-danger-border)]"
+                            : "bg-[var(--ui-success-light)] text-[var(--ui-success-dark)] border-[var(--ui-success-border)]"
                         }`}
                       >
                         {hasDue ? "Has Due" : "Settled"}

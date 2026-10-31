@@ -56,8 +56,8 @@ export const TradePaymentSection: React.FC<TradePaymentSectionProps> = ({
     <div className="space-y-1.5">
       {/* Header and Quick Payment Presets */}
       <div className="flex items-center justify-between flex-wrap gap-1">
-        <span className="text-[11px] font-bold text-gray-800 tracking-wider flex items-center gap-1.5">
-          {headerIcon || <FaWallet size={11} className="text-gray-700" />}
+        <span className="flex items-center gap-1.5 text-[13px] font-semibold text-[var(--ui-text)]">
+          {headerIcon || <FaWallet size={11} className="text-[var(--ui-text)]" />}
           {title}
         </span>
 
@@ -67,7 +67,7 @@ export const TradePaymentSection: React.FC<TradePaymentSectionProps> = ({
               type="button"
               disabled={disabled || grandTotal <= 0}
               onClick={handlePayFullCash}
-              className="px-1.5 py-0.5 text-[10px] font-bold rounded bg-emerald-50 text-emerald-800 border border-emerald-300 hover:bg-emerald-100 shadow-2xs transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+              className="px-1.5 py-0.5 text-[10px] font-bold rounded-[var(--ui-radius-sm)] bg-[var(--ui-success-light)] text-[var(--ui-success-dark)] border border-[var(--ui-success-border)] hover:bg-[var(--ui-success-border)] shadow-[var(--ui-shadow-control)] transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
             >
               Cash
             </button>
@@ -75,7 +75,7 @@ export const TradePaymentSection: React.FC<TradePaymentSectionProps> = ({
               type="button"
               disabled={disabled || grandTotal <= 0}
               onClick={handlePayFullBank}
-              className="px-1.5 py-0.5 text-[10px] font-bold rounded bg-sky-50 text-sky-800 border border-sky-300 hover:bg-sky-100 shadow-2xs transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+              className="px-1.5 py-0.5 text-[10px] font-bold rounded-[var(--ui-radius-sm)] bg-[var(--primary-color-light)] text-[var(--primary-color-dark)] border border-[var(--primary-color-muted)] hover:bg-[var(--primary-color-muted)] shadow-[var(--ui-shadow-control)] transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
             >
               {bankLabel === "CARD" ? "Card" : "Bank"}
             </button>
@@ -83,7 +83,7 @@ export const TradePaymentSection: React.FC<TradePaymentSectionProps> = ({
               type="button"
               disabled={disabled || grandTotal <= 0}
               onClick={handlePayFullMfs}
-              className="px-1.5 py-0.5 text-[10px] font-bold rounded bg-purple-50 text-purple-800 border border-purple-300 hover:bg-purple-100 shadow-2xs transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+              className="px-1.5 py-0.5 text-[10px] font-bold rounded-[var(--ui-radius-sm)] bg-[var(--ui-info-light)] text-[var(--ui-info-dark)] border border-[var(--ui-info-border)] hover:bg-[var(--ui-info-border)] shadow-[var(--ui-shadow-control)] transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
             >
               MFS
             </button>
@@ -91,7 +91,7 @@ export const TradePaymentSection: React.FC<TradePaymentSectionProps> = ({
               type="button"
               disabled={disabled}
               onClick={handlePayFullCredit}
-              className="px-1.5 py-0.5 text-[10px] font-bold rounded bg-rose-50 text-rose-800 border border-rose-300 hover:bg-rose-100 shadow-2xs transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+              className="px-1.5 py-0.5 text-[10px] font-bold rounded-[var(--ui-radius-sm)] bg-[var(--ui-danger-light)] text-[var(--ui-danger-dark)] border border-[var(--ui-danger-border)] hover:bg-[var(--ui-danger-border)] shadow-[var(--ui-shadow-control)] transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
             >
               Credit
             </button>
@@ -103,27 +103,27 @@ export const TradePaymentSection: React.FC<TradePaymentSectionProps> = ({
       <div className="flex flex-col gap-1.5">
         {/* 1. Cash Card */}
         <div
-          className={`px-2.5 py-1 rounded-md border transition-all flex items-center justify-between gap-1.5 shadow-2xs ${
+          className={`px-2.5 py-1 rounded-[var(--ui-radius-sm)] border transition-all flex items-center justify-between gap-1.5 shadow-[var(--ui-shadow-control)] ${
             Number(cashAmount) > 0
-              ? "border-emerald-400 bg-emerald-50/30"
-              : "border-gray-200 bg-gray-50/50 hover:bg-white"
+              ? "border-[var(--ui-success-border)] bg-[var(--ui-success-light)]/30"
+              : "border-[var(--ui-border)] bg-[var(--ui-surface-muted)]/50 hover:bg-[var(--ui-surface)]"
           }`}
         >
           <div className="flex items-center gap-1.5 min-w-0">
-            <div className="w-6 h-6 rounded bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0">
+            <div className="w-6 h-6 rounded-[var(--ui-radius-sm)] bg-[var(--ui-success-border)] text-[var(--ui-success-dark)] flex items-center justify-center shrink-0">
               <FaMoneyBillWave size={11} />
             </div>
-            <span className="font-bold text-[11px] text-gray-800 tracking-wider">CASH</span>
+            <span className="font-bold text-[11px] text-[var(--ui-text)] tracking-wider">CASH</span>
           </div>
 
           <div
-            className={`flex items-center h-6.5 rounded border bg-white overflow-hidden w-28 sm:w-34 shrink-0 transition-colors shadow-2xs ${
+            className={`flex items-center h-[var(--ui-control-h-xs)] rounded-[var(--ui-radius-sm)] border bg-[var(--ui-surface)] overflow-hidden w-28 sm:w-34 shrink-0 transition-colors shadow-[var(--ui-shadow-control)] ${
               Number(cashAmount) > 0
-                ? "border-emerald-500 ring-1 ring-emerald-500/50"
-                : "border-gray-300 focus-within:border-emerald-500 focus-within:ring-1 focus-within:ring-emerald-500"
+                ? "border-[var(--ui-success)] ring-1 ring-[var(--ui-success)]/50"
+                : "border-[var(--ui-border-strong)] focus-within:border-[var(--ui-success)] focus-within:ring-1 focus-within:ring-[var(--ui-success)]"
             }`}
           >
-            <span className="text-[11px] text-gray-600 font-bold px-1.5 bg-gray-50 h-full flex items-center border-r border-gray-200 select-none">
+            <span className="text-[11px] text-[var(--ui-text-muted)] font-bold tabular-nums px-1.5 bg-[var(--ui-surface-muted)] h-full flex items-center border-r border-[var(--ui-border)] select-none">
               ৳
             </span>
             <input
@@ -134,7 +134,7 @@ export const TradePaymentSection: React.FC<TradePaymentSectionProps> = ({
               value={cashAmount}
               onWheel={(e) => e.currentTarget.blur()}
               onChange={(e) => handleCashAmountChange(e.target.value)}
-              className="w-full text-right px-1.5 text-xs font-bold text-black outline-none bg-transparent placeholder:text-gray-400 h-full"
+              className="h-full w-full bg-transparent px-1.5 text-right text-[length:var(--ui-font-size-xs)] font-bold tabular-nums text-[var(--ui-text)] outline-none placeholder:text-[var(--ui-text-subtle)]"
             />
           </div>
         </div>
@@ -145,7 +145,7 @@ export const TradePaymentSection: React.FC<TradePaymentSectionProps> = ({
             <button
               type="button"
               onClick={() => setShowCashGivenCalc(!showCashGivenCalc)}
-              className="text-[var(--color-primary)] cursor-pointer font-bold"
+              className="text-[var(--primary-color)] cursor-pointer font-bold"
             >
               {showCashGivenCalc ? "- Hide Change Calculator" : "+ Calculate Cash Change / ভাংতি"}
             </button>
@@ -154,11 +154,11 @@ export const TradePaymentSection: React.FC<TradePaymentSectionProps> = ({
 
         {/* Cash Tendered & Change Return Block */}
         {showCashGivenCalc && numCash > 0 && (
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 bg-emerald-50/60 px-2 py-1 rounded-md border border-emerald-200 shadow-2xs">
-            <span className="text-[11px] text-gray-800 font-semibold">Cash Tendered:</span>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 bg-[var(--ui-success-light)]/60 px-2 py-1 rounded-[var(--ui-radius-sm)] border border-[var(--ui-success-border)] shadow-[var(--ui-shadow-control)]">
+            <span className="text-[11px] text-[var(--ui-text)] font-semibold">Cash Tendered:</span>
             <div className="flex items-center gap-1.5">
               <div className="relative w-28 sm:w-32">
-                <span className="absolute left-1.5 top-0.5 text-gray-600 text-xs font-bold">৳</span>
+                <span className="absolute left-1.5 top-0.5 text-[var(--ui-text-muted)] text-[length:var(--ui-font-size-xs)] font-bold tabular-nums">৳</span>
                 <input
                   type="number"
                   step="0.01"
@@ -167,11 +167,11 @@ export const TradePaymentSection: React.FC<TradePaymentSectionProps> = ({
                   value={cashGiven || ""}
                   onWheel={(e) => e.currentTarget.blur()}
                   onChange={(e) => setCashGiven(e.target.value)}
-                  className="w-full pl-4.5 pr-1.5 py-0.5 text-xs border border-gray-300 rounded text-right font-bold text-black bg-white outline-none focus:border-emerald-500 h-6"
+                  className="w-full pl-4.5 pr-1.5 py-0.5 text-[length:var(--ui-font-size-xs)] border border-[var(--ui-border-strong)] rounded-[var(--ui-radius-sm)] text-right font-bold text-[var(--ui-text)] bg-[var(--ui-surface)] outline-none focus:border-[var(--ui-success)] h-[var(--ui-control-h-xs)]"
                 />
               </div>
               {changeReturnAmount > 0 && (
-                <span className="text-[11px] text-emerald-800 font-bold whitespace-nowrap">
+                <span className="text-[11px] text-[var(--ui-success-dark)] font-bold whitespace-nowrap">
                   Return: ৳{formatMoney(changeReturnAmount)}
                 </span>
               )}
@@ -181,33 +181,33 @@ export const TradePaymentSection: React.FC<TradePaymentSectionProps> = ({
 
         {/* 2. Card / Bank Card */}
         <div
-          className={`px-2.5 py-1 rounded-md border transition-all flex items-center justify-between gap-1.5 shadow-2xs ${
+          className={`px-2.5 py-1 rounded-[var(--ui-radius-sm)] border transition-all flex items-center justify-between gap-1.5 shadow-[var(--ui-shadow-control)] ${
             Number(bankAmount) > 0
-              ? "border-sky-400 bg-sky-50/30"
-              : "border-gray-200 bg-gray-50/50 hover:bg-white"
+              ? "border-[var(--primary-color)] bg-[var(--primary-color-light)]/30"
+              : "border-[var(--ui-border)] bg-[var(--ui-surface-muted)]/50 hover:bg-[var(--ui-surface)]"
           }`}
         >
           <div className="flex items-center gap-1.5 flex-1 min-w-0 mr-1">
-            <div className="w-6 h-6 rounded bg-sky-100 text-sky-700 flex items-center justify-center shrink-0">
+            <div className="w-6 h-6 rounded-[var(--ui-radius-sm)] bg-[var(--primary-color-muted)] text-[var(--primary-color-dark)] flex items-center justify-center shrink-0">
               <FaCreditCard size={11} />
             </div>
-            <span className="font-bold text-[11px] text-gray-800 tracking-wider shrink-0">
+            <span className="font-bold text-[11px] text-[var(--ui-text)] tracking-wider shrink-0">
               {bankLabel}
             </span>
             <select
               disabled={disabled}
               value={selectedBankId}
               onChange={(e) => handleSelectBank(e.target.value)}
-              className="h-6.5 w-full max-w-[130px] sm:max-w-[215px] px-1.5 text-[11px] border border-gray-300 rounded bg-white text-black font-medium focus:outline-none focus:border-sky-500 cursor-pointer truncate disabled:opacity-50"
+              className="ui-control ui-select ui-control-xs w-full max-w-[130px] font-medium truncate sm:max-w-[215px]"
             >
-              <option value="" className="text-black">
+              <option value="" className="text-[var(--ui-text)]">
                 {registeredBankAccounts.length ? `Select ${bankLabel}...` : "No bank registered"}
               </option>
               {registeredBankAccounts.map((b) => (
                 <option
                   key={b.id}
                   value={b.id}
-                  className="text-black"
+                  className="text-[var(--ui-text)]"
                 >
                   {b.bankName}
                   {b.accountNo ? ` – ${b.accountNo}` : ""}
@@ -222,15 +222,15 @@ export const TradePaymentSection: React.FC<TradePaymentSectionProps> = ({
                 showErrorToast("Please select a bank account first");
               }
             }}
-            className={`flex items-center h-6.5 rounded border bg-white overflow-hidden w-28 sm:w-34 shrink-0 transition-colors shadow-2xs ${
+            className={`flex items-center h-[var(--ui-control-h-xs)] rounded-[var(--ui-radius-sm)] border bg-[var(--ui-surface)] overflow-hidden w-28 sm:w-34 shrink-0 transition-colors shadow-[var(--ui-shadow-control)] ${
               !selectedBankId
-                ? "border-gray-200 bg-gray-100 opacity-60 cursor-not-allowed"
+                ? "border-[var(--ui-border)] bg-[var(--ui-surface-sunken)] opacity-60 cursor-not-allowed"
                 : Number(bankAmount) > 0
-                ? "border-sky-500 ring-1 ring-sky-500/50"
-                : "border-gray-300 focus-within:border-sky-500 focus-within:ring-1 focus-within:ring-sky-500"
+                ? "border-[var(--primary-color)] ring-1 ring-[var(--primary-color)]/50"
+                : "border-[var(--ui-border-strong)] focus-within:border-[var(--primary-color)] focus-within:ring-1 focus-within:ring-[var(--primary-color)]"
             }`}
           >
-            <span className="text-[11px] text-gray-600 font-bold px-1.5 bg-gray-50 h-full flex items-center border-r border-gray-200 select-none">
+            <span className="text-[11px] text-[var(--ui-text-muted)] font-bold tabular-nums px-1.5 bg-[var(--ui-surface-muted)] h-full flex items-center border-r border-[var(--ui-border)] select-none">
               ৳
             </span>
             <input
@@ -241,38 +241,38 @@ export const TradePaymentSection: React.FC<TradePaymentSectionProps> = ({
               value={bankAmount}
               onWheel={(e) => e.currentTarget.blur()}
               onChange={(e) => handleBankAmountChange(e.target.value)}
-              className="w-full text-right px-1.5 text-xs font-bold text-black outline-none bg-transparent placeholder:text-gray-400 h-full disabled:cursor-not-allowed"
+              className="h-full w-full bg-transparent px-1.5 text-right text-[length:var(--ui-font-size-xs)] font-bold tabular-nums text-[var(--ui-text)] outline-none placeholder:text-[var(--ui-text-subtle)] disabled:cursor-not-allowed"
             />
           </div>
         </div>
 
         {/* 3. MFS Card */}
         <div
-          className={`px-2.5 py-1 rounded-md border transition-all flex items-center justify-between gap-1.5 shadow-2xs ${
+          className={`px-2.5 py-1 rounded-[var(--ui-radius-sm)] border transition-all flex items-center justify-between gap-1.5 shadow-[var(--ui-shadow-control)] ${
             Number(mfsAmount) > 0
-              ? "border-purple-400 bg-purple-50/30"
-              : "border-gray-200 bg-gray-50/50 hover:bg-white"
+              ? "border-[var(--ui-info-border)] bg-[var(--ui-info-light)]/30"
+              : "border-[var(--ui-border)] bg-[var(--ui-surface-muted)]/50 hover:bg-[var(--ui-surface)]"
           }`}
         >
           <div className="flex items-center gap-1.5 flex-1 min-w-0 mr-1">
-            <div className="w-6 h-6 rounded bg-purple-100 text-purple-700 flex items-center justify-center shrink-0">
+            <div className="w-6 h-6 rounded-[var(--ui-radius-sm)] bg-[var(--ui-info-border)] text-[var(--ui-info-dark)] flex items-center justify-center shrink-0">
               <FaMobileAlt size={11} />
             </div>
-            <span className="font-bold text-[11px] text-gray-800 tracking-wider shrink-0">MFS</span>
+            <span className="font-bold text-[11px] text-[var(--ui-text)] tracking-wider shrink-0">MFS</span>
             <select
               disabled={disabled}
               value={selectedMfsId}
               onChange={(e) => handleSelectMfs(e.target.value)}
-              className="h-6.5 w-full max-w-[130px] sm:max-w-[215px] px-1.5 text-[11px] border border-gray-300 rounded bg-white text-black font-medium focus:outline-none focus:border-purple-500 cursor-pointer truncate disabled:opacity-50"
+              className="ui-control ui-select ui-control-xs w-full max-w-[130px] font-medium truncate sm:max-w-[215px]"
             >
-              <option value="" className="text-black">
+              <option value="" className="text-[var(--ui-text)]">
                 {registeredMfsAccounts.length ? "Select MFS..." : "No MFS registered"}
               </option>
               {registeredMfsAccounts.map((m) => (
                 <option
                   key={m.id}
                   value={m.id}
-                  className="text-black"
+                  className="text-[var(--ui-text)]"
                 >
                   {m.mfsName}
                   {m.mfsPhone ? ` – ${m.mfsPhone}` : ""}
@@ -287,15 +287,15 @@ export const TradePaymentSection: React.FC<TradePaymentSectionProps> = ({
                 showErrorToast("Please select an MFS provider first");
               }
             }}
-            className={`flex items-center h-6.5 rounded border bg-white overflow-hidden w-28 sm:w-34 shrink-0 transition-colors shadow-2xs ${
+            className={`flex items-center h-[var(--ui-control-h-xs)] rounded-[var(--ui-radius-sm)] border bg-[var(--ui-surface)] overflow-hidden w-28 sm:w-34 shrink-0 transition-colors shadow-[var(--ui-shadow-control)] ${
               !selectedMfsId
-                ? "border-gray-200 bg-gray-100 opacity-60 cursor-not-allowed"
+                ? "border-[var(--ui-border)] bg-[var(--ui-surface-sunken)] opacity-60 cursor-not-allowed"
                 : Number(mfsAmount) > 0
-                ? "border-purple-500 ring-1 ring-purple-500/50"
-                : "border-gray-300 focus-within:border-purple-500 focus-within:ring-1 focus-within:ring-purple-500"
+                ? "border-[var(--ui-info)] ring-1 ring-[var(--ui-info)]/50"
+                : "border-[var(--ui-border-strong)] focus-within:border-[var(--ui-info)] focus-within:ring-1 focus-within:ring-[var(--ui-info)]"
             }`}
           >
-            <span className="text-[11px] text-gray-600 font-bold px-1.5 bg-gray-50 h-full flex items-center border-r border-gray-200 select-none">
+            <span className="text-[11px] text-[var(--ui-text-muted)] font-bold tabular-nums px-1.5 bg-[var(--ui-surface-muted)] h-full flex items-center border-r border-[var(--ui-border)] select-none">
               ৳
             </span>
             <input
@@ -306,7 +306,7 @@ export const TradePaymentSection: React.FC<TradePaymentSectionProps> = ({
               value={mfsAmount}
               onWheel={(e) => e.currentTarget.blur()}
               onChange={(e) => handleMfsAmountChange(e.target.value)}
-              className="w-full text-right px-1.5 text-xs font-bold text-black outline-none bg-transparent placeholder:text-gray-400 h-full disabled:cursor-not-allowed"
+              className="h-full w-full bg-transparent px-1.5 text-right text-[length:var(--ui-font-size-xs)] font-bold tabular-nums text-[var(--ui-text)] outline-none placeholder:text-[var(--ui-text-subtle)] disabled:cursor-not-allowed"
             />
           </div>
         </div>

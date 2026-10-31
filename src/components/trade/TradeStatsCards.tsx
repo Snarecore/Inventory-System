@@ -23,16 +23,16 @@ export const TradeStatsCards: React.FC<TradeStatsCardsProps> = ({ cards }) => {
           <div
             key={idx}
             className={`p-2.5 sm:p-3 rounded-xl border flex items-center justify-between gap-2.5 transition-all shadow-xs ${
-              card.bg || "bg-gray-50/60 border-gray-300 hover:border-gray-400"
+              card.bg || "bg-[var(--ui-surface-muted)]/60 border-[var(--ui-border-strong)] hover:border-[var(--ui-border-strong)]"
             }`}
           >
             <div className="flex flex-col min-w-0">
-              <span className="text-[11px] font-semibold text-black truncate">
+              <span className="text-[11px] font-semibold text-[var(--ui-text)] truncate">
                 {card.title}
               </span>
               <span
                 className={`text-base sm:text-lg font-bold truncate mt-0.5 ${
-                  card.color || "text-gray-900"
+                  card.color || "text-[var(--ui-text)]"
                 }`}
               >
                 {card.value}
@@ -40,7 +40,7 @@ export const TradeStatsCards: React.FC<TradeStatsCardsProps> = ({ cards }) => {
             </div>
             <div
               className={`p-2 rounded-lg shrink-0 ${
-                card.iconBg || "bg-gray-100 text-gray-600"
+                card.iconBg || "bg-[var(--ui-surface-sunken)] text-[var(--ui-text-muted)]"
               }`}
             >
               <Icon size={16} />

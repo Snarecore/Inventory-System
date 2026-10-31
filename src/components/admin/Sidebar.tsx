@@ -56,17 +56,17 @@ const Sidebar = ({ sidebarClick }: SidebarProps) => {
 
   return (
     <div
-      className={`hidden lg:flex flex-col h-screen bg-white shadow-md transition-all ease-in duration-300 border-r border-gray-200 relative shrink-0 ${
+      className={`hidden lg:flex flex-col h-screen bg-[var(--ui-surface)]/85 backdrop-blur-xl shadow-[0_18px_40px_-18px_rgba(15,23,42,0.35)] transition-all ease-in duration-300 border-r border-[var(--ui-border)] relative shrink-0 ${
         sidebarClick ? "w-20" : "w-52"
       }`}
     >
-      <div className={`h-12 flex items-center border-b border-gray-200 shrink-0 ${sidebarClick ? "justify-center px-2" : "justify-start px-3.5"}`}>
+      <div className={`h-12 flex items-center border-b border-[var(--ui-border)] bg-[var(--ui-surface)]/70 shrink-0 ${sidebarClick ? "justify-center px-2" : "justify-start px-3.5"}`}>
         <Link to={"/admin"} className="flex items-center">
           {sidebarClick ? (
             <img
               src={logoImg}
               alt="Cash Boi"
-              className="h-7 w-7 object-contain rounded-md"
+              className="h-7 w-7 object-contain rounded-md shadow-sm"
             />
           ) : (
             <img
@@ -82,7 +82,7 @@ const Sidebar = ({ sidebarClick }: SidebarProps) => {
         {menu.map((section) => (
           <div key={section.sectionName} className={sidebarClick ? "mb-1" : "mb-2"}>
             {!sidebarClick && section.sectionName && (
-              <p className="text-[11px] text-[#092c4c] font-bold px-2 mb-1">
+              <p className="text-[11px] text-[var(--primary-color-dark)] font-bold px-2 mb-1">
                 {section.sectionName}
               </p>
             )}
@@ -106,14 +106,14 @@ const Sidebar = ({ sidebarClick }: SidebarProps) => {
                   {item.subItems && item.subItems.length > 0 ? (
                     <div
                       onClick={() => handleParentItemClick(item)}
-                      className={`w-full group py-1.5 flex items-center cursor-pointer rounded-md transition-all ${
+                      className={`w-full group py-1.5 flex items-center cursor-pointer rounded-xl transition-all ${
                         sidebarClick
                           ? "justify-center px-0"
                           : "justify-between px-2.5"
                       } ${
                         shouldShowActive
-                          ? "bg-[var(--color-primary-light)] text-[var(--color-primary)]"
-                          : "hover:bg-gray-100"
+                          ? "bg-[var(--color-primary-light)] text-[var(--color-primary)] shadow-[inset_0_0_0_1px_rgba(6,51,107,0.06)]"
+                          : "hover:bg-[var(--ui-surface-sunken)]"
                       }`}
                       aria-expanded={!sidebarClick && isOpen}
                       aria-disabled={sidebarClick}
@@ -124,7 +124,7 @@ const Sidebar = ({ sidebarClick }: SidebarProps) => {
                           className={`text-base transition-all ${
                             shouldShowActive
                               ? "text-[var(--color-primary)]"
-                              : "text-[#5b6670] group-hover:text-[var(--color-primary)]"
+                              : "text-[var(--ui-text-muted)] group-hover:text-[var(--color-primary)]"
                           }`}
                         >
                           <Icon title={item.name} size={15} />
@@ -134,7 +134,7 @@ const Sidebar = ({ sidebarClick }: SidebarProps) => {
                             className={`text-xs font-semibold transition-all ${
                               shouldShowActive
                                 ? "text-[var(--color-primary)]"
-                                : "text-[#212b36] group-hover:text-[var(--color-primary)]"
+                                : "text-[var(--ui-text)] group-hover:text-[var(--color-primary)]"
                             }`}
                           >
                             {item.name}
@@ -155,14 +155,14 @@ const Sidebar = ({ sidebarClick }: SidebarProps) => {
                   ) : (
                     <Link
                       to={item.path}
-                      className={`w-full group py-1.5 flex items-center rounded-md transition-all ${
+                      className={`w-full group py-1.5 flex items-center rounded-xl transition-all ${
                         sidebarClick
                           ? "justify-center px-0"
                           : "gap-2 px-2.5"
                       } ${
                         shouldShowActive
-                          ? "bg-[var(--color-primary-light)] text-[var(--color-primary)]"
-                          : "hover:bg-gray-100"
+                          ? "bg-[var(--color-primary-light)] text-[var(--color-primary)] shadow-[inset_0_0_0_1px_rgba(6,51,107,0.06)]"
+                          : "hover:bg-[var(--ui-surface-sunken)]"
                       }`}
                       title={sidebarClick ? item.name : undefined}
                     >
@@ -170,7 +170,7 @@ const Sidebar = ({ sidebarClick }: SidebarProps) => {
                         className={`text-base transition-all ${
                           shouldShowActive
                             ? "text-[var(--color-primary)]"
-                            : "text-[#5b6670] group-hover:text-[var(--color-primary)]"
+                            : "text-[var(--ui-text-muted)] group-hover:text-[var(--color-primary)]"
                         }`}
                       >
                         <Icon title={item.name} size={15} />
@@ -180,7 +180,7 @@ const Sidebar = ({ sidebarClick }: SidebarProps) => {
                           className={`text-xs font-semibold transition-all ${
                             shouldShowActive
                               ? "text-[var(--color-primary)]"
-                              : "text-[#212b36] group-hover:text-[var(--color-primary)]"
+                              : "text-[var(--ui-text)] group-hover:text-[var(--color-primary)]"
                           }`}
                         >
                           {item.name}
@@ -203,7 +203,7 @@ const Sidebar = ({ sidebarClick }: SidebarProps) => {
                                 className={`block w-full rounded-md pl-5 pr-2.5 py-1 cursor-pointer text-xs transition-all ${
                                   isActive
                                     ? "text-[var(--color-primary)] font-semibold bg-[var(--color-primary-light)]"
-                                    : "text-[#646b72] hover:bg-gray-100 hover:text-[var(--color-primary)]"
+                                    : "text-[var(--ui-text-muted)] hover:bg-[var(--ui-surface-sunken)] hover:text-[var(--color-primary)]"
                                 }`}
                               >
                                 <span className="flex items-center gap-2">
@@ -211,7 +211,7 @@ const Sidebar = ({ sidebarClick }: SidebarProps) => {
                                     className={`w-1 h-1 shrink-0 rounded-full transition-all duration-200 ${
                                       isActive
                                         ? "bg-[var(--color-primary)]"
-                                        : "bg-gray-400 group-hover:bg-[var(--color-primary)]"
+                                        : "bg-[var(--ui-text-subtle)] group-hover:bg-[var(--color-primary)]"
                                     }`}
                                   />
                                   {subItem.name}

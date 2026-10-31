@@ -88,20 +88,20 @@ const PageCmsForm = () => {
 
 
     return (
-        <div className="bg-white max-w-7xl rounded-lg border border-gray-200 p-6">
+        <div className="bg-[var(--ui-surface)] max-w-7xl rounded-lg border border-[var(--ui-border)] p-6">
             {/* Header */}
             <div className="flex items-start justify-between gap-4">
                 <div>
-                    <p className="text-xs text-gray-500">Dashboard • Overview</p>
-                    <h1 className="text-2xl sm:text-3xl font-bold text-[#212B36] mt-1">
+                    <p className="text-xs text-[var(--ui-text-muted)]">Dashboard • Overview</p>
+                    <h1 className="text-2xl sm:text-3xl font-bold text-[var(--ui-text)] mt-1">
                         Welcome back 👋
                     </h1>
-                    <p className="text-gray-600 mt-2">
+                    <p className="text-[var(--ui-text-muted)] mt-2">
                         A quick snapshot of your product performance, categories, and team activity.
                     </p>
                 </div>
                 <div className="flex items-center gap-2">
-                    <button className="px-3 py-2 rounded-lg border text-sm hover:bg-gray-50">
+                    <button className="px-3 py-2 rounded-lg border text-sm hover:bg-[var(--ui-surface-muted)]">
                         Export
                     </button>
                     <button className="px-3 py-2 rounded-lg bg-[var(--color-primary)] text-white text-sm hover:opacity-90">
@@ -129,12 +129,12 @@ const PageCmsForm = () => {
                             desc: "Cohorts, LTV, and churn risk to guide retention.",
                         },
                     ].map((f) => (
-                        <div key={f.title} className="rounded-xl border border-gray-200 p-5">
-                            <div className="h-10 w-10 rounded-lg bg-gray-100 flex items-center justify-center text-gray-600">
+                        <div key={f.title} className="rounded-xl border border-[var(--ui-border)] p-5">
+                            <div className="h-10 w-10 rounded-lg bg-[var(--ui-surface-sunken)] flex items-center justify-center text-[var(--ui-text-muted)]">
                                 ⭐
                             </div>
                             <p className="mt-3 font-semibold">{f.title}</p>
-                            <p className="text-sm text-gray-600 mt-1">{f.desc}</p>
+                            <p className="text-sm text-[var(--ui-text-muted)] mt-1">{f.desc}</p>
                             <button className="mt-4 text-sm text-[var(--color-primary)] hover:underline">
                                 Learn more
                             </button>

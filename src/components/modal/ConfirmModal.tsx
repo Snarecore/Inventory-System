@@ -24,8 +24,8 @@ const ConfirmModal: React.FC<ConfirmModalProps> = ({
   confirmText = "Save",
   cancelText = "Cancel",
   icon,
-  iconBgColor = "bg-[#e0f2fe]",
-  confirmButtonColor = "bg-[#009fe3] hover:bg-[#0085be]",
+  iconBgColor = "bg-[var(--primary-color-light)]",
+  confirmButtonColor = "bg-[var(--primary-color)] hover:bg-[var(--primary-color-hover)]",
   isLoading = false,
 }) => {
   const isConfirmingRef = useRef(false);
@@ -45,9 +45,9 @@ const ConfirmModal: React.FC<ConfirmModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center bg-[#000000b6] bg-opacity-50 z-[9999] p-2">
+    <div className="ui-modal-backdrop fixed inset-0 flex items-center justify-center bg-[color-mix(in_srgb,var(--ui-text)_72%,transparent)] bg-opacity-50 z-[9999] p-2">
       <div
-        className="bg-white rounded-lg shadow-lg w-[400px] p-10 relative"
+        className="ui-modal-panel bg-[var(--ui-surface)] rounded-lg shadow-lg w-[400px] p-10 relative"
         role="dialog"
         aria-labelledby="confirm-modal-title"
       >
@@ -59,17 +59,17 @@ const ConfirmModal: React.FC<ConfirmModalProps> = ({
               <FiCheckCircle className="text-2xl text-[var(--color-primary)]" />
             )}
           </div>
-          <h2 id="confirm-modal-title" className="text-lg font-bold mt-3 text-gray-900">
+          <h2 id="confirm-modal-title" className="text-lg font-bold mt-3 text-[var(--ui-text)]">
             {title}
           </h2>
-          <p className="text-sm text-gray-600 mt-1">{message}</p>
+          <p className="text-sm text-[var(--ui-text-muted)] mt-1">{message}</p>
         </div>
         <div className="flex justify-center gap-3 mt-6">
           <button
             type="button"
             onClick={onClose}
             disabled={isLoading}
-            className="px-5 py-2 text-xs font-semibold text-gray-700 bg-white border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 transition shadow-2xs disabled:opacity-50 min-w-[90px]"
+            className="px-5 py-2 text-xs font-semibold text-[var(--ui-text)] bg-[var(--ui-surface)] border border-[var(--ui-border-strong)] rounded-lg cursor-pointer hover:bg-[var(--ui-surface-muted)] transition shadow-2xs disabled:opacity-50 min-w-[90px]"
           >
             {cancelText}
           </button>
@@ -78,7 +78,7 @@ const ConfirmModal: React.FC<ConfirmModalProps> = ({
             onClick={handleConfirmClick}
             disabled={isLoading}
             className={`px-5 py-2 text-xs font-bold text-white rounded-lg cursor-pointer transition flex items-center justify-center gap-2 shadow-sm disabled:opacity-50 min-w-[110px] ${
-              confirmButtonColor || "bg-[#009fe3] hover:bg-[#0085be]"
+              confirmButtonColor || "bg-[var(--primary-color)] hover:bg-[var(--primary-color-hover)]"
             }`}
           >
             {isLoading && (

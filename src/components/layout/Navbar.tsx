@@ -18,7 +18,7 @@ export const Navbar: React.FC = () => {
   ]
 
   return (
-    <header className="sticky top-0 z-40 w-full border-b border-slate-100 bg-white/95 backdrop-blur-md transition-colors shadow-xs">
+    <header className="sticky top-0 z-40 w-full border-b border-[var(--ui-border)] bg-[var(--ui-surface)]/95 backdrop-blur-md transition-colors shadow-xs">
       <Container className="flex h-20 items-center justify-between">
         {/* Left: Brand Logo */}
         <Link to="/" className="flex items-center group shrink-0">
@@ -40,7 +40,7 @@ export const Navbar: React.FC = () => {
                 `px-3.5 py-1.5 rounded-lg text-sm font-medium transition-all duration-150 ${
                   isActive
                     ? 'bg-[var(--primary-color-light)] text-[var(--primary-color)] font-semibold'
-                    : 'text-slate-700 hover:text-[var(--primary-color)] hover:bg-slate-50'
+                    : 'text-[var(--ui-text)] hover:text-[var(--primary-color)] hover:bg-[var(--ui-surface-muted)]'
                 }`
               }
             >
@@ -56,7 +56,7 @@ export const Navbar: React.FC = () => {
             to="/login"
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center justify-center rounded-xl border border-slate-200/90 bg-white px-4 py-2 lg:py-2.5 text-sm font-semibold text-slate-700 hover:border-[var(--primary-color)] hover:text-[var(--primary-color)] transition-all duration-200 shadow-xs cursor-pointer"
+            className="inline-flex items-center justify-center rounded-xl border border-[var(--ui-border)]/90 bg-[var(--ui-surface)] px-4 py-2 lg:py-2.5 text-sm font-semibold text-[var(--ui-text)] hover:border-[var(--primary-color)] hover:text-[var(--primary-color)] transition-all duration-200 shadow-xs cursor-pointer"
           >
             লগইন
           </Link>
@@ -74,7 +74,7 @@ export const Navbar: React.FC = () => {
         <button
           onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
           aria-label="Toggle menu"
-          className="rounded-xl p-2 text-slate-700 hover:bg-slate-100 md:hidden cursor-pointer"
+          className="rounded-xl p-2 text-[var(--ui-text)] hover:bg-[var(--ui-surface-sunken)] md:hidden cursor-pointer"
         >
           {mobileMenuOpen ? <HiX className="h-6 w-6" /> : <HiMenu className="h-6 w-6" />}
         </button>
@@ -82,7 +82,7 @@ export const Navbar: React.FC = () => {
 
       {/* Mobile Dropdown Menu via React Router NavLink */}
       {mobileMenuOpen && (
-        <div className="md:hidden border-b border-slate-200 bg-white px-4 pt-3 pb-6 space-y-4 shadow-lg">
+        <div className="md:hidden border-b border-[var(--ui-border)] bg-[var(--ui-surface)] px-4 pt-3 pb-6 space-y-4 shadow-lg">
           <nav className="flex flex-col space-y-1.5">
             {navLinks.map((link) => (
               <NavLink
@@ -94,7 +94,7 @@ export const Navbar: React.FC = () => {
                   `px-4 py-2.5 rounded-xl text-base font-medium transition-colors ${
                     isActive
                       ? 'bg-[var(--primary-color-light)] text-[var(--primary-color)] font-bold'
-                      : 'text-slate-700 hover:bg-slate-50'
+                      : 'text-[var(--ui-text)] hover:bg-[var(--ui-surface-muted)]'
                   }`
                 }
               >
@@ -104,13 +104,13 @@ export const Navbar: React.FC = () => {
           </nav>
 
           {/* Mobile Buttons via React Router Link */}
-          <div className="flex flex-col gap-2.5 pt-2 border-t border-slate-100">
+          <div className="flex flex-col gap-2.5 pt-2 border-t border-[var(--ui-border)]">
             <Link
               to="/login"
               target="_blank"
               rel="noopener noreferrer"
               onClick={() => setMobileMenuOpen(false)}
-              className="w-full text-center rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-colors"
+              className="w-full text-center rounded-lg border border-[var(--ui-border)] bg-[var(--ui-surface)] px-4 py-2.5 text-sm font-semibold text-[var(--ui-text)] hover:bg-[var(--ui-surface-muted)] transition-colors"
             >
               লগইন
             </Link>

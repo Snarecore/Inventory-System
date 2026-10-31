@@ -397,16 +397,16 @@ const Parties: React.FC = () => {
       <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 w-full">
         {/* 1. Total Parties - Blue */}
         <MotionDiv delay={0.05}>
-          <div className="p-3 rounded-xl border bg-blue-50/60 border-blue-300 hover:border-blue-400 flex items-center justify-between gap-2.5 transition-all shadow-xs h-full">
+          <div className="p-3 rounded-xl border bg-[var(--primary-color-light)]/60 border-[var(--primary-color-muted)] hover:border-[var(--primary-color-muted)] flex items-center justify-between gap-2.5 transition-all shadow-xs h-full">
             <div className="flex flex-col min-w-0">
-              <span className="text-[11px] font-semibold text-black tracking-wider truncate">
+              <span className="text-[11px] font-semibold text-[var(--ui-text)] tracking-wider truncate">
                 Total Parties
               </span>
-              <span className="text-base sm:text-lg font-bold truncate mt-0.5 text-blue-600">
+              <span className="text-base sm:text-lg font-bold truncate mt-0.5 text-[var(--primary-color)]">
                 {metrics.total}
               </span>
             </div>
-            <div className="p-2 rounded-lg shrink-0 bg-blue-100 text-blue-600">
+            <div className="p-2 rounded-lg shrink-0 bg-[var(--primary-color-muted)] text-[var(--primary-color)]">
               <FaUsers size={16} />
             </div>
           </div>
@@ -414,16 +414,16 @@ const Parties: React.FC = () => {
 
         {/* 2. Customers - Emerald */}
         <MotionDiv delay={0.1}>
-          <div className="p-3 rounded-xl border bg-emerald-50/60 border-emerald-300 hover:border-emerald-400 flex items-center justify-between gap-2.5 transition-all shadow-xs h-full">
+          <div className="p-3 rounded-xl border bg-[var(--ui-success-light)]/60 border-[var(--ui-success-border)] hover:border-[var(--ui-success-border)] flex items-center justify-between gap-2.5 transition-all shadow-xs h-full">
             <div className="flex flex-col min-w-0">
-              <span className="text-[11px] font-semibold text-black tracking-wider truncate">
+              <span className="text-[11px] font-semibold text-[var(--ui-text)] tracking-wider truncate">
                 Customers
               </span>
-              <span className="text-base sm:text-lg font-bold truncate mt-0.5 text-emerald-600">
+              <span className="text-base sm:text-lg font-bold truncate mt-0.5 text-[var(--ui-success)]">
                 {metrics.customerCount}
               </span>
             </div>
-            <div className="p-2 rounded-lg shrink-0 bg-emerald-100 text-emerald-600">
+            <div className="p-2 rounded-lg shrink-0 bg-[var(--ui-success-border)] text-[var(--ui-success)]">
               <FaUserTie size={16} />
             </div>
           </div>
@@ -431,16 +431,16 @@ const Parties: React.FC = () => {
 
         {/* 3. Suppliers - Purple */}
         <MotionDiv delay={0.15}>
-          <div className="p-3 rounded-xl border bg-purple-50/60 border-purple-300 hover:border-purple-400 flex items-center justify-between gap-2.5 transition-all shadow-xs h-full">
+          <div className="p-3 rounded-xl border bg-[var(--ui-info-light)]/60 border-[var(--ui-info-border)] hover:border-[var(--ui-info-border)] flex items-center justify-between gap-2.5 transition-all shadow-xs h-full">
             <div className="flex flex-col min-w-0">
-              <span className="text-[11px] font-semibold text-black tracking-wider truncate">
+              <span className="text-[11px] font-semibold text-[var(--ui-text)] tracking-wider truncate">
                 Suppliers
               </span>
-              <span className="text-base sm:text-lg font-bold truncate mt-0.5 text-purple-600">
+              <span className="text-base sm:text-lg font-bold truncate mt-0.5 text-[var(--ui-info)]">
                 {metrics.supplierCount}
               </span>
             </div>
-            <div className="p-2 rounded-lg shrink-0 bg-purple-100 text-purple-600">
+            <div className="p-2 rounded-lg shrink-0 bg-[var(--ui-info-border)] text-[var(--ui-info)]">
               <FaTruck size={16} />
             </div>
           </div>
@@ -448,16 +448,16 @@ const Parties: React.FC = () => {
 
         {/* 4. Total Opening Balance - Amber */}
         <MotionDiv delay={0.2}>
-          <div className="p-3 rounded-xl border bg-amber-50/60 border-amber-300 hover:border-amber-400 flex items-center justify-between gap-2.5 transition-all shadow-xs h-full">
+          <div className="p-3 rounded-xl border bg-[var(--ui-warning-light)]/60 border-[var(--ui-warning-border)] hover:border-[var(--ui-warning-border)] flex items-center justify-between gap-2.5 transition-all shadow-xs h-full">
             <div className="flex flex-col min-w-0">
-              <span className="text-[11px] font-semibold text-black tracking-wider truncate">
+              <span className="text-[11px] font-semibold text-[var(--ui-text)] tracking-wider truncate">
                 Total Balance
               </span>
-              <span className="text-base sm:text-lg font-bold truncate mt-0.5 text-amber-600">
+              <span className="text-base sm:text-lg font-bold truncate mt-0.5 text-[var(--ui-warning)]">
                 ৳ {metrics.totalOpeningBalance.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
               </span>
             </div>
-            <div className="p-2 rounded-lg shrink-0 bg-amber-100 text-amber-600">
+            <div className="p-2 rounded-lg shrink-0 bg-[var(--ui-warning-border)] text-[var(--ui-warning)]">
               <FaMoneyBillWave size={16} />
             </div>
           </div>

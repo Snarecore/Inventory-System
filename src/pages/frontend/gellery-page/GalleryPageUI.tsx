@@ -103,16 +103,16 @@ function GalleryPageUI() {
   };
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-[var(--ui-surface)]">
       {/* Main Content */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
         {/* Hero Section */}
         <div className="text-center mb-16">
        <MotionDiv>
-       <h2 className="text-4xl font-bold text-blue-900 mb-6">Visa</h2>
+       <h2 className="text-4xl font-bold text-[var(--primary-color-dark)] mb-6">Visa</h2>
        </MotionDiv>
          <MotionDiv>
-         <p className="text-gray-600 max-w-3xl mx-auto text-lg leading-relaxed">
+         <p className="text-[var(--ui-text-muted)] max-w-3xl mx-auto text-lg leading-relaxed">
             Celebrating the success of our clients! Here are a few of the many
             individuals who have achieved their dreams with our expert guidance
             and support. From securing student visas to obtaining work permits,
@@ -130,7 +130,7 @@ function GalleryPageUI() {
               className="group cursor-pointer transform transition-all duration-300 hover:scale-105"
               onClick={() => handleImageClick(index)}
             >
-              <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-xl transition-shadow duration-300">
+              <div className="bg-[var(--ui-surface)] rounded-lg shadow-md overflow-hidden hover:shadow-xl transition-shadow duration-300">
                 <div className="aspect-square overflow-hidden">
                   <img
                     src={client.image}
@@ -141,10 +141,10 @@ function GalleryPageUI() {
                   />
                 </div>
                 <MotionDiv className="p-4 text-center">
-                  <h3 className="font-semibold text-black mb-1">
+                  <h3 className="font-semibold text-[var(--ui-text)] mb-1">
                     {client.name}
                   </h3>
-                  <p className="text-gray-600 text-sm">{client.country}</p>
+                  <p className="text-[var(--ui-text-muted)] text-sm">{client.country}</p>
                 </MotionDiv>
               </div>
             </div>
@@ -157,32 +157,32 @@ function GalleryPageUI() {
           className="fixed inset-0 z-50 flex items-center justify-center p-4"
           onClick={closeModal}
         >
-          <div className="absolute inset-0 bg-black bg-opacity-75 backdrop-blur-sm"></div>
+          <div className="absolute inset-0 bg-[var(--ui-text)] bg-opacity-75 backdrop-blur-sm"></div>
           <div
-            className="relative bg-white rounded-lg shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden"
+            className="relative bg-[var(--ui-surface)] rounded-lg shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
             <button
               onClick={closeModal}
-              className="absolute top-4 right-4 z-10 bg-white rounded-full p-2 shadow-md hover:bg-gray-100 transition-colors"
+              className="absolute top-4 right-4 z-10 bg-[var(--ui-surface)] rounded-full p-2 shadow-md hover:bg-[var(--ui-surface-sunken)] transition-colors"
             >
-              <X className="h-6 w-6 text-gray-600" />
+              <X className="h-6 w-6 text-[var(--ui-text-muted)]" />
             </button>
 
             {/* Previous Button */}
             <button
               onClick={goToPrevious}
-              className="absolute left-4 top-1/2 transform -translate-y-1/2 z-10 bg-white rounded-full p-3 shadow-lg hover:bg-gray-100 transition-all duration-200 hover:scale-110"
+              className="absolute left-4 top-1/2 transform -translate-y-1/2 z-10 bg-[var(--ui-surface)] rounded-full p-3 shadow-lg hover:bg-[var(--ui-surface-sunken)] transition-all duration-200 hover:scale-110"
             >
-              <ChevronLeft className="h-6 w-6 text-gray-600" />
+              <ChevronLeft className="h-6 w-6 text-[var(--ui-text-muted)]" />
             </button>
 
             {/* Next Button */}
             <button
               onClick={goToNext}
-              className="absolute right-4 top-1/2 transform -translate-y-1/2 z-10 bg-white rounded-full p-3 shadow-lg hover:bg-gray-100 transition-all duration-200 hover:scale-110"
+              className="absolute right-4 top-1/2 transform -translate-y-1/2 z-10 bg-[var(--ui-surface)] rounded-full p-3 shadow-lg hover:bg-[var(--ui-surface-sunken)] transition-all duration-200 hover:scale-110"
             >
-              <ChevronRight className="h-6 w-6 text-gray-600" />
+              <ChevronRight className="h-6 w-6 text-[var(--ui-text-muted)]" />
             </button>
 
             <div className="aspect-square relative overflow-hidden">
@@ -196,20 +196,20 @@ function GalleryPageUI() {
             </div>
 
             <div className="p-6 text-center">
-              <h3 className="text-2xl font-bold text-black mb-2">
+              <h3 className="text-2xl font-bold text-[var(--ui-text)] mb-2">
                 {clients[selectedImageIndex].name}
               </h3>
-              <p className="text-gray-600 text-lg mb-2">
+              <p className="text-[var(--ui-text-muted)] text-lg mb-2">
                 {clients[selectedImageIndex].country}
               </p>
-              <p className="text-gray-500 mt-4">
+              <p className="text-[var(--ui-text-muted)] mt-4">
                 Successfully achieved their visa dreams with Admin Panel expert
                 guidance and support.
               </p>
 
               {/* Image Counter */}
               <div className="flex justify-center items-center mt-4 space-x-2">
-                <span className="text-sm text-gray-500">
+                <span className="text-sm text-[var(--ui-text-muted)]">
                   {selectedImageIndex + 1} of {clients.length}
                 </span>
               </div>
@@ -222,8 +222,8 @@ function GalleryPageUI() {
                     onClick={() => setSelectedImageIndex(index)}
                     className={`w-2 h-2 rounded-full transition-all duration-200 ${
                       index === selectedImageIndex
-                        ? "bg-blue-900 w-6"
-                        : "bg-gray-300 hover:bg-gray-400"
+                        ? "bg-[var(--primary-color-dark)] w-6"
+                        : "bg-[var(--ui-border-strong)] hover:bg-[var(--ui-text-subtle)]"
                     }`}
                   />
                 ))}

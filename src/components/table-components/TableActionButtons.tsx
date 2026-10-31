@@ -42,7 +42,7 @@ export const TableActionButtons: React.FC<TableActionButtonsProps> = ({
           type="button"
           onClick={onView}
           title={viewTitle}
-          className="p-1 rounded text-sky-600 hover:bg-sky-100 transition-colors cursor-pointer"
+          className="p-1 rounded text-[var(--primary-color)] hover:bg-[var(--primary-color-muted)] transition-colors cursor-pointer"
         >
           <FiEye size={14} />
         </button>
@@ -52,7 +52,7 @@ export const TableActionButtons: React.FC<TableActionButtonsProps> = ({
           type="button"
           onClick={onPrint}
           title={printTitle}
-          className="p-1 rounded text-gray-600 hover:bg-gray-100 transition-colors cursor-pointer"
+          className="p-1 rounded text-[var(--ui-text-muted)] hover:bg-[var(--ui-surface-sunken)] transition-colors cursor-pointer"
         >
           <FiPrinter size={14} />
         </button>
@@ -62,7 +62,7 @@ export const TableActionButtons: React.FC<TableActionButtonsProps> = ({
           type="button"
           onClick={onEdit}
           title={editTitle}
-          className="p-1 rounded text-amber-600 hover:bg-amber-100 transition-colors cursor-pointer"
+          className="p-1 rounded text-[var(--ui-warning)] hover:bg-[var(--ui-warning-border)] transition-colors cursor-pointer"
         >
           <FiEdit size={14} />
         </button>
@@ -71,7 +71,7 @@ export const TableActionButtons: React.FC<TableActionButtonsProps> = ({
         isReturnDisabled ? (
           <span
             title={returnDisabledTitle}
-            className="p-1 rounded text-gray-300 cursor-not-allowed inline-flex items-center"
+            className="p-1 rounded text-[var(--ui-text-subtle)] cursor-not-allowed inline-flex items-center"
           >
             <FaUndoAlt size={12} />
           </span>
@@ -80,7 +80,7 @@ export const TableActionButtons: React.FC<TableActionButtonsProps> = ({
             type="button"
             onClick={onReturn}
             title={returnTitle}
-            className="p-1 rounded text-indigo-600 hover:bg-indigo-100 transition-colors cursor-pointer"
+            className="p-1 rounded text-[var(--primary-color)] hover:bg-[var(--primary-color-muted)] transition-colors cursor-pointer"
           >
             <FaUndoAlt size={12} />
           </button>
@@ -91,7 +91,7 @@ export const TableActionButtons: React.FC<TableActionButtonsProps> = ({
           type="button"
           onClick={onDelete}
           title={deleteTitle}
-          className="p-1 rounded text-rose-600 hover:bg-rose-100 transition-colors cursor-pointer"
+          className="p-1 rounded text-[var(--ui-danger)] hover:bg-[var(--ui-danger-border)] transition-colors cursor-pointer"
         >
           <FiTrash2 size={14} />
         </button>

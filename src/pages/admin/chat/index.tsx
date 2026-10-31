@@ -102,15 +102,15 @@ const Chat = () => {
                 </div>
 
                 <div className="flex gap-5">
-                    <div className="w-[320px] bg-white h-[750px] overflow-hidden overflow-y-auto">
+                    <div className="w-[320px] bg-[var(--ui-surface)] h-[750px] overflow-hidden overflow-y-auto">
                         <ChatSidebar setSelectedUser={setSelectedUser} selectedUser={selectedUser} />
                     </div>
 
-                    <div className="flex-1 bg-gray-50">
+                    <div className="flex-1 bg-[var(--ui-surface-muted)]">
                     {selectedUser ? (
                         <ChatWindow selectedUser={selectedUser} />
                     ) : (
-                        <div className="flex items-center justify-center h-full text-gray-500">
+                        <div className="flex items-center justify-center h-full text-[var(--ui-text-muted)]">
                             Select a user to start chatting
                         </div>
                     )}
@@ -137,9 +137,9 @@ const Chat = () => {
                                 </div>
 
                                 <div>
-                                    <p>Message <span className="text-red-500 font-bold">*</span></p>
+                                    <p>Message <span className="text-[var(--ui-danger)] font-bold">*</span></p>
                                     <textarea
-                                        className="w-full border border-gray-300 rounded-md p-2 mt-1"
+                                        className="w-full border border-[var(--ui-border-strong)] rounded-md p-2 mt-1"
                                         name="content"
                                         value={fieldValues.content}
                                         required

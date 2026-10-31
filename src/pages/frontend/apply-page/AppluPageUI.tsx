@@ -49,11 +49,11 @@ const AppluPageUI = () => {
       }
     
       return (
-        <div className="min-h-screen bg-gray-50">
+        <div className="min-h-screen bg-[var(--ui-surface-muted)]">
           {/* Main Form */}
           <div className="py-12 px-4 sm:px-6 lg:px-8">
             <div className="max-w-6xl mx-auto">
-              <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
+              <div className="bg-[var(--ui-surface)] rounded-2xl shadow-xl overflow-hidden">
                 <div className="bg-gradient-to-r from-primary to-primary-light p-8 text-white">
                 <MotionDiv>
                 <h2 className="text-3xl font-bold mb-2">Application Form</h2>
@@ -70,7 +70,7 @@ const AppluPageUI = () => {
                     <div className="lg:col-span-2 space-y-6">
                       <div>
                         <MotionDiv>
-                        <h3 className="text-xl font-semibold text-black mb-4 flex items-center">
+                        <h3 className="text-xl font-semibold text-[var(--ui-text)] mb-4 flex items-center">
                           <User className="w-5 h-5 mr-2 text-primary" />
                           Personal Information
                         </h3>
@@ -78,7 +78,7 @@ const AppluPageUI = () => {
                         </MotionDiv>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           <MotionDiv>
-                            <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
+                            <label htmlFor="name" className="block text-sm font-medium text-[var(--ui-text)] mb-1">
                               Full Name *
                             </label>
                             <input
@@ -88,13 +88,13 @@ const AppluPageUI = () => {
                               required
                               value={formData.name}
                               onChange={handleInputChange}
-                              className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary-light focus:border-transparent transition-all"
+                              className="w-full border border-[var(--ui-border-strong)] rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary-light focus:border-transparent transition-all"
                               placeholder="Enter your full name"
                             />
                           </MotionDiv>
     
                           <MotionDiv>
-                            <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+                            <label htmlFor="email" className="block text-sm font-medium text-[var(--ui-text)] mb-1">
                               Email Address *
                             </label>
                             <input
@@ -104,13 +104,13 @@ const AppluPageUI = () => {
                               required
                               value={formData.email}
                               onChange={handleInputChange}
-                              className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary-light focus:border-transparent transition-all"
+                              className="w-full border border-[var(--ui-border-strong)] rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary-light focus:border-transparent transition-all"
                               placeholder="Enter your email"
                             />
                           </MotionDiv>
     
                           <MotionDiv>
-                            <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">
+                            <label htmlFor="phone" className="block text-sm font-medium text-[var(--ui-text)] mb-1">
                               Phone Number *
                             </label>
                             <input
@@ -120,13 +120,13 @@ const AppluPageUI = () => {
                               required
                               value={formData.phone}
                               onChange={handleInputChange}
-                              className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary-light focus:border-transparent transition-all"
+                              className="w-full border border-[var(--ui-border-strong)] rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary-light focus:border-transparent transition-all"
                               placeholder="Enter your phone number"
                             />
                           </MotionDiv>
     
                           <MotionDiv>
-                            <label htmlFor="dateOfBirth" className="block text-sm font-medium text-gray-700 mb-1">
+                            <label htmlFor="dateOfBirth" className="block text-sm font-medium text-[var(--ui-text)] mb-1">
                               Date of Birth *
                             </label>
                             <DatePicker
@@ -137,12 +137,12 @@ const AppluPageUI = () => {
                               size="lg"
                               placeholder="Select date of birth"
                               displayFormat="DD MMM, YYYY"
-                              inputClassName="py-3 px-4 rounded-lg border-gray-300"
+                              inputClassName="py-3 px-4 rounded-lg border-[var(--ui-border-strong)]"
                             />
                           </MotionDiv>
     
                           <MotionDiv>
-                            <label htmlFor="gender" className="block text-sm font-medium text-gray-700 mb-1">
+                            <label htmlFor="gender" className="block text-sm font-medium text-[var(--ui-text)] mb-1">
                               Gender *
                             </label>
                             <select
@@ -151,7 +151,7 @@ const AppluPageUI = () => {
                               required
                               value={formData.gender}
                               onChange={handleInputChange}
-                              className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary-light focus:border-transparent transition-all"
+                              className="w-full border border-[var(--ui-border-strong)] rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary-light focus:border-transparent transition-all"
                             >
                               <option value="">Select Gender</option>
                               <option value="male">Male</option>
@@ -161,7 +161,7 @@ const AppluPageUI = () => {
                           </MotionDiv>
     
                           <MotionDiv>
-                            <label htmlFor="country" className="block text-sm font-medium text-gray-700 mb-1">
+                            <label htmlFor="country" className="block text-sm font-medium text-[var(--ui-text)] mb-1">
                               Country *
                             </label>
                             <select
@@ -170,7 +170,7 @@ const AppluPageUI = () => {
                               required
                               value={formData.country}
                               onChange={handleInputChange}
-                              className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary-light focus:border-transparent transition-all"
+                              className="w-full border border-[var(--ui-border-strong)] rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary-light focus:border-transparent transition-all"
                             >
                               <option value="">Select Country</option>
                               <option value="bangladesh">Bangladesh</option>
@@ -184,7 +184,7 @@ const AppluPageUI = () => {
                         </div>
     
                         <MotionDiv className="mt-4">
-                          <label htmlFor="profession" className="block text-sm font-medium text-gray-700 mb-1">
+                          <label htmlFor="profession" className="block text-sm font-medium text-[var(--ui-text)] mb-1">
                             Profession *
                           </label>
                           <select
@@ -193,7 +193,7 @@ const AppluPageUI = () => {
                             required
                             value={formData.profession}
                             onChange={handleInputChange}
-                            className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary-light focus:border-transparent transition-all"
+                            className="w-full border border-[var(--ui-border-strong)] rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary-light focus:border-transparent transition-all"
                           >
                             <option value="">Select Profession</option>
                             <option value="student">Student</option>
@@ -208,14 +208,14 @@ const AppluPageUI = () => {
     
                       {/* Address Information */}
                       <MotionDiv>
-                        <h3 className="text-xl font-semibold text-black mb-4 flex items-center">
+                        <h3 className="text-xl font-semibold text-[var(--ui-text)] mb-4 flex items-center">
                           <MapPin className="w-5 h-5 mr-2 text-primary" />
                           Address Information
                         </h3>
     
                         <div className="space-y-4">
                           <div>
-                            <label htmlFor="presentAddress" className="block text-sm font-medium text-gray-700 mb-1">
+                            <label htmlFor="presentAddress" className="block text-sm font-medium text-[var(--ui-text)] mb-1">
                               Present Address *
                             </label>
                             <textarea
@@ -225,13 +225,13 @@ const AppluPageUI = () => {
                               rows={3}
                               value={formData.presentAddress}
                               onChange={handleInputChange}
-                              className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary-light focus:border-transparent transition-all resize-none"
+                              className="w-full border border-[var(--ui-border-strong)] rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary-light focus:border-transparent transition-all resize-none"
                               placeholder="Enter your current address"
                             />
                           </div>
     
                           <div>
-                            <label htmlFor="permanentAddress" className="block text-sm font-medium text-gray-700 mb-1">
+                            <label htmlFor="permanentAddress" className="block text-sm font-medium text-[var(--ui-text)] mb-1">
                               Permanent Address *
                             </label>
                             <textarea
@@ -241,7 +241,7 @@ const AppluPageUI = () => {
                               rows={3}
                               value={formData.permanentAddress}
                               onChange={handleInputChange}
-                              className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary-light focus:border-transparent transition-all resize-none"
+                              className="w-full border border-[var(--ui-border-strong)] rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary-light focus:border-transparent transition-all resize-none"
                               placeholder="Enter your permanent address"
                             />
                           </div>
@@ -252,18 +252,18 @@ const AppluPageUI = () => {
                     {/* Right Column - File Uploads */}
                     <MotionDiv className="space-y-6">
                       <div>
-                        <h3 className="text-xl font-semibold text-black mb-4 flex items-center">
+                        <h3 className="text-xl font-semibold text-[var(--ui-text)] mb-4 flex items-center">
                           <Upload className="w-5 h-5 mr-2 text-primary" />
                           Document Uploads
                         </h3>
     
                         {/* Profile Image */}
                         <div className="mb-6">
-                          <label className="block text-sm font-medium text-gray-700 mb-2">Profile Image *</label>
-                          <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-primary-light transition-colors cursor-pointer">
-                            <User className="w-8 h-8 mx-auto mb-2 text-gray-400" />
-                            <p className="text-sm text-gray-600">Click to upload profile image</p>
-                            <p className="text-xs text-gray-400 mt-1">PNG, JPG up to 2MB</p>
+                          <label className="block text-sm font-medium text-[var(--ui-text)] mb-2">Profile Image *</label>
+                          <div className="border-2 border-dashed border-[var(--ui-border-strong)] rounded-lg p-6 text-center hover:border-primary-light transition-colors cursor-pointer">
+                            <User className="w-8 h-8 mx-auto mb-2 text-[var(--ui-text-subtle)]" />
+                            <p className="text-sm text-[var(--ui-text-muted)]">Click to upload profile image</p>
+                            <p className="text-xs text-[var(--ui-text-subtle)] mt-1">PNG, JPG up to 2MB</p>
                             <input
                               type="file"
                               accept="image/*"
@@ -275,11 +275,11 @@ const AppluPageUI = () => {
     
                         {/* NID Image */}
                         <div className="mb-6">
-                          <label className="block text-sm font-medium text-gray-700 mb-2">National ID Image *</label>
-                          <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-primary-light transition-colors cursor-pointer">
-                            <CreditCard className="w-8 h-8 mx-auto mb-2 text-gray-400" />
-                            <p className="text-sm text-gray-600">Click to upload NID image</p>
-                            <p className="text-xs text-gray-400 mt-1">PNG, JPG up to 2MB</p>
+                          <label className="block text-sm font-medium text-[var(--ui-text)] mb-2">National ID Image *</label>
+                          <div className="border-2 border-dashed border-[var(--ui-border-strong)] rounded-lg p-6 text-center hover:border-primary-light transition-colors cursor-pointer">
+                            <CreditCard className="w-8 h-8 mx-auto mb-2 text-[var(--ui-text-subtle)]" />
+                            <p className="text-sm text-[var(--ui-text-muted)]">Click to upload NID image</p>
+                            <p className="text-xs text-[var(--ui-text-subtle)] mt-1">PNG, JPG up to 2MB</p>
                             <input
                               type="file"
                               accept="image/*"
@@ -291,11 +291,11 @@ const AppluPageUI = () => {
     
                         {/* Passport Image */}
                         <div className="mb-6">
-                          <label className="block text-sm font-medium text-gray-700 mb-2">Passport Image</label>
-                          <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-primary-light transition-colors cursor-pointer">
-                            <CreditCard className="w-8 h-8 mx-auto mb-2 text-gray-400" />
-                            <p className="text-sm text-gray-600">Click to upload passport image</p>
-                            <p className="text-xs text-gray-400 mt-1">PNG, JPG up to 2MB</p>
+                          <label className="block text-sm font-medium text-[var(--ui-text)] mb-2">Passport Image</label>
+                          <div className="border-2 border-dashed border-[var(--ui-border-strong)] rounded-lg p-6 text-center hover:border-primary-light transition-colors cursor-pointer">
+                            <CreditCard className="w-8 h-8 mx-auto mb-2 text-[var(--ui-text-subtle)]" />
+                            <p className="text-sm text-[var(--ui-text-muted)]">Click to upload passport image</p>
+                            <p className="text-xs text-[var(--ui-text-subtle)] mt-1">PNG, JPG up to 2MB</p>
                             <input
                               type="file"
                               accept="image/*"
@@ -307,11 +307,11 @@ const AppluPageUI = () => {
     
                         {/* Resume Upload */}
                         <div className="mb-6">
-                          <label className="block text-sm font-medium text-gray-700 mb-2">Resume/CV *</label>
-                          <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-primary-light transition-colors cursor-pointer">
-                            <FileText className="w-8 h-8 mx-auto mb-2 text-gray-400" />
-                            <p className="text-sm text-gray-600">Click to upload resume</p>
-                            <p className="text-xs text-gray-400 mt-1">PDF only, up to 5MB</p>
+                          <label className="block text-sm font-medium text-[var(--ui-text)] mb-2">Resume/CV *</label>
+                          <div className="border-2 border-dashed border-[var(--ui-border-strong)] rounded-lg p-6 text-center hover:border-primary-light transition-colors cursor-pointer">
+                            <FileText className="w-8 h-8 mx-auto mb-2 text-[var(--ui-text-subtle)]" />
+                            <p className="text-sm text-[var(--ui-text-muted)]">Click to upload resume</p>
+                            <p className="text-xs text-[var(--ui-text-subtle)] mt-1">PDF only, up to 5MB</p>
                             <input
                               type="file"
                               accept=".pdf"
@@ -325,7 +325,7 @@ const AppluPageUI = () => {
                   </div>
     
                   {/* Terms and Submit */}
-                  <MotionDiv className="mt-8 pt-6 border-t border-gray-200">
+                  <MotionDiv className="mt-8 pt-6 border-t border-[var(--ui-border)]">
                     <div className="space-y-4">
                       <div className="flex items-start">
                         <input
@@ -335,9 +335,9 @@ const AppluPageUI = () => {
                           required
                           checked={formData.acceptTerms}
                           onChange={handleInputChange}
-                          className="mt-1 h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded"
+                          className="mt-1 h-4 w-4 text-primary focus:ring-primary border-[var(--ui-border-strong)] rounded"
                         />
-                        <label htmlFor="acceptTerms" className="ml-3 text-sm text-gray-700">
+                        <label htmlFor="acceptTerms" className="ml-3 text-sm text-[var(--ui-text)]">
                           I accept the{" "}
                           <a href="#" className="text-primary hover:text-primary-light underline">
                             license terms and agreements
@@ -353,9 +353,9 @@ const AppluPageUI = () => {
                           name="subscribeNewsletter"
                           checked={formData.subscribeNewsletter}
                           onChange={handleInputChange}
-                          className="mt-1 h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded"
+                          className="mt-1 h-4 w-4 text-primary focus:ring-primary border-[var(--ui-border-strong)] rounded"
                         />
-                        <label htmlFor="subscribeNewsletter" className="ml-3 text-sm text-gray-700">
+                        <label htmlFor="subscribeNewsletter" className="ml-3 text-sm text-[var(--ui-text)]">
                           Subscribe to newsletter for updates and opportunities
                         </label>
                       </div>

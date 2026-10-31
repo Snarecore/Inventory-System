@@ -508,16 +508,16 @@ const CreateProductForm = () => {
 
     return (
         <form onSubmit={handleSubmitForm} className="flex flex-col gap-2.5">
-            <div className="bg-white rounded-xl border border-gray-200 shadow-xs overflow-visible">
+            <div className="bg-[var(--ui-surface)] rounded-xl border border-[var(--ui-border)] shadow-xs overflow-visible">
                 <div
-                    className="flex justify-between items-center px-3.5 sm:px-4 py-2 cursor-pointer select-none bg-gray-50/70 hover:bg-gray-100/70 rounded-t-xl transition-colors border-b border-gray-200"
+                    className="flex justify-between items-center px-3.5 sm:px-4 py-2 cursor-pointer select-none bg-[var(--ui-surface-muted)]/70 hover:bg-[var(--ui-surface-sunken)]/70 rounded-t-xl transition-colors border-b border-[var(--ui-border)]"
                     onClick={() => setIsOpen(!isOpen)}
                 >
-                    <h2 className="text-xs sm:text-sm font-bold text-black flex items-center gap-1.5">
+                    <h2 className="text-xs sm:text-sm font-bold text-[var(--ui-text)] flex items-center gap-1.5">
                         {isEditMode ? "Edit Product Information" : "Product Information"}
                     </h2>
                     <RiArrowDropDownLine
-                        className={`text-xl sm:text-2xl text-gray-500 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`}
+                        className={`text-xl sm:text-2xl text-[var(--ui-text-muted)] transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`}
                     />
                 </div>
 
@@ -551,14 +551,14 @@ const CreateProductForm = () => {
                             {/* Row 1, Col 3: Unit (Primary) with Allow Decimal Toggle */}
                             <div className="relative z-20">
                                 <div className="flex items-center justify-between mb-1">
-                                    <label className="text-xs font-semibold text-black">
-                                        Unit{isUnitsLoading ? " (Loading...)" : ""} <span className="text-red-600 ml-0.5">*</span>
+                                    <label className="text-xs font-semibold text-[var(--ui-text)]">
+                                        Unit{isUnitsLoading ? " (Loading...)" : ""} <span className="text-[var(--ui-danger)] ml-0.5">*</span>
                                     </label>
                                     <label 
                                         className="flex items-center gap-1 cursor-pointer select-none"
                                         title="Allow decimal numbers in quantity"
                                     >
-                                        <span className="text-[10px] font-medium text-gray-400">Allow Decimal</span>
+                                        <span className="text-[10px] font-medium text-[var(--ui-text-subtle)]">Allow Decimal</span>
                                         <ToggleInput
                                             checked={isDecimalAllowed}
                                             onChange={(checked) => handleDecimalToggle(checked)}
@@ -590,7 +590,7 @@ const CreateProductForm = () => {
                             {/* Row 2, Col 1: Conversion Ratio (if Secondary Unit is chosen) OR Packing Levels (Optional) */}
                             {selectedUnit && selectedSecondaryUnit ? (
                                 <div>
-                                    <label htmlFor="packing_levels" className="text-xs font-semibold text-black block mb-1 truncate">
+                                    <label htmlFor="packing_levels" className="text-xs font-semibold text-[var(--ui-text)] block mb-1 truncate">
                                         Conversion Ratio (1 {selectedUnit.label} = ?)
                                     </label>
                                     <div className="relative">
@@ -629,8 +629,8 @@ const CreateProductForm = () => {
                             {/* Row 2, Col 2: Buy Price (based on Secondary Unit if selected, else Primary Unit) */}
                             <div>
                                 <div className="flex items-center justify-between mb-1 gap-1">
-                                    <label htmlFor="buy_price" className="text-xs font-semibold text-black truncate">
-                                        Buy Price (৳) <span className="text-red-600">*</span>
+                                    <label htmlFor="buy_price" className="text-xs font-semibold text-[var(--ui-text)] truncate">
+                                        Buy Price (৳) <span className="text-[var(--ui-danger)]">*</span>
                                     </label>
                                     {conversionFactor && fieldValues.buy_price && Number(fieldValues.buy_price) > 0 ? (
                                         <span className="text-[10px] font-bold text-[var(--primary-color)] bg-[var(--primary-color-light)] border border-[var(--primary-color-muted)] px-1.5 py-0.5 rounded leading-none whitespace-nowrap shrink-0">
@@ -651,11 +651,11 @@ const CreateProductForm = () => {
                             {/* Row 2, Col 3: Sell Price (based on Secondary Unit if selected, else Primary Unit) */}
                             <div>
                                 <div className="flex items-center justify-between mb-1 gap-1">
-                                    <label htmlFor="sell_price" className="text-xs font-semibold text-black truncate">
-                                        Sell Price (৳) <span className="text-red-600">*</span>
+                                    <label htmlFor="sell_price" className="text-xs font-semibold text-[var(--ui-text)] truncate">
+                                        Sell Price (৳) <span className="text-[var(--ui-danger)]">*</span>
                                     </label>
                                     {conversionFactor && fieldValues.sell_price && Number(fieldValues.sell_price) > 0 ? (
-                                        <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded leading-none whitespace-nowrap shrink-0">
+                                        <span className="text-[10px] font-bold text-[var(--ui-success-dark)] bg-[var(--ui-success-light)] border border-[var(--ui-success-border)] px-1.5 py-0.5 rounded leading-none whitespace-nowrap shrink-0">
                                             1 {selectedUnit?.label} = ৳{(Number(fieldValues.sell_price) * conversionFactor).toLocaleString()}
                                         </span>
                                     ) : null}
@@ -742,10 +742,10 @@ const CreateProductForm = () => {
             </div>
 
             {/* Bottom Action Bar with Status and Action Buttons */}
-            <div className="bg-white shadow-xs rounded-xl border border-gray-200 p-2.5 sm:px-4 flex flex-wrap items-center justify-between gap-2.5">
+            <div className="bg-[var(--ui-surface)] shadow-xs rounded-xl border border-[var(--ui-border)] p-2.5 sm:px-4 flex flex-wrap items-center justify-between gap-2.5">
                 {/* Status Toggle on Left */}
                 <div className="flex items-center gap-2.5">
-                    <span className="text-xs font-semibold text-black">
+                    <span className="text-xs font-semibold text-[var(--ui-text)]">
                         Status
                     </span>
                     <ToggleInput
@@ -755,7 +755,7 @@ const CreateProductForm = () => {
                         size="sm"
                     />
                     <span className={`text-[11px] font-semibold px-2 py-0.5 rounded ${
-                        fieldValues.status === "active" ? "bg-emerald-50 text-emerald-600" : "bg-gray-100 text-gray-500"
+                        fieldValues.status === "active" ? "bg-[var(--ui-success-light)] text-[var(--ui-success)]" : "bg-[var(--ui-surface-sunken)] text-[var(--ui-text-muted)]"
                     }`}>
                         {fieldValues.status === "active" ? "Active" : "Inactive"}
                     </span>

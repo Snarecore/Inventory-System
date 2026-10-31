@@ -416,24 +416,24 @@ export const ProductTable = ({
                                         return (
                                             <tr
                                                 key={prodId}
-                                                className="hover:bg-sky-50/40 transition-colors duration-150 group"
+                                                className="hover:bg-[var(--primary-color-light)]/40 transition-colors duration-150 group"
                                             >
                                                 {/* SL */}
                                                 {isColVisible("sl") && (
-                                                    <td className="py-2.5 px-3 text-center text-xs font-normal text-black">
+                                                    <td className="py-2.5 px-3 text-center text-xs font-normal text-[var(--ui-text)]">
                                                         {rowNumber}
                                                     </td>
                                                 )}
 
                                                 {/* Product Name */}
                                                 {isColVisible("name") && (
-                                                    <td className="py-2.5 px-3 font-normal text-xs text-black">
+                                                    <td className="py-2.5 px-3 font-normal text-xs text-[var(--ui-text)]">
                                                         <div className="min-w-0">
-                                                            <span className="font-normal text-xs text-black block truncate">
+                                                            <span className="font-normal text-xs text-[var(--ui-text)] block truncate">
                                                                 {getName(product)}
                                                             </span>
                                                             {product.packing_levels && (
-                                                                <span className="text-[11px] text-gray-500 block truncate mt-0.5">
+                                                                <span className="text-[11px] text-[var(--ui-text-muted)] block truncate mt-0.5">
                                                                     • {product.packing_levels}
                                                                 </span>
                                                             )}
@@ -444,7 +444,7 @@ export const ProductTable = ({
                                                 {/* Category */}
                                                 {isColVisible("category") && (
                                                     <td className="py-2.5 px-3">
-                                                        <span className="inline-flex items-center px-1.5 py-0.5 rounded-md text-[10px] font-semibold bg-gray-100 text-gray-800 border border-gray-300">
+                                                        <span className="inline-flex items-center px-1.5 py-0.5 rounded-md text-[10px] font-semibold bg-[var(--ui-surface-sunken)] text-[var(--ui-text)] border border-[var(--ui-border-strong)]">
                                                             {getCategory(product)}
                                                         </span>
                                                     </td>
@@ -457,11 +457,11 @@ export const ProductTable = ({
                                                             className="inline-flex items-center justify-center gap-1.5"
                                                             title={stockInfo.hasSecondaryUnit ? `Primary: ${stockInfo.primaryStockText}` : undefined}
                                                         >
-                                                            <span className="font-normal text-xs text-black">
+                                                            <span className="font-normal text-xs text-[var(--ui-text)]">
                                                                 {stockInfo.displayStock}
                                                             </span>
                                                             {isLowStock && (
-                                                                <span className="inline-flex items-center text-[10px] font-semibold text-amber-800 bg-amber-100 border border-amber-300 px-1.5 py-0.5 rounded-md">
+                                                                <span className="inline-flex items-center text-[10px] font-semibold text-[var(--ui-warning-dark)] bg-[var(--ui-warning-border)] border border-[var(--ui-warning-border)] px-1.5 py-0.5 rounded-md">
                                                                     Low Stock
                                                                 </span>
                                                             )}
@@ -471,14 +471,14 @@ export const ProductTable = ({
 
                                                 {/* Buy Price */}
                                                 {isColVisible("buyPrice") && (
-                                                    <td className="py-2.5 px-3 text-right font-normal text-xs text-black whitespace-nowrap">
+                                                    <td className="py-2.5 px-3 text-right font-normal text-xs text-[var(--ui-text)] whitespace-nowrap">
                                                         ৳{getBuyPrice(product).toLocaleString('en-IN')}
                                                     </td>
                                                 )}
 
                                                 {/* Sell Price */}
                                                 {isColVisible("sellPrice") && (
-                                                    <td className="py-2.5 px-3 text-right font-normal text-xs text-black whitespace-nowrap">
+                                                    <td className="py-2.5 px-3 text-right font-normal text-xs text-[var(--ui-text)] whitespace-nowrap">
                                                         ৳{getSellPrice(product).toLocaleString('en-IN')}
                                                     </td>
                                                 )}
@@ -493,8 +493,8 @@ export const ProductTable = ({
                                                             title={`Click to mark as ${active ? "Inactive" : "Active"}`}
                                                             className={`inline-flex items-center px-1.5 py-0.5 rounded-md text-[10px] font-semibold border cursor-pointer transition-colors ${
                                                                 active
-                                                                    ? "bg-emerald-100 text-emerald-800 border-emerald-300 hover:bg-emerald-200"
-                                                                    : "bg-rose-100 text-rose-800 border-rose-300 hover:bg-rose-200"
+                                                                    ? "bg-[var(--ui-success-border)] text-[var(--ui-success-dark)] border-[var(--ui-success-border)] hover:bg-[var(--ui-success-border)]"
+                                                                    : "bg-[var(--ui-danger-border)] text-[var(--ui-danger-dark)] border-[var(--ui-danger-border)] hover:bg-[var(--ui-danger-border)]"
                                                             } ${togglingId === prodId ? "opacity-50 cursor-wait" : ""}`}
                                                         >
                                                             {active ? "Active" : "Inactive"}
@@ -511,7 +511,7 @@ export const ProductTable = ({
                                                                 type="button"
                                                                 onClick={() => openQuickView(product)}
                                                                 title="Quick View Details"
-                                                                className="p-1 rounded-md hover:bg-sky-50 text-sky-600 transition-colors cursor-pointer"
+                                                                className="p-1 rounded-md hover:bg-[var(--primary-color-light)] text-[var(--primary-color)] transition-colors cursor-pointer"
                                                             >
                                                                 <FiEye size={14} />
                                                             </button>
@@ -521,7 +521,7 @@ export const ProductTable = ({
                                                                 to={`/admin/edit-product/${product.id || product.pcode || ""}`}
                                                                 state={{ editData: product }}
                                                                 title="Edit Product"
-                                                                className="p-1 rounded-md hover:bg-amber-50 text-amber-600 transition-colors cursor-pointer"
+                                                                className="p-1 rounded-md hover:bg-[var(--ui-warning-light)] text-[var(--ui-warning)] transition-colors cursor-pointer"
                                                             >
                                                                 <FiEdit size={14} />
                                                             </Link>
@@ -531,7 +531,7 @@ export const ProductTable = ({
                                                                 type="button"
                                                                 onClick={() => openDeleteModal(product)}
                                                                 title="Delete Product"
-                                                                className="p-1 rounded-md hover:bg-rose-50 text-rose-600 transition-colors cursor-pointer"
+                                                                className="p-1 rounded-md hover:bg-[var(--ui-danger-light)] text-[var(--ui-danger)] transition-colors cursor-pointer"
                                                             >
                                                                 <FiTrash2 size={14} />
                                                             </button>
@@ -587,18 +587,18 @@ export const ProductTable = ({
                     title="Product Quick View"
                     maxWidth="w-full max-w-3xl"
                 >
-                    <div className="space-y-3 text-black">
+                    <div className="space-y-3 text-[var(--ui-text)]">
                         {/* Header info - single line */}
-                        <div className="flex flex-wrap items-center justify-between gap-2 pb-2.5 border-b border-gray-200">
+                        <div className="flex flex-wrap items-center justify-between gap-2 pb-2.5 border-b border-[var(--ui-border)]">
                             <div className="flex flex-wrap items-center gap-2.5">
-                                <h3 className="text-base font-semibold text-black">
+                                <h3 className="text-base font-semibold text-[var(--ui-text)]">
                                     {getName(selectedProduct)}
                                 </h3>
-                                <span className="inline-flex items-center px-1.5 py-0.5 rounded-md text-[10px] font-semibold bg-gray-100 text-black border border-gray-300">
+                                <span className="inline-flex items-center px-1.5 py-0.5 rounded-md text-[10px] font-semibold bg-[var(--ui-surface-sunken)] text-[var(--ui-text)] border border-[var(--ui-border-strong)]">
                                     {getCategory(selectedProduct)}
                                 </span>
                                 {getCode(selectedProduct) && (
-                                    <span className="text-xs   text-black">
+                                    <span className="text-xs   text-[var(--ui-text)]">
                                         (Code: {getCode(selectedProduct)})
                                     </span>
                                 )}
@@ -607,8 +607,8 @@ export const ProductTable = ({
                                 <span
                                     className={`inline-flex items-center px-1.5 py-0.5 rounded-md text-[10px] font-semibold border ${
                                         isActive(selectedProduct)
-                                            ? "bg-emerald-100 text-emerald-800 border-emerald-300"
-                                            : "bg-rose-100 text-rose-800 border-rose-300"
+                                            ? "bg-[var(--ui-success-border)] text-[var(--ui-success-dark)] border-[var(--ui-success-border)]"
+                                            : "bg-[var(--ui-danger-border)] text-[var(--ui-danger-dark)] border-[var(--ui-danger-border)]"
                                     }`}
                                 >
                                     {isActive(selectedProduct) ? "Active" : "Inactive"}
@@ -618,36 +618,36 @@ export const ProductTable = ({
 
                         {/* Stock & Pricing */}
                         <div>
-                            <h4 className="text-xs font-semibold tracking-wider text-black mb-1.5">
+                            <h4 className="text-xs font-semibold tracking-wider text-[var(--ui-text)] mb-1.5">
                                 Stock & Pricing
                             </h4>
                             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-                                <div className="px-3 py-2 bg-gray-50 rounded-lg border border-gray-200">
-                                    <span className="text-xs text-black block mb-0.5">Available Stock</span>
-                                    <span className="text-sm font-semibold text-black">
+                                <div className="px-3 py-2 bg-[var(--ui-surface-muted)] rounded-lg border border-[var(--ui-border)]">
+                                    <span className="text-xs text-[var(--ui-text)] block mb-0.5">Available Stock</span>
+                                    <span className="text-sm font-semibold text-[var(--ui-text)]">
                                         {getProductStockDisplay(selectedProduct).displayStock}
                                     </span>
                                     {getProductStockDisplay(selectedProduct).hasSecondaryUnit && (
-                                        <span className="text-[10px] text-gray-500 block mt-0.5">
+                                        <span className="text-[10px] text-[var(--ui-text-muted)] block mt-0.5">
                                             ({getProductStockDisplay(selectedProduct).primaryStockText})
                                         </span>
                                     )}
                                 </div>
-                                <div className="px-3 py-2 bg-gray-50 rounded-lg border border-gray-200">
-                                    <span className="text-xs text-black block mb-0.5">Low Stock Alert</span>
-                                    <span className="text-sm font-medium text-black">
+                                <div className="px-3 py-2 bg-[var(--ui-surface-muted)] rounded-lg border border-[var(--ui-border)]">
+                                    <span className="text-xs text-[var(--ui-text)] block mb-0.5">Low Stock Alert</span>
+                                    <span className="text-sm font-medium text-[var(--ui-text)]">
                                         {getLowThreshold(selectedProduct)} {getUnit(selectedProduct)}
                                     </span>
                                 </div>
-                                <div className="px-3 py-2 bg-gray-50 rounded-lg border border-gray-200">
-                                    <span className="text-xs text-black block mb-0.5">Buy Price</span>
-                                    <span className="text-sm font-semibold text-black">
+                                <div className="px-3 py-2 bg-[var(--ui-surface-muted)] rounded-lg border border-[var(--ui-border)]">
+                                    <span className="text-xs text-[var(--ui-text)] block mb-0.5">Buy Price</span>
+                                    <span className="text-sm font-semibold text-[var(--ui-text)]">
                                         ৳{getBuyPrice(selectedProduct).toLocaleString()}
                                     </span>
                                 </div>
-                                <div className="px-3 py-2 bg-gray-50 rounded-lg border border-gray-200">
-                                    <span className="text-xs text-black block mb-0.5">Sell Price</span>
-                                    <span className="text-sm font-semibold text-black">
+                                <div className="px-3 py-2 bg-[var(--ui-surface-muted)] rounded-lg border border-[var(--ui-border)]">
+                                    <span className="text-xs text-[var(--ui-text)] block mb-0.5">Sell Price</span>
+                                    <span className="text-sm font-semibold text-[var(--ui-text)]">
                                         ৳{getSellPrice(selectedProduct).toLocaleString()}
                                     </span>
                                 </div>
@@ -656,31 +656,31 @@ export const ProductTable = ({
 
                         {/* Identification & Units */}
                         <div>
-                            <h4 className="text-xs font-semibold tracking-wider text-black mb-1.5">
+                            <h4 className="text-xs font-semibold tracking-wider text-[var(--ui-text)] mb-1.5">
                                 Identification & Unit Details
                             </h4>
                             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-                                <div className="px-3 py-2 bg-gray-50 rounded-lg border border-gray-200">
-                                    <span className="text-xs text-black block mb-0.5">SKU</span>
-                                    <span className="text-xs   font-medium text-black">
+                                <div className="px-3 py-2 bg-[var(--ui-surface-muted)] rounded-lg border border-[var(--ui-border)]">
+                                    <span className="text-xs text-[var(--ui-text)] block mb-0.5">SKU</span>
+                                    <span className="text-xs   font-medium text-[var(--ui-text)]">
                                         {getSku(selectedProduct)}
                                     </span>
                                 </div>
-                                <div className="px-3 py-2 bg-gray-50 rounded-lg border border-gray-200">
-                                    <span className="text-xs text-black block mb-0.5">Barcode</span>
-                                    <span className="text-xs   font-medium text-black">
+                                <div className="px-3 py-2 bg-[var(--ui-surface-muted)] rounded-lg border border-[var(--ui-border)]">
+                                    <span className="text-xs text-[var(--ui-text)] block mb-0.5">Barcode</span>
+                                    <span className="text-xs   font-medium text-[var(--ui-text)]">
                                         {getBarcode(selectedProduct) || "-"}
                                     </span>
                                 </div>
-                                <div className="px-3 py-2 bg-gray-50 rounded-lg border border-gray-200">
-                                    <span className="text-xs text-black block mb-0.5">Primary Unit</span>
-                                    <span className="text-xs font-medium text-black">
+                                <div className="px-3 py-2 bg-[var(--ui-surface-muted)] rounded-lg border border-[var(--ui-border)]">
+                                    <span className="text-xs text-[var(--ui-text)] block mb-0.5">Primary Unit</span>
+                                    <span className="text-xs font-medium text-[var(--ui-text)]">
                                         {getUnit(selectedProduct)}
                                     </span>
                                 </div>
-                                <div className="px-3 py-2 bg-gray-50 rounded-lg border border-gray-200">
-                                    <span className="text-xs text-black block mb-0.5">Secondary Unit</span>
-                                    <span className="text-xs font-medium text-black">
+                                <div className="px-3 py-2 bg-[var(--ui-surface-muted)] rounded-lg border border-[var(--ui-border)]">
+                                    <span className="text-xs text-[var(--ui-text)] block mb-0.5">Secondary Unit</span>
+                                    <span className="text-xs font-medium text-[var(--ui-text)]">
                                         {(selectedProduct as any).secondary_unit || (selectedProduct as any).secondaryUnit || "-"}
                                     </span>
                                 </div>
@@ -689,19 +689,19 @@ export const ProductTable = ({
 
                         {/* Additional Configurations */}
                         <div>
-                            <h4 className="text-xs font-semibold tracking-wider text-black mb-1.5">
+                            <h4 className="text-xs font-semibold tracking-wider text-[var(--ui-text)] mb-1.5">
                                 Additional Details
                             </h4>
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                                <div className="px-3 py-2 bg-gray-50 rounded-lg border border-gray-200">
-                                    <span className="text-xs text-black block mb-0.5">Decimal Quantity Sale</span>
-                                    <span className="text-xs font-medium text-black">
+                                <div className="px-3 py-2 bg-[var(--ui-surface-muted)] rounded-lg border border-[var(--ui-border)]">
+                                    <span className="text-xs text-[var(--ui-text)] block mb-0.5">Decimal Quantity Sale</span>
+                                    <span className="text-xs font-medium text-[var(--ui-text)]">
                                         {(selectedProduct as any).isDecimal === "Yes" || (selectedProduct as any).isDecimal === true || (selectedProduct as any).is_decimal === "Yes" || (selectedProduct as any).is_decimal === true ? "Allowed (Fractional quantity supported)" : "Not Allowed (Whole numbers only)"}
                                     </span>
                                 </div>
-                                <div className="px-3 py-2 bg-gray-50 rounded-lg border border-gray-200">
-                                    <span className="text-xs text-black block mb-0.5">Packing Levels</span>
-                                    <span className="text-xs font-medium text-black">
+                                <div className="px-3 py-2 bg-[var(--ui-surface-muted)] rounded-lg border border-[var(--ui-border)]">
+                                    <span className="text-xs text-[var(--ui-text)] block mb-0.5">Packing Levels</span>
+                                    <span className="text-xs font-medium text-[var(--ui-text)]">
                                         {selectedProduct.packingLevels || (selectedProduct as any).packing_levels || "-"}
                                     </span>
                                 </div>
@@ -711,21 +711,21 @@ export const ProductTable = ({
                         {/* Description (if any) */}
                         {selectedProduct.description && (
                             <div>
-                                <h4 className="text-xs font-semibold tracking-wider text-black mb-1.5">
+                                <h4 className="text-xs font-semibold tracking-wider text-[var(--ui-text)] mb-1.5">
                                     Description / Note
                                 </h4>
-                                <div className="px-3 py-2 bg-gray-50 rounded-lg border border-gray-200 text-xs font-medium text-black">
+                                <div className="px-3 py-2 bg-[var(--ui-surface-muted)] rounded-lg border border-[var(--ui-border)] text-xs font-medium text-[var(--ui-text)]">
                                     {selectedProduct.description}
                                 </div>
                             </div>
                         )}
 
                         {/* Footer Actions */}
-                        <div className="pt-2.5 border-t border-gray-200 flex justify-end gap-2.5">
+                        <div className="pt-2.5 border-t border-[var(--ui-border)] flex justify-end gap-2.5">
                             <button
                                 type="button"
                                 onClick={closeQuickView}
-                                className="px-4 py-1.5 text-xs font-medium text-black bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors cursor-pointer"
+                                className="px-4 py-1.5 text-xs font-medium text-[var(--ui-text)] bg-[var(--ui-surface-sunken)] hover:bg-[var(--ui-border)] rounded-lg transition-colors cursor-pointer"
                             >
                                 Close
                             </button>

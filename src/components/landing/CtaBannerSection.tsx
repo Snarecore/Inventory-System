@@ -21,7 +21,7 @@ export const CtaBannerSection: React.FC = () => {
             <Link to="/download">
               <Button
                 size="lg"
-                className="bg-white text-slate-900 hover:bg-slate-100 shadow-lg font-semibold"
+                className="bg-[var(--ui-surface)] text-[var(--ui-text)] hover:bg-[var(--ui-surface-sunken)] shadow-lg font-semibold"
                 icon={<HiOutlineArrowNarrowRight />}
               >
                 ফ্রি ডাউনলোড করুন

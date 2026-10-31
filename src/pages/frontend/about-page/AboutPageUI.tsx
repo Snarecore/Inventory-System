@@ -96,42 +96,42 @@ const AboutPageUI = () => {
       title: "Visa Application Guidance",
       description:
         "Expert guidance to navigate the complex visa application process and maximize your chances of success.",
-      color: "text-blue-600",
+      color: "text-[var(--primary-color)]",
     },
     {
       icon: FileText,
       title: "Document Preparation",
       description:
         "Professional assistance in preparing all required documents, forms, and supporting materials required for your application.",
-      color: "text-green-600",
+      color: "text-[var(--ui-success)]",
     },
     {
       icon: Users,
       title: "Interview Coaching",
       description:
         "One-on-one coaching sessions to help you prepare effective interview questions and prepare a compelling case for immigration officers.",
-      color: "text-purple-600",
+      color: "text-[var(--ui-info)]",
     },
     {
       icon: Plane,
       title: "Travel & Relocation Support",
       description:
         "We handle all the logistics of your travel and relocation experience, including flight arrangements, finding flights to arranging housing, so you can focus on starting your new life abroad.",
-      color: "text-orange-600",
+      color: "text-[var(--ui-warning)]",
     },
     {
       icon: Shield,
       title: "Post-Arrival Assistance",
       description:
         "Our team helps you get settled in your new country, including registering with local authorities, setting up bank accounts and more.",
-      color: "text-teal-600",
+      color: "text-[var(--ui-info)]",
     },
     {
       icon: CheckCircle,
       title: "Ongoing Check-ins",
       description:
         "We maintain regular contact to ensure you're adapting well to your new life and are able to access resources and put your initial support.",
-      color: "text-red-600",
+      color: "text-[var(--ui-danger)]",
     },
   ];
 
@@ -143,7 +143,7 @@ const AboutPageUI = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-[var(--ui-surface-muted)]">
       {/* Hero Section */}
       <section className="bg-gradient-to-r from-[var(--primary-color)] to-[var(--primary-color-light)] text-white py-20">
         <div className="max-w-7xl mx-auto px-4 md:px-8">
@@ -166,7 +166,7 @@ const AboutPageUI = () => {
                 </button>
               </MotionDiv>
               <MotionDiv delay={0.2}>
-                <button className="border-2 border-white text-white hover:bg-white hover:text-[var(--primary-color)] px-8 py-4 rounded-lg font-medium transition-all duration-200">
+                <button className="border-2 border-[var(--ui-surface)] text-white hover:bg-[var(--ui-surface)] hover:text-[var(--primary-color)] px-8 py-4 rounded-lg font-medium transition-all duration-200">
                   Learn More
                 </button>
               </MotionDiv>
@@ -176,7 +176,7 @@ const AboutPageUI = () => {
       </section>
 
       {/* Statistics Section */}
-      <section className="py-16 bg-white">
+      <section className="py-16 bg-[var(--ui-surface)]">
         <div className="max-w-7xl mx-auto px-4 md:px-8">
           <div className="text-center mb-12">
             <MotionDiv>
@@ -207,7 +207,7 @@ const AboutPageUI = () => {
       </section>
 
       {/* Our Process Section */}
-      <section className="py-20 bg-gray-50">
+      <section className="py-20 bg-[var(--ui-surface-muted)]">
         <div className="max-w-7xl mx-auto px-4 md:px-8">
           <div className="text-center mb-16">
           <MotionDiv>
@@ -268,7 +268,7 @@ const AboutPageUI = () => {
       </section>
 
       {/* Services Section */}
-      <section className="py-20 bg-white">
+      <section className="py-20 bg-[var(--ui-surface)]">
         <div className="max-w-7xl mx-auto px-4 md:px-8">
           <div className="text-center mb-16">
            <MotionDiv>
@@ -288,7 +288,7 @@ const AboutPageUI = () => {
             {services.map((service, index) => (
               <MotionDiv delay={.25*index} key={index} className="service-card group">
                 <div
-                  className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300"
+                  className="w-16 h-16 rounded-full bg-[var(--ui-surface-sunken)] flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300"
                 >
                   <service.icon className={`w-8 h-8 ${service.color}`} />
                 </div>

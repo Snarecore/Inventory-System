@@ -43,10 +43,10 @@ const CmsForm = () => {
 
     return (
         <div>
-            <div className="bg-white rounded-lg border border-gray-200 p-6">
+            <div className="bg-[var(--ui-surface)] rounded-lg border border-[var(--ui-border)] p-6">
                 <div className="mb-4">
-                    <p className="block text-sm font-medium text-gray-700">Banner Image: <span className="text-red-500">*</span>
-                        <span className="text-xs text-gray-500 ml-1">(Recommended Size: 1920x192 PX)</span>
+                    <p className="block text-sm font-medium text-[var(--ui-text)]">Banner Image: <span className="text-[var(--ui-danger)]">*</span>
+                        <span className="text-xs text-[var(--ui-text-muted)] ml-1">(Recommended Size: 1920x192 PX)</span>
                     </p>
                     <ImageUpload
                         value={

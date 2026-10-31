@@ -106,10 +106,10 @@ const BlogCreation = () => {
                 <Button label="Back to List" onClick={() => navigate("/blogs")} color="var(--color-primary)" hoverColor="var(--color-primary-hover)" />
             </div>
 
-            <div className="space-y-4 bg-white shadow rounded-lg mx-auto p-4">
+            <div className="space-y-4 bg-[var(--ui-surface)] shadow rounded-lg mx-auto p-4">
                 <div>
-                    <p className="block text-sm font-medium text-gray-700">Image:
-                        <span className="text-xs text-gray-500 ml-1">(Recommended Size: 1920x400 PX)</span>
+                    <p className="block text-sm font-medium text-[var(--ui-text)]">Image:
+                        <span className="text-xs text-[var(--ui-text-muted)] ml-1">(Recommended Size: 1920x400 PX)</span>
                     </p>
 
                     <ImageUpload

@@ -99,19 +99,19 @@ const ImageUpload: React.FC<ImageUploadProps> = ({ value, onChange, size = "sm",
 						<img
 							src={getDisplayUrl(preview)}
 							alt="Uploaded File"
-							className="w-full h-full object-cover rounded-xl border border-gray-200 bg-white shadow-2xs"
+							className="w-full h-full object-cover rounded-xl border border-[var(--ui-border)] bg-[var(--ui-surface)] shadow-2xs"
 							onError={() => setHasImgError(true)}
 						/>
 					) : (
-						<div className="w-full h-full flex flex-col items-center justify-center bg-gray-50 border border-gray-200 rounded-xl p-1 text-center shadow-2xs">
-							<IoDocumentTextOutline size={22} className="text-gray-400 mb-1" />
-							<span className="text-[11px] font-semibold text-gray-600 truncate max-w-full px-1">Attached</span>
+						<div className="w-full h-full flex flex-col items-center justify-center bg-[var(--ui-surface-muted)] border border-[var(--ui-border)] rounded-xl p-1 text-center shadow-2xs">
+							<IoDocumentTextOutline size={22} className="text-[var(--ui-text-subtle)] mb-1" />
+							<span className="text-[11px] font-semibold text-[var(--ui-text-muted)] truncate max-w-full px-1">Attached</span>
 						</div>
 					)}
 					<button
 						type="button"
 						onClick={removeImage}
-						className="absolute -top-1.5 -right-1.5 bg-rose-500 text-white rounded-full p-0.5 shadow-md cursor-pointer hover:bg-rose-600 hover:scale-110 transition-all duration-200"
+						className="absolute -top-1.5 -right-1.5 bg-[var(--ui-danger)] text-white rounded-full p-0.5 shadow-md cursor-pointer hover:bg-[var(--ui-danger)] hover:scale-110 transition-all duration-200"
 					>
 						<IoCloseSharp size={13} />
 					</button>

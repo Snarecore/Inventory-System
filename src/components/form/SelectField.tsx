@@ -55,47 +55,60 @@ const SelectInput: React.FC<SelectInputProps> = ({ label, value, options, onChan
     }, [options, debouncedSearchTerm]);
 
     return (
-        <div className={`flex flex-col items-center w-full ${openDropdown ? 'relative z-50' : ''}`}>
-            <div ref={dropdownRef} className={`relative w-full ${openDropdown ? 'z-50' : ''}`}>
+        <div className={`flex w-full flex-col items-center ${openDropdown ? 'relative z-50' : ''}`}>
+            <div ref={dropdownRef} className={`ui-field relative w-full ${openDropdown ? 'z-50' : ''}`}>
                 {label && (
-                    <label className="text-xs font-semibold text-black block mb-1">
+                    <label className={`ui-label ${required ? 'ui-label-required' : ''}`}>
                         {label}
-                        {required && <span className="text-red-600 ml-1">*</span>}
                     </label>
                 )}
 
                 <div
-                    className={`border px-2.5 h-9 rounded-lg cursor-pointer bg-white flex justify-between items-center w-full text-black transition-all duration-200 text-xs active:bg-gray-50 touch-manipulation ${openDropdown ? "border-[var(--primary-color)] ring-1 ring-[var(--primary-color)]" : "border-gray-300"} ${disabled ? "opacity-50 cursor-not-allowed" : ""}`}
+                    role="combobox"
+                    aria-expanded={openDropdown}
+                    aria-haspopup="listbox"
+                    tabIndex={disabled ? -1 : 0}
+                    className={`ui-control flex w-full cursor-pointer touch-manipulation items-center justify-between gap-2 ${openDropdown ? 'border-[var(--primary-color)] shadow-[0_0_0_3px_var(--ui-focus-ring)]' : ''} ${disabled ? 'cursor-not-allowed bg-[var(--ui-surface-sunken)] text-[var(--ui-text-subtle)]' : ''}`}
                     onClick={() => !disabled && setOpenDropdown(!openDropdown)}
+                    onKeyDown={(e) => {
+                        if (disabled) return;
+                        if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            setOpenDropdown((prev) => !prev);
+                        } else if (e.key === 'Escape') {
+                            setOpenDropdown(false);
+                        }
+                    }}
                 >
-                    <span className={`truncate ${selectedOption ? 'text-black' : 'text-gray-400 text-xs'}`}>
+                    <span className={`truncate ${selectedOption ? 'text-[var(--ui-text)]' : 'text-[var(--ui-text-subtle)]'}`}>
                         {selectedOption ? selectedOption.label : placeholder}
                     </span>
-                    <RiArrowDropDownLine className={`text-gray-500 text-lg flex-shrink-0 transition-transform duration-200 ${openDropdown ? 'rotate-180 text-[var(--primary-color)]' : ''}`} />
+                    <RiArrowDropDownLine className={`shrink-0 text-lg text-[var(--ui-text-subtle)] transition-transform duration-200 ${openDropdown ? 'rotate-180 text-[var(--primary-color)]' : ''}`} />
                 </div>
 
                 {openDropdown && (
-                    <div className={`absolute left-0 right-0 w-full ${showTop ? 'bottom-full mb-1' : 'top-full mt-1'} bg-white border border-gray-200 rounded-lg shadow-xl z-[100] max-w-full text-xs`}>
-                        <div className="p-1.5 border-b border-gray-200">
+                    <div className={`absolute left-0 right-0 z-[100] w-full max-w-full border border-[var(--ui-border)] bg-[var(--ui-surface)] shadow-xl ${showTop ? 'bottom-full mb-1' : 'top-full mt-1'}`} style={{ borderRadius: 'var(--ui-radius)' }}>
+                        <div className="border-b border-[var(--ui-border)] p-1.5">
                             <input
                                 type="text"
                                 placeholder="Search..."
-                                className="w-full h-8 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[var(--primary-color)] focus:border-[var(--primary-color)] px-2 py-1 text-xs appearance-none"
+                                className="ui-control"
+                                style={{ height: 'calc(var(--ui-control-h) - 6px)' }}
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
                             />
                         </div>
 
-                        <ul className="max-h-36 sm:max-h-48 overflow-y-auto w-full py-1">
+                        <ul role="listbox" className="dropdownScrollbar max-h-36 w-full overflow-y-auto py-1 sm:max-h-48">
                             {filteredOptions.length > 0 ? (
                                 filteredOptions.map((option, index) => (
                                     <li
                                         key={index}
-                                        className={`px-2.5 py-1.5 hover:bg-[var(--primary-color)] hover:text-white active:bg-[var(--primary-color-light)] active:text-white 
-                                            focus:bg-[var(--primary-color)] focus:text-white cursor-pointer w-full text-xs truncate transition-colors duration-150 touch-manipulation 
-                                            ${selectedOption && selectedOption.value === option.value
-                                            ? "bg-[var(--primary-color-light)] text-[var(--primary-color)] font-medium"
-                                            : "text-black"
+                                        role="option"
+                                        aria-selected={selectedOption?.value === option.value}
+                                        className={`w-full cursor-pointer touch-manipulation truncate px-2.5 py-1.5 transition-colors duration-150 hover:bg-[var(--primary-color)] hover:text-[var(--ui-on-accent)] ${selectedOption && selectedOption.value === option.value
+                                            ? "bg-[var(--primary-color-light)] font-medium text-[var(--primary-color)]"
+                                            : "text-[var(--ui-text)]"
                                             }`}
                                         onClick={() => handleSelect(option)}
                                     >
@@ -103,7 +116,7 @@ const SelectInput: React.FC<SelectInputProps> = ({ label, value, options, onChan
                                     </li>
                                 ))
                             ) : (
-                                <li className="p-2 text-gray-500 w-full text-xs text-center">No results found</li>
+                                <li className="w-full p-2 text-center text-[var(--ui-text-subtle)]">No results found</li>
                             )}
                         </ul>
                     </div>

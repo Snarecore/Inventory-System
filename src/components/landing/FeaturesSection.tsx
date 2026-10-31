@@ -72,7 +72,7 @@ export const FeaturesSection: React.FC = () => {
   return (
     <section id="features" className="relative py-4 sm:py-8 overflow-hidden scroll-mt-24">
       {/* Ambient background decoration matching banner theme */}
-      <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[400px] bg-gradient-to-tr from-[#f4f9fd] via-[#e6f4fe]/60 to-transparent blur-3xl pointer-events-none -z-10" />
+      <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[400px] bg-gradient-to-tr from-[var(--primary-color-light)] via-[var(--primary-color-light)]/60 to-transparent blur-3xl pointer-events-none -z-10" />
 
       <Container className="space-y-10 sm:space-y-14">
         {/* Top Header & Visual Mockup Grid */}
@@ -80,44 +80,44 @@ export const FeaturesSection: React.FC = () => {
           {/* Left Column: Heading & Description */}
           <div className="lg:col-span-6 space-y-4 sm:space-y-5 text-left">
             {/* Badge matching banner badge */}
-            <div className="inline-flex items-center gap-2 rounded-lg bg-[#e6f4fe] px-3.5 py-1 text-xs font-semibold text-[#009fe3] border border-sky-200/80 shadow-xs">
+            <div className="inline-flex items-center gap-2 rounded-lg bg-[var(--primary-color-light)] px-3.5 py-1 text-xs font-semibold text-[var(--primary-color)] border border-[var(--primary-color-muted)]/80 shadow-xs">
               <span>কেন ক্যাশ বই?</span>
             </div>
 
             {/* Main Title matching Banner heading typography */}
-            <h2 className="text-2xl sm:text-3xl lg:text-[40px] font-extrabold text-[#0d2a4a] leading-[1.25] tracking-tight">
+            <h2 className="text-2xl sm:text-3xl lg:text-[40px] font-extrabold text-[var(--primary-color-dark)] leading-[1.25] tracking-tight">
               আপনার ব্যবসার হিসাবের{' '}
-              <span className="text-[#009fe3] block sm:inline">
+              <span className="text-[var(--primary-color)] block sm:inline">
                 সব কিছু এক জায়গায়
               </span>
             </h2>
 
             {/* Subtitle / Description */}
-            <p className="text-sm sm:text-base text-slate-600 max-w-xl leading-relaxed">
+            <p className="text-sm sm:text-base text-[var(--ui-text-muted)] max-w-xl leading-relaxed">
               ইনভয়েস, বিক্রয়, ক্রয়, স্টক, নগদ, ব্যাংক, বকেয়া - সবকিছু সহজে পরিচালনা করুন ক্যাশ বই-এর মাধ্যমে।
             </p>
           </div>
 
           {/* Right Column: Dashboard Mockup Card matching banner colors */}
           <div className="lg:col-span-6">
-            <div className="relative rounded-2xl bg-white border border-sky-100 p-4 sm:p-5 shadow-md shadow-sky-100/60">
+            <div className="relative rounded-2xl bg-[var(--ui-surface)] border border-[var(--primary-color-muted)] p-4 sm:p-5 shadow-md shadow-sky-100/60">
               {/* Card Inner Grid with mini-sidebar & main dashboard */}
               <div className="flex gap-3 sm:gap-4">
                 {/* Mini Left Sidebar */}
-                <div className="flex flex-col items-center justify-between py-2.5 px-1.5 rounded-xl bg-[#f8fbfe] border border-sky-100/80 text-slate-400 gap-3">
-                  <div className="w-6 h-6 rounded-md bg-[#e6f4fe] text-[#009fe3] flex items-center justify-center">
+                <div className="flex flex-col items-center justify-between py-2.5 px-1.5 rounded-xl bg-[var(--primary-color-light)] border border-[var(--primary-color-muted)]/80 text-[var(--ui-text-subtle)] gap-3">
+                  <div className="w-6 h-6 rounded-md bg-[var(--primary-color-light)] text-[var(--primary-color)] flex items-center justify-center">
                     <HiOutlineHome className="w-3.5 h-3.5" />
                   </div>
-                  <div className="w-6 h-6 rounded-md flex items-center justify-center text-slate-400">
+                  <div className="w-6 h-6 rounded-md flex items-center justify-center text-[var(--ui-text-subtle)]">
                     <HiOutlineShoppingCart className="w-3.5 h-3.5" />
                   </div>
-                  <div className="w-6 h-6 rounded-md flex items-center justify-center text-slate-400">
+                  <div className="w-6 h-6 rounded-md flex items-center justify-center text-[var(--ui-text-subtle)]">
                     <HiOutlineClipboardList className="w-3.5 h-3.5" />
                   </div>
-                  <div className="w-6 h-6 rounded-md flex items-center justify-center text-slate-400">
+                  <div className="w-6 h-6 rounded-md flex items-center justify-center text-[var(--ui-text-subtle)]">
                     <HiOutlineChartBar className="w-3.5 h-3.5" />
                   </div>
-                  <div className="w-6 h-6 rounded-md flex items-center justify-center text-slate-400">
+                  <div className="w-6 h-6 rounded-md flex items-center justify-center text-[var(--ui-text-subtle)]">
                     <HiOutlineCog className="w-3.5 h-3.5" />
                   </div>
                 </div>
@@ -125,16 +125,16 @@ export const FeaturesSection: React.FC = () => {
                 {/* Main Content Area */}
                 <div className="flex-1 min-w-0 space-y-3.5">
                   {/* Top Header of the Widget */}
-                  <div className="flex items-center justify-between gap-2 border-b border-slate-100 pb-2.5">
+                  <div className="flex items-center justify-between gap-2 border-b border-[var(--ui-border)] pb-2.5">
                     <div>
-                      <h4 className="text-xs sm:text-sm font-bold text-[#0d2a4a]">
+                      <h4 className="text-xs sm:text-sm font-bold text-[var(--primary-color-dark)]">
                         বিক্রয় সারাংশ
                       </h4>
-                      <p className="text-[10px] sm:text-xs text-slate-400">
+                      <p className="text-[10px] sm:text-xs text-[var(--ui-text-subtle)]">
                         সর্বশেষ আপডেট: আজ
                       </p>
                     </div>
-                    <span className="px-2.5 py-1 rounded-lg text-[10px] sm:text-xs font-semibold bg-[#e6f4fe] text-[#009fe3] border border-sky-200/80">
+                    <span className="px-2.5 py-1 rounded-lg text-[10px] sm:text-xs font-semibold bg-[var(--primary-color-light)] text-[var(--primary-color)] border border-[var(--primary-color-muted)]/80">
                       গত ৩০ দিন
                     </span>
                   </div>
@@ -142,10 +142,10 @@ export const FeaturesSection: React.FC = () => {
                   {/* Summary Value & Growth */}
                   <div className="flex items-baseline justify-between">
                     <div>
-                      <div className="text-xl sm:text-2xl font-extrabold text-[#0d2a4a] tracking-tight">
+                      <div className="text-xl sm:text-2xl font-extrabold text-[var(--primary-color-dark)] tracking-tight">
                         ৳ ৯,২৬,০০০
                       </div>
-                      <div className="flex items-center gap-1 text-[11px] font-semibold text-emerald-600 mt-0.5">
+                      <div className="flex items-center gap-1 text-[11px] font-semibold text-[var(--ui-success)] mt-0.5">
                         <HiOutlineTrendingUp className="w-3.5 h-3.5" />
                         <span>+১৮.৪% পূর্বের মাসের তুলনায়</span>
                       </div>
@@ -156,9 +156,9 @@ export const FeaturesSection: React.FC = () => {
                   <div className="relative pt-2">
                     {/* Background faint guide lines */}
                     <div className="absolute inset-0 flex flex-col justify-between pointer-events-none opacity-40">
-                      <div className="border-b border-dashed border-slate-200 w-full" />
-                      <div className="border-b border-dashed border-slate-200 w-full" />
-                      <div className="border-b border-dashed border-slate-200 w-full" />
+                      <div className="border-b border-dashed border-[var(--ui-border)] w-full" />
+                      <div className="border-b border-dashed border-[var(--ui-border)] w-full" />
+                      <div className="border-b border-dashed border-[var(--ui-border)] w-full" />
                     </div>
 
                     {/* Bars Container */}
@@ -172,8 +172,8 @@ export const FeaturesSection: React.FC = () => {
                             style={{ height: bar.height }}
                             className={`w-full rounded-t-[3px] ${
                               bar.active
-                                ? 'bg-[#154674]'
-                                : 'bg-[#009fe3]'
+                                ? 'bg-[var(--primary-color-dark)]'
+                                : 'bg-[var(--primary-color)]'
                             }`}
                           />
                         </div>
@@ -181,7 +181,7 @@ export const FeaturesSection: React.FC = () => {
                     </div>
 
                     {/* Horizontal Axis bottom line */}
-                    <div className="border-t border-slate-200 mt-1.5 flex justify-between text-[9px] sm:text-[10px] text-slate-400 pt-1 font-medium">
+                    <div className="border-t border-[var(--ui-border)] mt-1.5 flex justify-between text-[9px] sm:text-[10px] text-[var(--ui-text-subtle)] pt-1 font-medium">
                       <span>১ তারিখ</span>
                       <span>১৫ তারিখ</span>
                       <span>৩০ তারিখ</span>
@@ -201,20 +201,20 @@ export const FeaturesSection: React.FC = () => {
             return (
               <div
                 key={idx}
-                className="group bg-white rounded-2xl border border-slate-200/90 p-5 sm:p-6 shadow-xs hover:shadow-lg hover:shadow-sky-100/70 hover:border-[#009fe3]/60 transition-all duration-200 flex flex-col justify-start"
+                className="group bg-[var(--ui-surface)] rounded-2xl border border-[var(--ui-border)]/90 p-5 sm:p-6 shadow-xs hover:shadow-lg hover:shadow-sky-100/70 hover:border-[var(--primary-color)]/60 transition-all duration-200 flex flex-col justify-start"
               >
                 {/* Icon & Title Side-by-Side Row */}
                 <div className="flex items-center gap-3.5 sm:gap-4 mb-3">
-                  <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-xl bg-[#e0f2fe] text-[#009fe3] border border-sky-100 flex items-center justify-center shrink-0 group-hover:scale-105 group-hover:bg-[#009fe3] group-hover:text-white transition-all duration-200 shadow-xs">
+                  <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-xl bg-[var(--primary-color-light)] text-[var(--primary-color)] border border-[var(--primary-color-muted)] flex items-center justify-center shrink-0 group-hover:scale-105 group-hover:bg-[var(--primary-color)] group-hover:text-white transition-all duration-200 shadow-xs">
                     <Icon className="w-5 h-5 sm:w-6 sm:h-6" />
                   </div>
-                  <h3 className="font-bold text-[#0d2a4a] text-base sm:text-[17px] group-hover:text-[#154674] transition-colors leading-snug">
+                  <h3 className="font-bold text-[var(--primary-color-dark)] text-base sm:text-[17px] group-hover:text-[var(--primary-color-dark)] transition-colors leading-snug">
                     {item.title}
                   </h3>
                 </div>
 
                 {/* Description below the icon+title header */}
-                <p className="text-slate-600 text-xs sm:text-sm leading-relaxed">
+                <p className="text-[var(--ui-text-muted)] text-xs sm:text-sm leading-relaxed">
                   {item.description}
                 </p>
               </div>

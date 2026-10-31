@@ -121,31 +121,31 @@ const SalesPurchaseChart = ({ monthlySalesCommissionData }: SalesPurchaseChartPr
   const totalCommissions = monthlyCommissions.reduce((acc, val) => acc + val, 0);
 
   return (
-    <div className="w-full mx-auto bg-white p-5 rounded-2xl shadow-sm">
+    <div className="w-full mx-auto bg-[var(--ui-surface)] p-5 rounded-2xl shadow-sm">
       <div className="flex items-center justify-between mb-3">
         <p className="text-xl font-bold flex items-center gap-2.5">
-          <span className="bg-[#e6f4fe] text-[#009fe3] p-1.5 rounded-full">
+          <span className="bg-[var(--primary-color-light)] text-[var(--primary-color)] p-1.5 rounded-full">
             <FiBarChart2 size={18} />
           </span>
           Sales vs Commissions
         </p>
       </div>
 
-      <div className="border-b border-gray-200 mb-4"></div>
+      <div className="border-b border-[var(--ui-border)] mb-4"></div>
 
       <div className="flex gap-4 mb-4">
-        <div className="text-sm border border-gray-200 rounded-lg p-2 w-44">
+        <div className="text-sm border border-[var(--ui-border)] rounded-lg p-2 w-44">
           <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-[#009fe3]"></span>
-            <span className="text-xs text-gray-600">Total Sales</span>
+            <span className="w-2 h-2 rounded-full bg-[var(--primary-color)]"></span>
+            <span className="text-xs text-[var(--ui-text-muted)]">Total Sales</span>
           </div>
           <p className="font-bold text-lg ml-4">${totalSales.toLocaleString()}</p>
         </div>
 
-        <div className="text-sm border border-gray-200 rounded-lg p-2 w-44">
+        <div className="text-sm border border-[var(--ui-border)] rounded-lg p-2 w-44">
           <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-[#bfe7f7]"></span>
-            <span className="text-xs text-gray-600">Total Commissions</span>
+            <span className="w-2 h-2 rounded-full bg-[var(--primary-color-muted)]"></span>
+            <span className="text-xs text-[var(--ui-text-muted)]">Total Commissions</span>
           </div>
           <p className="font-bold text-lg ml-4">${totalCommissions.toLocaleString()}</p>
         </div>

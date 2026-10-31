@@ -11,8 +11,9 @@ import {
 } from 'chart.js';
 import { Line } from 'react-chartjs-2';
 import { FiGrid } from 'react-icons/fi';
+import moment from 'moment';
+import type { SaleItem } from '@/types';
 import { SalesTimeframe } from '../types/dashboard.types';
-import { mockSalesData } from '../data/mockDashboardData';
 
 ChartJS.register(LineElement, PointElement, CategoryScale, LinearScale, Filler, Tooltip, Legend);
 
@@ -36,15 +37,57 @@ const hoverLine = {
   },
 };
 
-export const SaleAnalysisChart: React.FC = () => {
+interface SaleAnalysisChartProps {
+  sales: SaleItem[];
+}
+
+export const SaleAnalysisChart: React.FC<SaleAnalysisChartProps> = ({ sales }) => {
   const chartRef = useRef(null);
   const [timeframe, setTimeframe] = useState<SalesTimeframe>('daily');
 
-  const currentData = mockSalesData[timeframe];
-  const labels = currentData.points.map((p) => p.label);
-  const values = currentData.points.map((p) => p.sales);
-  const totalSales = currentData.summary.total;
-  const totalOrders = currentData.points.reduce((acc, p) => acc + p.orders, 0);
+  const points = useMemo(() => {
+    const now = moment();
+    const buckets = new Map<string, { sales: number; orders: number; sort: number }>();
+    const addSale = (sale: SaleItem, label: string, sort: number) => {
+      const current = buckets.get(label) || { sales: 0, orders: 0, sort };
+      current.sales += Number(sale.grandTotal) || 0;
+      current.orders += 1;
+      buckets.set(label, current);
+    };
+
+    sales.forEach((sale) => {
+      const rawDate =
+        sale.salesDate ||
+        sale.saleDate ||
+        sale.sales_date ||
+        sale.date ||
+        sale.createdAt ||
+        sale.created_at;
+      const date = moment(rawDate);
+      if (!date.isValid()) return;
+
+      if (timeframe === 'daily' && date.isSame(now, 'day')) {
+        const hour = date.hour();
+        const label = date.format('h:00 A');
+        addSale(sale, label, hour);
+      } else if (timeframe === 'weekly' && date.isBetween(moment(now).subtract(6, 'days').startOf('day'), now, 'day', '[]')) {
+        const label = date.format('ddd');
+        addSale(sale, label, date.startOf('day').valueOf());
+      } else if (timeframe === 'monthly' && date.isSame(now, 'month')) {
+        const week = Math.ceil(date.date() / 7);
+        addSale(sale, `Week ${week}`, week);
+      }
+    });
+
+    return [...buckets.entries()]
+      .sort((a, b) => a[1].sort - b[1].sort)
+      .map(([label, point]) => ({ label, ...point }));
+  }, [sales, timeframe]);
+
+  const labels = points.map((point) => point.label);
+  const values = points.map((point) => point.sales);
+  const totalSales = points.reduce((sum, point) => sum + point.sales, 0);
+  const totalOrders = points.reduce((sum, point) => sum + point.orders, 0);
 
   const data = useMemo(
     () => ({
@@ -121,7 +164,7 @@ export const SaleAnalysisChart: React.FC = () => {
               return `৳${num}`;
             },
           },
-          suggestedMax: Math.max(...values) * 1.15,
+          suggestedMax: Math.max(0, ...values) * 1.15,
         },
       },
     }),
@@ -129,18 +172,18 @@ export const SaleAnalysisChart: React.FC = () => {
   );
 
   return (
-    <div className="w-full h-full bg-white p-4 rounded-2xl shadow-sm flex flex-col justify-between">
+    <div className="premium-panel w-full h-full p-4 flex flex-col justify-between">
       <div>
         <div className="flex items-center justify-between mb-2.5">
           <p className="text-xl font-bold flex items-center gap-2.5">
-            <span className="bg-[#e6f4fe] text-[#009fe3] p-1.5 rounded-full">
+            <span className="bg-[var(--primary-color-light)] text-[var(--primary-color)] p-1.5 rounded-full">
               <FiGrid size={18} />
             </span>
             Sale Analysis
           </p>
 
           {/* Timeframe Selector Tabs */}
-          <div className="flex items-center bg-[#f0f4f8] p-1 rounded-lg gap-1">
+          <div className="flex items-center bg-[var(--ui-surface-sunken)] p-1 rounded-lg gap-1">
             {(['daily', 'weekly', 'monthly'] as SalesTimeframe[]).map((tf) => (
               <button
                 key={tf}
@@ -148,8 +191,8 @@ export const SaleAnalysisChart: React.FC = () => {
                 onClick={() => setTimeframe(tf)}
                 className={`px-3 py-1 text-xs font-semibold rounded-md transition-all capitalize cursor-pointer ${
                   timeframe === tf
-                    ? 'bg-[#009fe3] text-white shadow-sm'
-                    : 'text-gray-600 hover:text-black'
+                    ? 'bg-[var(--primary-color)] text-white shadow-sm'
+                    : 'text-[var(--ui-text-muted)] hover:text-[var(--ui-text)]'
                 }`}
               >
                 {tf}
@@ -158,24 +201,24 @@ export const SaleAnalysisChart: React.FC = () => {
           </div>
         </div>
 
-        <div className="border-b border-gray-200 mb-3"></div>
+        <div className="border-b border-[var(--ui-border)] mb-3"></div>
 
         {/* Existing Stat Boxes style */}
         <div className="flex gap-4 mb-3">
-          <div className="text-sm border border-gray-200 rounded-lg p-2.5 min-w-44">
+          <div className="text-sm border border-[var(--ui-border)] rounded-lg p-2.5 min-w-44">
             <div className="flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-[#009fe3]"></span>
-              <span className="text-xs text-gray-600">
+              <span className="w-2 h-2 rounded-full bg-[var(--primary-color)]"></span>
+              <span className="text-xs text-[var(--ui-text-muted)]">
                 Total {timeframe.charAt(0).toUpperCase() + timeframe.slice(1)} Sale
               </span>
             </div>
             <p className="font-bold text-lg ml-4 mt-0.5">৳{totalSales.toLocaleString('en-IN')}</p>
           </div>
 
-          <div className="text-sm border border-gray-200 rounded-lg p-2.5 min-w-44">
+          <div className="text-sm border border-[var(--ui-border)] rounded-lg p-2.5 min-w-44">
             <div className="flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-[#bfe7f7]"></span>
-              <span className="text-xs text-gray-600">Total Orders</span>
+              <span className="w-2 h-2 rounded-full bg-[var(--primary-color-muted)]"></span>
+              <span className="text-xs text-[var(--ui-text-muted)]">Total Orders</span>
             </div>
             <p className="font-bold text-lg ml-4 mt-0.5">{totalOrders}</p>
           </div>

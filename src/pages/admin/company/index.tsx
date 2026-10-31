@@ -39,38 +39,38 @@ export const CompanyPage: React.FC = () => {
       {/* ── Content ── */}
       <div>
         {isLoading ? (
-          <div className="bg-white rounded-xl border border-gray-200 p-3 sm:p-4 space-y-3 animate-pulse">
+          <div className="bg-[var(--ui-surface)] rounded-xl border border-[var(--ui-border)] p-3 sm:p-4 space-y-3 animate-pulse">
             <div className="flex flex-col sm:flex-row items-start gap-3">
-              <div className="h-20 w-20 bg-gray-100 rounded-lg shrink-0" />
+              <div className="h-20 w-20 bg-[var(--ui-surface-sunken)] rounded-lg shrink-0" />
               <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 w-full">
-                <div className="h-9 bg-gray-100 rounded-lg" />
-                <div className="h-9 bg-gray-100 rounded-lg" />
-                <div className="h-9 bg-gray-100 rounded-lg" />
-                <div className="h-9 bg-gray-100 rounded-lg" />
-                <div className="h-9 bg-gray-100 rounded-lg" />
-                <div className="h-9 bg-gray-100 rounded-lg" />
-                <div className="h-9 bg-gray-100 rounded-lg" />
-                <div className="h-9 bg-gray-100 rounded-lg" />
+                <div className="h-9 bg-[var(--ui-surface-sunken)] rounded-lg" />
+                <div className="h-9 bg-[var(--ui-surface-sunken)] rounded-lg" />
+                <div className="h-9 bg-[var(--ui-surface-sunken)] rounded-lg" />
+                <div className="h-9 bg-[var(--ui-surface-sunken)] rounded-lg" />
+                <div className="h-9 bg-[var(--ui-surface-sunken)] rounded-lg" />
+                <div className="h-9 bg-[var(--ui-surface-sunken)] rounded-lg" />
+                <div className="h-9 bg-[var(--ui-surface-sunken)] rounded-lg" />
+                <div className="h-9 bg-[var(--ui-surface-sunken)] rounded-lg" />
               </div>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
-              <div className="h-9 bg-gray-100 rounded-lg" />
-              <div className="h-9 bg-gray-100 rounded-lg" />
-              <div className="h-9 bg-gray-100 rounded-lg" />
-              <div className="h-9 bg-gray-100 rounded-lg" />
+              <div className="h-9 bg-[var(--ui-surface-sunken)] rounded-lg" />
+              <div className="h-9 bg-[var(--ui-surface-sunken)] rounded-lg" />
+              <div className="h-9 bg-[var(--ui-surface-sunken)] rounded-lg" />
+              <div className="h-9 bg-[var(--ui-surface-sunken)] rounded-lg" />
             </div>
           </div>
         ) : error ? (
-          <div className="bg-white rounded-xl border border-red-200 p-6 text-center space-y-2.5">
-            <div className="w-9 h-9 rounded-full bg-red-100 text-red-600 mx-auto flex items-center justify-center text-base">
+          <div className="bg-[var(--ui-surface)] rounded-xl border border-[var(--ui-danger-border)] p-6 text-center space-y-2.5">
+            <div className="w-9 h-9 rounded-full bg-[var(--ui-danger-border)] text-[var(--ui-danger)] mx-auto flex items-center justify-center text-base">
               <FaExclamationTriangle />
             </div>
-            <h3 className="text-xs sm:text-sm font-bold text-red-900">Failed to load business profile</h3>
-            <p className="text-xs text-red-600 max-w-md mx-auto">{error.message || "Unable to connect to server."}</p>
+            <h3 className="text-xs sm:text-sm font-bold text-[var(--ui-danger-dark)]">Failed to load business profile</h3>
+            <p className="text-xs text-[var(--ui-danger)] max-w-md mx-auto">{error.message || "Unable to connect to server."}</p>
             <button
               type="button"
               onClick={() => refetch()}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white text-xs font-semibold rounded-md transition-all cursor-pointer"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[var(--ui-danger)] hover:bg-[var(--ui-danger-dark)] text-white text-xs font-semibold rounded-md transition-all cursor-pointer"
             >
               <FaRedo className="text-xs" />
               <span>Try Again</span>

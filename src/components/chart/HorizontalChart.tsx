@@ -127,16 +127,16 @@ export default function NewAgentsBar({
   );
 
   return (
-    <div className="w-full h-full rounded-2xl bg-white p-5 shadow-sm flex flex-col justify-between">
+    <div className="w-full h-full rounded-2xl bg-[var(--ui-surface)] p-5 shadow-sm flex flex-col justify-between">
       <div>
         <div className="flex items-center gap-2.5 mb-3">
-          <span className="bg-[#e6f4fe] text-[#009fe3] p-1.5 rounded-full">
+          <span className="bg-[var(--primary-color-light)] text-[var(--primary-color)] p-1.5 rounded-full">
             <FiGrid size={18} />
           </span>
           <p className="text-xl font-bold">{title}</p>
         </div>
 
-        <div className="border-b border-gray-200 mb-4"></div>
+        <div className="border-b border-[var(--ui-border)] mb-4"></div>
       </div>
 
       <div className="relative w-full h-[340px] flex-1 min-h-[300px]">

@@ -113,35 +113,35 @@ const UserTable = ({
   );
 
   return (
-    <div className="bg-white rounded-lg border border-gray-200">
+    <div className="bg-[var(--ui-surface)] rounded-lg border border-[var(--ui-border)]">
       {/* <div className="mt-4 w-full overflow-x-auto">
                 <table className="w-full text-left border-collapse min-w-[900px]">
-                    <thead className="bg-gray-100">
-                        <tr className="text-gray-600 text-sm border-b border-gray-200">
+                    <thead className="bg-[var(--ui-surface-sunken)]">
+                        <tr className="text-[var(--ui-text-muted)] text-sm border-b border-[var(--ui-border)]">
                             {tableHeaders.map(({ key, label }) => (
-                                <th key={key} className="px-6 py-4 text-left text-[#000000e0]">
+                                <th key={key} className="px-6 py-4 text-left text-[var(--ui-text)]">
                                     {label}
                                 </th>
                             ))}
                         </tr>
                     </thead>
-                    <tbody className="bg-white divide-y divide-gray-200 rounded-lg">
+                    <tbody className="bg-[var(--ui-surface)] divide-y divide-[var(--ui-border)] rounded-lg">
                         {dataList?.length > 0 ? (
                             dataList?.map((data, index) => (
                                 <tr
                                     key={data.id}
-                                    className="border-b border-gray-100 text-gray-700 hover:bg-gray-50 transition duration-300"
+                                    className="border-b border-[var(--ui-border)] text-[var(--ui-text)] hover:bg-[var(--ui-surface-muted)] transition duration-300"
                                 >
-                                    <td className="px-6 py-4 font-medium text-gray-800">
+                                    <td className="px-6 py-4 font-medium text-[var(--ui-text)]">
                                         {index + 1}
                                     </td>
-                                    <td className="px-6 py-4 font-medium text-gray-800">
+                                    <td className="px-6 py-4 font-medium text-[var(--ui-text)]">
                                         {data.name}
                                     </td>
-                                    <td className="px-6 py-4 font-medium text-gray-800">
+                                    <td className="px-6 py-4 font-medium text-[var(--ui-text)]">
                                         {data.email}
                                     </td>
-                                    <td className="px-6 py-4 font-medium text-gray-800">
+                                    <td className="px-6 py-4 font-medium text-[var(--ui-text)]">
                                         {data.phone}
                                     </td>
                                     
@@ -149,7 +149,7 @@ const UserTable = ({
                                         <div className="flex items-center gap-2">
                                             <button
                                                 onClick={() => openDeleteModal(data)}
-                                                className="border border-gray-300 text-gray-700 hover:text-[var(--color-primary)] hover:bg-gray-200 cursor-pointer p-2 rounded-md transition duration-300">
+                                                className="border border-[var(--ui-border-strong)] text-[var(--ui-text)] hover:text-[var(--color-primary)] hover:bg-[var(--ui-border)] cursor-pointer p-2 rounded-md transition duration-300">
                                                 <FiTrash2 />
                                             </button>
                                         </div>
@@ -170,7 +170,7 @@ const UserTable = ({
                 </table>
             </div> */}
 
-      <div className="space-y-4 border-b border-gray-200 px-4">
+      <div className="space-y-4 border-b border-[var(--ui-border)] px-4">
         <div className="pt-4 pb-4 flex sm:flex-row flex-col gap-4 justify-between flex-wrap">
           <Search
             searchQuery={searchQuery}
@@ -233,9 +233,9 @@ const UserTable = ({
                 </button>
 
                 {isModalOpen && (
-                  <div className="absolute right-0 top-8 w-32 bg-white border border-gray-100 rounded-lg shadow-lg z-10 p-2 space-y-2">
+                  <div className="absolute right-0 top-8 w-32 bg-[var(--ui-surface)] border border-[var(--ui-border)] rounded-lg shadow-lg z-10 p-2 space-y-2">
                     <button
-                      className="w-full text-left px-4 py-2 text-xs flex items-center gap-2 bg-blue-50 text-blue-700 font-semibold rounded-full cursor-pointer"
+                      className="w-full text-left px-4 py-2 text-xs flex items-center gap-2 bg-[var(--primary-color-light)] text-[var(--primary-color-dark)] font-semibold rounded-full cursor-pointer"
                       onClick={() => {
                         setIsModalOpen(false);
                         alert("Edit clicked");
@@ -263,7 +263,7 @@ const UserTable = ({
             <div className="mt-2 sm:mt-0 sm:flex sm:items-center sm:gap-2 sm:flex-1">
               <div>
                 <p className="font-semibold">Majba</p>
-                <p className="text-sm text-gray-500">Junior Developer</p>
+                <p className="text-sm text-[var(--ui-text-muted)]">Junior Developer</p>
               </div>
 
 
@@ -277,9 +277,9 @@ const UserTable = ({
                 </button>
 
                 {isModalOpen && (
-                  <div className="absolute right-0 top-8 w-32 bg-white border border-gray-100 rounded-lg shadow-lg z-10 p-2 space-y-2">
+                  <div className="absolute right-0 top-8 w-32 bg-[var(--ui-surface)] border border-[var(--ui-border)] rounded-lg shadow-lg z-10 p-2 space-y-2">
                     <button
-                      className="w-full text-left px-4 py-2 text-xs flex items-center gap-2 bg-blue-50 text-blue-700 font-semibold rounded-full cursor-pointer"
+                      className="w-full text-left px-4 py-2 text-xs flex items-center gap-2 bg-[var(--primary-color-light)] text-[var(--primary-color-dark)] font-semibold rounded-full cursor-pointer"
                       onClick={() => {
                         setIsModalOpen(false);
                         alert("Edit clicked");
@@ -330,7 +330,7 @@ const UserTable = ({
                   <HiDotsHorizontal size={20} />
                 </button>
                 {isModalOpen && (
-                  <div className="absolute right-0 top-8 w-32 bg-white border border-gray-100 rounded-lg shadow-lg z-10 p-2 space-y-2">
+                  <div className="absolute right-0 top-8 w-32 bg-[var(--ui-surface)] border border-[var(--ui-border)] rounded-lg shadow-lg z-10 p-2 space-y-2">
                     <button
                       className="w-full text-left px-4 py-2 text-xs transition-colors flex items-center gap-2 bg-[var(--color-primary-light)] rounded-full cursor-pointer"
                       onClick={() => {
@@ -373,7 +373,7 @@ const UserTable = ({
             <div className="text-sm font-medium tracking-wide">
               <span>09-09-2025</span>
             </div>
-            <div className="bg-white border border-[var(--color-primary)] text-[var(--color-primary)] text-xs px-3 py-1 rounded-full shadow-sm font-medium cursor-pointer">
+            <div className="bg-[var(--ui-surface)] border border-[var(--color-primary)] text-[var(--color-primary)] text-xs px-3 py-1 rounded-full shadow-sm font-medium cursor-pointer">
               See Details
             </div>
           </div>
@@ -398,9 +398,9 @@ const UserTable = ({
                 </button>
 
                 {isModalOpen && (
-                  <div className="absolute right-0 top-8 w-32 bg-white border border-gray-100 rounded-lg shadow-lg z-10 p-2 space-y-2">
+                  <div className="absolute right-0 top-8 w-32 bg-[var(--ui-surface)] border border-[var(--ui-border)] rounded-lg shadow-lg z-10 p-2 space-y-2">
                     <button
-                      className="w-full text-left px-4 py-2 text-xs flex items-center gap-2 bg-blue-50 text-blue-700 font-semibold rounded-full cursor-pointer"
+                      className="w-full text-left px-4 py-2 text-xs flex items-center gap-2 bg-[var(--primary-color-light)] text-[var(--primary-color-dark)] font-semibold rounded-full cursor-pointer"
                       onClick={() => {
                         setIsModalOpen(false);
                         alert("Edit clicked");
@@ -428,7 +428,7 @@ const UserTable = ({
             <div className="mt-2 sm:mt-0 sm:flex sm:items-center sm:gap-2 sm:flex-1">
               <div>
                 <p className="font-semibold">Majba</p>
-                <p className="text-sm text-gray-500">Junior Developer</p>
+                <p className="text-sm text-[var(--ui-text-muted)]">Junior Developer</p>
               </div>
 
 
@@ -442,9 +442,9 @@ const UserTable = ({
                 </button>
 
                 {isModalOpen && (
-                  <div className="absolute right-0 top-8 w-32 bg-white border border-gray-100 rounded-lg shadow-lg z-10 p-2 space-y-2">
+                  <div className="absolute right-0 top-8 w-32 bg-[var(--ui-surface)] border border-[var(--ui-border)] rounded-lg shadow-lg z-10 p-2 space-y-2">
                     <button
-                      className="w-full text-left px-4 py-2 text-xs flex items-center gap-2 bg-blue-50 text-blue-700 font-semibold rounded-full cursor-pointer"
+                      className="w-full text-left px-4 py-2 text-xs flex items-center gap-2 bg-[var(--primary-color-light)] text-[var(--primary-color-dark)] font-semibold rounded-full cursor-pointer"
                       onClick={() => {
                         setIsModalOpen(false);
                         alert("Edit clicked");
@@ -495,7 +495,7 @@ const UserTable = ({
                   <HiDotsHorizontal size={20} />
                 </button>
                 {isModalOpen && (
-                  <div className="absolute right-0 top-8 w-32 bg-white border border-gray-100 rounded-lg shadow-lg z-10 p-2 space-y-2">
+                  <div className="absolute right-0 top-8 w-32 bg-[var(--ui-surface)] border border-[var(--ui-border)] rounded-lg shadow-lg z-10 p-2 space-y-2">
                     <button
                       className="w-full text-left px-4 py-2 text-xs transition-colors flex items-center gap-2 bg-[var(--color-primary-light)] rounded-full cursor-pointer"
                       onClick={() => {
@@ -538,7 +538,7 @@ const UserTable = ({
             <div className="text-sm font-medium tracking-wide">
               <span>09-09-2025</span>
             </div>
-            <div className="bg-white border border-[var(--color-primary)] text-[var(--color-primary)] text-xs px-3 py-1 rounded-full shadow-sm font-medium cursor-pointer">
+            <div className="bg-[var(--ui-surface)] border border-[var(--color-primary)] text-[var(--color-primary)] text-xs px-3 py-1 rounded-full shadow-sm font-medium cursor-pointer">
               See Details
             </div>
           </div>
@@ -569,7 +569,7 @@ const UserTable = ({
                   <HiDotsHorizontal size={20} />
                 </button>
                 {isModalOpen && (
-                  <div className="absolute right-0 top-8 w-32 bg-white border border-gray-100 rounded-lg shadow-lg z-10 p-2 space-y-2">
+                  <div className="absolute right-0 top-8 w-32 bg-[var(--ui-surface)] border border-[var(--ui-border)] rounded-lg shadow-lg z-10 p-2 space-y-2">
                     <button
                       className="w-full text-left px-4 py-2 text-xs transition-colors flex items-center gap-2 bg-[var(--color-primary-light)] rounded-full cursor-pointer"
                       onClick={() => {
@@ -612,7 +612,7 @@ const UserTable = ({
             <div className="text-sm font-medium tracking-wide">
               <span>09-09-2025</span>
             </div>
-            <div className="bg-white border border-[var(--color-primary)] text-[var(--color-primary)] text-xs px-3 py-1 rounded-full shadow-sm font-medium cursor-pointer">
+            <div className="bg-[var(--ui-surface)] border border-[var(--color-primary)] text-[var(--color-primary)] text-xs px-3 py-1 rounded-full shadow-sm font-medium cursor-pointer">
               See Details
             </div>
           </div>
@@ -643,7 +643,7 @@ const UserTable = ({
                   <HiDotsHorizontal size={20} />
                 </button>
                 {isModalOpen && (
-                  <div className="absolute right-0 top-8 w-32 bg-white border border-gray-100 rounded-lg shadow-lg z-10 p-2 space-y-2">
+                  <div className="absolute right-0 top-8 w-32 bg-[var(--ui-surface)] border border-[var(--ui-border)] rounded-lg shadow-lg z-10 p-2 space-y-2">
                     <button
                       className="w-full text-left px-4 py-2 text-xs transition-colors flex items-center gap-2 bg-[var(--color-primary-light)] rounded-full cursor-pointer"
                       onClick={() => {
@@ -686,7 +686,7 @@ const UserTable = ({
             <div className="text-sm font-medium tracking-wide">
               <span>09-09-2025</span>
             </div>
-            <div className="bg-white border border-[var(--color-primary)] text-[var(--color-primary)] text-xs px-3 py-1 rounded-full shadow-sm font-medium cursor-pointer">
+            <div className="bg-[var(--ui-surface)] border border-[var(--color-primary)] text-[var(--color-primary)] text-xs px-3 py-1 rounded-full shadow-sm font-medium cursor-pointer">
               See Details
             </div>
           </div>

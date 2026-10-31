@@ -214,7 +214,7 @@ const ChallanSettingsModal: React.FC<ChallanSettingsModalProps> = ({
           <button
             type="button"
             onClick={onClose}
-            className="px-3.5 py-1.5 text-xs font-medium text-gray-600 hover:text-gray-800 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors cursor-pointer"
+            className="px-3.5 py-1.5 text-xs font-medium text-[var(--ui-text-muted)] hover:text-[var(--ui-text)] bg-[var(--ui-surface-sunken)] hover:bg-[var(--ui-border)] rounded-lg transition-colors cursor-pointer"
           >
             Cancel
           </button>
@@ -229,11 +229,11 @@ const ChallanSettingsModal: React.FC<ChallanSettingsModalProps> = ({
       }
     >
       <div className="flex flex-col gap-2.5 py-1">
-        <p className="text-xs text-gray-500 mb-1">
+        <p className="text-xs text-[var(--ui-text-muted)] mb-1">
           Customize which optional challan and logistics fields appear in your purchase entry form.
         </p>
 
-        <div className="flex flex-col divide-y divide-gray-100 max-h-[60vh] overflow-y-auto pr-1">
+        <div className="flex flex-col divide-y divide-[var(--ui-border)] max-h-[60vh] overflow-y-auto pr-1">
           {options.map((opt) => {
             const Icon = opt.icon;
             const isChecked = Boolean(settings[opt.key]);
@@ -241,17 +241,17 @@ const ChallanSettingsModal: React.FC<ChallanSettingsModalProps> = ({
             return (
               <label
                 key={opt.key}
-                className="flex items-center justify-between py-2 px-1 sm:px-2 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors select-none"
+                className="flex items-center justify-between py-2 px-1 sm:px-2 rounded-lg hover:bg-[var(--ui-surface-muted)] cursor-pointer transition-colors select-none"
               >
                 <div className="flex items-start gap-2 sm:gap-2.5 min-w-0 pr-2">
-                  <div className="p-1.5 rounded-md bg-sky-50 text-[var(--color-primary)] mt-0.5 shrink-0">
+                  <div className="p-1.5 rounded-md bg-[var(--primary-color-light)] text-[var(--color-primary)] mt-0.5 shrink-0">
                     <Icon size={14} />
                   </div>
                   <div className="min-w-0">
-                    <span className="text-xs font-semibold text-gray-800 block truncate">
+                    <span className="text-xs font-semibold text-[var(--ui-text)] block truncate">
                       {opt.label}
                     </span>
-                    <span className="text-[11px] text-gray-500 leading-tight block">
+                    <span className="text-[11px] text-[var(--ui-text-muted)] leading-tight block">
                       {opt.description}
                     </span>
                   </div>

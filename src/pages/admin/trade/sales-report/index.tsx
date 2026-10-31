@@ -297,14 +297,14 @@ const SalesReportPage: React.FC = () => {
       />
 
       {/* ── Unified Tab Switcher (Matches Sales & Purchases Page Design) ── */}
-      <div className="flex items-center gap-1.5 border-b border-gray-200/90 -my-0.5">
+      <div className="flex items-center gap-1.5 border-b border-[var(--ui-border)]/90 -my-0.5">
         <button
           type="button"
           onClick={() => setActiveTab("invoices")}
           className={`flex items-center gap-1.5 px-3 sm:px-3.5 py-1 text-xs font-bold transition-all border-b-2 cursor-pointer ${
             activeTab === "invoices"
-              ? "border-[var(--color-primary)] text-[var(--color-primary)] bg-sky-50/50 rounded-t-md"
-              : "border-transparent text-gray-600 hover:text-black hover:bg-gray-50 rounded-t-md"
+              ? "border-[var(--color-primary)] text-[var(--color-primary)] bg-[var(--primary-color-light)]/50 rounded-t-md"
+              : "border-transparent text-[var(--ui-text-muted)] hover:text-[var(--ui-text)] hover:bg-[var(--ui-surface-muted)] rounded-t-md"
           }`}
         >
           <FaShoppingCart size={11} />
@@ -316,8 +316,8 @@ const SalesReportPage: React.FC = () => {
           onClick={() => setActiveTab("products")}
           className={`flex items-center gap-1.5 px-3 sm:px-3.5 py-1 text-xs font-bold transition-all border-b-2 cursor-pointer ${
             activeTab === "products"
-              ? "border-[var(--color-primary)] text-[var(--color-primary)] bg-sky-50/50 rounded-t-md"
-              : "border-transparent text-gray-600 hover:text-black hover:bg-gray-50 rounded-t-md"
+              ? "border-[var(--color-primary)] text-[var(--color-primary)] bg-[var(--primary-color-light)]/50 rounded-t-md"
+              : "border-transparent text-[var(--ui-text-muted)] hover:text-[var(--ui-text)] hover:bg-[var(--ui-surface-muted)] rounded-t-md"
           }`}
         >
           <FaBoxes size={11} />
@@ -329,8 +329,8 @@ const SalesReportPage: React.FC = () => {
           onClick={() => setActiveTab("customers")}
           className={`flex items-center gap-1.5 px-3 sm:px-3.5 py-1 text-xs font-bold transition-all border-b-2 cursor-pointer ${
             activeTab === "customers"
-              ? "border-[var(--color-primary)] text-[var(--color-primary)] bg-sky-50/50 rounded-t-md"
-              : "border-transparent text-gray-600 hover:text-black hover:bg-gray-50 rounded-t-md"
+              ? "border-[var(--color-primary)] text-[var(--color-primary)] bg-[var(--primary-color-light)]/50 rounded-t-md"
+              : "border-transparent text-[var(--ui-text-muted)] hover:text-[var(--ui-text)] hover:bg-[var(--ui-surface-muted)] rounded-t-md"
           }`}
         >
           <FaUserFriends size={11} />

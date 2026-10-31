@@ -1,10 +1,9 @@
 import React, { Suspense } from 'react'
-import { createBrowserRouter, Navigate } from 'react-router-dom'
-import { RootLayout } from '@/layouts/RootLayout'
+import { createBrowserRouter, Navigate, Outlet, useLocation } from 'react-router-dom'
 import AdminLayout from '@/layouts/AdminLayout'
-import { Home } from '@/pages/frontend/Home'
 import { Login } from '@/pages/frontend/Login'
 import { NotFound } from '@/pages/frontend/NotFound'
+import { isSessionValid } from '@/utils/auth-storage'
 
 // Lazy loaded Admin Pages
 const Dashboard = React.lazy(() => import('@/pages/admin/main/admin-dashboard/Dashboard'))
@@ -20,6 +19,7 @@ const Admins = React.lazy(() => import('@/pages/admin/people/admin'))
 const Users = React.lazy(() => import('@/pages/admin/people/user'))
 const Vendors = React.lazy(() => import('@/pages/admin/people/vendor'))
 const Parties = React.lazy(() => import('@/pages/admin/people/parties'))
+const EmployeeEntry = React.lazy(() => import('@/pages/admin/people/employee-entry'))
 const HeroSlider = React.lazy(() => import('@/pages/admin/settings/home/hero-slider'))
 const HomePageCms = React.lazy(() => import('@/pages/admin/settings/home/page-cms'))
 const HeaderFooterCms = React.lazy(() => import('@/pages/admin/settings/header-footer-cms'))
@@ -27,6 +27,7 @@ const ContactMessage = React.lazy(() => import('@/pages/admin/settings/contact/c
 const ContactPageCms = React.lazy(() => import('@/pages/admin/settings/contact/contact-page-cms'))
 const ShopPageCms = React.lazy(() => import('@/pages/admin/settings/shop-page-cms'))
 const SocialLinks = React.lazy(() => import('@/pages/admin/settings/social-links'))
+const AppearanceSettings = React.lazy(() => import('@/pages/admin/settings/appearance'))
 const PrivacyPolicy = React.lazy(() => import('@/pages/admin/settings/policy/privacy'))
 const TermsConditions = React.lazy(() => import('@/pages/admin/settings/policy/terms-condition'))
 const ExchangePolicy = React.lazy(() => import('@/pages/admin/settings/policy/exchange-return/ExchangeForm'))
@@ -58,12 +59,33 @@ const withSuspense = (Component: React.ComponentType) => (
   </Suspense>
 )
 
+const RequireAuth = () => {
+  const location = useLocation()
+
+  if (!isSessionValid()) {
+    const requestedUrl = `${location.pathname}${location.search}${location.hash}`
+    return <Navigate to={`/?redirect=${encodeURIComponent(requestedUrl)}`} replace />
+  }
+
+  return <Outlet />
+}
+
 export const router = createBrowserRouter([
-  // Public Frontend Routes
+  {
+    path: '/',
+    element: <Login />,
+  },
   {
     path: '/login',
     element: <Login />,
   },
+  {
+    path: '/404',
+    element: <Navigate to="/admin/404" replace />,
+  },
+  {
+    element: <RequireAuth />,
+    children: [
   {
     path: '/customers',
     element: <Navigate to="/admin/parties?type=CUSTOMER" replace />,
@@ -193,21 +215,6 @@ export const router = createBrowserRouter([
     element: <Navigate to="/admin/company" replace />,
   },
 
-  {
-    path: '/',
-    element: <RootLayout />,
-    children: [
-      {
-        index: true,
-        element: <Home />,
-      },
-      {
-        path: '404',
-        element: <NotFound />,
-      },
-    ],
-  },
-
   // Admin Protected / Management Routes
   {
     path: '/admin',
@@ -272,6 +279,10 @@ export const router = createBrowserRouter([
       {
         path: 'parties',
         element: withSuspense(Parties),
+      },
+      {
+        path: 'employee-entry',
+        element: withSuspense(EmployeeEntry),
       },
       {
         path: 'purchases',
@@ -383,6 +394,10 @@ export const router = createBrowserRouter([
         element: withSuspense(SocialLinks),
       },
       {
+        path: 'settings/appearance',
+        element: withSuspense(AppearanceSettings),
+      },
+      {
         path: 'privacy-policy',
         element: withSuspense(PrivacyPolicy),
       },
@@ -422,14 +437,26 @@ export const router = createBrowserRouter([
         path: 'administration',
         element: <Navigate to="/admin/company" replace />,
       },
+      {
+        path: '404',
+        element: <NotFound returnTo="/admin" returnLabel="Back to Dashboard" />,
+      },
+      {
+        path: 'not-found',
+        element: <Navigate to="/admin/404" replace />,
+      },
+      {
+        path: '*',
+        element: <Navigate to="/admin/404" replace />,
+      },
     ],
   },
 
   // Fallback route
   {
     path: '*',
-    element: <Navigate to="/404" replace />,
+    element: <Navigate to="/admin/404" replace />,
+  },
+    ],
   },
 ])
-
-

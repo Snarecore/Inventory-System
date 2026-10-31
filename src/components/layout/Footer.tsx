@@ -7,7 +7,7 @@ const currentYear = new Date().getFullYear()
 
 export const Footer: React.FC = () => {
   return (
-    <footer className="border-t border-slate-200/90 bg-white py-12 transition-colors">
+    <footer className="border-t border-[var(--ui-border)]/90 bg-[var(--ui-surface)] py-12 transition-colors">
       <Container className="flex flex-col md:flex-row items-center justify-between gap-6">
         {/* Logo */}
         <Link to="/" className="flex items-center gap-3">
@@ -19,7 +19,7 @@ export const Footer: React.FC = () => {
         </Link>
 
         {/* Links via React Router Link */}
-        <div className="flex flex-wrap items-center justify-center gap-6 text-xs font-semibold text-slate-600">
+        <div className="flex flex-wrap items-center justify-center gap-6 text-xs font-semibold text-[var(--ui-text-muted)]">
           <Link to="/" className="hover:text-primary transition-colors">
             হোম
           </Link>
@@ -41,7 +41,7 @@ export const Footer: React.FC = () => {
         </div>
 
         {/* Copyright */}
-        <div className="text-xs text-slate-500 flex items-center gap-1">
+        <div className="text-xs text-[var(--ui-text-muted)] flex items-center gap-1">
           <span>© {currentYear} ক্যাশ বই। সর্বস্বত্ব সংরক্ষিত।</span>
         </div>
       </Container>

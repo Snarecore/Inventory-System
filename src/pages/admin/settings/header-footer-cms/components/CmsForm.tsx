@@ -106,9 +106,9 @@ const CmsForm = () => {
 
     return (
         <div>
-            <div className="bg-white rounded-lg border border-gray-200 p-6">
+            <div className="bg-[var(--ui-surface)] rounded-lg border border-[var(--ui-border)] p-6">
                 <div className="mb-4">
-                    <p className="block text-sm font-medium text-gray-700">Header Logo: <span className="text-red-500">*</span> (Recommended Size: 200*40 PX)</p>
+                    <p className="block text-sm font-medium text-[var(--ui-text)]">Header Logo: <span className="text-[var(--ui-danger)]">*</span> (Recommended Size: 200*40 PX)</p>
                     <ImageUpload
                         onChange={(file) => handleLogoUpload('headerLogo', file)}
                         value={typeof fieldValues.headerLogo === 'string' ? fieldValues.headerLogo : URL.createObjectURL(fieldValues.headerLogo)}
@@ -123,7 +123,7 @@ const CmsForm = () => {
                     </div>
                 </div>
                 <div className="mb-4">
-                    <p className="block text-sm font-medium text-gray-700">Footer Logo: <span className="text-red-500">*</span>(Recommended Size: 200*40 PX)</p>
+                    <p className="block text-sm font-medium text-[var(--ui-text)]">Footer Logo: <span className="text-[var(--ui-danger)]">*</span>(Recommended Size: 200*40 PX)</p>
                     <ImageUpload
                         onChange={(file) => handleLogoUpload('footerLogo', file)}
                         value={typeof fieldValues.footerLogo === 'string' ? fieldValues.footerLogo : URL.createObjectURL(fieldValues.footerLogo)}
@@ -169,28 +169,28 @@ const CmsForm = () => {
                         setSection: setFooterSectionThree
                     }].map(({ title, section, setSection }, idx) => (
                         <div key={idx}>
-                            <label className="block text-sm font-medium text-gray-700">{title}:</label>
+                            <label className="block text-sm font-medium text-[var(--ui-text)]">{title}:</label>
                             {section.map((item, index) => (
                                 <div key={index} className="flex gap-2 items-center mb-2">
                                     <input
                                         type="text"
                                         value={item.value}
                                         onChange={(e) => handleDynamicChange(index, 'value', e.target.value, setSection)}
-                                        className="flex-1 p-2 border border-gray-300 rounded-md"
+                                        className="flex-1 p-2 border border-[var(--ui-border-strong)] rounded-md"
                                         placeholder="Value"
                                     />
                                     <input
                                         type="text"
                                         value={item.link}
                                         onChange={(e) => handleDynamicChange(index, 'link', e.target.value, setSection)}
-                                        className="flex-1 p-2 border border-gray-300 rounded-md"
+                                        className="flex-1 p-2 border border-[var(--ui-border-strong)] rounded-md"
                                         placeholder="Link"
                                     />
                                     {index > 0 && (
                                         <button
                                             type="button"
                                             onClick={() => removeField(index, setSection)}
-                                            className="w-8 h-8 flex-shrink-0 flex items-center justify-center bg-red-500 text-white rounded-lg hover:bg-red-600 cursor-pointer"
+                                            className="w-8 h-8 flex-shrink-0 flex items-center justify-center bg-[var(--ui-danger)] text-white rounded-lg hover:bg-[var(--ui-danger)] cursor-pointer"
                                         ><IoMdRemoveCircleOutline className="text-xl" /></button>
                                     )}
                                 </div>

@@ -47,21 +47,21 @@ const HomePageUI = () => {
       title: "Travel & Relocation Support",
       description:
         "We handle all the logistics of your travel and relocation experience, including booking flights to arranging housing, so you can focus on starting your new life abroad.",
-      color: "text-orange-600",
+      color: "text-[var(--ui-warning)]",
     },
     {
       icon: Shield,
       title: "Post-Arrival Assistance",
       description:
         "Our team helps you get settled in your new country, including registering with local authorities, setting up bank accounts and more.",
-      color: "text-blue-600",
+      color: "text-[var(--primary-color)]",
     },
     {
       icon: CheckCircle,
       title: "Ongoing Check-ins",
       description:
         "We maintain regular contact to ensure you're adapting well to your new life and are able to access resources and put your initial support.",
-      color: "text-yellow-600",
+      color: "text-[var(--ui-warning)]",
     },
   ];
 
@@ -71,7 +71,7 @@ const HomePageUI = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-red-500">
+    <div className="min-h-screen bg-[var(--ui-danger)]">
       {/* Hero Section */}
       <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
         {/* Background Image with Overlay */}
@@ -83,9 +83,9 @@ const HomePageUI = () => {
             width={200}
             height={200}
           />
-          <div className="absolute inset-0 bg-black bg-opacity-60"></div>
+          <div className="absolute inset-0 bg-[var(--ui-text)] bg-opacity-60"></div>
           {/* Bokeh Effect Overlay */}
-          <div className="absolute inset-0 bg-gradient-to-r from-orange-500/20 via-transparent to-orange-400/20"></div>
+          <div className="absolute inset-0 bg-gradient-to-r from-[var(--ui-warning)]/20 via-transparent to-[var(--ui-warning)]/20"></div>
         </div>
 
         {/* Content */}
@@ -147,7 +147,7 @@ const HomePageUI = () => {
       </section>
 
       {/* Career Section - Updated Layout */}
-      <section className="py-20 bg-gray-900 text-white">
+      <section className="py-20 bg-[var(--ui-text)] text-white">
         <div className="max-w-7xl mx-auto px-4 md:px-8">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             {/* Left Side - Image */}
@@ -224,16 +224,16 @@ const HomePageUI = () => {
       </section>
 
       {/* Services Section */}
-      <section className="py-20 bg-gray-50">
+      <section className="py-20 bg-[var(--ui-surface-muted)]">
         <div className="max-w-7xl mx-auto px-4 md:px-8">
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
             {services.map((service, index) => (
               <MotionDiv
                 key={index}
                 delay={index * 0.1}
-                className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 p-8 group"
+                className="bg-[var(--ui-surface)] rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 p-8 group"
               >
-                <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
+                <div className="w-16 h-16 rounded-full bg-[var(--ui-surface-sunken)] flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
                   <service.icon className={`w-8 h-8 ${service.color}`} />
                 </div>
                 <h3 className="text-xl font-bold text-[var(--primary-color)] mb-4">
@@ -252,9 +252,9 @@ const HomePageUI = () => {
       <section className="py-20 bg-gradient-to-br from-[var(--secondary-color)] via-[var(--secondary-color-light)] to-[var(--primary-color-light)] relative overflow-hidden">
         {/* Decorative Elements */}
         <div className="absolute inset-0 opacity-10">
-          <div className="absolute top-10 left-10 w-32 h-32 bg-white rounded-full blur-xl"></div>
-          <div className="absolute bottom-10 right-10 w-48 h-48 bg-white rounded-full blur-2xl"></div>
-          <div className="absolute top-1/2 left-1/3 w-24 h-24 bg-white rounded-full blur-lg"></div>
+          <div className="absolute top-10 left-10 w-32 h-32 bg-[var(--ui-surface)] rounded-full blur-xl"></div>
+          <div className="absolute bottom-10 right-10 w-48 h-48 bg-[var(--ui-surface)] rounded-full blur-2xl"></div>
+          <div className="absolute top-1/2 left-1/3 w-24 h-24 bg-[var(--ui-surface)] rounded-full blur-lg"></div>
         </div>
 
         <div className="relative z-10 max-w-5xl mx-auto px-4 md:px-8 text-center">
@@ -269,7 +269,7 @@ const HomePageUI = () => {
       </section>
 
       {/* Events Gallery */}
-      <section className="py-20 bg-gray-50">
+      <section className="py-20 bg-[var(--ui-surface-muted)]">
         <div className="max-w-7xl mx-auto px-4 md:px-8">
           <div className="mb-12">
             <MotionDiv>

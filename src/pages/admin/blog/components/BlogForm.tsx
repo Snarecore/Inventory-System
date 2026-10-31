@@ -106,8 +106,8 @@ const BlogForm = ({ isOpen, onClose, editData }: any) => {
         >
             <div className="space-y-4">
                 <div>
-                    <p className="block text-sm font-medium text-gray-700">Image:
-                        <span className="text-xs text-gray-500 ml-1">(Recommended Size: 1920x400 PX)</span>
+                    <p className="block text-sm font-medium text-[var(--ui-text)]">Image:
+                        <span className="text-xs text-[var(--ui-text-muted)] ml-1">(Recommended Size: 1920x400 PX)</span>
                     </p>
                     {/* <ImageUpload value={fieldValues.image} onChange={handleImageUpload} /> */}
                     <ImageUpload

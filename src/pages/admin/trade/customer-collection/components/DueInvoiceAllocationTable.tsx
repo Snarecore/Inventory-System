@@ -59,7 +59,7 @@ export const DueInvoiceAllocationTable: React.FC<DueInvoiceAllocationTableProps>
 
   if (isLoading) {
     return (
-      <div className="p-4 text-center text-xs text-gray-500 border border-gray-200 rounded-lg bg-gray-50 flex items-center justify-center gap-2">
+      <div className="p-4 text-center text-xs text-[var(--ui-text-muted)] border border-[var(--ui-border)] rounded-lg bg-[var(--ui-surface-muted)] flex items-center justify-center gap-2">
         <FaSpinner className="animate-spin text-[var(--color-primary)]" size={13} />
         <span>Loading pending invoices...</span>
       </div>
@@ -68,10 +68,10 @@ export const DueInvoiceAllocationTable: React.FC<DueInvoiceAllocationTableProps>
 
   if (invoices.length === 0) {
     return (
-      <div className="p-4 text-center text-xs text-gray-500 border border-gray-200 rounded-lg bg-gray-50">
-        <FaFileInvoiceDollar size={20} className="mx-auto text-gray-300 mb-1" />
-        <p className="font-semibold text-black">No individual invoices due</p>
-        <p className="text-[11px] text-gray-400">
+      <div className="p-4 text-center text-xs text-[var(--ui-text-muted)] border border-[var(--ui-border)] rounded-lg bg-[var(--ui-surface-muted)]">
+        <FaFileInvoiceDollar size={20} className="mx-auto text-[var(--ui-text-subtle)] mb-1" />
+        <p className="font-semibold text-[var(--ui-text)]">No individual invoices due</p>
+        <p className="text-[11px] text-[var(--ui-text-subtle)]">
           Collection will be credited directly against the customer ledger balance.
         </p>
       </div>
@@ -83,7 +83,7 @@ export const DueInvoiceAllocationTable: React.FC<DueInvoiceAllocationTableProps>
       {/* Allocation Header */}
       <div className="flex items-center justify-between text-xs">
         <div className="flex items-center gap-2">
-          <span className="font-semibold text-black">
+          <span className="font-semibold text-[var(--ui-text)]">
             Pending Invoices ({invoices.length})
           </span>
         </div>
@@ -93,18 +93,18 @@ export const DueInvoiceAllocationTable: React.FC<DueInvoiceAllocationTableProps>
       {invoices.length > 3 && (
         <div className="relative">
           <TextInput
-            icon={<FaSearch className="text-gray-400 text-xs" />}
+            icon={<FaSearch className="text-[var(--ui-text-subtle)] text-xs" />}
             value={filterQuery}
             onChange={(val) => setFilterQuery(val)}
             placeholder="Filter invoice no..."
-            wrapperClass="!h-7 bg-white !border-gray-200"
-            inputClass="text-xs text-black"
+            wrapperClass="!h-7 bg-[var(--ui-surface)] !border-[var(--ui-border)]"
+            inputClass="text-xs text-[var(--ui-text)]"
           />
           {filterQuery && (
             <button
               type="button"
               onClick={() => setFilterQuery("")}
-              className="absolute right-2 top-1.5 text-gray-400 hover:text-black cursor-pointer"
+              className="absolute right-2 top-1.5 text-[var(--ui-text-subtle)] hover:text-[var(--ui-text)] cursor-pointer"
             >
               <FaTimes size={10} />
             </button>
@@ -113,9 +113,9 @@ export const DueInvoiceAllocationTable: React.FC<DueInvoiceAllocationTableProps>
       )}
 
       {/* Table */}
-      <div className="border border-gray-200 rounded-lg max-h-52 overflow-x-auto overflow-y-auto">
+      <div className="border border-[var(--ui-border)] rounded-lg max-h-52 overflow-x-auto overflow-y-auto">
         <table className="w-full text-left text-xs border-collapse">
-          <thead className="bg-gray-100 text-black font-semibold sticky top-0 z-10 border-b border-gray-200 whitespace-nowrap">
+          <thead className="bg-[var(--ui-surface-sunken)] text-[var(--ui-text)] font-semibold sticky top-0 z-10 border-b border-[var(--ui-border)] whitespace-nowrap">
             <tr>
               {isManualMode && (
                 <th className="py-1 px-2 text-center w-8 shrink-0 whitespace-nowrap">
@@ -145,7 +145,7 @@ export const DueInvoiceAllocationTable: React.FC<DueInvoiceAllocationTableProps>
               <th className="py-1 px-2.5 text-right whitespace-nowrap">Remaining (৳)</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-100 whitespace-nowrap">
+          <tbody className="divide-y divide-[var(--ui-border)] whitespace-nowrap">
             {filteredInvoices.map((inv) => {
               const isSelected = selectedInvoiceNos.has(inv.invoiceNo);
               const alloc = allocationMap.get(inv.invoiceNo);
@@ -163,11 +163,11 @@ export const DueInvoiceAllocationTable: React.FC<DueInvoiceAllocationTableProps>
               return (
                 <tr
                   key={inv.invoiceNo}
-                  className={`hover:bg-gray-50/80 transition-colors ${
+                  className={`hover:bg-[var(--ui-surface-muted)]/80 transition-colors ${
                     paidAmount > 0 || discountAmount > 0
-                      ? "bg-gray-50/70"
+                      ? "bg-[var(--ui-surface-muted)]/70"
                       : isSelected && isManualMode
-                      ? "bg-gray-50/40"
+                      ? "bg-[var(--ui-surface-muted)]/40"
                       : ""
                   }`}
                 >
@@ -181,24 +181,24 @@ export const DueInvoiceAllocationTable: React.FC<DueInvoiceAllocationTableProps>
                       />
                     </td>
                   )}
-                  <td className="py-1 px-2.5 text-black font-medium whitespace-nowrap">
+                  <td className="py-1 px-2.5 text-[var(--ui-text)] font-medium whitespace-nowrap">
                     {inv.invoiceNo}
                   </td>
-                  <td className="py-1 px-2.5 text-black whitespace-nowrap">
+                  <td className="py-1 px-2.5 text-[var(--ui-text)] whitespace-nowrap">
                     {inv.salesDate || inv.date
                       ? String(inv.salesDate || inv.date).replace("T", " ").split(" ")[0]
                       : "-"}
                   </td>
-                  <td className="py-1 px-2.5 text-right text-black font-semibold whitespace-nowrap">
+                  <td className="py-1 px-2.5 text-right text-[var(--ui-text)] font-semibold whitespace-nowrap">
                     {formatMoney(dueAmount)}
                   </td>
-                  <td className="py-1 px-2.5 text-right font-bold text-black whitespace-nowrap">
+                  <td className="py-1 px-2.5 text-right font-bold text-[var(--ui-text)] whitespace-nowrap">
                     {paidAmount > 0 ? formatMoney(paidAmount) : "-"}
                   </td>
-                  <td className="py-1 px-2.5 text-right font-bold text-black whitespace-nowrap">
+                  <td className="py-1 px-2.5 text-right font-bold text-[var(--ui-text)] whitespace-nowrap">
                     {discountAmount > 0 ? formatMoney(discountAmount) : "-"}
                   </td>
-                  <td className="py-1 px-2.5 text-right text-black font-semibold whitespace-nowrap">
+                  <td className="py-1 px-2.5 text-right text-[var(--ui-text)] font-semibold whitespace-nowrap">
                     {formatMoney(remainingDue)}
                   </td>
                 </tr>

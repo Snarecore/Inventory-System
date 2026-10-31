@@ -44,7 +44,7 @@ const ServicesPageUI = () => {
       title: "Language Training",
       description:
         "IELTS, TOEFL, and language preparation courses to meet international education requirements.",
-      color: "text-blue-600",
+      color: "text-[var(--primary-color)]",
     },
   ];
 
@@ -54,7 +54,7 @@ const ServicesPageUI = () => {
       title: "Construction & Skilled Trades",
       description:
         "Connect with construction companies across Europe for positions in welding, masonry, plumbing, tiling, and painting.",
-      color: "text-orange-600",
+      color: "text-[var(--ui-warning)]",
     },
     {
       icon: Factory,
@@ -82,21 +82,21 @@ const ServicesPageUI = () => {
       title: "Work Permit Processing",
       description:
         "Complete work permit and visa processing assistance for European countries including Lithuania, Croatia, Serbia, and Romania.",
-      color: "text-blue-600",
+      color: "text-[var(--primary-color)]",
     },
     {
       icon: Shield,
       title: "Legal & Documentation Support",
       description:
         "Professional assistance with all legal requirements, documentation, and compliance for international employment.",
-      color: "text-purple-600",
+      color: "text-[var(--ui-info)]",
     },
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-[var(--ui-surface-muted)]">
       {/* Hero Section */}
-      <section className="bg-white py-16">
+      <section className="bg-[var(--ui-surface)] py-16">
         <div className="max-w-7xl mx-auto px-4 md:px-8">
           <div className="text-center">
             <MotionDiv>
@@ -124,7 +124,7 @@ const ServicesPageUI = () => {
       </section>
 
       {/* Student Services Section */}
-      <section className="py-20 bg-white">
+      <section className="py-20 bg-[var(--ui-surface)]">
         <div className="max-w-7xl mx-auto px-4 md:px-8">
           <div className="text-center mb-16">
             <MotionDiv>
@@ -144,9 +144,9 @@ const ServicesPageUI = () => {
             {studentServices.map((service, index) => (
               <MotionDiv
                 key={index}
-                className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 p-6 border border-gray-100 group"
+                className="bg-[var(--ui-surface)] rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 p-6 border border-[var(--ui-border)] group"
               >
-                <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
+                <div className="w-16 h-16 rounded-full bg-[var(--ui-surface-sunken)] flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
                   <service.icon className={`w-8 h-8 ${service.color}`} />
                 </div>
                 <h3 className="text-xl font-bold text-[var(--primary-color)] mb-4">
@@ -166,7 +166,7 @@ const ServicesPageUI = () => {
       </section>
 
       {/* Worker Services Section */}
-      <section className="py-20 bg-gray-50">
+      <section className="py-20 bg-[var(--ui-surface-muted)]">
         <div className="max-w-7xl mx-auto px-4 md:px-8">
           <div className="text-center mb-16">
            <MotionDiv>
@@ -186,9 +186,9 @@ const ServicesPageUI = () => {
             {workerServices.map((service, index) => (
               <MotionDiv
                 key={index}
-                className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 p-6 border border-gray-100 group"
+                className="bg-[var(--ui-surface)] rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 p-6 border border-[var(--ui-border)] group"
               >
-                <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
+                <div className="w-16 h-16 rounded-full bg-[var(--ui-surface-sunken)] flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
                   <service.icon className={`w-8 h-8 ${service.color}`} />
                 </div>
                 <h3 className="text-xl font-bold text-[var(--primary-color)] mb-4">

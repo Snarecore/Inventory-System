@@ -173,15 +173,15 @@ export const DatePicker: React.FC<DatePickerProps> = ({
 
   // Size styling
   const sizeClasses = {
-    sm: "h-8 px-2 text-xs",
-    md: "h-9 px-2.5 text-xs",
-    lg: "h-10 px-3 text-sm",
+    sm: "h-[calc(var(--ui-control-h)-6px)] text-[calc(var(--ui-font-size)-1px)]",
+    md: "h-[var(--ui-control-h)]",
+    lg: "h-[calc(var(--ui-control-h)+6px)] text-[calc(var(--ui-font-size)+1px)]",
   };
 
   return (
     <div className={`relative inline-block w-full ${className}`} ref={containerRef}>
       {label && (
-        <label className="block text-xs font-bold text-black mb-1">
+        <label className="ui-label mb-1 block">
           {label}
         </label>
       )}
@@ -189,19 +189,19 @@ export const DatePicker: React.FC<DatePickerProps> = ({
       {/* Input Trigger */}
       <div
         onClick={() => !disabled && setIsOpen(!isOpen)}
-        className={`w-full flex items-center justify-between border rounded-lg bg-white transition-all cursor-pointer select-none ${
+        className={`ui-control flex w-full cursor-pointer select-none items-center justify-between ${
           disabled
-            ? "bg-gray-100 text-gray-400 cursor-not-allowed border-gray-200"
+            ? "cursor-not-allowed bg-[var(--ui-surface-sunken)] text-[var(--ui-text-subtle)]"
             : isOpen
-            ? "border-[var(--color-primary)] ring-2 ring-[var(--color-primary)]/15"
+            ? "border-[var(--primary-color)] shadow-[0_0_0_3px_var(--ui-focus-ring)]"
             : error
-            ? "border-rose-400 focus:border-rose-500"
-            : "border-gray-300 hover:border-gray-400"
+            ? "is-invalid"
+            : ""
         } ${sizeClasses[size]} ${inputClassName}`}
       >
         <div className="flex items-center gap-2 truncate flex-1 mr-1">
-          <FaCalendarAlt className={`shrink-0 text-xs ${displayText ? "text-black" : "text-gray-400"}`} />
-          <span className={`truncate font-semibold ${displayText ? "text-black" : "text-gray-400"}`}>
+          <FaCalendarAlt className={`shrink-0 text-xs ${displayText ? "text-[var(--ui-text)]" : "text-[var(--ui-text-subtle)]"}`} />
+          <span className={`truncate font-semibold ${displayText ? "text-[var(--ui-text)]" : "text-[var(--ui-text-subtle)]"}`}>
             {displayText || placeholder}
           </span>
         </div>
@@ -211,7 +211,7 @@ export const DatePicker: React.FC<DatePickerProps> = ({
             <button
               type="button"
               onClick={handleClear}
-              className="p-0.5 text-gray-400 hover:text-gray-600 rounded transition-colors"
+              className="p-0.5 text-[var(--ui-text-subtle)] hover:text-[var(--ui-text-muted)] rounded transition-colors"
               title="Clear date"
             >
               <FaTimes size={10} />
@@ -220,36 +220,36 @@ export const DatePicker: React.FC<DatePickerProps> = ({
           <FiChevronDown
             className={`text-xs transition-transform duration-200 ${
               isOpen ? "rotate-180" : ""
-            } ${displayText ? "text-black" : "text-gray-400"}`}
+            } ${displayText ? "text-[var(--ui-text)]" : "text-[var(--ui-text-subtle)]"}`}
           />
         </div>
       </div>
 
-      {error && <span className="text-[11px] text-rose-500 mt-0.5 block">{error}</span>}
+      {error && <span className="text-[11px] text-[var(--ui-danger)] mt-0.5 block">{error}</span>}
 
       {/* Custom Modern Calendar Dropdown */}
       {isOpen && (
         <div
           className={`absolute ${
             align === "right" ? "right-0" : "left-0"
-          } top-full mt-1 w-64 bg-white rounded-xl shadow-xl border border-gray-200 p-2.5 z-[99999] animate-in fade-in zoom-in-95 duration-150 select-none`}
+          } top-full mt-1 w-64 bg-[var(--ui-surface)] rounded-xl shadow-xl border border-[var(--ui-border)] p-2.5 z-[99999] animate-in fade-in zoom-in-95 duration-150 select-none`}
         >
           {/* Calendar Header */}
-          <div className="flex items-center justify-between mb-2 pb-1 border-b border-gray-200">
+          <div className="flex items-center justify-between mb-2 pb-1 border-b border-[var(--ui-border)]">
             {/* Month & Year Trigger */}
             <button
               type="button"
               onClick={() =>
                 setViewMode((prev) => (prev === "days" ? "months" : prev === "months" ? "years" : "days"))
               }
-              className="flex items-center gap-1 px-1.5 py-0.5 text-xs font-bold text-black hover:bg-gray-100 rounded transition-colors cursor-pointer"
+              className="flex items-center gap-1 px-1.5 py-0.5 text-xs font-bold text-[var(--ui-text)] hover:bg-[var(--ui-surface-sunken)] rounded transition-colors cursor-pointer"
             >
               <span>
                 {viewMode === "days" && viewDate.format("MMMM YYYY")}
                 {viewMode === "months" && viewDate.format("YYYY")}
                 {viewMode === "years" && `${yearsList[0]} - ${yearsList[yearsList.length - 1]}`}
               </span>
-              <FiChevronDown size={11} className="text-black" />
+              <FiChevronDown size={11} className="text-[var(--ui-text)]" />
             </button>
 
             {/* Navigation Arrows */}
@@ -257,7 +257,7 @@ export const DatePicker: React.FC<DatePickerProps> = ({
               <button
                 type="button"
                 onClick={handlePrevMonth}
-                className="p-1 text-black hover:bg-gray-100 rounded transition-colors cursor-pointer"
+                className="p-1 text-[var(--ui-text)] hover:bg-[var(--ui-surface-sunken)] rounded transition-colors cursor-pointer"
                 title="Previous"
               >
                 <FaChevronLeft size={8} />
@@ -265,7 +265,7 @@ export const DatePicker: React.FC<DatePickerProps> = ({
               <button
                 type="button"
                 onClick={handleNextMonth}
-                className="p-1 text-black hover:bg-gray-100 rounded transition-colors cursor-pointer"
+                className="p-1 text-[var(--ui-text)] hover:bg-[var(--ui-surface-sunken)] rounded transition-colors cursor-pointer"
                 title="Next"
               >
                 <FaChevronRight size={8} />
@@ -289,7 +289,7 @@ export const DatePicker: React.FC<DatePickerProps> = ({
                     className={`py-1.5 text-xs rounded-md font-semibold transition-colors cursor-pointer ${
                       isSelectedMonth
                         ? "bg-[var(--primary-color)] text-white font-bold"
-                        : "text-black hover:bg-sky-50 hover:text-[var(--color-primary)] border border-gray-100"
+                        : "text-[var(--ui-text)] hover:bg-[var(--primary-color-light)] hover:text-[var(--color-primary)] border border-[var(--ui-border)]"
                     }`}
                   >
                     {month}
@@ -315,7 +315,7 @@ export const DatePicker: React.FC<DatePickerProps> = ({
                     className={`py-1.5 text-xs rounded-md font-semibold transition-colors cursor-pointer ${
                       isSelectedYr
                         ? "bg-[var(--primary-color)] text-white font-bold"
-                        : "text-black hover:bg-sky-50 hover:text-[var(--color-primary)] border border-gray-100"
+                        : "text-[var(--ui-text)] hover:bg-[var(--primary-color-light)] hover:text-[var(--color-primary)] border border-[var(--ui-border)]"
                     }`}
                   >
                     {yr}
@@ -331,7 +331,7 @@ export const DatePicker: React.FC<DatePickerProps> = ({
               {/* Day Headers (Su, Mo, Tu, We, Th, Fr, Sa) */}
               <div className="grid grid-cols-7 mb-0.5 text-center">
                 {daysOfWeek.map((d) => (
-                  <span key={d} className="text-[10px] font-bold text-black py-0.5">
+                  <span key={d} className="text-[10px] font-bold text-[var(--ui-text)] py-0.5">
                     {d}
                   </span>
                 ))}
@@ -350,14 +350,14 @@ export const DatePicker: React.FC<DatePickerProps> = ({
                         onClick={() => handleSelectDay(date)}
                         className={`w-6 h-6 flex items-center justify-center rounded-md text-[11px] font-medium transition-all ${
                           isDisabled
-                            ? "text-gray-300 cursor-not-allowed"
+                            ? "text-[var(--ui-text-subtle)] cursor-not-allowed"
                             : isSelected
                             ? "bg-[var(--primary-color)] text-white font-bold shadow-xs scale-105"
                             : isToday
-                            ? "border border-[var(--primary-color)] text-black font-bold hover:bg-sky-50"
+                            ? "border border-[var(--primary-color)] text-[var(--ui-text)] font-bold hover:bg-[var(--primary-color-light)]"
                             : isCurrentMonth
-                            ? "text-black font-semibold hover:bg-gray-100 cursor-pointer"
-                            : "text-gray-300 hover:bg-gray-50 cursor-pointer"
+                            ? "text-[var(--ui-text)] font-semibold hover:bg-[var(--ui-surface-sunken)] cursor-pointer"
+                            : "text-[var(--ui-text-subtle)] hover:bg-[var(--ui-surface-muted)] cursor-pointer"
                         }`}
                       >
                         {date.date()}
@@ -370,18 +370,18 @@ export const DatePicker: React.FC<DatePickerProps> = ({
           )}
 
           {/* Calendar Footer */}
-          <div className="flex items-center justify-between pt-2 mt-2 border-t border-gray-200 text-xs font-semibold px-0.5">
+          <div className="flex items-center justify-between pt-2 mt-2 border-t border-[var(--ui-border)] text-xs font-semibold px-0.5">
             <button
               type="button"
               onClick={handleClear}
-              className="text-[11px] text-gray-700 hover:text-rose-600 transition-colors cursor-pointer py-0.5"
+              className="text-[11px] text-[var(--ui-text)] hover:text-[var(--ui-danger)] transition-colors cursor-pointer py-0.5"
             >
               Clear
             </button>
             <button
               type="button"
               onClick={handleSelectToday}
-              className="text-[11px] text-black hover:text-[var(--color-primary)] font-bold transition-colors cursor-pointer py-0.5"
+              className="text-[11px] text-[var(--ui-text)] hover:text-[var(--color-primary)] font-bold transition-colors cursor-pointer py-0.5"
             >
               Today
             </button>

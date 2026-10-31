@@ -27,87 +27,113 @@ export const TradeLineItemsTable: React.FC<TradeLineItemsTableProps> = ({
   emptyMessage = "No items added yet. Search and add products above.",
 }) => {
   return (
-    <div className="bg-white rounded-xl border border-gray-200 shadow-xs overflow-hidden">
-      <div className="p-2.5 border-b border-gray-100 flex items-center justify-between">
-        <h2 className="text-xs font-bold text-black tracking-wider">
+    <div className="ui-card overflow-hidden">
+      <div className="flex items-center justify-between border-b border-[var(--ui-border)] px-2.5 py-2">
+        <h2 className="text-[13px] font-semibold text-[var(--ui-text)]">
           {title} ({lineItems.length})
         </h2>
-        <span className="text-[11px] text-black font-medium">
-          Subtotal: <span className="font-bold text-black">৳ {formatMoney(subtotal)}</span>
+        <span className="text-[11px] text-[var(--ui-text-muted)]">
+          Subtotal <span className="ml-1 text-[13px] font-bold tabular-nums text-[var(--ui-text)]">৳ {formatMoney(subtotal)}</span>
         </span>
       </div>
 
-      <div className="overflow-x-auto w-full">
-        <table className="w-full min-w-[720px] text-xs text-left border-collapse">
+      {/* Caps the list at five rows, then scrolls. The header is sticky inside
+          the same scroller so column labels stay put. Background and colour go
+          on each <th> rather than the <tr>, because `.ui-table th` sets its own
+          and a cell background always paints over the row's. */}
+      <div
+        className="w-full overflow-auto"
+        style={{
+          // header (cell padding + one text line) + exactly five body rows
+          maxHeight:
+            "calc(var(--ui-table-row-h) * 5 + var(--ui-table-cell-py) * 2 + 1rem)",
+        }}
+      >
+        <table className="ui-table w-full min-w-[720px] text-left border-collapse">
           <thead>
-            <tr className="bg-[#41bef3] border-b border-gray-200 text-[11px] font-semibold text-black shadow-md">
-              <th className="py-2 px-2 text-center w-10 whitespace-nowrap">SL</th>
-              <th className="py-2 px-3 w-auto min-w-[200px]">Product</th>
-              <th className="py-2 px-2 text-center w-16 whitespace-nowrap">Unit</th>
-              <th className="py-2 px-2 text-center w-20 whitespace-nowrap">Stock</th>
-              <th className="py-2 px-2 text-right w-28 min-w-[100px] whitespace-nowrap">{priceHeader}</th>
-              <th className="py-2 px-2 text-center w-28 min-w-[110px] whitespace-nowrap">Quantity</th>
-              <th className="py-2 px-3 text-right w-28 min-w-[100px] whitespace-nowrap">Total (৳)</th>
-              <th className="py-2 px-2 text-center w-10 whitespace-nowrap"></th>
+            <tr className="text-[11px] font-semibold [&>th]:sticky [&>th]:top-0 [&>th]:z-10 [&>th]:bg-[var(--ui-accent-2)] [&>th]:text-[var(--ui-on-accent-2)] [&>th]:shadow-[inset_0_-1px_0_var(--ui-border)]">
+              <th className="text-center w-10 whitespace-nowrap">SL</th>
+              <th className="w-full min-w-[180px]">Product</th>
+              <th className="text-center w-16 whitespace-nowrap">Unit</th>
+              <th className="text-center w-20 whitespace-nowrap">Stock</th>
+              <th className="text-right w-28 min-w-[100px] whitespace-nowrap">{priceHeader}</th>
+              <th className="text-center w-28 min-w-[110px] whitespace-nowrap">Quantity</th>
+              <th className="text-right w-28 min-w-[100px] whitespace-nowrap">Total (৳)</th>
+              <th className="text-center w-10 whitespace-nowrap"></th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-100">
+          <tbody className="divide-y divide-[var(--ui-border)]">
             {lineItems.length > 0 ? (
               lineItems.map((item, idx) => {
                 const currentPrice = item[priceField] ?? "0";
                 return (
-                  <tr key={idx} className="hover:bg-gray-50/70 transition-colors">
+                  <tr key={idx} className="hover:bg-[var(--ui-surface-muted)]/70 transition-colors">
                     {/* SL */}
-                    <td className="py-2 px-2 text-center text-gray-700 text-[11px] whitespace-nowrap">
+                    <td className="text-center text-[11px] tabular-nums text-[var(--ui-text-muted)] whitespace-nowrap">
                       {idx + 1}
                     </td>
 
-                    {/* Product Name & Code */}
-                    <td className="py-2 px-3">
-                      <span className="font-semibold text-black block">{item.productName}</span>
-                      {item.productCode && (
-                        <span className="text-[10px] text-black">Code: {item.productCode}</span>
-                      )}
+                    {/* Product name + code on one line. `w-full max-w-0` is the
+                        table-cell truncation recipe: the cell absorbs the spare
+                        width but refuses to grow past it, so long names ellipsis
+                        instead of forcing the row onto a second line. */}
+                    <td className="w-full max-w-0">
+                      <div className="flex min-w-0 items-baseline gap-1.5">
+                        <span
+                          className="truncate font-semibold text-[var(--ui-text)]"
+                          title={item.productName}
+                        >
+                          {item.productName}
+                        </span>
+                        {item.productCode && (
+                          <span
+                            className="shrink-0 text-[10px] tabular-nums text-[var(--ui-text-subtle)]"
+                            title={`Code: ${item.productCode}`}
+                          >
+                            {item.productCode}
+                          </span>
+                        )}
+                      </div>
                     </td>
 
                     {/* Unit */}
-                    <td className="py-2 px-2 text-center whitespace-nowrap">
-                      <span className="text-black font-semibold bg-gray-100 px-1.5 py-0.5 rounded text-[11px]">
+                    <td className="text-center whitespace-nowrap">
+                      <span className="text-[var(--ui-text)] font-semibold bg-[var(--ui-surface-sunken)] px-1.5 py-0.5 rounded-[var(--ui-radius-sm)] text-[11px]">
                         {item.unit || "pcs"}
                       </span>
                     </td>
 
                     {/* Stock */}
-                    <td className="py-2 px-2 text-center whitespace-nowrap">
-                      <span className="text-gray-700 font-semibold bg-gray-100 px-2 py-0.5 rounded text-[11px]">
+                    <td className="text-center whitespace-nowrap">
+                      <span className="text-[var(--ui-text)] font-semibold bg-[var(--ui-surface-sunken)] px-2 py-0.5 rounded-[var(--ui-radius-sm)] text-[11px]">
                         {Number(item.stock) || 0}
                       </span>
                     </td>
 
                     {/* Price (Right Aligned Money Input, No Wheel/Spinners) */}
-                    <td className="py-2 px-2 text-right whitespace-nowrap">
+                    <td className="text-right whitespace-nowrap">
                       <TextInput
                         type="number"
                         step="0.01"
                         value={currentPrice}
                         placeholder="0"
-                        icon={<span className="text-black font-bold text-[11px]">৳</span>}
+                        icon={<span className="text-[var(--ui-text)] font-bold text-[11px]">৳</span>}
                         onChange={(val) => onUpdatePrice(idx, val)}
-                        wrapperClass="!h-7 bg-white !border-gray-300 !px-1.5 focus-within:!border-[var(--color-primary)]"
-                        inputClass="text-right font-bold text-black"
+                        wrapperClass="ui-control-xs !px-1.5 focus-within:!border-[var(--primary-color)]"
+                        inputClass="text-right font-bold tabular-nums text-[var(--ui-text)]"
                       />
                     </td>
 
                     {/* Quantity (Stepper) */}
-                    <td className="py-2 px-2 text-center whitespace-nowrap">
-                      <div className="inline-flex items-center border border-gray-300 rounded overflow-hidden">
+                    <td className="text-center whitespace-nowrap">
+                      <div className="inline-flex items-center border border-[var(--ui-border-strong)] rounded-[var(--ui-radius-sm)] overflow-hidden">
                         <button
                           type="button"
                           onClick={() => {
                             const q = Math.max(1, (Number(item.quantity) || 1) - 1);
                             onUpdateQuantity(idx, String(q));
                           }}
-                          className="px-1.5 py-1 bg-gray-100 hover:bg-gray-200 text-black font-bold text-xs cursor-pointer"
+                          className="px-1.5 py-1 bg-[var(--ui-surface-sunken)] hover:bg-[var(--ui-border)] text-[var(--ui-text)] font-bold text-xs cursor-pointer"
                         >
                           -
                         </button>
@@ -117,7 +143,7 @@ export const TradeLineItemsTable: React.FC<TradeLineItemsTableProps> = ({
                           placeholder="1"
                           onWheel={(e) => e.currentTarget.blur()}
                           onChange={(e) => onUpdateQuantity(idx, e.target.value)}
-                          className="w-12 py-1 text-xs text-center font-bold text-black focus:outline-none border-x border-gray-300"
+                          className="w-12 border-x border-[var(--ui-border-strong)] py-1 text-center text-[length:var(--ui-font-size-xs)] font-bold tabular-nums text-[var(--ui-text)] focus:outline-none"
                         />
                         <button
                           type="button"
@@ -125,7 +151,7 @@ export const TradeLineItemsTable: React.FC<TradeLineItemsTableProps> = ({
                             const q = (Number(item.quantity) || 0) + 1;
                             onUpdateQuantity(idx, String(q));
                           }}
-                          className="px-1.5 py-1 bg-gray-100 hover:bg-gray-200 text-black font-bold text-xs cursor-pointer"
+                          className="px-1.5 py-1 bg-[var(--ui-surface-sunken)] hover:bg-[var(--ui-border)] text-[var(--ui-text)] font-bold text-xs cursor-pointer"
                         >
                           +
                         </button>
@@ -133,16 +159,16 @@ export const TradeLineItemsTable: React.FC<TradeLineItemsTableProps> = ({
                     </td>
 
                     {/* Total */}
-                    <td className="py-2 px-3 text-right font-bold text-black whitespace-nowrap">
+                    <td className="text-right font-bold tabular-nums text-[var(--ui-text)] whitespace-nowrap">
                       ৳ {formatMoney(item.total)}
                     </td>
 
                     {/* Delete Action */}
-                    <td className="py-2 px-2 text-center whitespace-nowrap">
+                    <td className="text-center whitespace-nowrap">
                       <button
                         type="button"
                         onClick={() => onRequestDelete(idx)}
-                        className="p-1 text-rose-500 hover:bg-rose-50 rounded transition-colors cursor-pointer"
+                        className="p-1 text-[var(--ui-danger)] hover:bg-[var(--ui-danger-light)] rounded-[var(--ui-radius-sm)] transition-colors cursor-pointer"
                         title="Remove Item"
                       >
                         <FaTrash size={12} />
@@ -153,8 +179,20 @@ export const TradeLineItemsTable: React.FC<TradeLineItemsTableProps> = ({
               })
             ) : (
               <tr>
-                <td colSpan={8} className="py-8 text-center text-gray-400">
-                  {emptyMessage}
+                <td colSpan={8} className="px-4 py-10 text-center">
+                  <span
+                    aria-hidden="true"
+                    className="mx-auto mb-2.5 flex h-10 w-10 items-center justify-center rounded-full bg-[var(--ui-surface-sunken)] text-[var(--ui-text-subtle)]"
+                  >
+                    <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+                      <circle cx="9" cy="20" r="1.4" />
+                      <circle cx="18" cy="20" r="1.4" />
+                      <path d="M2 3h2.6l2.2 11.3a1.6 1.6 0 0 0 1.6 1.3h8.9a1.6 1.6 0 0 0 1.6-1.3L20 7H6" />
+                    </svg>
+                  </span>
+                  <span className="block text-[13px] font-medium text-[var(--ui-text-muted)]">
+                    {emptyMessage}
+                  </span>
                 </td>
               </tr>
             )}

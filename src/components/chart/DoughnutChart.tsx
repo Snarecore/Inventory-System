@@ -86,15 +86,15 @@ const DoughnutChart = ({ totalCategories, totalProducts, topCategories }: Doughn
                 <div className="space-y-3 flex-1">
                     {legendItems.map((item, index: number) => (
                         <div key={index}>
-                            <div className="flex items-center gap-2 text-xs text-gray-600">
+                            <div className="flex items-center gap-2 text-xs text-[var(--ui-text-muted)]">
                                 <span
                                     className="w-1 h-3 rounded-full inline-block"
                                     style={{ backgroundColor: item.color }}
                                 ></span>
                                 {item.label}
                             </div>
-                            <div className="text-base font-semibold text-gray-800">
-                                {item.value} <span className="text-xs font-normal text-gray-500">Sales</span>
+                            <div className="text-base font-semibold text-[var(--ui-text)]">
+                                {item.value} <span className="text-xs font-normal text-[var(--ui-text-muted)]">Sales</span>
                             </div>
                         </div>
                     ))}
@@ -102,12 +102,12 @@ const DoughnutChart = ({ totalCategories, totalProducts, topCategories }: Doughn
             </div>
 
             <div className='mt-3'>
-                <p className='text-xs font-semibold text-gray-700'>Category Statistics</p>
-                <div className='border border-gray-200 mt-1.5 rounded-lg text-xs overflow-hidden'>
-                    <div className='flex items-center justify-between border-b border-gray-200 px-3 py-1.5'>
-                        <p className='flex items-center gap-2 text-gray-600'>
+                <p className='text-xs font-semibold text-[var(--ui-text)]'>Category Statistics</p>
+                <div className='border border-[var(--ui-border)] mt-1.5 rounded-lg text-xs overflow-hidden'>
+                    <div className='flex items-center justify-between border-b border-[var(--ui-border)] px-3 py-1.5'>
+                        <p className='flex items-center gap-2 text-[var(--ui-text-muted)]'>
                             <span
-                                className="w-2 h-2 rounded-full inline-block bg-black"
+                                className="w-2 h-2 rounded-full inline-block bg-[var(--ui-text)]"
                             ></span>
                             Total Number Of Categories
                         </p>
@@ -115,9 +115,9 @@ const DoughnutChart = ({ totalCategories, totalProducts, topCategories }: Doughn
                     </div>
 
                     <div className='flex items-center justify-between px-3 py-1.5'>
-                        <p className='flex items-center gap-2 text-gray-600'>
+                        <p className='flex items-center gap-2 text-[var(--ui-text-muted)]'>
                             <span
-                                className="w-2 h-2 rounded-full inline-block bg-green-500"
+                                className="w-2 h-2 rounded-full inline-block bg-[var(--ui-success)]"
                             ></span>
                             Total Number Of Products
                         </p>

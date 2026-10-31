@@ -1,9 +1,12 @@
 import React, { useState, useRef, useEffect } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { HiOutlineUser, HiOutlineArrowLeft, HiOutlineCheck, HiOutlineShieldCheck } from 'react-icons/hi'
-import { RiDeleteBack2Line } from 'react-icons/ri'
 import logoImg from '@/assets/logo.jpeg'
-import { PhoneStepSchema, PinStepSchema } from '@/features/auth/login/login.schema'
+import {
+  IdentifierStepSchema,
+  PinStepSchema,
+  isEmailIdentifier,
+  normalizeIdentifier,
+} from '@/features/auth/login/login.schema'
 import { loginApi } from '@/features/auth/login/login.api'
 import { LoginSuccessResponse } from '@/features/auth/login/login.types'
 import { isSessionValid, saveLoginSession } from '@/utils/auth-storage'
@@ -14,18 +17,24 @@ const PIN_LENGTH = 4
 export const Login: React.FC = () => {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
-  const redirectUrl = searchParams.get('redirect') || '/admin'
+  const requestedRedirect = searchParams.get('redirect')
+  const redirectUrl =
+    requestedRedirect?.startsWith('/') &&
+    !requestedRedirect.startsWith('//') &&
+    !requestedRedirect.startsWith('/\\')
+      ? requestedRedirect
+      : '/admin'
 
   // If user is already authenticated, redirect straight to dashboard
   useEffect(() => {
     if (isSessionValid()) {
-      navigate('/admin', { replace: true })
+      navigate(redirectUrl, { replace: true })
     }
-  }, [navigate])
+  }, [navigate, redirectUrl])
 
   // Step State (1: Phone / Identifier, 2: 4-digit PIN)
   const [step, setStep] = useState<1 | 2>(1)
-  const [identifier, setIdentifier] = useState('01317020309')
+  const [identifier, setIdentifier] = useState('')
   const [rememberMe, setRememberMe] = useState(true)
   const [userData, setUserData] = useState<LoginSuccessResponse | null>(null)
   const [pin, setPin] = useState<string[]>(Array(PIN_LENGTH).fill(''))
@@ -41,15 +50,16 @@ export const Login: React.FC = () => {
     useRef<HTMLInputElement>(null),
   ]
 
-  // Step 1: Submit Phone Number Handler
+  // Step 1: Submit identifier (mobile number or email)
   const handleContinue = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    const cleanNumber = identifier.trim().replace(/[\s-]/g, '')
-    const validation = PhoneStepSchema.safeParse({ phone: cleanNumber, rememberMe })
+    const cleanNumber = normalizeIdentifier(identifier)
+    const validation = IdentifierStepSchema.safeParse({ identifier: cleanNumber, rememberMe })
 
     if (!validation.success) {
-      const firstError = validation.error.errors[0]?.message || 'Please enter a valid mobile number'
+      const firstError =
+        validation.error.errors[0]?.message || 'Please enter a valid mobile number or email address'
       showErrorToast(firstError)
       return
     }
@@ -65,7 +75,7 @@ export const Login: React.FC = () => {
       ) {
         const errorMsg =
           (res as any).msg === 'Phone number is available'
-            ? 'Account not found for this mobile number.'
+            ? 'No account found for this mobile number or email.'
             : (res as any).msg || (res as any).message || 'Account verification failed.'
         showErrorToast(errorMsg)
         return
@@ -275,160 +285,225 @@ export const Login: React.FC = () => {
     submitLogin(pin.join(''))
   }
 
+
+  // Identity line shown on the PIN step, built from the checkUser response
+  const accountName = userData?.fullName?.trim() || ''
+  const businessName = userData?.businessName?.trim() || ''
+
+  // Partially mask the identifier so the user can confirm it without exposing it
+  const maskedIdentifier = (() => {
+    if (!identifier) return ''
+    if (isEmailIdentifier(identifier)) {
+      const [name, domain] = identifier.split('@')
+      const head = name.slice(0, 2)
+      return `${head}${'•'.repeat(Math.max(name.length - 2, 1))}@${domain}`
+    }
+    return identifier.length > 4
+      ? `${'•'.repeat(identifier.length - 4)}${identifier.slice(-4)}`
+      : identifier
+  })()
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#eaf3f9] via-[#dcebf5] to-[#cfe2f0] flex items-center justify-center p-3 sm:p-6 lg:p-10 font-sans antialiased text-slate-800">
-      
-      {/* Outer Card Container (Reduced height and compact sleek layout with reduced rounded corners) */}
-      <div className="relative w-full max-w-[860px] bg-white rounded-xl sm:rounded-2xl shadow-[0_25px_60px_-10px_rgba(0,119,182,0.22),0_0_0_1px_rgba(255,255,255,0.9)] overflow-hidden flex flex-col md:flex-row min-h-0 sm:min-h-[450px]">
-        
-        {/* ================= LEFT HERO PANEL (Vibrant Brand Blue Gradient) ================= */}
-        <div className="relative w-full md:w-[46%] bg-gradient-to-br from-[#063566] via-[#085a9c] to-[#009fe3] text-white p-6 sm:p-7 md:p-8 flex flex-col justify-center items-center text-center overflow-hidden">
-          
-          {/* Luminous Glow Overlays */}
-          <div className="absolute -top-14 -left-14 w-52 h-52 rounded-full bg-white/15 blur-2xl pointer-events-none" />
-          <div className="absolute -bottom-20 -right-20 w-64 h-64 rounded-full bg-[#00d2ff]/25 blur-3xl pointer-events-none" />
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-80 h-80 rounded-full bg-white/5 blur-3xl pointer-events-none" />
+    <main className="relative flex min-h-screen w-full items-center justify-center overflow-hidden bg-[var(--ui-surface-sunken)] px-4 py-6 sm:px-6 sm:py-10">
+      {/* page-level ambient wash */}
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(1,48,107,0.07),transparent_60%)]" />
 
-          {/* Organic Curved Wave Divider for MD+ */}
-          <div className="hidden md:block absolute -right-[1px] top-0 bottom-0 w-20 pointer-events-none overflow-hidden h-full z-10">
-            <svg
-              className="h-full w-full text-white fill-current"
-              viewBox="0 0 100 100"
-              preserveAspectRatio="none"
-            >
-              <path d="M0,0 C65,22 65,78 0,100 L100,100 L100,0 Z" />
-            </svg>
-          </div>
+      <div className="relative grid w-full max-w-[64rem] overflow-hidden rounded-2xl border border-[var(--ui-border)]/70 bg-[var(--ui-surface)] shadow-[0_28px_80px_-36px_rgba(15,23,42,0.4)] lg:grid-cols-2">
+        {/* ===================== Brand panel ===================== */}
+        <aside className="relative hidden flex-col justify-center overflow-hidden bg-gradient-to-br from-[var(--ui-text)] via-[var(--primary-color-dark)] to-[var(--primary-color)] px-12 py-14 lg:flex">
+          <div className="pointer-events-none absolute inset-0 opacity-[0.05] [background-image:linear-gradient(#fff_1px,transparent_1px),linear-gradient(90deg,#fff_1px,transparent_1px)] [background-size:48px_48px]" />
+          <div className="pointer-events-none absolute right-0 top-20 h-px w-24 bg-gradient-to-r from-transparent to-[var(--ui-surface)]/30" />
 
-          {/* Left Panel Content Container */}
-          <div className="z-10 my-auto w-full max-w-[340px] pr-5 sm:pr-7 md:pr-9 flex flex-col justify-center">
-            {/* Top: Logo (Centered) */}
-            <div className="flex items-center justify-center mb-5">
-              <div className="h-12 sm:h-13 px-4 sm:px-5 rounded-xl sm:rounded-2xl bg-white shadow-[0_10px_25px_rgba(0,0,0,0.25)] ring-4 ring-white/40 flex items-center justify-center">
-                <img
-                  src={logoImg}
-                  alt="Cash Boi Logo"
-                  className="h-8 sm:h-9 w-auto object-contain"
-                />
-              </div>
-            </div>
-
-            {/* Description (Full white) */}
-            <p className="text-xs text-white leading-relaxed font-normal mb-4 text-left">
-              Manage your business finances efficiently. Access invoices, sales, expenses, and comprehensive insights from one unified dashboard.
+          <div className="relative">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-white/40">
+              Business Management Suite
+            </p>
+            <h2 className="mt-4 text-[2rem] font-bold leading-tight tracking-tight text-white">
+              Welcome to Cash&nbsp;Boi
+            </h2>
+            <p className="mt-4 max-w-sm text-[15px] leading-7 text-white/60">
+              Run sales, purchases, inventory and accounts from one system —
+              with every transaction posted to the ledger as it happens.
             </p>
 
-            {/* Feature Points */}
-            <div className="space-y-2.5 pt-0.5">
-              <div className="flex items-center gap-2 text-xs text-white font-medium">
-                <span className="shrink-0 w-4 h-4 rounded-full bg-amber-400/20 border border-amber-400 text-amber-400 flex items-center justify-center text-[10px] font-bold shadow-xs">
-                  ✓
-                </span>
-                <span className="text-white">Real-time financial tracking</span>
-              </div>
-              <div className="flex items-center gap-2 text-xs text-white font-medium">
-                <span className="shrink-0 w-4 h-4 rounded-full bg-amber-400/20 border border-amber-400 text-amber-400 flex items-center justify-center text-[10px] font-bold shadow-xs">
-                  ✓
-                </span>
-                <span className="text-white">Secure business data</span>
-              </div>
-              <div className="flex items-center gap-2 text-xs text-white font-medium">
-                <span className="shrink-0 w-4 h-4 rounded-full bg-amber-400/20 border border-amber-400 text-amber-400 flex items-center justify-center text-[10px] font-bold shadow-xs">
-                  ✓
-                </span>
-                <span className="text-white">Instant reporting & analytics</span>
-              </div>
-            </div>
+            <ul className="mt-10 space-y-4 border-t border-[var(--ui-surface)]/10 pt-8">
+              {[
+                { title: 'Sales & purchases', detail: 'Quotations, orders, invoices, returns' },
+                { title: 'Inventory control', detail: 'Products, categories, live stock' },
+                { title: 'Parties & collections', detail: 'Customer and supplier ledgers' },
+                { title: 'Financial reporting', detail: 'Sales, purchase and account reports' },
+              ].map((item) => (
+                <li key={item.title} className="flex gap-3.5">
+                  <span className="mt-[3px] flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-full border border-[var(--primary-color-muted)]/40 bg-[var(--ui-accent-2)]/15">
+                    <svg viewBox="0 0 12 12" className="h-2.5 w-2.5 text-[var(--ui-accent-2)]" aria-hidden="true">
+                      <path
+                        d="M1.5 6.2 4.4 9 10.5 2.8"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                  </span>
+                  <span>
+                    <span className="block text-sm font-semibold text-white">{item.title}</span>
+                    <span className="block text-[13px] leading-5 text-white/45">{item.detail}</span>
+                  </span>
+                </li>
+              ))}
+            </ul>
           </div>
 
-        </div>
+          <p className="relative mt-12 text-[11px] text-white/30">
+            &copy; {new Date().getFullYear()} Cash Boi. All rights reserved.
+          </p>
+        </aside>
 
-        {/* ================= RIGHT FORM PANEL (Compact Y-Axis Spacing) ================= */}
-        <div className="relative w-full md:w-[54%] bg-white p-6 sm:p-7 md:p-8 flex flex-col justify-center">
-          
-          <div className="relative z-10 my-auto">
-            {/* Header (Reduced bottom margin) */}
-            <div className="text-center mb-5 sm:mb-6">
-              <h1 className="text-xl sm:text-2xl font-semibold text-[#085a9c] tracking-tight">
-                Login to Account
-              </h1>
-              <p className="text-xs text-black mt-1 font-normal">
-                {step === 1
-                  ? 'Enter your mobile number to continue'
-                  : 'Enter your 4-digit PIN code to proceed'}
-              </p>
+        {/* ===================== Sign-in panel ===================== */}
+        <section className="flex flex-col justify-center bg-[var(--ui-surface)] px-6 py-12 sm:px-12 sm:py-14">
+          <div className="mx-auto w-full max-w-[21rem]">
+            {/* logo */}
+            <div className="flex justify-center">
+              <img src={logoImg} alt="Cash Boi" className="h-12 w-auto object-contain" />
             </div>
 
-            {/* Step 1: Mobile Number Input Form */}
+            {/* step indicator */}
+            <div
+              className="mt-7 flex items-center justify-center gap-2"
+              role="group"
+              aria-label={`Step ${step} of 2`}
+            >
+              <span className="h-2 w-2 rounded-full bg-[var(--primary-color)]" />
+              <span
+                className={`h-px w-10 transition-colors ${step === 2 ? 'bg-[var(--primary-color)]' : 'bg-[var(--ui-border)]'}`}
+              />
+              <span
+                className={`h-2 w-2 rounded-full transition-colors ${
+                  step === 2 ? 'bg-[var(--primary-color)]' : 'bg-[var(--ui-border-strong)]'
+                }`}
+              />
+            </div>
+
+            {/* heading */}
+            <h1 className="mt-6 text-center text-[1.6rem] font-bold tracking-tight text-[var(--ui-text)]">
+              {step === 1 ? 'Login to Account' : 'Enter your PIN'}
+            </h1>
+            <p className="mt-2 text-center text-sm leading-6 text-[var(--ui-text-muted)]">
+              {step === 1 ? (
+                'Enter your mobile number or email to continue'
+              ) : accountName || businessName ? (
+                <>
+                  Welcome back
+                  {accountName ? `, ${accountName}` : ''}
+                  {businessName ? (
+                    <span className="mt-0.5 block text-[13px] text-[var(--ui-text-subtle)]">{businessName}</span>
+                  ) : null}
+                </>
+              ) : (
+                'Enter your 4-digit PIN to continue'
+              )}
+            </p>
+
+            {/* ---------- Step 1: identifier ---------- */}
             {step === 1 && (
-              <form onSubmit={handleContinue} className="space-y-3 max-w-sm mx-auto">
+              <form onSubmit={handleContinue} className="mt-9 space-y-5">
                 <div>
-                  <div className="relative flex items-center">
-                    <div className="absolute left-4 flex items-center pointer-events-none text-[#009fe3]">
-                      <HiOutlineUser className="w-4.5 h-4.5" />
-                    </div>
+                  <label
+                    htmlFor="login-identifier"
+                    className="mb-2 block text-[11px] font-semibold uppercase tracking-[0.08em] text-[var(--ui-text-muted)]"
+                  >
+                    Mobile / Email <span className="text-[var(--ui-danger)]">*</span>
+                  </label>
+                  <div className="relative">
+                    <span className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--ui-text-subtle)]">
+                      <svg viewBox="0 0 20 20" className="h-[18px] w-[18px]" aria-hidden="true">
+                        <path
+                          d="M10 10.5a3.6 3.6 0 1 0 0-7.2 3.6 3.6 0 0 0 0 7.2ZM3.6 17.2c0-2.9 2.9-5.2 6.4-5.2s6.4 2.3 6.4 5.2"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="1.5"
+                          strokeLinecap="round"
+                        />
+                      </svg>
+                    </span>
                     <input
-                      type="tel"
+                      id="login-identifier"
+                      type="text"
                       value={identifier}
                       onChange={(e) => setIdentifier(e.target.value)}
-                      placeholder="Mobile Number..."
+                      placeholder="01XXXXXXXXX or name@company.com"
                       disabled={isCheckingUser}
-                      className="w-full rounded-full bg-[#e8f4fc] hover:bg-[#e0effa] focus:bg-white border-2 border-transparent focus:border-[#009fe3] pl-11 pr-4 py-2.5 sm:py-3 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-4 focus:ring-[#009fe3]/20 transition-all font-semibold disabled:opacity-60 shadow-inner"
+                      autoComplete="username"
                       autoFocus
+                      inputMode="email"
+                      className="h-12 w-full rounded-lg border border-[var(--ui-border)] bg-[var(--ui-surface-muted)]/70 pl-11 pr-4 text-sm text-[var(--ui-text)] outline-none transition placeholder:text-[var(--ui-text-subtle)] hover:border-[var(--ui-border-strong)] focus:border-[var(--primary-color)] focus:bg-[var(--ui-surface)] focus:ring-[3px] focus:ring-[var(--primary-color)]/12 disabled:cursor-not-allowed disabled:opacity-60"
                     />
                   </div>
                 </div>
 
-                {/* Remember Me */}
-                <div className="flex items-center justify-between px-1.5 pt-0.5">
-                  <label className="flex items-center gap-2 cursor-pointer select-none">
-                    <input
-                      type="checkbox"
-                      checked={rememberMe}
-                      onChange={(e) => setRememberMe(e.target.checked)}
-                      className="sr-only"
-                    />
-                    <div
-                      className={`w-4 h-4 rounded-md flex items-center justify-center border transition-all ${
-                        rememberMe
-                          ? 'bg-[#009fe3] border-[#009fe3] shadow-xs'
-                          : 'bg-white border-slate-300 hover:border-slate-400'
-                      }`}
-                    >
-                      {rememberMe && <HiOutlineCheck className="w-3 h-3 text-white stroke-[3]" />}
-                    </div>
-                    <span className="text-xs text-black font-medium">
-                      Remember me
-                    </span>
-                  </label>
-                </div>
+                <label className="flex w-fit cursor-pointer select-none items-center gap-2.5">
+                  <input
+                    type="checkbox"
+                    checked={rememberMe}
+                    onChange={(e) => setRememberMe(e.target.checked)}
+                    className="h-4 w-4 cursor-pointer rounded border-[var(--ui-border-strong)] accent-[var(--primary-color)]"
+                  />
+                  <span className="text-[13px] text-[var(--ui-text-muted)]">Remember me</span>
+                </label>
 
-                {/* Submit / Continue Button */}
-                <div className="pt-1.5">
-                  <button
-                    type="submit"
-                    disabled={isCheckingUser}
-                    className="w-full rounded-full bg-gradient-to-r from-[#009fe3] via-[#0878c7] to-[#085a9c] text-white font-bold py-2.5 sm:py-3 text-sm tracking-wider shadow-md shadow-[#009fe3]/30 cursor-pointer flex items-center justify-center gap-2 disabled:opacity-75 disabled:cursor-not-allowed uppercase"
-                  >
-                    {isCheckingUser ? (
-                      <div className="w-4.5 h-4.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                    ) : (
-                      'CONTINUE'
-                    )}
-                  </button>
-                </div>
+                <button
+                  type="submit"
+                  disabled={isCheckingUser}
+                  className="flex h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-lg bg-[var(--primary-color)] text-sm font-semibold text-white shadow-sm transition hover:bg-[var(--primary-color-hover)] focus:outline-none focus:ring-[3px] focus:ring-[var(--primary-color)]/25 disabled:cursor-not-allowed disabled:bg-[var(--ui-text-subtle)]"
+                >
+                  {isCheckingUser ? (
+                    <>
+                      <span className="h-4 w-4 animate-spin rounded-full border-2 border-[var(--ui-surface)]/35 border-t-white" />
+                      Checking
+                    </>
+                  ) : (
+                    'Continue'
+                  )}
+                </button>
               </form>
             )}
 
-            {/* Step 2: 4-Digit PIN Input Form */}
+            {/* ---------- Step 2: PIN ---------- */}
             {step === 2 && (
-              <form onSubmit={handleLoginSubmit} className="space-y-4 max-w-sm mx-auto">
-                {/* 4 Digit PIN Input Boxes */}
-                <div className="pt-0.5">
-                  <label className="block text-center text-xs font-bold uppercase tracking-wider text-black mb-2.5">
-                    ENTER 4-DIGIT PIN
-                  </label>
-                  <div className="flex justify-center gap-2.5 sm:gap-3">
+              <form onSubmit={handleLoginSubmit} className="mt-9 space-y-5">
+                <div className="flex items-center justify-between gap-3 rounded-lg border border-[var(--ui-border)] bg-[var(--ui-surface-muted)]/70 px-3.5 py-2.5">
+                  <span className="truncate text-[13px] font-medium tracking-wide text-[var(--ui-text)]">
+                    {maskedIdentifier}
+                  </span>
+                  <button
+                    type="button"
+                    disabled={isLoggingIn}
+                    onClick={() => {
+                      setStep(1)
+                      setPin(Array(PIN_LENGTH).fill(''))
+                    }}
+                    className="shrink-0 cursor-pointer text-[13px] font-semibold text-[var(--primary-color)] underline-offset-2 transition hover:underline disabled:opacity-50"
+                  >
+                    Change
+                  </button>
+                </div>
+
+                <div>
+                  <div className="mb-2 flex items-baseline justify-between">
+                    <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[var(--ui-text-muted)]">
+                      4-digit PIN <span className="text-[var(--ui-danger)]">*</span>
+                    </span>
+                    <button
+                      type="button"
+                      disabled={isLoggingIn}
+                      onClick={handleClearPin}
+                      className="cursor-pointer text-[13px] text-[var(--ui-text-subtle)] underline-offset-2 transition hover:text-[var(--primary-color)] hover:underline disabled:opacity-50"
+                    >
+                      Clear
+                    </button>
+                  </div>
+                  <div className="flex gap-3">
                     {pin.map((digit, idx) => {
                       const isCurrent = focusedIndex === idx
                       return (
@@ -437,6 +512,8 @@ export const Login: React.FC = () => {
                           ref={pinInputRefs[idx]}
                           type="password"
                           inputMode="numeric"
+                          autoComplete={idx === 0 ? 'one-time-code' : 'off'}
+                          aria-label={`PIN digit ${idx + 1}`}
                           maxLength={1}
                           disabled={isLoggingIn}
                           value={digit}
@@ -444,81 +521,54 @@ export const Login: React.FC = () => {
                           onChange={(e) => handlePinChange(idx, e.target.value)}
                           onKeyDown={(e) => handlePinKeyDown(idx, e)}
                           onPaste={handlePinPaste}
-                          className={`w-11 h-13 sm:w-12 sm:h-14 text-center text-xl font-bold rounded-2xl transition-all duration-200 outline-none ${
+                          className={`h-14 min-w-0 flex-1 rounded-lg border text-center text-xl font-semibold text-[var(--ui-text)] outline-none transition ${
                             isCurrent
-                              ? 'border-2 border-[#009fe3] bg-white text-[#085a9c] shadow-md shadow-[#009fe3]/25 ring-4 ring-[#009fe3]/20'
+                              ? 'border-[var(--primary-color)] bg-[var(--ui-surface)] ring-[3px] ring-[var(--primary-color)]/12'
                               : digit
-                              ? 'border-2 border-[#009fe3]/50 bg-[#e8f4fc] text-[#085a9c]'
-                              : 'border-2 border-transparent bg-[#e8f4fc] text-slate-800 hover:bg-[#e0effa]'
-                          } ${isLoggingIn ? 'opacity-60 cursor-not-allowed' : ''}`}
+                                ? 'border-[var(--primary-color)]/45 bg-[var(--ui-surface)]'
+                                : 'border-[var(--ui-border)] bg-[var(--ui-surface-muted)]/70 hover:border-[var(--ui-border-strong)]'
+                          } ${isLoggingIn ? 'cursor-not-allowed opacity-60' : ''}`}
                         />
                       )
                     })}
                   </div>
                 </div>
 
-                {/* Back / Clear Controls */}
-                <div className="flex items-center justify-between text-xs font-semibold px-1.5">
-                  <button
-                    type="button"
-                    disabled={isLoggingIn}
-                    onClick={() => {
-                      setStep(1)
-                      setPin(Array(PIN_LENGTH).fill(''))
-                    }}
-                    className="inline-flex items-center gap-1.5 text-[#009fe3] hover:text-[#085a9c] cursor-pointer transition-colors disabled:opacity-50"
-                  >
-                    <HiOutlineArrowLeft className="w-3.5 h-3.5" />
-                    <span>Change number</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    disabled={isLoggingIn}
-                    onClick={handleClearPin}
-                    className="inline-flex items-center gap-1 text-slate-400 hover:text-slate-600 cursor-pointer transition-colors disabled:opacity-50"
-                  >
-                    <RiDeleteBack2Line className="w-3.5 h-3.5" />
-                    <span>Clear</span>
-                  </button>
-                </div>
-
-                {/* Submit / Login Button */}
-                <div className="pt-1">
-                  <button
-                    type="submit"
-                    disabled={isLoggingIn}
-                    className="w-full rounded-full bg-gradient-to-r from-[#009fe3] via-[#0878c7] to-[#085a9c] text-white font-bold py-2.5 sm:py-3 text-sm tracking-wider shadow-md shadow-[#009fe3]/30 cursor-pointer flex items-center justify-center gap-2 disabled:opacity-75 disabled:cursor-not-allowed uppercase"
-                  >
-                    {isLoggingIn ? (
-                      <div className="w-4.5 h-4.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                    ) : (
-                      'LOG IN'
-                    )}
-                  </button>
-                </div>
+                <button
+                  type="submit"
+                  disabled={isLoggingIn}
+                  className="flex h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-lg bg-[var(--primary-color)] text-sm font-semibold text-white shadow-sm transition hover:bg-[var(--primary-color-hover)] focus:outline-none focus:ring-[3px] focus:ring-[var(--primary-color)]/25 disabled:cursor-not-allowed disabled:bg-[var(--ui-text-subtle)]"
+                >
+                  {isLoggingIn ? (
+                    <>
+                      <span className="h-4 w-4 animate-spin rounded-full border-2 border-[var(--ui-surface)]/35 border-t-white" />
+                      Signing in
+                    </>
+                  ) : (
+                    'Login'
+                  )}
+                </button>
               </form>
             )}
 
-            {/* Bottom Developed & Maintained Footer */}
-            <div className="text-center mt-4 pt-1">
-              <p className="text-[11px] sm:text-xs font-medium text-black">
-                Developed and Maintaince by{' '}
-                <a
-                  href="https://www.webnstech.net/"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-amber-500 font-semibold cursor-pointer"
-                >
-                  webens technology ltd
-                </a>
-              </p>
+            <p className="mt-8 text-center text-[13px] text-[var(--ui-text-subtle)]">
+              Trouble signing in? Contact your account administrator.
+            </p>
+
+            <div className="mt-6 border-t border-[var(--ui-border)] pt-5 text-center text-[11px] text-[var(--ui-text-subtle)]">
+              Developed &amp; maintained by{' '}
+              <a
+                href="https://www.webnstech.net/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-semibold text-[var(--primary-color)] underline-offset-2 hover:underline"
+              >
+                Webens Technology Ltd.
+              </a>
             </div>
-
           </div>
-        </div>
-
+        </section>
       </div>
-    </div>
+    </main>
   )
 }

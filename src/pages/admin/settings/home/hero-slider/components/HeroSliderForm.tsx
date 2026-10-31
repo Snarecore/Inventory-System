@@ -101,9 +101,9 @@ const HeroSliderForm = ({ isOpen, onClose, editData, fetchData }: HeroSliderForm
         >
             <div className="space-y-4">
                 <div>
-                    <h3 className="block text-sm font-medium text-gray-700 mb-1">
+                    <h3 className="block text-sm font-medium text-[var(--ui-text)] mb-1">
                         Image:
-                        <span className="text-xs text-gray-500 ml-1">(Recommended Size: 1920x400 PX)</span>
+                        <span className="text-xs text-[var(--ui-text-muted)] ml-1">(Recommended Size: 1920x400 PX)</span>
                     </h3>
                     <ImageUpload
                         value={
@@ -135,7 +135,7 @@ const HeroSliderForm = ({ isOpen, onClose, editData, fetchData }: HeroSliderForm
                     onChange={handleSwitchChange}
                 />
 
-                <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-100">
+                <div className="flex items-center justify-end gap-3 pt-4 border-t border-[var(--ui-border)]">
                     <Button
                         label="Cancel"
                         onClick={onClose}

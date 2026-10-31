@@ -12,6 +12,7 @@ export interface TextInputProps {
   readOnly?: boolean;
   message?: string;
   error?: string;
+  ariaDescribedBy?: string;
   wrapperClass?: string;
   icon?: React.ReactNode;
   disabled?: boolean;
@@ -41,6 +42,7 @@ const InputField: React.FC<TextInputProps> = ({
   readOnly = false,
   message,
   error,
+  ariaDescribedBy,
   wrapperClass = "",
   icon,
   disabled = false,
@@ -77,21 +79,19 @@ const InputField: React.FC<TextInputProps> = ({
     }
   };
 
+
   return (
-    <div className={`w-full ${className}`}>
+    <div className={`ui-field ${className}`}>
       {label && (
-        <label htmlFor={name} className="text-xs font-semibold text-black block mb-1">
-          {label} {required && <span className="text-red-600">*</span>}
+        <label htmlFor={name} className={`ui-label ${required ? "ui-label-required" : ""}`}>
+          {label}
         </label>
       )}
 
       <div
-        className={`flex items-center w-full transition-all duration-200 border rounded-lg px-2.5 h-9
-          ${displayError ? "border-red-500" : "border-gray-300"}
-          bg-white text-black text-xs focus-within:ring-1 focus-within:ring-[var(--primary-color)] focus-within:border-[var(--primary-color)]
-          ${wrapperClass}`}
+        className={`ui-control ui-control-shell ${displayError ? "is-invalid" : ""} ${wrapperClass}`}
       >
-        {icon && <div className="pr-2">{icon}</div>}
+        {icon && <span className="flex shrink-0 items-center text-[var(--ui-text-subtle)]">{icon}</span>}
 
         <input
           ref={inputRef}
@@ -107,20 +107,19 @@ const InputField: React.FC<TextInputProps> = ({
           min={min}
           max={max}
           autoFocus={autoFocus}
+          aria-invalid={displayError ? true : undefined}
+          aria-describedby={ariaDescribedBy || (displayError && name ? `${name}-error` : undefined)}
           onFocus={onFocus}
           onBlur={onBlur}
           onPaste={onPaste}
           onKeyDown={onKeyDown}
           onWheel={handleWheel}
           onChange={handleChange}
-          className={`w-full focus:outline-none placeholder:text-xs placeholder:text-gray-400 px-1 text-xs text-black bg-transparent
-            ${inputClass}
-            ${disabled ? "cursor-not-allowed opacity-50" : "cursor-text"}
-          `}
+          className={`ui-control-bare ${inputClass} ${disabled ? "cursor-not-allowed opacity-60" : "cursor-text"}`}
         />
       </div>
 
-      {displayError && <p className="text-xs text-red-500 mt-1">{displayError}</p>}
+      {displayError && <p id={name ? `${name}-error` : undefined} className="ui-error">{displayError}</p>}
     </div>
   );
 };

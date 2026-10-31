@@ -101,14 +101,14 @@ export const PartyTable: React.FC<PartyTableProps> = ({
     return (
       <span
         onClick={setSortBy ? handleClick : undefined}
-        className={`inline-flex items-center gap-1 select-none text-black ${
+        className={`inline-flex items-center gap-1 select-none text-[var(--ui-text)] ${
           setSortBy ? "cursor-pointer" : ""
         }`}
       >
         <span>{label}</span>
         <FiChevronDown
           size={11}
-          className={`text-black transition-transform duration-200 ${
+          className={`text-[var(--ui-text)] transition-transform duration-200 ${
             isAsc ? "rotate-180" : ""
           }`}
         />
@@ -315,18 +315,18 @@ export const PartyTable: React.FC<PartyTableProps> = ({
                     return (
                       <tr
                         key={partyId}
-                        className="hover:bg-sky-50/40 transition-colors group"
+                        className="hover:bg-[var(--primary-color-light)]/40 transition-colors group"
                       >
                         {/* SL */}
                         {isColVisible("sl") && (
-                          <td className="py-2.5 px-3 text-left text-xs font-normal text-black truncate">
+                          <td className="py-2.5 px-3 text-left text-xs font-normal text-[var(--ui-text)] truncate">
                             {rowNumber}
                           </td>
                         )}
 
                         {/* Party Details (Name) */}
                         {isColVisible("name") && (
-                          <td className="py-2.5 px-3 text-left font-medium text-xs text-black truncate">
+                          <td className="py-2.5 px-3 text-left font-medium text-xs text-[var(--ui-text)] truncate">
                             <span className="block truncate" title={name}>{name}</span>
                           </td>
                         )}
@@ -337,8 +337,8 @@ export const PartyTable: React.FC<PartyTableProps> = ({
                             <span
                               className={`inline-flex items-center px-1.5 py-0.5 rounded-md text-[10px] font-semibold border ${
                                 type === "SUPPLIER"
-                                  ? "bg-purple-100 text-purple-800 border-purple-300"
-                                  : "bg-sky-100 text-sky-800 border-sky-300"
+                                  ? "bg-[var(--ui-info-border)] text-[var(--ui-info-dark)] border-[var(--ui-info-border)]"
+                                  : "bg-[var(--primary-color-muted)] text-[var(--primary-color-dark)] border-[var(--primary-color-muted)]"
                               }`}
                             >
                               {type}
@@ -348,21 +348,21 @@ export const PartyTable: React.FC<PartyTableProps> = ({
 
                         {/* Contact Info (Phone) */}
                         {isColVisible("contact") && (
-                          <td className="py-2.5 px-3 text-left font-normal text-xs text-black truncate">
+                          <td className="py-2.5 px-3 text-left font-normal text-xs text-[var(--ui-text)] truncate">
                             <span className="block truncate" title={phone}>{phone}</span>
                           </td>
                         )}
 
                         {/* Address */}
                         {isColVisible("address") && (
-                          <td className="py-2.5 px-3 text-center font-normal text-xs text-black truncate">
+                          <td className="py-2.5 px-3 text-center font-normal text-xs text-[var(--ui-text)] truncate">
                             <span className="block truncate" title={address}>{address}</span>
                           </td>
                         )}
 
                         {/* Opening Balance */}
                         {isColVisible("balance") && (
-                          <td className="py-2.5 px-3 text-right font-normal text-xs text-black whitespace-nowrap">
+                          <td className="py-2.5 px-3 text-right font-normal text-xs text-[var(--ui-text)] whitespace-nowrap">
                             ৳{balance.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
                           </td>
                         )}
@@ -379,8 +379,8 @@ export const PartyTable: React.FC<PartyTableProps> = ({
                                 }}
                                 className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-semibold border cursor-pointer hover:opacity-80 transition-all ${
                                   active
-                                    ? "bg-emerald-100 text-emerald-800 border-emerald-300 hover:bg-emerald-200"
-                                    : "bg-rose-100 text-rose-800 border-rose-300 hover:bg-rose-200"
+                                    ? "bg-[var(--ui-success-border)] text-[var(--ui-success-dark)] border-[var(--ui-success-border)] hover:bg-[var(--ui-success-border)]"
+                                    : "bg-[var(--ui-danger-border)] text-[var(--ui-danger-dark)] border-[var(--ui-danger-border)] hover:bg-[var(--ui-danger-border)]"
                                 }`}
                                 title="Click to toggle status"
                               >
@@ -390,8 +390,8 @@ export const PartyTable: React.FC<PartyTableProps> = ({
                               <span
                                 className={`inline-flex items-center px-1.5 py-0.5 rounded-md text-[10px] font-semibold border ${
                                   active
-                                    ? "bg-emerald-100 text-emerald-800 border-emerald-300"
-                                    : "bg-rose-100 text-rose-800 border-rose-300"
+                                    ? "bg-[var(--ui-success-border)] text-[var(--ui-success-dark)] border-[var(--ui-success-border)]"
+                                    : "bg-[var(--ui-danger-border)] text-[var(--ui-danger-dark)] border-[var(--ui-danger-border)]"
                                 }`}
                               >
                                 {active ? "Active" : "Inactive"}

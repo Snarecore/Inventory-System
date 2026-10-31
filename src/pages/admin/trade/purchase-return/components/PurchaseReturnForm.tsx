@@ -899,7 +899,7 @@ export const PurchaseReturnForm: React.FC = () => {
   return (
     <div className="flex flex-col gap-2.5 px-3 py-2 sm:px-4 sm:py-2.5 max-w-[1600px] mx-auto w-full">
       {/* Top Header Bar (Matching SalesReturn Standard) */}
-      <div className="sticky top-0 z-30 bg-[#F6F6F6] py-2 sm:py-2.5 -mt-2 sm:-mt-2.5 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-2.5 border-b border-gray-200">
+      <div className="sticky top-0 z-30 bg-[var(--ui-surface-muted)] py-2 sm:py-2.5 -mt-2 sm:-mt-2.5 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-2.5 border-b border-[var(--ui-border)]">
         {/* Left Side: Title & Badge */}
         <div className="flex items-center justify-between gap-2 w-full lg:w-auto">
           <div className="flex flex-col lg:flex-row lg:items-center gap-1 lg:gap-2.5 min-w-0">
@@ -917,14 +917,14 @@ export const PurchaseReturnForm: React.FC = () => {
             <button
               type="button"
               onClick={handleReset}
-              className="px-2.5 py-1.5 text-xs font-normal text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors cursor-pointer"
+              className="px-2.5 py-1.5 text-xs font-normal text-[var(--ui-text-muted)] bg-[var(--ui-surface-sunken)] hover:bg-[var(--ui-border)] rounded-lg transition-colors cursor-pointer"
             >
               Reset
             </button>
             <button
               type="button"
               onClick={() => navigate("/admin/purchase-return")}
-              className="px-2.5 py-1.5 text-xs font-normal text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors cursor-pointer"
+              className="px-2.5 py-1.5 text-xs font-normal text-[var(--ui-text-muted)] bg-[var(--ui-surface-sunken)] hover:bg-[var(--ui-border)] rounded-lg transition-colors cursor-pointer"
             >
               Cancel
             </button>
@@ -937,14 +937,14 @@ export const PurchaseReturnForm: React.FC = () => {
             <button
               type="button"
               onClick={handleReset}
-              className="px-3 py-1.5 text-xs font-normal text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors cursor-pointer"
+              className="px-3 py-1.5 text-xs font-normal text-[var(--ui-text-muted)] bg-[var(--ui-surface-sunken)] hover:bg-[var(--ui-border)] rounded-lg transition-colors cursor-pointer"
             >
               Reset
             </button>
             <button
               type="button"
               onClick={() => navigate("/admin/purchase-return")}
-              className="px-3 py-1.5 text-xs font-normal text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors cursor-pointer"
+              className="px-3 py-1.5 text-xs font-normal text-[var(--ui-text-muted)] bg-[var(--ui-surface-sunken)] hover:bg-[var(--ui-border)] rounded-lg transition-colors cursor-pointer"
             >
               Cancel
             </button>
@@ -988,15 +988,15 @@ export const PurchaseReturnForm: React.FC = () => {
 
       {/* Warning Banner: If already returned */}
       {isCurrentPurchaseAlreadyReturned && (
-        <div className="bg-rose-50 border border-rose-200 text-rose-800 rounded-xl p-2.5 sm:p-3 flex items-center gap-2.5 text-xs shadow-2xs">
-          <div className="p-1.5 rounded-lg bg-rose-100 text-rose-600 shrink-0">
+        <div className="bg-[var(--ui-danger-light)] border border-[var(--ui-danger-border)] text-[var(--ui-danger-dark)] rounded-xl p-2.5 sm:p-3 flex items-center gap-2.5 text-xs shadow-2xs">
+          <div className="p-1.5 rounded-lg bg-[var(--ui-danger-border)] text-[var(--ui-danger)] shrink-0">
             <FaLock size={14} />
           </div>
           <div className="flex-1 min-w-0">
-            <span className="font-bold block text-[12px] leading-tight text-rose-900">
+            <span className="font-bold block text-[12px] leading-tight text-[var(--ui-danger-dark)]">
               Purchase Order Already Returned
             </span>
-            <span className="text-[11px] text-rose-700 block leading-tight">
+            <span className="text-[11px] text-[var(--ui-danger-dark)] block leading-tight">
               According to company policy, a purchase order or invoice can only be returned once. This invoice has already been settled and processed for return.
             </span>
           </div>
@@ -1004,11 +1004,11 @@ export const PurchaseReturnForm: React.FC = () => {
       )}
 
       {/* Section 1: Search by Order No / Purchase Invoice & Supplier Info */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 bg-white p-2.5 sm:p-3 rounded-xl border border-gray-200 shadow-xs">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 bg-[var(--ui-surface)] p-2.5 sm:p-3 rounded-xl border border-[var(--ui-border)] shadow-xs">
         {/* Invoice / Order No Search Input with dropdown */}
         <div className="relative" ref={invoiceDropdownRef}>
-          <label className="text-[11px] font-bold text-black tracking-wider block mb-1">
-            Search Order No / Invoice <span className="text-rose-500">*</span>
+          <label className="text-[11px] font-bold text-[var(--ui-text)] tracking-wider block mb-1">
+            Search Order No / Invoice <span className="text-[var(--ui-danger)]">*</span>
           </label>
           <div className="relative flex items-center">
             <input
@@ -1021,7 +1021,7 @@ export const PurchaseReturnForm: React.FC = () => {
               onFocus={() => setIsInvoiceDropdownOpen(true)}
               onClick={() => setIsInvoiceDropdownOpen(true)}
               placeholder="Search by Invoice (PUR-1001), Challan, Supplier..."
-              className="w-full h-9 pl-3 pr-8 border border-gray-300 rounded-lg bg-gray-50/50 hover:bg-white focus:bg-white text-xs text-gray-900 focus:outline-none focus:border-[var(--primary-color)]"
+              className="w-full h-9 pl-3 pr-8 border border-[var(--ui-border-strong)] rounded-lg bg-[var(--ui-surface-muted)]/50 hover:bg-[var(--ui-surface)] focus:bg-[var(--ui-surface)] text-xs text-[var(--ui-text)] focus:outline-none focus:border-[var(--primary-color)]"
             />
             {invoiceSearchQuery ? (
               <button
@@ -1037,7 +1037,7 @@ export const PurchaseReturnForm: React.FC = () => {
                   setLines([]);
                   setIsInvoiceDropdownOpen(true);
                 }}
-                className="absolute right-2.5 text-gray-400 hover:text-gray-600 cursor-pointer"
+                className="absolute right-2.5 text-[var(--ui-text-subtle)] hover:text-[var(--ui-text-muted)] cursor-pointer"
                 title="Clear search"
               >
                 <FaTimes className="text-xs" />
@@ -1045,25 +1045,25 @@ export const PurchaseReturnForm: React.FC = () => {
             ) : (
               <FaSearch
                 onClick={() => setIsInvoiceDropdownOpen(true)}
-                className="absolute right-2.5 text-gray-400 text-xs cursor-pointer hover:text-gray-600"
+                className="absolute right-2.5 text-[var(--ui-text-subtle)] text-xs cursor-pointer hover:text-[var(--ui-text-muted)]"
               />
             )}
           </div>
 
           {isInvoiceDropdownOpen && (
-            <div className="absolute left-0 w-[calc(100vw-32px)] sm:w-[480px] md:w-[560px] max-w-[600px] mt-1 max-h-72 overflow-y-auto bg-white border border-gray-200 rounded-xl shadow-2xl z-50 text-xs divide-y divide-gray-100 animate-in fade-in zoom-in-95 duration-100">
+            <div className="absolute left-0 w-[calc(100vw-32px)] sm:w-[480px] md:w-[560px] max-w-[600px] mt-1 max-h-72 overflow-y-auto bg-[var(--ui-surface)] border border-[var(--ui-border)] rounded-xl shadow-2xl z-50 text-xs divide-y divide-[var(--ui-border)] animate-in fade-in zoom-in-95 duration-100">
               {/* Dropdown Header */}
-              <div className="sticky top-0 bg-gray-50/95 backdrop-blur-xs px-3 py-1.5 border-b border-gray-100 flex items-center justify-between text-[11px] text-gray-500 font-medium z-10">
+              <div className="sticky top-0 bg-[var(--ui-surface-muted)]/95 backdrop-blur-xs px-3 py-1.5 border-b border-[var(--ui-border)] flex items-center justify-between text-[11px] text-[var(--ui-text-muted)] font-medium z-10">
                 <div className="flex items-center gap-1.5">
                   <FaFileInvoice className="text-[var(--primary-color)]" size={11} />
                   <span>Available Purchase Orders ({filteredInvoices.length})</span>
                 </div>
-                <span className="text-[10px] text-gray-400">Select order to return</span>
+                <span className="text-[10px] text-[var(--ui-text-subtle)]">Select order to return</span>
               </div>
 
               {isLoadingInvoices ? (
-                <div className="px-4 py-5 text-center text-gray-500 text-xs flex items-center justify-center gap-2">
-                  <div className="w-3.5 h-3.5 border-2 border-sky-500 border-t-transparent rounded-full animate-spin"></div>
+                <div className="px-4 py-5 text-center text-[var(--ui-text-muted)] text-xs flex items-center justify-center gap-2">
+                  <div className="w-3.5 h-3.5 border-2 border-[var(--primary-color)] border-t-transparent rounded-full animate-spin"></div>
                   <span>Loading purchase orders...</span>
                 </div>
               ) : filteredInvoices.length > 0 ? (
@@ -1074,20 +1074,20 @@ export const PurchaseReturnForm: React.FC = () => {
                       loadInvoice(inv);
                       setIsInvoiceDropdownOpen(false);
                     }}
-                    className="px-3 py-2 hover:bg-sky-50/70 transition-colors cursor-pointer flex items-center justify-between gap-2"
+                    className="px-3 py-2 hover:bg-[var(--primary-color-light)]/70 transition-colors cursor-pointer flex items-center justify-between gap-2"
                   >
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-0.5">
-                        <span className="font-bold text-gray-900 text-xs truncate">
+                        <span className="font-bold text-[var(--ui-text)] text-xs truncate">
                           {inv.invoiceNo || `PUR-${inv.id}`}
                         </span>
                         {inv.challanNo && (
-                          <span className="text-[10px] px-1.5 py-0.2 rounded bg-gray-100 text-gray-600 font-normal">
+                          <span className="text-[10px] px-1.5 py-0.2 rounded bg-[var(--ui-surface-sunken)] text-[var(--ui-text-muted)] font-normal">
                             Challan: {inv.challanNo}
                           </span>
                         )}
                       </div>
-                      <div className="flex items-center gap-2 text-[11px] text-gray-500">
+                      <div className="flex items-center gap-2 text-[11px] text-[var(--ui-text-muted)]">
                         <span className="truncate">
                           Supplier: {inv.supplierName || (inv as any).supplier_name || "N/A"}
                         </span>
@@ -1108,7 +1108,7 @@ export const PurchaseReturnForm: React.FC = () => {
                         ৳ {formatMoney(Number(inv.grandTotal ?? 0))}
                       </span>
                       {Number(inv.dueAmount || 0) > 0 && (
-                        <span className="text-[10px] text-rose-600 font-semibold block">
+                        <span className="text-[10px] text-[var(--ui-danger)] font-semibold block">
                           Due: ৳ {formatMoney(Number(inv.dueAmount))}
                         </span>
                       )}
@@ -1116,7 +1116,7 @@ export const PurchaseReturnForm: React.FC = () => {
                   </div>
                 ))
               ) : (
-                <div className="px-4 py-5 text-center text-gray-400 text-xs">
+                <div className="px-4 py-5 text-center text-[var(--ui-text-subtle)] text-xs">
                   No eligible purchase orders found.
                 </div>
               )}
@@ -1126,8 +1126,8 @@ export const PurchaseReturnForm: React.FC = () => {
 
         {/* Return Date */}
         <div>
-          <label className="text-[11px] font-bold text-black tracking-wider block mb-1">
-            Return Date <span className="text-rose-500">*</span>
+          <label className="text-[11px] font-bold text-[var(--ui-text)] tracking-wider block mb-1">
+            Return Date <span className="text-[var(--ui-danger)]">*</span>
           </label>
           <DatePicker
             value={returnDate}
@@ -1152,8 +1152,8 @@ export const PurchaseReturnForm: React.FC = () => {
               : "N/A"
           }
           placeholder="N/A"
-          wrapperClass="!h-9 bg-gray-50 !border-gray-200"
-          inputClass="font-normal text-black cursor-default truncate"
+          wrapperClass="!h-9 bg-[var(--ui-surface-muted)] !border-[var(--ui-border)]"
+          inputClass="font-normal text-[var(--ui-text)] cursor-default truncate"
         />
 
         {/* Refund / Settlement Type */}
@@ -1176,37 +1176,37 @@ export const PurchaseReturnForm: React.FC = () => {
               : "N/A"
           }
           placeholder="N/A"
-          wrapperClass="!h-9 bg-gray-50 !border-gray-200"
-          inputClass="font-normal text-black cursor-default truncate"
+          wrapperClass="!h-9 bg-[var(--ui-surface-muted)] !border-[var(--ui-border)]"
+          inputClass="font-normal text-[var(--ui-text)] cursor-default truncate"
         />
       </div>
 
       {/* Supplier's Original Payment Breakdown Banner */}
       {selectedPurchase && (
-        <div className="bg-blue-50/50 border border-blue-200 rounded-xl p-2 sm:p-2.5 flex flex-col gap-1.5 text-xs">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 pb-1 border-b border-blue-100">
+        <div className="bg-[var(--primary-color-light)]/50 border border-[var(--primary-color-muted)] rounded-xl p-2 sm:p-2.5 flex flex-col gap-1.5 text-xs">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 pb-1 border-b border-[var(--primary-color-muted)]">
             <div className="flex items-center gap-1.5">
               <div className="p-1 rounded-md bg-[var(--primary-color-light)] text-[var(--primary-color)] shrink-0">
                 <FaMoneyBillWave size={12} />
               </div>
-              <span className="font-bold text-black block text-[11px] sm:text-xs leading-tight">
+              <span className="font-bold text-[var(--ui-text)] block text-[11px] sm:text-xs leading-tight">
                 Supplier's Original Payment Breakdown
               </span>
             </div>
 
             <div className="flex items-center gap-1.5">
-              <span className="text-[10px] text-gray-500 font-medium">Invoice Method:</span>
+              <span className="text-[10px] text-[var(--ui-text-muted)] font-medium">Invoice Method:</span>
               <span
                 className={`px-1.5 py-0.2 rounded font-bold text-[10px] ${
                   origPaymentMode === "CASH"
-                    ? "bg-emerald-100 text-emerald-800 border border-emerald-300"
+                    ? "bg-[var(--ui-success-border)] text-[var(--ui-success-dark)] border border-[var(--ui-success-border)]"
                     : origPaymentMode === "CREDIT"
-                    ? "bg-rose-100 text-rose-800 border border-rose-300"
+                    ? "bg-[var(--ui-danger-border)] text-[var(--ui-danger-dark)] border border-[var(--ui-danger-border)]"
                     : origPaymentMode === "BANK"
-                    ? "bg-sky-100 text-sky-800 border border-sky-300"
+                    ? "bg-[var(--primary-color-muted)] text-[var(--primary-color-dark)] border border-[var(--primary-color-muted)]"
                     : origPaymentMode === "MFS"
-                    ? "bg-purple-100 text-purple-800 border border-purple-300"
-                    : "bg-blue-100 text-blue-800 border border-blue-300"
+                    ? "bg-[var(--ui-info-border)] text-[var(--ui-info-dark)] border border-[var(--ui-info-border)]"
+                    : "bg-[var(--primary-color-muted)] text-[var(--primary-color-dark)] border border-[var(--primary-color-muted)]"
                 }`}
               >
                 {origPaymentMode}
@@ -1217,98 +1217,98 @@ export const PurchaseReturnForm: React.FC = () => {
           {/* Cards for each channel paid with */}
           <div className="grid grid-cols-2 sm:grid-cols-5 gap-1.5">
             {/* Total Purchase Amount */}
-            <div className="p-1.5 sm:p-2 rounded-lg border border-sky-200 bg-gradient-to-b from-sky-50/50 to-white shadow-2xs flex flex-col justify-between">
-              <div className="flex items-center justify-between text-[11px] font-medium text-black mb-0.5">
-                <span className="flex items-center gap-1 text-black">
+            <div className="p-1.5 sm:p-2 rounded-lg border border-[var(--primary-color-muted)] bg-gradient-to-b from-[var(--primary-color-light)]/50 to-[var(--ui-surface)] shadow-2xs flex flex-col justify-between">
+              <div className="flex items-center justify-between text-[11px] font-medium text-[var(--ui-text)] mb-0.5">
+                <span className="flex items-center gap-1 text-[var(--ui-text)]">
                   <FaFileInvoice className="text-[var(--primary-color)] text-[10px]" />
                   Total Purchase
                 </span>
               </div>
-              <div className="font-semibold text-black text-xs sm:text-[13px] leading-tight">
+              <div className="font-semibold text-[var(--ui-text)] text-xs sm:text-[13px] leading-tight">
                 ৳ {formatMoney(origGrandTotal)}
               </div>
             </div>
 
             {/* Cash Paid */}
             <div
-              className={`p-1.5 sm:p-2 rounded-lg border bg-gradient-to-b from-emerald-50/40 to-white shadow-2xs flex flex-col justify-between ${
-                origCashPaid > 0 ? "border-emerald-300" : "border-gray-200 opacity-60"
+              className={`p-1.5 sm:p-2 rounded-lg border bg-gradient-to-b from-[var(--ui-success-light)]/40 to-[var(--ui-surface)] shadow-2xs flex flex-col justify-between ${
+                origCashPaid > 0 ? "border-[var(--ui-success-border)]" : "border-[var(--ui-border)] opacity-60"
               }`}
             >
-              <div className="flex items-center justify-between text-[11px] font-medium text-black mb-0.5">
-                <span className="flex items-center gap-1 text-black">
-                  <FaMoneyBillWave className="text-emerald-600 text-[10px]" />
+              <div className="flex items-center justify-between text-[11px] font-medium text-[var(--ui-text)] mb-0.5">
+                <span className="flex items-center gap-1 text-[var(--ui-text)]">
+                  <FaMoneyBillWave className="text-[var(--ui-success)] text-[10px]" />
                   Cash Paid
                 </span>
               </div>
-              <div className="font-normal text-black text-xs sm:text-[13px] leading-tight">
+              <div className="font-normal text-[var(--ui-text)] text-xs sm:text-[13px] leading-tight">
                 {origCashPaid > 0 ? `৳ ${formatMoney(origCashPaid)}` : "N/A"}
               </div>
             </div>
 
             {/* Bank Paid */}
             <div
-              className={`p-1.5 sm:p-2 rounded-lg border bg-gradient-to-b from-sky-50/40 to-white shadow-2xs flex flex-col justify-between ${
-                origBankPaid > 0 ? "border-sky-300" : "border-gray-200 opacity-60"
+              className={`p-1.5 sm:p-2 rounded-lg border bg-gradient-to-b from-[var(--primary-color-light)]/40 to-[var(--ui-surface)] shadow-2xs flex flex-col justify-between ${
+                origBankPaid > 0 ? "border-[var(--primary-color-muted)]" : "border-[var(--ui-border)] opacity-60"
               }`}
             >
-              <div className="flex items-center justify-between text-[11px] font-medium text-black mb-0.5">
-                <span className="flex items-center gap-1 text-black">
-                  <FaCreditCard className="text-sky-600 text-[10px]" />
+              <div className="flex items-center justify-between text-[11px] font-medium text-[var(--ui-text)] mb-0.5">
+                <span className="flex items-center gap-1 text-[var(--ui-text)]">
+                  <FaCreditCard className="text-[var(--primary-color)] text-[10px]" />
                   Bank Paid
                 </span>
                 {selectedPurchase.bankName && (
                   <span
-                    className="text-[9.5px] text-gray-700 bg-sky-100/70 px-1 rounded font-normal truncate max-w-[85px]"
+                    className="text-[9.5px] text-[var(--ui-text)] bg-[var(--primary-color-muted)]/70 px-1 rounded font-normal truncate max-w-[85px]"
                     title={selectedPurchase.bankName}
                   >
                     {selectedPurchase.bankName}
                   </span>
                 )}
               </div>
-              <div className="font-normal text-black text-xs sm:text-[13px] leading-tight">
+              <div className="font-normal text-[var(--ui-text)] text-xs sm:text-[13px] leading-tight">
                 {origBankPaid > 0 ? `৳ ${formatMoney(origBankPaid)}` : "N/A"}
               </div>
             </div>
 
             {/* MFS Paid */}
             <div
-              className={`p-1.5 sm:p-2 rounded-lg border bg-gradient-to-b from-purple-50/40 to-white shadow-2xs flex flex-col justify-between ${
-                origMfsPaid > 0 ? "border-purple-300" : "border-gray-200 opacity-60"
+              className={`p-1.5 sm:p-2 rounded-lg border bg-gradient-to-b from-[var(--ui-info-light)]/40 to-[var(--ui-surface)] shadow-2xs flex flex-col justify-between ${
+                origMfsPaid > 0 ? "border-[var(--ui-info-border)]" : "border-[var(--ui-border)] opacity-60"
               }`}
             >
-              <div className="flex items-center justify-between text-[11px] font-medium text-black mb-0.5">
-                <span className="flex items-center gap-1 text-black">
-                  <FaMobileAlt className="text-purple-600 text-[10px]" />
+              <div className="flex items-center justify-between text-[11px] font-medium text-[var(--ui-text)] mb-0.5">
+                <span className="flex items-center gap-1 text-[var(--ui-text)]">
+                  <FaMobileAlt className="text-[var(--ui-info)] text-[10px]" />
                   MFS Paid
                 </span>
                 {(selectedPurchase.mfsName || selectedPurchase.mfsPhone) && (
                   <span
-                    className="text-[9.5px] text-gray-700 bg-purple-100/70 px-1 rounded font-normal truncate max-w-[85px]"
+                    className="text-[9.5px] text-[var(--ui-text)] bg-[var(--ui-info-border)]/70 px-1 rounded font-normal truncate max-w-[85px]"
                     title={`${selectedPurchase.mfsName || ""} ${selectedPurchase.mfsPhone || ""}`}
                   >
                     {selectedPurchase.mfsName || selectedPurchase.mfsPhone}
                   </span>
                 )}
               </div>
-              <div className="font-normal text-black text-xs sm:text-[13px] leading-tight">
+              <div className="font-normal text-[var(--ui-text)] text-xs sm:text-[13px] leading-tight">
                 {origMfsPaid > 0 ? `৳ ${formatMoney(origMfsPaid)}` : "N/A"}
               </div>
             </div>
 
             {/* Due Balance */}
             <div
-              className={`p-1.5 sm:p-2 rounded-lg border bg-gradient-to-b from-rose-50/40 to-white shadow-2xs flex flex-col justify-between ${
-                origDueAmount > 0 ? "border-rose-300" : "border-gray-200 opacity-60"
+              className={`p-1.5 sm:p-2 rounded-lg border bg-gradient-to-b from-[var(--ui-danger-light)]/40 to-[var(--ui-surface)] shadow-2xs flex flex-col justify-between ${
+                origDueAmount > 0 ? "border-[var(--ui-danger-border)]" : "border-[var(--ui-border)] opacity-60"
               }`}
             >
-              <div className="flex items-center justify-between text-[11px] font-medium text-black mb-0.5">
-                <span className="flex items-center gap-1 text-black">
-                  <span className="w-1.5 h-1.5 rounded-full bg-rose-500 inline-block" />
+              <div className="flex items-center justify-between text-[11px] font-medium text-[var(--ui-text)] mb-0.5">
+                <span className="flex items-center gap-1 text-[var(--ui-text)]">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[var(--ui-danger)] inline-block" />
                   Due Balance
                 </span>
               </div>
-              <div className="font-normal text-black text-xs sm:text-[13px] leading-tight">
+              <div className="font-normal text-[var(--ui-text)] text-xs sm:text-[13px] leading-tight">
                 {origDueAmount > 0 ? `৳ ${formatMoney(origDueAmount)}` : "N/A"}
               </div>
             </div>
@@ -1317,22 +1317,22 @@ export const PurchaseReturnForm: React.FC = () => {
       )}
 
       {/* Section 2: Return Items Table with Full vs Partial Mode */}
-      <div className="bg-white rounded-xl border border-gray-200 shadow-xs overflow-hidden">
+      <div className="bg-[var(--ui-surface)] rounded-xl border border-[var(--ui-border)] shadow-xs overflow-hidden">
         {/* Return Mode Selection Toolbar */}
-        <div className="p-2 sm:px-3 border-b border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+        <div className="p-2 sm:px-3 border-b border-[var(--ui-border)] flex flex-col sm:flex-row sm:items-center justify-between gap-2">
           <div className="flex items-center gap-2">
             <FaBoxes className="text-[var(--primary-color)] text-xs" />
-            <span className="text-xs font-normal text-black tracking-wider">
+            <span className="text-xs font-normal text-[var(--ui-text)] tracking-wider">
               Return Type:
             </span>
-            <div className="inline-flex rounded-lg border border-gray-200 p-0.5 bg-gray-50 text-xs">
+            <div className="inline-flex rounded-lg border border-[var(--ui-border)] p-0.5 bg-[var(--ui-surface-muted)] text-xs">
               <button
                 type="button"
                 onClick={() => handleSetReturnMode("FULL")}
                 className={`px-2.5 py-0.5 rounded-md text-[11px] font-normal transition-all cursor-pointer ${
                   returnMode === "FULL"
                     ? "bg-[var(--primary-color)] text-white shadow-xs"
-                    : "text-gray-600 hover:text-black"
+                    : "text-[var(--ui-text-muted)] hover:text-[var(--ui-text)]"
                 }`}
               >
                 Full Return
@@ -1343,7 +1343,7 @@ export const PurchaseReturnForm: React.FC = () => {
                 className={`px-2.5 py-0.5 rounded-md text-[11px] font-normal transition-all cursor-pointer ${
                   returnMode === "PARTIAL"
                     ? "bg-[var(--primary-color)] text-white shadow-xs"
-                    : "text-gray-600 hover:text-black"
+                    : "text-[var(--ui-text-muted)] hover:text-[var(--ui-text)]"
                 }`}
               >
                 Partial Return
@@ -1357,14 +1357,14 @@ export const PurchaseReturnForm: React.FC = () => {
               <button
                 type="button"
                 onClick={handleClearAllQty}
-                className="px-2 py-0.5 text-[11px] font-normal text-gray-600 bg-gray-100 hover:bg-gray-200 rounded transition-colors cursor-pointer"
+                className="px-2 py-0.5 text-[11px] font-normal text-[var(--ui-text-muted)] bg-[var(--ui-surface-sunken)] hover:bg-[var(--ui-border)] rounded transition-colors cursor-pointer"
               >
                 Clear All
               </button>
             )}
-            <span className="text-xs text-black pl-1.5 border-l border-gray-200">
+            <span className="text-xs text-[var(--ui-text)] pl-1.5 border-l border-[var(--ui-border)]">
               Selected:{" "}
-              <span className="text-black font-normal">
+              <span className="text-[var(--ui-text)] font-normal">
                 {totals.selectedItemCount} items ({totals.totalPieces} pcs)
               </span>
             </span>
@@ -1372,14 +1372,14 @@ export const PurchaseReturnForm: React.FC = () => {
         </div>
 
         {lines.length === 0 ? (
-          <div className="py-8 text-center text-gray-400 text-xs">
+          <div className="py-8 text-center text-[var(--ui-text-subtle)] text-xs">
             Please search and select a purchase invoice / order number above to load items.
           </div>
         ) : (
           <div className="overflow-x-auto w-full">
             <table className="w-full text-xs text-left border-collapse min-w-[960px]">
               <thead>
-                <tr className="bg-[#41bef3] text-black border-b border-gray-200 text-[11px] font-semibold shadow-xs">
+                <tr className="bg-[var(--ui-accent-2)] text-[var(--ui-text)] border-b border-[var(--ui-border)] text-[11px] font-semibold shadow-xs">
                   <th className="py-2 px-3 text-center w-10 whitespace-nowrap">Select</th>
                   <th className="py-2 px-3 min-w-[200px]">Product Description</th>
                   <th className="py-2 px-2 text-center w-16 whitespace-nowrap">Unit</th>
@@ -1391,7 +1391,7 @@ export const PurchaseReturnForm: React.FC = () => {
                   <th className="py-2 px-3 text-right w-28 whitespace-nowrap">Total (৳)</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody className="divide-y divide-[var(--ui-border)]">
                 {lines.map((line, idx) => {
                   const isFullyReturned = line.availableQuantity <= 0;
                   return (
@@ -1399,11 +1399,11 @@ export const PurchaseReturnForm: React.FC = () => {
                       key={idx}
                       className={`${
                         isFullyReturned
-                          ? "bg-gray-100/70 opacity-60"
+                          ? "bg-[var(--ui-surface-sunken)]/70 opacity-60"
                           : line.isSelected
-                          ? "bg-white"
-                          : "bg-gray-50/50 opacity-70"
-                      } hover:bg-sky-50/30 transition-colors`}
+                          ? "bg-[var(--ui-surface)]"
+                          : "bg-[var(--ui-surface-muted)]/50 opacity-70"
+                      } hover:bg-[var(--primary-color-light)]/30 transition-colors`}
                     >
                       {/* Checkbox */}
                       <td className="py-2 px-3 text-center whitespace-nowrap">
@@ -1423,13 +1423,13 @@ export const PurchaseReturnForm: React.FC = () => {
 
                       {/* Product */}
                       <td className="py-2 px-3 whitespace-nowrap">
-                        <div className="inline-flex items-center gap-1.5 font-normal text-black text-xs whitespace-nowrap">
-                          <span className="font-normal text-black">{line.productName || "N/A"}</span>
-                          <span className="text-[10px] text-black font-normal">
+                        <div className="inline-flex items-center gap-1.5 font-normal text-[var(--ui-text)] text-xs whitespace-nowrap">
+                          <span className="font-normal text-[var(--ui-text)]">{line.productName || "N/A"}</span>
+                          <span className="text-[10px] text-[var(--ui-text)] font-normal">
                             ({line.productCode || "N/A"})
                           </span>
                           {isFullyReturned && (
-                            <span className="text-[10px] bg-rose-100 text-rose-700 border border-rose-200 px-1.5 py-0.5 rounded font-medium ml-1">
+                            <span className="text-[10px] bg-[var(--ui-danger-border)] text-[var(--ui-danger-dark)] border border-[var(--ui-danger-border)] px-1.5 py-0.5 rounded font-medium ml-1">
                               Fully Returned
                             </span>
                           )}
@@ -1438,7 +1438,7 @@ export const PurchaseReturnForm: React.FC = () => {
 
                       {/* Unit */}
                       <td className="py-2 px-2 text-center whitespace-nowrap">
-                        <span className="text-black bg-gray-100 px-1.5 py-0.5 rounded text-[11px] font-normal">
+                        <span className="text-[var(--ui-text)] bg-[var(--ui-surface-sunken)] px-1.5 py-0.5 rounded text-[11px] font-normal">
                           {line.unit || "N/A"}
                         </span>
                       </td>
@@ -1446,13 +1446,13 @@ export const PurchaseReturnForm: React.FC = () => {
                       {/* Purchased Qty */}
                       <td className="py-2 px-2 text-center whitespace-nowrap">
                         <div className="inline-flex items-center justify-center gap-1.5 whitespace-nowrap">
-                          <span className="text-black bg-gray-100 px-2 py-0.5 rounded text-[11px] font-medium">
+                          <span className="text-[var(--ui-text)] bg-[var(--ui-surface-sunken)] px-2 py-0.5 rounded text-[11px] font-medium">
                             {line.purchasedQuantity}
                           </span>
                           {line.alreadyReturnedQty > 0 && (
                             <span
                               title={`${line.alreadyReturnedQty} pcs previously returned`}
-                              className="text-[10px] text-amber-800 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded font-medium"
+                              className="text-[10px] text-[var(--ui-warning-dark)] bg-[var(--ui-warning-light)] border border-[var(--ui-warning-border)] px-1.5 py-0.5 rounded font-medium"
                             >
                               ({line.alreadyReturnedQty} ret)
                             </span>
@@ -1463,11 +1463,11 @@ export const PurchaseReturnForm: React.FC = () => {
                       {/* Available Qty */}
                       <td className="py-2 px-2 text-center whitespace-nowrap">
                         {isFullyReturned ? (
-                          <span className="text-rose-700 bg-rose-50 border border-rose-200 px-2.5 py-0.5 rounded text-[11px] font-bold">
+                          <span className="text-[var(--ui-danger-dark)] bg-[var(--ui-danger-light)] border border-[var(--ui-danger-border)] px-2.5 py-0.5 rounded text-[11px] font-bold">
                             0
                           </span>
                         ) : (
-                          <span className="text-emerald-800 bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded text-[11px] font-bold">
+                          <span className="text-[var(--ui-success-dark)] bg-[var(--ui-success-light)] border border-[var(--ui-success-border)] px-2.5 py-0.5 rounded text-[11px] font-bold">
                             {line.availableQuantity}
                           </span>
                         )}
@@ -1476,24 +1476,24 @@ export const PurchaseReturnForm: React.FC = () => {
                       {/* Return Qty with Steppers and Full Button */}
                       <td className="py-2 px-2 text-center whitespace-nowrap">
                         {isFullyReturned || isCurrentPurchaseAlreadyReturned ? (
-                          <span className="text-black text-xs font-normal">
+                          <span className="text-[var(--ui-text)] text-xs font-normal">
                             N/A
                           </span>
                         ) : returnMode === "FULL" ? (
                           <div
-                            className="inline-flex items-center justify-center gap-1.5 px-3 py-1 bg-gray-100 text-black border border-gray-200 rounded text-xs font-normal cursor-not-allowed select-none"
+                            className="inline-flex items-center justify-center gap-1.5 px-3 py-1 bg-[var(--ui-surface-sunken)] text-[var(--ui-text)] border border-[var(--ui-border)] rounded text-xs font-normal cursor-not-allowed select-none"
                             title="Full Return mode: Quantities are fixed to full available quantity. Select Partial Return to change."
                           >
                             <span>{line.quantity}</span>
-                            <span className="text-[10px] text-black font-normal">({line.unit || "N/A"})</span>
+                            <span className="text-[10px] text-[var(--ui-text)] font-normal">({line.unit || "N/A"})</span>
                           </div>
                         ) : (
-                          <div className="inline-flex items-center border border-gray-300 rounded overflow-hidden">
+                          <div className="inline-flex items-center border border-[var(--ui-border-strong)] rounded overflow-hidden">
                             <button
                               type="button"
                               onClick={() => handleQuantityChange(idx, line.quantity - 1)}
                               disabled={line.quantity <= 0 || isCurrentPurchaseAlreadyReturned}
-                              className="px-2 py-1 bg-gray-100 hover:bg-gray-200 text-black font-normal text-xs disabled:opacity-40 cursor-pointer"
+                              className="px-2 py-1 bg-[var(--ui-surface-sunken)] hover:bg-[var(--ui-border)] text-[var(--ui-text)] font-normal text-xs disabled:opacity-40 cursor-pointer"
                             >
                               -
                             </button>
@@ -1507,13 +1507,13 @@ export const PurchaseReturnForm: React.FC = () => {
                               onChange={(e) =>
                                 handleQuantityChange(idx, Number(e.target.value))
                               }
-                              className="w-12 py-1 text-center text-xs font-normal text-black focus:outline-none border-x border-gray-300 disabled:bg-gray-100 disabled:text-black"
+                              className="w-12 py-1 text-center text-xs font-normal text-[var(--ui-text)] focus:outline-none border-x border-[var(--ui-border-strong)] disabled:bg-[var(--ui-surface-sunken)] disabled:text-[var(--ui-text)]"
                             />
                             <button
                               type="button"
                               onClick={() => handleQuantityChange(idx, line.quantity + 1)}
                               disabled={line.quantity >= line.availableQuantity || isCurrentPurchaseAlreadyReturned}
-                              className="px-2 py-1 bg-gray-100 hover:bg-gray-200 text-black font-normal text-xs disabled:opacity-40 cursor-pointer"
+                              className="px-2 py-1 bg-[var(--ui-surface-sunken)] hover:bg-[var(--ui-border)] text-[var(--ui-text)] font-normal text-xs disabled:opacity-40 cursor-pointer"
                             >
                               +
                             </button>
@@ -1521,7 +1521,7 @@ export const PurchaseReturnForm: React.FC = () => {
                               type="button"
                               onClick={() => handleSetLineFullQty(idx)}
                               disabled={isCurrentPurchaseAlreadyReturned}
-                              className="px-2 py-1 bg-[var(--primary-color-light)] hover:bg-[var(--primary-color-muted)] text-[var(--primary-color)] font-bold text-[10px] border-l border-gray-300 cursor-pointer disabled:opacity-40"
+                              className="px-2 py-1 bg-[var(--primary-color-light)] hover:bg-[var(--primary-color-muted)] text-[var(--primary-color)] font-bold text-[10px] border-l border-[var(--ui-border-strong)] cursor-pointer disabled:opacity-40"
                               title="Return all available quantity"
                             >
                               Full
@@ -1536,10 +1536,10 @@ export const PurchaseReturnForm: React.FC = () => {
                           disabled={isFullyReturned || !line.isSelected || isCurrentPurchaseAlreadyReturned}
                           value={line.returnReason || "damaged_product"}
                           onChange={(e) => handleReturnReasonChange(idx, e.target.value)}
-                          className="w-full min-w-[175px] h-7 px-2 text-[11px] border border-gray-300 rounded bg-white text-black font-semibold focus:outline-none focus:border-[var(--primary-color)] disabled:bg-gray-100 disabled:text-black cursor-pointer disabled:cursor-not-allowed"
+                          className="w-full min-w-[175px] h-7 px-2 text-[11px] border border-[var(--ui-border-strong)] rounded bg-[var(--ui-surface)] text-[var(--ui-text)] font-semibold focus:outline-none focus:border-[var(--primary-color)] disabled:bg-[var(--ui-surface-sunken)] disabled:text-[var(--ui-text)] cursor-pointer disabled:cursor-not-allowed"
                         >
                           {PURCHASE_RETURN_REASONS.map((r) => (
-                            <option key={r.value} value={r.value} className="text-black font-semibold">
+                            <option key={r.value} value={r.value} className="text-[var(--ui-text)] font-semibold">
                               {r.label}
                             </option>
                           ))}
@@ -1547,12 +1547,12 @@ export const PurchaseReturnForm: React.FC = () => {
                       </td>
 
                       {/* Buy Price */}
-                      <td className="py-2 px-2 text-right whitespace-nowrap font-normal text-black text-xs">
+                      <td className="py-2 px-2 text-right whitespace-nowrap font-normal text-[var(--ui-text)] text-xs">
                         ৳ {formatMoney(line.buyPrice)}
                       </td>
 
                       {/* Total */}
-                      <td className="py-2 px-3 text-right whitespace-nowrap font-normal text-black text-xs">
+                      <td className="py-2 px-3 text-right whitespace-nowrap font-normal text-[var(--ui-text)] text-xs">
                         ৳ {formatMoney(line.total)}
                       </td>
                     </tr>
@@ -1567,12 +1567,12 @@ export const PurchaseReturnForm: React.FC = () => {
       {/* Section 3: Notes & Financial Summary (Clean 2-Column ERP Layout) */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 items-start">
         {/* Left Column (span-5): Return Notes, Presets & Stock Info */}
-        <div className="lg:col-span-5 bg-white p-3 sm:p-3.5 rounded-xl border border-gray-200 shadow-xs flex flex-col gap-2.5">
-          <div className="flex items-center justify-between pb-1.5 border-b border-gray-100">
-            <label className="text-[11px] font-normal text-black tracking-wider">
+        <div className="lg:col-span-5 bg-[var(--ui-surface)] p-3 sm:p-3.5 rounded-xl border border-[var(--ui-border)] shadow-xs flex flex-col gap-2.5">
+          <div className="flex items-center justify-between pb-1.5 border-b border-[var(--ui-border)]">
+            <label className="text-[11px] font-normal text-[var(--ui-text)] tracking-wider">
               Return Note & Remarks
             </label>
-            <span className="text-[10px] text-black font-normal">Internal Record</span>
+            <span className="text-[10px] text-[var(--ui-text)] font-normal">Internal Record</span>
           </div>
 
           <textarea
@@ -1580,12 +1580,12 @@ export const PurchaseReturnForm: React.FC = () => {
             value={note}
             onChange={(e) => setNote(e.target.value)}
             placeholder="Type notes or remarks about return reason, supplier credit agreement, condition..."
-            className="w-full p-2.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:border-[var(--primary-color)] resize-none leading-relaxed text-black placeholder:text-gray-400 bg-gray-50/30 hover:bg-white focus:bg-white transition-colors font-normal"
+            className="w-full p-2.5 text-xs border border-[var(--ui-border-strong)] rounded-lg focus:outline-none focus:border-[var(--primary-color)] resize-none leading-relaxed text-[var(--ui-text)] placeholder:text-[var(--ui-text-subtle)] bg-[var(--ui-surface-muted)]/30 hover:bg-[var(--ui-surface)] focus:bg-[var(--ui-surface)] transition-colors font-normal"
           />
 
           {/* Quick preset remarks */}
           <div className="flex items-center gap-1.5 flex-wrap">
-            <span className="text-[10px] text-black font-normal">Quick:</span>
+            <span className="text-[10px] text-[var(--ui-text)] font-normal">Quick:</span>
             {[
               "Damaged on delivery",
               "Wrong item received",
@@ -1603,7 +1603,7 @@ export const PurchaseReturnForm: React.FC = () => {
                     return `${prev}, ${preset}`;
                   });
                 }}
-                className="px-2 py-0.5 text-[10px] rounded-md bg-gray-100 hover:bg-[var(--primary-color-light)] hover:text-[var(--primary-color)] text-black border border-gray-200 transition-colors cursor-pointer font-normal"
+                className="px-2 py-0.5 text-[10px] rounded-md bg-[var(--ui-surface-sunken)] hover:bg-[var(--primary-color-light)] hover:text-[var(--primary-color)] text-[var(--ui-text)] border border-[var(--ui-border)] transition-colors cursor-pointer font-normal"
               >
                 + {preset}
               </button>
@@ -1612,7 +1612,7 @@ export const PurchaseReturnForm: React.FC = () => {
         </div>
 
         {/* Right Column (span-7): Payment Refunded Section */}
-        <div className="lg:col-span-7 bg-white p-2.5 sm:p-3 rounded-xl border border-gray-200 shadow-xs flex flex-col gap-2">
+        <div className="lg:col-span-7 bg-[var(--ui-surface)] p-2.5 sm:p-3 rounded-xl border border-[var(--ui-border)] shadow-xs flex flex-col gap-2">
           <TradeRefundSection
             refund={refund}
             refundAmount={totals.refundAmount}

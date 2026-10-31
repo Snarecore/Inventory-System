@@ -138,8 +138,8 @@ const AdminTable = ({
     );
 
     return (
-        <div className="bg-white rounded-xl shadow-xs border border-gray-200 flex flex-col relative z-20 overflow-visible">
-            <div className="p-2 sm:p-2.5 border-b border-gray-100 flex flex-wrap items-center justify-between gap-2 relative z-40 overflow-visible">
+        <div className="bg-[var(--ui-surface)] rounded-xl shadow-xs border border-[var(--ui-border)] flex flex-col relative z-20 overflow-visible">
+            <div className="p-2 sm:p-2.5 border-b border-[var(--ui-border)] flex flex-wrap items-center justify-between gap-2 relative z-40 overflow-visible">
                 <div className="w-full sm:w-56 shrink-0">
                     <Search
                         searchQuery={searchQuery}
@@ -175,7 +175,7 @@ const AdminTable = ({
             <div className="w-full overflow-x-auto relative z-10">
                 <table className="w-full text-left border-collapse min-w-[900px] text-xs">
                     <thead>
-                        <tr className="bg-[#41BEF3] text-black text-xs font-semibold">
+                        <tr className="bg-[var(--ui-accent-2)] text-[var(--ui-text)] text-xs font-semibold">
                             {tableHeaders.map(({ key, label }, i) => (
                                 <th
                                     key={key}
@@ -187,30 +187,30 @@ const AdminTable = ({
                         </tr>
                     </thead>
 
-                    <tbody className="divide-y divide-gray-100 bg-white">
+                    <tbody className="divide-y divide-[var(--ui-border)] bg-[var(--ui-surface)]">
                         {rows.length > 0 ? (
                             rows.map((data, rowIndex) => (
                                 <tr
                                     key={data.id}
-                                    className="hover:bg-sky-50/40 transition-colors group"
+                                    className="hover:bg-[var(--primary-color-light)]/40 transition-colors group"
                                 >
                                     {/* SL */}
-                                    <td className="py-2.5 px-3 text-center font-normal text-xs text-black">
+                                    <td className="py-2.5 px-3 text-center font-normal text-xs text-[var(--ui-text)]">
                                         {rowIndex + 1}
                                     </td>
 
                                     {/* Name */}
-                                    <td className="py-2.5 px-3 font-normal text-xs text-black">
+                                    <td className="py-2.5 px-3 font-normal text-xs text-[var(--ui-text)]">
                                         {data.name}
                                     </td>
 
                                     {/* Email */}
-                                    <td className="py-2.5 px-3 font-normal text-xs text-black">
+                                    <td className="py-2.5 px-3 font-normal text-xs text-[var(--ui-text)]">
                                         {data.email}
                                     </td>
 
                                     {/* Phone */}
-                                    <td className="py-2.5 px-3 font-normal text-xs text-black">
+                                    <td className="py-2.5 px-3 font-normal text-xs text-[var(--ui-text)]">
                                         {data.phone}
                                     </td>
 
@@ -220,7 +220,7 @@ const AdminTable = ({
                                             <button
                                                 type="button"
                                                 onClick={() => openDeleteModal(data)}
-                                                className={`p-1 rounded text-rose-600 hover:bg-rose-100 transition-colors cursor-pointer ${user.id === data.id ? "opacity-50 cursor-not-allowed" : ""}`}
+                                                className={`p-1 rounded text-[var(--ui-danger)] hover:bg-[var(--ui-danger-border)] transition-colors cursor-pointer ${user.id === data.id ? "opacity-50 cursor-not-allowed" : ""}`}
                                                 disabled={user.id === data.id}
                                                 title="Delete"
                                             >

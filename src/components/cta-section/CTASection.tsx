@@ -23,7 +23,7 @@ const CTASection = () => {
         </button>
        </MotionDiv>
        <MotionDiv>
-       <button className="border-2 border-white text-white hover:bg-white hover:text-[var(--quaternary-color)] px-8 py-4 rounded-lg font-medium transition-all duration-200">
+       <button className="border-2 border-[var(--ui-surface)] text-white hover:bg-[var(--ui-surface)] hover:text-[var(--quaternary-color)] px-8 py-4 rounded-lg font-medium transition-all duration-200">
           Schedule Consultation
         </button>
        </MotionDiv>

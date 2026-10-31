@@ -61,7 +61,7 @@ const PageCms = () => {
 
     return (
         <div>
-            <div className="bg-white rounded-lg border border-gray-200 p-6">
+            <div className="bg-[var(--ui-surface)] rounded-lg border border-[var(--ui-border)] p-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
                     <div>
                         <InputField label="Page Title" name="pageTitle" value={fieldValues.pageTitle} onChange={handleChange} required />
@@ -92,21 +92,21 @@ const PageCms = () => {
                         <InputField label="Form Section Title Three" name="formSectionTitleThree" value={fieldValues.formSectionTitleThree} onChange={handleChange} required />
                     </div>
                     <div>
-                        <label className="block text-[14px] font-medium text-[#212b36] mb-1">
-                            Button Text<span className="text-red-500">*</span>
+                        <label className="block text-[14px] font-medium text-[var(--ui-text)] mb-1">
+                            Button Text<span className="text-[var(--ui-danger)]">*</span>
                         </label>
                         <input
                             type="text"
                             name="buttonText"
                             value={fieldValues.buttonText}
                             onChange={handleChange}
-                            className="w-full p-2 border border-gray-300 rounded-md focus:ring-[#FE9F43] focus:outline-none"
+                            className="w-full p-2 border border-[var(--ui-border-strong)] rounded-md focus:ring-[var(--ui-warning)] focus:outline-none"
                             required
                         />
                     </div>
                 </div>
                 <div className="flex justify-end gap-3">
-                    <button className="px-4 py-2 text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50 cursor-pointer">
+                    <button className="px-4 py-2 text-[var(--ui-text-muted)] border border-[var(--ui-border-strong)] rounded-md hover:bg-[var(--ui-surface-muted)] cursor-pointer">
                         Cancel
                     </button>
                     <button onClick={handleSubmitForm} className="px-4 py-2 bg-[var(--color-primary)] text-white rounded-md hover:bg-[var(--color-light-primary)] cursor-pointer">

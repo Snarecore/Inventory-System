@@ -1,0 +1,350 @@
+import type { ThemeId, ThemePreset } from './types'
+
+/**
+ * The shipped looks. The two Cash Boi themes use the official brand palette;
+ * the rest each vary accent, chrome, shape AND density so they
+ * read as genuinely different styles rather than recolours of one layout.
+ */
+export const THEME_PRESETS: Record<ThemeId, ThemePreset> = {
+
+  /* --------------------------------------------------------------------------
+     Official Cash Boi brand palette.
+
+       Catalina Blue  #06336b   primary action, and the only brand blue that
+                                clears AA as small text (12.40:1 on white)
+       Cerulean       #079cdb   secondary accent — button fills and large marks
+       Curious Blue   #1793cc   measurably darker than Cerulean, so it serves
+                                as Cerulean's real hover rather than a derived one
+       Mystic         #edf2f4   the brand light tone, used as the sunken surface
+
+     Cerulean and Curious Blue sit at ~3.1:1 and ~3.5:1 on white, so neither is
+     used for body text anywhere in these themes.
+     ----------------------------------------------------------------------- */
+  'brand-navy': {
+    id: 'brand-navy',
+    name: 'Cash Boi Brand',
+    description: 'Catalina Blue leading, Cerulean as the secondary, Mystic surfaces.',
+    palette: {
+      accent: '#06336b',
+      accentHover: '#042548',
+      accentLight: '#edf2f4',
+      accentDark: '#031b35',
+      accentMuted: '#dbe4ea',
+      accentSecondary: '#079cdb',
+      surface: '#ffffff',
+      surfaceMuted: '#f7fafb',
+      surfaceSunken: '#edf2f4',
+      border: '#dde5ea',
+      borderStrong: '#bcc9d2',
+      text: '#0b1b2f',
+      textMuted: '#45566b',
+      textSubtle: '#64748b',
+    },
+    defaults: {
+      density: 'default',
+      radius: 'md',
+      borderWidth: 'hairline',
+      shadow: 'subtle',
+      tableDensity: 'default',
+      fieldStyle: 'outlined',
+    },
+  },
+
+  'brand-cyan': {
+    id: 'brand-cyan',
+    name: 'Cash Boi Cyan',
+    description: 'Cerulean leading with Curious Blue on hover, Catalina Blue as the secondary.',
+    palette: {
+      accent: '#079cdb',
+      // The brand's own Curious Blue, not a computed shade.
+      accentHover: '#1793cc',
+      accentLight: '#e9f6fd',
+      // Dark enough for subtle-button text to clear AA on the light fill.
+      accentDark: '#04618a',
+      accentMuted: '#c8e8f8',
+      accentSecondary: '#06336b',
+      surface: '#ffffff',
+      surfaceMuted: '#f7fafb',
+      surfaceSunken: '#edf2f4',
+      border: '#dde5ea',
+      borderStrong: '#bcc9d2',
+      text: '#0b1b2f',
+      textMuted: '#45566b',
+      textSubtle: '#64748b',
+    },
+    defaults: {
+      density: 'default',
+      radius: 'lg',
+      borderWidth: 'hairline',
+      shadow: 'subtle',
+      tableDensity: 'default',
+      fieldStyle: 'soft',
+    },
+  },
+
+  'corporate-navy': {
+    id: 'corporate-navy',
+    name: 'Corporate Navy',
+    description: 'The Cash Boi default. Deep navy accent, soft borders, balanced density.',
+    palette: {
+      accent: '#01306B',
+      accentHover: '#012452',
+      accentLight: '#f0f5fc',
+      accentDark: '#001a3d',
+      accentMuted: '#e6eef7',
+      surface: '#ffffff',
+      surfaceMuted: '#f8fafc',
+      surfaceSunken: '#eef2f7',
+      border: '#e2e8f0',
+      borderStrong: '#cbd5e1',
+      text: '#0f172a',
+      textMuted: '#475569',
+      textSubtle: '#64748b',
+    },
+    defaults: {
+      density: 'default',
+      radius: 'md',
+      borderWidth: 'hairline',
+      shadow: 'subtle',
+      tableDensity: 'default',
+      fieldStyle: 'outlined',
+    },
+  },
+
+  'slate-neutral': {
+    id: 'slate-neutral',
+    name: 'Slate Neutral',
+    description: 'Flat, low-chrome and tight. Built for dense data entry over long sessions.',
+    palette: {
+      accent: '#334155',
+      accentHover: '#1e293b',
+      accentLight: '#f1f5f9',
+      accentDark: '#0f172a',
+      accentMuted: '#e2e8f0',
+      surface: '#ffffff',
+      surfaceMuted: '#f8fafc',
+      surfaceSunken: '#f1f5f9',
+      border: '#dde3ea',
+      borderStrong: '#c3ccd6',
+      text: '#111827',
+      textMuted: '#4b5563',
+      textSubtle: '#64748b',
+    },
+    defaults: {
+      density: 'compact',
+      radius: 'sm',
+      borderWidth: 'hairline',
+      shadow: 'none',
+      tableDensity: 'compact',
+      fieldStyle: 'outlined',
+    },
+  },
+
+  'redwood-warm': {
+    id: 'redwood-warm',
+    name: 'Redwood Warm',
+    description: 'Warm red accent on a soft neutral base, generous spacing and rounded controls.',
+    palette: {
+      accent: '#c74634',
+      accentHover: '#a63729',
+      accentLight: '#fdf3f1',
+      accentDark: '#7f281d',
+      accentMuted: '#f8e3df',
+      surface: '#ffffff',
+      surfaceMuted: '#faf8f7',
+      surfaceSunken: '#f3efed',
+      border: '#e8e0dd',
+      borderStrong: '#d3c6c1',
+      text: '#1c1917',
+      textMuted: '#57534e',
+      textSubtle: '#746d67',
+    },
+    defaults: {
+      density: 'comfortable',
+      radius: 'xl',
+      borderWidth: 'hairline',
+      shadow: 'subtle',
+      tableDensity: 'comfortable',
+      fieldStyle: 'soft',
+    },
+  },
+
+  'teal-finance': {
+    id: 'teal-finance',
+    name: 'Teal Finance',
+    description: 'Cool teal accent with crisp edges. Reads well next to charts and figures.',
+    palette: {
+      accent: '#0f766e',
+      accentHover: '#115e59',
+      accentLight: '#f0fdfa',
+      accentDark: '#134e4a',
+      accentMuted: '#d9f2ee',
+      surface: '#ffffff',
+      surfaceMuted: '#f7fafa',
+      surfaceSunken: '#eef4f4',
+      border: '#dfe7e7',
+      borderStrong: '#c2d1d0',
+      text: '#0f172a',
+      textMuted: '#475569',
+      textSubtle: '#64748b',
+    },
+    defaults: {
+      density: 'default',
+      radius: 'sm',
+      borderWidth: 'hairline',
+      shadow: 'none',
+      tableDensity: 'default',
+      fieldStyle: 'outlined',
+    },
+  },
+
+  'contrast-mono': {
+    id: 'contrast-mono',
+    name: 'High Contrast',
+    description: 'Near-black accent and heavy 2px borders. Maximum legibility and AAA text contrast.',
+    palette: {
+      accent: '#111827',
+      accentHover: '#000000',
+      accentLight: '#f3f4f6',
+      accentDark: '#000000',
+      accentMuted: '#e5e7eb',
+      surface: '#ffffff',
+      surfaceMuted: '#fafafa',
+      surfaceSunken: '#f3f4f6',
+      border: '#9ca3af',
+      borderStrong: '#4b5563',
+      text: '#000000',
+      textMuted: '#374151',
+      textSubtle: '#4b5563',
+    },
+    defaults: {
+      density: 'default',
+      radius: 'none',
+      borderWidth: 'strong',
+      shadow: 'none',
+      tableDensity: 'default',
+      fieldStyle: 'outlined',
+    },
+  },
+
+  'indigo-pro': {
+    id: 'indigo-pro',
+    name: 'Indigo Pro',
+    description: 'Filled fields on a cool grey base. Soft, modern and easy on long data entry.',
+    palette: {
+      accent: '#4338ca',
+      accentHover: '#3730a3',
+      accentLight: '#f1f0fe',
+      accentDark: '#272176',
+      accentMuted: '#e0ddfb',
+      surface: '#ffffff',
+      surfaceMuted: '#f6f7fb',
+      surfaceSunken: '#eef0f7',
+      border: '#e3e6f0',
+      borderStrong: '#c6cbdd',
+      text: '#14162b',
+      textMuted: '#4a4f6a',
+      textSubtle: '#5f668b',
+    },
+    defaults: {
+      density: 'default',
+      radius: 'lg',
+      borderWidth: 'hairline',
+      shadow: 'subtle',
+      tableDensity: 'default',
+      fieldStyle: 'filled',
+    },
+  },
+
+  'emerald-books': {
+    id: 'emerald-books',
+    name: 'Emerald Books',
+    description: 'Accounting-oriented green with tight rows. Positive figures read naturally.',
+    palette: {
+      accent: '#047857',
+      accentHover: '#035f45',
+      accentLight: '#f0fdf7',
+      accentDark: '#023f2e',
+      accentMuted: '#d4f0e4',
+      surface: '#ffffff',
+      surfaceMuted: '#f7faf9',
+      surfaceSunken: '#edf4f1',
+      border: '#dde8e3',
+      borderStrong: '#bdd0c8',
+      text: '#0c1f19',
+      textMuted: '#456056',
+      textSubtle: '#4f6d64',
+    },
+    defaults: {
+      density: 'compact',
+      radius: 'sm',
+      borderWidth: 'hairline',
+      shadow: 'none',
+      tableDensity: 'compact',
+      fieldStyle: 'outlined',
+    },
+  },
+
+  graphite: {
+    id: 'graphite',
+    name: 'Graphite',
+    description: 'Underlined fields and no boxes. Minimal chrome, maximum content.',
+    palette: {
+      accent: '#1f2937',
+      accentHover: '#0b1220',
+      accentLight: '#f4f5f7',
+      accentDark: '#000000',
+      accentMuted: '#e4e7eb',
+      surface: '#ffffff',
+      surfaceMuted: '#fafafa',
+      surfaceSunken: '#f2f3f5',
+      border: '#dcdfe4',
+      borderStrong: '#aeb4bd',
+      text: '#16181d',
+      textMuted: '#4d535c',
+      textSubtle: '#5f6874',
+    },
+    defaults: {
+      density: 'default',
+      radius: 'none',
+      borderWidth: 'hairline',
+      shadow: 'none',
+      tableDensity: 'default',
+      fieldStyle: 'underlined',
+    },
+  },
+
+  sandstone: {
+    id: 'sandstone',
+    name: 'Sandstone',
+    description: 'Warm paper-toned surfaces with an amber accent. Low glare for all-day use.',
+    palette: {
+      accent: '#b45309',
+      accentHover: '#92400e',
+      accentLight: '#fffaf0',
+      accentDark: '#6d3005',
+      accentMuted: '#f7e7cd',
+      surface: '#fffefb',
+      surfaceMuted: '#faf7f0',
+      surfaceSunken: '#f3efe4',
+      border: '#e8e1d2',
+      borderStrong: '#cdc3ae',
+      text: '#1f1b14',
+      textMuted: '#5c5345',
+      textSubtle: '#6f675d',
+    },
+    defaults: {
+      density: 'comfortable',
+      radius: 'md',
+      borderWidth: 'hairline',
+      shadow: 'subtle',
+      tableDensity: 'comfortable',
+      fieldStyle: 'soft',
+    },
+  },
+}
+
+export const THEME_LIST: ThemePreset[] = Object.values(THEME_PRESETS)
+
+// The logo-derived theme is the shipped default.
+export const DEFAULT_THEME_ID: ThemeId = 'brand-navy'

@@ -32,62 +32,50 @@ export const TradeProductSearch: React.FC<TradeProductSearchProps> = ({
   const {
     searchQuery,
     setSearchQuery,
-    barcodeInput,
     isDropdownOpen,
     setIsDropdownOpen,
     searchRef,
     filteredProducts,
-    handleBarcodeChange,
-    handleBarcodeScan,
-    handleBarcodePaste,
-    handleKeyDownSearch,
+    handleUnifiedChange,
+    handleUnifiedKeyDown,
+    handleUnifiedPaste,
   } = search;
 
   const shouldShowBarcode = showBarcodeScanner ?? (mode === "sale");
   const defaultPlaceholder =
     placeholder ||
-    (mode === "sale"
-      ? "Search product name, code to add..."
-      : "Search product name, code, or scan barcode to add...");
+    (shouldShowBarcode
+      ? "Scan barcode or search product name / code…"
+      : "Search product name or code…");
   const defaultAddText =
     addBtnText || (mode === "purchase" ? "Add Your Product" : "Add Product");
 
   return (
     <div
-      className="bg-white p-2.5 rounded-xl border border-gray-200 shadow-xs relative"
+      className="bg-[var(--ui-surface)] p-2.5 rounded-[var(--ui-radius-lg)] border border-[var(--ui-border)] shadow-[var(--ui-shadow-control)] relative"
       ref={searchRef}
     >
       <div className="flex items-center gap-2">
-        {/* Barcode Quick Scan */}
-        {shouldShowBarcode && (
-          <div className="w-44 sm:w-56 shrink-0 hidden sm:block">
-            <TextInput
-              icon={<FaBarcode className="text-gray-400 text-xs" />}
-              placeholder="Scan barcode..."
-              value={barcodeInput}
-              onChange={(val) => handleBarcodeChange(val)}
-              onKeyDown={handleBarcodeScan}
-              onPaste={handleBarcodePaste}
-              wrapperClass="!h-9 bg-gray-50/50 !border-gray-300"
-              inputClass="font-medium text-black"
-            />
-          </div>
-        )}
-
-        {/* Search Product Input */}
-        <div className="flex-1">
+        {/* Single field: scanner input and manual search share one box.
+            An exact barcode / product code is added on the spot; anything
+            else drives the search dropdown below. */}
+        <div className="relative flex-1">
           <TextInput
-            icon={<FaSearch className="text-gray-400 text-xs" />}
+            icon={
+              shouldShowBarcode ? (
+                <FaBarcode className="text-[var(--ui-text-subtle)] text-xs" />
+              ) : (
+                <FaSearch className="text-[var(--ui-text-subtle)] text-xs" />
+              )
+            }
             placeholder={defaultPlaceholder}
             value={searchQuery}
-            onChange={(val) => {
-              setSearchQuery(val);
-              setIsDropdownOpen(true);
-            }}
-            onFocus={() => setIsDropdownOpen(true)}
-            onKeyDown={handleKeyDownSearch}
-            wrapperClass="!h-9 bg-gray-50/40 focus-within:bg-white !border-[var(--primary-color)] focus-within:ring-2 focus-within:ring-[var(--color-primary)]/20"
-            inputClass="font-medium text-black placeholder:text-gray-400 placeholder:text-xs"
+            onChange={(val) => handleUnifiedChange(val)}
+            onKeyDown={handleUnifiedKeyDown}
+            onPaste={handleUnifiedPaste}
+            autoFocus
+            wrapperClass="ui-control-sm !border-[var(--primary-color)] bg-[var(--ui-surface-muted)]/40 focus-within:bg-[var(--ui-surface)]"
+            inputClass="font-medium text-[var(--ui-text)]"
           />
         </div>
 
@@ -99,16 +87,16 @@ export const TradeProductSearch: React.FC<TradeProductSearchProps> = ({
               setIsDropdownOpen(false);
               setSearchQuery("");
             }}
-            className="px-3 sm:px-3.5 h-9 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all shadow-xs shrink-0 cursor-pointer bg-gray-100 hover:bg-gray-200 text-black border border-gray-300"
+            className="px-3 sm:px-3.5 h-[var(--ui-control-h-sm)] rounded-[var(--ui-radius)] text-[length:var(--ui-font-size-sm)] font-semibold flex items-center gap-1.5 transition-all shadow-[var(--ui-shadow-control)] shrink-0 cursor-pointer bg-[var(--ui-surface-sunken)] hover:bg-[var(--ui-border)] text-[var(--ui-text)] border border-[var(--ui-border-strong)]"
           >
-            <FaTimes size={11} className="text-gray-600" />
+            <FaTimes size={11} className="text-[var(--ui-text-muted)]" />
             <span>Cancel</span>
           </button>
         ) : (
           <button
             type="button"
             onClick={() => setIsDropdownOpen(true)}
-            className="px-3 sm:px-3.5 h-9 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all shadow-xs shrink-0 cursor-pointer bg-[var(--primary-color)] hover:bg-[var(--primary-color-hover)] text-white"
+            className="px-3 sm:px-3.5 h-[var(--ui-control-h-sm)] rounded-[var(--ui-radius)] text-[length:var(--ui-font-size-sm)] font-bold flex items-center gap-1.5 transition-all shadow-[var(--ui-shadow-control)] shrink-0 cursor-pointer bg-[var(--primary-color)] hover:bg-[var(--primary-color-hover)] text-white"
           >
             <FaPlus size={10} className="text-white" />
             <span className="hidden sm:inline">{defaultAddText}</span>
@@ -119,9 +107,9 @@ export const TradeProductSearch: React.FC<TradeProductSearchProps> = ({
 
       {/* Product Dropdown */}
       {isDropdownOpen && (
-        <div className="absolute left-2.5 right-2.5 mt-1 bg-white rounded-lg shadow-xl border border-gray-200 max-h-72 overflow-y-auto z-20 divide-y divide-gray-100">
+        <div className="absolute left-2.5 right-2.5 mt-1 bg-[var(--ui-surface)] rounded-[var(--ui-radius)] shadow-[var(--ui-shadow-popover)] border border-[var(--ui-border)] max-h-72 overflow-y-auto z-20 divide-y divide-[var(--ui-border)]">
           {/* Header */}
-          <div className="px-3 py-1.5 bg-slate-50 border-b border-gray-200 flex items-center justify-between text-[10px] font-semibold text-gray-500 uppercase tracking-wider sticky top-0 z-10">
+          <div className="px-3 py-1.5 bg-[var(--ui-surface-muted)] border-b border-[var(--ui-border)] flex items-center justify-between text-[10px] font-semibold text-[var(--ui-text-muted)] uppercase tracking-wider sticky top-0 z-10">
             <span>Select Product</span>
             <div className="flex items-center gap-6 pr-2">
               <span>Stock</span>
@@ -167,21 +155,21 @@ export const TradeProductSearch: React.FC<TradeProductSearchProps> = ({
                   }}
                   className={`px-3 py-1.5 sm:py-2 flex items-center justify-between gap-2 text-xs transition-colors select-none cursor-pointer ${
                     isOutOfStock && !isAlreadyInList
-                      ? "opacity-60 bg-gray-50/90 cursor-not-allowed border-l-4 border-l-rose-300"
+                      ? "opacity-60 bg-[var(--ui-surface-muted)]/90 cursor-not-allowed border-l-4 border-l-rose-300"
                       : isAlreadyInList
-                      ? "bg-sky-50/70 hover:bg-sky-100/70 border-l-4 border-l-[var(--color-primary)]"
-                      : "hover:bg-gray-50 border-l-4 border-l-transparent"
+                      ? "bg-[var(--primary-color-light)]/70 hover:bg-[var(--primary-color-muted)]/70 border-l-4 border-l-[var(--color-primary)]"
+                      : "hover:bg-[var(--ui-surface-muted)] border-l-4 border-l-transparent"
                   }`}
                 >
                   <div className="flex items-center gap-2.5 min-w-0 flex-1">
                     {/* Checkbox box */}
                     <div
-                      className={`w-4 h-4 rounded border flex items-center justify-center transition-colors shrink-0 ${
+                      className={`w-4 h-4 rounded-[var(--ui-radius-sm)] border flex items-center justify-center transition-colors shrink-0 ${
                         isOutOfStock && !isAlreadyInList
-                          ? "border-gray-300 bg-gray-100 text-gray-400 cursor-not-allowed"
+                          ? "border-[var(--ui-border-strong)] bg-[var(--ui-surface-sunken)] text-[var(--ui-text-subtle)] cursor-not-allowed"
                           : isAlreadyInList
                           ? "bg-[var(--color-primary)] border-[var(--color-primary)] text-white"
-                          : "border-gray-300 bg-white hover:border-[var(--color-primary)]"
+                          : "border-[var(--ui-border-strong)] bg-[var(--ui-surface)] hover:border-[var(--color-primary)]"
                       }`}
                       title={
                         isAlreadyInList
@@ -191,7 +179,7 @@ export const TradeProductSearch: React.FC<TradeProductSearchProps> = ({
                     >
                       {isAlreadyInList && <FaCheck size={9} />}
                       {isOutOfStock && !isAlreadyInList && (
-                        <span className="text-[10px] text-rose-500 font-bold">
+                        <span className="text-[10px] text-[var(--ui-danger)] font-bold">
                           ✕
                         </span>
                       )}
@@ -201,31 +189,31 @@ export const TradeProductSearch: React.FC<TradeProductSearchProps> = ({
                       <span
                         className={`font-bold text-xs truncate max-w-[200px] sm:max-w-sm ${
                           isOutOfStock && !isAlreadyInList
-                            ? "text-gray-500 line-through decoration-rose-400"
+                            ? "text-[var(--ui-text-muted)] line-through decoration-rose-400"
                             : isAlreadyInList
                             ? "text-[var(--color-primary)]"
-                            : "text-black"
+                            : "text-[var(--ui-text)]"
                         }`}
                       >
                         {prodName}
                       </span>
-                      <span className="text-[11px] text-gray-500 whitespace-nowrap shrink-0 flex items-center gap-1.5">
-                        <span className="text-gray-300">|</span>
+                      <span className="text-[11px] text-[var(--ui-text-muted)] whitespace-nowrap shrink-0 flex items-center gap-1.5">
+                        <span className="text-[var(--ui-text-subtle)]">|</span>
                         <span>
-                          Code: <span className="text-gray-800 font-medium">{prodCode}</span>
+                          Code: <span className="text-[var(--ui-text)] font-medium">{prodCode}</span>
                         </span>
-                        <span className="text-gray-300">|</span>
+                        <span className="text-[var(--ui-text-subtle)]">|</span>
                         <span>
-                          Unit: <span className="text-gray-800 font-medium">{prodUnit}</span>
+                          Unit: <span className="text-[var(--ui-text)] font-medium">{prodUnit}</span>
                         </span>
                       </span>
                       {isAlreadyInList && (
-                        <span className="text-[10px] bg-emerald-100 text-emerald-800 border border-emerald-300 px-1.5 py-0.2 rounded font-semibold whitespace-nowrap shrink-0">
+                        <span className="text-[10px] bg-[var(--ui-success-border)] text-[var(--ui-success-dark)] border border-[var(--ui-success-border)] px-1.5 py-0.5 rounded-[var(--ui-radius-sm)] font-semibold whitespace-nowrap shrink-0">
                           Added in list
                         </span>
                       )}
                       {isOutOfStock && !isAlreadyInList && (
-                        <span className="text-[10px] bg-rose-100 text-rose-700 border border-rose-300 px-1.5 py-0.2 rounded font-bold whitespace-nowrap shrink-0">
+                        <span className="text-[10px] bg-[var(--ui-danger-border)] text-[var(--ui-danger-dark)] border border-[var(--ui-danger-border)] px-1.5 py-0.5 rounded-[var(--ui-radius-sm)] font-bold whitespace-nowrap shrink-0">
                           Stock Out / স্টক নেই
                         </span>
                       )}
@@ -240,18 +228,18 @@ export const TradeProductSearch: React.FC<TradeProductSearchProps> = ({
                     }}
                   >
                     {/* Current / Available Stock */}
-                    <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-slate-100 border border-slate-200">
-                      <span className="text-[10px] font-semibold text-gray-500 uppercase tracking-wider">
+                    <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-[var(--ui-radius-sm)] bg-[var(--ui-surface-sunken)] border border-[var(--ui-border)]">
+                      <span className="text-[10px] font-semibold text-[var(--ui-text-muted)] uppercase tracking-wider">
                         Stock:
                       </span>
-                      <span className="text-xs font-bold text-gray-900">
+                      <span className="text-xs font-bold text-[var(--ui-text)]">
                         {mode === "sale" ? (
                           totalStock <= 0 ? (
-                            <span className="text-rose-600">0</span>
+                            <span className="text-[var(--ui-danger)]">0</span>
                           ) : (
                             <>
                               {remainingStock}{" "}
-                              <span className="text-[10px] font-normal text-gray-600">
+                              <span className="text-[10px] font-normal text-[var(--ui-text-muted)]">
                                 {prodUnit}
                               </span>
                             </>
@@ -259,7 +247,7 @@ export const TradeProductSearch: React.FC<TradeProductSearchProps> = ({
                         ) : (
                           <>
                             {totalStock}{" "}
-                            <span className="text-[10px] font-normal text-gray-600">
+                            <span className="text-[10px] font-normal text-[var(--ui-text-muted)]">
                               {prodUnit}
                             </span>
                           </>
@@ -273,8 +261,8 @@ export const TradeProductSearch: React.FC<TradeProductSearchProps> = ({
                     onUpdateLineItem ? (
                       <div className="flex items-center gap-2">
                         {/* Editable Qty */}
-                        <div className="flex items-center gap-1 px-2 py-0.5 rounded-md bg-sky-50 border border-sky-300 shadow-2xs">
-                          <span className="text-[10px] font-bold text-sky-800">
+                        <div className="flex items-center gap-1 px-2 py-0.5 rounded-[var(--ui-radius-sm)] bg-[var(--primary-color-light)] border border-[var(--primary-color-muted)] shadow-[var(--ui-shadow-control)]">
+                          <span className="text-[10px] font-bold text-[var(--primary-color-dark)]">
                             Qty:
                           </span>
                           <input
@@ -296,29 +284,29 @@ export const TradeProductSearch: React.FC<TradeProductSearchProps> = ({
                                 e.target.value
                               );
                             }}
-                            className="w-12 sm:w-14 px-1 py-0.5 text-xs font-bold text-sky-950 bg-white border border-sky-300 rounded focus:outline-none focus:ring-1 focus:ring-sky-500 text-center"
+                            className="w-12 sm:w-14 px-1 py-0.5 text-xs font-bold text-[var(--primary-color-dark)] bg-[var(--ui-surface)] border border-[var(--primary-color-muted)] rounded-[var(--ui-radius-sm)] focus:outline-none focus:ring-1 focus:ring-[var(--primary-color)] text-center"
                             title={`Edit Quantity${
                               mode === "sale" ? ` (Max: ${totalStock})` : ""
                             }`}
                           />
-                          <span className="text-[10px] text-sky-700 font-medium">
+                          <span className="text-[10px] text-[var(--primary-color-dark)] font-medium">
                             {prodUnit}
                           </span>
                         </div>
 
                         {/* Editable Rate */}
                         <div
-                          className={`flex items-center gap-1 px-2 py-0.5 rounded-md shadow-2xs ${
+                          className={`flex items-center gap-1 px-2 py-0.5 rounded-[var(--ui-radius-sm)] shadow-[var(--ui-shadow-control)] ${
                             mode === "purchase"
-                              ? "bg-amber-50 border border-amber-300"
-                              : "bg-emerald-50 border border-emerald-300"
+                              ? "bg-[var(--ui-warning-light)] border border-[var(--ui-warning-border)]"
+                              : "bg-[var(--ui-success-light)] border border-[var(--ui-success-border)]"
                           }`}
                         >
                           <span
                             className={`text-[10px] font-bold ${
                               mode === "purchase"
-                                ? "text-amber-800"
-                                : "text-emerald-800"
+                                ? "text-[var(--ui-warning-dark)]"
+                                : "text-[var(--ui-success-dark)]"
                             }`}
                           >
                             Rate: ৳
@@ -336,10 +324,10 @@ export const TradeProductSearch: React.FC<TradeProductSearchProps> = ({
                                 e.target.value
                               );
                             }}
-                            className={`w-16 sm:w-20 px-1 py-0.5 text-xs font-bold bg-white rounded focus:outline-none focus:ring-1 text-right ${
+                            className={`w-16 sm:w-20 px-1 py-0.5 text-xs font-bold bg-[var(--ui-surface)] rounded-[var(--ui-radius-sm)] focus:outline-none focus:ring-1 text-right ${
                               mode === "purchase"
-                                ? "text-amber-950 border border-amber-300 focus:ring-amber-500"
-                                : "text-emerald-950 border border-emerald-300 focus:ring-emerald-500"
+                                ? "text-[var(--ui-warning-dark)] border border-[var(--ui-warning-border)] focus:ring-[var(--ui-warning)]"
+                                : "text-[var(--ui-success-dark)] border border-[var(--ui-success-border)] focus:ring-[var(--ui-success)]"
                             }`}
                             title={`Edit ${
                               mode === "purchase" ? "Buy" : "Sale"
@@ -349,17 +337,17 @@ export const TradeProductSearch: React.FC<TradeProductSearchProps> = ({
                       </div>
                     ) : (
                       <div
-                        className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md ${
+                        className={`flex items-center gap-1.5 px-2.5 py-1 rounded-[var(--ui-radius-sm)] ${
                           mode === "purchase"
-                            ? "bg-amber-50 border border-amber-200"
-                            : "bg-emerald-50 border border-emerald-200"
+                            ? "bg-[var(--ui-warning-light)] border border-[var(--ui-warning-border)]"
+                            : "bg-[var(--ui-success-light)] border border-[var(--ui-success-border)]"
                         }`}
                       >
                         <span
                           className={`text-[10px] font-semibold uppercase tracking-wider ${
                             mode === "purchase"
-                              ? "text-amber-800"
-                              : "text-emerald-800"
+                              ? "text-[var(--ui-warning-dark)]"
+                              : "text-[var(--ui-success-dark)]"
                           }`}
                         >
                           {mode === "purchase" ? "Buy Rate:" : "Sale Rate:"}
@@ -367,8 +355,8 @@ export const TradeProductSearch: React.FC<TradeProductSearchProps> = ({
                         <span
                           className={`text-xs font-bold ${
                             mode === "purchase"
-                              ? "text-amber-950"
-                              : "text-emerald-950"
+                              ? "text-[var(--ui-warning-dark)]"
+                              : "text-[var(--ui-success-dark)]"
                           }`}
                         >
                           ৳ {formatMoney(defaultPrice)}
@@ -380,7 +368,7 @@ export const TradeProductSearch: React.FC<TradeProductSearchProps> = ({
               );
             })
           ) : (
-            <div className="p-4 text-center text-gray-400 text-xs">
+            <div className="p-4 text-center text-[var(--ui-text-subtle)] text-xs">
               No products found matching query.
             </div>
           )}

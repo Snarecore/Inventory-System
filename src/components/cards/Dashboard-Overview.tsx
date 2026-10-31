@@ -1,7 +1,7 @@
 const DashboardOverView = ({
 	title,
 	subTitle,
-	bgColor = "bg-gray-200",
+	bgColor = "bg-[var(--ui-border)]",
 	children,
 }: {
 	title: string;
