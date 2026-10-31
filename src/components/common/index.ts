@@ -4,6 +4,7 @@ export * from "./Badge";
 export * from "./Card";
 export * from "./Input";
 export * from "./Container";
+export * from "./UserAvatar";
 export * from "./DatePicker";
 
 // Form Controls
@@ -21,6 +22,8 @@ export * from "@/components/date-range-picker/DateRangePicker";
 
 // Modals
 export { default as Modal } from "@/components/modal/Modal";
+export { default as DrawerModal } from "@/components/modal/DrawerModal";
+export * from "@/components/modal/DrawerModal";
 export { default as ConfirmModal } from "@/components/modal/ConfirmModal";
 export { default as DeleteModal } from "@/components/modal/DeleteModal";
 
@@ -34,6 +37,7 @@ export { default as EmptyState } from "@/components/empty-state/EmptyState";
 export { default as Search } from "@/components/table-components/Search";
 export { default as DropdownFilter } from "@/components/table-components/DropdownFilter";
 export { default as RefreshButton } from "@/components/table-components/RefreshButton";
+export { default as ExcelExportButton } from "@/components/table-components/ExcelExportButton";
 export { default as ColumnVisibilityDropdown } from "@/components/table-components/ColumnVisibilityDropdown";
 export { default as TablePaginationFooter } from "@/components/table-components/TablePaginationFooter";
 export { default as TableActionButtons } from "@/components/table-components/TableActionButtons";
@@ -56,4 +60,10 @@ export {
   Td,
   TABLE_CLASSES,
 } from "@/components/table-components/Table";
+
+// Stats & Metrics Cards
+export { default as StatsCards, default as TradeStatsCards } from "./StatsCards";
+export * from "./StatsCards";
+
+
 

@@ -203,9 +203,20 @@ export const usePaymentMutation = () => {
       queryClient.invalidateQueries({ queryKey: [purchaseListQueryKey] });
       queryClient.invalidateQueries({ queryKey: [purchasesInvoicesDueQueryKey] });
       queryClient.invalidateQueries({ queryKey: [paymentReportQueryKey] });
-      queryClient.invalidateQueries({ queryKey: [cashBalanceQueryKey], refetchType: "none" });
-      queryClient.invalidateQueries({ queryKey: [bankInfoListQueryKey], refetchType: "none" });
-      queryClient.invalidateQueries({ queryKey: [mfsUserListQueryKey], refetchType: "none" });
+      const payMode = variables.paymentMode?.toUpperCase();
+      const hasCash = payMode === "CASH" || Number(variables.cashAmount || 0) > 0;
+      const hasBank = payMode === "BANK" || Number(variables.bankAmount || 0) > 0;
+      const hasMfs = payMode === "MFS" || Number(variables.mfsAmount || 0) > 0;
+
+      if (hasCash || (!hasCash && !hasBank && !hasMfs)) {
+        queryClient.invalidateQueries({ queryKey: [cashBalanceQueryKey], refetchType: "none" });
+      }
+      if (hasBank) {
+        queryClient.invalidateQueries({ queryKey: [bankInfoListQueryKey], refetchType: "none" });
+      }
+      if (hasMfs) {
+        queryClient.invalidateQueries({ queryKey: [mfsUserListQueryKey], refetchType: "none" });
+      }
       queryClient.invalidateQueries({ queryKey: [dashboardQueryKey], refetchType: "none" });
       queryClient.invalidateQueries({ queryKey: [partyListQueryKey], refetchType: "none" });
 

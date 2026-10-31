@@ -65,11 +65,14 @@
     "bank": {
         "bankInfoListUrl": "get-bank-info-list",
         "bankNameListUrl": "get-bank-name-list",
-        "insertBankAccountUrl": "insert-bank-account"
+        "insertBankAccountUrl": "insert-bank-account",
+        "updateBankAccountUrl": "update-bank-account"
     },
     "mfs": {
         "mfsUserListUrl": "mfs-user-list",
-        "insertMfsUserUrl": "insert-mfs-user"
+        "insertMfsUserUrl": "insert-mfs-user",
+        "updateMfsUserUrl": "mfs-user-update",
+        "updateMfsUserStatusUrl": "mfs-user-status-update"
     },
     "pageMeta": {
         "pageMetaUrl": "page-meta"
@@ -107,5 +110,26 @@
         "businessProfileUrl": "business-profile",
         "businessProfileSaveUrl": "business-profile-save",
         "businessTypesUrl": "get-business-types"
+    },
+    "category": {
+        "getCategoryListUrl": "get-category-list",
+        "insertCategoryUrl": "insert-category-info",
+        "updateCategoryUrl": "update-category-info",
+        "updateCategoryStatusUrl": "update-category-status"
+    },
+    "productCategory": {
+        "getProductCategoriesListUrl": "get-product-categories-list",
+        "insertProductCategoriesUrl": "insert-product-categories",
+        "updateProductCategoriesUrl": "update-product-categories",
+        "updateProductCategoriesStatusUrl": "update-product-categories-status",
+        "deleteProductCategoriesUrl": "delete-product-categories"
+    },
+    "userProfile": {
+        "userProfileUrl": "user-profile/phone",
+        "userProfileSaveUrl": "user-profile",
+        "profileImageUrl": "images",
+        "imageUploadUrl": "upload",
+        "otpSendUrl": "otp-send",
+        "otpVerifyUrl": "otp-verify"
     }
 }

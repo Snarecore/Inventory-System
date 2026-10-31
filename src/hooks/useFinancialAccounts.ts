@@ -1,157 +1,113 @@
 import { useMemo } from "react";
 import { useQuery, type UseQueryOptions } from "@tanstack/react-query";
-import { postData } from "@/services/api-service";
-import apiConfig from "@/config/api.json";
 import { bankInfoListQueryKey, mfsUserListQueryKey } from "@/config/query-key";
-import { buildAccessUser } from "@/utils/access-user";
+import { fetchBankInfoList } from "@/services/bank-service";
+import { fetchMfsUserList } from "@/services/mfs-service";
+import type { BankAccountItem, MfsUserItem } from "@/types";
 
-export interface BankAccountItem {
-  id?: string | number;
-  bankId?: string | number;
-  bankName?: string;
-  accountNo?: string;
-  bankAccountName?: string;
-  branchName?: string;
-  balance?: number;
-  status?: string;
-  [key: string]: any;
-}
+export type { BankAccountItem, MfsUserItem };
+export type MfsAccountItem = MfsUserItem;
 
-export interface MfsAccountItem {
-  id?: string | number;
-  mfsId?: string | number;
-  mfsName?: string;
-  mfsPhone?: string;
-  phone?: string;
-  accountNo?: string;
-  status?: string;
-  [key: string]: any;
-}
-
-// Standardized parser for bank accounts response.
+/**
+ * Standardized parser for bank accounts response.
+ * Uses strict BankAccountItem fields from backend.
+ */
 export const extractBankAccounts = (raw: any): BankAccountItem[] => {
   if (!raw) return [];
-  let list: any[] = [];
-  if (Array.isArray(raw)) {
-    list = raw;
-  } else if (typeof raw === "object") {
-    if (Array.isArray(raw.bankAccounts)) list = raw.bankAccounts;
-    else if (Array.isArray(raw.bankInfoList)) list = raw.bankInfoList;
-    else if (Array.isArray(raw.bankList)) list = raw.bankList;
-    else if (Array.isArray(raw.data)) list = raw.data;
-    else if (raw.data && typeof raw.data === "object") {
-      if (Array.isArray(raw.data.bankAccounts)) list = raw.data.bankAccounts;
-      else if (Array.isArray(raw.data.bankInfoList)) list = raw.data.bankInfoList;
-      else if (Array.isArray(raw.data.bankList)) list = raw.data.bankList;
-    }
-  }
+  const list: any[] = Array.isArray(raw?.bankAccounts)
+    ? raw.bankAccounts
+    : Array.isArray(raw?.data?.bankAccounts)
+    ? raw.data.bankAccounts
+    : Array.isArray(raw)
+    ? raw
+    : [];
 
   return list.map((b: any) => ({
-    ...b,
-    id: b.id ?? b.bankId ?? b._id,
-    bankName: b.bankName || b.name || "Bank",
-    accountNo: b.accountNo || b.accountNumber || b.bankAccountNumber || b.bankAccountNo || "",
-    bankAccountName: b.bankAccountName || b.accountName || "",
-    balance: Number(b.balance ?? b.currentBalance ?? b.initialBalance ?? 0),
+    bankId: Number(b.bankId || b.id || 0),
+    bankName: b.bankName || "",
+    bankAccountName: b.bankAccountName || "",
+    accountNo: b.accountNo || "",
+    branchName: b.branchName || "",
+    currentBalance: Number(b.currentBalance ?? 0),
+    openingBalance: Number(b.openingBalance ?? 0),
+    status: b.status ? String(b.status).trim() : "Inactive",
+    hasCard: Boolean(b.hasCard),
+    cardType: b.cardType || null,
+    cardNumber: b.cardNumber || null,
+    balanceDate: b.balanceDate,
+    transactionDate: b.transactionDate,
   }));
 };
 
-// Standardized parser for MFS accounts response.
-export const extractMfsAccounts = (raw: any): MfsAccountItem[] => {
+/**
+ * Standardized parser for MFS accounts response.
+ * Uses strict MfsUserItem fields from backend.
+ */
+export const extractMfsAccounts = (raw: any): MfsUserItem[] => {
   if (!raw) return [];
-  let list: any[] = [];
-  if (Array.isArray(raw)) {
-    list = raw;
-  } else if (typeof raw === "object") {
-    if (Array.isArray(raw.mfsUsers)) list = raw.mfsUsers;
-    else if (Array.isArray(raw.mfsUserList)) list = raw.mfsUserList;
-    else if (Array.isArray(raw.mfsList)) list = raw.mfsList;
-    else if (Array.isArray(raw.data)) list = raw.data;
-    else if (raw.data && typeof raw.data === "object") {
-      if (Array.isArray(raw.data.mfsUsers)) list = raw.data.mfsUsers;
-      else if (Array.isArray(raw.data.mfsUserList)) list = raw.data.mfsUserList;
-      else if (Array.isArray(raw.data.mfsList)) list = raw.data.mfsList;
-    }
-  }
+  const list: any[] = Array.isArray(raw?.mfsUsers)
+    ? raw.mfsUsers
+    : Array.isArray(raw?.data?.mfsUsers)
+    ? raw.data.mfsUsers
+    : Array.isArray(raw?.data)
+    ? raw.data
+    : Array.isArray(raw)
+    ? raw
+    : [];
 
   return list.map((m: any) => ({
-    ...m,
-    id: m.id ?? m.mfsId ?? m._id,
-    mfsName: m.mfsName || m.name || m.method || "bKash",
-    mfsPhone: m.mfsPhone || m.phoneNumber || m.phone || m.mobileNo || "",
+    id: Number(m.id || 0),
+    name: m.name || "",
+    phoneNumber: m.phoneNumber || "",
+    method: m.method || "",
+    openingBalance: Number(m.openingBalance ?? 0),
+    currentBalance: Number(m.currentBalance ?? 0),
+    status: m.status ? String(m.status).trim() : "Inactive",
   }));
 };
 
-// Centralized fetcher for registered Bank Accounts.
-export const fetchBankAccounts = async (): Promise<any> => {
-  try {
-    const bankInfoListUrl = apiConfig.bank?.bankInfoListUrl || "get-bank-info-list";
-    const accessUser = buildAccessUser();
-    const res = await postData<any>({
-      url: bankInfoListUrl,
-      body: { accessUser },
-    });
-    return res;
-  } catch (error) {
-    console.error("Failed to fetch bank accounts:", error);
-    return null;
-  }
-};
+// Aliases forwarding to the single source of truth services
+export const fetchBankAccounts = fetchBankInfoList;
+export const fetchMfsAccounts = fetchMfsUserList;
 
-/**
- * Centralized fetcher for registered MFS Accounts.
- */
-export const fetchMfsAccounts = async (): Promise<any> => {
-  try {
-    const mfsUserListUrl = apiConfig.mfs?.mfsUserListUrl || "mfs-user-list";
-    const accessUser = buildAccessUser();
-    const res = await postData<any>({
-      url: mfsUserListUrl,
-      body: { accessUser },
-    });
-    return res;
-  } catch (error) {
-    console.error("Failed to fetch MFS accounts:", error);
-    return null;
-  }
-};
-
-/**
- * Enterprise standard hook for fetching and caching Bank Accounts.
- * Shared across Trade, Purchase, Sale, and Return modules (5-minute staleTime).
- */
 export const useBankAccountsQuery = (
   options?: Omit<UseQueryOptions<any>, "queryKey" | "queryFn">
 ) => {
   return useQuery({
     queryKey: [bankInfoListQueryKey],
-    queryFn: fetchBankAccounts,
-    staleTime: 5 * 60 * 1000,
+    queryFn: fetchBankInfoList,
+    staleTime: 0,
+    refetchOnMount: "always",
+    refetchOnWindowFocus: false,
     ...options,
   });
 };
 
-/**
- * Enterprise standard hook for fetching and caching MFS Accounts.
- * Shared across Trade, Purchase, Sale, and Return modules (5-minute staleTime).
- */
+// Enterprise standard hook for fetching and caching MFS Accounts. Defaults to real-time refetching on mount and window focus.
+
 export const useMfsAccountsQuery = (
   options?: Omit<UseQueryOptions<any>, "queryKey" | "queryFn">
 ) => {
   return useQuery({
     queryKey: [mfsUserListQueryKey],
-    queryFn: fetchMfsAccounts,
-    staleTime: 5 * 60 * 1000,
+    queryFn: fetchMfsUserList,
+    staleTime: 0,
+    refetchOnMount: "always",
+    refetchOnWindowFocus: false,
     ...options,
   });
 };
 
-/**
- * Composite hook that provides normalized Bank and MFS accounts with shared caching.
- */
-export const useFinancialAccounts = () => {
-  const bankQuery = useBankAccountsQuery();
-  const mfsQuery = useMfsAccountsQuery();
+export interface UseFinancialAccountsOptions {
+  bankOptions?: Omit<UseQueryOptions<any>, "queryKey" | "queryFn">;
+  mfsOptions?: Omit<UseQueryOptions<any>, "queryKey" | "queryFn">;
+}
+
+  // Composite hook that provides normalized Bank and MFS accounts with shared caching.
+
+export const useFinancialAccounts = (options?: UseFinancialAccountsOptions) => {
+  const bankQuery = useBankAccountsQuery(options?.bankOptions);
+  const mfsQuery = useMfsAccountsQuery(options?.mfsOptions);
 
   const registeredBankAccounts = useMemo(() => {
     return extractBankAccounts(bankQuery.data);

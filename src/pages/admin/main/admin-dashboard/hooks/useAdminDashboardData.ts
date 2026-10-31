@@ -149,10 +149,9 @@ export const useAdminDashboardData = () => {
         0
       ),
       cashBalance: cashQuery.data || 0,
-      bankBalance: accounts.registeredBankAccounts.reduce(
-        (sum, account) => sum + asNumber(account.balance),
-        0
-      ),
+      bankBalance: accounts.registeredBankAccounts
+        .filter((account) => String(account.status || "").toLowerCase() === "active")
+        .reduce((sum, account) => sum + asNumber(account.currentBalance ?? account.balance), 0),
     };
   }, [
     accounts.registeredBankAccounts,

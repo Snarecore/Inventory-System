@@ -45,19 +45,27 @@ const CreatePurchaseReturn = React.lazy(() => import('@/pages/admin/trade/purcha
 const CustomerCollection = React.lazy(() => import('@/pages/admin/trade/customer-collection'))
 const SupplierPayment = React.lazy(() => import('@/pages/admin/trade/supplier-payment'))
 const Company = React.lazy(() => import('@/pages/admin/company'))
+const Profile = React.lazy(() => import('@/pages/admin/profile'))
+const FinancialCategory = React.lazy(() => import('@/pages/admin/finance/category'))
+const BankPage = React.lazy(() => import('@/pages/admin/finance/bank'))
+const CreateBankPage = React.lazy(() => import('@/pages/admin/finance/bank/create-bank'))
+const MfsPage = React.lazy(() => import('@/pages/admin/finance/mfs'))
+const CreateMfsPage = React.lazy(() => import('@/pages/admin/finance/mfs/create-mfs'))
+const ExpensePage = React.lazy(() => import('@/pages/admin/finance/expense'))
+const IncomePage = React.lazy(() => import('@/pages/admin/finance/income'))
 
-
-const LoadingFallback = () => (
-  <div className="flex h-64 w-full items-center justify-center">
-    <div className="h-8 w-8 animate-spin rounded-full border-4 border-solid border-primary border-t-transparent"></div>
-  </div>
-)
 
 const withSuspense = (Component: React.ComponentType) => (
-  <Suspense fallback={<LoadingFallback />}>
+  <Suspense
+    fallback={
+      <div className="flex h-64 w-full items-center justify-center">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-solid border-primary border-t-transparent"></div>
+      </div>
+    }
+  >
     <Component />
   </Suspense>
-)
+);
 
 const RequireAuth = () => {
   const location = useLocation()
@@ -195,8 +203,88 @@ export const router = createBrowserRouter([
     element: <Navigate to="/admin/supplier-payment" replace />,
   },
   {
+    path: '/expenses/categories',
+    element: <Navigate to="/admin/financial-categories" replace />,
+  },
+  {
+    path: '/expense',
+    element: <Navigate to="/admin/expense" replace />,
+  },
+  {
+    path: '/expenses',
+    element: <Navigate to="/admin/expense" replace />,
+  },
+  {
+    path: '/expenses/entry',
+    element: <Navigate to="/admin/expense" replace />,
+  },
+  {
+    path: '/income',
+    element: <Navigate to="/admin/income" replace />,
+  },
+  {
+    path: '/incomes',
+    element: <Navigate to="/admin/income" replace />,
+  },
+  {
+    path: '/finance/categories',
+    element: <Navigate to="/admin/financial-categories" replace />,
+  },
+  {
+    path: '/category',
+    element: <Navigate to="/admin/financial-categories" replace />,
+  },
+  {
+    path: '/banks',
+    element: <Navigate to="/admin/banks" replace />,
+  },
+  {
+    path: '/bank-accounts',
+    element: <Navigate to="/admin/banks" replace />,
+  },
+  {
+    path: '/create-bank',
+    element: <Navigate to="/admin/create-bank" replace />,
+  },
+  {
+    path: '/add-bank',
+    element: <Navigate to="/admin/create-bank" replace />,
+  },
+  {
+    path: '/accounts/cash-bank',
+    element: <Navigate to="/admin/banks" replace />,
+  },
+  {
+    path: '/accounts/chart-of-accounts',
+    element: <Navigate to="/admin/banks" replace />,
+  },
+  {
+    path: '/mfs',
+    element: <Navigate to="/admin/mfs" replace />,
+  },
+  {
+    path: '/mfs-list',
+    element: <Navigate to="/admin/mfs" replace />,
+  },
+  {
+    path: '/create-mfs',
+    element: <Navigate to="/admin/create-mfs" replace />,
+  },
+  {
+    path: '/add-mfs',
+    element: <Navigate to="/admin/create-mfs" replace />,
+  },
+  {
     path: '/company',
     element: <Navigate to="/admin/company" replace />,
+  },
+  {
+    path: '/profile',
+    element: <Navigate to="/admin/profile" replace />,
+  },
+  {
+    path: '/my-profile',
+    element: <Navigate to="/admin/profile" replace />,
   },
   {
     path: '/business-profile',
@@ -246,6 +334,14 @@ export const router = createBrowserRouter([
       },
       {
         path: 'main-category',
+        element: withSuspense(MainCategory),
+      },
+      {
+        path: 'product-category',
+        element: withSuspense(MainCategory),
+      },
+      {
+        path: 'product-categories',
         element: withSuspense(MainCategory),
       },
       {
@@ -356,6 +452,90 @@ export const router = createBrowserRouter([
         path: 'payment',
         element: <Navigate to="/admin/supplier-payment" replace />,
       },
+      {
+        path: 'financial-categories',
+        element: withSuspense(FinancialCategory),
+      },
+      {
+        path: 'categories',
+        element: withSuspense(FinancialCategory),
+      },
+      {
+        path: 'expense-categories',
+        element: withSuspense(FinancialCategory),
+      },
+      {
+        path: 'expense',
+        element: withSuspense(ExpensePage),
+      },
+      {
+        path: 'expenses',
+        element: <Navigate to="/admin/expense" replace />,
+      },
+      {
+        path: 'income',
+        element: withSuspense(IncomePage),
+      },
+      {
+        path: 'incomes',
+        element: <Navigate to="/admin/income" replace />,
+      },
+      {
+        path: 'banks',
+        element: withSuspense(BankPage),
+      },
+      {
+        path: 'bank-accounts',
+        element: withSuspense(BankPage),
+      },
+      {
+        path: 'cash-bank',
+        element: withSuspense(BankPage),
+      },
+      {
+        path: 'create-bank',
+        element: withSuspense(CreateBankPage),
+      },
+      {
+        path: 'banks/create',
+        element: withSuspense(CreateBankPage),
+      },
+      {
+        path: 'add-bank',
+        element: withSuspense(CreateBankPage),
+      },
+      {
+        path: 'edit-bank/:id',
+        element: withSuspense(CreateBankPage),
+      },
+      {
+        path: 'banks/edit/:id',
+        element: withSuspense(CreateBankPage),
+      },
+      {
+        path: 'mfs',
+        element: withSuspense(MfsPage),
+      },
+      {
+        path: 'mfs-list',
+        element: withSuspense(MfsPage),
+      },
+      {
+        path: 'create-mfs',
+        element: withSuspense(CreateMfsPage),
+      },
+      {
+        path: 'add-mfs',
+        element: withSuspense(CreateMfsPage),
+      },
+      {
+        path: 'edit-mfs/:id',
+        element: withSuspense(CreateMfsPage),
+      },
+      {
+        path: 'mfs/edit/:id',
+        element: withSuspense(CreateMfsPage),
+      },
 
       {
         path: 'customers',
@@ -428,6 +608,18 @@ export const router = createBrowserRouter([
       {
         path: 'company',
         element: withSuspense(Company),
+      },
+      {
+        path: 'profile',
+        element: withSuspense(Profile),
+      },
+      {
+        path: 'my-profile',
+        element: <Navigate to="/admin/profile" replace />,
+      },
+      {
+        path: 'user-profile',
+        element: <Navigate to="/admin/profile" replace />,
       },
       {
         path: 'business-profile',

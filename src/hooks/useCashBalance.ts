@@ -47,10 +47,16 @@ export const fetchCashBalance = async (): Promise<number> => {
 /**
  * TanStack Query Hook for live Cash Balance
  */
-export const useCashBalanceQuery = () => {
+export const useCashBalanceQuery = (
+  options?: Omit<import("@tanstack/react-query").UseQueryOptions<number, Error>, "queryKey" | "queryFn">
+) => {
   return useQuery({
     queryKey: [cashBalanceQueryKey],
     queryFn: fetchCashBalance,
-    staleTime: 60 * 1000,
+    staleTime: 0,
+    refetchOnMount: "always",
+    refetchOnWindowFocus: false,
+    ...options,
   });
 };
+

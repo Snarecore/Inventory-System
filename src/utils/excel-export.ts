@@ -1,6 +1,6 @@
 import * as XLSX from "xlsx";
-import type { PurchaseItem, PurchaseReturnItem } from "@/types";
-import { getUserInfo } from "./auth-storage";
+import type { PurchaseItem, PurchaseReturnItem, CategoryItem, ProductCategoryItem, BankAccountItem, MfsUserItem } from "@/types";
+import { isCategoryAdmin, normalizeCategoryType } from "@/services/category-service";
 
 export interface GenericExcelExportOptions {
   fileName?: string;
@@ -40,7 +40,7 @@ const getItemsCount = (p: any): number => {
  */
 export function buildAndDownloadExcel<T extends Record<string, any>>(
   rows: T[],
-  totalRow: T,
+  totalRow: Record<string, any>,
   options: GenericExcelExportOptions
 ): void {
   if (!rows || rows.length === 0) {
@@ -374,3 +374,170 @@ export function exportPurchaseReturnToExcel(
 
   buildAndDownloadExcel(rows, totalRow, { fileName, sheetName });
 }
+
+/**
+ * Enterprise standard Excel export for Categories
+ */
+export function exportCategoriesToExcel(
+  categories: CategoryItem[],
+  options?: GenericExcelExportOptions
+): void {
+  if (!categories || categories.length === 0) {
+    throw new Error("No category records available to export");
+  }
+
+  const todayStr = new Date().toISOString().substring(0, 10);
+  const fileName = options?.fileName || `Expense_Income_Categories_${todayStr}.xlsx`;
+  const sheetName = options?.sheetName || "Categories";
+
+  const rows = categories.map((item, index) => {
+    return {
+      SL: index + 1,
+      "Category Name": item.categoryName || "",
+      Type: normalizeCategoryType(item.type),
+      Status: item.status || "Active",
+      "System Default": isCategoryAdmin(item) ? "Yes" : "No",
+    };
+  });
+
+  const totalRow = {
+    SL: "TOTAL",
+    "Category Name": `Total Categories: ${categories.length}`,
+    Type: "",
+    Status: "",
+    "System Default": "",
+  };
+
+  buildAndDownloadExcel(rows, totalRow, { fileName, sheetName });
+}
+
+/**
+ * Enterprise standard Excel export for Product Categories
+ */
+export function exportProductCategoriesToExcel(
+  categories: ProductCategoryItem[],
+  options?: GenericExcelExportOptions
+): void {
+  if (!categories || categories.length === 0) {
+    throw new Error("No product category records available to export");
+  }
+
+  const todayStr = new Date().toISOString().substring(0, 10);
+  const fileName = options?.fileName || `Product_Categories_${todayStr}.xlsx`;
+  const sheetName = options?.sheetName || "Product Categories";
+
+  const rows = categories.map((item, index) => {
+    return {
+      SL: index + 1,
+      "Category Name": item.name || "",
+      Description: item.description || "—",
+      Status: item.status || "Active",
+    };
+  });
+
+  const totalRow = {
+    SL: "TOTAL",
+    "Category Name": `Total Categories: ${categories.length}`,
+    Description: "",
+    Status: "",
+  };
+
+  buildAndDownloadExcel(rows, totalRow, { fileName, sheetName });
+}
+
+/**
+ * Enterprise standard Excel export for Bank Accounts
+ */
+export function exportBankAccountsToExcel(
+  bankAccounts: BankAccountItem[],
+  options?: GenericExcelExportOptions
+): void {
+  if (!bankAccounts || bankAccounts.length === 0) {
+    throw new Error("No bank account records available to export");
+  }
+
+  const todayStr = new Date().toISOString().substring(0, 10);
+  const fileName = options?.fileName || `Bank_Accounts_${todayStr}.xlsx`;
+  const sheetName = options?.sheetName || "Bank Accounts";
+
+  let totalBalance = 0;
+
+  const rows = bankAccounts.map((item, index) => {
+    const bal = Number(item.currentBalance || 0);
+    totalBalance += bal;
+
+    return {
+      SL: index + 1,
+      "Bank Name": item.bankName || "—",
+      "Account Name": item.bankAccountName || "—",
+      "Account Number": item.accountNo || "—",
+      Branch: item.branchName || "—",
+      "Current Balance": bal,
+      Status: item.status || "Active",
+      "Has Card": item.hasCard ? "Yes" : "No",
+      "Card Type": item.cardType ? item.cardType.toUpperCase() : "—",
+    };
+  });
+
+  const totalRow = {
+    SL: "TOTAL",
+    "Bank Name": `Total Accounts: ${bankAccounts.length}`,
+    "Account Name": "",
+    "Account Number": "",
+    Branch: "",
+    "Current Balance": totalBalance,
+    Status: "",
+    "Has Card": "",
+    "Card Type": "",
+  };
+
+  buildAndDownloadExcel(rows, totalRow, { fileName, sheetName });
+}
+
+/**
+ * Senior Developer Standard: Export MFS Wallets to Excel
+ */
+export function exportMfsAccountsToExcel(
+  mfsAccounts: MfsUserItem[],
+  options?: GenericExcelExportOptions
+): void {
+  if (!mfsAccounts || mfsAccounts.length === 0) {
+    throw new Error("No MFS account records available to export");
+  }
+
+  const todayStr = new Date().toISOString().substring(0, 10);
+  const fileName = options?.fileName || `MFS_Accounts_${todayStr}.xlsx`;
+  const sheetName = options?.sheetName || "MFS Accounts";
+
+  let totalBalance = 0;
+
+  const rows = mfsAccounts.map((item, index) => {
+    const bal = Number(item.currentBalance || 0);
+    totalBalance += bal;
+
+    return {
+      SL: index + 1,
+      Provider: item.method || "—",
+      "Account Name": item.name || "—",
+      "Phone Number": item.phoneNumber || "—",
+      "Opening Balance": Number(item.openingBalance || 0),
+      "Current Balance": bal,
+      Status: item.status || "Active",
+    };
+  });
+
+  const totalRow = {
+    SL: "TOTAL",
+    Provider: `Total Accounts: ${mfsAccounts.length}`,
+    "Account Name": "",
+    "Phone Number": "",
+    "Opening Balance": "",
+    "Current Balance": totalBalance,
+    Status: "",
+  };
+
+  buildAndDownloadExcel(rows, totalRow, { fileName, sheetName });
+}
+
+
+

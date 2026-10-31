@@ -15,11 +15,11 @@ import {
 	FaCheckCircle,
 	FaShieldAlt,
 	FaCog,
-	FaUndoAlt,
-	FaReply,
+	FaLandmark,
 } from "react-icons/fa";
 import { BiCube } from "react-icons/bi";
 import { TbTablePlus } from "react-icons/tb";
+import { TrendingUp, TrendingDown } from "lucide-react";
 
 export const menu = [
 	{
@@ -50,14 +50,12 @@ export const menu = [
 
 			{
 				id: 205,
-				name: "Expense Category",
-				title: "Expense Category",
+				name: "Expense & Income",
+				title: "Expense & Income",
 				icon: FaReceipt,
-				path: "/expenses/categories",
+				path: "/admin/financial-categories",
 				permissionKey: "category.expenses.view",
-				subItems: [
-					{ id: 206, name: "Expense Categories", path: "/expenses/categories", permissionKey: "expenses.categories.view" },
-				],
+				subItems: [],
 			},
 		],
 	},
@@ -202,6 +200,36 @@ export const menu = [
 		sectionName: "Finance",
 		items: [
 			{
+				id: 710,
+				name: "Income",
+				title: "Income",
+				icon: TrendingUp,
+				path: "/admin/income",
+				permissionKey: "income.view",
+				subItems: [],
+			},
+			{
+				id: 711,
+				name: "Expense",
+				title: "Expense",
+				icon: TrendingDown,
+				path: "/admin/expense",
+				permissionKey: "expenses.view",
+				subItems: [],
+			},
+			{
+				id: 700,
+				name: "Banking",
+				title: "Banking",
+				icon: FaLandmark,
+				path: "/admin/banks",
+				permissionKey: "accounts.cash_bank.view",
+				subItems: [
+					{ id: 701, name: "Bank", path: "/admin/banks", permissionKey: "accounts.cash_bank.view" },
+					{ id: 703, name: "MFS", path: "/admin/mfs", permissionKey: "accounts.cash_bank.view" },
+				],
+			},
+			{
 				id: 9,
 				name: "Accounts",
 				title: "Accounts",
@@ -215,22 +243,7 @@ export const menu = [
 					{ id: 69, name: "Receipt Voucher", path: "/accounts/receipt-voucher", permissionKey: "accounts.receipt_voucher.view" },
 					{ id: 70, name: "Contra Voucher", path: "/accounts/contra-voucher", permissionKey: "accounts.contra_voucher.view" },
 					{ id: 71, name: "General Ledger", path: "/accounts/general-ledger", permissionKey: "accounts.general_ledger.view" },
-					{ id: 72, name: "Cash & Bank", path: "/accounts/cash-bank", permissionKey: "accounts.cash_bank.view" },
 					{ id: 73, name: "Bank Reconciliation", path: "/accounts/bank-reconciliation", permissionKey: "accounts.bank_recon.view" },
-				],
-			},
-			{
-				id: 10,
-				name: "Expenses",
-				title: "Expenses",
-				icon: FaReceipt,
-				path: "/expenses/entry",
-				permissionKey: "expenses.view",
-				subItems: [
-					{ id: 74, name: "Expense Entry", path: "/expenses/entry", permissionKey: "expenses.entry.view" },
-					{ id: 75, name: "Expense Categories", path: "/expenses/categories", permissionKey: "expenses.categories.view" },
-					{ id: 76, name: "Expense Approval", path: "/expenses/approval", permissionKey: "expenses.approval.view" },
-					{ id: 77, name: "Expense Reports", path: "/expenses/reports", permissionKey: "expenses.reports.view" },
 				],
 			},
 			{

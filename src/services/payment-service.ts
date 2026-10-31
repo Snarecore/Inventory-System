@@ -197,7 +197,7 @@ export const buildPaymentPayload = ({
 export const postPayment = async (
   payload: PaymentRequestPayload
 ): Promise<{ success: boolean; msg: string; data?: any }> => {
-  const endpoint = apiConfig.payment?.insertPaymentUrl || "insert-payment";
+  const endpoint = apiConfig.payment?.insertPaymentUrl;
 
   try {
     const res: any = await postData({
