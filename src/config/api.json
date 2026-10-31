@@ -123,5 +123,13 @@
         "updateProductCategoriesUrl": "update-product-categories",
         "updateProductCategoriesStatusUrl": "update-product-categories-status",
         "deleteProductCategoriesUrl": "delete-product-categories"
+    },
+    "userProfile": {
+        "userProfileUrl": "user-profile/phone",
+        "userProfileSaveUrl": "user-profile",
+        "profileImageUrl": "images",
+        "imageUploadUrl": "upload",
+        "otpSendUrl": "otp-send",
+        "otpVerifyUrl": "otp-verify"
     }
 }

@@ -4,6 +4,7 @@ export * from "./Badge";
 export * from "./Card";
 export * from "./Input";
 export * from "./Container";
+export * from "./UserAvatar";
 export * from "./DatePicker";
 
 // Form Controls

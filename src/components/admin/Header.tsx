@@ -11,6 +11,9 @@ import { FaCog, FaSignOutAlt, FaUserCircle } from "react-icons/fa";
 import { getUserInfo, getStoredUser, removeStoredUser } from "@/utils/auth-storage";
 import { showSuccessToast } from "@/utils/toast-utils";
 import { useQueryClient } from "@tanstack/react-query";
+import { useUserProfileQuery } from "@/hooks/useUserProfile";
+import { getUserProfileImageUrl } from "@/services/user-profile-service";
+import { UserAvatar, Badge } from "@/components/common";
 import logoImg from "@/assets/logo.jpeg";
 
 const MenuItem = ({
@@ -43,10 +46,13 @@ const Header = ({ sidebarClick }: { sidebarClick: boolean }) => {
     const dropdownRef = useRef<HTMLDivElement>(null);
     const userImageRef = useRef<HTMLDivElement>(null);
 
+    const { data: userProfile } = useUserProfileQuery();
+
     const userInfo = getUserInfo();
-    const storedUser = getStoredUser();
-    const displayName = userInfo?.fullName || userInfo?.businessName || storedUser?.name || "Admin";
-    const displayRole = userInfo?.userRole || storedUser?.role || "Super Admin";
+    const displayName = userProfile?.fullName || userInfo?.fullName || "Admin";
+    const displayRole = userInfo?.userRole || "ADMIN";
+    const userPhone = userProfile?.phoneNumber || userInfo?.phoneNumber || "";
+    const effectiveAvatarUrl = userPhone ? getUserProfileImageUrl(userPhone) : null;
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
@@ -83,6 +89,12 @@ const Header = ({ sidebarClick }: { sidebarClick: boolean }) => {
         setShowMenuDropdown(false);
         showSuccessToast("Logged out successfully");
         navigate("/login", { replace: true });
+    };
+
+    const handleOpenUserProfile = () => {
+        setShowUserDropdown(false);
+        setShowMenuDropdown(false);
+        navigate("/admin/profile");
     };
 
     const handleOpenCompanyProfile = () => {
@@ -132,18 +144,19 @@ const Header = ({ sidebarClick }: { sidebarClick: boolean }) => {
                         <MotionDiv>
                             <div className="absolute top-7 right-0 w-44 bg-white shadow-lg rounded-md border border-gray-200 z-50 dropdown-menu p-1">
                                 <div className="flex items-center gap-2 bg-gray-50 border border-gray-100 p-1.5 rounded mb-1">
-                                    <img
-                                        src="/avatar.png"
-                                        alt="user"
-                                        className="w-6 h-6 rounded object-cover shrink-0"
+                                    <UserAvatar
+                                        name={displayName}
+                                        photoUrl={effectiveAvatarUrl}
+                                        size="xs"
+                                        shape="rounded"
                                     />
                                     <div className="flex items-center gap-1.5 min-w-0">
                                         <span className="text-xs font-semibold text-gray-800 truncate">
                                             {displayName}
                                         </span>
-                                        <span className="text-[9px] font-bold text-[#0369a1] bg-[#e0f2fe] border border-[#38bdf8] uppercase tracking-wider px-1.5 py-0.5 rounded leading-none shrink-0">
+                                        <Badge variant="primary" size="sm" className="text-[9px] px-1.5 py-0.5 uppercase tracking-wider shrink-0">
                                             {displayRole}
-                                        </span>
+                                        </Badge>
                                     </div>
                                 </div>
                                 <div className="space-y-0.5">
@@ -151,7 +164,7 @@ const Header = ({ sidebarClick }: { sidebarClick: boolean }) => {
                                         icon={<FaUserCircle size={13} className="text-gray-500" />}
                                         text="My Profile"
                                         className="text-xs text-gray-700 font-medium hover:bg-gray-100"
-                                        onClick={handleOpenCompanyProfile}
+                                        onClick={handleOpenUserProfile}
                                     />
                                     <MenuItem
                                         icon={<FaCog size={13} className="text-gray-500" />}
@@ -311,10 +324,11 @@ const Header = ({ sidebarClick }: { sidebarClick: boolean }) => {
                         className="hidden lg:flex items-center gap-2 cursor-pointer bg-gray-100 border border-gray-200 px-2.5 py-1 rounded-md select-none"
                         onClick={() => setShowUserDropdown(!showUserDropdown)}>
                         <MotionDiv className="flex items-center gap-2">
-                            <img
-                                src="/avatar.png"
-                                alt="user"
-                                className="w-7 h-7 rounded object-cover"
+                            <UserAvatar
+                                name={displayName}
+                                photoUrl={effectiveAvatarUrl}
+                                size="sm"
+                                shape="rounded"
                             />
                             <span className="text-sm font-medium text-gray-800">
                                 {displayName}
@@ -340,16 +354,17 @@ const Header = ({ sidebarClick }: { sidebarClick: boolean }) => {
                         ].join(" ")}
                     >
                         <div className="flex items-center gap-2 bg-gray-50 border border-gray-100 p-1.5 rounded mb-1">
-                            <img
-                                src="/avatar.png"
-                                alt="user"
-                                className="w-6 h-6 rounded object-cover shrink-0"
+                            <UserAvatar
+                                name={displayName}
+                                photoUrl={effectiveAvatarUrl}
+                                size="xs"
+                                shape="rounded"
                             />
                             <div className="flex items-center gap-1.5 min-w-0">
                                 <span className="text-xs font-semibold text-gray-800 truncate">
                                     {displayName}
                                 </span>
-                                <span className="text-[9px] font-bold text-[#0369a1] bg-[#e0f2fe] border border-[#38bdf8] uppercase tracking-wider px-1.5 py-0.5 rounded leading-none shrink-0">
+                                <span className="text-[9px] font-bold text-white bg-[#009fe3] px-2 py-0.5 rounded-full uppercase tracking-wider shrink-0 shadow-2xs">
                                     {displayRole}
                                 </span>
                             </div>
@@ -360,7 +375,7 @@ const Header = ({ sidebarClick }: { sidebarClick: boolean }) => {
                                 icon={<FaUserCircle size={13} className="text-gray-500" />}
                                 text="My Profile"
                                 className="text-xs text-gray-700 font-medium hover:bg-gray-100"
-                                onClick={handleOpenCompanyProfile}
+                                onClick={handleOpenUserProfile}
                             />
                             <MenuItem
                                 icon={<FaCog size={13} className="text-gray-500" />}

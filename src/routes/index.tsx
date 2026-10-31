@@ -44,6 +44,7 @@ const CreatePurchaseReturn = React.lazy(() => import('@/pages/admin/trade/purcha
 const CustomerCollection = React.lazy(() => import('@/pages/admin/trade/customer-collection'))
 const SupplierPayment = React.lazy(() => import('@/pages/admin/trade/supplier-payment'))
 const Company = React.lazy(() => import('@/pages/admin/company'))
+const Profile = React.lazy(() => import('@/pages/admin/profile'))
 const FinancialCategory = React.lazy(() => import('@/pages/admin/finance/category'))
 const BankPage = React.lazy(() => import('@/pages/admin/finance/bank'))
 const CreateBankPage = React.lazy(() => import('@/pages/admin/finance/bank/create-bank'))
@@ -254,6 +255,14 @@ export const router = createBrowserRouter([
   {
     path: '/company',
     element: <Navigate to="/admin/company" replace />,
+  },
+  {
+    path: '/profile',
+    element: <Navigate to="/admin/profile" replace />,
+  },
+  {
+    path: '/my-profile',
+    element: <Navigate to="/admin/profile" replace />,
   },
   {
     path: '/business-profile',
@@ -584,6 +593,18 @@ export const router = createBrowserRouter([
       {
         path: 'company',
         element: withSuspense(Company),
+      },
+      {
+        path: 'profile',
+        element: withSuspense(Profile),
+      },
+      {
+        path: 'my-profile',
+        element: <Navigate to="/admin/profile" replace />,
+      },
+      {
+        path: 'user-profile',
+        element: <Navigate to="/admin/profile" replace />,
       },
       {
         path: 'business-profile',
