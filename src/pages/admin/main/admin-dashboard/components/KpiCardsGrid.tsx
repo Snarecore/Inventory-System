@@ -7,81 +7,102 @@ import { DashboardKpiData } from '../types/dashboard.types';
 
 interface KpiCardsGridProps {
   data: DashboardKpiData;
-  isLoading?: boolean;
 }
 
-export const KpiCardsGrid: React.FC<KpiCardsGridProps> = ({ data, isLoading = false }) => {
-  const formatCurrency = (val: number) => isLoading ? '...' : `৳${val.toLocaleString('en-IN')}`;
-
-  const cards = [
-    {
-      label: "Today's Sale",
-      value: data.todaysSale,
-      icon: IoCubeOutline,
-      tone: "linear-gradient(135deg, var(--primary-color) 0%, var(--primary-color-hover) 100%)",
-      iconBg: "rgba(255,255,255,0.18)",
-    },
-    {
-      label: "Today's Expense",
-      value: data.todaysExpense,
-      icon: FiShoppingCart,
-      tone: "linear-gradient(135deg, color-mix(in srgb, var(--primary-color) 78%, var(--ui-accent-2)) 0%, var(--primary-color) 100%)",
-      iconBg: "rgba(255,255,255,0.14)",
-    },
-    {
-      label: "Total Receivable",
-      value: data.totalReceivable,
-      icon: FaStore,
-      tone: "linear-gradient(135deg, var(--primary-color-dark) 0%, rgba(6,51,107,0.88) 100%)",
-      iconBg: "rgba(255,255,255,0.17)",
-    },
-    {
-      label: "Total Payable",
-      value: data.totalPayable,
-      icon: FaUserFriends,
-      tone: "linear-gradient(135deg, var(--ui-success) 0%, color-mix(in srgb, var(--ui-success) 80%, #0f172a) 100%)",
-      iconBg: "rgba(255,255,255,0.14)",
-    },
-    {
-      label: "Cash Balance",
-      value: data.cashBalance,
-      icon: FaMoneyBillWave,
-      tone: "linear-gradient(135deg, var(--ui-warning) 0%, color-mix(in srgb, var(--ui-warning) 75%, #7c2d12) 100%)",
-      iconBg: "rgba(255,255,255,0.15)",
-    },
-    {
-      label: "Bank Balance",
-      value: data.bankBalance,
-      icon: FaUniversity,
-      tone: "linear-gradient(135deg, var(--ui-info) 0%, color-mix(in srgb, var(--ui-info) 72%, #0f172a) 100%)",
-      iconBg: "rgba(255,255,255,0.14)",
-    },
-  ];
+export const KpiCardsGrid: React.FC<KpiCardsGridProps> = ({ data }) => {
+  const formatCurrency = (val: number) => `৳${val.toLocaleString('en-IN')}`;
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6 gap-4 w-full cursor-pointer">
-      {cards.map(({ label, value, icon: Icon, tone, iconBg }) => (
-        <MotionDiv key={label}>
-          <div
-            className="group relative overflow-hidden rounded-2xl p-4 text-white shadow-[0_18px_32px_-22px_rgba(15,23,42,0.5)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_24px_40px_-20px_rgba(15,23,42,0.55)]"
-            style={{ background: tone }}
-          >
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.22),transparent_38%)]" />
-            <div className="relative flex items-start justify-between gap-3">
-              <div>
-                <p className="text-[26px] font-bold leading-none tracking-tight">{formatCurrency(value)}</p>
-                <p className="mt-2 text-sm text-white/80">{label}</p>
-              </div>
-              <div
-                className="flex h-12 w-12 items-center justify-center rounded-2xl text-2xl shadow-inner"
-                style={{ background: iconBg }}
-              >
-                <Icon />
-              </div>
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 w-full cursor-pointer">
+      {/* 1. Today's Sale - Primary Navy/Teal */}
+      <MotionDiv>
+        <div className="px-4 py-4 rounded-md bg-[var(--color-primary)] text-white shadow-sm hover:shadow-md transition-all duration-300">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-[24px] font-bold">{formatCurrency(data.todaysSale)}</p>
+              <p className="text-sm">Today's Sale</p>
+            </div>
+            <div className="text-5xl hover:scale-120 transition-all ease-in duration-300">
+              <IoCubeOutline />
             </div>
           </div>
-        </MotionDiv>
-      ))}
+        </div>
+      </MotionDiv>
+
+      {/* 2. Today's Expense - Bright Sky Blue */}
+      <MotionDiv>
+        <div className="px-4 py-4 rounded-md bg-[#009fe3] text-white shadow-sm hover:shadow-md transition-all duration-300">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-[24px] font-bold">{formatCurrency(data.todaysExpense)}</p>
+              <p className="text-sm">Today's Expense</p>
+            </div>
+            <div className="text-5xl hover:scale-120 transition-all ease-in duration-300">
+              <FiShoppingCart />
+            </div>
+          </div>
+        </div>
+      </MotionDiv>
+
+      {/* 3. Total Receivable - Midnight Navy */}
+      <MotionDiv>
+        <div className="px-4 py-4 rounded-md bg-[#1b2850] text-white shadow-sm hover:shadow-md transition-all duration-300">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-[24px] font-bold">{formatCurrency(data.totalReceivable)}</p>
+              <p className="text-sm">Total Receivable</p>
+            </div>
+            <div className="text-5xl hover:scale-120 transition-all ease-in duration-300">
+              <FaStore />
+            </div>
+          </div>
+        </div>
+      </MotionDiv>
+
+      {/* 4. Total Payable - Emerald Green */}
+      <MotionDiv>
+        <div className="px-4 py-4 rounded-md bg-[#28c76f] text-white shadow-sm hover:shadow-md transition-all duration-300">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-[24px] font-bold">{formatCurrency(data.totalPayable)}</p>
+              <p className="text-sm">Total Payable</p>
+            </div>
+            <div className="text-5xl hover:scale-120 transition-all ease-in duration-300">
+              <FaUserFriends />
+            </div>
+          </div>
+        </div>
+      </MotionDiv>
+
+      {/* 5. Cash Balance - Orange / Amber */}
+      <MotionDiv>
+        <div className="px-4 py-4 rounded-md bg-[#FE9F43] text-white shadow-sm hover:shadow-md transition-all duration-300">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-[24px] font-bold">{formatCurrency(data.cashBalance)}</p>
+              <p className="text-sm">Cash Balance</p>
+            </div>
+            <div className="text-5xl hover:scale-120 transition-all ease-in duration-300">
+              <FaMoneyBillWave />
+            </div>
+          </div>
+        </div>
+      </MotionDiv>
+
+      {/* 6. Bank Balance - Matching Rich Indigo/Violet */}
+      <MotionDiv>
+        <div className="px-4 py-4 rounded-md bg-[#7367f0] text-white shadow-sm hover:shadow-md transition-all duration-300">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-[24px] font-bold">{formatCurrency(data.bankBalance)}</p>
+              <p className="text-sm">Bank Balance</p>
+            </div>
+            <div className="text-5xl hover:scale-120 transition-all ease-in duration-300">
+              <FaUniversity />
+            </div>
+          </div>
+        </div>
+      </MotionDiv>
     </div>
   );
 };

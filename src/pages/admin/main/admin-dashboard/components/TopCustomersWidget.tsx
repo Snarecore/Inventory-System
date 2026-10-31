@@ -1,29 +1,25 @@
 import React from 'react';
 import { FiGrid } from 'react-icons/fi';
-import type { TopCustomer } from '../types/dashboard.types';
+import { mockTopCustomers } from '../data/mockDashboardData';
 
-interface TopCustomersWidgetProps {
-  customers: TopCustomer[];
-}
-
-export const TopCustomersWidget: React.FC<TopCustomersWidgetProps> = ({ customers }) => {
+export const TopCustomersWidget: React.FC = () => {
   return (
-    <div className="premium-panel w-full p-4 flex flex-col justify-between h-full">
+    <div className="w-full bg-white p-4 rounded-2xl shadow-sm flex flex-col justify-between h-full">
       <div>
         <div className="flex items-center gap-2.5 mb-2.5">
-          <span className="bg-[var(--primary-color-light)] text-[var(--primary-color)] p-1.5 rounded-full">
+          <span className="bg-[#e6f4fe] text-[#009fe3] p-1.5 rounded-full">
             <FiGrid size={18} />
           </span>
           <p className="text-xl font-bold">Top 5 Customers</p>
         </div>
 
-        <div className="border-b border-[var(--ui-border)] mb-3"></div>
+        <div className="border-b border-gray-200 mb-3"></div>
 
         {/* Customer Table/List */}
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm">
             <thead>
-              <tr className="border-b border-[var(--ui-border)] text-xs text-[var(--ui-text)] font-semibold">
+              <tr className="border-b border-gray-100 text-xs text-black font-semibold">
                 <th className="pb-1.5">SL</th>
                 <th className="pb-1.5">Customer</th>
                 <th className="pb-1.5">Phone</th>
@@ -31,29 +27,22 @@ export const TopCustomersWidget: React.FC<TopCustomersWidgetProps> = ({ customer
                 <th className="pb-1.5 text-right">Total Spent</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-[var(--ui-border)]">
-              {customers.map((cust, idx) => (
-                <tr key={cust.id} className="hover:bg-[var(--ui-surface-muted)]/70 transition-colors">
-                  <td className="py-2 text-xs text-[var(--ui-text)] font-bold">{idx + 1}</td>
+            <tbody className="divide-y divide-gray-100">
+              {mockTopCustomers.map((cust, idx) => (
+                <tr key={cust.id} className="hover:bg-gray-50/70 transition-colors">
+                  <td className="py-2 text-xs text-black font-bold">{idx + 1}</td>
                   <td className="py-2">
-                    <span className="text-[var(--ui-text)]">{cust.name}</span>
+                    <span className="text-black">{cust.name}</span>
                   </td>
-                  <td className="py-2 text-xs text-[var(--ui-text)]">{cust.phone}</td>
-                  <td className="py-2 text-center text-xs font-semibold text-[var(--ui-text)]">
+                  <td className="py-2 text-xs text-black">{cust.phone}</td>
+                  <td className="py-2 text-center text-xs font-semibold text-black">
                     {cust.ordersCount}
                   </td>
-                  <td className="py-2 text-right font-bold text-[var(--ui-text)]">
+                  <td className="py-2 text-right font-bold text-black">
                     ৳{cust.totalPurchases.toLocaleString('en-IN')}
                   </td>
                 </tr>
               ))}
-              {customers.length === 0 && (
-                <tr>
-                  <td colSpan={5} className="py-6 text-center text-sm text-[var(--ui-text-muted)]">
-                    No sales data available yet.
-                  </td>
-                </tr>
-              )}
             </tbody>
           </table>
         </div>
