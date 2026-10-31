@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useCallback, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import moment from "moment";
 import apiConfig from "@/config/api.json";
@@ -290,13 +290,44 @@ export const useAdminDashboardData = () => {
     productsQuery.dataUpdatedAt
   );
 
+  const isRefreshing =
+    salesQuery.isRefetching ||
+    customerDueQuery.isRefetching ||
+    supplierDueQuery.isRefetching ||
+    cashQuery.isRefetching ||
+    accounts.bankQuery.isRefetching ||
+    expensesQuery.isRefetching ||
+    productsQuery.isRefetching;
+
+  const refresh = useCallback(async () => {
+    await Promise.all([
+      salesQuery.refetch(),
+      customerDueQuery.refetch(),
+      supplierDueQuery.refetch(),
+      cashQuery.refetch(),
+      accounts.bankQuery.refetch(),
+      expensesQuery.refetch(),
+      productsQuery.refetch(),
+    ]);
+  }, [
+    accounts.bankQuery,
+    cashQuery,
+    customerDueQuery,
+    expensesQuery,
+    productsQuery,
+    salesQuery,
+    supplierDueQuery,
+  ]);
+
   return {
     assets,
     expenses,
     hasError,
     isLoading,
+    isRefreshing,
     kpis,
     products,
+    refresh,
     sales,
     topCustomers,
     topSaleItems,

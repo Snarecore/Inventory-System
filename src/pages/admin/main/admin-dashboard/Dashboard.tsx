@@ -5,6 +5,7 @@ import { ProfitLossChart } from './components/ProfitLossChart';
 import { AssetAnalysisChart } from './components/AssetAnalysisChart';
 import { TopCustomersWidget } from './components/TopCustomersWidget';
 import { TopSaleItemsWidget } from './components/TopSaleItemsWidget';
+import { RefreshButton } from '@/components/common';
 import { useAdminDashboardData } from './hooks/useAdminDashboardData';
 
 const AdminDashboard: React.FC = () => {
@@ -27,8 +28,14 @@ const AdminDashboard: React.FC = () => {
             Business overview
           </h1>
         </div>
-        <div className="rounded-full border border-[var(--ui-border)] bg-[var(--ui-surface-muted)] px-3 py-1.5 text-xs font-medium text-[var(--ui-text-muted)]">
-          {updatedLabel}
+        <div className="flex items-center gap-2.5">
+          <div className="hidden rounded-full border border-[var(--ui-border)] bg-[var(--ui-surface-muted)] px-3 py-1.5 text-xs font-medium text-[var(--ui-text-muted)] sm:block">
+            {updatedLabel}
+          </div>
+          <RefreshButton
+            onClick={dashboard.refresh}
+            isLoading={dashboard.isRefreshing}
+          />
         </div>
       </div>
 
