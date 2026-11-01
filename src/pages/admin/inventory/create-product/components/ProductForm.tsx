@@ -523,10 +523,10 @@ const CreateProductForm = () => {
 
                 {isOpen && (
                     <div className="p-2.5 sm:p-3">
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-2.5">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-2 sm:gap-x-2.5 gap-y-1.5 sm:gap-y-2">
                             {/* Row 1, Col 1: Product Name */}
                             <div>
-                                <div className="flex items-center justify-between min-h-[22px] mb-1.5 gap-1">
+                                <div className="flex items-center justify-between min-h-[20px] mb-1 gap-1">
                                     <label className="ui-label ui-label-required">Product Name</label>
                                 </div>
                                 <InputField
@@ -542,7 +542,7 @@ const CreateProductForm = () => {
 
                             {/* Row 1, Col 2: Category */}
                             <div className="relative z-30">
-                                <div className="flex items-center justify-between min-h-[22px] mb-1.5 gap-1">
+                                <div className="flex items-center justify-between min-h-[20px] mb-1 gap-1">
                                     <label className="ui-label">
                                         Category{isCategoriesLoading ? " (Loading...)" : ""}
                                     </label>
@@ -558,7 +558,7 @@ const CreateProductForm = () => {
 
                             {/* Row 1, Col 3: Unit (Primary) with Allow Decimal Toggle */}
                             <div className="relative z-20">
-                                <div className="flex items-center justify-between min-h-[22px] mb-1.5 gap-1">
+                                <div className="flex items-center justify-between min-h-[20px] mb-1 gap-1">
                                     <label className="ui-label ui-label-required">
                                         Unit{isUnitsLoading ? " (Loading...)" : ""}
                                     </label>
@@ -585,7 +585,7 @@ const CreateProductForm = () => {
 
                             {/* Row 1, Col 4: Secondary Unit (Optional) */}
                             <div className="relative z-20">
-                                <div className="flex items-center justify-between min-h-[22px] mb-1.5 gap-1">
+                                <div className="flex items-center justify-between min-h-[20px] mb-1 gap-1">
                                     <label className="ui-label">
                                         Secondary Unit (Optional)
                                     </label>
@@ -602,7 +602,7 @@ const CreateProductForm = () => {
 
                             {/* Row 2, Col 1: Conversion Ratio (if Secondary Unit is chosen) OR Packing Levels (Optional) */}
                             <div>
-                                <div className="flex items-center justify-between min-h-[22px] mb-1.5 gap-1">
+                                <div className="flex items-center justify-between min-h-[20px] mb-1 gap-1">
                                     <label htmlFor="packing_levels" className="ui-label truncate">
                                         {selectedUnit && selectedSecondaryUnit 
                                             ? `Conversion Ratio (1 ${selectedUnit.label} = ?)` 
@@ -632,7 +632,7 @@ const CreateProductForm = () => {
 
                             {/* Row 2, Col 2: Buy Price (based on Secondary Unit if selected, else Primary Unit) */}
                             <div>
-                                <div className="flex items-center justify-between min-h-[22px] mb-1.5 gap-1">
+                                <div className="flex items-center justify-between min-h-[20px] mb-1 gap-1">
                                     <label htmlFor="buy_price" className="ui-label ui-label-required truncate">
                                         Buy Price (৳)
                                     </label>
@@ -655,7 +655,7 @@ const CreateProductForm = () => {
 
                             {/* Row 2, Col 3: Sell Price (based on Secondary Unit if selected, else Primary Unit) */}
                             <div>
-                                <div className="flex items-center justify-between min-h-[22px] mb-1.5 gap-1">
+                                <div className="flex items-center justify-between min-h-[20px] mb-1 gap-1">
                                     <label htmlFor="sell_price" className="ui-label ui-label-required truncate">
                                         Sell Price (৳)
                                     </label>
@@ -678,7 +678,7 @@ const CreateProductForm = () => {
 
                             {/* Row 2, Col 4: Quantity */}
                             <div>
-                                <div className="flex items-center justify-between min-h-[22px] mb-1.5 gap-1">
+                                <div className="flex items-center justify-between min-h-[20px] mb-1 gap-1">
                                     <label className="ui-label">
                                         {activePricingUnit ? `Quantity (${activePricingUnit})` : "Quantity"}
                                     </label>
@@ -701,7 +701,7 @@ const CreateProductForm = () => {
 
                             {/* Row 3, Col 1: Low Stock Alert */}
                             <div>
-                                <div className="flex items-center justify-between min-h-[22px] mb-1.5 gap-1">
+                                <div className="flex items-center justify-between min-h-[20px] mb-1 gap-1">
                                     <label className="ui-label">Low Stock Alert</label>
                                 </div>
                                 <InputField
@@ -716,7 +716,7 @@ const CreateProductForm = () => {
 
                             {/* Row 3, Col 2: Product Code */}
                             <div>
-                                <div className="flex items-center justify-between min-h-[22px] mb-1.5 gap-1">
+                                <div className="flex items-center justify-between min-h-[20px] mb-1 gap-1">
                                     <label className="ui-label">Product Code</label>
                                 </div>
                                 <InputField
@@ -731,7 +731,7 @@ const CreateProductForm = () => {
 
                             {/* Row 3, Col 3: SKU */}
                             <div>
-                                <div className="flex items-center justify-between min-h-[22px] mb-1.5 gap-1">
+                                <div className="flex items-center justify-between min-h-[20px] mb-1 gap-1">
                                     <label className="ui-label">SKU</label>
                                 </div>
                                 <InputField
@@ -746,7 +746,7 @@ const CreateProductForm = () => {
 
                             {/* Row 3, Col 4: Barcode */}
                             <div>
-                                <div className="flex items-center justify-between min-h-[22px] mb-1.5 gap-1">
+                                <div className="flex items-center justify-between min-h-[20px] mb-1 gap-1">
                                     <label className="ui-label">Barcode</label>
                                 </div>
                                 <InputField
