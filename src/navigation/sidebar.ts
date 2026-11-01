@@ -19,7 +19,6 @@ import {
 } from "react-icons/fa";
 import { BiCube } from "react-icons/bi";
 import { TbTablePlus } from "react-icons/tb";
-import { TrendingUp, TrendingDown } from "lucide-react";
 
 export const menu = [
 	{
@@ -200,24 +199,6 @@ export const menu = [
 		sectionName: "Finance",
 		items: [
 			{
-				id: 710,
-				name: "Income",
-				title: "Income",
-				icon: TrendingUp,
-				path: "/admin/income",
-				permissionKey: "income.view",
-				subItems: [],
-			},
-			{
-				id: 711,
-				name: "Expense",
-				title: "Expense",
-				icon: TrendingDown,
-				path: "/admin/expense",
-				permissionKey: "expenses.view",
-				subItems: [],
-			},
-			{
 				id: 700,
 				name: "Banking",
 				title: "Banking",
@@ -234,9 +215,12 @@ export const menu = [
 				name: "Accounts",
 				title: "Accounts",
 				icon: FaBookOpen,
-				path: "/accounts/chart-of-accounts",
+				path: "/admin/income",
 				permissionKey: "accounts.view",
 				subItems: [
+					{ id: 710, name: "Income", path: "/admin/income", permissionKey: "income.view" },
+					{ id: 711, name: "Expense", path: "/admin/expense", permissionKey: "expenses.view" },
+					{ id: 712, name: "Fund Transfer", path: "/admin/fund-transfer", permissionKey: "accounts.fund_transfer.view" },
 					{ id: 66, name: "Chart of Accounts", path: "/accounts/chart-of-accounts", permissionKey: "accounts.coa.view" },
 					{ id: 67, name: "Journal Voucher", path: "/accounts/journal-voucher", permissionKey: "accounts.journal_voucher.view" },
 					{ id: 68, name: "Payment Voucher", path: "/accounts/payment-voucher", permissionKey: "accounts.payment_voucher.view" },
