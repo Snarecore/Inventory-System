@@ -35,39 +35,17 @@ import TradeProductSearch from "@/components/trade/TradeProductSearch";
 import TradeLineItemsTable from "@/components/trade/TradeLineItemsTable";
 import TradePartySelector from "@/components/trade/TradePartySelector";
 import TradeLedgerSummary from "@/components/trade/TradeLedgerSummary";
+import TradeSettlementSummary from "@/components/trade/TradeSettlementSummary";
+import TradeActionButtons from "@/components/trade/TradeActionButtons";
+import TradeFormHeader from "@/components/trade/TradeFormHeader";
 import TradeNotesInput from "@/components/trade/TradeNotesInput";
 import { usePurchasesQuery } from "@/pages/admin/trade/purchases/hooks/usePurchaseQueries";
 import { useFinancialLedger } from "@/hooks/useFinancialLedger";
 import { cashLeg, bankLeg, mfsLeg, type TradeTender } from "@/services/financial-ledger-service";
 import type { PurchaseItem, ProductItem, PartyItem, PurchaseChallanSettings } from "@/types";
-
-interface FormLineItem {
-  id?: string | number;
-  purchaseDetailId?: string | number;
-  productId: string | number;
-  productCode: string;
-  productName: string;
-  unit: string;
-  buyPrice: string;
-  quantity: string;
-  vat: string;
-  total: number;
-  stock?: number | string;
-}
-
-const computeLineTotal = (
-  priceStr: string,
-  qtyStr: string,
-  vatStr: string
-) => {
-  const p = Number(priceStr) || 0;
-  const q = Number(qtyStr) || 0;
-  const v = Number(vatStr) || 0;
-
-  const baseAmount = p * q;
-  const vatAmount = (baseAmount * v) / 100;
-  return Math.round((baseAmount + vatAmount) * 100) / 100;
-};
+import { useTradeParties } from "@/hooks/useTradeParties";
+import { useTradeProducts } from "@/hooks/useTradeProducts";
+import { useTradeLineItems, type TradeLineItem } from "@/hooks/useTradeLineItems";
 
 const defaultChallanSettings: PurchaseChallanSettings = {
   showChallanRefNo: true,
@@ -120,9 +98,6 @@ const CreatePurchaseForm: React.FC = () => {
   const [notes, setNotes] = useState<string>("");
   const [attachment, setAttachment] = useState<File | string | null>(null);
 
-  // Product Selection & Line Items
-  const [lineItems, setLineItems] = useState<FormLineItem[]>([]);
-
   // Invoice-level Financials
   const [invoiceDiscount, setInvoiceDiscount] = useState<string>("");
   const [invoiceVat, setInvoiceVat] = useState<string>("");
@@ -135,11 +110,35 @@ const CreatePurchaseForm: React.FC = () => {
   const [shouldAutoPrint, setShouldAutoPrint] = useState<boolean>(false);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const isSubmittingRef = useRef<boolean>(false);
-  const [itemIndexToDelete, setItemIndexToDelete] = useState<number | null>(null);
-  const [isDeleteLineModalOpen, setIsDeleteLineModalOpen] = useState<boolean>(false);
   const [isResetModalOpen, setIsResetModalOpen] = useState<boolean>(false);
   const [isSaveConfirmModalOpen, setIsSaveConfirmModalOpen] = useState<boolean>(false);
   const [pendingSavePrint, setPendingSavePrint] = useState<boolean>(false);
+
+  // 1. Fetch Products & Suppliers via shared trade hooks
+  const { allProducts } = useTradeProducts();
+  const { partyList: suppliersList } = useTradeParties("SUPPLIER");
+
+  // 2. Line Items State & Operations
+  const {
+    lineItems,
+    setLineItems,
+    rawSubtotal,
+    lineVatTotal,
+    isProductAlreadyInList,
+    handleToggleProductInList,
+    handleAddProduct,
+    handleUpdateLineItem,
+    handleUpdatePrice,
+    handleUpdateQuantity,
+    handleRequestDelete,
+    handleConfirmDelete,
+    isDeleteModalOpen: isDeleteLineModalOpen,
+    handleCloseDeleteModal,
+    itemIndexToDelete,
+  } = useTradeLineItems({
+    mode: "purchase",
+    allProducts,
+  });
 
   // Fetch Existing Purchases ONLY when in edit mode (Shared cache with 60s staleTime)
   const { data: rawPurchaseData } = usePurchasesQuery({
@@ -155,98 +154,6 @@ const CreatePurchaseForm: React.FC = () => {
       setInvoiceNo(makeInvoiceNo(businessCode));
     }
   }, [isEditMode, invoiceNo, businessCode]);
-
-  // Fetch Products via POST /get-product-list
-  const productListUrl = apiConfig.productList.productListUrl;
-  const { data: rawProductData } = useQuery({
-    queryKey: [productListQueryKey],
-    queryFn: async () => {
-      try {
-        const res = await postData<any>({
-          url: productListUrl,
-          body: { accessUser: buildAccessUser() },
-        });
-        return res;
-      } catch {
-        return null;
-      }
-    },
-    staleTime: 60 * 1000,
-  });
-
-  const allProducts: ProductItem[] = useMemo(() => {
-    if (!rawProductData) return [];
-    let list: any[] = [];
-    if (Array.isArray(rawProductData)) list = rawProductData;
-    else if (rawProductData && typeof rawProductData === "object") {
-      const raw = rawProductData as any;
-      if (Array.isArray(raw.productsList)) list = raw.productsList;
-      else if (Array.isArray(raw.productList)) list = raw.productList;
-      else if (Array.isArray(raw.data)) list = raw.data;
-    }
-
-    return list
-      .filter((p: any) => {
-        const isDel = String(p.isDeleted || "").trim().toUpperCase();
-        return isDel !== "Y" && isDel !== "YES" && isDel !== "TRUE" && isDel !== "1";
-      })
-      .map((p: any) => ({
-        ...p,
-        id: p.id ?? p.pcode,
-        name: p.name || "Product",
-        productCode: p.pcode || "",
-        pcode: p.pcode || "",
-        buyPrice: Number(p.buyPrice ?? 0),
-        sellPrice: Number(p.sellPrice ?? 0),
-        quantity: Number(p.quantity ?? 0),
-        unit: p.secondary_unit || p.secondaryUnit || p.unit || "pcs",
-      }));
-  }, [rawProductData]);
-
-  // Fetch Suppliers via POST /get-party-info-list
-  const partyListUrl = apiConfig.party.partyListUrl;
-  const { data: rawPartyData } = useQuery({
-    queryKey: [partyListQueryKey],
-    queryFn: async () => {
-      try {
-        const res = await postData<any>({
-          url: partyListUrl,
-          body: { accessUser: buildAccessUser() },
-        });
-        return res;
-      } catch {
-        return null;
-      }
-    },
-    staleTime: 5 * 60 * 1000,
-  });
-
-  const suppliersList: PartyItem[] = useMemo(() => {
-    if (!rawPartyData) return [];
-    let list: any[] = [];
-    if (Array.isArray(rawPartyData)) list = rawPartyData;
-    else if (rawPartyData && typeof rawPartyData === "object") {
-      const raw = rawPartyData as any;
-      if (Array.isArray(raw.partyList)) list = raw.partyList;
-      else if (Array.isArray(raw.supplierList)) list = raw.supplierList;
-      else if (Array.isArray(raw.partyInfoList)) list = raw.partyInfoList;
-      else if (Array.isArray(raw.data)) list = raw.data;
-    }
-
-    return list
-      .filter((p: any) => {
-        if (!isPartyActive(p)) return false;
-        const type = String(p.type || p.partyType || "").toUpperCase();
-        return type.includes("SUPPLIER") || !type;
-      })
-      .map((p: any) => ({
-        ...p,
-        id: p.id,
-        name: p.name || "Supplier",
-        phone: p.phone || "",
-        address: p.address || "",
-      }));
-  }, [rawPartyData]);
 
   // Fetch Registered Bank and MFS Accounts (Shared cache with 5-minute staleTime)
   const { registeredBankAccounts, registeredMfsAccounts } = useFinancialAccounts();
@@ -482,7 +389,7 @@ const CreatePurchaseForm: React.FC = () => {
             productId: pId || (matchedProd?.id ? String(matchedProd.id) : ""),
             productCode: pCode || matchedProd?.pcode || "",
             productName: pName !== "Product" ? pName : (matchedProd?.name || "Product"),
-            unit: item.unit || (matchedProd as any)?.secondary_unit || (matchedProd as any)?.secondaryUnit || matchedProd?.unit || "pcs",
+            unit: item.unit || matchedProd?.unit || "pcs",
             buyPrice: String(buyP),
             quantity: String(q),
             vat: v ? String(v) : "",
@@ -498,158 +405,12 @@ const CreatePurchaseForm: React.FC = () => {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [effectiveEditData, suppliersList, allProducts, routeId]);
-
-  // Synchronize live stock for lineItems whenever allProducts is loaded or updated
-  useEffect(() => {
-    if (allProducts.length > 0 && lineItems.length > 0) {
-      setLineItems((prevItems) => {
-        let changed = false;
-        const updated = prevItems.map((item) => {
-          const matchedProd = allProducts.find((p) => {
-            const pIdStr = String(p.id ?? "");
-            const pCodeStr = String(p.productCode || p.pcode || "").toLowerCase();
-            return (item.productId && pIdStr === String(item.productId)) ||
-                    (item.productCode && pCodeStr === item.productCode.toLowerCase());
-          });
-
-          if (matchedProd) {
-            const liveStock = Number(matchedProd.quantity ?? 0);
-            if (item.stock !== liveStock) {
-              changed = true;
-              return { ...item, stock: liveStock };
-            }
-          }
-          return item;
-        });
-        return changed ? updated : prevItems;
-      });
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [allProducts]);
-
-
-  // Helper to check if a product is already added in the purchase line items list
-  const isProductAlreadyInList = useCallback(
-    (product: ProductItem) => {
-      const pId = product.id;
-      const pCode = product.productCode || product.pcode;
-
-      return lineItems.some((item) => {
-        if (pId !== undefined && pId !== null && pId !== "" && item.productId !== undefined && item.productId !== null && item.productId !== "") {
-          if (String(item.productId) === String(pId)) return true;
-        }
-        if (pCode && item.productCode) {
-          if (String(item.productCode).trim().toLowerCase() === String(pCode).trim().toLowerCase()) return true;
-        }
-        return false;
-      });
-    },
-    [lineItems]
-  );
-
-  // Toggle adding or removing a product from line items directly
-  const handleToggleProductInList = useCallback(
-    (product: ProductItem) => {
-      const pId = product.id ? String(product.id) : "";
-      const pCode = product.productCode || product.pcode || "";
-      const isAlreadyIn = isProductAlreadyInList(product);
-
-      if (isAlreadyIn) {
-        setLineItems((prev) =>
-          prev.filter((item) => {
-            if (pId && item.productId && String(item.productId) === String(pId)) return false;
-            if (pCode && item.productCode && String(item.productCode).trim().toLowerCase() === String(pCode).trim().toLowerCase()) return false;
-            return true;
-          })
-        );
-      } else {
-        const prodName = product.name || "Product";
-        const prodUnit = (product as any).secondary_unit || (product as any).secondaryUnit || product.unit || "pcs";
-        const buyPrice = Number(product.buyPrice ?? 0);
-        const currentStock = Number(product.quantity ?? 0);
-
-        const newLine: FormLineItem = {
-          productId: pId,
-          productCode: pCode,
-          productName: prodName,
-          unit: prodUnit,
-          buyPrice: buyPrice > 0 ? String(buyPrice) : "",
-          quantity: "1",
-          vat: "",
-          total: buyPrice,
-          stock: currentStock,
-        };
-        setLineItems((prev) => [...prev, newLine]);
-      }
-    },
-    [isProductAlreadyInList]
-  );
-
-  const handleUpdateLineItem = useCallback(
-    (index: number, field: keyof FormLineItem, value: any) => {
-      setLineItems((prev) => {
-        if (!prev[index]) return prev;
-        const updated = [...prev];
-        const item = { ...updated[index], [field]: value };
-        item.total = computeLineTotal(item.buyPrice, item.quantity, item.vat);
-        updated[index] = item;
-        return updated;
-      });
-    },
-    []
-  );
-
-  const handleAddProduct = useCallback(
-    (product: ProductItem) => {
-      const pId = product.id ?? "";
-      const pCode = product.pcode || "";
-      const existingIndex = lineItems.findIndex(
-        (item) =>
-          (pId && item.productId && String(item.productId) === String(pId)) ||
-          (pCode && item.productCode && String(item.productCode).trim().toLowerCase() === String(pCode).trim().toLowerCase())
-      );
-
-      if (existingIndex > -1) {
-        const curQty = Number(lineItems[existingIndex].quantity) || 1;
-        const newQty = curQty + 1;
-        handleUpdateLineItem(existingIndex, "quantity", String(newQty));
-      } else {
-        handleToggleProductInList(product);
-      }
-    },
-    [lineItems, handleUpdateLineItem, handleToggleProductInList]
-  );
-
   const productSearch = useTradeProductSearch({
     allProducts,
     mode: "purchase",
     onAddProduct: handleAddProduct,
     onToggleProduct: handleToggleProductInList,
   });
-
-  const handleRemoveLineItem = useCallback((index: number) => {
-    setLineItems((prev) => {
-      const item = prev[index];
-      const name = item?.productName || "Product";
-      showDeleteToast(`"${name}" removed from purchase list!`);
-      return prev.filter((_, i) => i !== index);
-    });
-  }, []);
-
-  const handleUpdatePrice = useCallback(
-    (idx: number, val: string) => handleUpdateLineItem(idx, "buyPrice", val),
-    [handleUpdateLineItem]
-  );
-
-  const handleUpdateQuantity = useCallback(
-    (idx: number, val: string) => handleUpdateLineItem(idx, "quantity", val),
-    [handleUpdateLineItem]
-  );
-
-  const handleRequestDelete = useCallback((idx: number) => {
-    setItemIndexToDelete(idx);
-    setIsDeleteLineModalOpen(true);
-  }, []);
 
   const handleSelectSupplier = useCallback((supplier: PartyItem) => {
     setSelectedSupplier(supplier);
@@ -658,27 +419,6 @@ const CreatePurchaseForm: React.FC = () => {
   const handleOpenPartyModal = useCallback(() => {
     setIsPartyModalOpen(true);
   }, []);
-
-  // --- Financial Calculations ---
-  // 1. Raw Subtotal = sum of (buyPrice * quantity)
-  const rawSubtotal = useMemo(() => {
-    return lineItems.reduce((sum, item) => {
-      const p = Number(item.buyPrice) || 0;
-      const q = Number(item.quantity) || 0;
-      return sum + p * q;
-    }, 0);
-  }, [lineItems]);
-
-  // 2. Line Items Total VAT
-  const lineVatTotal = useMemo(() => {
-    return lineItems.reduce((sum, item) => {
-      const p = Number(item.buyPrice) || 0;
-      const q = Number(item.quantity) || 0;
-      const v = Number(item.vat) || 0;
-      const base = p * q;
-      return sum + (base * v) / 100;
-    }, 0);
-  }, [lineItems]);
 
   // 3. Invoice-level Overall Discount (Fixed Amount)
   const calculatedInvoiceDiscount = Number(invoiceDiscount) || 0;
@@ -820,13 +560,12 @@ const CreatePurchaseForm: React.FC = () => {
 
       const purchaseDetailsPayload = lineItems.map((item) => {
         const p = Number(item.buyPrice) || 0;
-        const q = Number(item.quantity) || 0;
+        const q = Number(item.quantity) || 1;
         const v = Number(item.vat) || 0;
-        const base = p * q;
-        const lineVat = (base * v) / 100;
+        const lineVat = Math.round((p * q * v) / 100 * 100) / 100;
 
         return {
-          productId: item.productId || item.id,
+          productId: String(item.productId || ""),
           productCode: String(item.productCode || ""),
           productName: item.productName || "",
           unit: item.unit || "pcs",
@@ -838,23 +577,18 @@ const CreatePurchaseForm: React.FC = () => {
           delivery_charge: 0,
           status: "PENDING",
           advenType: "PURCHASE",
-          addedBy: accessUser.phone || "",
         };
       });
 
-      const supplierId =
-        (selectedSupplier as any).partyId ||
-        selectedSupplier.id ||
-        selectedSupplier.phone ||
-        "";
+      const supplierId = selectedSupplier.id ?? selectedSupplier.partyId ?? "";
 
       const purchasePayload: any = {
         accessUser,
         invoiceNo: invoiceNo.trim(),
         supplierId,
         supplierName: selectedSupplier.name || "",
-        supplierPhone: selectedSupplier.phone || (selectedSupplier as any).mobile || "",
-        supplierAddress: selectedSupplier.address || (selectedSupplier as any).city || "",
+        supplierPhone: selectedSupplier.phone || "",
+        supplierAddress: selectedSupplier.address || "",
         purchaseDate,
         totalAmount: rawSubtotal,
         discount: totalDiscount,
@@ -863,17 +597,19 @@ const CreatePurchaseForm: React.FC = () => {
         dueAmount,
         paymentType,
         status,
-        note: notes.trim() || "",
+        note: notes.trim(),
         vat: totalVat,
         addedBy: accessUser.phone || "",
         osType: "WEB",
         delivery_charge: calculatedTransport,
+        transportCost: calculatedTransport,
         challanNo: challanNo.trim() || null,
         challanRefNo: challanNo.trim() || null,
         challanDate: purchaseDate || null,
         vatChallan: vatChallan.trim() || null,
         vatChallanDate: vatChallanDate || null,
         vehicleNo: vehicleNo.trim() || null,
+        vehicleNumber: vehicleNo.trim() || null,
         capacityCft: capacityCft.trim() || null,
         driverName: driverName.trim() || null,
         driverPhone: driverPhone.trim() || null,
@@ -918,7 +654,7 @@ const CreatePurchaseForm: React.FC = () => {
         if (totalPaid > 0) {
           try {
             const selectedBankObj = registeredBankAccounts.find(
-              (b) => String(b.id) === String(selectedBankId)
+              (b) => String(b.bankId ?? b.id) === String(selectedBankId)
             );
             const selectedMfsObj = registeredMfsAccounts.find(
               (m) => String(m.id) === String(selectedMfsId)
@@ -1063,74 +799,24 @@ const CreatePurchaseForm: React.FC = () => {
   return (
     <div className="flex flex-col gap-2 px-2 py-1.5 sm:px-3 sm:py-2 max-w-[1600px] mx-auto w-full">
       {/* Top Header Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between pb-1.5 border-b border-[var(--ui-border)] gap-2">
-        <div className="flex items-center justify-between w-full sm:w-auto">
-          <div className="flex flex-col lg:flex-row lg:items-center gap-1 lg:gap-2.5 min-w-0">
-            <h1 className="text-sm sm:text-base lg:text-lg font-bold text-[var(--primary-color)] flex items-center gap-1.5 shrink-0">
-              <FaCalculator className="text-[var(--primary-color)] shrink-0" size={18} />
-              <span className="truncate">{isEditMode ? "Edit Purchase Invoice" : "Create New Purchase"}</span>
-            </h1>
-            <span className="text-[10px] sm:text-xs px-2.5 py-0.5 rounded-full bg-[var(--primary-color-light)] text-[var(--primary-color)] font-normal w-fit">
-              {invoiceNo || "Draft"}
-            </span>
-          </div>
-
-          {/* Quick Challan Settings, Reset & Cancel for Mobile */}
-          <div className="flex lg:hidden items-center gap-1 shrink-0">
-            <button
-              type="button"
-              onClick={() => setIsChallanSettingsOpen(true)}
-              className="ui-btn ui-btn-ghost h-[var(--ui-control-h-xs)] px-2 text-[length:var(--ui-font-size-xs)] font-normal flex items-center gap-1"
-              title="Challan Settings"
-            >
-              <FaSlidersH size={11} />
-              <span className="hidden sm:inline">Challan</span>
-            </button>
-            <button
-              type="button"
-              onClick={handleReset}
-              className="ui-btn ui-btn-ghost h-[var(--ui-control-h-xs)] px-2.5 text-[length:var(--ui-font-size-xs)] font-normal"
-            >
-              Reset
-            </button>
-            <button
-              type="button"
-              onClick={() => navigate("/admin/purchases")}
-              className="ui-btn ui-btn-ghost h-[var(--ui-control-h-xs)] px-2.5 text-[length:var(--ui-font-size-xs)] font-normal"
-            >
-              Cancel
-            </button>
-          </div>
-        </div>
-
-        {/* Action Controls */}
-        <div className="flex flex-col lg:flex-row lg:items-center gap-2 w-full lg:w-auto">
-          <div className="hidden lg:flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => setIsChallanSettingsOpen(true)}
-              className="ui-btn ui-btn-secondary h-[var(--ui-control-h-xs)] px-2.5 text-[length:var(--ui-font-size-xs)] font-normal flex items-center gap-1.5"
-            >
-              <FaSlidersH size={12} />
-              <span>Challan Settings</span>
-            </button>
-            <button
-              type="button"
-              onClick={handleReset}
-              className="ui-btn ui-btn-secondary h-[var(--ui-control-h-xs)] px-3 text-[length:var(--ui-font-size-xs)] font-normal"
-            >
-              Reset
-            </button>
-            <button
-              type="button"
-              onClick={() => navigate("/admin/purchases")}
-              className="ui-btn ui-btn-secondary h-[var(--ui-control-h-xs)] px-3 text-[length:var(--ui-font-size-xs)] font-normal"
-            >
-              Cancel
-            </button>
-          </div>
-        </div>
-      </div>
+      <TradeFormHeader
+        title={isEditMode ? "Edit Purchase Invoice" : "Create New Purchase"}
+        invoiceNo={invoiceNo}
+        invoiceBadgeFallback="Draft"
+        onReset={handleReset}
+        onCancel={() => navigate("/admin/purchases")}
+        extraActions={
+          <button
+            type="button"
+            onClick={() => setIsChallanSettingsOpen(true)}
+            className="ui-btn ui-btn-secondary h-[var(--ui-control-h-xs)] px-2.5 text-[length:var(--ui-font-size-xs)] font-normal flex items-center gap-1.5 cursor-pointer"
+            title="Challan Settings"
+          >
+            <FaSlidersH size={12} />
+            <span className="hidden sm:inline">Challan Settings</span>
+          </button>
+        }
+      />
 
       {/* Workspace: entry flow on the left, pinned summary rail on the right */}
       <div className="grid grid-cols-1 items-start gap-2 xl:grid-cols-12">
@@ -1372,90 +1058,25 @@ const CreatePurchaseForm: React.FC = () => {
             />
 
             {/* Settlement summary: who, then paid vs due */}
-            <div className="flex items-center justify-between gap-2 border-t border-[var(--ui-border)]/90 pt-1.5">
-              <div className="flex min-w-0 items-center gap-1.5">
-                <FaUserCircle size={12} className="shrink-0 text-[var(--ui-text-subtle)]" />
-                <span className="truncate text-[11px] font-semibold text-[var(--ui-text)]">
-                  {selectedSupplier?.name || selectedSupplier?.partyName || "—"}
-                </span>
-                {(selectedSupplier?.phone || selectedSupplier?.phoneNumber) && (
-                  <span className="truncate text-[10px] tabular-nums text-[var(--ui-text-muted)]">
-                    · {selectedSupplier?.phone || selectedSupplier?.phoneNumber}
-                  </span>
-                )}
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 items-center gap-1.5 sm:grid-cols-2">
-              {/* Total Paid Card with status badge */}
-              <div className="bg-[var(--ui-success-light)]/90 px-2.5 py-1 rounded-[var(--ui-radius-sm)] border border-[var(--ui-success-border)]/90 flex items-center justify-between shadow-[var(--ui-shadow-control)]">
-                <div className="flex items-center gap-1.5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-[var(--ui-success)] inline-block" />
-                  <span className="text-[11px] font-bold text-[var(--ui-success-dark)] tracking-wide">
-                    Total Paid
-                  </span>
-                  <span className="text-[10px] font-semibold px-1 py-0.5 rounded-[var(--ui-radius-sm)] bg-[var(--ui-success-border)] text-[var(--ui-success-dark)]">
-                    {totalPaid >= grandTotal && grandTotal > 0 ? "PAID" : totalPaid > 0 ? "PARTIAL" : "UNPAID"}
-                  </span>
-                </div>
-                <span className="text-xs sm:text-[13px] font-extrabold tabular-nums text-[var(--ui-success-dark)]">
-                  ৳ {formatMoney(totalPaid)}
-                </span>
-              </div>
-
-              {/* Due Balance Card */}
-              <div
-                className={`px-2.5 py-1 rounded-[var(--ui-radius-sm)] border flex items-center justify-between transition-colors shadow-[var(--ui-shadow-control)] ${
-                  dueAmount > 0 ? "bg-[var(--ui-danger-light)]/90 border-[var(--ui-danger-border)]/90" : "bg-[var(--ui-surface-muted)] border-[var(--ui-border)]"
-                }`}
-              >
-                <div className="flex items-center gap-1.5">
-                  <span
-                    className={`w-1.5 h-1.5 rounded-full inline-block ${
-                      dueAmount > 0 ? "bg-[var(--ui-danger)]" : "bg-[var(--ui-text-subtle)]"
-                    }`}
-                  />
-                  <span
-                    className={`text-[11px] font-bold tracking-wide ${
-                      dueAmount > 0 ? "text-[var(--ui-danger-dark)]" : "text-[var(--ui-text)]"
-                    }`}
-                  >
-                    Due Balance
-                  </span>
-                  {dueAmount > 0 && (
-                    <span className="text-[10px] font-semibold px-1 py-0.5 rounded-[var(--ui-radius-sm)] bg-[var(--ui-danger-border)] text-[var(--ui-danger-dark)]">
-                      DUE
-                    </span>
-                  )}
-                </div>
-                <span
-                  className={`text-xs sm:text-[13px] font-extrabold tabular-nums ${
-                    dueAmount > 0 ? "text-[var(--ui-danger)]" : "text-[var(--ui-text)]"
-                  }`}
-                >
-                  ৳ {formatMoney(dueAmount)}
-                </span>
-              </div>
-            </div>
+            <TradeSettlementSummary
+              partyName={selectedSupplier?.name || selectedSupplier?.partyName}
+              partyPhone={selectedSupplier?.phone || selectedSupplier?.phoneNumber}
+              isWalkIn={false}
+              totalPaid={totalPaid}
+              grandTotal={grandTotal}
+              dueAmount={dueAmount}
+              dueLabel="Due Balance"
+            />
           </div>
 
           {/* Primary actions live with the totals they commit */}
-          <div className="ui-card flex items-center gap-2 p-2 sm:p-2.5">
-            <Button
-              label={isSubmitting ? "Saving..." : isEditMode ? "Update Purchase" : "Save Purchase"}
-              onClick={() => handlePreSubmit(false)}
-              color="var(--primary-color)"
-              disabled={isSubmitting}
-              buttonClass="flex-1 !w-auto justify-center !py-2 text-[length:var(--ui-font-size-sm)] font-semibold !text-white"
-            />
-            <Button
-              label="Save & Print"
-              onClick={() => handlePreSubmit(true)}
-              color="#059669"
-              disabled={isSubmitting}
-              buttonClass="flex-1 !w-auto justify-center !py-2 text-[length:var(--ui-font-size-sm)] font-semibold !text-white"
-            />
-          </div>
+          <TradeActionButtons
+            isSubmitting={isSubmitting}
+            isEditMode={isEditMode}
+            saveLabel="Purchase"
+            onSave={() => handlePreSubmit(false)}
+            onSaveAndPrint={() => handlePreSubmit(true)}
+          />
         </aside>
       </div>
 
@@ -1499,17 +1120,8 @@ const CreatePurchaseForm: React.FC = () => {
       {isDeleteLineModalOpen && (
         <DeleteModal
           isOpen={isDeleteLineModalOpen}
-          onClose={() => {
-            setIsDeleteLineModalOpen(false);
-            setItemIndexToDelete(null);
-          }}
-          onDelete={() => {
-            if (itemIndexToDelete !== null) {
-              handleRemoveLineItem(itemIndexToDelete);
-            }
-            setIsDeleteLineModalOpen(false);
-            setItemIndexToDelete(null);
-          }}
+          onClose={handleCloseDeleteModal}
+          onDelete={handleConfirmDelete}
           title="Remove Product"
           message={`Are you sure you want to remove "${itemIndexToDelete !== null && lineItems[itemIndexToDelete] ? lineItems[itemIndexToDelete]?.productName : 'this item'}" from the purchase list?`}
         />

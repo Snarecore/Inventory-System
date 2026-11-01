@@ -8,6 +8,8 @@ export interface MfsUserItem {
   openingBalance: number;
   currentBalance: number;
   status: MfsStatus | string;
+  mfsName?: string;
+  mfsPhone?: string;
 }
 
 export interface MfsUserListResponse {

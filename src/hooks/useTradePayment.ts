@@ -162,12 +162,12 @@ export const useTradePayment = ({
     (bankId: string) => {
       setSelectedBankId(bankId);
       const found = registeredBankAccounts.find(
-        (b) => String(b.id || b.bankId || b._id) === String(bankId)
+        (b) => String(b.bankId ?? b.id) === String(bankId)
       );
       if (found) {
-        setBankName(found.bankName || found.name || "");
-        setAccountNo(found.accountNo || found.bankAccountNumber || found.bankAccountNo || "");
-        setBankRef(found.accountName || found.bankAccountName || found.branchName || "");
+        setBankName(found.bankName || "");
+        setAccountNo(found.accountNo || "");
+        setBankRef(found.bankAccountName || "");
       } else {
         setBankName("");
         setAccountNo("");
@@ -187,11 +187,11 @@ export const useTradePayment = ({
     (mfsId: string) => {
       setSelectedMfsId(mfsId);
       const found = registeredMfsAccounts.find(
-        (m) => String(m.id || m.mfsId || m._id) === String(mfsId)
+        (m) => String(m.id) === String(mfsId)
       );
       if (found) {
-        setMfsName(found.name || found.mfsName || found.method || "MFS");
-        setMfsPhone(found.phoneNumber || found.mfsPhone || found.phone || "");
+        setMfsName(found.name || found.method || "MFS");
+        setMfsPhone(found.phoneNumber || "");
       } else {
         setMfsName("");
         setMfsPhone("");
@@ -216,7 +216,7 @@ export const useTradePayment = ({
     if (!selectedBankId) {
       if (registeredBankAccounts.length > 0) {
         const firstBank = registeredBankAccounts[0];
-        const bId = String(firstBank.id || firstBank.bankId || firstBank._id || "");
+        const bId = String(firstBank.bankId ?? firstBank.id ?? "");
         handleSelectBank(bId);
       } else {
         showErrorToast("Please select / register a bank account first");
@@ -232,7 +232,7 @@ export const useTradePayment = ({
     if (!selectedMfsId) {
       if (registeredMfsAccounts.length > 0) {
         const firstMfs = registeredMfsAccounts[0];
-        const mId = String(firstMfs.id || firstMfs.mfsId || firstMfs._id || "");
+        const mId = String(firstMfs.id ?? "");
         handleSelectMfs(mId);
       } else {
         showErrorToast("Please select / register an MFS account first");

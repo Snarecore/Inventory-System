@@ -2,6 +2,7 @@ export type BankAccountStatus = "Active" | "Inactive";
 export type BankCardType = "debit" | "credit";
 
 export interface BankAccountItem {
+  id?: number;
   bankId: number;
   bankName: string;
   bankAccountName: string;

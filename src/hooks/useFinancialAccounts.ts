@@ -22,21 +22,25 @@ export const extractBankAccounts = (raw: any): BankAccountItem[] => {
     ? raw
     : [];
 
-  return list.map((b: any) => ({
-    bankId: Number(b.bankId || b.id || 0),
-    bankName: b.bankName || "",
-    bankAccountName: b.bankAccountName || "",
-    accountNo: b.accountNo || "",
-    branchName: b.branchName || "",
-    currentBalance: Number(b.currentBalance ?? 0),
-    openingBalance: Number(b.openingBalance ?? 0),
-    status: b.status ? String(b.status).trim() : "Inactive",
-    hasCard: Boolean(b.hasCard),
-    cardType: b.cardType || null,
-    cardNumber: b.cardNumber || null,
-    balanceDate: b.balanceDate,
-    transactionDate: b.transactionDate,
-  }));
+  return list.map((b: any) => {
+    const bankId = Number(b.bankId || b.id || 0);
+    return {
+      id: bankId,
+      bankId,
+      bankName: b.bankName || "",
+      bankAccountName: b.bankAccountName || "",
+      accountNo: b.accountNo || "",
+      branchName: b.branchName || "",
+      currentBalance: Number(b.currentBalance ?? 0),
+      openingBalance: Number(b.openingBalance ?? 0),
+      status: b.status ? String(b.status).trim() : "Inactive",
+      hasCard: Boolean(b.hasCard),
+      cardType: b.cardType || null,
+      cardNumber: b.cardNumber || null,
+      balanceDate: b.balanceDate,
+      transactionDate: b.transactionDate,
+    };
+  });
 };
 
 /**
