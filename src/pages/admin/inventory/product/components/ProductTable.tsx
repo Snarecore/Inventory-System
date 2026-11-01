@@ -50,15 +50,15 @@ interface ProductTableProps {
     onRefresh: () => void;
 }
 
-const tableHeaders = [
-    { key: "sl", label: "SL", align: "text-center" },
-    { key: "name", label: "Product Name", align: "text-left" },
-    { key: "category", label: "Category", align: "text-left" },
-    { key: "stock", label: "Stock & Unit", align: "text-center" },
-    { key: "buyPrice", label: "Buy Price", align: "text-right" },
-    { key: "sellPrice", label: "Sell Price", align: "text-right" },
-    { key: "status", label: "Status", align: "text-center" },
-    { key: "action", label: "Actions", align: "text-center" },
+const tableHeaders: { key: string; label: string; align: "left" | "center" | "right" }[] = [
+    { key: "sl", label: "SL", align: "center" },
+    { key: "name", label: "Product Name", align: "left" },
+    { key: "category", label: "Category", align: "left" },
+    { key: "stock", label: "Stock & Unit", align: "center" },
+    { key: "buyPrice", label: "Buy Price", align: "right" },
+    { key: "sellPrice", label: "Sell Price", align: "right" },
+    { key: "status", label: "Status", align: "center" },
+    { key: "action", label: "Actions", align: "center" },
 ];
 
 const availableColumns: ColumnItem[] = tableHeaders.map((h) => ({ key: h.key, label: h.label }));
@@ -395,7 +395,9 @@ export const ProductTable = ({
                                 {tableHeaders.filter((h) => isColVisible(h.key)).map(({ key, label, align }) => (
                                     <TableTh
                                         key={key}
-                                        className={`${align} ${key === "sl" ? "w-10 text-center" : ""}`}
+                                        align={align}
+                                        width={key === "sl" ? 48 : undefined}
+                                        className={`${key === "sl" ? "w-12" : ""} whitespace-nowrap`}
                                     >
                                         {label}
                                     </TableTh>
@@ -420,14 +422,14 @@ export const ProductTable = ({
                                             >
                                                 {/* SL */}
                                                 {isColVisible("sl") && (
-                                                    <td className="py-2.5 px-3 text-center text-xs font-normal text-[var(--ui-text)]">
+                                                    <td className="py-2.5 px-3 text-center text-xs font-normal text-[var(--ui-text)] w-12 whitespace-nowrap">
                                                         {rowNumber}
                                                     </td>
                                                 )}
 
                                                 {/* Product Name */}
                                                 {isColVisible("name") && (
-                                                    <td className="py-2.5 px-3 font-normal text-xs text-[var(--ui-text)]">
+                                                    <td className="py-2.5 px-3 text-left font-normal text-xs text-[var(--ui-text)]">
                                                         <div className="min-w-0">
                                                             <span className="font-normal text-xs text-[var(--ui-text)] block truncate">
                                                                 {getName(product)}
@@ -443,7 +445,7 @@ export const ProductTable = ({
 
                                                 {/* Category */}
                                                 {isColVisible("category") && (
-                                                    <td className="py-2.5 px-3">
+                                                    <td className="py-2.5 px-3 text-left">
                                                         <span className="inline-flex items-center px-1.5 py-0.5 rounded-md text-[10px] font-semibold bg-[var(--ui-surface-sunken)] text-[var(--ui-text)] border border-[var(--ui-border-strong)]">
                                                             {getCategory(product)}
                                                         </span>
@@ -471,14 +473,14 @@ export const ProductTable = ({
 
                                                 {/* Buy Price */}
                                                 {isColVisible("buyPrice") && (
-                                                    <td className="py-2.5 px-3 text-right font-normal text-xs text-[var(--ui-text)] whitespace-nowrap">
+                                                    <td className="py-2.5 px-3 text-right font-normal text-xs text-[var(--ui-text)] whitespace-nowrap tabular-nums">
                                                         ৳{getBuyPrice(product).toLocaleString('en-IN')}
                                                     </td>
                                                 )}
 
                                                 {/* Sell Price */}
                                                 {isColVisible("sellPrice") && (
-                                                    <td className="py-2.5 px-3 text-right font-normal text-xs text-[var(--ui-text)] whitespace-nowrap">
+                                                    <td className="py-2.5 px-3 text-right font-normal text-xs text-[var(--ui-text)] whitespace-nowrap tabular-nums">
                                                         ৳{getSellPrice(product).toLocaleString('en-IN')}
                                                     </td>
                                                 )}

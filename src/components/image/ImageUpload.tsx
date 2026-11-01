@@ -81,10 +81,13 @@ const ImageUpload: React.FC<ImageUploadProps> = ({ value, onChange, size = "sm",
 		<div className={`flex flex-row items-start space-x-2.5 ${className}`}>
 			<label
 				htmlFor={`${id}-file-upload`}
-				className={`${dimensionClass} group flex items-center justify-center flex-col gap-1 border border-dashed border-[var(--primary-color)] bg-[var(--primary-color-light)] hover:bg-[var(--primary-color-muted)] text-[var(--primary-color)] text-xs rounded-xl cursor-pointer transition-all duration-200`}
+				className={`${dimensionClass} group flex items-center justify-center flex-col gap-0.5 border border-dashed border-[var(--primary-color)] bg-[var(--primary-color-light)] hover:bg-[var(--primary-color-muted)] text-[var(--primary-color)] text-xs rounded-xl cursor-pointer transition-all duration-200 p-1`}
 			>
-				<IoCloudUploadOutline size={size === "sm" ? 20 : 24} className="text-[var(--primary-color)] group-hover:-translate-y-0.5 transition-all" />
-				<p className="font-semibold text-[11px] text-[var(--primary-color)] transition-colors">Upload Image</p>
+				<IoCloudUploadOutline size={size === "sm" ? 20 : 24} className="text-[var(--primary-color)] group-hover:-translate-y-0.5 transition-all shrink-0" />
+				<span className="font-semibold text-[11px] leading-tight text-center text-[var(--primary-color)] transition-colors flex flex-col items-center">
+					<span>Upload</span>
+					<span>Image</span>
+				</span>
 			</label>
 			<input
 				id={`${id}-file-upload`}

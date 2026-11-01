@@ -140,23 +140,34 @@ export interface TableThProps extends React.ThHTMLAttributes<HTMLTableCellElemen
 export const TableTh: React.FC<TableThProps> = ({
   children,
   className = "",
-  align = "left",
+  align,
   width,
   style,
   ...props
 }) => {
+  let effectiveAlign = align;
+  if (!effectiveAlign) {
+    if (/\btext-center\b/.test(className)) effectiveAlign = "center";
+    else if (/\btext-right\b/.test(className)) effectiveAlign = "right";
+    else effectiveAlign = "left";
+  }
+
   const alignClass =
-    align === "center"
+    effectiveAlign === "center"
       ? "text-center"
-      : align === "right"
+      : effectiveAlign === "right"
       ? "text-right"
       : "text-left";
+
+  const cleanClassName = className
+    .replace(/\btext-(left|center|right)\b/g, "")
+    .trim();
 
   const customStyle = width ? { width, ...style } : style;
 
   return (
     <th
-      className={`${TABLE_CLASSES.headerCell} ${alignClass} ${className}`.trim()}
+      className={`${TABLE_CLASSES.headerCell} ${alignClass} ${cleanClassName}`.trim()}
       style={customStyle}
       {...props}
     >
@@ -215,19 +226,30 @@ export interface TableCellProps extends React.TdHTMLAttributes<HTMLTableCellElem
 export const TableCell: React.FC<TableCellProps> = ({
   children,
   className = "",
-  align = "left",
+  align,
   ...props
 }) => {
+  let effectiveAlign = align;
+  if (!effectiveAlign) {
+    if (/\btext-center\b/.test(className)) effectiveAlign = "center";
+    else if (/\btext-right\b/.test(className)) effectiveAlign = "right";
+    else effectiveAlign = "left";
+  }
+
   const alignClass =
-    align === "center"
+    effectiveAlign === "center"
       ? "text-center"
-      : align === "right"
+      : effectiveAlign === "right"
       ? "text-right"
       : "text-left";
 
+  const cleanClassName = className
+    .replace(/\btext-(left|center|right)\b/g, "")
+    .trim();
+
   return (
     <td
-      className={`${TABLE_CLASSES.cell} ${alignClass} ${className}`.trim()}
+      className={`${TABLE_CLASSES.cell} ${alignClass} ${cleanClassName}`.trim()}
       {...props}
     >
       {children}

@@ -29,7 +29,7 @@ const variantStyles: Record<string, string> = {
 
 /** Sizes are derived from the density token rather than fixed pixels. */
 const sizeStyles: Record<string, string> = {
-  sm: "h-[calc(var(--ui-control-h)-6px)] px-3 gap-1.5 text-[calc(var(--ui-font-size)-1px)]",
+  sm: "!h-8 !px-3 !gap-1.5 text-xs font-medium !rounded-md",
   md: "h-[var(--ui-control-h)] px-4 gap-2",
   lg: "h-[calc(var(--ui-control-h)+6px)] px-6 gap-2.5 text-[calc(var(--ui-font-size)+1px)]",
 };
@@ -65,10 +65,10 @@ export const Button: React.FC<ButtonProps> = ({
 
   const baseStyles = "ui-btn active:scale-[0.98]";
 
-  // Legacy call sites pass neither `variant` nor `size`; they keep their
-  // full-width-on-mobile behaviour but pick up token height, radius and font.
+  // Legacy call sites pass neither `variant` nor `size`; they match the global
+  // toolbar / header button dimensions (h-8 px-3 rounded-md) exactly like RefreshButton.
   const legacyStyles =
-    "ui-btn ui-btn-primary w-full font-normal sm:w-fit active:scale-[0.98]";
+    "ui-btn ui-btn-primary !h-8 !px-3 !py-0 text-xs sm:text-xs font-medium !rounded-md !gap-1.5 w-full sm:w-fit whitespace-nowrap shrink-0 active:scale-[0.98]";
 
   const finalClass = cn(
     variant || size ? baseStyles : legacyStyles,
@@ -133,7 +133,7 @@ export const Button: React.FC<ButtonProps> = ({
           ></path>
         </svg>
       ) : icon ? (
-        <span className="mr-2 text-lg leading-none">{icon}</span>
+        <span className="inline-flex items-center justify-center shrink-0 leading-none">{icon}</span>
       ) : null}
       {label}
       {children}

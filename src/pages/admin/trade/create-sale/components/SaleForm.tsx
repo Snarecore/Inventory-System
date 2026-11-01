@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
-import { FiChevronDown, FiRefreshCw } from "react-icons/fi";
 import { FaCalculator, FaUserCircle } from "react-icons/fa";
 import Button from "@/components/button/Button";
 import DeleteModal from "@/components/modal/DeleteModal";
@@ -35,6 +34,8 @@ import { useTradeProductSearch } from "@/hooks/useTradeProductSearch";
 import TradeProductSearch from "@/components/trade/TradeProductSearch";
 import TradeLineItemsTable from "@/components/trade/TradeLineItemsTable";
 import TradePartySelector from "@/components/trade/TradePartySelector";
+import TradeLedgerSummary from "@/components/trade/TradeLedgerSummary";
+import TradeNotesInput from "@/components/trade/TradeNotesInput";
 import { useSalesQuery } from "@/pages/admin/trade/sales/hooks/useSalesQueries";
 import { useFinancialLedger } from "@/hooks/useFinancialLedger";
 import { useCustomerInvoicesDue } from "@/hooks/useCustomerInvoicesDue";
@@ -113,8 +114,6 @@ export const CreateSaleForm: React.FC = () => {
   const [vatAmount, setVatAmount] = useState<string>("");
   const [deliveryCharge, setDeliveryCharge] = useState<string>("");
   const [notes, setNotes] = useState<string>("");
-  const [isNotesDropdownOpen, setIsNotesDropdownOpen] = useState<boolean>(false);
-  const notesDropdownRef = useRef<HTMLDivElement>(null);
 
 
 
@@ -250,17 +249,6 @@ export const CreateSaleForm: React.FC = () => {
       }
     }
   }, [isEditMode, invoiceNo]);
-
-  // Close dropdowns on outside click
-  useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (notesDropdownRef.current && !notesDropdownRef.current.contains(e.target as Node)) {
-        setIsNotesDropdownOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
 
   // Hydrate edit data directly from backend response
   useEffect(() => {
@@ -1080,49 +1068,14 @@ export const CreateSaleForm: React.FC = () => {
 
         {/* Invoice No */}
         <div>
-          <div className="flex items-center justify-between mb-1">
-            <label className="ui-label block">
-              Invoice No <span className="text-[var(--ui-danger)]">*</span>
-            </label>
-            {!isEditMode && (
-              <button
-                type="button"
-                onClick={() => {
-                  const bCode = getBusinessCode();
-                  if (bCode) {
-                    setInvoiceNo(makeInvoiceNo(bCode));
-                    showSuccessToast("New invoice number generated");
-                  }
-                }}
-                className="text-[10px] text-[var(--primary-color)] hover:underline flex items-center gap-1 cursor-pointer font-medium"
-                title="Generate new invoice number"
-              >
-                <FiRefreshCw size={10} className="shrink-0" />
-                <span>Regenerate</span>
-              </button>
-            )}
-          </div>
+          <label className="ui-label block mb-1">
+            Invoice No <span className="text-[var(--ui-danger)]">*</span>
+          </label>
           <div
-            className="w-full h-[var(--ui-control-h-sm)] px-2.5 py-1.5 text-[length:var(--ui-font-size-sm)] border border-[var(--ui-border-strong)] rounded-[var(--ui-radius)] bg-[var(--ui-border)] font-bold text-[var(--ui-text)] flex items-center justify-between select-text cursor-default"
+            className="w-full h-[var(--ui-control-h-sm)] px-2.5 py-1.5 text-[length:var(--ui-font-size-sm)] border border-[var(--ui-border-strong)] rounded-[var(--ui-radius)] bg-[var(--ui-border)] font-bold text-[var(--ui-text)] flex items-center select-text cursor-default"
             title="Auto-generated Invoice Number"
           >
             <span className="truncate">{invoiceNo || "N/A"}</span>
-            {!isEditMode && (
-              <button
-                type="button"
-                onClick={() => {
-                  const bCode = getBusinessCode();
-                  if (bCode) {
-                    setInvoiceNo(makeInvoiceNo(bCode));
-                    showSuccessToast("New invoice number generated");
-                  }
-                }}
-                className="p-1 text-[var(--ui-text-muted)] hover:text-[var(--primary-color)] transition-colors cursor-pointer rounded-[var(--ui-radius-sm)] shrink-0 ml-1"
-                title="Generate new invoice number"
-              >
-                <FiRefreshCw size={12} />
-              </button>
-            )}
           </div>
         </div>
 
@@ -1195,74 +1148,12 @@ export const CreateSaleForm: React.FC = () => {
           </div>
 
           {/* Notes / Remarks */}
-          <div className="mt-1.5 pt-1.5 border-t border-[var(--ui-border)] flex flex-col" ref={notesDropdownRef}>
-            <div className="h-5 flex items-center justify-between gap-1 mb-1">
-              <span className="text-[11px] font-semibold text-[var(--ui-text)] truncate">
-                Notes / Remarks
-              </span>
-              <button
-                type="button"
-                onClick={() => setIsNotesDropdownOpen(!isNotesDropdownOpen)}
-                className="text-[11px] font-semibold text-[var(--ui-text)] bg-[var(--ui-surface-sunken)] hover:bg-[var(--ui-border)] px-1.5 py-0.5 rounded-[var(--ui-radius-sm)] border border-[var(--ui-border-strong)] transition-all flex items-center gap-1 cursor-pointer shadow-[var(--ui-shadow-control)] h-5"
-              >
-                <span>+ Presets</span>
-                <FiChevronDown
-                  size={11}
-                  className={`transition-transform duration-200 ${isNotesDropdownOpen ? "rotate-180" : ""}`}
-                />
-              </button>
-            </div>
-
-            <div className="relative h-[84px]">
-              <textarea
-                rows={3}
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                placeholder="Type notes or click '+ Presets' to add..."
-                className="ui-control ui-control-multiline ui-control-sm h-[84px] resize-none font-medium leading-relaxed"
-              />
-
-              {isNotesDropdownOpen && (
-                <div className="absolute right-0 bottom-full mb-1.5 w-full bg-[var(--ui-surface)] rounded-[var(--ui-radius-lg)] shadow-[var(--ui-shadow-popover)] border border-[var(--ui-border)] z-40 overflow-hidden divide-y divide-[var(--ui-border)]">
-                  <div className="px-3 py-1.5 bg-[var(--ui-surface-muted)] flex items-center justify-between">
-                    <span className="text-[11px] font-semibold text-[var(--ui-text)]">
-                      Choose a preset:
-                    </span>
-                    <span className="text-[10px] text-[var(--ui-text-subtle)]">Click to add</span>
-                  </div>
-
-                  <div className="flex flex-col py-1 divide-y divide-[var(--ui-border)]">
-                    {[
-                      "Goods delivered in good condition",
-                      "Cash received on delivery",
-                      "Full payment cleared",
-                      "Standard order completed",
-                      "Warranty card issued",
-                    ].map((preset) => (
-                      <button
-                        key={preset}
-                        type="button"
-                        onClick={() => {
-                          setNotes((prev) => {
-                            if (!prev.trim()) return preset;
-                            if (prev.includes(preset)) return prev;
-                            return `${prev}, ${preset}`;
-                          });
-                          setIsNotesDropdownOpen(false);
-                        }}
-                        className="px-3 py-2 text-[11px] text-left text-[var(--ui-text)] hover:bg-[var(--primary-color-light)] hover:text-[var(--primary-color)] font-medium transition-colors flex items-center justify-between cursor-pointer group"
-                      >
-                        <span className="truncate">{preset}</span>
-                        <span className="text-[10px] text-[var(--ui-text-subtle)] group-hover:text-[var(--primary-color)] font-semibold shrink-0 ml-2">
-                          + Add
-                        </span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
+          <TradeNotesInput
+            value={notes}
+            onChange={setNotes}
+            mode="sale"
+            className="mt-1.5 pt-1.5 border-t border-[var(--ui-border)]"
+          />
         </div>
 
         </div>
@@ -1273,34 +1164,13 @@ export const CreateSaleForm: React.FC = () => {
           {/* Financial summary, read as an invoice ledger: labels left, figures
               right-aligned on tabular numerals so the columns line up, with a
               rule separating the payable total. */}
-          <dl className="rounded-[var(--ui-radius)] border border-[var(--ui-border)] bg-[var(--ui-surface-muted)] px-3 py-2 shadow-[var(--ui-shadow-control)]">
-            <div className="flex items-baseline justify-between gap-3 py-0.5">
-              <dt className="text-[11px] font-medium text-[var(--ui-text-muted)]">Subtotal</dt>
-              <dd className="text-xs font-semibold tabular-nums text-[var(--ui-text)]">
-                ৳ {formatMoney(rawSubtotal)}
-              </dd>
-            </div>
-            <div className="flex items-baseline justify-between gap-3 py-0.5">
-              <dt className="text-[11px] font-medium text-[var(--ui-text-muted)]">Discount</dt>
-              <dd className="text-xs font-semibold tabular-nums text-[var(--ui-danger)]">
-                − ৳ {formatMoney(totalDiscount)}
-              </dd>
-            </div>
-            <div className="flex items-baseline justify-between gap-3 py-0.5">
-              <dt className="text-[11px] font-medium text-[var(--ui-text-muted)]">VAT + Delivery</dt>
-              <dd className="text-xs font-semibold tabular-nums text-[var(--ui-text)]">
-                + ৳ {formatMoney(totalVat + calculatedDelivery)}
-              </dd>
-            </div>
-            <div className="mt-1.5 flex items-baseline justify-between gap-3 border-t border-[var(--ui-border-strong)] pt-1.5">
-              <dt className="text-[11px] font-bold uppercase tracking-wider text-[var(--ui-text)]">
-                Grand Total
-              </dt>
-              <dd className="text-sm font-extrabold tabular-nums tabular-nums text-[var(--primary-color)]">
-                ৳ {formatMoney(grandTotal)}
-              </dd>
-            </div>
-          </dl>
+          <TradeLedgerSummary
+            subtotal={rawSubtotal}
+            discount={totalDiscount}
+            extraLabel="VAT + Delivery"
+            extraAmount={totalVat + calculatedDelivery}
+            grandTotal={grandTotal}
+          />
 
           {/* Unified Payment Section */}
           <TradePaymentSection
@@ -1409,20 +1279,20 @@ export const CreateSaleForm: React.FC = () => {
         </div>
 
           {/* Primary actions live with the totals they commit */}
-          <div className="ui-card flex flex-col gap-2 p-2 sm:p-2.5">
+          <div className="ui-card flex items-center gap-2 p-2 sm:p-2.5">
             <Button
               label={isSubmitting ? "Saving..." : isEditMode ? "Update Sale" : "Save Sale"}
               onClick={() => handlePreSubmit(false)}
               color="var(--primary-color)"
               disabled={isSubmitting}
-              buttonClass="!w-full justify-center !py-2 text-[length:var(--ui-font-size-sm)] font-semibold !text-white"
+              buttonClass="flex-1 !w-auto justify-center !py-2 text-[length:var(--ui-font-size-sm)] font-semibold !text-white"
             />
             <Button
               label="Save & Print"
               onClick={() => handlePreSubmit(true)}
               color="#059669"
               disabled={isSubmitting}
-              buttonClass="!w-full justify-center !py-2 text-[length:var(--ui-font-size-sm)] font-semibold !text-white"
+              buttonClass="flex-1 !w-auto justify-center !py-2 text-[length:var(--ui-font-size-sm)] font-semibold !text-white"
             />
           </div>
         </aside>
