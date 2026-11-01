@@ -38,6 +38,14 @@ const google = (query: string) => `https://fonts.googleapis.com/css2?family=${qu
 
 export const FONTS: Record<FontFamilyId, FontDefinition> = {
   /* ---------------- System (no download) ---------------- */
+  helvetica: {
+    id: 'helvetica',
+    label: 'Helvetica',
+    bestUse: 'Corporate elegance, clean typography',
+    category: 'system',
+    source: 'system',
+    stack: `"Helvetica Neue", Helvetica, Arial, ${SANS_TAIL}`,
+  },
   verdana: {
     id: 'verdana',
     label: 'Verdana',
@@ -80,7 +88,16 @@ export const FONTS: Record<FontFamilyId, FontDefinition> = {
     stack: `ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, ${SANS_TAIL}`,
   },
 
-  /* ---------------- Web sans (Google) ---------------- */
+  /* ---------------- Web sans (Google / Custom) ---------------- */
+  'brown-pro': {
+    id: 'brown-pro',
+    label: 'Brown Pro (__brownpro_df74a3)',
+    bestUse: 'Modern geometric design, premium branding',
+    category: 'sans',
+    source: 'system',
+    stack: `'__brownpro_df74a3', 'Brown Pro', 'LL Brown', 'Brown', ${SANS_TAIL}`,
+    note: 'Custom geometric font; falls back to system geometric sans',
+  },
   inter: {
     id: 'inter',
     label: 'Inter',

@@ -6,12 +6,51 @@ export type AppearanceLanguage = 'bn' | 'en'
 const LANGUAGE_STORAGE_KEY = 'cash-boi-appearance-language'
 
 const BANGLA: Record<string, string> = {
+  'DESIGN SYSTEM & THEMING': 'ডিজাইন সিস্টেম ও থিমিং',
   Appearance: 'অ্যাপের চেহারা ও প্রদর্শন',
+  'Controls the look of every form, button and table in the dashboard. Settings apply instantly to this admin panel.':
+    'ড্যাশবোর্ডের প্রতিটি ফর্ম, বাটন এবং টেবিলের রূপ নিয়ন্ত্রণ করুন। সেটিংস সঙ্গে সঙ্গেই এই অ্যাডমিন প্যানেলে প্রয়োগ হয়।',
   'Controls the look of every form, button and table in the application. Settings apply instantly and are saved to this browser only — they do not affect other users.':
     'এখান থেকে পুরো অ্যাপের ফর্ম, বাটন, টেবিল ও অন্যান্য অংশের চেহারা বদলাতে পারবেন। পরিবর্তন সঙ্গে সঙ্গেই দেখা যাবে এবং শুধু এই ব্রাউজারেই সেভ থাকবে।',
   'Reduce motion': 'অ্যানিমেশন কমান',
   'Reset to theme defaults': 'থিমের আগের সেটিংসে ফিরুন',
   'Restore defaults': 'সব ডিফল্টে ফিরুন',
+  Light: 'লাইট',
+  Dark: 'ডার্ক',
+  System: 'সিস্টেম',
+  'Color mode': 'কালার মোড',
+  'Light mode': 'লাইট মোড',
+  'Dark mode': 'ডার্ক মোড',
+  'System (Auto)': 'সিস্টেম (অটো)',
+  'Appearance mode': 'অ্যাপিয়ারেন্স মোড',
+  'Switch between daylight surfaces, low-glare dark mode, or automatic synchronization with your OS preference.':
+    'লাইট মোড, চোখে কম আলো লাগা ডার্ক মোড, অথবা আপনার অপারেটিং সিস্টেমের সাথে স্বয়ংক্রিয় কালার মোড বেছে নিন।',
+  'Crisp daylight surfaces with high legibility': 'উজ্জ্বল দিনের আলো সারফেস ও স্পষ্ট পাঠযোগ্যতা',
+  'Low-glare charcoal surfaces for late-night workflows': 'চোখে কম আলো লাগা গাঢ় সারফেস, রাতে কাজের জন্য আরামদায়ক',
+  'Synchronize automatically with your device OS settings': 'আপনার ডিভাইসের অপারেটিং সিস্টেম অনুযায়ী নিজে থেকেই রূপ বদলাবে',
+  'Create custom palettes or auto-extract colors from company logo.':
+    'নিজের রঙের তালিকা তৈরি করুন অথবা লোগো থেকে নিজে থেকেই রং বের করুন।',
+  'Switch global font stacks across English and Bengali typography.':
+    'ইংরেজি ও বাংলা উভয় ভাষার জন্য অ্যাপের সার্বিক ফন্ট পরিবর্তন করুন।',
+  'Export, import, and manage your custom design presets.':
+    'আপনার নিজস্ব ডিজাইনের প্রিসেট সংরক্ষণ, ইমপোর্ট এবং পরিচালনা করুন।',
+  Square: 'চৌকো',
+  Slight: 'অল্প গোল',
+  Rounded: 'মাঝারি গোল',
+  'Pill-ish': 'বেশি গোল',
+  'Accent header': 'রঙিন শিরোনাম',
+  'Brand color bar at the top': 'উপরে ব্র্যান্ড রঙের বার',
+  'Theme surface with normal elevation': 'স্বাভাবিক উচ্চতা ও থিম সারফেস',
+  'Visible border around the dialog': 'ডায়ালগের চারপাশে স্পষ্ট বর্ডার',
+  'Surface alert with semantic border': 'বর্ডারসহ সাধারণ নোটিশ',
+  'Semantic tinted background': 'হালকা রঙের ব্যাকগ্রাউন্ড নোটিশ',
+  'Strong semantic color background': 'গাঢ় রঙের ব্যাকগ্রাউন্ড নোটিশ',
+  'Dark Midnight': 'ডার্ক মিডনাইট',
+  'Dark Slate': 'ডার্ক স্লেট',
+  'Dark Emerald': 'ডার্ক এমারেল্ড',
+  'Deep midnight blue surfaces with vibrant sky cyan and warm amber accents.': 'গাঢ় মিডনাইট ব্যাকগ্রাউন্ডের সাথে উজ্জ্বল সায়ান ও অ্যাম্বার রঙের কম্বিনেশন।',
+  'Sleek neutral slate surfaces with energetic indigo and cyan highlights.': 'মডার্ন স্লেট সারফেসের সাথে ইন্ডিগো ও সায়ান হাইলাইটের কম্বিনেশন।',
+  'Deep forest obsidian with emerald green and mint luminous touches.': 'গাঢ় অবসিডিয়ান সারফেসের সাথে পান্না সবুজ ও পুদিনা রঙের আকর্ষণীয় কম্বিনেশন।',
   Theme: 'থিম বাছাই',
   'Each theme sets its own palette, shape and density. Pick one as a starting point, then adjust anything below.':
     'প্রতিটি থিমে রং, কোণা, ফিল্ডের মাপ ও ঘনত্ব আলাদা। পছন্দের একটি থিম বেছে নিয়ে নিচের সেটিংস নিজের মতো করে নিন।',
@@ -173,6 +212,11 @@ const BANGLA: Record<string, string> = {
   System: 'কম্পিউটারের ফন্ট',
   Google: 'গুগল ফন্ট',
   CDN: 'অনলাইন ফন্ট',
+  Helvetica: 'হেলভেটিকা',
+  'Brown Pro (__brownpro_df74a3)': 'ব্রাউন প্রো (__brownpro_df74a3)',
+  'Modern geometric design, premium branding': 'আধুনিক জ্যামিতিক নকশা ও প্রিমিয়াম ব্র্যান্ডিং',
+  'Custom geometric font; falls back to system geometric sans': 'কাস্টম জ্যামিতিক ফন্ট; না থাকলে সাধারণ জ্যামিতিক ফন্ট দেখাবে',
+  'Corporate elegance, clean typography': 'কর্পোরেট পরিচ্ছন্নতা ও স্পষ্ট টাইপোগ্রাফি',
   'ERP, HRMS, tables, forms': 'অফিসের হিসাব, কর্মী তথ্য, টেবিল ও ফর্ম',
   'General business applications': 'সাধারণ অফিসের কাজ',
   'Microsoft-style applications': 'মাইক্রোসফটের মতো চেহারা',

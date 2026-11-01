@@ -38,7 +38,12 @@ export const FontPicker: React.FC<FontPickerProps> = ({ value, onChange }) => {
   const grouped = useMemo(() => {
     const q = query.trim().toLowerCase()
     const matches = FONT_LIST.filter(
-      (f) => !q || f.label.toLowerCase().includes(q) || f.bestUse.toLowerCase().includes(q)
+      (f) =>
+        !q ||
+        f.label.toLowerCase().includes(q) ||
+        f.bestUse.toLowerCase().includes(q) ||
+        f.id.toLowerCase().includes(q) ||
+        f.stack.toLowerCase().includes(q)
     )
     return FONT_CATEGORY_ORDER.map((category) => ({
       category,

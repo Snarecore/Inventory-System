@@ -29,6 +29,7 @@ const VALID_OVERRIDE_KEYS = new Set<keyof AppearanceOverrides>([
   'dialogStyle',
   'alertStyle',
   'reduceMotion',
+  'colorMode',
 ])
 
 const sanitizeAppearanceOverrides = (value: unknown): AppearanceOverrides => {
@@ -142,6 +143,11 @@ const sanitizeAppearanceOverrides = (value: unknown): AppearanceOverrides => {
           result.reduceMotion = next
         }
         break
+      case 'colorMode':
+        if (next === 'light' || next === 'dark' || next === 'system') {
+          result.colorMode = next
+        }
+        break
     }
   }
 
@@ -199,6 +205,19 @@ export const AppearanceProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       // Storage unavailable — the theme still applies for this session.
     }
   }, [resolved, state])
+
+  // Listen for OS dark-mode changes when in system mode
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const mq = window.matchMedia('(prefers-color-scheme: dark)')
+    const onChange = () => {
+      if (state.overrides.colorMode === 'system') {
+        setState((prev) => ({ ...prev }))
+      }
+    }
+    mq.addEventListener?.('change', onChange)
+    return () => mq.removeEventListener?.('change', onChange)
+  }, [state.overrides.colorMode])
 
   const setTheme = useCallback((id: ThemeRef) => {
     setState((prev) => ({ ...prev, themeId: id }))

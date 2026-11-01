@@ -1,15 +1,20 @@
 @import "tailwindcss";
 
-/* ============================================================================
-   Design tokens
-   ----------------------------------------------------------------------------
-   These are the fallback values. At runtime AppearanceProvider overwrites them
-   on <html> from the active theme + user overrides, so anything built on these
-   variables restyles without a rebuild. See src/theme/.
-   ========================================================================== */
+/* Brown Pro (__brownpro_df74a3) local alias mapping */
+@font-face {
+  font-family: '__brownpro_df74a3';
+  src: local('__brownpro_df74a3'),
+       local('Brown Pro'),
+       local('BrownPro-Regular'),
+       local('Brown'),
+       local('LL Brown'),
+       local('LLBrown');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
 :root {
-  /* Brand ramp — also consumed by the @theme mapping below, so overriding
-     --primary-color at runtime re-colours every bg-primary/text-primary use. */
   --primary-color: #01306B;
   --primary-color-hover: #012452;
   --primary-color-light: #f0f5fc;
@@ -27,9 +32,6 @@
   --ui-on-accent: #ffffff;
   --table-header-bg: var(--primary-color);
   --table-header-text: var(--ui-on-accent);
-  /* Secondary brand accent (logo Cerulean) and its readable foreground.
-     AppearanceProvider overwrites both at runtime; these are the values used
-     before that first paint, and if scripting is unavailable. */
   --ui-accent-2: #079cdb;
   --ui-on-accent-2: #0f172a;
 
@@ -171,7 +173,7 @@
     @apply m-0 min-h-screen antialiased;
     background:
       radial-gradient(circle at top left, color-mix(in srgb, var(--primary-color) 7%, transparent), transparent 28%),
-      linear-gradient(180deg, color-mix(in srgb, var(--ui-surface-muted) 75%, white), var(--ui-surface));
+      linear-gradient(180deg, color-mix(in srgb, var(--ui-surface-muted) 75%, var(--ui-surface)), var(--ui-surface));
     color: var(--ui-text);
     font-family: var(--ui-font-family);
     font-size: var(--ui-font-size);
@@ -188,12 +190,6 @@
   }
 }
 
-/* ============================================================================
-   Form primitives
-   ----------------------------------------------------------------------------
-   Defined in the components layer so any Tailwind utility passed through a
-   component's `className` prop still wins (utilities layer sorts later).
-   ========================================================================== */
 @layer components {
   .ui-field {
     display: flex;
@@ -225,10 +221,10 @@
     font-size: var(--ui-font-size);
     font-family: var(--ui-font-family);
     color: var(--ui-text);
-    background-color: rgba(255, 255, 255, 0.92);
+    background-color: var(--ui-control-bg, var(--ui-surface));
     border: var(--ui-border-width) solid var(--ui-border);
     border-radius: var(--ui-radius);
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4), var(--ui-shadow-control);
+    box-shadow: var(--ui-shadow-control);
     outline: none;
     transition: border-color 150ms ease, box-shadow 150ms ease, background-color 150ms ease,
       transform 150ms ease;
@@ -310,10 +306,6 @@
     color: var(--ui-text-subtle);
   }
 
-  /* Compact control sizes. Each sets height AND font size together so text and
-     placeholders stay proportionate to the box — defined after .ui-control so
-     they win on equal specificity. .ui-control-bare inherits the size, which
-     is what carries it through to the placeholder. */
   .ui-control-sm {
     height: var(--ui-control-h-sm);
     font-size: var(--ui-font-size-sm);
@@ -508,22 +500,20 @@
   }
 
   .premium-panel {
-    background: linear-gradient(180deg, rgba(255,255,255,0.96), rgba(255,255,255,0.92));
+    background: var(--ui-surface);
     border: 1px solid var(--ui-border);
     border-radius: var(--ui-radius-lg);
     box-shadow: var(--ui-shadow-card);
   }
 
   .admin-header-strip {
-    background: rgba(255,255,255,0.8);
+    background: color-mix(in srgb, var(--ui-surface) 85%, transparent);
     backdrop-filter: blur(14px);
     -webkit-backdrop-filter: blur(14px);
+    border-bottom: 1px solid var(--ui-border);
     box-shadow: 0 10px 30px -24px rgba(15, 23, 42, 0.45);
   }
 
-  /* ---- Table density ----
-     Opt-in via .ui-table so existing bespoke tables are not disturbed.
-     Use direct child selectors so nested tables (e.g. accordion drawers) are not polluted. */
   .ui-table > thead > tr > th,
   .ui-table > tbody > tr > td {
     padding-inline: var(--ui-table-cell-px);
@@ -850,4 +840,183 @@ input[type="number"] {
   font-display: swap;
   src: local("SolaimanLipi Bold"), local("SolaimanLipi"),
     url("/fonts/solaimanlipi-bold.woff2") format("woff2");
+}
+
+/* ============================================================================
+   Dark Mode Harmonization (Matches E-commerce-admin Standard Globally)
+   ========================================================================== */
+.dark,
+html.dark,
+[data-mode="dark"],
+[data-theme-mode="dark"] {
+  color-scheme: dark;
+}
+
+html.dark body,
+.dark body,
+[data-mode="dark"] body {
+  background:
+    radial-gradient(circle at top left, color-mix(in srgb, var(--primary-color) 12%, transparent), transparent 30%),
+    linear-gradient(180deg, var(--ui-surface-sunken), var(--ui-surface));
+  color: var(--ui-text);
+}
+
+/* Scrollbars in Dark Mode */
+.dark ::-webkit-scrollbar-track,
+[data-mode="dark"] ::-webkit-scrollbar-track,
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: var(--ui-surface-sunken) !important;
+}
+
+.dark ::-webkit-scrollbar-thumb,
+[data-mode="dark"] ::-webkit-scrollbar-thumb {
+  background: var(--primary-color) !important;
+  border-radius: 9999px;
+}
+
+/* Tables in Dark Mode */
+.dark table thead,
+[data-mode="dark"] table thead {
+  background-color: var(--ui-surface-muted) !important;
+}
+
+.dark table thead th,
+[data-mode="dark"] table thead th,
+.dark table thead th span,
+[data-mode="dark"] table thead th span {
+  color: var(--ui-text) !important;
+  border-color: var(--ui-border) !important;
+}
+
+.dark table tbody,
+[data-mode="dark"] table tbody {
+  background-color: var(--ui-surface) !important;
+}
+
+.dark table tbody tr,
+[data-mode="dark"] table tbody tr {
+  border-color: var(--ui-border) !important;
+  color: var(--ui-text);
+}
+
+.dark table tbody tr:hover,
+[data-mode="dark"] table tbody tr:hover {
+  background-color: var(--ui-surface-muted) !important;
+}
+
+.dark table tbody td,
+[data-mode="dark"] table tbody td {
+  border-color: var(--ui-border);
+}
+
+/* Common Text Tokens in Dark Mode */
+.dark .text-gray-900,
+.dark .text-gray-800,
+.dark .text-gray-700,
+.dark .text-\[\#212B36\],
+.dark .text-\[\#212b36\],
+.dark .text-\[\#000000e0\],
+.dark .text-\[\#0b1b2f\],
+.dark .text-\[\#092c4c\],
+.dark .text-\[\#1b2850\],
+.dark .text-black,
+[data-mode="dark"] .text-gray-900,
+[data-mode="dark"] .text-gray-800,
+[data-mode="dark"] .text-gray-700,
+[data-mode="dark"] .text-\[\#212B36\],
+[data-mode="dark"] .text-\[\#212b36\],
+[data-mode="dark"] .text-\[\#000000e0\],
+[data-mode="dark"] .text-\[\#0b1b2f\],
+[data-mode="dark"] .text-\[\#092c4c\],
+[data-mode="dark"] .text-\[\#1b2850\],
+[data-mode="dark"] .text-black {
+  color: var(--ui-text) !important;
+}
+
+.dark .text-gray-600,
+.dark .text-gray-500,
+.dark .text-gray-400,
+.dark .text-\[\#646b72\],
+.dark .text-\[\#5b6670\],
+.dark .text-\[\#45566b\],
+[data-mode="dark"] .text-gray-600,
+[data-mode="dark"] .text-gray-500,
+[data-mode="dark"] .text-gray-400,
+[data-mode="dark"] .text-\[\#646b72\],
+[data-mode="dark"] .text-\[\#5b6670\],
+[data-mode="dark"] .text-\[\#45566b\] {
+  color: var(--ui-text-muted) !important;
+}
+
+/* Card & Surface Containers in Dark Mode */
+.dark .bg-white,
+[data-mode="dark"] .bg-white {
+  background-color: var(--ui-surface) !important;
+  color: var(--ui-text);
+}
+
+.dark .bg-gray-50,
+.dark .bg-gray-100,
+.dark .bg-\[\#F6F6F6\],
+[data-mode="dark"] .bg-gray-50,
+[data-mode="dark"] .bg-gray-100,
+[data-mode="dark"] .bg-\[\#F6F6F6\] {
+  background-color: var(--ui-surface-muted) !important;
+  color: var(--ui-text);
+}
+
+.dark .hover\:bg-gray-50:hover,
+.dark .hover\:bg-gray-100:hover,
+.dark .hover\:bg-gray-200:hover,
+[data-mode="dark"] .hover\:bg-gray-50:hover,
+[data-mode="dark"] .hover\:bg-gray-100:hover,
+[data-mode="dark"] .hover\:bg-gray-200:hover {
+  background-color: var(--ui-surface-muted) !important;
+}
+
+.dark .border-gray-100,
+.dark .border-gray-200,
+.dark .border-gray-300,
+.dark .border-\[\#e6eaed\],
+.dark .border-\[\#dde5ea\],
+[data-mode="dark"] .border-gray-100,
+[data-mode="dark"] .border-gray-200,
+[data-mode="dark"] .border-gray-300,
+[data-mode="dark"] .border-\[\#e6eaed\],
+[data-mode="dark"] .border-\[\#dde5ea\] {
+  border-color: var(--ui-border) !important;
+}
+
+.dark .divide-gray-100 > :not([hidden]) ~ :not([hidden]),
+.dark .divide-gray-200 > :not([hidden]) ~ :not([hidden]),
+[data-mode="dark"] .divide-gray-100 > :not([hidden]) ~ :not([hidden]),
+[data-mode="dark"] .divide-gray-200 > :not([hidden]) ~ :not([hidden]) {
+  border-color: var(--ui-border) !important;
+}
+
+/* Inputs & Form Controls in Dark Mode */
+.dark input:not([type="checkbox"]):not([type="radio"]),
+.dark select,
+.dark textarea,
+[data-mode="dark"] input:not([type="checkbox"]):not([type="radio"]),
+[data-mode="dark"] select,
+[data-mode="dark"] textarea {
+  background-color: var(--ui-surface) !important;
+  border-color: var(--ui-border) !important;
+  color: var(--ui-text) !important;
+}
+
+.dark input::placeholder,
+.dark textarea::placeholder,
+[data-mode="dark"] input::placeholder,
+[data-mode="dark"] textarea::placeholder {
+  color: var(--ui-text-subtle) !important;
+}
+
+/* Dropdowns & Popovers in Dark Mode */
+.dark .shadow-lg,
+.dark .shadow-md,
+.dark .dropdown-menu {
+  background-color: var(--ui-surface) !important;
+  border-color: var(--ui-border) !important;
 }

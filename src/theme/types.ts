@@ -21,7 +21,11 @@ export type ThemeId =
   | 'emerald-books'
   | 'graphite'
   | 'sandstone'
+  | 'dark-midnight'
+  | 'dark-slate'
+  | 'dark-emerald'
 
+export type ColorModeId = 'light' | 'dark' | 'system'
 export type DensityId = 'compact' | 'default' | 'comfortable'
 export type FontScaleId = 'sm' | 'md' | 'lg' | 'xl'
 export type ContentWidthId = 'standard' | 'wide' | 'full'
@@ -41,12 +45,14 @@ export type DialogStyleId = 'standard' | 'outlined' | 'accent'
 export type AlertStyleId = 'outlined' | 'soft' | 'solid'
 export type FontFamilyId =
   // System (no download)
+  | 'helvetica'
   | 'verdana'
   | 'arial'
   | 'segoe-ui'
   | 'tahoma'
   | 'system'
   // Web sans-serif
+  | 'brown-pro'
   | 'inter'
   | 'roboto'
   | 'open-sans'
@@ -86,6 +92,8 @@ export interface ThemePalette {
   text: string
   textMuted: string
   textSubtle: string
+  /** Dark mode flag hint */
+  isDark?: boolean
 }
 
 /**
@@ -138,6 +146,8 @@ export interface AppearanceOverrides {
   alertStyle?: AlertStyleId
   /** Suppress transitions and animations app-wide. */
   reduceMotion?: boolean
+  /** Explicit light/dark/system mode preference */
+  colorMode?: ColorModeId
 }
 
 export interface AppearanceState {
@@ -148,6 +158,9 @@ export interface AppearanceState {
 /** Fully resolved values, with every `undefined` filled in. */
 export interface ResolvedAppearance {
   themeId: ThemeRef
+  colorMode: ColorModeId
+  resolvedColorMode: 'light' | 'dark'
+  isDark: boolean
   density: DensityId
   radius: RadiusId
   borderWidth: BorderWidthId

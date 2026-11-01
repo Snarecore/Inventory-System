@@ -12,6 +12,7 @@ import {
 import { DEFAULT_THEME_ID, THEME_PRESETS } from './themes'
 import type {
   AppearanceState,
+  ColorModeId,
   ResolvedAppearance,
   ThemeId,
   ThemePreset,
@@ -24,6 +25,27 @@ export const DEFAULT_FONT_SCALE = 'md' as const
 export const DEFAULT_APPEARANCE: AppearanceState = {
   themeId: DEFAULT_THEME_ID,
   overrides: {},
+}
+
+/** Check if preset is designed with dark surfaces */
+export const isDarkPreset = (preset: ThemePreset): boolean => {
+  if (typeof preset.id === 'string' && preset.id.startsWith('dark-')) return true
+  const surface = preset.palette?.surface?.toLowerCase() || ''
+  if (surface.startsWith('#') && surface.length >= 7) {
+    const hex = surface.replace('#', '')
+    const r = parseInt(hex.substring(0, 2), 16) || 0
+    const g = parseInt(hex.substring(2, 4), 16) || 0
+    const b = parseInt(hex.substring(4, 6), 16) || 0
+    const luma = 0.2126 * r + 0.7152 * g + 0.0722 * b
+    return luma < 128
+  }
+  return false
+}
+
+/** Check system dark mode preference */
+export const getSystemPrefersDark = (): boolean => {
+  if (typeof window === 'undefined') return false
+  return Boolean(window.matchMedia?.('(prefers-color-scheme: dark)')?.matches)
 }
 
 /**
@@ -44,13 +66,57 @@ export const resolveAppearance = (
   const preset = findTheme(state.themeId, customThemes)
   const o = state.overrides
 
+  const presetIsDark = isDarkPreset(preset)
+  const colorMode: ColorModeId = o.colorMode ?? (presetIsDark ? 'dark' : 'light')
+
+  let resolvedColorMode: 'light' | 'dark' = 'light'
+  if (colorMode === 'dark') {
+    resolvedColorMode = 'dark'
+  } else if (colorMode === 'light') {
+    resolvedColorMode = 'light'
+  } else {
+    resolvedColorMode = presetIsDark || getSystemPrefersDark() ? 'dark' : 'light'
+  }
+  const isDark = resolvedColorMode === 'dark'
+
   const palette = { ...preset.palette }
+
+  // High-contrast, accessibility-checked dark adaptation for light themes (Matches E-commerce-admin)
+  if (isDark && !presetIsDark) {
+    palette.surface = '#0f172a'
+    palette.surfaceMuted = '#1e293b'
+    palette.surfaceSunken = '#0b0f19'
+    palette.border = '#334155'
+    palette.borderStrong = '#475569'
+    palette.text = '#f8fafc'
+    palette.textMuted = '#cbd5e1'
+    palette.textSubtle = '#94a3b8'
+    palette.accentLight = `color-mix(in srgb, ${palette.accent} 16%, #0f172a)`
+    palette.accentMuted = `color-mix(in srgb, ${palette.accent} 28%, #1e293b)`
+    palette.accentHover = lighten(palette.accent, 0.1)
+    palette.isDark = true
+  } else if (!isDark && presetIsDark) {
+    // Graceful light fallback if a dark preset has colorMode forced to light
+    palette.surface = '#ffffff'
+    palette.surfaceMuted = '#f8fafc'
+    palette.surfaceSunken = '#edf2f7'
+    palette.border = '#e2e8f0'
+    palette.borderStrong = '#cbd5e1'
+    palette.text = '#0f172a'
+    palette.textMuted = '#475569'
+    palette.textSubtle = '#64748b'
+    palette.isDark = false
+  }
+
   if (o.accent && isValidHex(o.accent)) {
     Object.assign(palette, deriveAccentRamp(o.accent))
   }
 
   return {
     themeId: preset.id,
+    colorMode,
+    resolvedColorMode,
+    isDark,
     density: o.density ?? preset.defaults.density,
     radius: o.radius ?? preset.defaults.radius,
     borderWidth: o.borderWidth ?? preset.defaults.borderWidth,
@@ -151,6 +217,10 @@ export const appearanceToCssVars = (r: ResolvedAppearance): Record<string, strin
     '--ui-table-cell-px': table.cellPx,
     '--ui-table-cell-py': table.cellPy,
     '--ui-page-padding': table.pagePadding,
+
+    // --- dark mode & control background ---
+    '--ui-control-bg': r.isDark ? '#1e293b' : 'rgba(255, 255, 255, 0.92)',
+    '--color-scheme': r.isDark ? 'dark' : 'light',
   }
 }
 
@@ -163,6 +233,14 @@ export const applyAppearance = (
   for (const [key, value] of Object.entries(vars)) {
     target.style.setProperty(key, value)
   }
+  // Dark mode class, dataset, and colorScheme
+  target.classList.toggle('dark', resolved.isDark)
+  target.dataset.mode = resolved.isDark ? 'dark' : 'light'
+  target.dataset.themeMode = resolved.isDark ? 'dark' : 'light'
+  target.dataset.colorMode = resolved.colorMode
+  target.dataset.resolvedMode = resolved.resolvedColorMode
+  target.style.colorScheme = resolved.isDark ? 'dark' : 'light'
+
   // Non-numeric presentation choices ride as data-attributes; index.css keys
   // its variant rules off them.
   target.dataset.theme = resolved.themeId

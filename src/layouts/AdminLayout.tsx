@@ -35,7 +35,7 @@ export default function AdminLayout() {
 			<div className="flex flex-col flex-1 min-w-0">
 				<Header sidebarClick={sidebarClick} />
 
-				<main className="flex-1 overflow-auto bg-[#F6F6F6] mt-12 flex flex-col justify-between">
+				<main className="flex-1 overflow-auto bg-[var(--ui-surface-sunken,#F6F6F6)] mt-12 flex flex-col justify-between">
 					<div className="flex-1">
 						<Outlet />
 					</div>

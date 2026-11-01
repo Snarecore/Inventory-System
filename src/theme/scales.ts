@@ -17,6 +17,7 @@ import type {
   TableRowStyleId,
   DialogStyleId,
   AlertStyleId,
+  ColorModeId,
 } from './types'
 import { FONT_LIST } from './fonts'
 
@@ -213,4 +214,10 @@ export const ALERT_STYLE_OPTIONS: ScaleOption<AlertStyleId>[] = [
   { id: 'outlined', label: 'Outlined', hint: 'Surface alert with semantic border' },
   { id: 'soft', label: 'Soft', hint: 'Semantic tinted background' },
   { id: 'solid', label: 'Solid', hint: 'Strong semantic color background' },
+]
+
+export const COLOR_MODE_OPTIONS: ScaleOption<ColorModeId>[] = [
+  { id: 'light', label: 'Light mode', hint: 'Crisp daylight surfaces with high legibility' },
+  { id: 'dark', label: 'Dark mode', hint: 'Low-glare charcoal surfaces for late-night workflows' },
+  { id: 'system', label: 'System (Auto)', hint: 'Synchronize automatically with your device OS settings' },
 ]
