@@ -1185,7 +1185,7 @@ const CreatePurchaseForm: React.FC = () => {
 
             {/* Optional Challan fields (if enabled in settings) */}
             {hasAnyChallanField && (
-              <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 md:grid-cols-3 pt-2 mt-2 border-t border-[var(--ui-border)]">
+              <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 md:grid-cols-3 mt-2.5">
                 {/* Optional Challan Ref No */}
                 {(challanSettings.showChallanRefNo ?? challanSettings.showChallanNo) && (
                   <TextInput

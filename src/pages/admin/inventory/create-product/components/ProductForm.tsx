@@ -526,8 +526,11 @@ const CreateProductForm = () => {
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-2.5">
                             {/* Row 1, Col 1: Product Name */}
                             <div>
+                                <div className="flex items-center justify-between min-h-[22px] mb-1.5 gap-1">
+                                    <label className="ui-label ui-label-required">Product Name</label>
+                                </div>
                                 <InputField
-                                    label="Product Name"
+                                    label=""
                                     type="text"
                                     name="name"
                                     required
@@ -539,8 +542,13 @@ const CreateProductForm = () => {
 
                             {/* Row 1, Col 2: Category */}
                             <div className="relative z-30">
+                                <div className="flex items-center justify-between min-h-[22px] mb-1.5 gap-1">
+                                    <label className="ui-label">
+                                        Category{isCategoriesLoading ? " (Loading...)" : ""}
+                                    </label>
+                                </div>
                                 <SelectInput
-                                    label={`Category${isCategoriesLoading ? " (Loading...)" : ""}`}
+                                    label=""
                                     value={selectedCategory}
                                     options={categoryOptions}
                                     onChange={handleCategorySelect}
@@ -550,9 +558,9 @@ const CreateProductForm = () => {
 
                             {/* Row 1, Col 3: Unit (Primary) with Allow Decimal Toggle */}
                             <div className="relative z-20">
-                                <div className="flex items-center justify-between mb-1">
-                                    <label className="text-xs font-semibold text-[var(--ui-text)]">
-                                        Unit{isUnitsLoading ? " (Loading...)" : ""} <span className="text-[var(--ui-danger)] ml-0.5">*</span>
+                                <div className="flex items-center justify-between min-h-[22px] mb-1.5 gap-1">
+                                    <label className="ui-label ui-label-required">
+                                        Unit{isUnitsLoading ? " (Loading...)" : ""}
                                     </label>
                                     <label 
                                         className="flex items-center gap-1 cursor-pointer select-none"
@@ -577,8 +585,13 @@ const CreateProductForm = () => {
 
                             {/* Row 1, Col 4: Secondary Unit (Optional) */}
                             <div className="relative z-20">
+                                <div className="flex items-center justify-between min-h-[22px] mb-1.5 gap-1">
+                                    <label className="ui-label">
+                                        Secondary Unit (Optional)
+                                    </label>
+                                </div>
                                 <SelectInput
-                                    label="Secondary Unit (Optional)"
+                                    label=""
                                     value={selectedSecondaryUnit}
                                     options={secondaryUnitOptions}
                                     onChange={handleSecondaryUnitSelect}
@@ -588,49 +601,40 @@ const CreateProductForm = () => {
                             </div>
 
                             {/* Row 2, Col 1: Conversion Ratio (if Secondary Unit is chosen) OR Packing Levels (Optional) */}
-                            {selectedUnit && selectedSecondaryUnit ? (
-                                <div>
-                                    <label htmlFor="packing_levels" className="text-xs font-semibold text-[var(--ui-text)] block mb-1 truncate">
-                                        Conversion Ratio (1 {selectedUnit.label} = ?)
+                            <div>
+                                <div className="flex items-center justify-between min-h-[22px] mb-1.5 gap-1">
+                                    <label htmlFor="packing_levels" className="ui-label truncate">
+                                        {selectedUnit && selectedSecondaryUnit 
+                                            ? `Conversion Ratio (1 ${selectedUnit.label} = ?)` 
+                                            : "Packing Levels (Optional)"}
                                     </label>
-                                    <div className="relative">
-                                        <InputField
-                                            name="packing_levels"
-                                            type="text"
-                                            value={fieldValues.packing_levels}
-                                            onChange={handleChange}
-                                            placeholder={`e.g. 10 (1 ${selectedUnit.label} = 10 ${selectedSecondaryUnit.label})`}
-                                            inputClass={fieldValues.packing_levels ? "pr-24" : ""}
-                                        />
-                                        {fieldValues.packing_levels ? (
-                                            <span className="absolute right-2 top-2 text-[10px] font-semibold text-[var(--primary-color)] bg-[var(--primary-color-light)] border border-[var(--primary-color-muted)] px-1.5 py-0.5 rounded whitespace-nowrap select-none pointer-events-none">
-                                                1 {selectedUnit.label} = {
-                                                    fieldValues.packing_levels.toLowerCase().includes(selectedSecondaryUnit.label.toLowerCase())
-                                                        ? fieldValues.packing_levels
-                                                        : `${fieldValues.packing_levels} ${selectedSecondaryUnit.label}`
-                                                }
-                                            </span>
-                                        ) : null}
-                                    </div>
+                                    {selectedUnit && selectedSecondaryUnit && fieldValues.packing_levels ? (
+                                        <span className="text-[10px] font-semibold text-[var(--primary-color)] bg-[var(--primary-color-light)] border border-[var(--primary-color-muted)] px-1.5 py-0.5 rounded whitespace-nowrap select-none leading-none shrink-0">
+                                            1 {selectedUnit.label} = {
+                                                fieldValues.packing_levels.toLowerCase().includes(selectedSecondaryUnit.label.toLowerCase())
+                                                    ? fieldValues.packing_levels
+                                                    : `${fieldValues.packing_levels} ${selectedSecondaryUnit.label}`
+                                            }
+                                        </span>
+                                    ) : null}
                                 </div>
-                            ) : (
-                                <div>
-                                    <InputField
-                                        label="Packing Levels (Optional)"
-                                        type="text"
-                                        name="packing_levels"
-                                        value={fieldValues.packing_levels}
-                                        onChange={handleChange}
-                                        placeholder="e.g. 10 pcs/box"
-                                    />
-                                </div>
-                            )}
+                                <InputField
+                                    label=""
+                                    name="packing_levels"
+                                    type="text"
+                                    value={fieldValues.packing_levels}
+                                    onChange={handleChange}
+                                    placeholder={selectedUnit && selectedSecondaryUnit 
+                                        ? `e.g. 10 (1 ${selectedUnit.label} = 10 ${selectedSecondaryUnit.label})` 
+                                        : "e.g. 10 pcs/box"}
+                                />
+                            </div>
 
                             {/* Row 2, Col 2: Buy Price (based on Secondary Unit if selected, else Primary Unit) */}
                             <div>
-                                <div className="flex items-center justify-between mb-1 gap-1">
-                                    <label htmlFor="buy_price" className="text-xs font-semibold text-[var(--ui-text)] truncate">
-                                        Buy Price (৳) <span className="text-[var(--ui-danger)]">*</span>
+                                <div className="flex items-center justify-between min-h-[22px] mb-1.5 gap-1">
+                                    <label htmlFor="buy_price" className="ui-label ui-label-required truncate">
+                                        Buy Price (৳)
                                     </label>
                                     {conversionFactor && fieldValues.buy_price && Number(fieldValues.buy_price) > 0 ? (
                                         <span className="text-[10px] font-bold text-[var(--primary-color)] bg-[var(--primary-color-light)] border border-[var(--primary-color-muted)] px-1.5 py-0.5 rounded leading-none whitespace-nowrap shrink-0">
@@ -639,6 +643,7 @@ const CreateProductForm = () => {
                                     ) : null}
                                 </div>
                                 <InputField
+                                    label=""
                                     name="buy_price"
                                     type="number"
                                     required
@@ -650,9 +655,9 @@ const CreateProductForm = () => {
 
                             {/* Row 2, Col 3: Sell Price (based on Secondary Unit if selected, else Primary Unit) */}
                             <div>
-                                <div className="flex items-center justify-between mb-1 gap-1">
-                                    <label htmlFor="sell_price" className="text-xs font-semibold text-[var(--ui-text)] truncate">
-                                        Sell Price (৳) <span className="text-[var(--ui-danger)]">*</span>
+                                <div className="flex items-center justify-between min-h-[22px] mb-1.5 gap-1">
+                                    <label htmlFor="sell_price" className="ui-label ui-label-required truncate">
+                                        Sell Price (৳)
                                     </label>
                                     {conversionFactor && fieldValues.sell_price && Number(fieldValues.sell_price) > 0 ? (
                                         <span className="text-[10px] font-bold text-[var(--ui-success-dark)] bg-[var(--ui-success-light)] border border-[var(--ui-success-border)] px-1.5 py-0.5 rounded leading-none whitespace-nowrap shrink-0">
@@ -661,6 +666,7 @@ const CreateProductForm = () => {
                                     ) : null}
                                 </div>
                                 <InputField
+                                    label=""
                                     name="sell_price"
                                     type="number"
                                     required
@@ -672,8 +678,13 @@ const CreateProductForm = () => {
 
                             {/* Row 2, Col 4: Quantity */}
                             <div>
+                                <div className="flex items-center justify-between min-h-[22px] mb-1.5 gap-1">
+                                    <label className="ui-label">
+                                        {activePricingUnit ? `Quantity (${activePricingUnit})` : "Quantity"}
+                                    </label>
+                                </div>
                                 <InputField
-                                    label={activePricingUnit ? `Quantity (${activePricingUnit})` : "Quantity"}
+                                    label=""
                                     type={isDecimalAllowed ? "number" : "text"}
                                     name="quantity"
                                     value={fieldValues.quantity}
@@ -690,8 +701,11 @@ const CreateProductForm = () => {
 
                             {/* Row 3, Col 1: Low Stock Alert */}
                             <div>
+                                <div className="flex items-center justify-between min-h-[22px] mb-1.5 gap-1">
+                                    <label className="ui-label">Low Stock Alert</label>
+                                </div>
                                 <InputField
-                                    label="Low Stock Alert"
+                                    label=""
                                     type="number"
                                     name="low_stock_threshold"
                                     value={fieldValues.low_stock_threshold}
@@ -702,8 +716,11 @@ const CreateProductForm = () => {
 
                             {/* Row 3, Col 2: Product Code */}
                             <div>
+                                <div className="flex items-center justify-between min-h-[22px] mb-1.5 gap-1">
+                                    <label className="ui-label">Product Code</label>
+                                </div>
                                 <InputField
-                                    label="Product Code"
+                                    label=""
                                     type="text"
                                     name="pcode"
                                     value={fieldValues.pcode}
@@ -714,8 +731,11 @@ const CreateProductForm = () => {
 
                             {/* Row 3, Col 3: SKU */}
                             <div>
+                                <div className="flex items-center justify-between min-h-[22px] mb-1.5 gap-1">
+                                    <label className="ui-label">SKU</label>
+                                </div>
                                 <InputField
-                                    label="SKU"
+                                    label=""
                                     type="text"
                                     name="sku"
                                     value={fieldValues.sku}
@@ -726,8 +746,11 @@ const CreateProductForm = () => {
 
                             {/* Row 3, Col 4: Barcode */}
                             <div>
+                                <div className="flex items-center justify-between min-h-[22px] mb-1.5 gap-1">
+                                    <label className="ui-label">Barcode</label>
+                                </div>
                                 <InputField
-                                    label="Barcode"
+                                    label=""
                                     type="text"
                                     name="barcode"
                                     value={fieldValues.barcode}
