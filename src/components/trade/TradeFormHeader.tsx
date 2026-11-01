@@ -24,12 +24,12 @@ export const TradeFormHeader: React.FC<TradeFormHeaderProps> = ({
 }) => {
   return (
     <div
-      className={`sticky top-0 z-30 bg-[var(--ui-surface-muted)] py-2 sm:py-2.5 -mt-2 sm:-mt-2.5 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-2.5 border-b border-[var(--ui-border)] ${className}`}
+      className={`sticky top-0 z-30 bg-[var(--ui-surface-sunken,#F6F6F6)] -mt-1.5 sm:-mt-2 py-2 sm:py-2.5 border-b border-[var(--ui-border)] flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 ${className}`}
     >
       {/* Left Side: Title & Invoice Badge */}
-      <div className="flex items-center justify-between gap-2 w-full lg:w-auto">
+      <div className="flex items-center justify-between gap-2 w-full sm:w-auto">
         <div className="flex flex-col lg:flex-row lg:items-center gap-1 lg:gap-2.5 min-w-0">
-          <h1 className="text-sm sm:text-base lg:text-lg font-bold text-[var(--primary-color)] flex items-center gap-1.5 shrink-0">
+          <h1 className="text-sm sm:text-base lg:text-lg font-bold text-[var(--primary-color)] flex items-center gap-1.5 shrink-0 select-none">
             {icon}
             <span className="truncate">{title}</span>
           </h1>
@@ -39,7 +39,7 @@ export const TradeFormHeader: React.FC<TradeFormHeaderProps> = ({
         </div>
 
         {/* Quick Reset & Cancel for Mobile */}
-        <div className="flex lg:hidden items-center gap-1 shrink-0">
+        <div className="flex sm:hidden items-center gap-1 shrink-0">
           {extraActions}
           <button
             type="button"
@@ -59,7 +59,7 @@ export const TradeFormHeader: React.FC<TradeFormHeaderProps> = ({
       </div>
 
       {/* Desktop Action Controls */}
-      <div className="hidden lg:flex items-center gap-2">
+      <div className="hidden sm:flex items-center gap-2">
         {extraActions}
         <button
           type="button"
