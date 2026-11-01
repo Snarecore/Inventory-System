@@ -86,19 +86,26 @@ const Purchases: React.FC = () => {
     const rList: PurchaseReturnItem[] = [];
 
     if (Array.isArray(combinedData)) {
-      combinedData.forEach((item: any) => {
+      combinedData.forEach((item: any, idx: number) => {
         const isRet = Boolean(item.isReturnRecord) || isPurchaseReturnRecord(item);
 
         if (isRet) {
           const noteText = extractPurchaseReturnRemarks(item);
-          const details = Array.isArray(item.returnDetails) && item.returnDetails.length > 0
-            ? item.returnDetails
-            : Array.isArray(item.purchaseReturnDetails) && item.purchaseReturnDetails.length > 0
-            ? item.purchaseReturnDetails
-            : [];
+          const details =
+            Array.isArray(item.returnDetails) && item.returnDetails.length > 0
+              ? item.returnDetails
+              : Array.isArray(item.purchaseReturnDetails) && item.purchaseReturnDetails.length > 0
+              ? item.purchaseReturnDetails
+              : Array.isArray(item.details) && item.details.length > 0
+              ? item.details
+              : Array.isArray(item.items) && item.items.length > 0
+              ? item.items
+              : Array.isArray(item.products) && item.products.length > 0
+              ? item.products
+              : [];
 
           rList.push({
-            id: item.id,
+            id: item.id || item.returnId || item.purchaseReturnId || item.returnNo || item.orderNo || `ret_${item.returnNo || idx}`,
             returnNo: item.returnNo || "",
             orderNo: item.orderNo || "",
             purchaseInvoiceNo: item.purchaseInvoiceNo || item.invoiceNo || "",

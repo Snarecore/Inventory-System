@@ -87,15 +87,27 @@ const Sales: React.FC = () => {
     const salesList: SaleItem[] = [];
     const returnsList: SalesReturnItem[] = [];
 
-    apiReturnsData.forEach((item: any) => {
+    apiReturnsData.forEach((item: any, idx: number) => {
       const isRet = Boolean(item.isReturnRecord) || isReturnRecord(item);
       const isSale = Boolean(item.invoiceNo) || Boolean(item.salesDate) || (item.orderNo && !item.returnNo);
 
       if (isRet) {
         const noteText = extractReturnRemarks(item);
+        const details =
+          Array.isArray(item.returnDetails) && item.returnDetails.length > 0
+            ? item.returnDetails
+            : Array.isArray(item.salesReturnDetails) && item.salesReturnDetails.length > 0
+            ? item.salesReturnDetails
+            : Array.isArray(item.details) && item.details.length > 0
+            ? item.details
+            : Array.isArray(item.items) && item.items.length > 0
+            ? item.items
+            : Array.isArray(item.products) && item.products.length > 0
+            ? item.products
+            : [];
 
         returnsList.push({
-          id: item.id,
+          id: item.id || item.returnId || item.salesReturnId || item.returnNo || item.orderNo || `ret_${item.returnNo || idx}`,
           returnNo: item.returnNo || "",
           orderNo: item.orderNo || "",
           salesInvoiceNo: item.salesInvoiceNo || item.invoiceNo || "",
@@ -117,8 +129,8 @@ const Sales: React.FC = () => {
           note: noteText,
           remarks: noteText,
           reason: noteText,
-          returnDetails: item.returnDetails || item.salesReturnDetails || [],
-          itemsCount: (item.returnDetails || item.salesReturnDetails)?.length || 1,
+          returnDetails: details,
+          itemsCount: details.length || 1,
         });
       }
 

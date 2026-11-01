@@ -522,28 +522,29 @@
   }
 
   /* ---- Table density ----
-     Opt-in via .ui-table so existing bespoke tables are not disturbed. */
-  .ui-table th,
-  .ui-table td {
+     Opt-in via .ui-table so existing bespoke tables are not disturbed.
+     Use direct child selectors so nested tables (e.g. accordion drawers) are not polluted. */
+  .ui-table > thead > tr > th,
+  .ui-table > tbody > tr > td {
     padding-inline: var(--ui-table-cell-px);
     padding-block: var(--ui-table-cell-py);
     font-size: var(--ui-font-size);
   }
 
-  .ui-table tbody tr {
+  .ui-table > tbody > tr {
     height: var(--ui-table-row-h);
     transition: background-color 150ms ease;
   }
 
-  .ui-table tbody tr:hover {
+  .ui-table > tbody > tr:hover {
     background-color: var(--ui-surface-muted);
   }
 
-  [data-table-row-style="striped"] .ui-table tbody tr:nth-child(even) {
+  [data-table-row-style="striped"] .ui-table > tbody > tr:nth-child(even) {
     background-color: var(--ui-surface-muted);
   }
 
-  .ui-table th {
+  .ui-table > thead > tr > th {
     font-size: var(--ui-label-size);
     font-weight: 600;
     color: var(--table-header-text, var(--ui-on-accent, #ffffff));

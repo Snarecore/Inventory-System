@@ -487,7 +487,8 @@ export function TradeReturnTable<T extends Record<string, any>>({
             </TableHead>
             <TableBody>
               {returns.map((item, index) => {
-                const isExpanded = expandedRowId === item.id;
+                const rowId = item.id || item.returnNo || item.orderNo || item.salesInvoiceNo || item.purchaseInvoiceNo || `return-row-${index}`;
+                const isExpanded = expandedRowId !== null && expandedRowId !== undefined && expandedRowId === rowId;
                 const sl = (currentPageNumber - 1) * dataLimit + index + 1;
                 const refund = Number(item.refundAmount ?? item.grandTotal ?? item.totalAmount ?? 0);
                 const pType = String(item.paymentType || "CASH").toUpperCase();
@@ -495,15 +496,54 @@ export function TradeReturnTable<T extends Record<string, any>>({
                 // Payment badges
                 const paymentBg = "bg-[var(--primary-color-muted)] text-[var(--primary-color-dark)] border-[var(--primary-color-muted)] font-semibold";
 
-                // Return items count
-                const details = Array.isArray(item.returnDetails)
-                  ? item.returnDetails
-                  : Array.isArray(item.purchaseReturnDetails)
-                  ? item.purchaseReturnDetails
-                  : Array.isArray(item.salesReturnDetails)
-                  ? item.salesReturnDetails
-                  : [];
-                const itemsCount = details.length > 0 ? details.length : Number(item.itemsCount || 1);
+                // Return items count & details breakdown
+                const rawDetails =
+                  Array.isArray(item.returnDetails) && item.returnDetails.length > 0
+                    ? item.returnDetails
+                    : Array.isArray(item.purchaseReturnDetails) && item.purchaseReturnDetails.length > 0
+                    ? item.purchaseReturnDetails
+                    : Array.isArray(item.salesReturnDetails) && item.salesReturnDetails.length > 0
+                    ? item.salesReturnDetails
+                    : Array.isArray(item.details) && item.details.length > 0
+                    ? item.details
+                    : Array.isArray(item.items) && item.items.length > 0
+                    ? item.items
+                    : Array.isArray(item.products) && item.products.length > 0
+                    ? item.products
+                    : Array.isArray(item.saleDetails) && item.saleDetails.length > 0
+                    ? item.saleDetails
+                    : Array.isArray(item.salesDetails) && item.salesDetails.length > 0
+                    ? item.salesDetails
+                    : Array.isArray(item.purchaseDetails) && item.purchaseDetails.length > 0
+                    ? item.purchaseDetails
+                    : [];
+
+                // Synthesize item if details array is missing, so clicking one shows its data in place instead of empty
+                const details = rawDetails.length > 0
+                  ? rawDetails
+                  : [
+                      {
+                        productName:
+                          item.productName ||
+                          item.product_name ||
+                          item.name ||
+                          (item.orderNo ? `Order #${item.orderNo}` : item.salesInvoiceNo || item.purchaseInvoiceNo || "Returned Item"),
+                        productCode:
+                          item.productCode ||
+                          item.product_code ||
+                          item.pcode ||
+                          item.salesInvoiceNo ||
+                          item.purchaseInvoiceNo ||
+                          item.returnNo ||
+                          "N/A",
+                        unitPrice: Number(item.unitPrice ?? item.price ?? item.buyPrice ?? item.sellPrice ?? (refund > 0 ? refund : 0)),
+                        returnQuantity: Number(item.returnQuantity ?? item.quantity ?? item.qty ?? item.itemsCount ?? 1),
+                        unit: item.unit || "pcs",
+                        returnReason: item.returnReason || item.return_reason || item.reason || item.note || item.remarks,
+                        total: Number(item.total ?? (refund > 0 ? refund : (item.totalAmount ?? item.grandTotal ?? 0))),
+                      },
+                    ];
+                const itemsCount = details.length;
 
                 // Status badge styling
                 const statusStr = String(item.status || "Completed").trim();
@@ -522,8 +562,8 @@ export function TradeReturnTable<T extends Record<string, any>>({
                   : (item.supplierName || "Direct Supplier");
 
                 return (
-                  <React.Fragment key={item.id}>
-                    <tr className={`transition-colors group ${isExpanded ? "bg-sky-50/50" : "hover:bg-sky-50/40"}`}>
+                  <React.Fragment key={rowId}>
+                    <tr className={`transition-colors group ${isExpanded ? "bg-[var(--primary-color-light)]/40" : "hover:bg-[var(--primary-color-light)]/30"}`}>
                       {/* SL */}
                       {isColVisible("sl") && (
                         <td className="py-2.5 px-3 text-center text-[var(--ui-text)] text-xs font-normal">
@@ -583,15 +623,15 @@ export function TradeReturnTable<T extends Record<string, any>>({
                         <td className="py-2.5 px-3 text-center w-28 whitespace-nowrap">
                           <button
                             type="button"
-                            onClick={() => toggleExpandRow(item.id)}
-                            className="inline-flex items-center justify-center gap-1.5 px-2 py-0.5 bg-gray-100 hover:bg-sky-100 text-black rounded text-[11px] font-medium transition-colors cursor-pointer whitespace-nowrap select-none"
+                            onClick={() => toggleExpandRow(rowId)}
+                            className="inline-flex items-center justify-center gap-1.5 px-2 py-0.5 bg-[var(--ui-surface-sunken)] hover:bg-[var(--primary-color-muted)] text-[var(--ui-text)] border border-[var(--ui-border)] rounded-md text-[11px] font-medium transition-colors cursor-pointer whitespace-nowrap select-none"
                             title="Click to view returned products"
                           >
                             <span className="whitespace-nowrap">{itemsCount} {itemsCount === 1 ? "item" : "items"}</span>
                             <FiChevronDown
                               size={11}
-                              className={`shrink-0 text-gray-500 transition-transform duration-200 ${
-                                isExpanded ? "rotate-180" : ""
+                              className={`shrink-0 text-[var(--ui-text-muted)] transition-transform duration-200 ${
+                                isExpanded ? "rotate-180 text-[var(--primary-color)]" : ""
                               }`}
                             />
                           </button>
@@ -655,26 +695,26 @@ export function TradeReturnTable<T extends Record<string, any>>({
 
                     {/* Expandable Accordion Drawer for Items Breakdown */}
                     {isExpanded && (
-                      <tr className="bg-sky-50/40 border-y border-sky-100">
-                        <td colSpan={activeVisibleColumnCount} className="p-2.5 sm:p-3">
-                          <div className="bg-white rounded-lg border border-sky-200 shadow-xs p-2.5 sm:p-3">
-                            <div className="flex flex-wrap items-center justify-between gap-2 mb-2.5 pb-2 border-b border-gray-100">
-                              <div className="flex items-center gap-2">
-                                <FaBoxOpen className="text-sky-600 text-sm" />
-                                <span className="font-semibold text-black text-xs">
-                                  Returned Items Breakdown ({details.length} products)
+                      <tr className="bg-[var(--primary-color-light)]/20 border-y border-[var(--ui-border)]">
+                        <td colSpan={activeVisibleColumnCount} className="p-2 sm:p-2.5">
+                          <div className="bg-[var(--ui-surface)] rounded-xl border border-[var(--ui-border)] shadow-xs p-2.5 sm:p-3">
+                            <div className="flex flex-wrap items-center justify-between gap-2 mb-2 pb-2 border-b border-[var(--ui-border)]">
+                              <div className="flex items-center gap-1.5">
+                                <FaBoxOpen className="text-[var(--primary-color)] text-xs" />
+                                <span className="font-semibold text-[var(--ui-text)] text-xs">
+                                  Returned Items Breakdown ({details.length} {details.length === 1 ? "product" : "products"})
                                 </span>
                               </div>
 
                               <div className="flex items-center gap-2 text-xs">
-                                <span className="text-black">Total Refund:</span>
-                                <span className="font-semibold text-black text-xs">
+                                <span className="text-[var(--ui-text-muted)] text-[11px]">Total Refund:</span>
+                                <span className="font-bold text-[var(--ui-text)] text-xs tabular-nums">
                                   ৳ {formatMoney(refund)}
                                 </span>
                                 <button
                                   type="button"
                                   onClick={() => onView(item)}
-                                  className="ml-2 text-xs text-sky-600 font-medium cursor-pointer"
+                                  className="ml-1 text-xs text-[var(--primary-color)] hover:underline font-medium cursor-pointer"
                                 >
                                   View Full Slip
                                 </button>
@@ -682,20 +722,20 @@ export function TradeReturnTable<T extends Record<string, any>>({
                             </div>
 
                             {details.length > 0 ? (
-                              <div className="overflow-x-auto">
-                                <table className="w-full text-left text-xs border-collapse">
+                              <div className="overflow-x-auto rounded-lg border border-[var(--ui-border)]">
+                                <table className="w-full text-left border-collapse text-xs">
                                   <thead>
-                                    <tr className="bg-gray-50 text-black font-semibold border-b border-gray-200 text-[11px]">
-                                      <th className="py-1.5 px-2 text-center w-8">SL</th>
-                                      <th className="py-1.5 px-2">Product Name</th>
-                                      <th className="py-1.5 px-2">Product Code</th>
-                                      <th className="py-1.5 px-2 text-center">Unit Price</th>
-                                      <th className="py-1.5 px-2 text-center">Return Qty</th>
-                                      <th className="py-1.5 px-2 text-center">Return Reason</th>
-                                      <th className="py-1.5 px-2 text-right">Subtotal</th>
+                                    <tr className="bg-[var(--table-header-bg,var(--primary-color))] text-[var(--table-header-text,var(--ui-on-accent,#ffffff))] text-xs font-semibold select-none !h-auto">
+                                      <th style={{ paddingTop: "7px", paddingBottom: "7px" }} className="px-2.5 text-center w-10 text-[var(--table-header-text,var(--ui-on-accent,#ffffff))] text-xs font-semibold select-none leading-normal">SL</th>
+                                      <th style={{ paddingTop: "7px", paddingBottom: "7px" }} className="px-2.5 text-left text-[var(--table-header-text,var(--ui-on-accent,#ffffff))] text-xs font-semibold select-none leading-normal">Product Name</th>
+                                      <th style={{ paddingTop: "7px", paddingBottom: "7px" }} className="px-2.5 text-left text-[var(--table-header-text,var(--ui-on-accent,#ffffff))] text-xs font-semibold select-none leading-normal">Product Code</th>
+                                      <th style={{ paddingTop: "7px", paddingBottom: "7px" }} className="px-2.5 text-center text-[var(--table-header-text,var(--ui-on-accent,#ffffff))] text-xs font-semibold select-none leading-normal">Unit Price</th>
+                                      <th style={{ paddingTop: "7px", paddingBottom: "7px" }} className="px-2.5 text-center text-[var(--table-header-text,var(--ui-on-accent,#ffffff))] text-xs font-semibold select-none leading-normal">Return Qty</th>
+                                      <th style={{ paddingTop: "7px", paddingBottom: "7px" }} className="px-2.5 text-center text-[var(--table-header-text,var(--ui-on-accent,#ffffff))] text-xs font-semibold select-none leading-normal">Return Reason</th>
+                                      <th style={{ paddingTop: "7px", paddingBottom: "7px" }} className="px-2.5 text-right text-[var(--table-header-text,var(--ui-on-accent,#ffffff))] text-xs font-semibold select-none leading-normal">Subtotal</th>
                                     </tr>
                                   </thead>
-                                  <tbody className="divide-y divide-gray-100">
+                                  <tbody className="divide-y divide-[var(--ui-border)] bg-[var(--ui-surface)]">
                                     {details.map((prod: any, pIdx: number) => {
                                       const pQty = Number(prod.quantity ?? prod.returnQuantity ?? 1);
                                       const pPrice = Number(prod.buyPrice ?? prod.sellPrice ?? prod.price ?? prod.unitPrice ?? 0);
@@ -703,32 +743,32 @@ export function TradeReturnTable<T extends Record<string, any>>({
                                       const pReason = prod.returnReason || prod.return_reason || prod.reason;
 
                                       return (
-                                        <tr key={pIdx} className="hover:bg-gray-50/50">
-                                          <td className="py-1.5 px-2 text-center text-black font-medium">
+                                        <tr key={pIdx} className="hover:bg-[var(--primary-color-light)]/40 transition-colors group !h-auto">
+                                          <td style={{ paddingTop: "7px", paddingBottom: "7px" }} className="px-2.5 text-center text-xs font-normal text-[var(--ui-text)]">
                                             {pIdx + 1}
                                           </td>
-                                          <td className="py-1.5 px-2 font-medium text-black">
+                                          <td style={{ paddingTop: "7px", paddingBottom: "7px" }} className="px-2.5 text-left text-xs font-medium text-[var(--ui-text)]">
                                             {prod.productName || "Product"}
                                           </td>
-                                          <td className="py-1.5 px-2 text-black text-[11px]">
+                                          <td style={{ paddingTop: "7px", paddingBottom: "7px" }} className="px-2.5 text-left text-xs font-normal text-[var(--ui-text-muted)]">
                                             {prod.productCode || "N/A"}
                                           </td>
-                                          <td className="py-1.5 px-2 text-center text-black font-medium">
+                                          <td style={{ paddingTop: "7px", paddingBottom: "7px" }} className="px-2.5 text-center text-xs font-normal text-[var(--ui-text)] tabular-nums">
                                             ৳ {formatMoney(pPrice)}
                                           </td>
-                                          <td className="py-1.5 px-2 text-center font-bold text-sky-700">
+                                          <td style={{ paddingTop: "7px", paddingBottom: "7px" }} className="px-2.5 text-center text-xs font-semibold text-[var(--primary-color)]">
                                             {pQty} {prod.unit || "pcs"}
                                           </td>
-                                          <td className="py-1.5 px-2 text-center">
+                                          <td style={{ paddingTop: "7px", paddingBottom: "7px" }} className="px-2.5 text-center">
                                             {pReason ? (
-                                              <span className="inline-block px-1.5 py-0.5 rounded text-[10px] font-medium bg-amber-50 text-amber-800 border border-amber-200">
+                                              <span className="inline-block px-1.5 py-0.5 rounded text-[10px] font-semibold bg-[var(--ui-warning-light,#fffbeb)] text-[var(--ui-warning-dark,#b45309)] border border-[var(--ui-warning-border,#fde68a)]">
                                                 {reasonLabelFn(pReason)}
                                               </span>
                                             ) : (
-                                              <span className="text-black font-normal">N/A</span>
+                                              <span className="text-[var(--ui-text-muted)] text-xs font-normal">N/A</span>
                                             )}
                                           </td>
-                                          <td className="py-1.5 px-2 text-right font-bold text-black ">
+                                          <td style={{ paddingTop: "7px", paddingBottom: "7px" }} className="px-2.5 text-right text-xs font-bold text-[var(--ui-text)] tabular-nums">
                                             ৳ {formatMoney(pTotal)}
                                           </td>
                                         </tr>
@@ -738,14 +778,15 @@ export function TradeReturnTable<T extends Record<string, any>>({
                                 </table>
                               </div>
                             ) : (
-                              <div className="text-black text-xs italic py-2 text-center">
+                              <div className="text-[var(--ui-text-muted)] text-xs italic py-2 text-center">
                                 Direct voucher refund without individual item breakdown records.
                               </div>
                             )}
 
                             {(item.note || item.remarks) && (
-                              <div className="mt-2 pt-2 border-t border-gray-100 text-[11px] text-black font-normal flex items-center gap-1.5">
-                                <strong className="text-black">Remarks:</strong> {item.note || item.remarks}
+                              <div className="mt-2 pt-2 border-t border-[var(--ui-border)] text-xs text-[var(--ui-text)] font-normal flex items-center gap-1.5">
+                                <strong className="font-semibold text-[var(--ui-text)]">Remarks:</strong>{" "}
+                                <span className="text-[var(--ui-text-muted)]">{item.note || item.remarks}</span>
                               </div>
                             )}
                           </div>
