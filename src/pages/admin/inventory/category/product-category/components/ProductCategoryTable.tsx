@@ -261,7 +261,7 @@ export const ProductCategoryTable: React.FC<ProductCategoryTableProps> = ({
                     return (
                       <TableRow key={item.id || index}>
                         {/* SL */}
-                        <TableCell align="center" className="text-gray-500 font-normal">
+                        <TableCell align="center" className="text-black font-medium">
                           {sl}
                         </TableCell>
 

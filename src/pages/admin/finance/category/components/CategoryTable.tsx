@@ -338,7 +338,7 @@ export const CategoryTable: React.FC<CategoryTableProps> = ({
                     return (
                       <TableRow key={item.categoryId || index}>
                         {/* SL */}
-                        <TableCell align="center" className="text-gray-500 font-normal">
+                        <TableCell align="center" className="text-black font-medium">
                           {sl}
                         </TableCell>
 
