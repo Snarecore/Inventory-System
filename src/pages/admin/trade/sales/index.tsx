@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import moment from "moment";
 import { FaPlus, FaShoppingCart, FaUndoAlt } from "react-icons/fa";
+import PageHeader from "@/components/page-header/PageHeader";
 import Button from "@/components/button/Button";
 import RefreshButton from "@/components/table-components/RefreshButton";
 import SaleStats from "./components/SaleStats";
@@ -522,33 +523,34 @@ const Sales: React.FC = () => {
   const isGlobalFetching = isSalesFetching || isReturnsFetching;
 
   return (
-    <div className="flex w-full max-w-[1600px] flex-col gap-4 px-3 py-3 sm:gap-5 sm:px-5 sm:py-5">
+    <div className="flex flex-col gap-2 sm:gap-2.5 px-3 py-1.5 sm:px-4 sm:py-2 max-w-[1600px] mx-auto w-full">
       {/* Top Header */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <p className="mb-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-[var(--primary-color-dark)]">Trade management</p>
-          <h1 className="text-2xl font-semibold tracking-tight text-[var(--ui-text)]">Sales</h1>
-          <p className="mt-1 text-sm text-[var(--ui-text-muted)]">
-            Manage customer invoices, returns, and payment activity.
-          </p>
-        </div>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+        <PageHeader
+          headerTitle={activeTab === "sales" ? "Sales" : "Sales Return"}
+          headerDescription={
+            activeTab === "sales"
+              ? "Manage customer sales, invoices, pos, and trade accounts"
+              : "Manage customer sales returns, item quantities, and refund settlements"
+          }
+        />
 
-        <div className="flex items-center gap-2 self-start sm:self-auto">
+        <div className="flex items-center gap-2 self-end sm:self-auto">
           <RefreshButton onClick={handleRefetchAll} isLoading={isGlobalLoading || isGlobalFetching} />
           {activeTab === "sales" ? (
             <Button
               label="New Sale"
               onClick={() => navigate("/admin/create-sale")}
-              color="#0b3b70"
-              hoverColor="#092f5a"
+              color="var(--primary-color)"
+              hoverColor="var(--primary-color-hover)"
               icon={<FaPlus className="text-white text-xs" />}
             />
           ) : (
             <Button
               label="Create Return"
               onClick={() => navigate("/admin/create-sales-return")}
-              color="#0b3b70"
-              hoverColor="#092f5a"
+              color="var(--primary-color)"
+              hoverColor="var(--primary-color-hover)"
               icon={<FaPlus className="text-white text-xs" />}
             />
           )}
@@ -573,7 +575,7 @@ const Sales: React.FC = () => {
       )}
 
       {/* Unified Tab Switcher: Sales Invoices vs Sales Returns */}
-      <div className="flex items-center gap-1 rounded-xl border border-[var(--ui-border)] bg-[var(--ui-surface)] p-1 shadow-sm">
+      <div className="flex items-center gap-1.5 border-b border-[var(--ui-border)]/90 -my-0.5">
         <button
           type="button"
           onClick={() => {
@@ -581,10 +583,10 @@ const Sales: React.FC = () => {
             setCurrentPageNumber(1);
             navigate("/admin/sales", { replace: true });
           }}
-          className={`flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold transition-all cursor-pointer sm:px-4 ${
+          className={`flex items-center gap-1.5 px-3 sm:px-3.5 py-1 text-xs font-bold transition-all border-b-2 cursor-pointer ${
             activeTab === "sales"
-              ? "bg-[var(--primary-color-dark)] text-white shadow-sm"
-              : "text-[var(--ui-text-muted)] hover:bg-[var(--ui-surface-muted)] hover:text-[var(--ui-text)]"
+              ? "border-[var(--color-primary)] text-[var(--color-primary)] bg-[var(--primary-color-light)]/50 rounded-t-md"
+              : "border-transparent text-[var(--ui-text-muted)] hover:text-[var(--ui-text)] hover:bg-[var(--ui-surface-muted)] rounded-t-md"
           }`}
         >
           <FaShoppingCart size={11} />
@@ -598,14 +600,14 @@ const Sales: React.FC = () => {
             setCurrentPageNumber(1);
             navigate("/admin/sales-return", { replace: true });
           }}
-          className={`flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold transition-all cursor-pointer sm:px-4 ${
+          className={`flex items-center gap-1.5 px-3 sm:px-3.5 py-1 text-xs font-bold transition-all border-b-2 cursor-pointer ${
             activeTab === "returns"
-              ? "bg-[var(--primary-color-dark)] text-white shadow-sm"
-              : "text-[var(--ui-text-muted)] hover:bg-[var(--ui-surface-muted)] hover:text-[var(--ui-text)]"
+              ? "border-[var(--color-primary)] text-[var(--color-primary)] bg-[var(--primary-color-light)]/50 rounded-t-md"
+              : "border-transparent text-[var(--ui-text-muted)] hover:text-[var(--ui-text)] hover:bg-[var(--ui-surface-muted)] rounded-t-md"
           }`}
         >
           <FaUndoAlt size={11} />
-          <span>Sales Return List ({rawReturns.length})</span>
+          <span>Sales Returns List ({rawReturns.length})</span>
         </button>
       </div>
 

@@ -107,7 +107,7 @@ export const appearanceToCssVars = (r: ResolvedAppearance): Record<string, strin
     '--ui-on-accent-2': readableOn(p.accentSecondary ?? p.accent),
     '--brand-primary': p.accent,
     '--brand-primary-light': p.accentLight,
-    '--brand-primary-dark': p.accentDark,
+    '--brand-primary-dark': '#001a3d',
     '--brand-secondary': p.accent,
     '--ui-on-accent': readableOn(p.accent),
     '--table-header-bg': p.accent,
