@@ -1,11 +1,11 @@
 import React, { ChangeEvent, useState, useEffect, useMemo } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate, useParams, useSearchParams, useLocation } from "react-router-dom";
-import Button from '@/components/button/Button';
 import SelectInput from '@/components/form/SelectField';
 import InputField from '@/components/form/TextInput';
 import ToggleInput from '@/components/form/ToggleInput';
 import { RiArrowDropDownLine } from 'react-icons/ri';
+import { FaLock, FaSpinner } from 'react-icons/fa';
 import { showErrorToast } from '@/utils/toast-utils';
 import { useAPI } from '@/hooks/useApi';
 import apiConfig from '@/config/api.json';
@@ -349,6 +349,11 @@ const CreateProductForm = () => {
 
     const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
         const { name, value } = event.target;
+
+        // Disallow editing of system-generated product code, sku, and barcode
+        if (name === "pcode" || name === "sku" || name === "barcode") {
+            return;
+        }
 
         if (name === "quantity") {
             if (!isDecimalAllowed) {
@@ -714,48 +719,72 @@ const CreateProductForm = () => {
                                 />
                             </div>
 
-                            {/* Row 3, Col 2: Product Code */}
+                            {/* Row 3, Col 2: Product Code (Read-only / Non-editable) */}
                             <div>
                                 <div className="flex items-center justify-between min-h-[20px] mb-1 gap-1">
-                                    <label className="ui-label">Product Code</label>
+                                    <label htmlFor="pcode" className="ui-label flex items-center gap-1.5">
+                                        <span>Product Code</span>
+                                        <FaLock size={10} className="text-[var(--ui-text-subtle)]" />
+                                    </label>
+                                    <span className="text-[9px] font-medium text-[var(--ui-text-subtle)] bg-[var(--ui-surface-sunken)] px-1.5 py-0.5 rounded border border-[var(--ui-border)]">
+                                        System Generated
+                                    </span>
                                 </div>
                                 <InputField
                                     label=""
                                     type="text"
                                     name="pcode"
                                     value={fieldValues.pcode}
-                                    onChange={handleChange}
+                                    readOnly
                                     placeholder="e.g. P-1001"
+                                    wrapperClass="!bg-[var(--ui-surface-sunken)]/70 !border-[var(--ui-border)] cursor-not-allowed"
+                                    inputClass="!cursor-not-allowed font-mono text-[var(--ui-text-muted)] select-all"
                                 />
                             </div>
 
-                            {/* Row 3, Col 3: SKU */}
+                            {/* Row 3, Col 3: SKU (Read-only / Non-editable) */}
                             <div>
                                 <div className="flex items-center justify-between min-h-[20px] mb-1 gap-1">
-                                    <label className="ui-label">SKU</label>
+                                    <label htmlFor="sku" className="ui-label flex items-center gap-1.5">
+                                        <span>SKU</span>
+                                        <FaLock size={10} className="text-[var(--ui-text-subtle)]" />
+                                    </label>
+                                    <span className="text-[9px] font-medium text-[var(--ui-text-subtle)] bg-[var(--ui-surface-sunken)] px-1.5 py-0.5 rounded border border-[var(--ui-border)]">
+                                        System Generated
+                                    </span>
                                 </div>
                                 <InputField
                                     label=""
                                     type="text"
                                     name="sku"
                                     value={fieldValues.sku}
-                                    onChange={handleChange}
+                                    readOnly
                                     placeholder="e.g. SKU-1001"
+                                    wrapperClass="!bg-[var(--ui-surface-sunken)]/70 !border-[var(--ui-border)] cursor-not-allowed"
+                                    inputClass="!cursor-not-allowed font-mono text-[var(--ui-text-muted)] select-all"
                                 />
                             </div>
 
-                            {/* Row 3, Col 4: Barcode */}
+                            {/* Row 3, Col 4: Barcode (Read-only / Non-editable) */}
                             <div>
                                 <div className="flex items-center justify-between min-h-[20px] mb-1 gap-1">
-                                    <label className="ui-label">Barcode</label>
+                                    <label htmlFor="barcode" className="ui-label flex items-center gap-1.5">
+                                        <span>Barcode</span>
+                                        <FaLock size={10} className="text-[var(--ui-text-subtle)]" />
+                                    </label>
+                                    <span className="text-[9px] font-medium text-[var(--ui-text-subtle)] bg-[var(--ui-surface-sunken)] px-1.5 py-0.5 rounded border border-[var(--ui-border)]">
+                                        System Generated
+                                    </span>
                                 </div>
                                 <InputField
                                     label=""
                                     type="text"
                                     name="barcode"
                                     value={fieldValues.barcode}
-                                    onChange={handleChange}
+                                    readOnly
                                     placeholder="e.g. 894000001001"
+                                    wrapperClass="!bg-[var(--ui-surface-sunken)]/70 !border-[var(--ui-border)] cursor-not-allowed"
+                                    inputClass="!cursor-not-allowed font-mono text-[var(--ui-text-muted)] select-all"
                                 />
                             </div>
 
@@ -786,23 +815,29 @@ const CreateProductForm = () => {
 
                 {/* Cancel & Save/Update Buttons on Right */}
                 <div className="flex items-center gap-2">
-                    <Button
-                        label="Cancel"
+                    <button
+                        type="button"
                         onClick={() => navigate("/admin/products")}
-                        color="#6b7280"
-                        hoverColor="#4b5563"
                         disabled={isLoading}
-                        buttonClass="!text-xs !py-1.5"
-                    />
-                    <Button
-                        label={isEditMode ? "Update Product" : "Save Product"}
+                        className="h-8 px-3.5 text-xs font-medium rounded-md border border-[var(--ui-border)] bg-[var(--ui-surface)] hover:bg-[var(--ui-surface-sunken)] text-[var(--ui-text)] transition-colors cursor-pointer disabled:opacity-50"
+                    >
+                        Cancel
+                    </button>
+                    <button
+                        type="button"
                         onClick={handleSubmitForm}
-                        color="var(--primary-color)"
-                        hoverColor="var(--primary-color-hover)"
-                        isLoading={isLoading}
                         disabled={isLoading}
-                        buttonClass="!text-xs !py-1.5 font-bold"
-                    />
+                        className="h-8 px-4 text-xs font-semibold rounded-md bg-[var(--primary-color)] hover:bg-[var(--primary-color-hover)] text-white flex items-center justify-center gap-1.5 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed shadow-none"
+                    >
+                        {isLoading ? (
+                            <>
+                                <FaSpinner className="animate-spin -ml-0.5 text-white" size={13} />
+                                <span>Saving...</span>
+                            </>
+                        ) : (
+                            <span>{isEditMode ? "Update Product" : "Save Product"}</span>
+                        )}
+                    </button>
                 </div>
             </div>
         </form>

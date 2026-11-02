@@ -26,7 +26,9 @@
         "productStatusUrl": "product/update-status",
         "insertProductUrl": "insert-product",
         "productCategoriesListUrl": "product-categories-list",
-        "productUnitsListUrl": "product-units-list"
+        "productUnitsListUrl": "product-units-list",
+        "stockAdjustmentSaveUrl": "stock-adjustments-save",
+        "stockAdjustmentReportUrl": "get-adjust-report"
     },
     "order": {
         "orderListUrl": "orders",

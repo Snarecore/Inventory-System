@@ -52,7 +52,7 @@ export const toNaiveIso = (date?: Date | string | null): string => {
  */
 export const fetchLedgerPersonList = async (): Promise<LedgerPersonListResponse> => {
   const accessUser = buildAccessUser();
-  const url = apiConfig.ledger?.personListUrl || "ledger/person/list";
+  const url = apiConfig.ledger.personListUrl;
 
   const res: any = await postData<LedgerPersonListResponse>({
     url,
@@ -101,7 +101,7 @@ export const saveLedgerPerson = async (
   payload: SaveLedgerPersonPayload
 ): Promise<LedgerActionResponse> => {
   const accessUser = buildAccessUser();
-  const url = apiConfig.ledger?.personSaveUrl || "ledger/person/save";
+  const url = apiConfig.ledger.personSaveUrl;
 
   const body: any = {
     accessUser,
@@ -147,7 +147,7 @@ export const saveLedgerPerson = async (
  */
 export const deleteLedgerPerson = async (personId: number): Promise<LedgerActionResponse> => {
   const accessUser = buildAccessUser();
-  const url = apiConfig.ledger?.personDeleteUrl || "ledger/person/delete";
+  const url = apiConfig.ledger.personDeleteUrl;
 
   const res: any = await postData<LedgerActionResponse>({
     url,
@@ -177,7 +177,7 @@ export const fetchLedgerTransactionList = async (
   personId?: number | null
 ): Promise<LedgerTransactionListResponse> => {
   const accessUser = buildAccessUser();
-  const url = apiConfig.ledger?.transactionListUrl || "ledger/transaction/list";
+  const url = apiConfig.ledger.transactionListUrl;
 
   const body: any = { accessUser };
   if (personId != null && !isNaN(Number(personId))) {
@@ -229,7 +229,7 @@ export const createLedgerTransaction = async (
   payload: CreateLedgerTransactionPayload
 ): Promise<LedgerActionResponse> => {
   const accessUser = buildAccessUser();
-  const url = apiConfig.ledger?.transactionCreateUrl || "ledger/transaction/create";
+  const url = apiConfig.ledger.transactionCreateUrl;
 
   const naiveDate = toNaiveIso(payload.createdDate || payload.transactionDate);
   const refNo = payload.refNo?.trim() || `TXN-${Date.now()}`;
@@ -275,7 +275,7 @@ export const updateLedgerTransaction = async (
   payload: UpdateLedgerTransactionPayload
 ): Promise<LedgerActionResponse> => {
   const accessUser = buildAccessUser();
-  const url = apiConfig.ledger?.transactionUpdateUrl || "ledger/transaction/update";
+  const url = apiConfig.ledger.transactionUpdateUrl;
 
   const naiveDate = toNaiveIso(payload.createdDate || payload.transactionDate);
 
@@ -321,7 +321,7 @@ export const deleteLedgerTransaction = async (
   transactionId: number
 ): Promise<LedgerActionResponse> => {
   const accessUser = buildAccessUser();
-  const url = apiConfig.ledger?.transactionDeleteUrl || "ledger/transaction/delete";
+  const url = apiConfig.ledger.transactionDeleteUrl;
 
   const res: any = await postData<LedgerActionResponse>({
     url,

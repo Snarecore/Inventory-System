@@ -99,8 +99,7 @@ export const fetchPaymentReport = async (
   }
 
   try {
-    const endpoint =
-      apiConfig.payment?.paymentReportUrl || "get-payment-report";
+    const endpoint = apiConfig.payment.paymentReportUrl;
     const res: any = await postData({
       url: endpoint,
       body: payload,

@@ -75,7 +75,7 @@ export const normalizeCustomersDue = (raw: any): CustomerDueItem[] => {
  */
 export const fetchCustomersDue = async (): Promise<CustomerDueItem[]> => {
   try {
-    const endpoint = apiConfig.collection?.customersDueUrl || "customers-due";
+    const endpoint = apiConfig.collection.customersDueUrl;
     const res: any = await postData({
       url: endpoint,
       body: { accessUser: buildAccessUser() },

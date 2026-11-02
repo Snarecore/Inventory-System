@@ -33,7 +33,7 @@ export const CustomerCollection: React.FC = () => {
   const { data: rawPartyData } = useQuery({
     queryKey: [partyListQueryKey],
     queryFn: async () => {
-      const partyListUrl = apiConfig.party?.partyListUrl || "get-party-info-list";
+      const partyListUrl = apiConfig.party.partyListUrl;
       const res: any = await postData({
         url: partyListUrl,
         body: { accessUser: buildAccessUser() },

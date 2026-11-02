@@ -415,3 +415,4 @@ export * from './product-category.types';
 export * from './bank.types';
 export * from './mfs.types';
 export * from './ledger.types';
+export * from './stock-adjustment.types';

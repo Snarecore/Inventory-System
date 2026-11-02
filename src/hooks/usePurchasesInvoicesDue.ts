@@ -59,8 +59,7 @@ export const fetchPurchasesInvoicesDue = async (
   if (!supplierId) return [];
 
   try {
-    const endpoint =
-      apiConfig.payment?.purchasesInvoicesDueUrl || "purchases-invoices-due";
+    const endpoint = apiConfig.payment.purchasesInvoicesDueUrl;
     const res: any = await postData({
       url: endpoint,
       body: {

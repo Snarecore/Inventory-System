@@ -97,7 +97,7 @@ export const insertMfsUser = async (
   payload: InsertMfsUserPayload
 ): Promise<MfsActionResponse> => {
   const accessUser = buildAccessUser();
-  const url = apiConfig.mfs?.insertMfsUserUrl || "insert-mfs-user";
+  const url = apiConfig.mfs.insertMfsUserUrl;
 
   const opening = Number(payload.openingBalance || 0);
   const current = payload.currentBalance !== undefined ? Number(payload.currentBalance) : opening;
@@ -129,7 +129,7 @@ export const updateMfsUser = async (
   payload: UpdateMfsUserPayload
 ): Promise<MfsActionResponse> => {
   const accessUser = buildAccessUser();
-  const url = apiConfig.mfs?.updateMfsUserUrl || "mfs-user-update";
+  const url = apiConfig.mfs.updateMfsUserUrl;
 
   const opening = Number(payload.openingBalance || 0);
   const current = payload.currentBalance !== undefined ? Number(payload.currentBalance) : opening;
@@ -162,7 +162,7 @@ export const updateMfsUserStatus = async (
   payload: UpdateMfsUserStatusPayload
 ): Promise<MfsActionResponse> => {
   const accessUser = buildAccessUser();
-  const url = apiConfig.mfs?.updateMfsUserStatusUrl || "mfs-user-status-update";
+  const url = apiConfig.mfs.updateMfsUserStatusUrl;
 
   const body = {
     accessUser,

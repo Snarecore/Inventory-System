@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import PageHeader from "@/components/page-header/PageHeader";
-import { Button, RefreshButton, DeleteModal } from "@/components/common";
+import { RefreshButton, DeleteModal } from "@/components/common";
 import ProductCategoryTable from "./components/ProductCategoryTable";
 import ProductCategoryFormModal from "./components/ProductCategoryFormModal";
 import {
@@ -85,13 +85,14 @@ export const ProductCategoryPage: React.FC = () => {
         />
         <div className="flex items-center gap-2">
           <RefreshButton onClick={() => refetch()} isLoading={isLoading} />
-          <Button
-            label="Add Category"
+          <button
+            type="button"
             onClick={handleAddNew}
-            color="var(--color-primary)"
-            hoverColor="var(--color-primary-hover)"
-            icon={<FaPlus className="text-white text-xs" />}
-          />
+            className="bg-[var(--primary-color)] hover:bg-[var(--primary-color-hover)] text-white text-xs font-medium cursor-pointer h-8 px-3 rounded-md flex justify-center items-center gap-1.5 transition-all ease-in duration-200 whitespace-nowrap shrink-0 shadow-none"
+          >
+            <FaPlus size={11} className="text-white" />
+            <span>Add Category</span>
+          </button>
         </div>
       </div>
 

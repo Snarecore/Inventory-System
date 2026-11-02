@@ -16,7 +16,7 @@ export interface CashBalanceRecord {
  */
 export const fetchCashBalance = async (): Promise<number> => {
   try {
-    const endpoint = apiConfig.finance?.getCashBalanceInfoUrl || "get-cash-balance-info";
+    const endpoint = apiConfig.finance.getCashBalanceInfoUrl;
     const res: any = await postData({
       url: endpoint,
       body: { accessUser: buildAccessUser() },

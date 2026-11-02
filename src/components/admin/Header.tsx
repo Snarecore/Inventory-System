@@ -195,12 +195,6 @@ const Header = ({ sidebarClick }: { sidebarClick: boolean }) => {
                                             className="text-xs text-gray-700 dark:text-[var(--ui-text)] font-medium hover:bg-gray-100 dark:hover:bg-[var(--ui-surface-muted)]"
                                             onClick={handleOpenCompanyProfile}
                                         />
-                                        <MenuItem
-                                            icon={isDark ? <FaSun size={13} className="text-amber-400" /> : <FaMoon size={13} className="text-slate-500" />}
-                                            text={isDark ? "Light Mode" : "Dark Mode"}
-                                            className="text-xs text-gray-700 dark:text-[var(--ui-text)] font-medium hover:bg-gray-100 dark:hover:bg-[var(--ui-surface-muted)]"
-                                            onClick={toggleColorMode}
-                                        />
                                     </div>
 
                                     <div className="my-1 border-t border-gray-100 dark:border-[var(--ui-border)]" />
@@ -421,12 +415,6 @@ const Header = ({ sidebarClick }: { sidebarClick: boolean }) => {
                                 text="My Profile"
                                 className="text-xs text-gray-700 dark:text-[var(--ui-text)] font-medium hover:bg-gray-100 dark:hover:bg-[var(--ui-surface-muted)]"
                                 onClick={handleOpenUserProfile}
-                            />
-                            <MenuItem
-                                icon={isDark ? <FaSun size={13} className="text-amber-400" /> : <FaMoon size={13} className="text-slate-500 dark:text-[var(--ui-text-muted)]" />}
-                                text={isDark ? "Light Mode" : "Dark Mode"}
-                                className="text-xs text-gray-700 dark:text-[var(--ui-text)] font-medium hover:bg-gray-100 dark:hover:bg-[var(--ui-surface-muted)]"
-                                onClick={toggleColorMode}
                             />
                             <MenuItem
                                 icon={<FaCog size={13} className="text-gray-500 dark:text-[var(--ui-text-muted)]" />}

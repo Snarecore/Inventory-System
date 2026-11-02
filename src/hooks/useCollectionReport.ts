@@ -95,8 +95,7 @@ export const fetchCollectionReport = async (
   }
 
   try {
-    const endpoint =
-      apiConfig.collection?.collectionReportUrl || "get-collection-report";
+    const endpoint = apiConfig.collection.collectionReportUrl;
     const res: any = await postData({
       url: endpoint,
       body: payload,

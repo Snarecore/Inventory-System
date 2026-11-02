@@ -234,7 +234,7 @@ export interface FinanceDashboardResult {
 export const fetchFinanceDashboard = async (
   params?: FinanceDashboardParams
 ): Promise<FinanceDashboardResult> => {
-  const url = apiConfig.dashboard?.adminDashboardUrl || "site/admin-dashboard";
+  const url = apiConfig.dashboard.adminDashboardUrl;
   const now = new Date();
   const pad = (n: number) => String(n).padStart(2, "0");
   const monthStart = `01-${pad(now.getMonth() + 1)}-${now.getFullYear()}`;
@@ -269,7 +269,7 @@ export interface FetchFinancialTransactionsParams {
 export const fetchFinancialTransactions = async (
   params?: FetchFinancialTransactionsParams
 ): Promise<any[]> => {
-  const url = apiConfig.finance?.getFinancialTransactionUrl || "get-financial-transaction";
+  const url = apiConfig.finance.getFinancialTransactionUrl;
   const body = {
     accessUser: buildAccessUser(),
     startDate: params?.startDate || "",

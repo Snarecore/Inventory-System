@@ -72,7 +72,7 @@ export const normalizePurchasesDue = (raw: any): SupplierDueItem[] => {
  */
 export const fetchPurchasesDue = async (): Promise<SupplierDueItem[]> => {
   try {
-    const endpoint = apiConfig.payment?.purchasesDueUrl || "purchases-due";
+    const endpoint = apiConfig.payment.purchasesDueUrl;
     const res: any = await postData({
       url: endpoint,
       body: { accessUser: buildAccessUser() },

@@ -1,7 +1,3 @@
-/**
- * Enterprise standard TypeScript definitions for Supplier Payment & Due Management
- */
-
 export interface SupplierDueItem {
   id?: string | number;
   supplierId?: string | number;

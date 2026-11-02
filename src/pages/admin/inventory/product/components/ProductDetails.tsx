@@ -1,7 +1,7 @@
-import { useMemo } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { FiArrowLeft, FiPackage, FiCheckCircle, FiXCircle, FiAlertTriangle } from "react-icons/fi";
+import { FaPlus } from "react-icons/fa";
 import PageHeader from "@/components/page-header/PageHeader";
 import apiConfig from "@/config/api.json";
 import { productListQueryKey } from "@/config/query-key";
@@ -29,27 +29,25 @@ const ProductDetails = () => {
         staleTime: 30 * 1000,
     });
 
-    const product: ProductItem | null = useMemo(() => {
-        if (!rawProductData || !id) return null;
-        let list: ProductItem[] = [];
+    let rawList: ProductItem[] = [];
+    if (rawProductData) {
         if (Array.isArray((rawProductData as any).productsList)) {
-            list = (rawProductData as any).productsList;
+            rawList = (rawProductData as any).productsList;
         } else if (Array.isArray((rawProductData as any).data)) {
-            list = (rawProductData as any).data;
+            rawList = (rawProductData as any).data;
         } else if (Array.isArray(rawProductData)) {
-            list = rawProductData as ProductItem[];
+            rawList = rawProductData as ProductItem[];
         }
+    }
 
-        return (
-            list.find(
-                (p) =>
-                    String(p.id) === String(id) ||
-                    String(p.pcode) === String(id) ||
-                    String(p.productCode) === String(id) ||
-                    String(p.sku) === String(id)
-            ) || null
-        );
-    }, [rawProductData, id]);
+    const product: ProductItem | null =
+        rawList.find(
+            (p) =>
+                String(p.id) === String(id) ||
+                String(p.pcode) === String(id) ||
+                String(p.productCode) === String(id) ||
+                String(p.sku) === String(id)
+        ) || null;
 
     if (isLoading) {
         return (
@@ -97,11 +95,12 @@ const ProductDetails = () => {
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                     <button
+                        type="button"
                         onClick={() => navigate("/admin/products")}
-                        className="p-2 rounded-lg border border-[var(--ui-border)] text-[var(--ui-text-muted)] hover:bg-[var(--ui-surface-sunken)] transition-colors"
-                        title="Back"
+                        className="h-8 w-8 flex items-center justify-center rounded-md border border-[var(--ui-border)] text-[var(--ui-text-muted)] hover:bg-[var(--ui-surface-sunken)] transition-colors cursor-pointer"
+                        title="Back to Product List"
                     >
-                        <FiArrowLeft className="w-5 h-5" />
+                        <FiArrowLeft className="w-4 h-4" />
                     </button>
                     <PageHeader
                         headerTitle={name}
@@ -111,9 +110,10 @@ const ProductDetails = () => {
 
                 <Link
                     to="/admin/create-product"
-                    className="px-4 py-2 bg-[var(--color-primary,#009FE3)] text-white rounded-lg text-sm font-medium hover:opacity-90 transition-opacity"
+                    className="h-8 px-3 rounded-md text-xs font-medium bg-[var(--primary-color)] hover:bg-[var(--primary-color-hover)] text-white inline-flex items-center gap-1.5 transition-colors shadow-none shrink-0"
                 >
-                    Add Another Product
+                    <FaPlus size={10} />
+                    <span>Add Another Product</span>
                 </Link>
             </div>
 

@@ -27,7 +27,7 @@ export function getUserProfileImageUrl(phoneParam?: string): string {
   if (!phone) return "";
 
   const rawApiUrl = (import.meta.env.VITE_API_BASE_URL as string)?.replace(/\/+$/, "") || "";
-  const imageEndpoint = apiConfig.userProfile.profileImageUrl || "images";
+  const imageEndpoint = apiConfig.userProfile.profileImageUrl;
   return `${rawApiUrl}/${imageEndpoint}/${encodeURIComponent(phone)}`;
 }
 
@@ -102,7 +102,7 @@ export async function uploadUserProfilePhoto(
 
   try {
     const res = (await postFormData<any>({
-      url: apiConfig.userProfile.imageUploadUrl || "upload",
+      url: apiConfig.userProfile.imageUploadUrl,
       body: formData,
     })) as any;
 

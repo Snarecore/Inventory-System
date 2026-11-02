@@ -103,7 +103,7 @@ export const fetchBankInfoList = async (): Promise<BankInfoListResponse> => {
  */
 export const fetchBankNameList = async (): Promise<BankNameListResponse> => {
   const accessUser = buildAccessUser();
-  const url = apiConfig.bank?.bankNameListUrl || "get-bank-name-list";
+  const url = apiConfig.bank.bankNameListUrl;
 
   const res: any = await postData<BankNameListResponse>({ url, body: { accessUser } });
 
@@ -132,7 +132,7 @@ export const insertBankAccount = async (
   payload: InsertBankAccountPayload
 ): Promise<BankAccountActionResponse> => {
   const accessUser = buildAccessUser();
-  const url = apiConfig.bank?.insertBankAccountUrl || "insert-bank-account";
+  const url = apiConfig.bank.insertBankAccountUrl;
 
   const hasCard = Boolean(payload.hasCard);
   const txDate = payload.transactionDate || payload.balanceDate || new Date();
@@ -173,7 +173,7 @@ export const updateBankAccount = async (
   payload: UpdateBankAccountPayload
 ): Promise<BankAccountActionResponse> => {
   const accessUser = buildAccessUser();
-  const url = apiConfig.bank?.updateBankAccountUrl || "update-bank-account";
+  const url = apiConfig.bank.updateBankAccountUrl;
 
   const hasCard = Boolean(payload.hasCard);
   const txDate = payload.transactionDate || payload.balanceDate || new Date();

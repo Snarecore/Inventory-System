@@ -723,21 +723,21 @@ export const ProductTable = ({
                         )}
 
                         {/* Footer Actions */}
-                        <div className="pt-2.5 border-t border-[var(--ui-border)] flex justify-end gap-2.5">
+                        <div className="pt-2.5 border-t border-[var(--ui-border)] flex justify-end gap-2">
                             <button
                                 type="button"
                                 onClick={closeQuickView}
-                                className="px-4 py-1.5 text-xs font-medium text-[var(--ui-text)] bg-[var(--ui-surface-sunken)] hover:bg-[var(--ui-border)] rounded-lg transition-colors cursor-pointer"
+                                className="h-8 px-3 text-xs font-medium text-[var(--ui-text)] bg-[var(--ui-surface-sunken)] hover:bg-[var(--ui-border)] rounded-md transition-colors cursor-pointer"
                             >
                                 Close
                             </button>
                             <Link
                                 to={`/admin/edit-product/${selectedProduct.id || selectedProduct.pcode || ""}`}
                                 state={{ editData: selectedProduct }}
-                                className="px-4 py-1.5 text-xs font-medium text-white bg-[var(--color-primary,#009FE3)] hover:opacity-90 rounded-lg transition-opacity inline-flex items-center gap-1.5 cursor-pointer shadow-sm"
+                                className="h-8 px-3.5 text-xs font-medium text-white bg-[var(--primary-color)] hover:bg-[var(--primary-color-hover)] rounded-md transition-colors inline-flex items-center gap-1.5 cursor-pointer shadow-none"
                             >
                                 <FiEdit className="w-3.5 h-3.5" />
-                                Edit Product
+                                <span>Edit Product</span>
                             </Link>
                         </div>
                     </div>

@@ -6,7 +6,6 @@ import { IoCubeOutline } from "react-icons/io5";
 import { FiCheckCircle, FiAlertTriangle, FiXCircle } from "react-icons/fi";
 import { MotionDiv } from "@/utils/framer.motion";
 import PageHeader from "@/components/page-header/PageHeader";
-import Button from "@/components/button/Button";
 import RefreshButton from "@/components/table-components/RefreshButton";
 import ProductTable from "./components/ProductTable";
 import apiConfig from "@/config/api.json";
@@ -216,13 +215,14 @@ const Products = () => {
                 />
                 <div className="flex items-center gap-2">
                     <RefreshButton onClick={handleRefresh} />
-                    <Button
-                        label="Add Product"
+                    <button
+                        type="button"
                         onClick={() => navigate("/admin/create-product")}
-                        color="#009FE3"
-                        hoverColor="#0085be"
-                        icon={<FaPlus className="text-white text-xs" />}
-                    />
+                        className="bg-[var(--primary-color)] hover:bg-[var(--primary-color-hover)] text-white text-xs font-medium cursor-pointer h-8 px-3 rounded-md flex justify-center items-center gap-1.5 transition-all ease-in duration-200 whitespace-nowrap shrink-0 shadow-none"
+                    >
+                        <FaPlus size={11} className="text-white" />
+                        <span>Add Product</span>
+                    </button>
                 </div>
             </div>
 

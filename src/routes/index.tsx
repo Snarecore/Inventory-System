@@ -55,6 +55,7 @@ const ExpensePage = React.lazy(() => import('@/pages/admin/finance/expense'))
 const IncomePage = React.lazy(() => import('@/pages/admin/finance/income'))
 const FundTransferPage = React.lazy(() => import('@/pages/admin/finance/fund-transfer'))
 const KhatabookPage = React.lazy(() => import('@/pages/admin/khatabook'))
+const StockAdjustmentPage = React.lazy(() => import('@/pages/admin/inventory/stock-adjustment'))
 
 
 const withSuspense = (Component: React.ComponentType) => (
@@ -115,6 +116,22 @@ export const router = createBrowserRouter([
   {
     path: '/ledger',
     element: <Navigate to="/admin/khatabook" replace />,
+  },
+  {
+    path: '/inventory',
+    element: <Navigate to="/admin/inventory/adjustment" replace />,
+  },
+  {
+    path: '/inventory/overview',
+    element: <Navigate to="/admin/inventory/adjustment" replace />,
+  },
+  {
+    path: '/inventory/adjustment',
+    element: <Navigate to="/admin/inventory/adjustment" replace />,
+  },
+  {
+    path: '/stock-adjustment',
+    element: <Navigate to="/admin/inventory/adjustment" replace />,
   },
   {
     path: '/purchases',
@@ -345,6 +362,22 @@ export const router = createBrowserRouter([
       {
         path: 'products/:id',
         element: withSuspense(ProductDetails),
+      },
+      {
+        path: 'inventory',
+        element: <Navigate to="/admin/inventory/adjustment" replace />,
+      },
+      {
+        path: 'inventory/overview',
+        element: <Navigate to="/admin/inventory/adjustment" replace />,
+      },
+      {
+        path: 'inventory/adjustment',
+        element: withSuspense(StockAdjustmentPage),
+      },
+      {
+        path: 'stock-adjustment',
+        element: withSuspense(StockAdjustmentPage),
       },
       {
         path: 'main-category',

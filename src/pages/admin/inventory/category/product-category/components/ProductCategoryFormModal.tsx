@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Button, TextInput } from "@/components/common";
+import { TextInput } from "@/components/common";
 import {
   useInsertProductCategoryMutation,
   useUpdateProductCategoryMutation,
@@ -8,7 +8,7 @@ import {
 import type { ProductCategoryItem, ProductCategoryStatus } from "@/types";
 import { showErrorToast } from "@/utils/toast-utils";
 import { TiDelete } from "react-icons/ti";
-import { FaBoxes, FaCheckCircle, FaTimesCircle } from "react-icons/fa";
+import { FaBoxes, FaCheckCircle, FaTimesCircle, FaSpinner } from "react-icons/fa";
 
 interface ProductCategoryFormModalProps {
   isOpen: boolean;
@@ -182,22 +182,30 @@ const ProductCategoryFormContent: React.FC<FormContentProps> = ({
       </form>
 
       {/* Drawer Footer */}
-      <div className="px-4 py-2.5 border-t border-gray-100 bg-gray-50/80 flex items-center justify-end gap-2 shrink-0">
-        <Button
-          label="Cancel"
+      <div className="px-4 py-2.5 border-t border-[var(--ui-border)] bg-[var(--ui-surface-sunken)]/60 flex items-center justify-end gap-2 shrink-0">
+        <button
+          type="button"
           onClick={onClose}
-          variant="outline"
           disabled={isSaving}
-          buttonClass="!bg-white hover:!bg-gray-50 !border-gray-300 !text-gray-700 shadow-2xs font-medium !rounded-md !py-[0.4rem] !px-4 text-xs sm:text-sm"
-        />
-        <Button
-          label={isEditing ? "Update Category" : "Save Category"}
+          className="h-8 px-3 text-xs font-medium rounded-md border border-[var(--ui-border)] bg-[var(--ui-surface)] hover:bg-[var(--ui-surface-sunken)] text-[var(--ui-text)] transition-colors cursor-pointer disabled:opacity-50"
+        >
+          Cancel
+        </button>
+        <button
+          type="button"
           onClick={() => handleSubmit()}
-          color="var(--color-primary)"
-          hoverColor="var(--color-primary-hover)"
-          isLoading={isSaving}
           disabled={isSaving}
-        />
+          className="h-8 px-4 text-xs font-semibold rounded-md bg-[var(--primary-color)] hover:bg-[var(--primary-color-hover)] text-white flex items-center justify-center gap-1.5 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed shadow-none"
+        >
+          {isSaving ? (
+            <>
+              <FaSpinner className="animate-spin -ml-0.5 text-white" size={13} />
+              <span>Saving...</span>
+            </>
+          ) : (
+            <span>{isEditing ? "Update Category" : "Save Category"}</span>
+          )}
+        </button>
       </div>
     </>
   );

@@ -1,4 +1,3 @@
-import Button from "@/components/button/Button";
 import PageHeader from "@/components/page-header/PageHeader";
 import { FaArrowLeft } from "react-icons/fa";
 import CreateProductForm from "./components/ProductForm";
@@ -19,13 +18,14 @@ const CreateProduct = () => {
           headerTitle={isEditMode ? "Edit Product" : "Create Product"}
           headerDescription={isEditMode ? "Update existing product details" : "Create a new inventory product"}
         />
-        <Button
-          label="Back to Products"
-          onClick={() => {navigate("/admin/products")}}
-          color="var(--primary-color)"
-          hoverColor="var(--primary-color-hover)"
-          icon={<FaArrowLeft className="text-xs" />}
-        />
+        <button
+          type="button"
+          onClick={() => navigate("/admin/products")}
+          className="bg-[var(--primary-color)] hover:bg-[var(--primary-color-hover)] text-white text-xs font-medium cursor-pointer h-8 px-3 rounded-md flex justify-center items-center gap-1.5 transition-all ease-in duration-200 whitespace-nowrap shrink-0 shadow-none"
+        >
+          <FaArrowLeft className="text-xs" />
+          <span>Back to Products</span>
+        </button>
       </div>
 
       <div>
