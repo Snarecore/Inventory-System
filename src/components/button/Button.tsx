@@ -63,12 +63,12 @@ export const Button: React.FC<ButtonProps> = ({
   const effectiveHoverColor = getHoverColor();
   const hasCustomColor = Boolean(color);
 
-  const baseStyles = "ui-btn active:scale-[0.98]";
+  const baseStyles = "ui-btn";
 
   // Legacy call sites pass neither `variant` nor `size`; they match the global
   // toolbar / header button dimensions (h-8 px-3 rounded-md) exactly like RefreshButton.
   const legacyStyles =
-    "ui-btn ui-btn-primary !h-8 !px-3 !py-0 text-xs sm:text-xs font-medium !rounded-md !gap-1.5 w-full sm:w-fit whitespace-nowrap shrink-0 active:scale-[0.98]";
+    "ui-btn ui-btn-primary !h-8 !px-3 !py-0 text-xs sm:text-xs font-medium !rounded-md !gap-1.5 w-full sm:w-fit whitespace-nowrap shrink-0";
 
   const finalClass = cn(
     variant || size ? baseStyles : legacyStyles,
@@ -76,7 +76,7 @@ export const Button: React.FC<ButtonProps> = ({
     size && sizeStyles[size],
     buttonClass,
     className,
-    disabled || isLoading ? "opacity-50 cursor-not-allowed active:scale-100" : ""
+    disabled || isLoading ? "opacity-50 cursor-not-allowed" : ""
   );
 
   const finalStyle: React.CSSProperties = {
@@ -98,13 +98,13 @@ export const Button: React.FC<ButtonProps> = ({
       className={finalClass}
       style={finalStyle}
       onMouseOver={(e) => {
-        if (!disabled && !isLoading && effectiveHoverColor && hasCustomColor) {
-          e.currentTarget.style.backgroundColor = effectiveHoverColor;
-          e.currentTarget.style.borderColor = effectiveHoverColor;
+        if (!disabled && !isLoading && hoverColor && hasCustomColor) {
+          e.currentTarget.style.backgroundColor = hoverColor;
+          e.currentTarget.style.borderColor = hoverColor;
         }
       }}
       onMouseOut={(e) => {
-        if (!disabled && !isLoading && hasCustomColor && color) {
+        if (!disabled && !isLoading && hoverColor && hasCustomColor && color) {
           e.currentTarget.style.backgroundColor = color;
           e.currentTarget.style.borderColor = color;
         }

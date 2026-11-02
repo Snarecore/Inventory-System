@@ -429,12 +429,13 @@
     border-radius: var(--ui-radius);
     cursor: pointer;
     box-shadow: var(--ui-shadow-control);
-    transition: transform 150ms ease, background-color 150ms ease, border-color 150ms ease,
+    transition: background-color 150ms ease, border-color 150ms ease,
       color 150ms ease, box-shadow 150ms ease;
   }
 
-  .ui-btn:hover:not(:disabled) {
-    transform: translateY(-1px);
+  .ui-btn:hover:not(:disabled),
+  button:hover:not(:disabled) {
+    transform: none;
   }
 
   .ui-btn:focus-visible {
@@ -455,8 +456,9 @@
   }
 
   .ui-btn-primary:hover:not(:disabled) {
-    background-color: var(--primary-color-hover);
-    box-shadow: 0 8px 22px -12px color-mix(in srgb, var(--primary-color) 80%, black);
+    background-color: var(--primary-color);
+    box-shadow: 0 6px 18px -10px color-mix(in srgb, var(--primary-color) 75%, black);
+    transform: none;
   }
 
   .ui-btn-secondary {

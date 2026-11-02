@@ -199,6 +199,15 @@ export const menu = [
 		sectionName: "Finance",
 		items: [
 			{
+				id: 720,
+				name: "Khatabook",
+				title: "Khatabook (Ledger)",
+				icon: FaBookOpen,
+				path: "/admin/khatabook",
+				permissionKey: "accounts.view",
+				subItems: [],
+			},
+			{
 				id: 700,
 				name: "Banking",
 				title: "Banking",

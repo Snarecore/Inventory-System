@@ -9,6 +9,7 @@ interface ModalProps {
 	maxWidth?: string;
 	width?: string;
 	size?: string;
+	zIndex?: string;
 	className?: string;
 	headerClassName?: string;
 	bodyClassName?: string;
@@ -23,6 +24,7 @@ const Modal: React.FC<ModalProps> = ({
 	maxWidth,
 	width,
 	size,
+	zIndex = "z-50",
 	className = "",
 	headerClassName = "",
 	bodyClassName = "",
@@ -40,7 +42,7 @@ const Modal: React.FC<ModalProps> = ({
 			: "w-full max-w-[450px]");
 
 	return (
-		<div className="ui-modal-backdrop fixed inset-0 flex items-center justify-center bg-[var(--ui-text)]/60 z-50 p-2 sm:p-4 overflow-y-auto">
+		<div className={`ui-modal-backdrop fixed inset-0 flex items-center justify-center bg-[var(--ui-text)]/60 ${zIndex} p-2 sm:p-4 overflow-y-auto`}>
 			<div className={`ui-modal-panel bg-[var(--ui-surface)] rounded-xl shadow-2xl ${resolvedWidth} px-3.5 sm:px-5 py-3 sm:py-3.5 flex flex-col relative max-h-[92vh] overflow-y-auto ${className}`}>
 				<div className={`flex justify-between items-center pb-2 border-b border-[var(--ui-border)] ${headerClassName}`}>
 					<h2 className="text-base font-semibold text-[var(--ui-text)]">{title}</h2>

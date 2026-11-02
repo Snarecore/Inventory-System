@@ -54,6 +54,7 @@ const CreateMfsPage = React.lazy(() => import('@/pages/admin/finance/mfs/create-
 const ExpensePage = React.lazy(() => import('@/pages/admin/finance/expense'))
 const IncomePage = React.lazy(() => import('@/pages/admin/finance/income'))
 const FundTransferPage = React.lazy(() => import('@/pages/admin/finance/fund-transfer'))
+const KhatabookPage = React.lazy(() => import('@/pages/admin/khatabook'))
 
 
 const withSuspense = (Component: React.ComponentType) => (
@@ -106,6 +107,14 @@ export const router = createBrowserRouter([
   {
     path: '/parties',
     element: <Navigate to="/admin/parties" replace />,
+  },
+  {
+    path: '/khatabook',
+    element: <Navigate to="/admin/khatabook" replace />,
+  },
+  {
+    path: '/ledger',
+    element: <Navigate to="/admin/khatabook" replace />,
   },
   {
     path: '/purchases',
@@ -488,6 +497,18 @@ export const router = createBrowserRouter([
       {
         path: 'fund-transfer',
         element: withSuspense(FundTransferPage),
+      },
+      {
+        path: 'khatabook',
+        element: withSuspense(KhatabookPage),
+      },
+      {
+        path: 'ledger',
+        element: <Navigate to="/admin/khatabook" replace />,
+      },
+      {
+        path: 'khata',
+        element: <Navigate to="/admin/khatabook" replace />,
       },
       {
         path: 'banks',

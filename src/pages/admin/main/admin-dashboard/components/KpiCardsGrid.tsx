@@ -13,7 +13,7 @@ export const KpiCardsGrid: React.FC<KpiCardsGridProps> = ({ data }) => {
   const formatCurrency = (val: number) => `৳${val.toLocaleString('en-IN')}`;
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 w-full cursor-pointer">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3 w-full cursor-pointer">
       {/* 1. Today's Sale - Primary Navy/Teal */}
       <MotionDiv>
         <div className="px-4 py-4 rounded-md bg-[var(--color-primary)] text-white shadow-sm hover:shadow-md transition-all duration-300">

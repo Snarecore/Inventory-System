@@ -90,7 +90,7 @@ const AdminDashboard: React.FC = () => {
   ]);
 
   return (
-    <div className="flex flex-col gap-4 sm:gap-4.5 p-4 sm:p-5 bg-[#f8fafc]">
+    <div className="flex flex-col gap-2.5 px-3 py-2 sm:px-4 sm:py-2.5 max-w-[1600px] mx-auto w-full">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <PageHeader
           headerTitle="Dashboard"
@@ -103,7 +103,7 @@ const AdminDashboard: React.FC = () => {
       </div>
       <KpiCardsGrid data={kpiData} />
       
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-4.5 items-stretch">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-2.5 sm:gap-3 items-stretch">
         <div className="col-span-12 lg:col-span-8 flex flex-col h-full">
           <SaleAnalysisChart />
         </div>
@@ -112,7 +112,7 @@ const AdminDashboard: React.FC = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-4.5 items-stretch">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-2.5 sm:gap-3 items-stretch">
         <div className="col-span-12 lg:col-span-8 flex flex-col h-full">
           <ProfitLossChart />
         </div>

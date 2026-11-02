@@ -400,11 +400,11 @@ export const FundTransferPage: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-2.5 sm:gap-3 items-start">
         {/* Left Column: Transfer Form (8 cols on lg) */}
         <form onSubmit={handleSubmit} className="lg:col-span-8 flex flex-col gap-2.5 sm:gap-3">
-          <div className="bg-white dark:bg-[var(--ui-surface)] rounded-xl border border-gray-200 dark:border-[var(--ui-border)] shadow-2xs p-3 sm:p-4 flex flex-col gap-3">
+          <div className="bg-white dark:bg-[var(--ui-surface)] rounded-xl border border-gray-300/80 dark:border-[var(--ui-border-strong)] shadow-2xs p-3 sm:p-4 flex flex-col gap-3">
             {/* Form Section Header */}
-            <div className="flex items-center justify-between pb-2 border-b border-gray-100 dark:border-[var(--ui-border)] gap-2">
+            <div className="flex items-center justify-between pb-2 border-b border-gray-200/80 dark:border-[var(--ui-border)] gap-2">
               <div className="flex items-center gap-2 min-w-0">
-                <div className="w-7 h-7 rounded-lg bg-sky-50 dark:bg-sky-950/50 text-[var(--color-primary)] dark:text-sky-400 flex items-center justify-center text-xs shrink-0 border border-sky-100 dark:border-sky-800/40 shadow-2xs">
+                <div className="w-7 h-7 rounded-lg bg-sky-100/70 dark:bg-sky-950/60 text-[var(--color-primary)] dark:text-sky-400 flex items-center justify-center text-xs shrink-0 border border-sky-200 dark:border-sky-800/60 shadow-2xs">
                   <FaExchangeAlt />
                 </div>
                 <div className="min-w-0">
@@ -421,7 +421,7 @@ export const FundTransferPage: React.FC = () => {
               <button
                 type="button"
                 onClick={handleSwap}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-sky-200 dark:border-sky-800/80 bg-sky-50/80 dark:bg-sky-950/50 text-[var(--color-primary)] dark:text-sky-300 hover:bg-sky-100 dark:hover:bg-sky-900/60 hover:border-sky-300 dark:hover:border-sky-700 hover:shadow-2xs transition-all cursor-pointer text-xs font-bold shrink-0"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-sky-300 dark:border-sky-700 bg-sky-100/70 dark:bg-sky-950/70 text-[var(--color-primary)] dark:text-sky-300 hover:bg-sky-100 dark:hover:bg-sky-900/60 hover:border-sky-400 dark:hover:border-sky-600 hover:shadow-2xs transition-all cursor-pointer text-xs font-bold shrink-0"
                 title="Swap source and destination"
               >
                 <FaRandom className="text-[10px]" />
@@ -473,7 +473,7 @@ export const FundTransferPage: React.FC = () => {
             <div className="flex flex-col gap-2 pt-1">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3 items-start relative">
                 {/* 1. SOURCE: Transfer From */}
-                <div className="flex flex-col gap-1.5 p-3 rounded-xl border border-rose-200/90 dark:border-rose-900/40 bg-rose-50/40 dark:bg-rose-950/20">
+                <div className="flex flex-col gap-1.5 p-3 rounded-xl border border-rose-300 dark:border-rose-800/60 bg-rose-100/50 dark:bg-rose-950/35 shadow-2xs">
                   <div className="flex items-center justify-between">
                     <span className="text-[11px] font-bold text-rose-700 dark:text-rose-400 tracking-wide">
                       Transfer From
@@ -491,8 +491,8 @@ export const FundTransferPage: React.FC = () => {
                       onClick={() => handleSwitchFromMethod("CASH")}
                       className={`p-2 rounded-lg border text-center transition-all cursor-pointer flex flex-col items-center justify-center ${
                         fromMethod === "CASH"
-                          ? "border-[var(--color-primary)] dark:border-sky-400 bg-sky-50 dark:bg-sky-950/40 ring-1 ring-[var(--color-primary)] dark:ring-sky-400 shadow-2xs text-[var(--color-primary)] dark:text-sky-300 font-bold"
-                          : "border-gray-200 dark:border-[var(--ui-border)] bg-white dark:bg-[var(--ui-surface)] hover:bg-gray-50 dark:hover:bg-[var(--ui-surface-muted)] text-gray-700 dark:text-[var(--ui-text-muted)] hover:border-gray-300 dark:hover:border-[var(--ui-border-strong)] font-medium"
+                          ? "border-[var(--color-primary)] dark:border-sky-400 bg-sky-100/70 dark:bg-sky-950/60 ring-1 ring-[var(--color-primary)] dark:ring-sky-400 shadow-2xs text-[var(--color-primary)] dark:text-sky-300 font-bold"
+                          : "border-gray-300/80 dark:border-[var(--ui-border)] bg-white dark:bg-[var(--ui-surface)] hover:bg-gray-50 dark:hover:bg-[var(--ui-surface-muted)] text-gray-700 dark:text-[var(--ui-text-muted)] hover:border-gray-400 dark:hover:border-[var(--ui-border-strong)] font-medium"
                       }`}
                     >
                       <FaWallet className="text-xs mb-0.5 text-emerald-600 dark:text-emerald-400" />
@@ -505,8 +505,8 @@ export const FundTransferPage: React.FC = () => {
                       onClick={() => handleSwitchFromMethod("BANK")}
                       className={`p-2 rounded-lg border text-center transition-all cursor-pointer flex flex-col items-center justify-center ${
                         fromMethod === "BANK"
-                          ? "border-[var(--color-primary)] dark:border-sky-400 bg-sky-50 dark:bg-sky-950/40 ring-1 ring-[var(--color-primary)] dark:ring-sky-400 shadow-2xs text-[var(--color-primary)] dark:text-sky-300 font-bold"
-                          : "border-gray-200 dark:border-[var(--ui-border)] bg-white dark:bg-[var(--ui-surface)] hover:bg-gray-50 dark:hover:bg-[var(--ui-surface-muted)] text-gray-700 dark:text-[var(--ui-text-muted)] hover:border-gray-300 dark:hover:border-[var(--ui-border-strong)] font-medium"
+                          ? "border-[var(--color-primary)] dark:border-sky-400 bg-sky-100/70 dark:bg-sky-950/60 ring-1 ring-[var(--color-primary)] dark:ring-sky-400 shadow-2xs text-[var(--color-primary)] dark:text-sky-300 font-bold"
+                          : "border-gray-300/80 dark:border-[var(--ui-border)] bg-white dark:bg-[var(--ui-surface)] hover:bg-gray-50 dark:hover:bg-[var(--ui-surface-muted)] text-gray-700 dark:text-[var(--ui-text-muted)] hover:border-gray-400 dark:hover:border-[var(--ui-border-strong)] font-medium"
                       }`}
                     >
                       <FaLandmark className="text-xs mb-0.5 text-blue-600 dark:text-blue-400" />
@@ -519,8 +519,8 @@ export const FundTransferPage: React.FC = () => {
                       onClick={() => handleSwitchFromMethod("MFS")}
                       className={`p-2 rounded-lg border text-center transition-all cursor-pointer flex flex-col items-center justify-center ${
                         fromMethod === "MFS"
-                          ? "border-[var(--color-primary)] dark:border-sky-400 bg-sky-50 dark:bg-sky-950/40 ring-1 ring-[var(--color-primary)] dark:ring-sky-400 shadow-2xs text-[var(--color-primary)] dark:text-sky-300 font-bold"
-                          : "border-gray-200 dark:border-[var(--ui-border)] bg-white dark:bg-[var(--ui-surface)] hover:bg-gray-50 dark:hover:bg-[var(--ui-surface-muted)] text-gray-700 dark:text-[var(--ui-text-muted)] hover:border-gray-300 dark:hover:border-[var(--ui-border-strong)] font-medium"
+                          ? "border-[var(--color-primary)] dark:border-sky-400 bg-sky-100/70 dark:bg-sky-950/60 ring-1 ring-[var(--color-primary)] dark:ring-sky-400 shadow-2xs text-[var(--color-primary)] dark:text-sky-300 font-bold"
+                          : "border-gray-300/80 dark:border-[var(--ui-border)] bg-white dark:bg-[var(--ui-surface)] hover:bg-gray-50 dark:hover:bg-[var(--ui-surface-muted)] text-gray-700 dark:text-[var(--ui-text-muted)] hover:border-gray-400 dark:hover:border-[var(--ui-border-strong)] font-medium"
                       }`}
                     >
                       <FaMobileAlt className="text-xs mb-0.5 text-purple-600 dark:text-purple-400" />
@@ -533,7 +533,7 @@ export const FundTransferPage: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => setModalConfig({ isOpen: true, target: "FROM", type: "BANK" })}
-                      className="w-full h-9 flex items-center justify-between px-2.5 rounded-lg border border-blue-200 dark:border-blue-900/60 bg-white dark:bg-[var(--ui-surface)] hover:bg-blue-50/50 dark:hover:bg-blue-950/30 transition-all cursor-pointer text-left shadow-2xs"
+                      className="w-full h-9 flex items-center justify-between px-2.5 rounded-lg border border-blue-300 dark:border-blue-800/70 bg-white dark:bg-[var(--ui-surface)] hover:bg-blue-50/70 dark:hover:bg-blue-950/30 transition-all cursor-pointer text-left shadow-2xs"
                     >
                       <div className="flex items-center gap-2 min-w-0">
                         <FaLandmark className="text-xs text-blue-600 dark:text-blue-400 shrink-0" />
@@ -553,7 +553,7 @@ export const FundTransferPage: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => setModalConfig({ isOpen: true, target: "FROM", type: "MFS" })}
-                      className="w-full h-9 flex items-center justify-between px-2.5 rounded-lg border border-purple-200 dark:border-purple-900/60 bg-white dark:bg-[var(--ui-surface)] hover:bg-purple-50/50 dark:hover:bg-purple-950/30 transition-all cursor-pointer text-left shadow-2xs"
+                      className="w-full h-9 flex items-center justify-between px-2.5 rounded-lg border border-purple-300 dark:border-purple-800/70 bg-white dark:bg-[var(--ui-surface)] hover:bg-purple-50/70 dark:hover:bg-purple-950/30 transition-all cursor-pointer text-left shadow-2xs"
                     >
                       <div className="flex items-center gap-2 min-w-0">
                         <FaMobileAlt className="text-xs text-purple-600 dark:text-purple-400 shrink-0" />
@@ -577,7 +577,7 @@ export const FundTransferPage: React.FC = () => {
                 </div>
 
                 {/* 2. DESTINATION: Transfer To */}
-                <div className="flex flex-col gap-1.5 p-3 rounded-xl border border-emerald-200/90 dark:border-emerald-900/40 bg-emerald-50/40 dark:bg-emerald-950/20">
+                <div className="flex flex-col gap-1.5 p-3 rounded-xl border border-emerald-300 dark:border-emerald-800/60 bg-emerald-100/50 dark:bg-emerald-950/35 shadow-2xs">
                   <div className="flex items-center justify-between">
                     <span className="text-[11px] font-bold text-emerald-700 dark:text-emerald-400 tracking-wide">
                       Transfer To
@@ -595,8 +595,8 @@ export const FundTransferPage: React.FC = () => {
                       onClick={() => handleSwitchToMethod("CASH")}
                       className={`p-2 rounded-lg border text-center transition-all cursor-pointer flex flex-col items-center justify-center ${
                         toMethod === "CASH"
-                          ? "border-[var(--color-primary)] dark:border-sky-400 bg-sky-50 dark:bg-sky-950/40 ring-1 ring-[var(--color-primary)] dark:ring-sky-400 shadow-2xs text-[var(--color-primary)] dark:text-sky-300 font-bold"
-                          : "border-gray-200 dark:border-[var(--ui-border)] bg-white dark:bg-[var(--ui-surface)] hover:bg-gray-50 dark:hover:bg-[var(--ui-surface-muted)] text-gray-700 dark:text-[var(--ui-text-muted)] hover:border-gray-300 dark:hover:border-[var(--ui-border-strong)] font-medium"
+                          ? "border-[var(--color-primary)] dark:border-sky-400 bg-sky-100/70 dark:bg-sky-950/60 ring-1 ring-[var(--color-primary)] dark:ring-sky-400 shadow-2xs text-[var(--color-primary)] dark:text-sky-300 font-bold"
+                          : "border-gray-300/80 dark:border-[var(--ui-border)] bg-white dark:bg-[var(--ui-surface)] hover:bg-gray-50 dark:hover:bg-[var(--ui-surface-muted)] text-gray-700 dark:text-[var(--ui-text-muted)] hover:border-gray-400 dark:hover:border-[var(--ui-border-strong)] font-medium"
                       }`}
                     >
                       <FaWallet className="text-xs mb-0.5 text-emerald-600 dark:text-emerald-400" />
@@ -609,8 +609,8 @@ export const FundTransferPage: React.FC = () => {
                       onClick={() => handleSwitchToMethod("BANK")}
                       className={`p-2 rounded-lg border text-center transition-all cursor-pointer flex flex-col items-center justify-center ${
                         toMethod === "BANK"
-                          ? "border-[var(--color-primary)] dark:border-sky-400 bg-sky-50 dark:bg-sky-950/40 ring-1 ring-[var(--color-primary)] dark:ring-sky-400 shadow-2xs text-[var(--color-primary)] dark:text-sky-300 font-bold"
-                          : "border-gray-200 dark:border-[var(--ui-border)] bg-white dark:bg-[var(--ui-surface)] hover:bg-gray-50 dark:hover:bg-[var(--ui-surface-muted)] text-gray-700 dark:text-[var(--ui-text-muted)] hover:border-gray-300 dark:hover:border-[var(--ui-border-strong)] font-medium"
+                          ? "border-[var(--color-primary)] dark:border-sky-400 bg-sky-100/70 dark:bg-sky-950/60 ring-1 ring-[var(--color-primary)] dark:ring-sky-400 shadow-2xs text-[var(--color-primary)] dark:text-sky-300 font-bold"
+                          : "border-gray-300/80 dark:border-[var(--ui-border)] bg-white dark:bg-[var(--ui-surface)] hover:bg-gray-50 dark:hover:bg-[var(--ui-surface-muted)] text-gray-700 dark:text-[var(--ui-text-muted)] hover:border-gray-400 dark:hover:border-[var(--ui-border-strong)] font-medium"
                       }`}
                     >
                       <FaLandmark className="text-xs mb-0.5 text-blue-600 dark:text-blue-400" />
@@ -623,8 +623,8 @@ export const FundTransferPage: React.FC = () => {
                       onClick={() => handleSwitchToMethod("MFS")}
                       className={`p-2 rounded-lg border text-center transition-all cursor-pointer flex flex-col items-center justify-center ${
                         toMethod === "MFS"
-                          ? "border-[var(--color-primary)] dark:border-sky-400 bg-sky-50 dark:bg-sky-950/40 ring-1 ring-[var(--color-primary)] dark:ring-sky-400 shadow-2xs text-[var(--color-primary)] dark:text-sky-300 font-bold"
-                          : "border-gray-200 dark:border-[var(--ui-border)] bg-white dark:bg-[var(--ui-surface)] hover:bg-gray-50 dark:hover:bg-[var(--ui-surface-muted)] text-gray-700 dark:text-[var(--ui-text-muted)] hover:border-gray-300 dark:hover:border-[var(--ui-border-strong)] font-medium"
+                          ? "border-[var(--color-primary)] dark:border-sky-400 bg-sky-100/70 dark:bg-sky-950/60 ring-1 ring-[var(--color-primary)] dark:ring-sky-400 shadow-2xs text-[var(--color-primary)] dark:text-sky-300 font-bold"
+                          : "border-gray-300/80 dark:border-[var(--ui-border)] bg-white dark:bg-[var(--ui-surface)] hover:bg-gray-50 dark:hover:bg-[var(--ui-surface-muted)] text-gray-700 dark:text-[var(--ui-text-muted)] hover:border-gray-400 dark:hover:border-[var(--ui-border-strong)] font-medium"
                       }`}
                     >
                       <FaMobileAlt className="text-xs mb-0.5 text-purple-600 dark:text-purple-400" />
@@ -637,7 +637,7 @@ export const FundTransferPage: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => setModalConfig({ isOpen: true, target: "TO", type: "BANK" })}
-                      className="w-full h-9 flex items-center justify-between px-2.5 rounded-lg border border-blue-200 dark:border-blue-900/60 bg-white dark:bg-[var(--ui-surface)] hover:bg-blue-50/50 dark:hover:bg-blue-950/30 transition-all cursor-pointer text-left shadow-2xs"
+                      className="w-full h-9 flex items-center justify-between px-2.5 rounded-lg border border-blue-300 dark:border-blue-800/70 bg-white dark:bg-[var(--ui-surface)] hover:bg-blue-50/70 dark:hover:bg-blue-950/30 transition-all cursor-pointer text-left shadow-2xs"
                     >
                       <div className="flex items-center gap-2 min-w-0">
                         <FaLandmark className="text-xs text-blue-600 dark:text-blue-400 shrink-0" />
@@ -657,7 +657,7 @@ export const FundTransferPage: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => setModalConfig({ isOpen: true, target: "TO", type: "MFS" })}
-                      className="w-full h-9 flex items-center justify-between px-2.5 rounded-lg border border-purple-200 dark:border-purple-900/60 bg-white dark:bg-[var(--ui-surface)] hover:bg-purple-50/50 dark:hover:bg-purple-950/30 transition-all cursor-pointer text-left shadow-2xs"
+                      className="w-full h-9 flex items-center justify-between px-2.5 rounded-lg border border-purple-300 dark:border-purple-800/70 bg-white dark:bg-[var(--ui-surface)] hover:bg-purple-50/70 dark:hover:bg-purple-950/30 transition-all cursor-pointer text-left shadow-2xs"
                     >
                       <div className="flex items-center gap-2 min-w-0">
                         <FaMobileAlt className="text-xs text-purple-600 dark:text-purple-400 shrink-0" />
@@ -748,11 +748,11 @@ export const FundTransferPage: React.FC = () => {
         {/* Right Column: Balances, Simulation & History (4 cols on lg) */}
         <div className="lg:col-span-4 flex flex-col gap-2.5 sm:gap-3">
           {/* Card 1: BALANCES */}
-          <div className="bg-white dark:bg-[var(--ui-surface)] rounded-xl border border-gray-200 dark:border-[var(--ui-border)] shadow-2xs p-3 sm:p-3.5 flex flex-col gap-2.5">
+          <div className="bg-white dark:bg-[var(--ui-surface)] rounded-xl border border-gray-300/80 dark:border-[var(--ui-border-strong)] shadow-2xs p-3 sm:p-3.5 flex flex-col gap-2.5">
             {/* Header */}
-            <div className="flex items-center justify-between pb-2 border-b border-gray-100 dark:border-[var(--ui-border)]">
+            <div className="flex items-center justify-between pb-2 border-b border-gray-200/80 dark:border-[var(--ui-border)]">
               <div className="flex items-center gap-2">
-                <div className="w-7 h-7 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 flex items-center justify-center text-xs shrink-0 font-bold border border-emerald-100 dark:border-emerald-800/40 shadow-2xs">
+                <div className="w-7 h-7 rounded-lg bg-emerald-100/80 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 flex items-center justify-center text-xs shrink-0 font-bold border border-emerald-200 dark:border-emerald-800/60 shadow-2xs">
                   <FaWallet />
                 </div>
                 <div>
@@ -767,7 +767,7 @@ export const FundTransferPage: React.FC = () => {
             {/* 3 Channels: Cash, Bank, MFS */}
             <div className="grid grid-cols-3 gap-1.5 sm:gap-2">
               {/* Cash Drawer */}
-              <div className="relative rounded-xl border border-emerald-200/80 dark:border-emerald-900/50 bg-gradient-to-b from-emerald-50/60 via-emerald-50/20 to-white dark:from-emerald-950/30 dark:via-emerald-950/20 dark:to-[var(--ui-surface)] p-2 sm:p-2.5 flex flex-col gap-1 transition-all hover:border-emerald-300 dark:hover:border-emerald-700 hover:shadow-2xs">
+              <div className="relative rounded-xl border border-emerald-300/80 dark:border-emerald-900/60 bg-gradient-to-b from-emerald-100/60 via-emerald-50/30 to-white dark:from-emerald-950/40 dark:via-emerald-950/25 dark:to-[var(--ui-surface)] p-2 sm:p-2.5 flex flex-col gap-1 transition-all hover:border-emerald-400 dark:hover:border-emerald-700 hover:shadow-2xs">
                 <div className="flex items-center justify-between">
                   <span className="text-[10px] font-bold tracking-wide text-emerald-800 dark:text-emerald-300 flex items-center gap-1">
                     <FaWallet className="text-[10px] text-emerald-600 dark:text-emerald-400 shrink-0" />
@@ -783,13 +783,13 @@ export const FundTransferPage: React.FC = () => {
               </div>
 
               {/* Bank Accounts */}
-              <div className="relative rounded-xl border border-blue-200/80 dark:border-blue-900/50 bg-gradient-to-b from-blue-50/60 via-blue-50/20 to-white dark:from-blue-950/30 dark:via-blue-950/20 dark:to-[var(--ui-surface)] p-2 sm:p-2.5 flex flex-col gap-1 transition-all hover:border-blue-300 dark:hover:border-blue-700 hover:shadow-2xs">
+              <div className="relative rounded-xl border border-blue-300/80 dark:border-blue-900/60 bg-gradient-to-b from-blue-100/60 via-blue-50/30 to-white dark:from-blue-950/40 dark:via-blue-950/25 dark:to-[var(--ui-surface)] p-2 sm:p-2.5 flex flex-col gap-1 transition-all hover:border-blue-400 dark:hover:border-blue-700 hover:shadow-2xs">
                 <div className="flex items-center justify-between">
                   <span className="text-[10px] font-bold tracking-wide text-blue-800 dark:text-blue-300 flex items-center gap-1">
                     <FaLandmark className="text-[10px] text-blue-600 dark:text-blue-400 shrink-0" />
                     Bank
                   </span>
-                  <span className="text-[9px] font-bold text-blue-700 dark:text-blue-300 px-1 py-0.2 rounded bg-blue-100/70 dark:bg-blue-900/50 shrink-0">
+                  <span className="text-[9px] font-bold text-blue-700 dark:text-blue-300 px-1 py-0.2 rounded bg-blue-100 dark:bg-blue-900/60 shrink-0">
                     {activeBankAccounts.length}
                   </span>
                 </div>
@@ -802,13 +802,13 @@ export const FundTransferPage: React.FC = () => {
               </div>
 
               {/* MFS Wallets */}
-              <div className="relative rounded-xl border border-purple-200/80 dark:border-purple-900/50 bg-gradient-to-b from-purple-50/60 via-purple-50/20 to-white dark:from-purple-950/30 dark:via-purple-950/20 dark:to-[var(--ui-surface)] p-2 sm:p-2.5 flex flex-col gap-1 transition-all hover:border-purple-300 dark:hover:border-purple-700 hover:shadow-2xs">
+              <div className="relative rounded-xl border border-purple-300/80 dark:border-purple-900/60 bg-gradient-to-b from-purple-100/60 via-purple-50/30 to-white dark:from-purple-950/40 dark:via-purple-950/25 dark:to-[var(--ui-surface)] p-2 sm:p-2.5 flex flex-col gap-1 transition-all hover:border-purple-400 dark:hover:border-purple-700 hover:shadow-2xs">
                 <div className="flex items-center justify-between">
                   <span className="text-[10px] font-bold tracking-wide text-purple-800 dark:text-purple-300 flex items-center gap-1">
                     <FaMobileAlt className="text-[10px] text-purple-600 dark:text-purple-400 shrink-0" />
                     MFS
                   </span>
-                  <span className="text-[9px] font-bold text-purple-700 dark:text-purple-300 px-1 py-0.2 rounded bg-purple-100/70 dark:bg-purple-900/50 shrink-0">
+                  <span className="text-[9px] font-bold text-purple-700 dark:text-purple-300 px-1 py-0.2 rounded bg-purple-100 dark:bg-purple-900/60 shrink-0">
                     {activeMfsAccounts.length}
                   </span>
                 </div>
@@ -822,7 +822,7 @@ export const FundTransferPage: React.FC = () => {
             </div>
 
             {/* Total Available Liquidity */}
-            <div className="pt-2 border-t border-gray-100 dark:border-[var(--ui-border)] flex items-center justify-between">
+            <div className="pt-2 border-t border-gray-200/80 dark:border-[var(--ui-border)] flex items-center justify-between">
               <div className="flex items-center gap-1.5">
                 <span className="text-xs font-bold text-black dark:text-[var(--ui-text)] tracking-wide">
                   Total Available:
@@ -836,25 +836,25 @@ export const FundTransferPage: React.FC = () => {
           </div>
 
           {/* Card 2: Transfer Flow Preview */}
-          <div className="bg-white dark:bg-[var(--ui-surface)] rounded-xl border border-gray-200 dark:border-[var(--ui-border)] shadow-2xs p-3 sm:p-3.5 flex flex-col gap-2.5">
-            <div className="flex items-center justify-between pb-2 border-b border-gray-100 dark:border-[var(--ui-border)]">
+          <div className="bg-white dark:bg-[var(--ui-surface)] rounded-xl border border-gray-300/80 dark:border-[var(--ui-border-strong)] shadow-2xs p-3 sm:p-3.5 flex flex-col gap-2.5">
+            <div className="flex items-center justify-between pb-2 border-b border-gray-200/80 dark:border-[var(--ui-border)]">
               <h3 className="text-xs font-bold text-black dark:text-[var(--ui-text)] tracking-wide flex items-center gap-1.5">
                 <FaExchangeAlt className="text-[var(--color-primary)] dark:text-sky-400 text-xs" />
                 Transfer Simulation
               </h3>
-              <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-sky-50 dark:bg-sky-950/40 text-[var(--color-primary)] dark:text-sky-300 border border-sky-100 dark:border-sky-800/40">
+              <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-sky-100/70 dark:bg-sky-950/60 text-[var(--color-primary)] dark:text-sky-300 border border-sky-200 dark:border-sky-800/60">
                 Preview
               </span>
             </div>
 
             {/* Source Box */}
-            <div className="bg-rose-50/40 dark:bg-rose-950/20 border border-rose-100 dark:border-rose-900/50 rounded-xl p-2.5 flex flex-col gap-1">
+            <div className="bg-rose-100/50 dark:bg-rose-950/35 border border-rose-300/90 dark:border-rose-800/60 rounded-xl p-2.5 flex flex-col gap-1 shadow-2xs">
               <div className="flex items-center justify-between text-xs">
                 <span className="text-[10px] font-bold text-rose-700 dark:text-rose-400">From (Source)</span>
                 <span className="text-[11px] font-semibold text-gray-600 dark:text-[var(--ui-text-muted)]">Current: ৳ {formatMoney(fromBalance)}</span>
               </div>
               <span className="text-xs font-bold text-black dark:text-[var(--ui-text)] truncate">{fromAccountLabel}</span>
-              <div className="flex items-center justify-between text-[11px] pt-1 border-t border-rose-200/50 dark:border-rose-900/30 mt-0.5">
+              <div className="flex items-center justify-between text-[11px] pt-1 border-t border-rose-200/80 dark:border-rose-900/40 mt-0.5">
                 <span className="text-gray-500 dark:text-[var(--ui-text-subtle)]">Balance After:</span>
                 <span className={`font-bold tabular-nums ${afterFromBalance < 0 ? "text-rose-600 dark:text-rose-400" : "text-black dark:text-[var(--ui-text)]"}`}>
                   ৳ {formatMoney(afterFromBalance)}
@@ -864,7 +864,7 @@ export const FundTransferPage: React.FC = () => {
 
             {/* Center Direction Indicator */}
             <div className="flex items-center justify-center my-0.5 text-xs text-gray-400 dark:text-[var(--ui-text-subtle)] font-bold">
-              <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 text-black dark:text-[var(--ui-text)]">
+              <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-gray-100/80 dark:bg-slate-800 border border-gray-300/80 dark:border-slate-700 text-black dark:text-[var(--ui-text)]">
                 <span className="text-rose-600 dark:text-rose-400 font-bold tabular-nums">-৳ {formatMoney(totalDeduction)}</span>
                 <FaArrowRight className="text-[10px] text-gray-400 dark:text-[var(--ui-text-subtle)]" />
                 <span className="text-emerald-600 dark:text-emerald-400 font-bold tabular-nums">+৳ {formatMoney(amountNum)}</span>
@@ -872,13 +872,13 @@ export const FundTransferPage: React.FC = () => {
             </div>
 
             {/* Destination Box */}
-            <div className="bg-emerald-50/40 dark:bg-emerald-950/20 border border-emerald-100 dark:border-emerald-900/50 rounded-xl p-2.5 flex flex-col gap-1">
+            <div className="bg-emerald-100/50 dark:bg-emerald-950/35 border border-emerald-300/90 dark:border-emerald-800/60 rounded-xl p-2.5 flex flex-col gap-1 shadow-2xs">
               <div className="flex items-center justify-between text-xs">
                 <span className="text-[10px] font-bold text-emerald-700 dark:text-emerald-400">To (Destination)</span>
                 <span className="text-[11px] font-semibold text-gray-600 dark:text-[var(--ui-text-muted)]">Current: ৳ {formatMoney(toBalance)}</span>
               </div>
               <span className="text-xs font-bold text-black dark:text-[var(--ui-text)] truncate">{toAccountLabel}</span>
-              <div className="flex items-center justify-between text-[11px] pt-1 border-t border-emerald-200/50 dark:border-emerald-900/30 mt-0.5">
+              <div className="flex items-center justify-between text-[11px] pt-1 border-t border-emerald-200/80 dark:border-emerald-900/40 mt-0.5">
                 <span className="text-gray-500 dark:text-[var(--ui-text-subtle)]">Balance After:</span>
                 <span className="font-bold text-emerald-700 dark:text-emerald-400 tabular-nums">
                   ৳ {formatMoney(afterToBalance)}

@@ -61,3 +61,5 @@ export const businessTypesQueryKey = "get-business-types";
 export const categoryListQueryKey = "get-category-list";
 export const financeDashboardQueryKey = "finance-dashboard";
 export const userProfileQueryKey = "user-profile";
+export const ledgerPersonListQueryKey = "ledger-person-list";
+export const ledgerTransactionListQueryKey = "ledger-transaction-list";

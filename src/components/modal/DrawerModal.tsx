@@ -10,6 +10,7 @@ export interface DrawerModalProps {
   children: React.ReactNode;
   footerButtons?: React.ReactNode;
   maxWidth?: string;
+  zIndex?: string;
   className?: string;
   headerClassName?: string;
   bodyClassName?: string;
@@ -28,6 +29,7 @@ const DrawerModal: React.FC<DrawerModalProps> = ({
   children,
   footerButtons,
   maxWidth = "max-w-[340px]",
+  zIndex = "z-50",
   className = "",
   headerClassName = "",
   bodyClassName = "",
@@ -65,7 +67,7 @@ const DrawerModal: React.FC<DrawerModalProps> = ({
   return (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-50 overflow-hidden">
+        <div className={`fixed inset-0 ${zIndex} overflow-hidden`}>
           {/* Backdrop */}
           <motion.div
             initial={{ opacity: 0 }}
