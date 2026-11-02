@@ -13,11 +13,12 @@ export interface DatePickerProps {
   minDate?: string | Date;
   maxDate?: string | Date;
   label?: string;
+  required?: boolean;
   error?: string;
   format?: string; 
   displayFormat?: string; 
   isClearable?: boolean;
-  size?: "sm" | "md" | "lg";
+  size?: "xs" | "sm" | "md" | "lg";
   align?: "left" | "right";
 }
 
@@ -31,6 +32,7 @@ export const DatePicker: React.FC<DatePickerProps> = ({
   minDate,
   maxDate,
   label,
+  required = false,
   error,
   format = "YYYY-MM-DD",
   displayFormat,
@@ -172,16 +174,17 @@ export const DatePicker: React.FC<DatePickerProps> = ({
   const displayText = selectedMoment ? selectedMoment.format(displayFormat || format) : "";
 
   // Size styling
-  const sizeClasses = {
-    sm: "h-[calc(var(--ui-control-h)-6px)] text-[calc(var(--ui-font-size)-1px)]",
-    md: "h-[var(--ui-control-h)]",
+  const sizeClasses: Record<string, string> = {
+    xs: "ui-control-xs",
+    sm: "ui-control-sm",
+    md: "",
     lg: "h-[calc(var(--ui-control-h)+6px)] text-[calc(var(--ui-font-size)+1px)]",
   };
 
   return (
-    <div className={`relative inline-block w-full ${className}`} ref={containerRef}>
+    <div className={`relative w-full ${label ? "ui-field" : ""} ${className}`} ref={containerRef}>
       {label && (
-        <label className="ui-label mb-1 block">
+        <label className={`ui-label ${required ? "ui-label-required" : ""}`}>
           {label}
         </label>
       )}
@@ -190,6 +193,8 @@ export const DatePicker: React.FC<DatePickerProps> = ({
       <div
         onClick={() => !disabled && setIsOpen(!isOpen)}
         className={`ui-control flex w-full cursor-pointer select-none items-center justify-between ${
+          sizeClasses[size] || ""
+        } ${
           disabled
             ? "cursor-not-allowed bg-[var(--ui-surface-sunken)] text-[var(--ui-text-subtle)]"
             : isOpen
@@ -197,11 +202,11 @@ export const DatePicker: React.FC<DatePickerProps> = ({
             : error
             ? "is-invalid"
             : ""
-        } ${sizeClasses[size]} ${inputClassName}`}
+        } ${inputClassName}`}
       >
         <div className="flex items-center gap-2 truncate flex-1 mr-1">
           <FaCalendarAlt className={`shrink-0 text-xs ${displayText ? "text-[var(--ui-text)]" : "text-[var(--ui-text-subtle)]"}`} />
-          <span className={`truncate font-semibold ${displayText ? "text-[var(--ui-text)]" : "text-[var(--ui-text-subtle)]"}`}>
+          <span className={`truncate text-xs font-medium ${displayText ? "text-[var(--ui-text)]" : "text-[var(--ui-text-subtle)]"}`}>
             {displayText || placeholder}
           </span>
         </div>
@@ -211,7 +216,7 @@ export const DatePicker: React.FC<DatePickerProps> = ({
             <button
               type="button"
               onClick={handleClear}
-              className="p-0.5 text-[var(--ui-text-subtle)] hover:text-[var(--ui-text-muted)] rounded transition-colors"
+              className="p-0.5 text-[var(--ui-text-subtle)] hover:text-[var(--ui-text-muted)] rounded transition-colors cursor-pointer"
               title="Clear date"
             >
               <FaTimes size={10} />
@@ -225,7 +230,7 @@ export const DatePicker: React.FC<DatePickerProps> = ({
         </div>
       </div>
 
-      {error && <span className="text-[11px] text-[var(--ui-danger)] mt-0.5 block">{error}</span>}
+      {error && <p className="ui-error mt-0.5">{error}</p>}
 
       {/* Custom Modern Calendar Dropdown */}
       {isOpen && (

@@ -326,16 +326,16 @@ export const FinancialEntryPage: React.FC<FinancialEntryPageProps> = ({ mode }) 
             {/* Inputs Grid: Category, Date & Amount in 1 line */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-start">
               {/* 1. Category Box */}
-              <div>
-                <label className="text-xs font-semibold text-black block mb-1">
-                  {config.categoryLabel} <span className="text-red-600">*</span>
+              <div className="ui-field">
+                <label className="ui-label ui-label-required">
+                  {config.categoryLabel}
                 </label>
                 <button
                   type="button"
                   onClick={() => setIsCategoryModalOpen(true)}
-                  className={`w-full h-9 flex items-center justify-between px-2.5 rounded-lg border text-left transition-all cursor-pointer bg-white ${
+                  className={`ui-control flex items-center justify-between px-2.5 text-left transition-all cursor-pointer bg-white ${
                     errors.category
-                      ? "border-red-500 ring-1 ring-red-500"
+                      ? "is-invalid"
                       : selectedCategory
                       ? "border-sky-400 bg-sky-50/50 hover:bg-sky-50 shadow-2xs"
                       : "border-gray-300 hover:border-gray-400 hover:bg-gray-50/80"
@@ -363,7 +363,7 @@ export const FinancialEntryPage: React.FC<FinancialEntryPageProps> = ({ mode }) 
                   </div>
                 </button>
                 {errors.category && (
-                  <p className="text-xs text-red-500 mt-1 flex items-center gap-1">
+                  <p className="ui-error mt-0.5 flex items-center gap-1">
                     <FaExclamationTriangle className="text-[10px] shrink-0" /> {errors.category}
                   </p>
                 )}
@@ -371,10 +371,9 @@ export const FinancialEntryPage: React.FC<FinancialEntryPageProps> = ({ mode }) 
 
               {/* 2. Date Box */}
               <div>
-                <label className="text-xs font-semibold text-black block mb-1">
-                  {config.dateLabel} <span className="text-red-600">*</span>
-                </label>
                 <DatePicker
+                  label={config.dateLabel}
+                  required
                   value={date}
                   onChange={(dateStr) => {
                     setDate(dateStr || todayStr);
@@ -382,7 +381,6 @@ export const FinancialEntryPage: React.FC<FinancialEntryPageProps> = ({ mode }) 
                   }}
                   displayFormat="DD MMM, YYYY"
                   isClearable={false}
-                  size="md"
                   placeholder="Select date"
                   error={errors.date}
                 />

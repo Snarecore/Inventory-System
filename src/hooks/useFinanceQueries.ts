@@ -76,7 +76,13 @@ export const useInsertFinancialTransactionMutation = (options?: {
         queryClient.invalidateQueries({ queryKey: [dashboardQueryKey], refetchType: "none" });
         queryClient.invalidateQueries({ queryKey: [financeDashboardQueryKey], refetchType: "none" });
 
-        showSuccessToast(res.msg || `${vars.type === "INCOME" ? "Income" : "Expense"} recorded successfully`);
+        const actionLabel =
+          vars.type === "TRANSFER"
+            ? "Fund transfer"
+            : vars.type === "INCOME"
+            ? "Income"
+            : "Expense";
+        showSuccessToast(res.msg || `${actionLabel} recorded successfully`);
         if (options?.onSuccess) options.onSuccess(res);
       } else {
         showErrorToast(res.msg || "Failed to record transaction");

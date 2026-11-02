@@ -7,13 +7,14 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { RiArrowDropDownLine, RiArrowDropRightLine } from "react-icons/ri";
 import { GoDotFill } from "react-icons/go";
 import { MotionDiv } from "@/utils/framer.motion";
-import { FaCog, FaSignOutAlt, FaUserCircle } from "react-icons/fa";
+import { FaCog, FaSignOutAlt, FaUserCircle, FaSun, FaMoon } from "react-icons/fa";
 import { getUserInfo, getStoredUser, removeStoredUser } from "@/utils/auth-storage";
 import { showSuccessToast } from "@/utils/toast-utils";
 import { useQueryClient } from "@tanstack/react-query";
 import { useUserProfileQuery } from "@/hooks/useUserProfile";
 import { getUserProfileImageUrl } from "@/services/user-profile-service";
 import { UserAvatar, Badge } from "@/components/common";
+import { useAppearance } from "@/theme";
 import logoImg from "@/assets/logo.jpeg";
 
 const MenuItem = ({
@@ -47,6 +48,12 @@ const Header = ({ sidebarClick }: { sidebarClick: boolean }) => {
     const userImageRef = useRef<HTMLDivElement>(null);
 
     const { data: userProfile } = useUserProfileQuery();
+    const { resolved, setOverrides } = useAppearance();
+    const isDark = resolved.isDark;
+
+    const toggleColorMode = () => {
+        setOverrides({ colorMode: isDark ? "light" : "dark" });
+    };
 
     const userInfo = getUserInfo();
     const displayName = userProfile?.fullName || userInfo?.fullName || "Admin";
@@ -133,48 +140,70 @@ const Header = ({ sidebarClick }: { sidebarClick: boolean }) => {
                     </Link>
                 </div>
 
-                <div className="relative inline-block">
-                    <BsThreeDotsVertical
-                        size={20}
-                        className="text-[var(--color-primary)] cursor-pointer"
-                        onClick={() => setShowMenuDropdown(!showMenuDropdown)}
-                    />
+                <div className="flex items-center gap-2">
+                    {/* Mobile Dark Mode Toggle Button */}
+                    <button
+                        type="button"
+                        onClick={toggleColorMode}
+                        className="flex items-center justify-center w-7 h-7 rounded-lg border border-gray-200 dark:border-[var(--ui-border)] bg-gray-50 dark:bg-[var(--ui-surface-muted)] text-gray-700 dark:text-[var(--ui-text)] hover:bg-gray-100 dark:hover:bg-[var(--ui-surface-sunken)] transition-all cursor-pointer"
+                        title={isDark ? "Switch to Light Mode" : "Switch to Dark Mode"}
+                        aria-label={isDark ? "Switch to Light Mode" : "Switch to Dark Mode"}
+                    >
+                        {isDark ? (
+                            <FaSun className="text-amber-400 text-xs" />
+                        ) : (
+                            <FaMoon className="text-slate-600 text-xs" />
+                        )}
+                    </button>
 
-                    {showMenuDropdown && (
-                        <MotionDiv>
-                            <div className="absolute top-7 right-0 w-44 bg-white shadow-lg rounded-md border border-gray-200 z-50 dropdown-menu p-1">
-                                <div className="flex items-center gap-2 bg-gray-50 border border-gray-100 p-1.5 rounded mb-1">
-                                    <UserAvatar
-                                        name={displayName}
-                                        photoUrl={effectiveAvatarUrl}
-                                        size="xs"
-                                        shape="rounded"
-                                    />
-                                    <div className="flex items-center gap-1.5 min-w-0">
-                                        <span className="text-xs font-semibold text-gray-800 truncate">
-                                            {displayName}
-                                        </span>
-                                        <Badge variant="primary" size="sm" className="text-[9px] px-1.5 py-0.5 uppercase tracking-wider shrink-0">
-                                            {displayRole}
-                                        </Badge>
+                    <div className="relative inline-block">
+                        <BsThreeDotsVertical
+                            size={20}
+                            className="text-[var(--color-primary)] cursor-pointer"
+                            onClick={() => setShowMenuDropdown(!showMenuDropdown)}
+                        />
+
+                        {showMenuDropdown && (
+                            <MotionDiv>
+                                <div className="absolute top-7 right-0 w-44 bg-white dark:bg-[var(--ui-surface)] shadow-lg rounded-md border border-gray-200 dark:border-[var(--ui-border)] z-50 dropdown-menu p-1">
+                                    <div className="flex items-center gap-2 bg-gray-50 dark:bg-[var(--ui-surface-muted)] border border-gray-100 dark:border-[var(--ui-border)] p-1.5 rounded mb-1">
+                                        <UserAvatar
+                                            name={displayName}
+                                            photoUrl={effectiveAvatarUrl}
+                                            size="xs"
+                                            shape="rounded"
+                                        />
+                                        <div className="flex items-center gap-1.5 min-w-0">
+                                            <span className="text-xs font-semibold text-gray-800 dark:text-[var(--ui-text)] truncate">
+                                                {displayName}
+                                            </span>
+                                            <Badge variant="primary" size="sm" className="text-[9px] px-1.5 py-0.5 uppercase tracking-wider shrink-0">
+                                                {displayRole}
+                                            </Badge>
+                                        </div>
                                     </div>
-                                </div>
-                                <div className="space-y-0.5">
-                                    <MenuItem
-                                        icon={<FaUserCircle size={13} className="text-gray-500" />}
-                                        text="My Profile"
-                                        className="text-xs text-gray-700 font-medium hover:bg-gray-100"
-                                        onClick={handleOpenUserProfile}
-                                    />
-                                    <MenuItem
-                                        icon={<FaCog size={13} className="text-gray-500" />}
-                                        text="Settings"
-                                        className="text-xs text-gray-700 font-medium hover:bg-gray-100"
-                                        onClick={handleOpenCompanyProfile}
-                                    />
-                                </div>
+                                    <div className="space-y-0.5">
+                                        <MenuItem
+                                            icon={<FaUserCircle size={13} className="text-gray-500 dark:text-[var(--ui-text-subtle)]" />}
+                                            text="My Profile"
+                                            className="text-xs text-gray-700 dark:text-[var(--ui-text)] font-medium hover:bg-gray-100 dark:hover:bg-[var(--ui-surface-muted)]"
+                                            onClick={handleOpenUserProfile}
+                                        />
+                                        <MenuItem
+                                            icon={<FaCog size={13} className="text-gray-500 dark:text-[var(--ui-text-subtle)]" />}
+                                            text="Settings"
+                                            className="text-xs text-gray-700 dark:text-[var(--ui-text)] font-medium hover:bg-gray-100 dark:hover:bg-[var(--ui-surface-muted)]"
+                                            onClick={handleOpenCompanyProfile}
+                                        />
+                                        <MenuItem
+                                            icon={isDark ? <FaSun size={13} className="text-amber-400" /> : <FaMoon size={13} className="text-slate-500" />}
+                                            text={isDark ? "Light Mode" : "Dark Mode"}
+                                            className="text-xs text-gray-700 dark:text-[var(--ui-text)] font-medium hover:bg-gray-100 dark:hover:bg-[var(--ui-surface-muted)]"
+                                            onClick={toggleColorMode}
+                                        />
+                                    </div>
 
-                                <div className="my-1 border-t border-gray-100" />
+                                    <div className="my-1 border-t border-gray-100 dark:border-[var(--ui-border)]" />
 
                                 <MenuItem
                                     icon={<FaSignOutAlt size={13} />}
@@ -185,6 +214,7 @@ const Header = ({ sidebarClick }: { sidebarClick: boolean }) => {
                             </div>
                         </MotionDiv>
                     )}
+                </div>
                 </div>
 
                 {showSidebarMenu && (
@@ -317,11 +347,26 @@ const Header = ({ sidebarClick }: { sidebarClick: boolean }) => {
                 <div className="" onClick={() => {}}></div>
             )}
 
-            <div className="hidden lg:flex justify-end items-center px-4 h-12 bg-white border-b border-gray-200">
+            <div className="hidden lg:flex justify-end items-center gap-2.5 px-4 h-12 bg-white dark:bg-[var(--ui-surface)] border-b border-gray-200 dark:border-[var(--ui-border)] transition-colors">
+                {/* Dark Mode / Light Mode Toggle Button */}
+                <button
+                    type="button"
+                    onClick={toggleColorMode}
+                    className="flex items-center justify-center w-8 h-8 rounded-lg border border-gray-200 dark:border-[var(--ui-border)] bg-gray-100 dark:bg-[var(--ui-surface-muted)] hover:bg-gray-200 dark:hover:bg-[var(--ui-surface-sunken)] text-gray-700 dark:text-[var(--ui-text)] transition-all cursor-pointer shadow-2xs hover:scale-105 active:scale-95"
+                    title={isDark ? "Switch to Light Mode" : "Switch to Dark Mode"}
+                    aria-label={isDark ? "Switch to Light Mode" : "Switch to Dark Mode"}
+                >
+                    {isDark ? (
+                        <FaSun className="text-amber-400 text-sm transition-transform duration-200 hover:rotate-45" />
+                    ) : (
+                        <FaMoon className="text-slate-600 text-sm transition-transform duration-200 hover:-rotate-12" />
+                    )}
+                </button>
+
                 <div className="relative">
                     <div
                         ref={userImageRef}
-                        className="hidden lg:flex items-center gap-2 cursor-pointer bg-gray-100 border border-gray-200 px-2.5 py-1 rounded-md select-none"
+                        className="hidden lg:flex items-center gap-2 cursor-pointer bg-gray-100 dark:bg-[var(--ui-surface-muted)] hover:bg-gray-200 dark:hover:bg-[var(--ui-surface-sunken)] border border-gray-200 dark:border-[var(--ui-border)] px-2.5 py-1 rounded-md select-none transition-colors"
                         onClick={() => setShowUserDropdown(!showUserDropdown)}>
                         <MotionDiv className="flex items-center gap-2">
                             <UserAvatar
@@ -330,12 +375,12 @@ const Header = ({ sidebarClick }: { sidebarClick: boolean }) => {
                                 size="sm"
                                 shape="rounded"
                             />
-                            <span className="text-sm font-medium text-gray-800">
+                            <span className="text-sm font-medium text-gray-800 dark:text-[var(--ui-text)]">
                                 {displayName}
                             </span>
                             <IoChevronDown
                                 size={14}
-                                className={`text-gray-600 transition-transform duration-200 ${
+                                className={`text-gray-600 dark:text-[var(--ui-text-muted)] transition-transform duration-200 ${
                                     showUserDropdown ? "rotate-180" : ""
                                 }`}
                             />
@@ -346,14 +391,14 @@ const Header = ({ sidebarClick }: { sidebarClick: boolean }) => {
                         ref={dropdownRef}
                         aria-hidden={!showUserDropdown}
                         className={[
-                            "absolute top-[calc(100%+4px)] right-0 w-44 bg-white shadow-lg rounded-md border border-gray-200 p-1 z-50",
+                            "absolute top-[calc(100%+4px)] right-0 w-44 bg-white dark:bg-[var(--ui-surface)] shadow-lg rounded-md border border-gray-200 dark:border-[var(--ui-border)] p-1 z-50",
                             "origin-top-right transition-all duration-200 ease-out transform",
                             showUserDropdown
                                 ? "opacity-100 translate-y-0 scale-100"
                                 : "opacity-0 translate-y-1 scale-95 pointer-events-none",
                         ].join(" ")}
                     >
-                        <div className="flex items-center gap-2 bg-gray-50 border border-gray-100 p-1.5 rounded mb-1">
+                        <div className="flex items-center gap-2 bg-gray-50 dark:bg-[var(--ui-surface-muted)] border border-gray-100 dark:border-[var(--ui-border)] p-1.5 rounded mb-1">
                             <UserAvatar
                                 name={displayName}
                                 photoUrl={effectiveAvatarUrl}
@@ -361,7 +406,7 @@ const Header = ({ sidebarClick }: { sidebarClick: boolean }) => {
                                 shape="rounded"
                             />
                             <div className="flex items-center gap-1.5 min-w-0">
-                                <span className="text-xs font-semibold text-gray-800 truncate">
+                                <span className="text-xs font-semibold text-gray-800 dark:text-[var(--ui-text)] truncate">
                                     {displayName}
                                 </span>
                                 <span className="text-[9px] font-bold text-white bg-[#009fe3] px-2 py-0.5 rounded-full uppercase tracking-wider shrink-0 shadow-2xs">
@@ -372,25 +417,31 @@ const Header = ({ sidebarClick }: { sidebarClick: boolean }) => {
 
                         <div className="space-y-0.5">
                             <MenuItem
-                                icon={<FaUserCircle size={13} className="text-gray-500" />}
+                                icon={<FaUserCircle size={13} className="text-gray-500 dark:text-[var(--ui-text-muted)]" />}
                                 text="My Profile"
-                                className="text-xs text-gray-700 font-medium hover:bg-gray-100"
+                                className="text-xs text-gray-700 dark:text-[var(--ui-text)] font-medium hover:bg-gray-100 dark:hover:bg-[var(--ui-surface-muted)]"
                                 onClick={handleOpenUserProfile}
                             />
                             <MenuItem
-                                icon={<FaCog size={13} className="text-gray-500" />}
+                                icon={isDark ? <FaSun size={13} className="text-amber-400" /> : <FaMoon size={13} className="text-slate-500 dark:text-[var(--ui-text-muted)]" />}
+                                text={isDark ? "Light Mode" : "Dark Mode"}
+                                className="text-xs text-gray-700 dark:text-[var(--ui-text)] font-medium hover:bg-gray-100 dark:hover:bg-[var(--ui-surface-muted)]"
+                                onClick={toggleColorMode}
+                            />
+                            <MenuItem
+                                icon={<FaCog size={13} className="text-gray-500 dark:text-[var(--ui-text-muted)]" />}
                                 text="Settings"
-                                className="text-xs text-gray-700 font-medium hover:bg-gray-100"
+                                className="text-xs text-gray-700 dark:text-[var(--ui-text)] font-medium hover:bg-gray-100 dark:hover:bg-[var(--ui-surface-muted)]"
                                 onClick={handleOpenCompanyProfile}
                             />
                         </div>
 
-                        <div className="my-1 border-t border-gray-100" />
+                        <div className="my-1 border-t border-gray-100 dark:border-[var(--ui-border)]" />
 
                         <MenuItem
                             icon={<FaSignOutAlt size={13} />}
                             text="Logout"
-                            className="text-red-500 text-xs font-medium hover:bg-red-50"
+                            className="text-red-500 text-xs font-medium hover:bg-red-50 dark:hover:bg-red-950/20"
                             onClick={handleLogout}
                         />
                     </div>

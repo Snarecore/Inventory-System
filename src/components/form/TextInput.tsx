@@ -17,9 +17,8 @@ export interface TextInputProps {
   icon?: React.ReactNode;
   disabled?: boolean;
   step?: string;
-  min?: string | number;
-  max?: string | number;
   autoFocus?: boolean;
+  size?: "xs" | "sm" | "md" | "lg";
   inputRef?: React.Ref<HTMLInputElement>;
   onFocus?: React.FocusEventHandler<HTMLInputElement>;
   onBlur?: React.FocusEventHandler<HTMLInputElement>;
@@ -50,6 +49,7 @@ const InputField: React.FC<TextInputProps> = ({
   min,
   max,
   autoFocus,
+  size = "md",
   inputRef,
   onFocus,
   onBlur,
@@ -80,6 +80,13 @@ const InputField: React.FC<TextInputProps> = ({
   };
 
 
+  const sizeClasses: Record<string, string> = {
+    xs: "ui-control-xs",
+    sm: "ui-control-sm",
+    md: "",
+    lg: "h-[calc(var(--ui-control-h)+6px)] text-[calc(var(--ui-font-size)+1px)]",
+  };
+
   return (
     <div className={`ui-field ${className}`}>
       {label && (
@@ -89,7 +96,7 @@ const InputField: React.FC<TextInputProps> = ({
       )}
 
       <div
-        className={`ui-control ui-control-shell ${displayError ? "is-invalid" : ""} ${wrapperClass}`}
+        className={`ui-control ui-control-shell ${sizeClasses[size] || ""} ${displayError ? "is-invalid" : ""} ${wrapperClass}`}
       >
         {icon && <span className="flex shrink-0 items-center text-[var(--ui-text-subtle)]">{icon}</span>}
 
@@ -115,7 +122,7 @@ const InputField: React.FC<TextInputProps> = ({
           onKeyDown={onKeyDown}
           onWheel={handleWheel}
           onChange={handleChange}
-          className={`ui-control-bare ${inputClass} ${disabled ? "cursor-not-allowed opacity-60" : "cursor-text"}`}
+          className={`ui-control-bare text-xs ${inputClass} ${disabled ? "cursor-not-allowed opacity-60" : "cursor-text"}`}
         />
       </div>
 

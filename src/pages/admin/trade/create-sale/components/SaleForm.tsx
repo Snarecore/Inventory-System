@@ -680,9 +680,6 @@ export const CreateSaleForm: React.FC = () => {
         <div className="flex flex-col gap-2 xl:col-span-8">
       {/* Customer & invoice meta */}
       <div className="ui-card p-2 sm:p-2.5">
-        <h3 className="mb-1.5 text-[12px] font-semibold uppercase tracking-wide text-[var(--ui-text-muted)]">
-          Customer &amp; Invoice
-        </h3>
         <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-3">
         {/* Customer Selector */}
         <TradePartySelector

@@ -1,5 +1,8 @@
 @import "tailwindcss";
 
+/* Class-based Dark Mode variant for Tailwind CSS v4 */
+@custom-variant dark (&:where(.dark, .dark *, [data-mode="dark"], [data-mode="dark"] *));
+
 /* Brown Pro (__brownpro_df74a3) local alias mapping */
 @font-face {
   font-family: '__brownpro_df74a3';
@@ -81,7 +84,9 @@
   /* Typography */
   --ui-font-family: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
   --ui-font-size: 14px;
-  --ui-label-size: 12px;
+  --ui-label-size: 11px;
+  --ui-label-gap: 4px;
+  --ui-control-font-size: 12px;
   --ui-heading-size: 1.25rem;
 
   /* Shape */
@@ -165,6 +170,17 @@
     font-family: var(--ui-font-family);
   }
 
+  input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="range"]),
+  select,
+  textarea {
+    font-size: var(--ui-control-font-size);
+  }
+
+  input::placeholder,
+  textarea::placeholder {
+    font-size: var(--ui-control-font-size);
+  }
+
   html {
     font-size: var(--ui-font-size);
   }
@@ -194,17 +210,19 @@
   .ui-field {
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: var(--ui-label-gap, 4px);
     width: 100%;
+    box-sizing: border-box;
   }
 
   .ui-label {
     display: block;
+    margin: 0;
     font-size: var(--ui-label-size);
     font-weight: 600;
     letter-spacing: 0.01em;
     color: var(--ui-text-muted);
-    line-height: 1.4;
+    line-height: 1.3;
   }
 
   .ui-label-required::after {
@@ -218,7 +236,7 @@
     min-width: 0;
     height: var(--ui-control-h);
     padding-inline: var(--ui-control-px);
-    font-size: var(--ui-font-size);
+    font-size: var(--ui-control-font-size);
     font-family: var(--ui-font-family);
     color: var(--ui-text);
     background-color: var(--ui-control-bg, var(--ui-surface));
@@ -226,12 +244,14 @@
     border-radius: var(--ui-radius);
     box-shadow: var(--ui-shadow-control);
     outline: none;
+    box-sizing: border-box;
     transition: border-color 150ms ease, box-shadow 150ms ease, background-color 150ms ease,
       transform 150ms ease;
   }
 
   .ui-control::placeholder {
     color: var(--ui-text-subtle);
+    font-size: var(--ui-control-font-size);
   }
 
   .ui-control:hover:not(:disabled):not(:read-only) {
@@ -292,13 +312,14 @@
     border: 0;
     background: transparent;
     font-family: inherit;
-    font-size: inherit;
+    font-size: var(--ui-control-font-size);
     color: inherit;
     outline: none;
   }
 
   .ui-control-bare::placeholder {
     color: var(--ui-text-subtle);
+    font-size: var(--ui-control-font-size);
   }
 
   .ui-control-bare:disabled {
@@ -1004,6 +1025,7 @@ html.dark body,
   background-color: var(--ui-surface) !important;
   border-color: var(--ui-border) !important;
   color: var(--ui-text) !important;
+  font-size: var(--ui-control-font-size);
 }
 
 .dark input::placeholder,
@@ -1011,6 +1033,7 @@ html.dark body,
 [data-mode="dark"] input::placeholder,
 [data-mode="dark"] textarea::placeholder {
   color: var(--ui-text-subtle) !important;
+  font-size: var(--ui-control-font-size);
 }
 
 /* Dropdowns & Popovers in Dark Mode */

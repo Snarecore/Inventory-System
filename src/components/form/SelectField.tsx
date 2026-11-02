@@ -8,7 +8,7 @@ interface Option {
 }
 
 interface SelectInputProps {
-    label: string;
+    label?: string;
     value: Option | null;
     options: Option[];
     onChange: (selected: Option) => void;
@@ -16,9 +16,26 @@ interface SelectInputProps {
     required?: boolean;
     disabled?: boolean;
     showTop?: boolean;
+    size?: "xs" | "sm" | "md" | "lg";
+    error?: string;
+    className?: string;
+    inputClassName?: string;
 }
 
-const SelectInput: React.FC<SelectInputProps> = ({ label, value, options, onChange, placeholder = "Choose", required, disabled = false, showTop = false }) => {
+const SelectInput: React.FC<SelectInputProps> = ({
+    label,
+    value,
+    options,
+    onChange,
+    placeholder = "Choose",
+    required = false,
+    disabled = false,
+    showTop = false,
+    size = "md",
+    error,
+    className = "",
+    inputClassName = "",
+}) => {
     const [openDropdown, setOpenDropdown] = useState(false);
     const [selectedOption, setSelectedOption] = useState<Option | null>(value);
     const [searchTerm, setSearchTerm] = useState("");
@@ -54,21 +71,29 @@ const SelectInput: React.FC<SelectInputProps> = ({ label, value, options, onChan
         return options.filter((option) => option.label && option.label.toLocaleLowerCase().includes(q));
     }, [options, debouncedSearchTerm]);
 
-    return (
-        <div className={`flex w-full flex-col items-center ${openDropdown ? 'relative z-50' : ''}`}>
-            <div ref={dropdownRef} className={`ui-field relative w-full ${openDropdown ? 'z-50' : ''}`}>
-                {label && (
-                    <label className={`ui-label ${required ? 'ui-label-required' : ''}`}>
-                        {label}
-                    </label>
-                )}
+    const sizeClasses: Record<string, string> = {
+        xs: "ui-control-xs",
+        sm: "ui-control-sm",
+        md: "",
+        lg: "h-[calc(var(--ui-control-h)+6px)] text-[calc(var(--ui-font-size)+1px)]",
+    };
 
-                <div
-                    role="combobox"
-                    aria-expanded={openDropdown}
-                    aria-haspopup="listbox"
-                    tabIndex={disabled ? -1 : 0}
-                    className={`ui-control flex w-full cursor-pointer touch-manipulation items-center justify-between gap-2 ${openDropdown ? 'border-[var(--primary-color)] shadow-[0_0_0_3px_var(--ui-focus-ring)]' : ''} ${disabled ? 'cursor-not-allowed bg-[var(--ui-surface-sunken)] text-[var(--ui-text-subtle)]' : ''}`}
+    return (
+        <div ref={dropdownRef} className={`ui-field relative w-full ${openDropdown ? 'z-50' : ''} ${className}`}>
+            {label && (
+                <label className={`ui-label ${required ? 'ui-label-required' : ''}`}>
+                    {label}
+                </label>
+            )}
+
+            <div
+                role="combobox"
+                aria-expanded={openDropdown}
+                aria-haspopup="listbox"
+                tabIndex={disabled ? -1 : 0}
+                className={`ui-control flex w-full cursor-pointer touch-manipulation items-center justify-between gap-2 ${
+                    sizeClasses[size] || ""
+                } ${openDropdown ? 'border-[var(--primary-color)] shadow-[0_0_0_3px_var(--ui-focus-ring)]' : ''} ${disabled ? 'cursor-not-allowed bg-[var(--ui-surface-sunken)] text-[var(--ui-text-subtle)]' : ''} ${error ? 'is-invalid' : ''} ${inputClassName}`}
                     onClick={() => !disabled && setOpenDropdown(!openDropdown)}
                     onKeyDown={(e) => {
                         if (disabled) return;
@@ -80,7 +105,7 @@ const SelectInput: React.FC<SelectInputProps> = ({ label, value, options, onChan
                         }
                     }}
                 >
-                    <span className={`truncate ${selectedOption ? 'text-[var(--ui-text)]' : 'text-[var(--ui-text-subtle)]'}`}>
+                    <span className={`truncate text-xs ${selectedOption ? 'text-[var(--ui-text)]' : 'text-[var(--ui-text-subtle)]'}`}>
                         {selectedOption ? selectedOption.label : placeholder}
                     </span>
                     <RiArrowDropDownLine className={`shrink-0 text-lg text-[var(--ui-text-subtle)] transition-transform duration-200 ${openDropdown ? 'rotate-180 text-[var(--primary-color)]' : ''}`} />
@@ -121,8 +146,8 @@ const SelectInput: React.FC<SelectInputProps> = ({ label, value, options, onChan
                         </ul>
                     </div>
                 )}
+                {error && <p className="ui-error mt-0.5">{error}</p>}
             </div>
-        </div>
     );
 };
 

@@ -20,9 +20,13 @@ export interface DateRangePickerProps {
   onPresetChange?: (preset: string) => void;
   placeholder?: string;
   className?: string;
+  inputClassName?: string;
   align?: "left" | "right";
   disabled?: boolean;
-  size?: "sm" | "md" | "lg";
+  size?: "xs" | "sm" | "md" | "lg";
+  label?: string;
+  required?: boolean;
+  error?: string;
 }
 
 export const DateRangePicker: React.FC<DateRangePickerProps> = ({
@@ -36,9 +40,13 @@ export const DateRangePicker: React.FC<DateRangePickerProps> = ({
   onPresetChange,
   placeholder = "Select date range...",
   className = "",
+  inputClassName = "",
   align = "left",
   disabled = false,
-  size = "sm",
+  size = "md",
+  label,
+  required = false,
+  error,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -290,39 +298,52 @@ export const DateRangePicker: React.FC<DateRangePickerProps> = ({
   }
 
   // Size styling
-  const sizeClasses = {
-    sm: "h-8 px-2 text-xs",
-    md: "h-8 px-2.5 text-xs",
-    lg: "h-9 px-3 text-sm",
+  const sizeClasses: Record<string, string> = {
+    xs: "ui-control-xs",
+    sm: "ui-control-sm",
+    md: "",
+    lg: "h-[calc(var(--ui-control-h)+6px)] text-[calc(var(--ui-font-size)+1px)]",
   };
 
   const isFiltered = Boolean((activePreset && activePreset !== "all") || rangeStart || rangeEnd);
 
   return (
-    <div className={`relative w-full ${className}`} ref={containerRef}>
+    <div className={`relative w-full ${label ? "ui-field" : ""} ${className}`} ref={containerRef}>
+      {label && (
+        <label className={`ui-label ${required ? "ui-label-required" : ""}`}>
+          {label}
+        </label>
+      )}
+
       {/* Trigger Button */}
       <button
         type="button"
         disabled={disabled}
         onClick={() => !disabled && setIsOpen(!isOpen)}
-        className={`w-full flex items-center justify-between border rounded-lg transition-all cursor-pointer select-none ${
+        className={`ui-control flex w-full items-center justify-between cursor-pointer select-none ${
+          sizeClasses[size] || ""
+        } ${
           disabled
-            ? "bg-[var(--ui-surface-sunken)] text-[var(--ui-text-subtle)] cursor-not-allowed border-[var(--ui-border)]"
+            ? "cursor-not-allowed bg-[var(--ui-surface-sunken)] text-[var(--ui-text-subtle)]"
+            : isOpen
+            ? "border-[var(--primary-color)] shadow-[0_0_0_3px_var(--ui-focus-ring)]"
             : isFiltered
-            ? "border-[var(--color-primary)] bg-[var(--primary-color-light)]/70 text-[var(--color-primary)] font-semibold"
-            : "border-[var(--ui-border)] bg-[var(--ui-surface-muted)]/50 hover:bg-[var(--ui-surface)] text-[var(--ui-text)] font-medium focus:border-[var(--color-primary)]"
-        } ${sizeClasses[size]}`}
+            ? "border-[var(--color-primary)] bg-[var(--primary-color-light)]/40 text-[var(--color-primary)] font-semibold"
+            : ""
+        } ${error ? "is-invalid" : ""} ${inputClassName}`}
       >
         <div className="flex items-center gap-1.5 truncate mr-1">
-          <FaCalendarAlt className="text-[var(--ui-text-muted)] shrink-0 text-[11px]" />
-          <span className="truncate text-[var(--ui-text)] font-medium">{displayLabel || placeholder}</span>
+          <FaCalendarAlt className="text-[var(--ui-text-subtle)] shrink-0 text-xs" />
+          <span className="truncate text-xs text-[var(--ui-text)] font-medium">{displayLabel || placeholder}</span>
         </div>
         <FiChevronDown
-          className={`text-[var(--ui-text-muted)] shrink-0 text-xs transition-transform duration-200 ${
+          className={`text-[var(--ui-text-subtle)] shrink-0 text-xs transition-transform duration-200 ${
             isOpen ? "rotate-180" : ""
           }`}
         />
       </button>
+
+      {error && <p className="ui-error mt-0.5">{error}</p>}
 
       {/* Date Range Dropdown Popover */}
       {isOpen && (
