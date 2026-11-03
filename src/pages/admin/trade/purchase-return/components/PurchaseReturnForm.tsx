@@ -1296,7 +1296,7 @@ export const PurchaseReturnForm: React.FC = () => {
               </div>
             </div>
 
-            {/* Due Balance */}
+            {/* Outstanding Balance */}
             <div
               className={`p-1.5 sm:p-2 rounded-lg border bg-gradient-to-b from-[var(--ui-danger-light)]/40 to-[var(--ui-surface)] shadow-2xs flex flex-col justify-between ${
                 origDueAmount > 0 ? "border-[var(--ui-danger-border)]" : "border-[var(--ui-border)] opacity-60"
@@ -1305,7 +1305,7 @@ export const PurchaseReturnForm: React.FC = () => {
               <div className="flex items-center justify-between text-[11px] font-medium text-[var(--ui-text)] mb-0.5">
                 <span className="flex items-center gap-1 text-[var(--ui-text)]">
                   <span className="w-1.5 h-1.5 rounded-full bg-[var(--ui-danger)] inline-block" />
-                  Due Balance
+                  Outstanding
                 </span>
               </div>
               <div className="font-normal text-[var(--ui-text)] text-xs sm:text-[13px] leading-tight">

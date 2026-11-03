@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
-import { FaSlidersH, FaCalculator, FaUserCircle } from "react-icons/fa";
+import { FaSlidersH, FaCalculator } from "react-icons/fa";
 import Button from "@/components/button/Button";
 import DeleteModal from "@/components/modal/DeleteModal";
 import ConfirmModal from "@/components/modal/ConfirmModal";
@@ -786,15 +786,15 @@ const CreatePurchaseForm: React.FC = () => {
     showDeleteToast("Purchase form reset successfully!");
   };
 
-  const hasAnyChallanField = Boolean(
-    (challanSettings.showChallanRefNo ?? challanSettings.showChallanNo) ||
-    challanSettings.showVatChallan ||
-    challanSettings.showVatChallanDate ||
-    (challanSettings.vehicleNumber ?? challanSettings.showVehicleNo) ||
-    challanSettings.capacityCft ||
-    (challanSettings.driverName ?? challanSettings.showDriverName) ||
-    (challanSettings.driverPhone ?? challanSettings.showDriverPhone)
-  );
+  const hasAnyChallanField = [
+    challanSettings.showChallanRefNo,
+    challanSettings.showVatChallan,
+    challanSettings.showVatChallanDate,
+    challanSettings.vehicleNumber,
+    challanSettings.capacityCft,
+    challanSettings.driverName,
+    challanSettings.driverPhone,
+  ].some(Boolean);
 
   return (
     <div className="flex flex-col gap-2 px-2 py-1.5 sm:px-3 sm:py-2 max-w-[1600px] mx-auto w-full">
@@ -870,7 +870,7 @@ const CreatePurchaseForm: React.FC = () => {
             {hasAnyChallanField && (
               <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 md:grid-cols-3 mt-2.5">
                 {/* Optional Challan Ref No */}
-                {(challanSettings.showChallanRefNo ?? challanSettings.showChallanNo) && (
+                {challanSettings.showChallanRefNo && (
                   <TextInput
                     label="Challan Ref No"
                     value={challanNo}
@@ -907,7 +907,7 @@ const CreatePurchaseForm: React.FC = () => {
                 )}
 
                 {/* Optional Vehicle No */}
-                {(challanSettings.vehicleNumber ?? challanSettings.showVehicleNo) && (
+                {challanSettings.vehicleNumber && (
                   <TextInput
                     label="Vehicle / Truck No"
                     value={vehicleNo}
@@ -927,7 +927,7 @@ const CreatePurchaseForm: React.FC = () => {
                 )}
 
                 {/* Optional Driver Name */}
-                {(challanSettings.driverName ?? challanSettings.showDriverName) && (
+                {challanSettings.driverName && (
                   <TextInput
                     label="Driver Name"
                     value={driverName}
@@ -937,7 +937,7 @@ const CreatePurchaseForm: React.FC = () => {
                 )}
 
                 {/* Optional Driver Phone */}
-                {(challanSettings.driverPhone ?? challanSettings.showDriverPhone) && (
+                {challanSettings.driverPhone && (
                   <TextInput
                     label="Driver Phone"
                     value={driverPhone}
@@ -1054,15 +1054,14 @@ const CreatePurchaseForm: React.FC = () => {
               showCashTenderedToggle={true}
             />
 
-            {/* Settlement summary: who, then paid vs due */}
+            {/* Settlement summary: paid vs outstanding */}
             <TradeSettlementSummary
-              partyName={selectedSupplier?.name || selectedSupplier?.partyName}
-              partyPhone={selectedSupplier?.phone || selectedSupplier?.phoneNumber}
-              isWalkIn={false}
+              showPartyInfo={false}
               totalPaid={totalPaid}
               grandTotal={grandTotal}
               dueAmount={dueAmount}
-              dueLabel="Due Balance"
+              paidLabel="Paid Amount"
+              dueLabel="Outstanding"
             />
           </div>
 

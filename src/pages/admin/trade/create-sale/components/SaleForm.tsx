@@ -814,7 +814,7 @@ export const CreateSaleForm: React.FC = () => {
             title="Payment Collected"
             bankLabel="BANK"
           />
-          {/* Settlement summary: who, then paid vs short */}
+          {/* Settlement summary: who, then paid vs outstanding */}
           <TradeSettlementSummary
             partyName={selectedCustomer?.name || selectedCustomer?.partyName}
             partyPhone={selectedCustomer?.phone || selectedCustomer?.phoneNumber}
@@ -826,7 +826,7 @@ export const CreateSaleForm: React.FC = () => {
             grandTotal={grandTotal}
             dueAmount={dueAmount}
             changeReturnAmount={changeReturnAmount}
-            dueLabel="Short"
+            dueLabel="Outstanding"
           />
         </div>
 
