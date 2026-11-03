@@ -14,6 +14,7 @@ import {
 	FaShieldAlt,
 	FaCog,
 	FaLandmark,
+	FaPaperPlane,
 } from "react-icons/fa";
 
 export const menu = [
@@ -133,6 +134,15 @@ export const menu = [
 					{ id: 51, name: "Customers", path: "/admin/parties?type=CUSTOMER", permissionKey: "customers.list.view" },
 					{ id: 52, name: "Suppliers", path: "/admin/parties?type=SUPPLIER", permissionKey: "suppliers.list.view" },
 				],
+			},
+			{
+				id: 125,
+				name: "Send SMS",
+				title: "Send SMS",
+				icon: FaPaperPlane,
+				path: "/admin/sms",
+				permissionKey: "settings.sms.view",
+				subItems: [],
 			},
 		],
 	},
@@ -298,7 +308,7 @@ export const menu = [
 					{ id: 118, name: "System Settings", path: "/settings/system", permissionKey: "settings.system.view" },
 					{ id: 119, name: "Payment Methods", path: "/settings/payment-methods", permissionKey: "settings.payment_methods.view" },
 					{ id: 120, name: "Tax / VAT", path: "/settings/tax", permissionKey: "settings.tax.view" },
-					{ id: 121, name: "SMS", path: "/admin/settings/sms", permissionKey: "settings.sms.view" },
+					{ id: 121, name: "SMS Bundles", path: "/admin/settings/sms", permissionKey: "settings.sms.view" },
 					{ id: 122, name: "Email", path: "/settings/email", permissionKey: "settings.email.view" },
 					{ id: 123, name: "Integrations", path: "/settings/integrations", permissionKey: "settings.integrations.view" },
 				],

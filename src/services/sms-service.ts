@@ -8,6 +8,7 @@ import type {
   SendSmsPayload,
   SmsBalanceData,
   SmsSendBackendData,
+  SmsHistoryItem,
 } from "@/types";
 
 /**
@@ -128,8 +129,18 @@ export async function fetchSmsBalance(): Promise<SmsBalanceData | null> {
       body: { accessUser: buildAccessUser() },
     });
 
-    if (res?.status === "Success" && res?.data) {
-      return res.data as SmsBalanceData;
+    if (res?.error || res?.status === "Error") {
+      console.error("Error fetching SMS balance:", res?.msg || res?.message);
+      return null;
+    }
+
+    const d = res?.data ?? res;
+    if (d && typeof d === "object") {
+      return {
+        smsBalance: Number(d.smsBalance ?? d.balance ?? d.remainingBalance ?? 0),
+        smsConsumed: Number(d.smsConsumed ?? d.consumed ?? d.totalSent ?? d.smsUsed ?? 0),
+        smsPurchase: Number(d.smsPurchase ?? d.totalPurchase ?? d.purchase ?? 0),
+      };
     }
     return null;
   } catch (error) {
@@ -137,3 +148,114 @@ export async function fetchSmsBalance(): Promise<SmsBalanceData | null> {
     return null;
   }
 }
+
+/**
+ * Safely parse backend date formats (ISO string, "YYYY-MM-DD HH:mm:ss", Jackson array, or epoch)
+ */
+function parseBackendDate(raw: any): string {
+  if (!raw) return "";
+  if (Array.isArray(raw)) {
+    // Jackson LocalDateTime serialization: [year, month, day, hour, minute, second]
+    const [y, m, d, h = 0, min = 0, s = 0] = raw;
+    const date = new Date(y, m - 1, d, h, min, s);
+    return isNaN(date.getTime()) ? "" : date.toISOString();
+  }
+  if (typeof raw === "number") {
+    const millis = raw < 1e11 ? raw * 1000 : raw;
+    const date = new Date(millis);
+    return isNaN(date.getTime()) ? "" : date.toISOString();
+  }
+  if (typeof raw === "string") {
+    const trimmed = raw.trim();
+    if (!trimmed) return "";
+    const parsed = new Date(trimmed);
+    if (!isNaN(parsed.getTime())) {
+      return parsed.toISOString();
+    }
+    // Handle "YYYY-MM-DD HH:mm:ss" format
+    const replaced = trimmed.replace(" ", "T");
+    const parsed2 = new Date(replaced);
+    if (!isNaN(parsed2.getTime())) {
+      return parsed2.toISOString();
+    }
+    return trimmed;
+  }
+  return "";
+}
+
+/**
+ * Fetch list of sent SMS records from Cash Boi backend
+ */
+export async function fetchSmsSendList(): Promise<SmsHistoryItem[]> {
+  try {
+    const res: any = await postData({
+      url: apiConfig.sms.getSmsSendListUrl,
+      body: { accessUser: buildAccessUser() },
+    });
+
+    if (res?.error || String(res?.status).toLowerCase() === "error") {
+      console.error("Error fetching SMS send list:", res?.msg || res?.message);
+      return [];
+    }
+
+    const rawList = Array.isArray(res?.data)
+      ? res.data
+      : Array.isArray(res?.smsList)
+      ? res.smsList
+      : Array.isArray(res?.list)
+      ? res.list
+      : Array.isArray(res)
+      ? res
+      : [];
+
+    return rawList.map((item: any, idx: number) => {
+      const rawDate =
+        item.addedDate ||
+        item.added_date ||
+        item.createdDate ||
+        item.createdAt ||
+        item.created_at ||
+        item.createDate ||
+        item.create_date ||
+        item.sendDate ||
+        item.send_date ||
+        item.sentDate ||
+        item.sent_date ||
+        item.sentAt ||
+        item.sent_at ||
+        item.date ||
+        item.dateTime ||
+        item.date_time ||
+        item.timestamp ||
+        item.updateDate ||
+        item.updatedAt ||
+        item.updated_at;
+
+      const sentAt = parseBackendDate(rawDate);
+
+      return {
+        id: String(item.id ?? item.smsId ?? item._id ?? idx + 1),
+        recipientName:
+          item.recipientName ||
+          item.customerName ||
+          item.supplierName ||
+          item.partyName ||
+          item.name ||
+          item.phoneNumber ||
+          item.phone ||
+          "Direct",
+        recipientPhone: item.phoneNumber || item.phone || item.recipientPhone || "",
+        recipientType: (item.type || item.recipientType || "Direct") as any,
+        message: item.msg || item.message || item.text || "",
+        partsCount: Number(item.partsCount || item.segmentCount || item.segments || 1),
+        creditsUsed: Number(item.creditsUsed || item.cost || item.partsCount || 1),
+        sentAt,
+        status: (item.status === "Success" || item.status === "Delivered" ? "Delivered" : item.status || "Delivered") as any,
+      };
+    });
+  } catch (error) {
+    console.error("Error fetching SMS send list:", error);
+    return [];
+  }
+}
+

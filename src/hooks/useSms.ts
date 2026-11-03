@@ -4,13 +4,15 @@ import {
   purchaseSmsBundle,
   sendSmsMessage,
   fetchSmsBalance,
+  fetchSmsSendList,
 } from "@/services/sms-service";
 import { showSuccessToast, showErrorToast } from "@/utils/toast-utils";
-import type { SmsBundleItem, SmsBalanceData } from "@/types";
+import type { SmsBundleItem, SmsBalanceData, SmsHistoryItem } from "@/types";
 
 export const SMS_QUERY_KEYS = {
   bundles: ["sms-bundles"] as const,
   balance: ["sms-balance"] as const,
+  sendList: ["sms-send-list"] as const,
 };
 
 export function useSmsBundles() {
@@ -26,6 +28,14 @@ export function useSmsBalance() {
     queryKey: SMS_QUERY_KEYS.balance,
     queryFn: fetchSmsBalance,
     staleTime: 60 * 1000,
+  });
+}
+
+export function useSmsSendList() {
+  return useQuery<SmsHistoryItem[]>({
+    queryKey: SMS_QUERY_KEYS.sendList,
+    queryFn: fetchSmsSendList,
+    staleTime: 30 * 1000,
   });
 }
 
@@ -52,6 +62,7 @@ export function useSendSms() {
       if (result.success) {
         showSuccessToast(result.message ?? "SMS sent successfully!");
         queryClient.invalidateQueries({ queryKey: SMS_QUERY_KEYS.balance });
+        queryClient.invalidateQueries({ queryKey: SMS_QUERY_KEYS.sendList });
       } else {
         showErrorToast(result.message ?? "Failed to send SMS.");
       }

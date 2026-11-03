@@ -1,9 +1,7 @@
 @import "tailwindcss";
 
-/* Class-based Dark Mode variant for Tailwind CSS v4 */
 @custom-variant dark (&:where(.dark, .dark *, [data-mode="dark"], [data-mode="dark"] *));
 
-/* Brown Pro (__brownpro_df74a3) local alias mapping */
 @font-face {
   font-family: '__brownpro_df74a3';
   src: local('__brownpro_df74a3'),
@@ -47,8 +45,6 @@
   --ui-text: #0f172a;
   --ui-text-muted: #475569;
   --ui-text-subtle: #94a3b8;
-  /* Status colours carry meaning (danger / success / warning / info), so they
-     stay constant across themes rather than following the accent. */
   --ui-danger: #dc2626;
   --ui-danger-light: #fef2f2;
   --ui-danger-border: #fecaca;
@@ -66,15 +62,9 @@
   --ui-info-border: #bae6fd;
   --ui-info-dark: #075985;
 
-  /* Density */
-  --ui-control-h: 38px;
-  /* Derived sizes for dense screens (trade forms, inline toolbars). Ratios are
-     chosen so the defaults land on the 36px / 28px these screens used before,
-     while still tracking the density setting. */
+  --ui-control-h: 34px;
   --ui-control-h-sm: calc(var(--ui-control-h) * 0.95);
   --ui-control-h-xs: calc(var(--ui-control-h) * 0.74);
-  /* Font sizes paired with the heights above. A pinned height without a
-     matching size leaves oversized text (and placeholders) in a small box. */
   --ui-font-size-sm: calc(var(--ui-font-size) - 1px);
   --ui-font-size-xs: calc(var(--ui-font-size) - 3px);
   --ui-control-px: 12px;
@@ -85,7 +75,7 @@
   --ui-font-family: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
   --ui-font-size: 14px;
   --ui-label-size: 11px;
-  --ui-label-gap: 4px;
+  --ui-label-gap: 2.5px;
   --ui-control-font-size: 12px;
   --ui-heading-size: 1.25rem;
 
@@ -98,8 +88,6 @@
   /* Elevation */
   --ui-shadow-card: 0 10px 30px -18px rgba(15, 23, 42, 0.35), 0 4px 12px -7px rgba(15, 23, 42, 0.16);
   --ui-shadow-control: 0 2px 8px -4px rgba(15, 23, 42, 0.18);
-  /* Floating layers (dropdowns, popovers) keep a shadow even on the Flat
-     elevation setting — it conveys layering, not decoration. */
   --ui-shadow-popover: 0 16px 36px -12px rgba(15, 23, 42, 0.28), 0 4px 12px -6px rgba(15, 23, 42, 0.14);
 
   /* Tables & page chrome */
@@ -210,7 +198,7 @@
   .ui-field {
     display: flex;
     flex-direction: column;
-    gap: var(--ui-label-gap, 4px);
+    gap: var(--ui-label-gap, 2.5px);
     width: 100%;
     box-sizing: border-box;
   }
@@ -230,7 +218,6 @@
     color: var(--ui-danger);
   }
 
-  /* Shared shell for input / select / textarea */
   .ui-control {
     width: 100%;
     min-width: 0;
@@ -284,8 +271,6 @@
     box-shadow: 0 0 0 3px color-mix(in srgb, var(--ui-danger) 18%, transparent);
   }
 
-  /* Shell variant: border lives on a wrapper, the real input sits inside.
-     Used by components that render adornments as siblings of the input. */
   .ui-control-shell {
     display: flex;
     align-items: center;
@@ -302,7 +287,6 @@
     box-shadow: 0 0 0 3px color-mix(in srgb, var(--ui-danger) 18%, transparent);
   }
 
-  /* Bare input for use inside .ui-control-shell */
   .ui-control-bare {
     flex: 1 1 auto;
     width: 100%;
@@ -472,8 +456,6 @@
     border-color: var(--ui-border-strong);
   }
 
-  /* Text uses the dark end of the ramp: a mid-tone accent such as the brand
-     cyan fails AA at small sizes when painted straight onto its own tint. */
   .ui-btn-subtle {
     background-color: var(--primary-color-light);
     color: var(--primary-color-dark);

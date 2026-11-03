@@ -29,6 +29,7 @@ const ShopPageCms = React.lazy(() => import('@/pages/admin/settings/shop-page-cm
 const SocialLinks = React.lazy(() => import('@/pages/admin/settings/social-links'))
 const AppearanceSettings = React.lazy(() => import('@/pages/admin/settings/appearance'))
 const SmsSettings = React.lazy(() => import('@/pages/admin/settings/sms'))
+const SendSmsPage = React.lazy(() => import('@/pages/admin/sms'))
 const PrivacyPolicy = React.lazy(() => import('@/pages/admin/settings/policy/privacy'))
 const TermsConditions = React.lazy(() => import('@/pages/admin/settings/policy/terms-condition'))
 const ExchangePolicy = React.lazy(() => import('@/pages/admin/settings/policy/exchange-return/ExchangeForm'))
@@ -651,7 +652,11 @@ export const router = createBrowserRouter([
       },
       {
         path: 'sms',
-        element: withSuspense(SmsSettings),
+        element: withSuspense(SendSmsPage),
+      },
+      {
+        path: 'sms/send',
+        element: withSuspense(SendSmsPage),
       },
       {
         path: 'privacy-policy',

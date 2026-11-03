@@ -9,7 +9,6 @@ import {
   FaRedo,
   FaTimesCircle,
   FaSpinner,
-  FaCalendarAlt,
   FaGlobe,
   FaCheckDouble,
   FaCrown,
@@ -269,11 +268,6 @@ export const SmsBundlesTab: React.FC = () => {
                         <h3 className="text-xs font-bold text-[var(--ui-text)] leading-tight">
                           {bundle.name}
                         </h3>
-                        {bundle.bundleCode && (
-                          <div className="text-[10px] font-mono font-medium text-[var(--ui-text-muted)] mt-0.5">
-                            {bundle.bundleCode}
-                          </div>
-                        )}
                       </div>
                     </div>
 
@@ -331,14 +325,6 @@ export const SmsBundlesTab: React.FC = () => {
 
                   {/* Feature Checklist with Distinct Micro-Icons */}
                   <div className="space-y-1.5 text-xs pb-2.5 border-t border-[var(--ui-border)] pt-2">
-                    <div className="flex items-center gap-2">
-                      <div className="w-4 h-4 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
-                        <FaCalendarAlt size={9} />
-                      </div>
-                      <span className="text-[11px] font-medium text-[var(--ui-text)]">
-                        {bundle.validityLabel}
-                      </span>
-                    </div>
                     <div className="flex items-center gap-2">
                       <div className="w-4 h-4 rounded-full bg-sky-500/10 text-sky-600 dark:text-sky-400 flex items-center justify-center shrink-0">
                         <FaShieldAlt size={9} />
@@ -446,9 +432,6 @@ export const SmsBundlesTab: React.FC = () => {
                     <span className="font-bold text-[var(--ui-text)] text-sm">
                       {selectedBundle.name}
                     </span>
-                    <span className="text-[10px] font-mono font-semibold px-1.5 py-0.5 rounded bg-[var(--ui-surface)] border border-[var(--ui-border)] text-[var(--ui-text-muted)]">
-                      {selectedBundle.bundleCode}
-                    </span>
                   </div>
                   <span className="text-base font-extrabold text-[var(--primary-color)] tabular-nums">
                     ৳ {selectedBundle.price.toLocaleString("en-IN")}
@@ -457,7 +440,6 @@ export const SmsBundlesTab: React.FC = () => {
 
                 <div className="flex items-center justify-between text-[11px] text-[var(--ui-text-muted)] pt-1.5 border-t border-[var(--ui-border)]">
                   <span>{selectedBundle.smsCount.toLocaleString("en-IN")} Credits</span>
-                  <span>{selectedBundle.validityLabel}</span>
                   <span className="text-[var(--ui-success-dark)] font-semibold">Instant Top-up</span>
                 </div>
               </div>

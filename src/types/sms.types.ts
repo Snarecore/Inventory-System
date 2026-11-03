@@ -65,3 +65,15 @@ export interface SmsSendBackendData {
   currentSmsBalance: number;
   status: string;
 }
+
+export interface SmsHistoryItem {
+  id: string;
+  recipientName: string;
+  recipientPhone: string;
+  recipientType: "Customer" | "Supplier" | "Direct" | "Any";
+  message: string;
+  partsCount: number;
+  creditsUsed: number;
+  sentAt: string;
+  status: "Delivered" | "Sent" | "Failed";
+}

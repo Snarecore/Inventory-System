@@ -147,6 +147,7 @@
         "bundleListUrl": "sms-bundle/list",
         "bundlePurchaseUrl": "sms-bundle/purchase",
         "insertSmsSendUrl": "insert-sms-send",
-        "getSmsBalanceUrl": "get-sms-balance"
+        "getSmsBalanceUrl": "get-sms-balance",
+        "getSmsSendListUrl": "get-sms-send-list"
     }
 }

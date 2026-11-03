@@ -32,15 +32,15 @@ export const DENSITY_SCALE: Record<
   DensityId,
   { controlH: string; controlPx: string; fieldGap: string; sectionGap: string }
 > = {
-  compact: { controlH: '32px', controlPx: '10px', fieldGap: '12px', sectionGap: '16px' },
-  default: { controlH: '38px', controlPx: '12px', fieldGap: '16px', sectionGap: '24px' },
-  comfortable: { controlH: '44px', controlPx: '14px', fieldGap: '20px', sectionGap: '32px' },
+  compact: { controlH: '30px', controlPx: '10px', fieldGap: '12px', sectionGap: '16px' },
+  default: { controlH: '34px', controlPx: '12px', fieldGap: '16px', sectionGap: '24px' },
+  comfortable: { controlH: '40px', controlPx: '14px', fieldGap: '20px', sectionGap: '32px' },
 }
 
 export const DENSITY_OPTIONS: ScaleOption<DensityId>[] = [
-  { id: 'compact', label: 'Compact', hint: '32px controls — most rows per screen' },
-  { id: 'default', label: 'Default', hint: '38px controls — balanced' },
-  { id: 'comfortable', label: 'Comfortable', hint: '44px controls — easiest to hit' },
+  { id: 'compact', label: 'Compact', hint: '30px controls — most rows per screen' },
+  { id: 'default', label: 'Default', hint: '34px controls — balanced' },
+  { id: 'comfortable', label: 'Comfortable', hint: '40px controls — easiest to hit' },
 ]
 
 /** Base font size. Everything else is sized in em/rem relative to this. */
