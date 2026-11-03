@@ -142,5 +142,11 @@
         "transactionUpdateUrl": "ledger/transaction/update",
         "transactionListUrl": "ledger/transaction/list",
         "transactionDeleteUrl": "ledger/transaction/delete"
+    },
+    "sms": {
+        "bundleListUrl": "sms-bundle/list",
+        "bundlePurchaseUrl": "sms-bundle/purchase",
+        "insertSmsSendUrl": "insert-sms-send",
+        "getSmsBalanceUrl": "get-sms-balance"
     }
 }

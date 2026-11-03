@@ -298,7 +298,7 @@ export const menu = [
 					{ id: 118, name: "System Settings", path: "/settings/system", permissionKey: "settings.system.view" },
 					{ id: 119, name: "Payment Methods", path: "/settings/payment-methods", permissionKey: "settings.payment_methods.view" },
 					{ id: 120, name: "Tax / VAT", path: "/settings/tax", permissionKey: "settings.tax.view" },
-					{ id: 121, name: "SMS", path: "/settings/sms", permissionKey: "settings.sms.view" },
+					{ id: 121, name: "SMS", path: "/admin/settings/sms", permissionKey: "settings.sms.view" },
 					{ id: 122, name: "Email", path: "/settings/email", permissionKey: "settings.email.view" },
 					{ id: 123, name: "Integrations", path: "/settings/integrations", permissionKey: "settings.integrations.view" },
 				],

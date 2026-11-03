@@ -9,10 +9,13 @@ const apiUrl = rawApiUrl.endsWith("/") ? rawApiUrl : `${rawApiUrl}/`;
  */
 async function apiRequest<T>(
     url: string,
-    options: RequestInit
+    options: RequestInit,
+    baseUrl?: string
 ): Promise<T | { error: boolean; message: string; status?: string; msg?: string }> {
     try {
-        const response = await fetch(`${apiUrl}${url}`, options);
+        const base = baseUrl ? (baseUrl.endsWith("/") ? baseUrl : `${baseUrl}/`) : apiUrl;
+        const targetUrl = url.startsWith("http://") || url.startsWith("https://") ? url : `${base}${url}`;
+        const response = await fetch(targetUrl, options);
 
         // 401 Unauthorized: Session expired, clear storage and redirect
         if (response.status === 401 && !url.includes("authorization-check") && !url.includes("user-login")) {
@@ -61,58 +64,58 @@ async function apiRequest<T>(
     }
 }
 
-export async function getData<T>({ url, token }: GetDataProps): Promise<T | { error: boolean; message: string; status?: string; msg?: string }> {
-    const activeToken = token || getStoredToken();
+export async function getData<T>({ url, token, baseUrl }: GetDataProps): Promise<T | { error: boolean; message: string; status?: string; msg?: string }> {
+    const activeToken = token !== undefined ? token : getStoredToken();
     const headers: Record<string, string> = { "Content-Type": "application/json" };
     if (activeToken) headers["Authorization"] = `Bearer ${activeToken}`;
 
-    return apiRequest<T>(url, { headers, method: "GET", cache: "no-cache" });
+    return apiRequest<T>(url, { headers, method: "GET", cache: "no-cache" }, baseUrl);
 }
 
-export async function postData<T>({ url, token, body }: PostDataProps): Promise<T | { error: boolean; message: string; status?: string; msg?: string }> {
-    const activeToken = token || getStoredToken();
+export async function postData<T>({ url, token, body, baseUrl }: PostDataProps): Promise<T | { error: boolean; message: string; status?: string; msg?: string }> {
+    const activeToken = token !== undefined ? token : getStoredToken();
     const headers: Record<string, string> = { "Content-Type": "application/json" };
     if (activeToken) headers["Authorization"] = `Bearer ${activeToken}`;
 
-    return apiRequest<T>(url, { headers, method: "POST", body: JSON.stringify(body) });
+    return apiRequest<T>(url, { headers, method: "POST", body: JSON.stringify(body) }, baseUrl);
 }
 
-export async function patchData<T>({ url, token, body }: PatchDataProps): Promise<T | { error: boolean; message: string; status?: string; msg?: string }> {
-    const activeToken = token || getStoredToken();
+export async function patchData<T>({ url, token, body, baseUrl }: PatchDataProps): Promise<T | { error: boolean; message: string; status?: string; msg?: string }> {
+    const activeToken = token !== undefined ? token : getStoredToken();
     const headers: Record<string, string> = { "Content-Type": "application/json" };
     if (activeToken) headers["Authorization"] = `Bearer ${activeToken}`;
 
-    return apiRequest<T>(url, { headers, method: "PATCH", body: JSON.stringify(body) });
+    return apiRequest<T>(url, { headers, method: "PATCH", body: JSON.stringify(body) }, baseUrl);
 }
 
-export async function putData<T>({ url, token, body }: PutDataProps): Promise<T | { error: boolean; message: string; status?: string; msg?: string }> {
-    const activeToken = token || getStoredToken();
+export async function putData<T>({ url, token, body, baseUrl }: PutDataProps): Promise<T | { error: boolean; message: string; status?: string; msg?: string }> {
+    const activeToken = token !== undefined ? token : getStoredToken();
     const headers: Record<string, string> = { "Content-Type": "application/json" };
     if (activeToken) headers["Authorization"] = `Bearer ${activeToken}`;
 
-    return apiRequest<T>(url, { headers, method: "PUT", body: JSON.stringify(body) });
+    return apiRequest<T>(url, { headers, method: "PUT", body: JSON.stringify(body) }, baseUrl);
 }
 
-export async function deleteData<T>({ url, token }: DeleteDataProps): Promise<T | { error: boolean; message: string; status?: string; msg?: string }> {
-    const activeToken = token || getStoredToken();
+export async function deleteData<T>({ url, token, baseUrl }: DeleteDataProps): Promise<T | { error: boolean; message: string; status?: string; msg?: string }> {
+    const activeToken = token !== undefined ? token : getStoredToken();
     const headers: Record<string, string> = { "Content-Type": "application/json" };
     if (activeToken) headers["Authorization"] = `Bearer ${activeToken}`;
 
-    return apiRequest<T>(url, { headers, method: "DELETE" });
+    return apiRequest<T>(url, { headers, method: "DELETE" }, baseUrl);
 }
 
-export async function postFormData<T>({ url, token, body }: FormDataProps): Promise<T | { error: boolean; message: string; status?: string; msg?: string }> {
-    const activeToken = token || getStoredToken();
+export async function postFormData<T>({ url, token, body, baseUrl }: FormDataProps): Promise<T | { error: boolean; message: string; status?: string; msg?: string }> {
+    const activeToken = token !== undefined ? token : getStoredToken();
     const headers: Record<string, string> = {};
     if (activeToken) headers["Authorization"] = `Bearer ${activeToken}`;
 
-    return apiRequest<T>(url, { headers, method: "POST", body });
+    return apiRequest<T>(url, { headers, method: "POST", body }, baseUrl);
 }
 
-export async function patchFormData<T>({ url, token, body }: FormDataProps): Promise<T | { error: boolean; message: string; status?: string; msg?: string }> {
-    const activeToken = token || getStoredToken();
+export async function patchFormData<T>({ url, token, body, baseUrl }: FormDataProps): Promise<T | { error: boolean; message: string; status?: string; msg?: string }> {
+    const activeToken = token !== undefined ? token : getStoredToken();
     const headers: Record<string, string> = {};
     if (activeToken) headers["Authorization"] = `Bearer ${activeToken}`;
 
-    return apiRequest<T>(url, { headers, method: "PATCH", body });
+    return apiRequest<T>(url, { headers, method: "PATCH", body }, baseUrl);
 }
