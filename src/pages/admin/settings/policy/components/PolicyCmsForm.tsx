@@ -1,5 +1,6 @@
 import React, { ChangeEvent, useState } from "react";
 import TextEditor from "@/components/form/TextEditor";
+import { FormKeyboardNav } from "@/components/common/FormKeyboardNav";
 
 export interface PolicyCmsFormProps {
   initialTitle?: string;
@@ -36,7 +37,7 @@ export const PolicyCmsForm: React.FC<PolicyCmsFormProps> = ({
   };
 
   return (
-    <div>
+    <FormKeyboardNav>
       <div className="bg-[var(--ui-surface)] rounded-lg border border-[var(--ui-border)] p-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
           <div>
@@ -79,7 +80,7 @@ export const PolicyCmsForm: React.FC<PolicyCmsFormProps> = ({
           </button>
         </div>
       </div>
-    </div>
+    </FormKeyboardNav>
   );
 };
 

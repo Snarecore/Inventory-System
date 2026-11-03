@@ -1,7 +1,7 @@
 import React, { useState, useCallback } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { FaMobileAlt } from "react-icons/fa";
-import { Button, ConfirmModal, TextInput, ToggleInput } from "@/components/common";
+import { Button, ConfirmModal, TextInput, ToggleInput, FormKeyboardNav } from "@/components/common";
 import {
   useInsertMfsUserMutation,
   useUpdateMfsUserMutation,
@@ -131,7 +131,7 @@ export const MfsForm: React.FC<MfsFormProps> = ({
   const formattedBalance = formatMoney(Number(form.openingBalance || 0));
 
   return (
-    <div className="flex flex-col gap-2.5 px-2.5 py-2 sm:px-4 sm:py-2.5 max-w-[1600px] mx-auto w-full">
+    <FormKeyboardNav className="flex flex-col gap-2.5 px-2.5 py-2 sm:px-4 sm:py-2.5 max-w-[1600px] mx-auto w-full">
       {/* Sticky Header */}
       <div className="sticky top-0 z-40 bg-[#F6F6F6] py-2 sm:py-2.5 -mt-2 sm:-mt-2.5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5 border-b border-gray-200">
         <div className="flex items-center gap-2">
@@ -375,7 +375,7 @@ export const MfsForm: React.FC<MfsFormProps> = ({
         cancelText="Keep Editing"
         confirmButtonColor="bg-rose-600 hover:bg-rose-700"
       />
-    </div>
+    </FormKeyboardNav>
   );
 };
 

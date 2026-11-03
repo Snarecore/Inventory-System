@@ -1,4 +1,6 @@
+import React, { useRef } from "react";
 import { TiDelete } from "react-icons/ti";
+import { useFormKeyboardNavigation } from "@/hooks/useFormKeyboardNavigation";
 
 interface ModalProps {
 	isOpen: boolean;
@@ -13,6 +15,9 @@ interface ModalProps {
 	className?: string;
 	headerClassName?: string;
 	bodyClassName?: string;
+	autoFocusFirst?: boolean;
+	enableArrowKeys?: boolean;
+	enableEnterNavigation?: boolean;
 }
 
 const Modal: React.FC<ModalProps> = ({
@@ -28,7 +33,19 @@ const Modal: React.FC<ModalProps> = ({
 	className = "",
 	headerClassName = "",
 	bodyClassName = "",
+	autoFocusFirst = true,
+	enableArrowKeys = true,
+	enableEnterNavigation = true,
 }) => {
+	const panelRef = useRef<HTMLDivElement>(null);
+
+	useFormKeyboardNavigation(panelRef, {
+		autoFocusFirst,
+		enableArrowKeys,
+		enableEnterNavigation,
+		isActive: isOpen,
+	});
+
 	if (!isOpen) return null;
 	const resolvedWidth =
 		width ||
@@ -43,7 +60,7 @@ const Modal: React.FC<ModalProps> = ({
 
 	return (
 		<div className={`ui-modal-backdrop fixed inset-0 flex items-center justify-center bg-[var(--ui-text)]/60 ${zIndex} p-2 sm:p-4 overflow-y-auto`}>
-			<div className={`ui-modal-panel bg-[var(--ui-surface)] rounded-xl shadow-2xl ${resolvedWidth} px-3.5 sm:px-5 py-3 sm:py-3.5 flex flex-col relative max-h-[92vh] overflow-y-auto ${className}`}>
+			<div ref={panelRef} className={`ui-modal-panel bg-[var(--ui-surface)] rounded-xl shadow-2xl ${resolvedWidth} px-3.5 sm:px-5 py-3 sm:py-3.5 flex flex-col relative max-h-[92vh] overflow-y-auto ${className}`}>
 				<div className={`flex justify-between items-center pb-2 border-b border-[var(--ui-border)] ${headerClassName}`}>
 					<h2 className="text-base font-semibold text-[var(--ui-text)]">{title}</h2>
 					<button

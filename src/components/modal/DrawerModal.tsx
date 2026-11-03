@@ -1,6 +1,7 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useRef } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { TiDelete } from "react-icons/ti";
+import { useFormKeyboardNavigation } from "@/hooks/useFormKeyboardNavigation";
 
 export interface DrawerModalProps {
   isOpen: boolean;
@@ -19,6 +20,9 @@ export interface DrawerModalProps {
   closeOnBackdrop?: boolean;
   closeOnEscape?: boolean;
   onSubmit?: (e: React.FormEvent) => void;
+  autoFocusFirst?: boolean;
+  enableArrowKeys?: boolean;
+  enableEnterNavigation?: boolean;
 }
 
 const DrawerModal: React.FC<DrawerModalProps> = ({
@@ -38,7 +42,19 @@ const DrawerModal: React.FC<DrawerModalProps> = ({
   closeOnBackdrop = true,
   closeOnEscape = true,
   onSubmit,
+  autoFocusFirst = true,
+  enableArrowKeys = true,
+  enableEnterNavigation = true,
 }) => {
+  const drawerRef = useRef<HTMLDivElement>(null);
+
+  useFormKeyboardNavigation(drawerRef, {
+    autoFocusFirst,
+    enableArrowKeys,
+    enableEnterNavigation,
+    isActive: isOpen,
+  });
+
   // Handle ESC key to close
   useEffect(() => {
     if (!isOpen || !closeOnEscape) return;
@@ -81,6 +97,7 @@ const DrawerModal: React.FC<DrawerModalProps> = ({
           {/* Sidebar Drawer Container */}
           <div className="fixed inset-y-0 right-0 max-w-full flex pointer-events-none">
             <motion.div
+              ref={drawerRef}
               key={contentKey}
               initial={{ x: "100%" }}
               animate={{ x: 0 }}

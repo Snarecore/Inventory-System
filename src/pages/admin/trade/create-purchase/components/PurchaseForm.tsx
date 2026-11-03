@@ -11,6 +11,7 @@ import DatePicker from "@/components/common/DatePicker";
 import TextInput from "@/components/form/TextInput";
 import CurrencyInput from "@/components/form/CurrencyInput";
 import ImageUpload from "@/components/image/ImageUpload";
+import { FormKeyboardNav } from "@/components/common/FormKeyboardNav";
 import apiConfig from "@/config/api.json";
 import {
   purchaseListQueryKey,
@@ -794,7 +795,7 @@ const CreatePurchaseForm: React.FC = () => {
   ].some(Boolean);
 
   return (
-    <div className="flex flex-col gap-2 px-2 py-1.5 sm:px-3 sm:py-2 max-w-[1600px] mx-auto w-full">
+    <FormKeyboardNav className="flex flex-col gap-2 px-2 py-1.5 sm:px-3 sm:py-2 max-w-[1600px] mx-auto w-full">
       {/* Top Header Bar */}
       <TradeFormHeader
         title={isEditMode ? "Edit Purchase Invoice" : "Create New Purchase"}
@@ -1152,7 +1153,7 @@ const CreatePurchaseForm: React.FC = () => {
           confirmButtonColor={pendingSavePrint ? "bg-[var(--ui-success)] hover:bg-[var(--ui-success-dark)]" : "bg-[var(--primary-color)] hover:bg-[var(--primary-color-hover)]"}
         />
       )}
-    </div>
+    </FormKeyboardNav>
   );
 };
 

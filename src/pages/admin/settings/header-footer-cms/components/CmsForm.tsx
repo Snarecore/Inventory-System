@@ -1,6 +1,7 @@
 import Button from "@/components/button/Button";
 import InputField from "@/components/form/TextInput";
 import ImageUpload from "@/components/image/ImageUpload";
+import { FormKeyboardNav } from "@/components/common/FormKeyboardNav";
 import { ChangeEvent, useEffect, useState } from "react";
 import { IoMdAddCircleOutline, IoMdRemoveCircleOutline } from "react-icons/io";
 
@@ -105,7 +106,7 @@ const CmsForm = () => {
     // if (isLoading) return <CmsSkeleton />;
 
     return (
-        <div>
+        <FormKeyboardNav>
             <div className="bg-[var(--ui-surface)] rounded-lg border border-[var(--ui-border)] p-6">
                 <div className="mb-4">
                     <p className="block text-sm font-medium text-[var(--ui-text)]">Header Logo: <span className="text-[var(--ui-danger)]">*</span> (Recommended Size: 200*40 PX)</p>
@@ -209,7 +210,7 @@ const CmsForm = () => {
                     </Button>
                 </div>
             </div>
-        </div>
+        </FormKeyboardNav>
     );
 };
 

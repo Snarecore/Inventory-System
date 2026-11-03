@@ -1,4 +1,5 @@
 import ImageUpload from "@/components/image/ImageUpload";
+import { FormKeyboardNav } from "@/components/common/FormKeyboardNav";
 import { useEffect, useState } from "react";
 
 const initialFieldValues = {
@@ -42,7 +43,7 @@ const CmsForm = () => {
     // if (isLoading) return <CmsSkeleton />;
 
     return (
-        <div>
+        <FormKeyboardNav>
             <div className="bg-[var(--ui-surface)] rounded-lg border border-[var(--ui-border)] p-6">
                 <div className="mb-4">
                     <p className="block text-sm font-medium text-[var(--ui-text)]">Banner Image: <span className="text-[var(--ui-danger)]">*</span>
@@ -64,7 +65,7 @@ const CmsForm = () => {
                     </button>
                 </div>
             </div>
-        </div>
+        </FormKeyboardNav>
     );
 };
 

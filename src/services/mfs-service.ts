@@ -73,15 +73,24 @@ export const fetchMfsUserList = async (): Promise<MfsUserListResponse> => {
     ? res.data.mfsUsers
     : [];
 
-  const mfsUsers: MfsUserItem[] = rawList.map((item: any, idx: number) => ({
-    id: Number(item.id ?? item.mfsId ?? idx + 1),
-    name: item.name || item.accountName || "-",
-    phoneNumber: item.phoneNumber || item.phone || item.mobileNumber || "",
-    method: item.method || item.provider || item.mfsMethod || "Bkash",
-    openingBalance: Number(item.openingBalance ?? 0),
-    currentBalance: Number(item.currentBalance ?? item.balance ?? 0),
-    status: item.status ? String(item.status).trim() : "Inactive",
-  }));
+  const mfsUsers: MfsUserItem[] = rawList.map((item: any, idx: number) => {
+    const id = Number(item.id ?? item.mfsId ?? idx + 1);
+    const name = item.name || item.accountName || "";
+    const phone = item.phoneNumber || item.phone || item.mobileNumber || "";
+    const method = item.method || item.provider || item.mfsMethod || "Bkash";
+    const mfsName = method ? `${method}${name && name !== "-" ? ` (${name})` : ""}` : name || "MFS";
+    return {
+      id,
+      name: name || "-",
+      phoneNumber: phone,
+      method,
+      mfsName,
+      mfsPhone: phone,
+      openingBalance: Number(item.openingBalance ?? 0),
+      currentBalance: Number(item.currentBalance ?? item.balance ?? 0),
+      status: item.status ? String(item.status).trim() : "Inactive",
+    };
+  });
 
   return {
     status: res?.status || "Success",

@@ -238,11 +238,15 @@ export const MultiTenderFormSection: React.FC<MultiTenderFormSectionProps> = ({
                   {registeredMfsAccounts.length === 0 ? (
                     <option value="">No MFS accounts registered</option>
                   ) : (
-                    registeredMfsAccounts.map((m) => (
-                      <option key={String(m.id || m.mfsId)} value={String(m.id || m.mfsId)}>
-                        {m.mfsName} {m.mfsPhone ? `- ${m.mfsPhone}` : ""}
-                      </option>
-                    ))
+                    registeredMfsAccounts.map((m) => {
+                      const displayName = m.mfsName || (m.method ? `${m.method}${m.name ? ` (${m.name})` : ""}` : m.name || "MFS");
+                      const phone = m.mfsPhone || m.phoneNumber || "";
+                      return (
+                        <option key={String(m.id || m.mfsId)} value={String(m.id || m.mfsId)}>
+                          {displayName} {phone ? `- ${phone}` : ""}
+                        </option>
+                      );
+                    })
                   )}
                 </select>
                 <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-1.5 text-[var(--ui-info)]">

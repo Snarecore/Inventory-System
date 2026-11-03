@@ -1,5 +1,6 @@
 import Button from "@/components/button/Button";
 import InputField from "@/components/form/TextInput";
+import { FormKeyboardNav } from "@/components/common/FormKeyboardNav";
 import { ChangeEvent, useEffect, useState } from "react";
 
 const initialFieldValues = {
@@ -60,7 +61,7 @@ const PageCms = () => {
     // if (isLoading) return <CmsSkeleton />;
 
     return (
-        <div>
+        <FormKeyboardNav>
             <div className="bg-[var(--ui-surface)] rounded-lg border border-[var(--ui-border)] p-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
                     <div>
@@ -114,7 +115,7 @@ const PageCms = () => {
                     </button>
                 </div>
             </div>
-        </div>
+        </FormKeyboardNav>
     );
 };
 

@@ -191,8 +191,22 @@ export const DatePicker: React.FC<DatePickerProps> = ({
 
       {/* Input Trigger */}
       <div
+        role="combobox"
+        aria-expanded={isOpen}
+        aria-haspopup="dialog"
+        tabIndex={disabled ? -1 : 0}
+        data-form-nav="true"
         onClick={() => !disabled && setIsOpen(!isOpen)}
-        className={`ui-control flex w-full cursor-pointer select-none items-center justify-between ${
+        onKeyDown={(e) => {
+          if (disabled) return;
+          if (e.key === "Enter" || e.key === " " || (!isOpen && e.key === "ArrowDown")) {
+            e.preventDefault();
+            setIsOpen((prev) => !prev);
+          } else if (e.key === "Escape") {
+            setIsOpen(false);
+          }
+        }}
+        className={`ui-control flex w-full cursor-pointer select-none items-center justify-between focus:outline-none focus:border-[var(--primary-color)] focus:shadow-[0_0_0_3px_var(--ui-focus-ring)] focus-visible:outline-none focus-visible:border-[var(--primary-color)] focus-visible:shadow-[0_0_0_3px_var(--ui-focus-ring)] ${
           sizeClasses[size] || ""
         } ${
           disabled

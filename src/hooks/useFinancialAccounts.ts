@@ -59,15 +59,26 @@ export const extractMfsAccounts = (raw: any): MfsUserItem[] => {
     ? raw
     : [];
 
-  return list.map((m: any) => ({
-    id: Number(m.id || 0),
-    name: m.name || "",
-    phoneNumber: m.phoneNumber || "",
-    method: m.method || "",
-    openingBalance: Number(m.openingBalance ?? 0),
-    currentBalance: Number(m.currentBalance ?? 0),
-    status: m.status ? String(m.status).trim() : "Inactive",
-  }));
+  return list.map((m: any, idx: number) => {
+    const id = Number(m.id ?? m.mfsId ?? idx + 1);
+    const method = m.method || m.provider || m.mfsMethod || "bKash";
+    const name = m.name || m.accountName || "";
+    const phone = m.phoneNumber || m.phone || m.mobileNumber || m.mfsPhone || "";
+    const mfsName = method ? `${method}${name && name !== "-" ? ` (${name})` : ""}` : name || "MFS";
+    return {
+      id,
+      mfsId: id,
+      name: name || "-",
+      phoneNumber: phone,
+      phone,
+      mfsPhone: phone,
+      method,
+      mfsName,
+      openingBalance: Number(m.openingBalance ?? 0),
+      currentBalance: Number(m.currentBalance ?? m.balance ?? 0),
+      status: m.status ? String(m.status).trim() : "Inactive",
+    };
+  });
 };
 
 // Aliases forwarding to the single source of truth services

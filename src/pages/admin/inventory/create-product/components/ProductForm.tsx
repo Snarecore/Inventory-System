@@ -4,6 +4,7 @@ import { useNavigate, useParams, useSearchParams, useLocation } from "react-rout
 import SelectInput from '@/components/form/SelectField';
 import InputField from '@/components/form/TextInput';
 import ToggleInput from '@/components/form/ToggleInput';
+import { FormKeyboardNav } from '@/components/common/FormKeyboardNav';
 import { RiArrowDropDownLine } from 'react-icons/ri';
 import { FaLock, FaSpinner } from 'react-icons/fa';
 import { showErrorToast } from '@/utils/toast-utils';
@@ -512,7 +513,7 @@ const CreateProductForm = () => {
     };
 
     return (
-        <form onSubmit={handleSubmitForm} className="flex flex-col gap-2.5">
+        <FormKeyboardNav as="form" onSubmit={handleSubmitForm} className="flex flex-col gap-2.5">
             <div className="bg-[var(--ui-surface)] rounded-xl border border-[var(--ui-border)] shadow-xs overflow-visible">
                 <div
                     className="flex justify-between items-center px-3.5 sm:px-4 py-2 cursor-pointer select-none bg-[var(--ui-surface-muted)]/70 hover:bg-[var(--ui-surface-sunken)]/70 rounded-t-xl transition-colors border-b border-[var(--ui-border)]"
@@ -840,7 +841,7 @@ const CreateProductForm = () => {
                     </button>
                 </div>
             </div>
-        </form>
+        </FormKeyboardNav>
     );
 };
 

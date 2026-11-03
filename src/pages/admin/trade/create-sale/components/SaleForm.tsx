@@ -7,6 +7,7 @@ import PartyModal from "@/pages/admin/people/parties/components/PartyModal";
 import SaleInvoiceModal from "@/pages/admin/trade/sales/components/SaleInvoiceModal";
 import DatePicker from "@/components/common/DatePicker";
 import CurrencyInput from "@/components/form/CurrencyInput";
+import { FormKeyboardNav } from "@/components/common/FormKeyboardNav";
 import apiConfig from "@/config/api.json";
 import {
   salesListQueryKey,
@@ -663,7 +664,7 @@ export const CreateSaleForm: React.FC = () => {
   };
 
   return (
-    <div className="flex w-full flex-col gap-2 px-2 py-1.5 sm:px-3 sm:py-2">
+    <FormKeyboardNav className="flex w-full flex-col gap-2 px-2 py-1.5 sm:px-3 sm:py-2">
       {/* Top Header Bar */}
       <TradeFormHeader
         title={isEditMode ? "Edit Sales Invoice" : "Create New Sale"}
@@ -812,7 +813,7 @@ export const CreateSaleForm: React.FC = () => {
             registeredBankAccounts={registeredBankAccounts}
             registeredMfsAccounts={registeredMfsAccounts}
             title="Payment Collected"
-            bankLabel="BANK"
+            bankLabel="CARD"
           />
           {/* Settlement summary: who, then paid vs outstanding */}
           <TradeSettlementSummary
@@ -920,7 +921,7 @@ export const CreateSaleForm: React.FC = () => {
           sale={savedSaleForInvoice}
         />
       )}
-    </div>
+    </FormKeyboardNav>
   );
 };
 

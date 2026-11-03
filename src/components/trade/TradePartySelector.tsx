@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useMemo } from "react";
-import { FaSearch, FaUserPlus, FaWalking } from "react-icons/fa";
+import { FaSearch, FaUserPlus, FaWalking, FaTimes } from "react-icons/fa";
 import { FiChevronDown } from "react-icons/fi";
 import TextInput from "@/components/form/TextInput";
 import type { PartyItem } from "@/types";
@@ -20,7 +20,7 @@ export interface TradePartySelectorProps {
   required?: boolean;
   selectedParty: PartyItem | null;
   partyList: PartyItem[];
-  onSelectParty: (party: PartyItem) => void;
+  onSelectParty: (party: PartyItem | null) => void;
   onOpenNewPartyModal?: () => void;
   allowWalkIn?: boolean;
   walkInName?: string;
@@ -51,6 +51,7 @@ export const TradePartySelector: React.FC<TradePartySelectorProps> = ({
   const debouncedSearch = useDebounce(searchQuery, 200);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   const displayLabel = label || (partyType === "customer" ? "Customer" : "Supplier");
   const isWalkIn = Boolean(
@@ -84,6 +85,28 @@ export const TradePartySelector: React.FC<TradePartySelectorProps> = ({
       .slice(0, 25);
   }, [partyList, debouncedSearch]);
 
+  const [highlightedIndex, setHighlightedIndex] = useState(0);
+
+  useEffect(() => {
+    setHighlightedIndex(0);
+  }, [filteredParties, isDropdownOpen]);
+
+  const handleClear = (e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    onSelectParty(null);
+    setSearchQuery("");
+    setIsDropdownOpen(true);
+    setTimeout(() => {
+      inputRef.current?.focus();
+    }, 20);
+  };
+
+  const handleSelect = (party: PartyItem) => {
+    onSelectParty(party);
+    setIsDropdownOpen(false);
+    setSearchQuery("");
+  };
+
   return (
     <div className="relative" ref={containerRef}>
       <div className="flex items-center justify-between mb-1">
@@ -95,8 +118,7 @@ export const TradePartySelector: React.FC<TradePartySelectorProps> = ({
             <button
               type="button"
               onClick={() => {
-                onSelectParty(WALK_IN_CUSTOMER);
-                setIsDropdownOpen(false);
+                handleSelect(WALK_IN_CUSTOMER);
               }}
               className={`text-[10px] font-bold px-1.5 py-0.5 rounded-[var(--ui-radius-sm)] border transition-colors flex items-center gap-1 cursor-pointer ${
                 isWalkIn
@@ -121,13 +143,93 @@ export const TradePartySelector: React.FC<TradePartySelectorProps> = ({
         </div>
       </div>
 
-      <div
-        onClick={() => setIsDropdownOpen((prev) => !prev)}
-        className={`flex items-center justify-between h-[var(--ui-control-h-sm)] px-2.5 py-1.5 border rounded-[var(--ui-radius)] bg-[var(--ui-surface-muted)]/50 hover:bg-[var(--ui-surface)] cursor-pointer text-[length:var(--ui-font-size-sm)] transition-colors ${
-          isWalkIn ? "border-[var(--ui-success-border)] bg-[var(--ui-success-light)]/30" : "border-[var(--ui-border-strong)]"
-        }`}
-      >
-        {selectedParty ? (
+      {/* Main Trigger / Search Field */}
+      {!selectedParty ? (
+        <div
+          onClick={() => {
+            setIsDropdownOpen(true);
+            inputRef.current?.focus();
+          }}
+          className={`flex items-center justify-between h-[var(--ui-control-h-sm)] px-2.5 py-1.5 border rounded-[var(--ui-radius)] bg-[var(--ui-surface-muted)]/50 focus-within:bg-[var(--ui-surface)] transition-colors focus-within:border-[var(--primary-color)] focus-within:shadow-[0_0_0_3px_var(--ui-focus-ring)] ${
+            isDropdownOpen
+              ? "border-[var(--primary-color)] shadow-[0_0_0_3px_var(--ui-focus-ring)] bg-[var(--ui-surface)]"
+              : "border-[var(--ui-border-strong)]"
+          }`}
+        >
+          <div className="flex items-center gap-2 flex-1 min-w-0">
+            <FaSearch className="text-[var(--ui-text-subtle)] text-xs shrink-0" />
+            <input
+              ref={inputRef}
+              type="text"
+              data-form-nav="true"
+              placeholder={`Select or search ${displayLabel.toLowerCase()}...`}
+              value={searchQuery}
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+                if (!isDropdownOpen) setIsDropdownOpen(true);
+              }}
+              onFocus={() => setIsDropdownOpen(true)}
+              onKeyDown={(e) => {
+                if (e.key === "ArrowDown") {
+                  e.preventDefault();
+                  if (!isDropdownOpen) {
+                    setIsDropdownOpen(true);
+                  } else {
+                    setHighlightedIndex((prev) => Math.min(prev + 1, filteredParties.length - 1));
+                  }
+                } else if (e.key === "ArrowUp") {
+                  e.preventDefault();
+                  setHighlightedIndex((prev) => Math.max(prev - 1, 0));
+                } else if (e.key === "Enter") {
+                  if (isDropdownOpen && filteredParties.length > 0 && filteredParties[highlightedIndex]) {
+                    e.preventDefault();
+                    handleSelect(filteredParties[highlightedIndex]);
+                  }
+                } else if (e.key === "Escape") {
+                  e.preventDefault();
+                  setIsDropdownOpen(false);
+                }
+              }}
+              className="w-full bg-transparent outline-none text-[length:var(--ui-font-size-sm)] placeholder:text-[var(--ui-text-subtle)] text-[var(--ui-text)] font-normal cursor-text min-w-0"
+            />
+          </div>
+          <FiChevronDown
+            className={`text-[var(--ui-text-muted)] text-xs ml-1 shrink-0 transition-transform duration-200 cursor-pointer ${
+              isDropdownOpen ? "rotate-180 text-[var(--primary-color)]" : ""
+            }`}
+            size={14}
+            onClick={(e) => {
+              e.stopPropagation();
+              setIsDropdownOpen((prev) => !prev);
+              inputRef.current?.focus();
+            }}
+          />
+        </div>
+      ) : (
+        <div
+          role="combobox"
+          aria-expanded={isDropdownOpen}
+          aria-haspopup="listbox"
+          tabIndex={0}
+          data-form-nav="true"
+          onClick={() => setIsDropdownOpen((prev) => !prev)}
+          onKeyDown={(e) => {
+            if (e.key === "Backspace" || e.key === "Delete") {
+              e.preventDefault();
+              handleClear();
+            } else if (e.key === "Enter" || e.key === " " || (!isDropdownOpen && e.key === "ArrowDown")) {
+              e.preventDefault();
+              setIsDropdownOpen((prev) => !prev);
+            } else if (e.key === "Escape") {
+              setIsDropdownOpen(false);
+            }
+          }}
+          className={`flex items-center justify-between h-[var(--ui-control-h-sm)] px-2.5 py-1.5 border rounded-[var(--ui-radius)] bg-[var(--ui-surface-muted)]/50 hover:bg-[var(--ui-surface)] cursor-pointer text-[length:var(--ui-font-size-sm)] transition-colors focus:outline-none focus:border-[var(--primary-color)] focus:shadow-[0_0_0_3px_var(--ui-focus-ring)] focus-visible:outline-none focus-visible:border-[var(--primary-color)] focus-visible:shadow-[0_0_0_3px_var(--ui-focus-ring)] ${
+            isDropdownOpen ? "border-[var(--primary-color)] shadow-[0_0_0_3px_var(--ui-focus-ring)]" : ""
+          } ${
+            isWalkIn ? "border-[var(--ui-success-border)] bg-[var(--ui-success-light)]/30" : "border-[var(--ui-border-strong)]"
+          }`}
+        >
           <div className="flex items-center gap-1.5 min-w-0 truncate">
             {isWalkIn ? (
               <span className="font-bold text-[var(--ui-success-dark)] flex items-center gap-1 truncate">
@@ -152,13 +254,24 @@ export const TradePartySelector: React.FC<TradePartySelectorProps> = ({
               </>
             )}
           </div>
-        ) : (
-          <span className="text-[var(--ui-text-subtle)]">
-            Select or search {displayLabel.toLowerCase()}...
-          </span>
-        )}
-        <FiChevronDown className="text-[var(--ui-text-muted)] text-xs ml-1 shrink-0" size={14} />
-      </div>
+          <div className="flex items-center gap-1 shrink-0 ml-1">
+            <button
+              type="button"
+              onClick={handleClear}
+              className="p-1 text-[var(--ui-text-subtle)] hover:text-rose-600 rounded transition-colors cursor-pointer"
+              title="Clear selection"
+            >
+              <FaTimes size={11} />
+            </button>
+            <FiChevronDown
+              className={`text-[var(--ui-text-muted)] text-xs transition-transform duration-200 ${
+                isDropdownOpen ? "rotate-180 text-[var(--primary-color)]" : ""
+              }`}
+              size={14}
+            />
+          </div>
+        </div>
+      )}
 
       {/* Customer Previous Due Banner (Loaded from Backend /customer-invoices-due) */}
       {!isWalkIn && selectedParty && previousDue !== undefined && previousDue !== null && (
@@ -192,24 +305,12 @@ export const TradePartySelector: React.FC<TradePartySelectorProps> = ({
 
       {/* Dropdown Panel */}
       {isDropdownOpen && (
-        <div className="absolute left-0 right-0 sm:right-auto sm:w-96 max-w-[calc(100vw-32px)] mt-1 bg-[var(--ui-surface)] rounded-[var(--ui-radius)] shadow-[var(--ui-shadow-popover)] border border-[var(--ui-border)] p-2 z-30">
-          <div className="mb-2">
-            <TextInput
-              icon={<FaSearch className="text-[var(--ui-text-subtle)] text-xs" />}
-              placeholder={`Search ${displayLabel.toLowerCase()} name, phone, address...`}
-              value={searchQuery}
-              onChange={(val) => setSearchQuery(val)}
-              autoFocus
-              wrapperClass="ui-control-xs"
-            />
-          </div>
-
+        <div className="absolute left-0 right-0 sm:right-auto sm:w-96 max-w-[calc(100vw-32px)] mt-1 bg-[var(--ui-surface)] rounded-[var(--ui-radius)] shadow-[var(--ui-shadow-popover)] border border-[var(--ui-border)] p-1.5 z-50">
           {/* Quick Walk-in Option inside dropdown for Customer */}
           {allowWalkIn && (
             <div
               onClick={() => {
-                onSelectParty(WALK_IN_CUSTOMER);
-                setIsDropdownOpen(false);
+                handleSelect(WALK_IN_CUSTOMER);
               }}
               className="px-2 py-1 mb-1 bg-[var(--ui-success-light)] hover:bg-[var(--ui-success-border)]/80 border border-[var(--ui-success-border)] rounded-[var(--ui-radius-sm)] cursor-pointer transition-colors flex items-center justify-between"
             >
@@ -234,17 +335,20 @@ export const TradePartySelector: React.FC<TradePartySelectorProps> = ({
 
           <div className="max-h-48 overflow-y-auto divide-y divide-[var(--ui-border)]">
             {filteredParties.length > 0 ? (
-              filteredParties.map((p) => {
+              filteredParties.map((p, idx) => {
                 const partyKey = p.id ?? p.name;
                 const balance = p.openingBalance ?? p.balance ?? 0;
                 return (
                   <div
                     key={partyKey}
                     onClick={() => {
-                      onSelectParty(p);
-                      setIsDropdownOpen(false);
+                      handleSelect(p);
                     }}
-                    className="p-2 hover:bg-[var(--primary-color-light)] cursor-pointer rounded-[var(--ui-radius-sm)] transition-colors text-xs flex justify-between items-center"
+                    className={`p-2 cursor-pointer rounded-[var(--ui-radius-sm)] transition-colors text-xs flex justify-between items-center ${
+                      idx === highlightedIndex
+                        ? "bg-[var(--primary-color-light)] ring-1 ring-[var(--primary-color)] font-medium"
+                        : "hover:bg-[var(--primary-color-light)]"
+                    }`}
                   >
                     <div className="flex flex-col min-w-0 pr-2">
                       <div className="flex items-center gap-1.5 truncate">
@@ -281,7 +385,7 @@ export const TradePartySelector: React.FC<TradePartySelectorProps> = ({
                 onOpenNewPartyModal();
                 setIsDropdownOpen(false);
               }}
-              className="mt-2 p-2 bg-[var(--primary-color-light)] hover:bg-[var(--primary-color-muted)] border border-[var(--primary-color-muted)] rounded-[var(--ui-radius-sm)] cursor-pointer text-xs flex items-center justify-between text-[var(--primary-color)] font-bold transition-colors"
+              className="mt-1.5 p-2 bg-[var(--primary-color-light)] hover:bg-[var(--primary-color-muted)] border border-[var(--primary-color-muted)] rounded-[var(--ui-radius-sm)] cursor-pointer text-xs flex items-center justify-between text-[var(--primary-color)] font-bold transition-colors"
             >
               <span className="flex items-center gap-1.5 truncate">
                 <FaUserPlus size={11} /> Add "{searchQuery}" as New {displayLabel}

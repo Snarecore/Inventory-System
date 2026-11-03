@@ -268,16 +268,22 @@ export const TradePaymentSection: React.FC<TradePaymentSectionProps> = ({
               <option value="" className="text-[var(--ui-text)]">
                 {registeredMfsAccounts.length ? "Select MFS..." : "No MFS registered"}
               </option>
-              {registeredMfsAccounts.map((m) => (
-                <option
-                  key={m.id}
-                  value={m.id}
-                  className="text-[var(--ui-text)]"
-                >
-                  {m.mfsName}
-                  {m.mfsPhone ? ` – ${m.mfsPhone}` : ""}
-                </option>
-              ))}
+              {registeredMfsAccounts.map((m) => {
+                const method = m.method || (m as any).provider || (m as any).mfsMethod || "";
+                const name = m.name || (m as any).accountName || "";
+                const phone = m.mfsPhone || m.phoneNumber || (m as any).phone || (m as any).mobileNumber || "";
+                const displayName = m.mfsName || (method ? `${method}${name && name !== "-" ? ` (${name})` : ""}` : name || "MFS");
+                return (
+                  <option
+                    key={String(m.id || (m as any).mfsId)}
+                    value={String(m.id || (m as any).mfsId)}
+                    className="text-[var(--ui-text)]"
+                  >
+                    {displayName}
+                    {phone ? ` – ${phone}` : ""}
+                  </option>
+                );
+              })}
             </select>
           </div>
 

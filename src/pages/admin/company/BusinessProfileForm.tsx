@@ -3,6 +3,7 @@ import Button from "@/components/button/Button";
 import InputField from "@/components/form/TextInput";
 import SelectInput from "@/components/form/SelectField";
 import ImageUpload from "@/components/image/ImageUpload";
+import { FormKeyboardNav } from "@/components/common";
 import { uploadBusinessLogo, getFileViewUrl } from "@/services/file-upload-service";
 import { useSaveBusinessProfileMutation } from "@/hooks/useBusinessProfile";
 import { showErrorToast } from "@/utils/toast-utils";
@@ -177,7 +178,7 @@ export const BusinessProfileForm: React.FC<BusinessProfileFormProps> = ({
   };
 
   return (
-    <form onSubmit={handleSubmitForm} className="flex flex-col gap-2.5">
+    <FormKeyboardNav as="form" onSubmit={handleSubmitForm} className="flex flex-col gap-2.5">
       {/* ── Business Information Card ── */}
       <div className="bg-[var(--ui-surface)] rounded-xl border border-[var(--ui-border)] shadow-xs overflow-visible">
         {/* Card Header Ribbon */}
@@ -350,7 +351,7 @@ export const BusinessProfileForm: React.FC<BusinessProfileFormProps> = ({
           buttonClass="!text-xs !py-1.5 font-bold"
         />
       </div>
-    </form>
+    </FormKeyboardNav>
   );
 };
 
