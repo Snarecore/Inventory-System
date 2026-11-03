@@ -23,23 +23,22 @@ export const SmsSettingsPage: React.FC = () => {
           headerDescription="Send branded messages and recharge SMS balance"
         />
 
-        {/* Quick status pills */}
-        <div className="flex flex-wrap items-center gap-2 self-start sm:self-auto">
-          {balanceData && (
-            <div className="flex items-center gap-1.5 bg-[var(--ui-success-light)] border border-[var(--ui-success-border)] px-3 py-1.5 rounded-full text-xs text-[var(--ui-success-dark)] shadow-[var(--ui-shadow-control)]">
-              <FaCoins size={11} className="text-[var(--ui-success)]" />
-              <span>Balance:</span>
-              <strong className="font-extrabold tabular-nums">
-                {balanceData.smsBalance.toLocaleString("en-IN")} SMS
-              </strong>
+        {/* Real-time SMS Balance Metric Badge */}
+        {balanceData && (
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[var(--ui-surface)] border border-[var(--ui-border)] shadow-xs hover:border-[var(--primary-color)]/60 transition-colors self-start sm:self-auto">
+            <div className="w-7 h-7 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0 border border-emerald-500/20">
+              <FaCoins size={13} />
             </div>
-          )}
-          <div className="flex items-center gap-2 bg-[var(--ui-surface)] border border-[var(--ui-border)] px-3 py-1.5 rounded-full text-xs shadow-[var(--ui-shadow-control)]">
-            <span className="w-2 h-2 rounded-full bg-[var(--ui-success)] animate-pulse" />
-            <span className="text-[var(--ui-text-muted)]">Sender ID:</span>
-            <strong className="text-[var(--ui-text)]">Cash Boi</strong>
+            <div className="flex items-baseline gap-1">
+              <span className="text-sm font-black text-[var(--ui-text)] tabular-nums tracking-tight">
+                {balanceData.smsBalance.toLocaleString("en-IN")}
+              </span>
+              <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">
+                Credits
+              </span>
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
       {/* Tabs navigation */}

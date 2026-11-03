@@ -198,36 +198,6 @@ export const SmsBundlesTab: React.FC = () => {
         </div>
       )}
 
-      {/* Hero Header Card */}
-      <div className="ui-card p-3 sm:p-3.5 rounded-xl border border-[var(--ui-border)] hover:border-[var(--primary-color)]/60 transition-colors flex flex-col md:flex-row items-start md:items-center justify-between gap-3 bg-[var(--ui-surface)] relative overflow-hidden shadow-xs">
-        <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-[var(--primary-color)] via-[var(--ui-accent-2)] to-[var(--primary-color)]" />
-        <div className="flex items-start gap-3">
-          <div className="w-9 h-9 rounded-lg bg-[var(--primary-color-light)] text-[var(--primary-color)] flex items-center justify-center shrink-0 border border-[var(--primary-color-muted)] shadow-xs">
-            <FaCoins size={16} />
-          </div>
-          <div>
-            <div className="flex items-center gap-2 flex-wrap">
-              <h2 className="text-sm font-bold text-[var(--ui-text)]">
-                Official SMS Packages
-              </h2>
-              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[var(--ui-success-light)] text-[var(--ui-success-dark)] border border-[var(--ui-success-border)]">
-                Instant Auto-Activation
-              </span>
-            </div>
-            <p className="text-xs text-[var(--ui-text-muted)] mt-0.5 max-w-xl leading-relaxed">
-              Recharge your SMS balance directly with 12 months validity. Secure payment gateway supporting bKash, Nagad, Rocket and Cards.
-            </p>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[var(--ui-surface-muted)] border border-[var(--ui-border)] shrink-0 self-stretch md:self-auto justify-between md:justify-start">
-          <FaShieldAlt size={15} className="text-[var(--primary-color)] shrink-0" />
-          <div className="text-left">
-            <div className="text-xs font-bold text-[var(--ui-text)]">EPS Payment Gateway</div>
-            <div className="text-[10px] text-[var(--ui-text-muted)]">PCI-DSS Encrypted Checkout</div>
-          </div>
-        </div>
-      </div>
 
       {/* Loading Skeleton */}
       {isLoading && (
