@@ -49,7 +49,7 @@ export const SmsSettingsPage: React.FC = () => {
             key={id}
             type="button"
             onClick={() => setActiveTab(id)}
-            className={`flex items-center gap-2 px-4 py-2.5 text-xs font-bold border-b-2 transition-all ${
+            className={`flex items-center gap-2 px-4 py-2.5 text-xs font-bold border-b-2 transition-all cursor-pointer ${
               activeTab === id
                 ? "border-[var(--primary-color)] text-[var(--primary-color)]"
                 : "border-transparent text-[var(--ui-text-muted)] hover:text-[var(--ui-text)]"

@@ -2,7 +2,6 @@ import React, { useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import {
   FaCoins,
-  FaCheckCircle,
   FaFire,
   FaShieldAlt,
   FaCreditCard,
@@ -10,6 +9,13 @@ import {
   FaRedo,
   FaTimesCircle,
   FaSpinner,
+  FaCalendarAlt,
+  FaGlobe,
+  FaCheckDouble,
+  FaCrown,
+  FaBolt,
+  FaGem,
+  FaPaperPlane,
 } from "react-icons/fa";
 import { useSmsBundles, usePurchaseSmsBundle } from "@/hooks/useSms";
 import { getUserInfo, getStoredUser } from "@/utils/auth-storage";
@@ -17,6 +23,69 @@ import Modal from "@/components/modal/Modal";
 import Button from "@/components/button/Button";
 import TextInput from "@/components/form/TextInput";
 import type { SmsBundleItem } from "@/types";
+
+interface TierConfig {
+  icon: React.ComponentType<{ size?: number; className?: string }>;
+  iconColor: string;
+  iconBg: string;
+  badge: string;
+  badgeClass: string;
+}
+
+const getTierConfig = (smsCount: number, isPopular?: boolean): TierConfig => {
+  if (smsCount >= 10000) {
+    return {
+      icon: FaGem,
+      iconColor: "text-purple-600 dark:text-purple-400",
+      iconBg: "bg-purple-500/10 border-purple-500/20",
+      badge: "Enterprise",
+      badgeClass:
+        "bg-purple-50 text-purple-700 dark:bg-purple-950/60 dark:text-purple-300 border-purple-200 dark:border-purple-800",
+    };
+  }
+  if (smsCount >= 5000) {
+    return {
+      icon: FaCrown,
+      iconColor: "text-indigo-600 dark:text-indigo-400",
+      iconBg: "bg-indigo-500/10 border-indigo-500/20",
+      badge: "Corporate",
+      badgeClass:
+        "bg-indigo-50 text-indigo-700 dark:bg-indigo-950/60 dark:text-indigo-300 border-indigo-200 dark:border-indigo-800",
+    };
+  }
+  if (isPopular || smsCount >= 1000) {
+    return {
+      icon: FaFire,
+      iconColor: "text-rose-600 dark:text-rose-400",
+      iconBg: "bg-rose-500/10 border-rose-500/20",
+      badge: "Most Popular",
+      badgeClass: "bg-[var(--primary-color)] text-white shadow-xs border-transparent",
+    };
+  }
+  if (smsCount >= 500) {
+    return {
+      icon: FaBolt,
+      iconColor: "text-amber-600 dark:text-amber-400",
+      iconBg: "bg-amber-500/10 border-amber-500/20",
+      badge: "Growth",
+      badgeClass:
+        "bg-amber-50 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300 border-amber-200 dark:border-amber-800",
+    };
+  }
+  return {
+    icon: FaPaperPlane,
+    iconColor: "text-sky-600 dark:text-sky-400",
+    iconBg: "bg-sky-500/10 border-sky-500/20",
+    badge: "Starter",
+    badgeClass:
+      "bg-sky-50 text-sky-700 dark:bg-sky-950/60 dark:text-sky-300 border-sky-200 dark:border-sky-800",
+  };
+};
+
+const calculateSavings = (pricePerSms: number, baseRate = 0.5): number => {
+  if (pricePerSms >= baseRate) return 0;
+  return Math.round(((baseRate - pricePerSms) / baseRate) * 100);
+};
 
 export const SmsBundlesTab: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -81,12 +150,12 @@ export const SmsBundlesTab: React.FC = () => {
   };
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-3 sm:space-y-3.5">
       {/* Payment Gateway Return Alerts */}
       {isReturnSuccess && (
-        <div className="bg-[var(--ui-success-light)] border border-[var(--ui-success-border)] p-3.5 rounded-[var(--ui-radius-lg)] shadow-xs flex items-center justify-between gap-3">
-          <div className="flex items-center gap-2.5">
-            <FaCheckCircle className="text-[var(--ui-success)] text-lg shrink-0" />
+        <div className="bg-[var(--ui-success-light)] border border-[var(--ui-success-border)] p-2.5 sm:p-3 rounded-xl shadow-xs flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <FaCheckDouble className="text-[var(--ui-success)] text-base shrink-0" />
             <div>
               <div className="text-xs font-bold text-[var(--ui-success-dark)]">
                 Payment Completed Successfully!
@@ -99,7 +168,7 @@ export const SmsBundlesTab: React.FC = () => {
           <button
             type="button"
             onClick={handleDismissPaymentStatus}
-            className="text-xs text-[var(--ui-success-dark)] hover:underline font-semibold px-2 py-1"
+            className="text-xs text-[var(--ui-success-dark)] hover:underline font-semibold px-2 py-1 cursor-pointer"
           >
             Dismiss
           </button>
@@ -107,9 +176,9 @@ export const SmsBundlesTab: React.FC = () => {
       )}
 
       {isReturnFailed && (
-        <div className="bg-[var(--ui-danger-light)] border border-[var(--ui-danger-border)] p-3.5 rounded-[var(--ui-radius-lg)] shadow-xs flex items-center justify-between gap-3">
-          <div className="flex items-center gap-2.5">
-            <FaTimesCircle className="text-[var(--ui-danger)] text-lg shrink-0" />
+        <div className="bg-[var(--ui-danger-light)] border border-[var(--ui-danger-border)] p-2.5 sm:p-3 rounded-xl shadow-xs flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <FaTimesCircle className="text-[var(--ui-danger)] text-base shrink-0" />
             <div>
               <div className="text-xs font-bold text-[var(--ui-danger-dark)]">
                 Payment Incomplete or Cancelled
@@ -122,47 +191,57 @@ export const SmsBundlesTab: React.FC = () => {
           <button
             type="button"
             onClick={handleDismissPaymentStatus}
-            className="text-xs text-[var(--ui-danger-dark)] hover:underline font-semibold px-2 py-1"
+            className="text-xs text-[var(--ui-danger-dark)] hover:underline font-semibold px-2 py-1 cursor-pointer"
           >
             Dismiss
           </button>
         </div>
       )}
 
-      {/* Hero Banner */}
-      <div className="bg-gradient-to-r from-[var(--primary-color)] via-[var(--primary-color-hover)] to-[var(--ui-accent-2)] text-white p-4 sm:p-5 rounded-[var(--ui-radius-lg)] shadow-[var(--ui-shadow-card)] flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-        <div>
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-white/20 text-[10px] font-semibold backdrop-blur-xs mb-1.5">
-            <FaCoins size={10} /> Official SMS Bundles
-          </span>
-          <h2 className="text-base sm:text-lg font-extrabold tracking-tight">
-            Choose an SMS Package
-          </h2>
-          <p className="text-xs text-white/85 mt-0.5 max-w-xl">
-            Recharge your SMS balance instantly with 12 months validity via bKash, Nagad, Rocket or Card.
-          </p>
+      {/* Hero Header Card */}
+      <div className="ui-card p-3 sm:p-3.5 rounded-xl border border-[var(--ui-border)] hover:border-[var(--primary-color)]/60 transition-colors flex flex-col md:flex-row items-start md:items-center justify-between gap-3 bg-[var(--ui-surface)] relative overflow-hidden shadow-xs">
+        <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-[var(--primary-color)] via-[var(--ui-accent-2)] to-[var(--primary-color)]" />
+        <div className="flex items-start gap-3">
+          <div className="w-9 h-9 rounded-lg bg-[var(--primary-color-light)] text-[var(--primary-color)] flex items-center justify-center shrink-0 border border-[var(--primary-color-muted)] shadow-xs">
+            <FaCoins size={16} />
+          </div>
+          <div>
+            <div className="flex items-center gap-2 flex-wrap">
+              <h2 className="text-sm font-bold text-[var(--ui-text)]">
+                Official SMS Packages
+              </h2>
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[var(--ui-success-light)] text-[var(--ui-success-dark)] border border-[var(--ui-success-border)]">
+                Instant Auto-Activation
+              </span>
+            </div>
+            <p className="text-xs text-[var(--ui-text-muted)] mt-0.5 max-w-xl leading-relaxed">
+              Recharge your SMS balance directly with 12 months validity. Secure payment gateway supporting bKash, Nagad, Rocket and Cards.
+            </p>
+          </div>
         </div>
-        <div className="flex items-center gap-2 bg-white/10 px-3 py-2 rounded-[var(--ui-radius-md)] backdrop-blur-xs shrink-0 border border-white/20">
-          <FaShieldAlt size={18} className="text-white/90" />
+
+        <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[var(--ui-surface-muted)] border border-[var(--ui-border)] shrink-0 self-stretch md:self-auto justify-between md:justify-start">
+          <FaShieldAlt size={15} className="text-[var(--primary-color)] shrink-0" />
           <div className="text-left">
-            <div className="text-[11px] font-bold">EPS Gateway</div>
-            <div className="text-[10px] text-white/80">Instant Top-up</div>
+            <div className="text-xs font-bold text-[var(--ui-text)]">EPS Payment Gateway</div>
+            <div className="text-[10px] text-[var(--ui-text-muted)]">PCI-DSS Encrypted Checkout</div>
           </div>
         </div>
       </div>
 
       {/* Loading Skeleton */}
       {isLoading && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3.5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-2.5 sm:gap-3">
           {[1, 2, 3, 4, 5].map((i) => (
             <div
               key={i}
-              className="h-64 ui-card animate-pulse p-4 space-y-3"
+              className="h-72 ui-card animate-pulse p-3.5 space-y-3 rounded-xl border border-[var(--ui-border)]"
             >
-              <div className="h-4 bg-[var(--ui-surface-sunken)] rounded w-1/2 mx-auto" />
-              <div className="h-7 bg-[var(--ui-surface-sunken)] rounded w-3/4 mx-auto" />
-              <div className="h-12 bg-[var(--ui-surface-muted)] rounded" />
-              <div className="h-9 bg-[var(--ui-surface-sunken)] rounded" />
+              <div className="h-4 bg-[var(--ui-surface-sunken)] rounded w-1/2" />
+              <div className="h-12 bg-[var(--ui-surface-muted)] rounded-lg" />
+              <div className="h-8 bg-[var(--ui-surface-sunken)] rounded" />
+              <div className="h-16 bg-[var(--ui-surface-muted)] rounded" />
+              <div className="h-8 bg-[var(--ui-surface-sunken)] rounded-lg" />
             </div>
           ))}
         </div>
@@ -170,10 +249,10 @@ export const SmsBundlesTab: React.FC = () => {
 
       {/* Error State with Retry */}
       {error && (
-        <div className="p-5 ui-card text-center space-y-2.5">
+        <div className="p-6 ui-card text-center space-y-2.5 rounded-2xl border border-[var(--ui-border)]">
           <FaTimesCircle className="text-[var(--ui-danger)] text-2xl mx-auto" />
           <div className="text-xs font-bold text-[var(--ui-text)]">
-            Failed to load SMS bundles
+            Failed to load SMS packages
           </div>
           <p className="text-[11px] text-[var(--ui-text-muted)] max-w-md mx-auto">
             Unable to connect to the bundle service. Please check your network and retry.
@@ -189,88 +268,153 @@ export const SmsBundlesTab: React.FC = () => {
         </div>
       )}
 
-      {/* Pricing Cards Grid */}
+      {/* Rich Pricing Cards Grid */}
       {!isLoading && !error && bundles.length > 0 && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3.5 items-stretch">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-2.5 sm:gap-3 items-stretch">
           {bundles.map((bundle) => {
             const isPopular = Boolean(bundle.popular);
+            const tier = getTierConfig(bundle.smsCount, isPopular);
+            const savings = calculateSavings(bundle.pricePerSms);
+            const TierIcon = tier.icon;
+
             return (
               <div
                 key={bundle.id}
-                className={`relative ui-card p-4 flex flex-col justify-between transition-all duration-200 ${
+                className={`ui-card group rounded-xl p-3 sm:p-3.5 flex flex-col justify-between relative transition-all duration-200 ${
                   isPopular
-                    ? "border-[var(--primary-color)] ring-2 ring-[var(--primary-color)]/20 shadow-md"
-                    : "hover:border-[var(--primary-color)]/50"
+                    ? "border-2 border-[var(--primary-color)] shadow-[0_4px_20px_rgb(var(--primary-rgb,14,165,233)/0.12)] bg-gradient-to-b from-[var(--primary-color)]/[0.04] to-[var(--ui-surface)] hover:border-[var(--primary-color)] hover:shadow-md"
+                    : "border border-[var(--ui-border)] bg-[var(--ui-surface)] hover:border-[var(--primary-color)] hover:shadow-xs"
                 }`}
               >
-                {/* Popular Tag */}
-                {isPopular && (
-                  <div className="absolute -top-2.5 left-1/2 -translate-x-1/2 bg-[var(--primary-color)] text-white text-[9px] font-extrabold uppercase px-2.5 py-0.5 rounded-full shadow-xs flex items-center gap-1">
-                    <FaFire size={9} /> Popular
-                  </div>
-                )}
-
                 <div>
-                  {/* Card Title */}
-                  <div className="text-center pt-0.5 pb-2.5 border-b border-[var(--ui-border)]">
-                    <h3 className="text-sm font-bold text-[var(--ui-text)]">
-                      {bundle.name}
-                    </h3>
-                    {bundle.bundleCode && (
-                      <span className="text-[10px] font-semibold text-[var(--ui-text-muted)] bg-[var(--ui-surface-muted)] px-1.5 py-0.5 rounded mt-0.5 inline-block">
-                        {bundle.bundleCode}
+                  {/* Card Header */}
+                  <div className="flex items-start justify-between gap-1.5 mb-2.5">
+                    <div className="flex items-center gap-2">
+                      <div
+                        className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 border ${tier.iconBg} ${tier.iconColor}`}
+                      >
+                        <TierIcon size={13} />
+                      </div>
+                      <div>
+                        <h3 className="text-xs font-bold text-[var(--ui-text)] leading-tight">
+                          {bundle.name}
+                        </h3>
+                        {bundle.bundleCode && (
+                          <div className="text-[10px] font-mono font-medium text-[var(--ui-text-muted)] mt-0.5">
+                            {bundle.bundleCode}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    <span
+                      className={`text-[9px] font-bold px-1.5 py-0.5 rounded-md border shrink-0 ${tier.badgeClass}`}
+                    >
+                      {tier.badge}
+                    </span>
+                  </div>
+
+                  {/* Credits & Rate Metric Box */}
+                  <div className="p-2.5 rounded-lg bg-[var(--ui-surface-muted)] border border-[var(--ui-border)] mb-2.5">
+                    <div className="text-[9px] font-bold text-[var(--ui-text-muted)] uppercase tracking-wider">
+                      SMS Credits
+                    </div>
+                    <div className="flex items-baseline gap-1 mt-0.5">
+                      <span className="text-2xl font-black text-[var(--ui-text)] tabular-nums tracking-tight">
+                        {bundle.smsCount.toLocaleString("en-IN")}
+                      </span>
+                      <span className="text-[11px] font-bold text-[var(--primary-color)]">
+                        SMS
+                      </span>
+                    </div>
+
+                    <div className="flex items-center justify-between text-xs pt-1.5 mt-1.5 border-t border-[var(--ui-border)]">
+                      <span className="text-[10px] text-[var(--ui-text-muted)]">Unit Rate</span>
+                      <span className="font-bold text-[var(--ui-text)] text-xs tabular-nums">
+                        ৳{bundle.pricePerSms.toFixed(2)}{" "}
+                        <span className="text-[9px] font-normal text-[var(--ui-text-muted)]">
+                          / SMS
+                        </span>
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Total Price & Savings Tag */}
+                  <div className="flex items-baseline justify-between mb-2.5 px-0.5">
+                    <div>
+                      <span className="text-[10px] font-medium text-[var(--ui-text-muted)] block">
+                        Package Total
+                      </span>
+                      <div className="flex items-baseline gap-1 mt-0.5">
+                        <span className="text-xs font-bold text-[var(--primary-color)]">৳</span>
+                        <span className="text-xl font-black text-[var(--ui-text)] tabular-nums tracking-tight">
+                          {bundle.price.toLocaleString("en-IN")}
+                        </span>
+                      </div>
+                    </div>
+                    {savings > 0 && (
+                      <span className="px-1.5 py-0.5 rounded-md text-[9px] font-bold bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800">
+                        Save {savings}%
                       </span>
                     )}
                   </div>
 
-                  {/* SMS Count */}
-                  <div className="text-center my-3.5">
-                    <div className="text-2xl font-extrabold text-[var(--primary-color)] tabular-nums">
-                      {bundle.smsCount.toLocaleString("en-IN")}
+                  {/* Feature Checklist with Distinct Micro-Icons */}
+                  <div className="space-y-1.5 text-xs pb-2.5 border-t border-[var(--ui-border)] pt-2">
+                    <div className="flex items-center gap-2">
+                      <div className="w-4 h-4 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
+                        <FaCalendarAlt size={9} />
+                      </div>
+                      <span className="text-[11px] font-medium text-[var(--ui-text)]">
+                        {bundle.validityLabel}
+                      </span>
                     </div>
-                    <div className="text-[10px] font-semibold text-[var(--ui-text-muted)]">
-                      SMS Credits
+                    <div className="flex items-center gap-2">
+                      <div className="w-4 h-4 rounded-full bg-sky-500/10 text-sky-600 dark:text-sky-400 flex items-center justify-center shrink-0">
+                        <FaShieldAlt size={9} />
+                      </div>
+                      <span className="text-[11px] text-[var(--ui-text)]">
+                        Masking: <strong className="font-semibold">Cash Boi</strong>
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-4 h-4 rounded-full bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0">
+                        <FaGlobe size={9} />
+                      </div>
+                      <span className="text-[11px] text-[var(--ui-text-muted)]">
+                        Bangla & English (Unicode)
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-4 h-4 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+                        <FaCheckDouble size={9} />
+                      </div>
+                      <span className="text-[11px] text-[var(--ui-text-muted)]">
+                        Instant Delivery Reports
+                      </span>
                     </div>
                   </div>
-
-                  {/* Price breakdown */}
-                  <div className="bg-[var(--ui-surface-muted)] p-2 rounded-[var(--ui-radius-sm)] text-center space-y-0.5 mb-3.5">
-                    <div className="text-base font-extrabold text-[var(--ui-text)] tabular-nums">
-                      ৳ {bundle.price.toLocaleString("en-IN")}
-                    </div>
-                    <div className="text-[10px] font-medium text-[var(--ui-text-muted)]">
-                      ৳ {bundle.pricePerSms.toFixed(2)} / SMS
-                    </div>
-                  </div>
-
-                  {/* Feature checklist */}
-                  <ul className="text-[10.5px] text-[var(--ui-text-muted)] space-y-1.5 mb-4">
-                    <li className="flex items-center gap-1.5">
-                      <FaCheckCircle size={10} className="text-[var(--ui-success)] shrink-0" />
-                      <span>{bundle.validityLabel}</span>
-                    </li>
-                    <li className="flex items-center gap-1.5">
-                      <FaCheckCircle size={10} className="text-[var(--ui-success)] shrink-0" />
-                      <span>Cash Boi Sender ID</span>
-                    </li>
-                    <li className="flex items-center gap-1.5">
-                      <FaCheckCircle size={10} className="text-[var(--ui-success)] shrink-0" />
-                      <span>Unicode & GSM-7 Support</span>
-                    </li>
-                  </ul>
                 </div>
 
-                {/* Purchase Button */}
-                <Button
-                  type="button"
-                  variant={isPopular ? "primary" : "secondary"}
-                  onClick={() => handleOpenPurchase(bundle)}
-                  disabled={purchaseMutation.isPending}
-                  className="w-full flex items-center justify-center gap-1.5 py-2 text-xs font-bold"
-                >
-                  <FaCoins size={10} />
-                  Buy Bundle
-                </Button>
+                {/* Purchase Action Button */}
+                <div className="pt-1.5">
+                  <button
+                    type="button"
+                    onClick={() => handleOpenPurchase(bundle)}
+                    disabled={purchaseMutation.isPending}
+                    className={`w-full py-2 px-3 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer disabled:cursor-not-allowed ${
+                      isPopular
+                        ? "bg-[var(--primary-color)] text-white hover:bg-[var(--primary-color-hover)] shadow-xs"
+                        : "bg-[var(--ui-surface-muted)] text-[var(--ui-text)] group-hover:border-[var(--primary-color)] group-hover:text-[var(--primary-color)] hover:bg-[var(--ui-surface-sunken)] border border-[var(--ui-border)]"
+                    }`}
+                  >
+                    <FaCoins
+                      size={11}
+                      className={isPopular ? "text-white" : "text-[var(--primary-color)]"}
+                    />
+                    <span>Recharge Package</span>
+                  </button>
+                </div>
               </div>
             );
           })}
@@ -278,18 +422,26 @@ export const SmsBundlesTab: React.FC = () => {
       )}
 
       {/* Payment Channels Strip */}
-      <div className="ui-card p-3 rounded-[var(--ui-radius-lg)] flex flex-wrap items-center justify-between gap-3 text-xs">
-        <div className="flex items-center gap-2 font-semibold text-[var(--ui-text)]">
-          <FaCreditCard className="text-[var(--primary-color)]" />
-          Supported Payment Methods:
+      <div className="ui-card p-2.5 rounded-xl border border-[var(--ui-border)] hover:border-[var(--primary-color)]/60 transition-colors flex flex-wrap items-center justify-between gap-2 text-xs">
+        <div className="flex items-center gap-1.5 text-xs font-bold text-[var(--ui-text)]">
+          <FaCreditCard className="text-[var(--primary-color)]" size={12} />
+          <span>Supported Payment Channels:</span>
         </div>
         <div className="flex flex-wrap items-center gap-1.5">
-          {["bKash", "Nagad", "Rocket", "Upay", "Visa / MasterCard", "Internet Banking"].map((m) => (
+          {[
+            { name: "bKash", color: "bg-[#e2136e]" },
+            { name: "Nagad", color: "bg-[#f7941d]" },
+            { name: "Rocket", color: "bg-[#8c3494]" },
+            { name: "Upay", color: "bg-[#005baa]" },
+            { name: "Visa / MasterCard", color: "bg-slate-700" },
+            { name: "Internet Banking", color: "bg-emerald-600" },
+          ].map((m) => (
             <span
-              key={m}
-              className="text-[10px] font-bold px-2 py-0.5 rounded-full border border-[var(--ui-border)] bg-[var(--ui-surface-muted)] text-[var(--ui-text-muted)]"
+              key={m.name}
+              className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full border border-[var(--ui-border)] bg-[var(--ui-surface-muted)] text-[var(--ui-text)]"
             >
-              {m}
+              <span className={`w-1.5 h-1.5 rounded-full ${m.color}`} />
+              {m.name}
             </span>
           ))}
         </div>
@@ -318,22 +470,25 @@ export const SmsBundlesTab: React.FC = () => {
           ) : (
             <div className="space-y-3.5 text-xs">
               {/* Selected Bundle Summary */}
-              <div className="bg-[var(--primary-color-light)] border border-[var(--primary-color-muted)] p-3 rounded-[var(--ui-radius-md)] flex items-center justify-between">
-                <div>
-                  <div className="font-bold text-[var(--primary-color-dark)] text-xs">
-                    {selectedBundle.name} ({selectedBundle.bundleCode})
+              <div className="bg-[var(--ui-surface-muted)] border border-[var(--ui-border)] p-3.5 rounded-[var(--ui-radius-md)] space-y-2">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1.5">
+                    <span className="font-bold text-[var(--ui-text)] text-sm">
+                      {selectedBundle.name}
+                    </span>
+                    <span className="text-[10px] font-mono font-semibold px-1.5 py-0.5 rounded bg-[var(--ui-surface)] border border-[var(--ui-border)] text-[var(--ui-text-muted)]">
+                      {selectedBundle.bundleCode}
+                    </span>
                   </div>
-                  <div className="text-[11px] text-[var(--ui-text-muted)] mt-0.5">
-                    {selectedBundle.smsCount.toLocaleString("en-IN")} SMS • {selectedBundle.validityLabel}
-                  </div>
-                </div>
-                <div className="text-right">
-                  <div className="text-base font-extrabold text-[var(--primary-color)] tabular-nums">
+                  <span className="text-base font-extrabold text-[var(--primary-color)] tabular-nums">
                     ৳ {selectedBundle.price.toLocaleString("en-IN")}
-                  </div>
-                  <div className="text-[9px] text-[var(--ui-success-dark)] font-semibold">
-                    Instant Activation
-                  </div>
+                  </span>
+                </div>
+
+                <div className="flex items-center justify-between text-[11px] text-[var(--ui-text-muted)] pt-1.5 border-t border-[var(--ui-border)]">
+                  <span>{selectedBundle.smsCount.toLocaleString("en-IN")} Credits</span>
+                  <span>{selectedBundle.validityLabel}</span>
+                  <span className="text-[var(--ui-success-dark)] font-semibold">Instant Top-up</span>
                 </div>
               </div>
 
