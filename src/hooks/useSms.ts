@@ -44,8 +44,17 @@ export function usePurchaseSmsBundle() {
     mutationFn: purchaseSmsBundle,
     onSuccess: (result) => {
       if (result.success && result.data?.redirectUrl) {
-        showSuccessToast("Redirecting to payment gateway...");
-        window.location.href = result.data.redirectUrl;
+        try {
+          const parsed = new URL(result.data.redirectUrl);
+          if (parsed.protocol === "https:" || parsed.protocol === "http:") {
+            showSuccessToast("Redirecting to payment gateway...");
+            window.location.href = parsed.toString();
+            return;
+          }
+        } catch {
+          // fallthrough
+        }
+        showErrorToast("Invalid payment gateway link received.");
       } else {
         showErrorToast(result.message ?? "Failed to purchase bundle.");
       }

@@ -147,22 +147,21 @@ export async function updateUserProfile(
     throw new Error(res?.msg || res?.message || "Failed to update profile");
   }
 
-  syncLocalStorageUser(payload.fullName, payload.pin);
+  syncLocalStorageUser(payload.fullName);
 
   return res;
 }
 
 /**
- * Helper to sync updated name and pin to local storage
+ * Helper to sync updated name to local storage
  */
-function syncLocalStorageUser(fullName?: string, pin?: string | null) {
+function syncLocalStorageUser(fullName?: string) {
   try {
     const userInfo = getUserInfo();
     if (userInfo) {
       const updated = {
         ...userInfo,
         ...(fullName ? { fullName } : {}),
-        ...(pin ? { pin } : {}),
       };
       setUserInfo(updated);
     }

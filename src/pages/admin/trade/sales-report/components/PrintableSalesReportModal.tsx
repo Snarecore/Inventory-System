@@ -38,55 +38,71 @@ export const PrintableSalesReportModal: React.FC<PrintableSalesReportModalProps>
 
   const handlePrint = () => {
     if (!printRef.current) return;
-    const printContent = printRef.current.innerHTML;
 
     const printWindow = window.open("", "_blank", "width=900,height=900");
-    if (printWindow) {
-      printWindow.document.write(`
-        <!DOCTYPE html>
-        <html>
-          <head>
-            <title>Sales_Summary_Report_${moment().format("YYYY-MM-DD")}</title>
-            <meta charset="utf-8" />
-            <style>
-              body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; margin: 0; padding: 24px; color: #111827; }
-              @media print {
-                @page { margin: 15mm; size: auto; }
-                body { padding: 0; }
-                .no-print { display: none !important; }
-              }
-              table { width: 100%; border-collapse: collapse; margin-top: 14px; }
-              th, td { border: 1px solid #e5e7eb; padding: 8px 10px; font-size: 11px; text-align: left; }
-              th { background-color: #f3f4f6; font-weight: 700; }
-              .text-right { text-align: right; }
-              .text-center { text-align: center; }
-              .font-bold { font-weight: 700; }
-              .font-black { font-weight: 900; }
-              .header-title { font-size: 20px; font-weight: 800; color: #0f172a; margin: 0; }
-              .header-subtitle { font-size: 12px; color: #64748b; margin-top: 4px; }
-              .badge { display: inline-block; padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 600; }
-              .badge-cash { background-color: #d1fae5; color: #065f46; }
-              .badge-mfs { background-color: #fae8ff; color: #86198f; }
-              .badge-due { background-color: #ffe4e6; color: #9f1239; }
-              .grid-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-top: 16px; margin-bottom: 20px; }
-              .stat-box { border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px; background-color: #f8fafc; }
-              .stat-title { font-size: 10px; text-transform: ; color: #64748b; font-weight: 700; }
-              .stat-val { font-size: 16px; font-weight: 900; color: #0f172a; margin-top: 4px; }
-            </style>
-          </head>
-          <body>
-            ${printContent}
-            <script>
-              window.onload = function() {
-                window.print();
-                window.onafterprint = function() { window.close(); };
-              };
-            </script>
-          </body>
-        </html>
-      `);
-      printWindow.document.close();
+    if (!printWindow) {
+      window.print();
+      return;
     }
+
+    const doc = printWindow.document;
+    doc.open();
+    doc.write(`
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="utf-8" />
+          <style>
+            body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; margin: 0; padding: 24px; color: #111827; }
+            @media print {
+              @page { margin: 15mm; size: auto; }
+              body { padding: 0; }
+              .no-print { display: none !important; }
+            }
+            table { width: 100%; border-collapse: collapse; margin-top: 14px; }
+            th, td { border: 1px solid #e5e7eb; padding: 8px 10px; font-size: 11px; text-align: left; }
+            th { background-color: #f3f4f6; font-weight: 700; }
+            .text-right { text-align: right; }
+            .text-center { text-align: center; }
+            .font-bold { font-weight: 700; }
+            .font-black { font-weight: 900; }
+            .header-title { font-size: 20px; font-weight: 800; color: #0f172a; margin: 0; }
+            .header-subtitle { font-size: 12px; color: #64748b; margin-top: 4px; }
+            .badge { display: inline-block; padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 600; }
+            .badge-cash { background-color: #d1fae5; color: #065f46; }
+            .badge-mfs { background-color: #fae8ff; color: #86198f; }
+            .badge-due { background-color: #ffe4e6; color: #9f1239; }
+            .grid-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-top: 16px; margin-bottom: 20px; }
+            .stat-box { border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px; background-color: #f8fafc; }
+            .stat-title { font-size: 10px; color: #64748b; font-weight: 700; }
+            .stat-val { font-size: 16px; font-weight: 900; color: #0f172a; margin-top: 4px; }
+          </style>
+        </head>
+        <body>
+          <div id="print-root"></div>
+        </body>
+      </html>
+    `);
+    doc.close();
+
+    doc.title = `Sales_Summary_Report_${moment().format("YYYY-MM-DD")}`;
+
+    const container = doc.getElementById("print-root");
+    if (container && printRef.current) {
+      container.appendChild(printRef.current.cloneNode(true));
+    }
+
+    printWindow.focus();
+    setTimeout(() => {
+      try {
+        printWindow.print();
+      } catch (err) {
+        console.error("Print trigger error:", err);
+      }
+    }, 300);
+    printWindow.onafterprint = () => {
+      printWindow.close();
+    };
   };
 
   return (

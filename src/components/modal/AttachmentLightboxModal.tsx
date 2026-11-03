@@ -48,11 +48,14 @@ export const AttachmentLightboxModal: React.FC<AttachmentLightboxModalProps> = (
     if (!imageUrl) return;
     const printWindow = window.open("", "_blank");
     if (!printWindow) return;
-    printWindow.document.write(`
+
+    const doc = printWindow.document;
+    doc.open();
+    doc.write(`
       <!DOCTYPE html>
       <html>
         <head>
-          <title>${title} - ${invoiceNo || ""}</title>
+          <meta charset="utf-8" />
           <style>
             body { margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; justify-content: center; font-family: sans-serif; }
             .header { margin-bottom: 12px; text-align: center; }
@@ -67,14 +70,39 @@ export const AttachmentLightboxModal: React.FC<AttachmentLightboxModalProps> = (
         </head>
         <body>
           <div class="header">
-            <h2>${title}</h2>
-            ${invoiceNo ? `<p>Invoice / Ref: <strong>${invoiceNo}</strong></p>` : ""}
+            <h2 id="print-title"></h2>
+            <p id="print-subtitle"></p>
           </div>
-          <img src="${imageUrl}" onload="window.print();window.close();" alt="Attachment" />
+          <img id="print-img" alt="Attachment" />
         </body>
       </html>
     `);
-    printWindow.document.close();
+    doc.close();
+
+    doc.title = `${title} - ${invoiceNo || ""}`;
+    const titleEl = doc.getElementById("print-title");
+    if (titleEl) titleEl.textContent = title;
+    const subEl = doc.getElementById("print-subtitle");
+    if (subEl && invoiceNo) {
+      subEl.textContent = `Invoice / Ref: ${invoiceNo}`;
+    }
+    const imgEl = doc.getElementById("print-img") as HTMLImageElement | null;
+    if (imgEl) {
+      imgEl.src = imageUrl;
+      imgEl.onload = () => {
+        printWindow.focus();
+        setTimeout(() => {
+          try {
+            printWindow.print();
+          } catch (e) {
+            console.error(e);
+          }
+        }, 150);
+      };
+      printWindow.onafterprint = () => {
+        printWindow.close();
+      };
+    }
   };
 
   return (

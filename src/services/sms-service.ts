@@ -63,6 +63,23 @@ export async function purchaseSmsBundle(payload: SmsBundlePurchasePayload): Prom
       };
     }
 
+    try {
+      const parsed = new URL(res.redirectUrl);
+      if (parsed.protocol !== "https:" && parsed.protocol !== "http:") {
+        return {
+          success: false,
+          message: "Invalid payment gateway redirect protocol.",
+          data: res,
+        };
+      }
+    } catch {
+      return {
+        success: false,
+        message: "Invalid payment gateway redirect URL format.",
+        data: res,
+      };
+    }
+
     return {
       success: true,
       message: "Purchase initiated successfully",

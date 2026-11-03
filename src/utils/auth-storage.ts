@@ -131,7 +131,6 @@ export function saveLoginSession(data: LoginSuccessResponse, rememberMe = true):
         phone: data.phoneNumber,
         phoneNumber: data.phoneNumber,
         token: data.token,
-        pin: data.pin,
         fullName: data.fullName,
         businessName: data.businessName,
         businessCode: businessCode,

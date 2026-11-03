@@ -184,7 +184,6 @@ export const TradeInvoiceModal: React.FC<TradeInvoiceModalProps> = ({
 
   const handlePrint = () => {
     if (!printRef.current) return;
-    const printContent = printRef.current.innerHTML;
 
     const printWindow = window.open("", "_blank", "width=880,height=960");
     if (!printWindow) {
@@ -192,15 +191,13 @@ export const TradeInvoiceModal: React.FC<TradeInvoiceModalProps> = ({
       return;
     }
 
-    const origin = window.location.origin;
-
-    printWindow.document.write(`
+    const doc = printWindow.document;
+    doc.open();
+    doc.write(`
       <!DOCTYPE html>
       <html>
         <head>
-          <title>${docTitle} - ${inv?.invoiceNo}</title>
           <meta charset="utf-8" />
-          <base href="${origin}/" />
           <style>
             * {
               -webkit-print-color-adjust: exact !important;
@@ -240,29 +237,32 @@ export const TradeInvoiceModal: React.FC<TradeInvoiceModalProps> = ({
           </style>
         </head>
         <body style="background: #ffffff; margin: 0; padding: 0;">
-          <div class="a4-container">
-            ${printContent}
-          </div>
-          <script>
-            var printed = false;
-            function triggerPrint() {
-              if (printed) return;
-              printed = true;
-              window.focus();
-              window.print();
-            }
-            window.addEventListener('load', function() {
-              setTimeout(triggerPrint, 250);
-            });
-            setTimeout(triggerPrint, 600);
-            window.onafterprint = function() {
-              window.close();
-            };
-          </script>
+          <div id="print-root" class="a4-container"></div>
         </body>
       </html>
     `);
-    printWindow.document.close();
+    doc.close();
+
+    // Safely assign title as a DOM property
+    doc.title = `${docTitle} - ${inv?.invoiceNo || ""}`;
+
+    // Safely clone DOM node to avoid HTML injection
+    const container = doc.getElementById("print-root");
+    if (container && printRef.current) {
+      container.appendChild(printRef.current.cloneNode(true));
+    }
+
+    printWindow.focus();
+    setTimeout(() => {
+      try {
+        printWindow.print();
+      } catch (err) {
+        console.error("Print trigger error:", err);
+      }
+    }, 300);
+    printWindow.onafterprint = () => {
+      printWindow.close();
+    };
   };
 
   useEffect(() => {

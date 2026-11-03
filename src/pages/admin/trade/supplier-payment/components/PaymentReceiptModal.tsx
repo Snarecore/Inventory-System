@@ -30,7 +30,8 @@ export const PaymentReceiptModal: React.FC<PaymentReceiptModalProps> = ({
       return;
     }
 
-    const html = `
+    // Unused template string deprecated for safe DOM cloning
+    /*
       <!DOCTYPE html>
       <html>
         <head>
@@ -273,15 +274,50 @@ export const PaymentReceiptModal: React.FC<PaymentReceiptModalProps> = ({
           </div>
         </body>
       </html>
-    `;
+    */
 
-    printWindow.document.open();
-    printWindow.document.write(html);
-    printWindow.document.close();
+    const doc = printWindow.document;
+    doc.open();
+    doc.write(`
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="utf-8" />
+          <style>
+            @page { size: A4 portrait; margin: 15mm; }
+            body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; color: #111827; margin: 0; padding: 15px; font-size: 11px; }
+            .no-print { display: none !important; }
+            table { width: 100%; border-collapse: collapse; margin-bottom: 12px; }
+            th, td { border: 1px solid #e5e7eb; padding: 6px 8px; text-align: left; }
+            th { background-color: #f3f4f6; font-weight: 700; color: #111827; font-size: 10px; text-transform: uppercase; }
+            .text-right { text-align: right; }
+          </style>
+        </head>
+        <body>
+          <div id="print-root"></div>
+        </body>
+      </html>
+    `);
+    doc.close();
+
+    doc.title = `Payment Voucher - ${receiptData.receiptNo}`;
+
+    const container = doc.getElementById("print-root");
+    if (container) {
+      container.appendChild(content.cloneNode(true));
+    }
+
     printWindow.focus();
     setTimeout(() => {
-      printWindow.print();
-    }, 250);
+      try {
+        printWindow.print();
+      } catch (err) {
+        console.error("Print error:", err);
+      }
+    }, 300);
+    printWindow.onafterprint = () => {
+      printWindow.close();
+    };
   };
 
   return (
