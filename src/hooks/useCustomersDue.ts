@@ -6,7 +6,7 @@ import { buildAccessUser } from "@/utils/access-user";
 import type { CustomerDueItem } from "@/types/collection.types";
 
 /**
- * Standard normalizer for /customers-due response
+ * Standard normalizer for customers due response
  */
 export const normalizeCustomersDue = (raw: any): CustomerDueItem[] => {
   if (!raw) return [];

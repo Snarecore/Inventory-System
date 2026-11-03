@@ -53,7 +53,7 @@ export const describeMfsSaveError = (rawMsg?: string, phone?: string): string =>
 };
 
 /**
- * 1. GET MFS USER LIST (/mfs-user-list)
+ * 1. GET MFS USER LIST
  */
 export const fetchMfsUserList = async (): Promise<MfsUserListResponse> => {
   const accessUser = buildAccessUser();
@@ -91,7 +91,7 @@ export const fetchMfsUserList = async (): Promise<MfsUserListResponse> => {
 };
 
 /**
- * 2. INSERT MFS USER (/insert-mfs-user)
+ * 2. INSERT MFS USER
  */
 export const insertMfsUser = async (
   payload: InsertMfsUserPayload
@@ -123,7 +123,7 @@ export const insertMfsUser = async (
 };
 
 /**
- * 3. UPDATE MFS USER (/mfs-user-update)
+ * 3. UPDATE MFS USER
  */
 export const updateMfsUser = async (
   payload: UpdateMfsUserPayload
@@ -156,7 +156,7 @@ export const updateMfsUser = async (
 };
 
 /**
- * 4. UPDATE MFS USER STATUS (/mfs-user-status-update)
+ * 4. UPDATE MFS USER STATUS
  */
 export const updateMfsUserStatus = async (
   payload: UpdateMfsUserStatusPayload

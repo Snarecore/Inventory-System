@@ -78,7 +78,7 @@ export const CreateSaleForm: React.FC = () => {
   const [walkInPhone, setWalkInPhone] = useState<string>("");
   const [isPartyModalOpen, setIsPartyModalOpen] = useState<boolean>(false);
 
-  // Live Previous Due fetched directly from backend (/customer-invoices-due)
+  // Live Previous Due fetched directly from backend
   const isWalkIn =
     !selectedCustomer ||
     selectedCustomer.id === 0 ||

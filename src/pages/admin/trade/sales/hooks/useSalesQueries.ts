@@ -129,7 +129,7 @@ export const fetchSalesList = async (): Promise<SaleItem[]> => {
 
 /**
  * Standardized fetcher for combined sales and return records.
- * Single source of truth for combined /get-sales-and-return query.
+ * Single source of truth for combined sales and return query.
  */
 export const fetchSalesAndReturnList = async (): Promise<UnifiedTradeRecord[]> => {
   try {

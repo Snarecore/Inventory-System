@@ -25,7 +25,7 @@ export const toApiDate = (isoDate?: string): string => {
 };
 
 /**
- * Standard normalizer for /get-payment-report response
+ * Standard normalizer for payment report response
  */
 export const normalizePaymentReport = (raw: any): PaymentReportItem[] => {
   if (!raw) return [];

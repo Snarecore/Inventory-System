@@ -691,7 +691,7 @@ export const PurchaseReturnForm: React.FC = () => {
     setIsConfirmModalOpen(true);
   };
 
-  // Submit to POST /insert-purchase-return
+  // Submit purchase return
   const handleSubmitReturn = async () => {
     setIsSubmitting(true);
     try {

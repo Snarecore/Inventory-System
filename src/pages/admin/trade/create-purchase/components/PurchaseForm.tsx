@@ -634,7 +634,7 @@ const CreatePurchaseForm: React.FC = () => {
         purchasePayload.purchaseDetails = purchaseDetailsPayload;
       }
 
-      // Both insert-purchases and update-purchases endpoints in ERP backend are JSON HTTP POST
+      // Both insert and update operations in backend use JSON HTTP POST
       const mutation = postMutation;
 
       const result = await handleApiMutation({

@@ -86,7 +86,7 @@ const CreateProductForm = () => {
     const unitsUrl = apiConfig.inventory.productUnitsListUrl;
     const productListUrl = apiConfig.productList.productListUrl;
 
-    // 1. Fetch Categories via GET /product-categories-list
+    // 1. Fetch Categories
     const { data: rawCategoryData, isLoading: isCategoriesLoading } = useQuery({
         queryKey: [productCategoriesListQueryKey],
         queryFn: async () => {
@@ -96,7 +96,7 @@ const CreateProductForm = () => {
         staleTime: 5 * 60 * 1000,
     });
 
-    // 2. Fetch Units via GET /product-units-list
+    // 2. Fetch Units
     const { data: rawUnitData, isLoading: isUnitsLoading } = useQuery({
         queryKey: [productUnitsListQueryKey],
         queryFn: async () => {

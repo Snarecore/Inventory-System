@@ -6,7 +6,7 @@ import { buildAccessUser } from "@/utils/access-user";
 import type { PurchaseInvoiceDueItem } from "@/types/payment.types";
 
 /**
- * Standard normalizer for /purchases-invoices-due response
+ * Standard normalizer for purchases invoices due response
  */
 export const normalizePurchasesInvoicesDue = (raw: any): PurchaseInvoiceDueItem[] => {
   if (!raw) return [];

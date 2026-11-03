@@ -72,7 +72,7 @@ const Sales: React.FC = () => {
     refetch: refetchSales,
   } = useSalesQuery({ enabled: false });
 
-  // 2. Returns & Return Indicators Query: /get-sales-and-return-list
+  // 2. Returns & Return Indicators Query
   const {
     data: apiReturnsData,
     isLoading: isCombinedLoading,

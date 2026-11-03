@@ -72,7 +72,7 @@ const Purchases: React.FC = () => {
     refetch: refetchPurchases,
   } = usePurchasesQuery({ enabled: false });
 
-  // 2. Returns & Return Indicators Query: /get-purchase-and-return-list
+  // 2. Returns & Return Indicators Query
   const {
     data: combinedData,
     isLoading: isCombinedLoading,

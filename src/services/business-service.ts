@@ -8,10 +8,6 @@ import type {
   BusinessTypeItem,
 } from "@/types/business.types";
 
-/**
- * Fetch business profile by orgId and branchId.
- * Endpoint: GET /business-profile/org/{orgId}/branch/{branchId}
- */
 export async function getBusinessProfile(
   orgIdParam?: number | string,
   branchIdParam?: number | string
@@ -41,10 +37,6 @@ export async function getBusinessProfile(
   return data;
 }
 
-/**
- * Save / update business profile.
- * Endpoint: POST /business-profile-save
- */
 export async function saveBusinessProfile(
   payload: BusinessProfileSavePayload
 ): Promise<any> {
@@ -75,10 +67,6 @@ export async function saveBusinessProfile(
   return res;
 }
 
-/**
- * Fetch list of official business categories / types.
- * Endpoint: GET /get-business-types
- */
 export async function getBusinessTypes(): Promise<BusinessTypeItem[]> {
   const res = (await getData<any>({
     url: apiConfig.business.businessTypesUrl,

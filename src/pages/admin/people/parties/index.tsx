@@ -51,7 +51,7 @@ const Parties: React.FC = () => {
 
   const partyListUrl = apiConfig.party.partyListUrl;
 
-  // POST /get-party-info-list
+  // Fetch party list
   const {
     data: rawPartyData,
     isLoading,

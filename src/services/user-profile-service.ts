@@ -31,10 +31,6 @@ export function getUserProfileImageUrl(phoneParam?: string): string {
   return `${rawApiUrl}/${imageEndpoint}/${encodeURIComponent(phone)}`;
 }
 
-/**
- * Fetches user profile by phone number (exact 24 backend fields)
- * Endpoint: GET /user-profile/phone/{phone}
- */
 export async function getUserProfile(
   phoneParam?: string
 ): Promise<UserProfileData | null> {
@@ -82,10 +78,6 @@ export async function getUserProfile(
   return profileData;
 }
 
-/**
- * Uploads user profile photo
- * Endpoint: POST /upload or POST /files/upload
- */
 export async function uploadUserProfilePhoto(
   file: File,
   phoneParam?: string
@@ -93,7 +85,7 @@ export async function uploadUserProfilePhoto(
   const phone = getActiveUserPhone(phoneParam);
   if (!phone) throw new Error("User phone number is required to upload photo");
 
-  // 1. Primary /upload endpoint
+  // 1. Primary upload
   const formData = new FormData();
   formData.append("file", file);
   formData.append("phoneNumber", phone);
@@ -133,10 +125,6 @@ export async function uploadUserProfilePhoto(
   return fallbackRes;
 }
 
-/**
- * Updates user profile with exact 24 backend fields
- * Endpoint: POST /user-profile
- */
 export async function updateUserProfile(
   payload: UpdateUserProfilePayload
 ): Promise<any> {
@@ -183,10 +171,6 @@ function syncLocalStorageUser(fullName?: string, pin?: string | null) {
   }
 }
 
-/**
- * Request OTP sent to user's registered mobile number
- * Endpoint: POST /otp-send
- */
 export async function sendOtp(phoneParam?: string): Promise<{ status: string; msg: string }> {
   const phone = getActiveUserPhone(phoneParam);
   const res = (await postData<any>({
@@ -201,10 +185,6 @@ export async function sendOtp(phoneParam?: string): Promise<{ status: string; ms
   return res;
 }
 
-/**
- * Verify OTP received on user's registered mobile number
- * Endpoint: POST /otp-verify
- */
 export async function verifyOtp(otp: string, phoneParam?: string): Promise<{ status: string; msg: string }> {
   const phone = getActiveUserPhone(phoneParam);
   const res = (await postData<any>({

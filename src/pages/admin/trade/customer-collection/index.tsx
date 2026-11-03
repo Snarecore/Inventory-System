@@ -29,7 +29,7 @@ export const CustomerCollection: React.FC = () => {
     refetch,
   } = useCustomersDueQuery();
 
-  // Fetch party master list to enrich addresses if missing in /customers-due
+  // Fetch party master list to enrich addresses if missing in customers due data
   const { data: rawPartyData } = useQuery({
     queryKey: [partyListQueryKey],
     queryFn: async () => {

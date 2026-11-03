@@ -25,7 +25,7 @@ export const toApiDate = (isoDate?: string): string => {
 };
 
 /**
- * Standard normalizer for /get-collection-report response
+ * Standard normalizer for collection report response
  */
 export const normalizeCollectionReport = (raw: any): CollectionReportItem[] => {
   if (!raw) return [];

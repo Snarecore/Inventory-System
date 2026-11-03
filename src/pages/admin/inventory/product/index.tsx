@@ -32,7 +32,7 @@ const Products = () => {
 
     const productListUrl = apiConfig.productList.productListUrl;
 
-    // 1. Fetch Product List from POST /get-product-list
+    // 1. Fetch Product List
     const {
         data: rawProductData,
         isLoading,

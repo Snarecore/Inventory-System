@@ -27,7 +27,7 @@ export interface BankMutationCallbacks<TData = BankAccountActionResponse, TVaria
 }
 
 /**
- * Hook to fetch registered bank accounts (/get-bank-info-list)
+ * Hook to fetch registered bank accounts
  */
 export const useBankInfoListQuery = (
   options?: Omit<UseQueryOptions<BankInfoListResponse, Error>, "queryKey" | "queryFn">
@@ -42,7 +42,7 @@ export const useBankInfoListQuery = (
 };
 
 /**
- * Hook to fetch master bank names directory (/get-bank-name-list)
+ * Hook to fetch master bank names directory
  */
 export const useBankNameListQuery = (
   options?: Omit<UseQueryOptions<BankNameListResponse, Error>, "queryKey" | "queryFn">
@@ -56,7 +56,7 @@ export const useBankNameListQuery = (
 };
 
 /**
- * Hook to insert a new bank account (/insert-bank-account)
+ * Hook to insert a new bank account
  */
 export const useInsertBankAccountMutation = (
   options?: BankMutationCallbacks<BankAccountActionResponse, InsertBankAccountPayload>
@@ -108,7 +108,7 @@ export const useInsertBankAccountMutation = (
 };
 
 /**
- * Hook to update an existing bank account (/update-bank-account)
+ * Hook to update an existing bank account
  */
 export const useUpdateBankAccountMutation = (
   options?: BankMutationCallbacks<BankAccountActionResponse, UpdateBankAccountPayload>

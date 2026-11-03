@@ -102,7 +102,7 @@ export const mfsLeg = (wallet: MfsAccountItem | any): TenderLeg => {
 };
 
 /**
- * Posts a single row to /insert-financial-transaction
+ * Posts a single row to financial ledger.
  */
 export const postSingleFinancialTransaction = async (
   payload: Omit<FinancialTransactionPayload, "accessUser" | "osType">
@@ -228,7 +228,7 @@ export interface FinanceDashboardResult {
 }
 
 /**
- * Fetches dashboard financial summary (from /site/admin-dashboard).
+ * Fetches dashboard financial summary.
  * Requires DD-MM-YYYY format dates as verified in cash-boi_v2.
  */
 export const fetchFinanceDashboard = async (
@@ -263,7 +263,7 @@ export interface FetchFinancialTransactionsParams {
 }
 
 /**
- * Fetches transactions from financial ledger (/get-financial-transaction).
+ * Fetches transactions from financial ledger.
  * Filters out deleted rows (isDeleted === 'Y').
  */
 export const fetchFinancialTransactions = async (

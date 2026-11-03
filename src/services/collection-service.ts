@@ -188,7 +188,7 @@ export const buildCollectionPayload = ({
 };
 
 /**
- * Dispatches collection to /insert-collection
+ * Dispatches collection.
  */
 export const postCollection = async (
   payload: CollectionRequestPayload
@@ -236,7 +236,7 @@ export interface PostCollectionLedgerParams {
 }
 
 /**
- * Sequential Ledger posting to /insert-financial-transaction
+ * Sequential Ledger posting.
  * Credits the collected amount to Cash, Bank, or MFS balance.
  */
 export const postCollectionLedger = async ({

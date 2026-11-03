@@ -100,7 +100,7 @@ export const isPurchaseReturnRecord = (item: any): boolean => {
 
 /**
  * Standardized fetcher for all purchase records.
- * Single source of truth for /get-purchase-list query across the entire app.
+ * Single source of truth for purchases list query across the entire app.
  */
 export const fetchPurchasesList = async (): Promise<PurchaseItem[]> => {
   try {
@@ -132,7 +132,7 @@ export const fetchPurchasesList = async (): Promise<PurchaseItem[]> => {
 
 /**
  * Standardized fetcher for combined purchase and return records.
- * Single source of truth for /get-purchase-and-return-list query.
+ * Single source of truth for combined purchase and return query.
  */
 export const fetchPurchaseAndReturnList = async (): Promise<any[]> => {
   try {
@@ -201,7 +201,7 @@ export const fetchPurchaseAndReturnList = async (): Promise<any[]> => {
 };
 
 /**
- * Standardized hook for /get-purchase-list
+ * Standardized hook for purchase list
  * Shared across Purchases page, Purchase Return list, Purchase tab, and Create Form.
  */
 export const usePurchasesQuery = <TData = PurchaseItem[]>(
@@ -216,7 +216,7 @@ export const usePurchasesQuery = <TData = PurchaseItem[]>(
 };
 
 /**
- * Standardized hook for /get-purchase-and-return-list
+ * Standardized hook for combined purchase and return list
  * Shared across Purchase Return list, Purchases page, and Create Form.
  */
 export const usePurchaseAndReturnsQuery = <TData = any[]>(

@@ -11,7 +11,7 @@ export interface CashBalanceRecord {
 }
 
 /**
- * Single source of truth fetcher for Cash Balance (/get-cash-balance-info).
+ * Single source of truth fetcher for Cash Balance.
  * Sums up currentBalance across all active cash registers/drawers.
  */
 export const fetchCashBalance = async (): Promise<number> => {

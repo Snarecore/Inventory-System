@@ -81,7 +81,7 @@ export interface BuildPaymentPayloadParams {
 }
 
 /**
- * Factory for building strict Spring Boot DTO Payment Payload for /insert-payment.
+ * Factory for building strict Spring Boot DTO Payment Payload.
  * In the backend Java DTO, supplier fields are designated as `customerPhone` and `customerName`.
  */
 export const buildPaymentPayload = ({
@@ -192,7 +192,7 @@ export const buildPaymentPayload = ({
 };
 
 /**
- * Dispatches supplier payment to /insert-payment
+ * Dispatches supplier payment.
  */
 export const postPayment = async (
   payload: PaymentRequestPayload
@@ -244,7 +244,7 @@ export interface PostPaymentLedgerParams {
 }
 
 /**
- * Sequential Ledger posting to /insert-financial-transaction
+ * Sequential Ledger posting.
  * Debits the paid amount from Cash, Bank, or MFS balance with tradeType: "EXPENSE", head: "Payment".
  */
 export const postPaymentLedger = async ({

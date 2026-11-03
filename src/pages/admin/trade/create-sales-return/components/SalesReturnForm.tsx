@@ -712,7 +712,7 @@ export const SalesReturnForm: React.FC = () => {
     setIsConfirmModalOpen(true);
   };
 
-  // Submit to POST /insert-sales-return
+  // Submit sales return
   const handleSubmitReturn = async () => {
     setIsSubmitting(true);
     try {

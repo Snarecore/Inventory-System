@@ -46,8 +46,8 @@ export interface PaymentMutationResult {
 
 /**
  * Enterprise standard mutation hook for supplier payment.
- * Phase 1: /insert-payment (updates trade purchase invoices and dues)
- * Phase 2: /insert-financial-transaction (debits cash/bank/MFS balance)
+ * Phase 1: Record payment (updates trade purchase invoices and dues)
+ * Phase 2: Post financial transaction (debits cash/bank/MFS balance)
  * Followed by targeted TanStack Query multi-cache invalidation.
  */
 export const usePaymentMutation = () => {

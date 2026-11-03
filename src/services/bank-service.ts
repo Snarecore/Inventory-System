@@ -53,7 +53,7 @@ export const describeSaveError = (rawMsg?: string, accountNo?: string): string =
 };
 
 /**
- * 1. GET BANK INFO LIST (/get-bank-info-list)
+ * 1. GET BANK INFO LIST
  * Fetches the branch's registered bank accounts with balances and card metadata.
  */
 export const fetchBankInfoList = async (): Promise<BankInfoListResponse> => {
@@ -98,7 +98,7 @@ export const fetchBankInfoList = async (): Promise<BankInfoListResponse> => {
 };
 
 /**
- * 2. GET BANK NAME LIST (/get-bank-name-list)
+ * 2. GET BANK NAME LIST
  * Master list of Bangladesh commercial banks for dropdown selection.
  */
 export const fetchBankNameList = async (): Promise<BankNameListResponse> => {
@@ -125,7 +125,7 @@ export const fetchBankNameList = async (): Promise<BankNameListResponse> => {
 };
 
 /**
- * 3. INSERT BANK ACCOUNT (/insert-bank-account)
+ * 3. INSERT BANK ACCOUNT
  * Registers a new bank account sending all required backend keys including transactionDate.
  */
 export const insertBankAccount = async (
@@ -166,7 +166,7 @@ export const insertBankAccount = async (
 };
 
 /**
- * 4. UPDATE BANK ACCOUNT (/update-bank-account)
+ * 4. UPDATE BANK ACCOUNT
  * Updates an existing bank account using actual required backend keys.
  */
 export const updateBankAccount = async (

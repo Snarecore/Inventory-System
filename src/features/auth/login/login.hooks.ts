@@ -77,7 +77,7 @@ export function useLoginMutation(options?: UseLoginOptions) {
         }
       }
 
-      // 3. Fallback to user-login endpoint
+      // 3. Fallback to standard login
       const response: LoginApiResponse = await loginApi.loginUser(payload);
 
       if (

@@ -232,7 +232,7 @@ export const Login: React.FC = () => {
         }
       }
 
-      // 3. Fallback to user-login endpoint
+      // 3. Fallback to standard login
       const response = await loginApi.loginUser({
         authentication: {
           phone_number: identifier,

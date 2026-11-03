@@ -20,7 +20,7 @@ import {
 import { showSuccessToast, showErrorToast } from "@/utils/toast-utils";
 
 /**
- * Hook to fetch finance dashboard figures (/site/admin-dashboard)
+ * Hook to fetch finance dashboard figures
  */
 export const useFinanceDashboardQuery = (params?: FinanceDashboardParams) => {
   return useQuery<FinanceDashboardResult>({

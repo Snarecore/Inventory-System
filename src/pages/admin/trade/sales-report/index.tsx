@@ -121,7 +121,7 @@ const SalesReportPage: React.FC = () => {
         console.warn("Failed fetching from get-sale-transaction-report, trying get-sale-list fallback:", err);
       }
 
-      // Fallback to fetchSalesList if report endpoint returned no data or failed
+      // Fallback to fetchSalesList if report returned no data or failed
       if (rawList.length === 0) {
         const allSales = await fetchSalesList();
         rawList = allSales;

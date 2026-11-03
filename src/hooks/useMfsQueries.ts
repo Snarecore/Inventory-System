@@ -32,7 +32,7 @@ export interface MutationCallbacks<TData = MfsActionResponse, TVariables = unkno
 }
 
 /**
- * Hook to fetch registered MFS accounts (/mfs-user-list)
+ * Hook to fetch registered MFS accounts
  */
 export const useMfsUserListQuery = (
   options?: Omit<UseQueryOptions<MfsUserListResponse, Error>, "queryKey" | "queryFn">
@@ -48,7 +48,7 @@ export const useMfsUserListQuery = (
 };
 
 /**
- * Hook to insert a new MFS account (/insert-mfs-user)
+ * Hook to insert a new MFS account
  * Merges success response into cache directly to save bandwidth on mobile networks
  */
 export const useInsertMfsUserMutation = (
@@ -104,7 +104,7 @@ export const useInsertMfsUserMutation = (
 };
 
 /**
- * Hook to update an existing MFS account (/mfs-user-update)
+ * Hook to update an existing MFS account
  */
 export const useUpdateMfsUserMutation = (
   options?: MutationCallbacks<MfsActionResponse, UpdateMfsUserPayload, MfsMutationContext>
@@ -171,7 +171,7 @@ export const useUpdateMfsUserMutation = (
 };
 
 /**
- * Hook to update MFS account status (/mfs-user-status-update) with instant optimistic toggle & rollback
+ * Hook to update MFS account status with instant optimistic toggle & rollback
  */
 export const useUpdateMfsUserStatusMutation = (
   options?: MutationCallbacks<MfsActionResponse, UpdateMfsUserStatusPayload, MfsMutationContext>

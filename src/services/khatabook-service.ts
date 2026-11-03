@@ -48,7 +48,7 @@ export const toNaiveIso = (date?: Date | string | null): string => {
 };
 
 /**
- * 1. GET PERSON LIST (/ledger/person/list)
+ * 1. GET PERSON LIST
  */
 export const fetchLedgerPersonList = async (): Promise<LedgerPersonListResponse> => {
   const accessUser = buildAccessUser();
@@ -94,7 +94,7 @@ export const fetchLedgerPersonList = async (): Promise<LedgerPersonListResponse>
 };
 
 /**
- * 2. SAVE PERSON (/ledger/person/save)
+ * 2. SAVE PERSON
  * Supports both creating a new person (with opening balances) and updating existing person.
  */
 export const saveLedgerPerson = async (
@@ -142,7 +142,7 @@ export const saveLedgerPerson = async (
 };
 
 /**
- * 3. DELETE PERSON (/ledger/person/delete)
+ * 3. DELETE PERSON
  * Deletes person. If transactions exist, server rejects with explanation.
  */
 export const deleteLedgerPerson = async (personId: number): Promise<LedgerActionResponse> => {
@@ -169,7 +169,7 @@ export const deleteLedgerPerson = async (personId: number): Promise<LedgerAction
 };
 
 /**
- * 4. GET TRANSACTION LIST (/ledger/transaction/list)
+ * 4. GET TRANSACTION LIST
  * If personId is provided, returns transactions for that person.
  * If omitted, returns all ledger transactions.
  */
@@ -222,7 +222,7 @@ export const fetchLedgerTransactionList = async (
 };
 
 /**
- * 5. CREATE TRANSACTION (/ledger/transaction/create)
+ * 5. CREATE TRANSACTION
  * Creates a PABO (receivable) or DIBO (payable) transaction with CASH, BANK, or MFS tender.
  */
 export const createLedgerTransaction = async (
@@ -268,7 +268,7 @@ export const createLedgerTransaction = async (
 };
 
 /**
- * 6. UPDATE TRANSACTION (/ledger/transaction/update)
+ * 6. UPDATE TRANSACTION
  * Edits an existing ledger transaction.
  */
 export const updateLedgerTransaction = async (
@@ -314,7 +314,7 @@ export const updateLedgerTransaction = async (
 };
 
 /**
- * 7. DELETE TRANSACTION (/ledger/transaction/delete)
+ * 7. DELETE TRANSACTION
  * Deletes transaction and restores financial balance.
  */
 export const deleteLedgerTransaction = async (

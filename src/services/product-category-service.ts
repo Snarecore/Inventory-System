@@ -10,9 +10,6 @@ import type {
   DeleteProductCategoryPayload,
 } from "@/types";
 
-/**
- * Fetches the list of product categories (POST /get-product-categories-list)
- */
 export const fetchProductCategoryList = async (): Promise<ProductCategoryListResponse> => {
   const accessUser = buildAccessUser();
   const url = apiConfig.productCategory.getProductCategoriesListUrl;
@@ -33,9 +30,6 @@ export const fetchProductCategoryList = async (): Promise<ProductCategoryListRes
   };
 };
 
-/**
- * Inserts a new product category (POST /insert-product-categories)
- */
 export const insertProductCategory = async (
   payload: InsertProductCategoryPayload
 ): Promise<ProductCategoryActionResponse> => {
@@ -58,9 +52,6 @@ export const insertProductCategory = async (
   return res;
 };
 
-/**
- * Updates an existing product category (POST /update-product-categories)
- */
 export const updateProductCategory = async (
   payload: UpdateProductCategoryPayload
 ): Promise<ProductCategoryActionResponse> => {
@@ -84,9 +75,6 @@ export const updateProductCategory = async (
   return res;
 };
 
-/**
- * Updates status of a product category (POST /update-product-categories-status)
- */
 export const updateProductCategoryStatus = async (
   payload: UpdateProductCategoryStatusPayload
 ): Promise<ProductCategoryActionResponse> => {
@@ -107,9 +95,6 @@ export const updateProductCategoryStatus = async (
   return res;
 };
 
-/**
- * Deletes a product category (POST /delete-product-categories)
- */
 export const deleteProductCategory = async (
   payload: DeleteProductCategoryPayload
 ): Promise<ProductCategoryActionResponse> => {
