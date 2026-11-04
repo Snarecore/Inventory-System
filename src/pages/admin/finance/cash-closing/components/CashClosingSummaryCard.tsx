@@ -219,26 +219,26 @@ export const CashClosingSummaryCard: React.FC<CashClosingSummaryCardProps> = ({
           <button
             type="button"
             onClick={onEnableEdit}
-            className="w-full py-2 px-3 text-xs font-semibold rounded-lg bg-gray-100 dark:bg-gray-800 text-[var(--ui-text)] hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors cursor-pointer flex items-center justify-center gap-1.5"
+            className="px-3.5 py-1.5 text-xs font-semibold rounded-lg bg-gray-100 dark:bg-gray-800 text-[var(--ui-text)] hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors cursor-pointer flex items-center justify-center gap-1.5 shadow-2xs"
           >
-            <FaUnlock size={12} />
-            <span>Recount / Edit Closing</span>
+            <FaUnlock size={11} />
+            <span>Recount / Edit</span>
           </button>
         ) : (
           <button
             type="button"
             onClick={handleInitialClick}
             disabled={isSubmitting || countedCash <= 0 || (hasDifference && !differenceReason)}
-            className="w-full py-2 px-4 text-xs font-semibold rounded-lg bg-[var(--primary-color)] hover:bg-[var(--primary-color-hover)] text-white flex items-center justify-center gap-2 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed shadow-xs"
+            className="px-4 py-1.5 text-xs font-semibold rounded-lg bg-[var(--primary-color)] hover:bg-[var(--primary-color-hover)] text-white flex items-center justify-center gap-1.5 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed shadow-xs"
           >
             {isSubmitting ? (
               <>
                 <FaSpinner className="animate-spin text-xs" />
-                <span>Saving Cash Closing...</span>
+                <span>Saving...</span>
               </>
             ) : (
               <>
-                <FaCheckCircle size={13} />
+                <FaCheckCircle size={12} />
                 <span>Submit & Close Cash</span>
               </>
             )}
