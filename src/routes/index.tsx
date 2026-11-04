@@ -55,6 +55,7 @@ const IncomePage = React.lazy(() => import('@/pages/admin/finance/income'))
 const FundTransferPage = React.lazy(() => import('@/pages/admin/finance/fund-transfer'))
 const KhatabookPage = React.lazy(() => import('@/pages/admin/khatabook'))
 const StockAdjustmentPage = React.lazy(() => import('@/pages/admin/inventory/stock-adjustment'))
+const CashClosingPage = React.lazy(() => import('@/pages/admin/finance/cash-closing'))
 
 
 const withSuspense = (Component: React.ComponentType) => (
@@ -521,6 +522,14 @@ export const router = createBrowserRouter([
       {
         path: 'khatabook',
         element: withSuspense(KhatabookPage),
+      },
+      {
+        path: 'cash-closing',
+        element: withSuspense(CashClosingPage),
+      },
+      {
+        path: 'daily-cash-closing',
+        element: withSuspense(CashClosingPage),
       },
       {
         path: 'ledger',

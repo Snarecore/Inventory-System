@@ -149,5 +149,10 @@
         "insertSmsSendUrl": "insert-sms-send",
         "getSmsBalanceUrl": "get-sms-balance",
         "getSmsSendListUrl": "get-sms-send-list"
+    },
+    "cashClosing": {
+        "getCashClosingUrl": "get-cash-closing",
+        "getCashClosingReportUrl": "get-cash-closing-report",
+        "insertCashClosingUrl": "insert-cash-closing"
     }
 }

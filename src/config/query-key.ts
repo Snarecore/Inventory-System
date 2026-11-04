@@ -60,3 +60,5 @@ export const userProfileQueryKey = "user-profile";
 export const ledgerPersonListQueryKey = "ledger-person-list";
 export const ledgerTransactionListQueryKey = "ledger-transaction-list";
 export const stockAdjustmentReportQueryKey = "get-adjust-report";
+export const cashClosingQueryKey = "get-cash-closing";
+export const cashClosingReportQueryKey = "get-cash-closing-report";
