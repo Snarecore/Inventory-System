@@ -10,6 +10,7 @@ import {
   FaStickyNote,
 } from "react-icons/fa";
 import { formatMoney } from "@/utils/formatters";
+import { showErrorToast } from "@/utils/toast-utils";
 import { DIFFERENCE_REASONS } from "@/types";
 
 interface CashClosingSummaryCardProps {
@@ -56,6 +57,10 @@ export const CashClosingSummaryCard: React.FC<CashClosingSummaryCardProps> = ({
   const [confirmOpen, setConfirmOpen] = useState(false);
 
   const handleInitialClick = () => {
+    if (hasDifference && !differenceReason) {
+      showErrorToast("Please select a difference reason before closing.");
+      return;
+    }
     setConfirmOpen(true);
   };
 
@@ -228,7 +233,7 @@ export const CashClosingSummaryCard: React.FC<CashClosingSummaryCardProps> = ({
           <button
             type="button"
             onClick={handleInitialClick}
-            disabled={isSubmitting || countedCash <= 0 || (hasDifference && !differenceReason)}
+            disabled={isSubmitting}
             className="px-4 py-1.5 text-xs font-semibold rounded-lg bg-[var(--primary-color)] hover:bg-[var(--primary-color-hover)] text-white flex items-center justify-center gap-1.5 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed shadow-xs"
           >
             {isSubmitting ? (
@@ -237,10 +242,7 @@ export const CashClosingSummaryCard: React.FC<CashClosingSummaryCardProps> = ({
                 <span>Saving...</span>
               </>
             ) : (
-              <>
-                <FaCheckCircle size={12} />
-                <span>Close Cash</span>
-              </>
+              <span>Close Cash</span>
             )}
           </button>
         )}

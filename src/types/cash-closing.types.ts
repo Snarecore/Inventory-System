@@ -1,7 +1,3 @@
-/**
- * Types and interfaces for Daily Cash Closing & Reconciliation
- */
-
 export interface DenominationItem {
   denomination: number;
   quantity: number;
