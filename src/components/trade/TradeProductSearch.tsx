@@ -56,9 +56,6 @@ export const TradeProductSearch: React.FC<TradeProductSearchProps> = ({
       ref={searchRef}
     >
       <div className="flex items-center gap-2">
-        {/* Single field: scanner input and manual search share one box.
-            An exact barcode / product code is added on the spot; anything
-            else drives the search dropdown below. */}
         <div className="relative flex-1">
           <TextInput
             icon={
@@ -214,7 +211,7 @@ export const TradeProductSearch: React.FC<TradeProductSearchProps> = ({
                       )}
                       {isOutOfStock && !isAlreadyInList && (
                         <span className="text-[10px] bg-[var(--ui-danger-border)] text-[var(--ui-danger-dark)] border border-[var(--ui-danger-border)] px-1.5 py-0.5 rounded-[var(--ui-radius-sm)] font-bold whitespace-nowrap shrink-0">
-                          Stock Out / স্টক নেই
+                          Stock Out
                         </span>
                       )}
                     </div>

@@ -11,10 +11,6 @@ export interface TradeLedgerSummaryProps {
   className?: string;
 }
 
-/**
- * Reusable financial ledger summary for Trade forms (Sales, Purchases, etc.)
- * Read as an invoice ledger: labels left, figures right-aligned on tabular numerals.
- */
 export const TradeLedgerSummary: React.FC<TradeLedgerSummaryProps> = ({
   subtotal,
   discount,

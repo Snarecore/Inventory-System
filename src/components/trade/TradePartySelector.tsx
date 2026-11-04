@@ -323,7 +323,7 @@ export const TradePartySelector: React.FC<TradePartySelectorProps> = ({
                     Walk-in Customer
                   </span>
                   <span className="text-[10px] text-[var(--ui-success-dark)] leading-tight">
-                    Quick counter sale / সাধারণ ক্রেতা
+                    Quick counter sale
                   </span>
                 </div>
               </div>

@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useMemo } from "react";
-import { FiEye, FiPrinter, FiChevronDown, FiCopy, FiCheck, FiRotateCcw } from "react-icons/fi";
+import { FiChevronDown, FiCopy, FiCheck, FiRotateCcw } from "react-icons/fi";
 import { FaFileExcel, FaSearch, FaBoxOpen } from "react-icons/fa";
 import moment from "moment";
 import Search from "@/components/table-components/Search";
@@ -15,8 +15,6 @@ import {
   TableHead,
   TableTh,
   TableBody,
-  TableRow,
-  TableCell,
   TablePaginationFooter,
   TableActionButtons,
 } from "@/components/common";

@@ -37,10 +37,6 @@ export const TradeLineItemsTable: React.FC<TradeLineItemsTableProps> = ({
         </span>
       </div>
 
-      {/* Caps the list at five rows, then scrolls. The header is sticky inside
-          the same scroller so column labels stay put. Background and colour go
-          on each <th> rather than the <tr>, because `.ui-table th` sets its own
-          and a cell background always paints over the row's. */}
       <div
         className="w-full overflow-auto"
         style={{
@@ -73,10 +69,6 @@ export const TradeLineItemsTable: React.FC<TradeLineItemsTableProps> = ({
                       {idx + 1}
                     </td>
 
-                    {/* Product name + code on one line. `w-full max-w-0` is the
-                        table-cell truncation recipe: the cell absorbs the spare
-                        width but refuses to grow past it, so long names ellipsis
-                        instead of forcing the row onto a second line. */}
                     <td className="w-full max-w-0">
                       <div className="flex min-w-0 items-baseline gap-1.5">
                         <span
