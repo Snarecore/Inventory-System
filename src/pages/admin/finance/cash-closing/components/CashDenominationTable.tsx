@@ -55,10 +55,10 @@ export const CashDenominationTable: React.FC<CashDenominationTableProps> = ({
   return (
     <div className="bg-[var(--ui-surface)] border border-[var(--ui-border)] rounded-2xl shadow-xs overflow-hidden flex flex-col h-full">
       {/* Header */}
-      <div className="px-4 py-3 border-b border-[var(--ui-border)] flex items-center justify-between bg-[var(--ui-surface-sunken)]/40">
+      <div className="px-3 py-2 border-b border-[var(--ui-border)] flex items-center justify-between bg-[var(--ui-surface-sunken)]/40">
         <div className="flex items-center gap-2">
-          <div className="p-1.5 rounded-lg bg-sky-50 dark:bg-sky-950/50 text-sky-600 dark:text-sky-400">
-            <FaCoins size={14} />
+          <div className="p-1 rounded-md bg-sky-50 dark:bg-sky-950/50 text-sky-600 dark:text-sky-400">
+            <FaCoins size={13} />
           </div>
           <div>
             <h3 className="text-xs font-bold text-[var(--ui-text)] uppercase tracking-wider">
@@ -74,7 +74,7 @@ export const CashDenominationTable: React.FC<CashDenominationTableProps> = ({
           <button
             type="button"
             onClick={onResetAll}
-            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-medium text-[var(--ui-text-muted)] border border-[var(--ui-border)] hover:bg-[var(--ui-surface-sunken)] hover:text-red-500 transition-colors cursor-pointer"
+            className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[11px] font-medium text-[var(--ui-text-muted)] border border-[var(--ui-border)] hover:bg-[var(--ui-surface-sunken)] hover:text-red-500 transition-colors cursor-pointer"
             title="Reset all count quantities to 0"
           >
             <FaRedo size={10} />
@@ -88,10 +88,10 @@ export const CashDenominationTable: React.FC<CashDenominationTableProps> = ({
         <table className="w-full text-left border-collapse text-xs">
           <thead>
             <tr className="border-b border-[var(--ui-border)] bg-[var(--ui-surface-sunken)]/60 text-[11px] font-semibold text-[var(--ui-text-muted)] uppercase tracking-wider sticky top-0 z-10 backdrop-blur-xs">
-              <th className="py-2.5 px-3">Note / Coin</th>
-              <th className="py-2.5 px-3 w-40 text-center">Quantity</th>
-              {!isReadOnly && <th className="py-2.5 px-2 text-center w-28">Quick Add</th>}
-              <th className="py-2.5 px-3 text-right">Total Amount</th>
+              <th className="py-1.5 px-2.5">Note / Coin</th>
+              <th className="py-1.5 px-2.5 w-40 text-center">Quantity</th>
+              {!isReadOnly && <th className="py-1.5 px-2 text-center w-28">Quick Add</th>}
+              <th className="py-1.5 px-2.5 text-right">Total Amount</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-[var(--ui-border)]">
@@ -106,16 +106,16 @@ export const CashDenominationTable: React.FC<CashDenominationTableProps> = ({
                   className="hover:bg-[var(--ui-surface-sunken)]/40 transition-colors"
                 >
                   {/* Denomination Note Badge */}
-                  <td className="py-2 px-3">
+                  <td className="py-1.5 px-2.5">
                     <span
-                      className={`inline-flex items-center px-2.5 py-0.5 rounded-md font-bold text-xs border ${badgeStyle} shadow-2xs`}
+                      className={`inline-flex items-center px-2 py-0.5 rounded font-bold text-xs border ${badgeStyle} shadow-2xs`}
                     >
                       ৳ {item.denomination.toLocaleString("en-IN")}
                     </span>
                   </td>
 
                   {/* Quantity Input */}
-                  <td className="py-2 px-3">
+                  <td className="py-1.5 px-2.5">
                     <div className="flex items-center justify-center">
                       <input
                         type="text"
@@ -124,7 +124,7 @@ export const CashDenominationTable: React.FC<CashDenominationTableProps> = ({
                         value={qty === 0 ? "" : qty}
                         placeholder="0"
                         onChange={(e) => handleInputChange(item.denomination, e.target.value)}
-                        className={`w-24 text-center font-bold text-xs py-1 px-2 rounded-lg border transition-all ${
+                        className={`w-24 text-center font-bold text-xs py-0.5 px-2 rounded-md border transition-all ${
                           qty > 0
                             ? "border-sky-500 bg-sky-50/50 dark:bg-sky-950/30 text-sky-700 dark:text-sky-300 ring-1 ring-sky-500/20"
                             : "border-[var(--ui-border)] bg-[var(--ui-surface)] text-[var(--ui-text)]"
@@ -135,12 +135,12 @@ export const CashDenominationTable: React.FC<CashDenominationTableProps> = ({
 
                   {/* Quick Add Buttons */}
                   {!isReadOnly && (
-                    <td className="py-2 px-2 text-center">
+                    <td className="py-1.5 px-2 text-center">
                       <div className="inline-flex items-center gap-1">
                         <button
                           type="button"
                           onClick={() => handleQuickAdd(item.denomination, qty, 1)}
-                          className="h-6 px-1.5 rounded bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-[10px] font-semibold text-gray-700 dark:text-gray-300 transition-colors cursor-pointer"
+                          className="h-5 px-1.5 rounded bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-[10px] font-semibold text-gray-700 dark:text-gray-300 transition-colors cursor-pointer"
                           title="Add 1 note"
                         >
                           +1
@@ -148,7 +148,7 @@ export const CashDenominationTable: React.FC<CashDenominationTableProps> = ({
                         <button
                           type="button"
                           onClick={() => handleQuickAdd(item.denomination, qty, 10)}
-                          className="h-6 px-1.5 rounded bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-[10px] font-semibold text-gray-700 dark:text-gray-300 transition-colors cursor-pointer"
+                          className="h-5 px-1.5 rounded bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-[10px] font-semibold text-gray-700 dark:text-gray-300 transition-colors cursor-pointer"
                           title="Add 10 notes"
                         >
                           +10
@@ -157,7 +157,7 @@ export const CashDenominationTable: React.FC<CashDenominationTableProps> = ({
                           <button
                             type="button"
                             onClick={() => onChangeQuantity(item.denomination, 0)}
-                            className="h-6 w-6 rounded bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/50 text-[11px] font-bold text-rose-600 transition-colors cursor-pointer flex items-center justify-center"
+                            className="h-5 w-5 rounded bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/50 text-[11px] font-bold text-rose-600 transition-colors cursor-pointer flex items-center justify-center"
                             title="Clear"
                           >
                             ×
@@ -168,7 +168,7 @@ export const CashDenominationTable: React.FC<CashDenominationTableProps> = ({
                   )}
 
                   {/* Line Total */}
-                  <td className="py-2 px-3 text-right">
+                  <td className="py-1.5 px-2.5 text-right">
                     <span
                       className={`font-semibold text-xs ${
                         lineTotal > 0
@@ -187,7 +187,7 @@ export const CashDenominationTable: React.FC<CashDenominationTableProps> = ({
       </div>
 
       {/* Footer Total */}
-      <div className="p-3 bg-[var(--ui-surface-sunken)] border-t border-[var(--ui-border)] flex items-center justify-between mt-auto">
+      <div className="px-3 py-2 bg-[var(--ui-surface-sunken)] border-t border-[var(--ui-border)] flex items-center justify-between mt-auto">
         <div className="flex items-center gap-2">
           <span className="text-xs font-semibold text-[var(--ui-text-muted)]">
             Total Notes Count:

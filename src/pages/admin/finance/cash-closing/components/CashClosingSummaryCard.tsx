@@ -65,16 +65,16 @@ export const CashClosingSummaryCard: React.FC<CashClosingSummaryCardProps> = ({
   return (
     <div className="bg-[var(--ui-surface)] border border-[var(--ui-border)] rounded-2xl shadow-xs overflow-hidden flex flex-col h-full">
       {/* Header */}
-      <div className="px-4 py-3 border-b border-[var(--ui-border)] flex items-center justify-between bg-[var(--ui-surface-sunken)]/40">
+      <div className="px-3 py-2 border-b border-[var(--ui-border)] flex items-center justify-between bg-[var(--ui-surface-sunken)]/40">
         <div className="flex items-center gap-2">
           <div
-            className={`p-1.5 rounded-lg shrink-0 ${
+            className={`p-1 rounded-md shrink-0 ${
               isClosed
                 ? "bg-rose-50 dark:bg-rose-950/50 text-rose-600 dark:text-rose-400"
                 : "bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400"
             }`}
           >
-            {isClosed ? <FaLock size={14} /> : <FaUnlock size={14} />}
+            {isClosed ? <FaLock size={13} /> : <FaUnlock size={13} />}
           </div>
           <div>
             <h3 className="text-xs font-bold text-[var(--ui-text)] uppercase tracking-wider">
@@ -87,7 +87,7 @@ export const CashClosingSummaryCard: React.FC<CashClosingSummaryCardProps> = ({
         </div>
 
         <span
-          className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider border ${
+          className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider border ${
             isClosed
               ? "bg-rose-100 text-rose-800 border-rose-300 dark:bg-rose-950/50 dark:text-rose-300"
               : "bg-emerald-100 text-emerald-800 border-emerald-300 dark:bg-emerald-950/50 dark:text-emerald-300"
@@ -98,9 +98,9 @@ export const CashClosingSummaryCard: React.FC<CashClosingSummaryCardProps> = ({
       </div>
 
       {/* Body */}
-      <div className="p-4 space-y-3.5 flex-1 overflow-y-auto">
+      <div className="p-3 space-y-2.5 flex-1 overflow-y-auto">
         {/* Breakdown Summary */}
-        <div className="rounded-xl border border-[var(--ui-border)] bg-[var(--ui-surface-sunken)]/40 p-3 space-y-2 text-xs">
+        <div className="rounded-xl border border-[var(--ui-border)] bg-[var(--ui-surface-sunken)]/40 p-2.5 space-y-1.5 text-xs">
           <div className="flex items-center justify-between">
             <span className="text-[var(--ui-text-muted)] font-medium">Opening Cash:</span>
             <span className="font-semibold text-[var(--ui-text)]">৳ {formatMoney(openingCash)}</span>
@@ -113,7 +113,7 @@ export const CashClosingSummaryCard: React.FC<CashClosingSummaryCardProps> = ({
             <span className="text-rose-600 dark:text-rose-400 font-medium">- Today Expense:</span>
             <span className="font-semibold text-rose-600 dark:text-rose-400">৳ {formatMoney(todayExpense)}</span>
           </div>
-          <div className="border-t border-[var(--ui-border)] pt-2 flex items-center justify-between">
+          <div className="border-t border-[var(--ui-border)] pt-1.5 flex items-center justify-between">
             <span className="font-semibold text-sky-700 dark:text-sky-300">Expected In Register:</span>
             <span className="font-bold text-sky-700 dark:text-sky-300">৳ {formatMoney(expectedCash)}</span>
           </div>
@@ -125,7 +125,7 @@ export const CashClosingSummaryCard: React.FC<CashClosingSummaryCardProps> = ({
 
         {/* Difference Alert Banner */}
         <div
-          className={`p-3 rounded-xl border text-xs flex items-start gap-2.5 transition-colors ${
+          className={`p-2.5 rounded-xl border text-xs flex items-start gap-2.5 transition-colors ${
             isBalanced
               ? "border-emerald-300 bg-emerald-50/70 text-emerald-900 dark:bg-emerald-950/30 dark:text-emerald-200"
               : hasDifference
@@ -203,7 +203,7 @@ export const CashClosingSummaryCard: React.FC<CashClosingSummaryCardProps> = ({
       </div>
 
       {/* Footer Actions */}
-      <div className="p-3 border-t border-[var(--ui-border)] bg-[var(--ui-surface-sunken)]/60 flex items-center justify-end gap-2 mt-auto">
+      <div className="px-3 py-2 border-t border-[var(--ui-border)] bg-[var(--ui-surface-sunken)]/60 flex items-center justify-end gap-2 mt-auto">
         {isClosed && isReadOnly ? (
           <button
             type="button"

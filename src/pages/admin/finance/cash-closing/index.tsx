@@ -176,7 +176,7 @@ export const CashClosingPage: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-col gap-3 px-3 py-2 sm:px-4 sm:py-2.5 max-w-[1600px] mx-auto w-full">
+    <div className="flex flex-col gap-2.5 px-3 py-1.5 sm:px-4 sm:py-2 max-w-[1600px] mx-auto w-full">
       {/* Top Header */}
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <PageHeader
@@ -233,7 +233,7 @@ export const CashClosingPage: React.FC = () => {
 
       {/* Main Tab Content */}
       {activeTab === "DAILY" ? (
-        <div className="flex flex-col gap-3">
+        <div className="flex flex-col gap-2.5">
           {/* KPI Cards Row */}
           <CashClosingKpiCards
             openingCash={openingCash}
@@ -246,7 +246,7 @@ export const CashClosingPage: React.FC = () => {
           />
 
           {/* Split Layout: Denomination Table (Left) + Closing Settlement Card (Right) */}
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 items-start">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-2.5 items-start">
             {/* Left 7 Columns: Physical Cash Denomination Counter */}
             <div className="lg:col-span-7 h-full">
               <CashDenominationTable
