@@ -78,7 +78,7 @@ export const CashClosingSummaryCard: React.FC<CashClosingSummaryCardProps> = ({
           </div>
           <div>
             <h3 className="text-xs font-bold text-[var(--ui-text)] uppercase tracking-wider">
-              Settlement & Closing (ক্লোজিং বিবরণ)
+              Settlement & Closing
             </h3>
             <p className="text-[10px] text-[var(--ui-text-muted)] flex items-center gap-1">
               <FaCalendarAlt size={10} /> Date: <span className="font-semibold">{closingDate}</span>
@@ -147,11 +147,11 @@ export const CashClosingSummaryCard: React.FC<CashClosingSummaryCardProps> = ({
           <div className="min-w-0 flex-1">
             <p className="font-bold">
               {isBalanced
-                ? "Cash Balanced (হিসাব মিলেছে)"
+                ? "Cash Balanced"
                 : hasDifference
                 ? differenceAmount < 0
-                  ? `Cash Shortage of ৳ ${formatMoney(Math.abs(differenceAmount))} (ঘাটতি)`
-                  : `Cash Surplus of ৳ ${formatMoney(differenceAmount)} (উদ্বৃত্ত)`
+                  ? `Cash Shortage of ৳ ${formatMoney(Math.abs(differenceAmount))}`
+                  : `Cash Surplus of ৳ ${formatMoney(differenceAmount)}`
                 : "Physical count not entered yet"}
             </p>
             <p className="text-[11px] mt-0.5 opacity-90 leading-tight">
@@ -189,7 +189,7 @@ export const CashClosingSummaryCard: React.FC<CashClosingSummaryCardProps> = ({
         {/* Remarks Input */}
         <div>
           <label className="block text-xs font-semibold text-[var(--ui-text)] mb-1">
-            Closing Remarks / Notes (মন্তব্য)
+            Closing Remarks / Notes
           </label>
           <textarea
             rows={2}
@@ -228,7 +228,7 @@ export const CashClosingSummaryCard: React.FC<CashClosingSummaryCardProps> = ({
             ) : (
               <>
                 <FaCheckCircle size={13} />
-                <span>Submit & Close Cash (ক্যাশ ক্লোজ সম্পন্ন করুন)</span>
+                <span>Submit & Close Cash</span>
               </>
             )}
           </button>

@@ -180,7 +180,7 @@ export const CashClosingPage: React.FC = () => {
       {/* Top Header */}
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <PageHeader
-          headerTitle="Daily Cash Closing (দৈনিক ক্যাশ ক্লোজিং)"
+          headerTitle="Daily Cash Closing"
           headerDescription="Daily cash register reconciliation, denomination counting and variance settlement"
         />
 

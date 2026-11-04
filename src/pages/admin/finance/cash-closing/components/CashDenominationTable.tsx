@@ -62,7 +62,7 @@ export const CashDenominationTable: React.FC<CashDenominationTableProps> = ({
           </div>
           <div>
             <h3 className="text-xs font-bold text-[var(--ui-text)] uppercase tracking-wider">
-              Cash Denomination Counter (নোট গণনা)
+              Cash Denomination Counter
             </h3>
             <p className="text-[10px] text-[var(--ui-text-muted)]">
               Count each currency note and coin to calculate physical cash total
@@ -88,10 +88,10 @@ export const CashDenominationTable: React.FC<CashDenominationTableProps> = ({
         <table className="w-full text-left border-collapse text-xs">
           <thead>
             <tr className="border-b border-[var(--ui-border)] bg-[var(--ui-surface-sunken)]/60 text-[11px] font-semibold text-[var(--ui-text-muted)] uppercase tracking-wider sticky top-0 z-10 backdrop-blur-xs">
-              <th className="py-2.5 px-3">Note / Coin (মান)</th>
-              <th className="py-2.5 px-3 w-40 text-center">Quantity (সংখ্যা)</th>
+              <th className="py-2.5 px-3">Note / Coin</th>
+              <th className="py-2.5 px-3 w-40 text-center">Quantity</th>
               {!isReadOnly && <th className="py-2.5 px-2 text-center w-28">Quick Add</th>}
-              <th className="py-2.5 px-3 text-right">Total Amount (মোট)</th>
+              <th className="py-2.5 px-3 text-right">Total Amount</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-[var(--ui-border)]">

@@ -76,11 +76,11 @@ export interface InsertCashClosingResponse {
 export const BANGLADESH_DENOMINATIONS = [1000, 500, 200, 100, 50, 20, 10, 5, 2, 1] as const;
 
 export const DIFFERENCE_REASONS = [
-  { value: "ENTRY_MISTAKE", label: "Data Entry Mistake (ডাটা এন্ট্রি ভুল)" },
-  { value: "CASH_SHORTAGE", label: "Cash Shortage (ক্যাশ ঘাটতি)" },
-  { value: "CASH_SURPLUS", label: "Cash Surplus (উদ্বৃত্ত ক্যাশ)" },
-  { value: "ROUNDING_DIFF", label: "Rounding Difference (রাউন্ডিং ব্যবধান)" },
-  { value: "UNRECORDED_EXPENSE", label: "Unrecorded Expense (অনথিভুক্ত খরচ)" },
-  { value: "UNRECORDED_INCOME", label: "Unrecorded Income (অনথিভুক্ত আয়)" },
-  { value: "OTHER", label: "Other (অন্যান্য কারণ)" },
+  { value: "ENTRY_MISTAKE", label: "Data Entry Mistake" },
+  { value: "CASH_SHORTAGE", label: "Cash Shortage" },
+  { value: "CASH_SURPLUS", label: "Cash Surplus" },
+  { value: "ROUNDING_DIFF", label: "Rounding Difference" },
+  { value: "UNRECORDED_EXPENSE", label: "Unrecorded Expense" },
+  { value: "UNRECORDED_INCOME", label: "Unrecorded Income" },
+  { value: "OTHER", label: "Other" },
 ] as const;

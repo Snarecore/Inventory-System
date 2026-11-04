@@ -36,7 +36,7 @@ export const CashClosingKpiCards: React.FC<CashClosingKpiCardsProps> = ({
   return (
     <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5 w-full">
       {/* 1. Opening Cash */}
-      <div className="p-3 rounded-xl border border-[var(--ui-border)] bg-[var(--ui-surface)] flex flex-col justify-between shadow-xs">
+      <div className="p-3 rounded-xl border border-[var(--ui-border)] bg-[var(--ui-surface)] flex flex-col justify-between shadow-xs min-h-[76px]">
         <div className="flex items-center justify-between">
           <span className="text-[11px] font-semibold text-[var(--ui-text-muted)] truncate">
             Opening Cash
@@ -45,18 +45,15 @@ export const CashClosingKpiCards: React.FC<CashClosingKpiCardsProps> = ({
             <FaMoneyBillWave size={13} />
           </div>
         </div>
-        <div className="mt-1.5">
+        <div className="mt-2">
           <span className="text-sm sm:text-base font-bold text-[var(--ui-text)] truncate block">
             ৳ {formatMoney(openingCash)}
-          </span>
-          <span className="text-[10px] text-[var(--ui-text-subtle)] truncate block">
-            প্রারম্ভিক ক্যাশ
           </span>
         </div>
       </div>
 
       {/* 2. Today's Inflow / Deposit */}
-      <div className="p-3 rounded-xl border border-[var(--ui-border)] bg-[var(--ui-surface)] flex flex-col justify-between shadow-xs">
+      <div className="p-3 rounded-xl border border-[var(--ui-border)] bg-[var(--ui-surface)] flex flex-col justify-between shadow-xs min-h-[76px]">
         <div className="flex items-center justify-between">
           <span className="text-[11px] font-semibold text-[var(--ui-text-muted)] truncate">
             Today Deposit
@@ -65,18 +62,15 @@ export const CashClosingKpiCards: React.FC<CashClosingKpiCardsProps> = ({
             <FaArrowDown size={13} />
           </div>
         </div>
-        <div className="mt-1.5">
+        <div className="mt-2">
           <span className="text-sm sm:text-base font-bold text-emerald-600 dark:text-emerald-400 truncate block">
             + ৳ {formatMoney(todayDeposit)}
-          </span>
-          <span className="text-[10px] text-[var(--ui-text-subtle)] truncate block">
-            আজকের জমা
           </span>
         </div>
       </div>
 
       {/* 3. Today's Outflow / Expense */}
-      <div className="p-3 rounded-xl border border-[var(--ui-border)] bg-[var(--ui-surface)] flex flex-col justify-between shadow-xs">
+      <div className="p-3 rounded-xl border border-[var(--ui-border)] bg-[var(--ui-surface)] flex flex-col justify-between shadow-xs min-h-[76px]">
         <div className="flex items-center justify-between">
           <span className="text-[11px] font-semibold text-[var(--ui-text-muted)] truncate">
             Today Expense
@@ -85,18 +79,15 @@ export const CashClosingKpiCards: React.FC<CashClosingKpiCardsProps> = ({
             <FaArrowUp size={13} />
           </div>
         </div>
-        <div className="mt-1.5">
+        <div className="mt-2">
           <span className="text-sm sm:text-base font-bold text-rose-600 dark:text-rose-400 truncate block">
             - ৳ {formatMoney(todayExpense)}
-          </span>
-          <span className="text-[10px] text-[var(--ui-text-subtle)] truncate block">
-            আজকের খরচ
           </span>
         </div>
       </div>
 
       {/* 4. Expected Cash */}
-      <div className="p-3 rounded-xl border border-sky-200 dark:border-sky-900/60 bg-sky-50/50 dark:bg-sky-950/20 flex flex-col justify-between shadow-xs">
+      <div className="p-3 rounded-xl border border-sky-200 dark:border-sky-900/60 bg-sky-50/50 dark:bg-sky-950/20 flex flex-col justify-between shadow-xs min-h-[76px]">
         <div className="flex items-center justify-between">
           <span className="text-[11px] font-semibold text-sky-800 dark:text-sky-300 truncate">
             Expected Cash
@@ -105,18 +96,15 @@ export const CashClosingKpiCards: React.FC<CashClosingKpiCardsProps> = ({
             <FaCalculator size={13} />
           </div>
         </div>
-        <div className="mt-1.5">
+        <div className="mt-2">
           <span className="text-sm sm:text-base font-bold text-sky-700 dark:text-sky-300 truncate block">
             ৳ {formatMoney(expectedCash)}
-          </span>
-          <span className="text-[10px] text-sky-600/80 dark:text-sky-400 truncate block">
-            হিসাব অনুযায়ী
           </span>
         </div>
       </div>
 
       {/* 5. Counted Physical Cash */}
-      <div className="p-3 rounded-xl border border-purple-200 dark:border-purple-900/60 bg-purple-50/50 dark:bg-purple-950/20 flex flex-col justify-between shadow-xs">
+      <div className="p-3 rounded-xl border border-purple-200 dark:border-purple-900/60 bg-purple-50/50 dark:bg-purple-950/20 flex flex-col justify-between shadow-xs min-h-[76px]">
         <div className="flex items-center justify-between">
           <span className="text-[11px] font-semibold text-purple-800 dark:text-purple-300 truncate">
             Counted Cash
@@ -125,19 +113,16 @@ export const CashClosingKpiCards: React.FC<CashClosingKpiCardsProps> = ({
             <FaCoins size={13} />
           </div>
         </div>
-        <div className="mt-1.5">
+        <div className="mt-2">
           <span className="text-sm sm:text-base font-bold text-purple-700 dark:text-purple-300 truncate block">
             ৳ {formatMoney(countedCash)}
-          </span>
-          <span className="text-[10px] text-purple-600/80 dark:text-purple-400 truncate block">
-            গণনাকৃত ক্যাশ
           </span>
         </div>
       </div>
 
       {/* 6. Difference / Variance */}
       <div
-        className={`p-3 rounded-xl border flex flex-col justify-between shadow-xs transition-colors ${
+        className={`p-3 rounded-xl border flex flex-col justify-between shadow-xs transition-colors min-h-[76px] ${
           isBalanced
             ? "border-emerald-300 bg-emerald-50/80 dark:bg-emerald-950/30 text-emerald-800 dark:text-emerald-300"
             : isShortage
@@ -151,18 +136,31 @@ export const CashClosingKpiCards: React.FC<CashClosingKpiCardsProps> = ({
           <span className="text-[11px] font-semibold truncate">
             Difference
           </span>
-          <div className="p-1.5 rounded-lg bg-white/70 dark:bg-black/20 shrink-0">
-            {isBalanced ? (
-              <FaCheckCircle size={13} className="text-emerald-600" />
-            ) : (
-              <FaExclamationTriangle
-                size={13}
-                className={isShortage ? "text-rose-600" : "text-amber-600"}
-              />
-            )}
+          <div className="flex items-center gap-1">
+            <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-white/70 dark:bg-black/20">
+              {isBalanced
+                ? "Matched"
+                : isShortage
+                ? "Shortage"
+                : isSurplus
+                ? "Surplus"
+                : isClosed
+                ? "Closed"
+                : "Pending"}
+            </span>
+            <div className="p-1 rounded-lg bg-white/70 dark:bg-black/20 shrink-0">
+              {isBalanced ? (
+                <FaCheckCircle size={11} className="text-emerald-600" />
+              ) : (
+                <FaExclamationTriangle
+                  size={11}
+                  className={isShortage ? "text-rose-600" : "text-amber-600"}
+                />
+              )}
+            </div>
           </div>
         </div>
-        <div className="mt-1.5">
+        <div className="mt-2">
           <span
             className={`text-sm sm:text-base font-bold truncate block ${
               isBalanced
@@ -176,17 +174,6 @@ export const CashClosingKpiCards: React.FC<CashClosingKpiCardsProps> = ({
           >
             {differenceAmount > 0 ? "+" : ""}
             ৳ {formatMoney(differenceAmount)}
-          </span>
-          <span className="text-[10px] font-medium opacity-85 truncate block">
-            {isBalanced
-              ? "Matched (হিসাব মিলেছে)"
-              : isShortage
-              ? "Shortage (ক্যাশ ঘাটতি)"
-              : isSurplus
-              ? "Surplus (ক্যাশ উদ্বৃত্ত)"
-              : isClosed
-              ? "Closed"
-              : "Pending Count"}
           </span>
         </div>
       </div>

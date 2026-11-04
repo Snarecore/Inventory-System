@@ -50,7 +50,7 @@ export const DenominationBreakdownModal: React.FC<DenominationBreakdownModalProp
             </div>
             <div>
               <h3 id="denom-modal-title" className="text-xs font-bold uppercase tracking-wider">
-                Denomination Breakdown (নোটের বিবরণ)
+                Denomination Breakdown
               </h3>
               <p className="text-[10px] text-[var(--ui-text-muted)] flex items-center gap-1 mt-0.5">
                 <FaCalendarAlt size={10} /> Date: <span className="font-semibold">{record.closingDate}</span>

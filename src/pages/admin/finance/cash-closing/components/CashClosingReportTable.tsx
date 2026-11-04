@@ -143,7 +143,7 @@ export const CashClosingReportTable: React.FC<CashClosingReportTableProps> = ({
         <div className="p-3 rounded-xl border border-emerald-200 dark:border-emerald-900/60 bg-emerald-50/50 dark:bg-emerald-950/20 flex items-center justify-between shadow-xs">
           <div>
             <span className="text-[11px] font-semibold text-emerald-800 dark:text-emerald-300">
-              Matched Days (মিলেছে)
+              Matched Days
             </span>
             <span className="text-lg font-bold text-emerald-700 dark:text-emerald-400 block mt-0.5">
               {summary?.matchedDays ?? 0} Days
@@ -157,7 +157,7 @@ export const CashClosingReportTable: React.FC<CashClosingReportTableProps> = ({
         <div className="p-3 rounded-xl border border-rose-200 dark:border-rose-900/60 bg-rose-50/50 dark:bg-rose-950/20 flex items-center justify-between shadow-xs">
           <div>
             <span className="text-[11px] font-semibold text-rose-800 dark:text-rose-300">
-              Mismatched Days (মিল নেই)
+              Mismatched Days
             </span>
             <span className="text-lg font-bold text-rose-700 dark:text-rose-400 block mt-0.5">
               {summary?.mismatchedDays ?? 0} Days
