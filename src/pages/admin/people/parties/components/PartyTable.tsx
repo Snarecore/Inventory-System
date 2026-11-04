@@ -41,6 +41,7 @@ interface PartyTableProps {
   setSortBy?: (sort: string) => void;
   onEdit: (party: PartyItem) => void;
   onView: (party: PartyItem) => void;
+  onMessage?: (party: PartyItem) => void;
   onRefresh: () => void;
   onToggleStatus?: (party: PartyItem) => void;
 }
@@ -65,6 +66,7 @@ export const PartyTable: React.FC<PartyTableProps> = ({
   setSortBy,
   onEdit,
   onView,
+  onMessage,
   onRefresh: _onRefresh,
   onToggleStatus,
 }) => {
@@ -408,6 +410,8 @@ export const PartyTable: React.FC<PartyTableProps> = ({
                               viewTitle="Quick View Details"
                               onEdit={() => onEdit(party)}
                               editTitle="Edit Party"
+                              onMessage={onMessage ? () => onMessage(party) : undefined}
+                              messageTitle="Send SMS / Message"
                               className="justify-end"
                             />
                           </td>

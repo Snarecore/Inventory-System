@@ -9,6 +9,7 @@ import RefreshButton from "@/components/table-components/RefreshButton";
 import PartyTable from "./components/PartyTable";
 import PartyModal from "./components/PartyModal";
 import PartyDetailsModal from "./components/PartyDetailsModal";
+import PartyMessageModal from "./components/PartyMessageModal";
 import apiConfig from "@/config/api.json";
 import { partyListQueryKey } from "@/config/query-key";
 import { buildAccessUser, withBranchScope } from "@/utils/access-user";
@@ -41,6 +42,8 @@ const Parties: React.FC = () => {
   const [selectedPartyForEdit, setSelectedPartyForEdit] = useState<PartyItem | null>(null);
   const [selectedPartyForView, setSelectedPartyForView] = useState<PartyItem | null>(null);
   const [isViewModalOpen, setIsViewModalOpen] = useState<boolean>(false);
+  const [selectedPartyForMessage, setSelectedPartyForMessage] = useState<PartyItem | null>(null);
+  const [isMessageModalOpen, setIsMessageModalOpen] = useState<boolean>(false);
   const [defaultModalType, setDefaultModalType] = useState<PartyType>("CUSTOMER");
 
   // Sync with URL query parameter
@@ -297,6 +300,11 @@ const Parties: React.FC = () => {
     setIsViewModalOpen(true);
   };
 
+  const openMessageModal = (party: PartyItem) => {
+    setSelectedPartyForMessage(party);
+    setIsMessageModalOpen(true);
+  };
+
   const handleModalSuccess = (savedParty?: PartyItem) => {
     if (!savedParty) return;
 
@@ -490,6 +498,7 @@ const Parties: React.FC = () => {
         setSortBy={setSortBy}
         onEdit={openEditModal}
         onView={openViewModal}
+        onMessage={openMessageModal}
         onRefresh={handleRefresh}
         onToggleStatus={handleTogglePartyStatus}
       />
@@ -518,6 +527,16 @@ const Parties: React.FC = () => {
           setIsViewModalOpen(false);
           openEditModal(party);
         }}
+      />
+
+      {/* Send Message / SMS Modal */}
+      <PartyMessageModal
+        isOpen={isMessageModalOpen}
+        onClose={() => {
+          setIsMessageModalOpen(false);
+          setSelectedPartyForMessage(null);
+        }}
+        party={selectedPartyForMessage}
       />
     </div>
   );

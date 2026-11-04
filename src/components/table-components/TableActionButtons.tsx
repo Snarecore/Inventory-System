@@ -1,5 +1,5 @@
 import React from "react";
-import { FiEye, FiEdit, FiPrinter, FiTrash2 } from "react-icons/fi";
+import { FiEye, FiEdit, FiPrinter, FiTrash2, FiMessageSquare } from "react-icons/fi";
 import { FaUndoAlt } from "react-icons/fa";
 
 export interface TableActionButtonsProps {
@@ -8,6 +8,7 @@ export interface TableActionButtonsProps {
   onPrint?: () => void;
   onDelete?: () => void;
   onReturn?: () => void;
+  onMessage?: () => void;
   isReturnDisabled?: boolean;
   returnDisabledTitle?: string;
   viewTitle?: string;
@@ -15,6 +16,7 @@ export interface TableActionButtonsProps {
   printTitle?: string;
   deleteTitle?: string;
   returnTitle?: string;
+  messageTitle?: string;
   extraActions?: React.ReactNode;
   className?: string;
 }
@@ -25,6 +27,7 @@ export const TableActionButtons: React.FC<TableActionButtonsProps> = ({
   onPrint,
   onDelete,
   onReturn,
+  onMessage,
   isReturnDisabled = false,
   returnDisabledTitle = "Already Returned",
   viewTitle = "View Invoice",
@@ -32,6 +35,7 @@ export const TableActionButtons: React.FC<TableActionButtonsProps> = ({
   printTitle = "Print Invoice",
   deleteTitle = "Delete",
   returnTitle = "Return Product",
+  messageTitle = "Send Message",
   extraActions,
   className = "",
 }) => {
@@ -47,16 +51,6 @@ export const TableActionButtons: React.FC<TableActionButtonsProps> = ({
           <FiEye size={14} />
         </button>
       )}
-      {onPrint && (
-        <button
-          type="button"
-          onClick={onPrint}
-          title={printTitle}
-          className="p-1 rounded text-[var(--ui-text-muted)] hover:bg-[var(--ui-surface-sunken)] transition-colors cursor-pointer"
-        >
-          <FiPrinter size={14} />
-        </button>
-      )}
       {onEdit && (
         <button
           type="button"
@@ -65,6 +59,26 @@ export const TableActionButtons: React.FC<TableActionButtonsProps> = ({
           className="p-1 rounded text-[var(--ui-warning)] hover:bg-[var(--ui-warning-border)] transition-colors cursor-pointer"
         >
           <FiEdit size={14} />
+        </button>
+      )}
+      {onMessage && (
+        <button
+          type="button"
+          onClick={onMessage}
+          title={messageTitle}
+          className="p-1 rounded text-sky-500 hover:bg-sky-50 dark:hover:bg-sky-950/30 transition-colors cursor-pointer"
+        >
+          <FiMessageSquare size={14} />
+        </button>
+      )}
+      {onPrint && (
+        <button
+          type="button"
+          onClick={onPrint}
+          title={printTitle}
+          className="p-1 rounded text-[var(--ui-text-muted)] hover:bg-[var(--ui-surface-sunken)] transition-colors cursor-pointer"
+        >
+          <FiPrinter size={14} />
         </button>
       )}
       {onReturn && (
