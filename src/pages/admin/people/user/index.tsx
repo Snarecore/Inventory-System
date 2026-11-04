@@ -14,7 +14,7 @@ interface UserDataProps {
 }
 
 type OptionT = { label: string; value: string };
-type FilterKey = "mainCategoryId" | "vendorId" | "isApprove";
+type FilterKey = "categoryId" | "vendorId" | "isApprove";
 type SelectedFilters = Record<FilterKey, OptionT | null>;
 
 const Users = () => {
@@ -24,7 +24,7 @@ const Users = () => {
   const [editData, setEditData] = useState<UserDataProps | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedFilters, setSelectedFilters] = useState<SelectedFilters>({
-    mainCategoryId: null,
+    categoryId: null,
     vendorId: null,
     isApprove: null,
   });
@@ -48,7 +48,7 @@ const Users = () => {
   const handleRefresh = () => {
     setSearchQuery("");
     setSelectedFilters({
-      mainCategoryId: null,
+      categoryId: null,
       vendorId: null,
       isApprove: null,
     });
@@ -62,18 +62,17 @@ const Users = () => {
     <div className="flex flex-col gap-6 p-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <PageHeader
-          headerTitle="Admin List"
-          headerDescription="Manage your admins"
+          headerTitle="User List"
+          headerDescription="Manage users and staff accounts"
         />
 
         <div className="flex items-center gap-2">
           <RefreshButton onClick={handleRefresh} />
           <Button
-            label="Add Product"
+            label="Add User"
             onClick={() => openModal()}
             color="var(--color-primary)"
             hoverColor="var(--color-primary-hover)"
-            // buttonClass="w-full sm:w-auto"
             icon={
               <FaPlus
                 size={18}
@@ -87,7 +86,12 @@ const Users = () => {
         <div>
           <UserTable
             currentPageNumber={currentPageNumber}
+            setCurrentPageNumber={setCurrentPageNumber}
             handlePagination={handlePagination}
+            searchQuery={searchQuery}
+            setSearchQuery={setSearchQuery}
+            selectedFilters={selectedFilters}
+            setSelectedFilters={setSelectedFilters}
           />
         </div>
       </div>

@@ -10,10 +10,7 @@ const Dashboard = React.lazy(() => import('@/pages/admin/main/admin-dashboard/Da
 const Products = React.lazy(() => import('@/pages/admin/inventory/product'))
 const CreateProduct = React.lazy(() => import('@/pages/admin/inventory/create-product'))
 const ProductDetails = React.lazy(() => import('@/pages/admin/inventory/product/components/ProductDetails'))
-const MainCategory = React.lazy(() => import('@/pages/admin/inventory/category/main-category'))
-const FirstCategory = React.lazy(() => import('@/pages/admin/inventory/category/first-category'))
-const SecondCategory = React.lazy(() => import('@/pages/admin/inventory/category/second-category'))
-const ThirdCategory = React.lazy(() => import('@/pages/admin/inventory/category/third-category'))
+const ProductCategory = React.lazy(() => import('@/pages/admin/inventory/category/product-category'))
 const Orders = React.lazy(() => import('@/pages/admin/orders'))
 const Admins = React.lazy(() => import('@/pages/admin/people/admin'))
 const Users = React.lazy(() => import('@/pages/admin/people/user'))
@@ -386,28 +383,12 @@ export const router = createBrowserRouter([
         element: withSuspense(StockAdjustmentPage),
       },
       {
-        path: 'main-category',
-        element: withSuspense(MainCategory),
-      },
-      {
         path: 'product-category',
-        element: withSuspense(MainCategory),
+        element: withSuspense(ProductCategory),
       },
       {
         path: 'product-categories',
-        element: withSuspense(MainCategory),
-      },
-      {
-        path: 'first-category',
-        element: withSuspense(FirstCategory),
-      },
-      {
-        path: 'second-category',
-        element: withSuspense(SecondCategory),
-      },
-      {
-        path: 'third-category',
-        element: withSuspense(ThirdCategory),
+        element: withSuspense(ProductCategory),
       },
       {
         path: 'orders',

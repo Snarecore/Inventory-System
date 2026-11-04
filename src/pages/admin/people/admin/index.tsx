@@ -17,7 +17,7 @@ interface AdminDataProps {
 }
 
 type OptionT = { label: string; value: string };
-type FilterKey = "mainCategoryId" | "vendorId" | "isApprove";
+type FilterKey = "categoryId" | "vendorId" | "isApprove";
 type SelectedFilters = Record<FilterKey, OptionT | null>;
 
 const Admin = () => {
@@ -27,7 +27,7 @@ const Admin = () => {
     const [editData, setEditData] = useState<AdminDataProps | null>(null);
     const [searchQuery, setSearchQuery] = useState("");
     const [selectedFilters, setSelectedFilters] = useState<SelectedFilters>({
-        mainCategoryId: null,
+        categoryId: null,
         vendorId: null,
         isApprove: null,
     });
@@ -56,7 +56,7 @@ const Admin = () => {
             setIsRefreshing(true);
             setSearchQuery("");
             setSelectedFilters({
-                mainCategoryId: null,
+                categoryId: null,
                 vendorId: null,
                 isApprove: null,
             });
@@ -97,7 +97,13 @@ const Admin = () => {
                     <div>
                         <AdminTable
                             currentPageNumber={currentPageNumber}
+                            setCurrentPageNumber={setCurrentPageNumber}
                             handlePagination={handlePagination}
+                            searchQuery={searchQuery}
+                            setSearchQuery={setSearchQuery}
+                            selectedFilters={selectedFilters}
+                            setSelectedFilters={setSelectedFilters}
+                            refreshKey={refreshKey}
                         />
                     </div>
                 </div>

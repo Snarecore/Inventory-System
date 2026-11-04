@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from "react";
 import { FiChevronDown } from "react-icons/fi";
 import { FaFileExcel } from "react-icons/fa";
-import * as XLSX from "xlsx";
+import { buildAndDownloadExcel } from "@/utils/excel-export";
 import Search from "@/components/table-components/Search";
 import {
   TableContainer,
@@ -222,7 +222,7 @@ export const TradePartyDueTable = <T extends GenericTradePartyDue>({
   };
 
   // Excel Export
-  const handleExport = () => {
+  const handleExport = async () => {
     if (processedParties.length === 0) {
       showErrorToast(`No ${partyTitle.toLowerCase()} records available to export`);
       return;
@@ -243,13 +243,16 @@ export const TradePartyDueTable = <T extends GenericTradePartyDue>({
         return item;
       });
 
-      const worksheet = XLSX.utils.json_to_sheet(rows);
-      const workbook = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(workbook, worksheet, `${partyTitle} Dues`);
-
       const today = new Date().toISOString().split("T")[0];
       const fname = excelFileName || `${partyTitle}_Dues_${today}.xlsx`;
-      XLSX.writeFile(workbook, fname);
+      const totalDue = rows.reduce((s, r) => s + (Number(r["Total Due (৳)"]) || 0), 0);
+      const totalRow = {
+        SL: "TOTAL",
+        [`${partyTitle} Name`]: `Total Records: ${rows.length}`,
+        "Total Due (৳)": totalDue,
+      };
+
+      await buildAndDownloadExcel(rows, totalRow, { fileName: fname, sheetName: `${partyTitle} Dues` });
       showSuccessToast(`Successfully exported ${rows.length} records to Excel!`);
     } catch (err: any) {
       showErrorToast(err?.message || "Failed to export Excel file");

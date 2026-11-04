@@ -17,22 +17,23 @@ interface UserDataProps {
 }
 
 type OptionT = { label: string; value: string };
-type FilterKey = "mainCategoryId" | "vendorId" | "isApprove";
+type FilterKey = "categoryId" | "vendorId" | "isApprove";
 type SelectedFilters = Record<FilterKey, OptionT | null>;
 
 interface UserTableProps {
-  dataList: UserDataProps[];
-  fetchData: () => void;
+  dataList?: UserDataProps[];
+  fetchData?: () => void;
   isLoading?: boolean;
   isFetching?: boolean;
-  pageCount: number;
-  currentPageNumber: number;
-  handlePagination: (paginationData: { selected: number }) => void;
-  setCurrentPageNumber: React.Dispatch<React.SetStateAction<number>>;
-  searchQuery: string;
-  setSearchQuery: (query: string) => void;
-  selectedFilters: SelectedFilters;
-  setSelectedFilters: React.Dispatch<React.SetStateAction<SelectedFilters>>;
+  pageCount?: number;
+  currentPageNumber?: number;
+  handlePagination?: (paginationData: { selected: number }) => void;
+  setCurrentPageNumber?: React.Dispatch<React.SetStateAction<number>>;
+  searchQuery?: string;
+  setSearchQuery?: (query: string) => void;
+  selectedFilters?: SelectedFilters;
+  setSelectedFilters?: React.Dispatch<React.SetStateAction<SelectedFilters>>;
+  refreshKey?: number;
 }
 
 const UserTable = ({
@@ -86,7 +87,7 @@ const UserTable = ({
 
   const dropdownOptions = useMemo<Record<FilterKey, OptionT[]>>(
     () => ({
-      mainCategoryId: [
+      categoryId: [
         { label: "All Categories", value: "" },
         { label: "Coffee & Beverages", value: "cat_001" },
         { label: "Bakery & Snacks", value: "cat_002" },
@@ -173,10 +174,10 @@ const UserTable = ({
       <div className="space-y-4 border-b border-[var(--ui-border)] px-4">
         <div className="pt-4 pb-4 flex sm:flex-row flex-col gap-4 justify-between flex-wrap">
           <Search
-            searchQuery={searchQuery}
+            searchQuery={searchQuery || ""}
             onSearchChange={(value) => {
-              setSearchQuery(value);
-              setCurrentPageNumber(1);
+              setSearchQuery?.(value);
+              setCurrentPageNumber?.(1);
             }}
           />
           <div className="flex sm:flex-row flex-col gap-2">
@@ -185,24 +186,23 @@ const UserTable = ({
                 <DropdownFilter
                   key={key}
                   title={
-                    key === "mainCategoryId"
+                    key === "categoryId"
                       ? "Category"
                       : key === "vendorId"
                         ? "Vendor"
                         : "Approval"
                   }
                   options={options}
-                  // selectedOption={selectedFilters[key]}          // ✅ typed
                   isOpen={openDropdown === key}
                   onToggle={() =>
                     setOpenDropdown(openDropdown === key ? null : key)
                   }
                   onSelect={(selected) => {
-                    setSelectedFilters((prev) => ({
+                    setSelectedFilters?.((prev) => ({
                       ...prev,
                       [key]: selected,
-                    })); // ✅ typed
-                    setCurrentPageNumber(1);
+                    }));
+                    setCurrentPageNumber?.(1);
                     setOpenDropdown(null);
                   }}
                 />

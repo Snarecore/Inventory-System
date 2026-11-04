@@ -1,8 +1,4 @@
 export const heroSliderQueryKey = 'hero-slider';
-export const mainCategoryQueryKey = "main-category";
-export const firstCategoryQueryKey = "first-category";
-export const secondCategoryQueryKey = "second-category";
-export const thirdCategoryQueryKey = "third-category";
 export const productQueryKey = "product";
 export const insertProductQueryKey = "insert-product";
 export const contactMessageQueryKey = "contact-message";

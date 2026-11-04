@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { TiDelete } from "react-icons/ti";
+import { FaTimesCircle } from "react-icons/fa";
 import { useFormKeyboardNavigation } from "@/hooks/useFormKeyboardNavigation";
 
 export interface DrawerModalProps {
@@ -125,7 +125,7 @@ const DrawerModal: React.FC<DrawerModalProps> = ({
                   className="p-1 rounded-lg text-gray-400 hover:text-red-500 hover:bg-gray-100 transition-colors cursor-pointer"
                   title="Close"
                 >
-                  <TiDelete className="text-2xl text-red-500" />
+                  <FaTimesCircle className="text-xl text-red-500" />
                 </button>
               </div>
 

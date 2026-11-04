@@ -40,7 +40,7 @@ export const menu = [
 				name: "Product Category",
 				title: "Product Category",
 				icon: FaBoxes,
-				path: "/admin/main-category",
+				path: "/admin/product-category",
 				subItems: [],
 			},
 

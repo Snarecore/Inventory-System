@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
-import { BsColumnsGap } from "react-icons/bs";
+import { FaColumns } from "react-icons/fa";
 
 export interface ColumnItem {
   key: string;
@@ -47,7 +47,7 @@ export const ColumnVisibilityDropdown: React.FC<ColumnVisibilityDropdownProps> =
         className="w-full sm:w-auto flex items-center justify-center gap-1.5 px-2.5 h-8 text-[11px] sm:text-xs font-medium text-[var(--ui-text)] bg-[var(--ui-surface-muted)]/80 hover:bg-[var(--ui-surface-sunken)] border border-[var(--ui-border)] rounded-lg transition-colors cursor-pointer"
         title="Customize visible columns"
       >
-        <BsColumnsGap className="text-[var(--ui-text)] text-xs shrink-0" />
+        <FaColumns className="text-[var(--ui-text)] text-xs shrink-0" />
         <span className="truncate">Columns</span>
         <span className="text-[10px] text-[var(--ui-text-muted)] font-semibold bg-[var(--ui-border)]/80 px-1.5 py-0.2 rounded-full">
           {visibleCount}/{columns.length}

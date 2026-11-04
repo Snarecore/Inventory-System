@@ -1,13 +1,20 @@
 import { useState, useEffect, useRef } from "react";
-import { BsThreeDotsVertical } from "react-icons/bs";
-import { GiHamburgerMenu } from "react-icons/gi";
-import { IoClose, IoChevronDown } from "react-icons/io5";
 import { menu } from "@/navigation/sidebar";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { RiArrowDropDownLine, RiArrowDropRightLine } from "react-icons/ri";
-import { GoDotFill } from "react-icons/go";
 import { MotionDiv } from "@/utils/framer.motion";
-import { FaCog, FaSignOutAlt, FaUserCircle, FaSun, FaMoon } from "react-icons/fa";
+import {
+    FaCog,
+    FaSignOutAlt,
+    FaUserCircle,
+    FaSun,
+    FaMoon,
+    FaEllipsisV,
+    FaBars,
+    FaTimes,
+    FaChevronDown,
+    FaChevronRight,
+    FaCircle,
+} from "react-icons/fa";
 import { getUserInfo, getStoredUser, removeStoredUser } from "@/utils/auth-storage";
 import { showSuccessToast } from "@/utils/toast-utils";
 import { useQueryClient } from "@tanstack/react-query";
@@ -117,13 +124,13 @@ const Header = ({ sidebarClick }: { sidebarClick: boolean }) => {
             }`}>
             <div className="flex lg:hidden items-center justify-between px-4 h-12 bg-white border-b border-gray-200 transition-all ease-in-out duration-300">
                 {showSidebarMenu ? (
-                    <IoClose
-                        size={24}
+                    <FaTimes
+                        size={22}
                         className="text-[var(--color-primary)] cursor-pointer"
                         onClick={() => setShowSidebarMenu(false)}
                     />
                 ) : (
-                    <GiHamburgerMenu
+                    <FaBars
                         size={20}
                         className="text-[var(--color-primary)] cursor-pointer"
                         onClick={() => setShowSidebarMenu(true)}
@@ -157,8 +164,8 @@ const Header = ({ sidebarClick }: { sidebarClick: boolean }) => {
                     </button>
 
                     <div className="relative inline-block">
-                        <BsThreeDotsVertical
-                            size={20}
+                        <FaEllipsisV
+                            size={18}
                             className="text-[var(--color-primary)] cursor-pointer"
                             onClick={() => setShowMenuDropdown(!showMenuDropdown)}
                         />
@@ -265,11 +272,11 @@ const Header = ({ sidebarClick }: { sidebarClick: boolean }) => {
                                                             </span>
                                                         </div>
 
-                                                        <span className="text-xl bg-gray-100 rounded-full">
+                                                        <span className="text-xs bg-gray-100 rounded-full p-1.5 flex items-center justify-center">
                                                             {isOpen ? (
-                                                                <RiArrowDropDownLine className="text-[var(--color-primary)]" />
+                                                                <FaChevronDown className="text-[var(--color-primary)] text-[10px]" />
                                                             ) : (
-                                                                <RiArrowDropRightLine className="text-gray-600" />
+                                                                <FaChevronRight className="text-gray-600 text-[10px]" />
                                                             )}
                                                         </span>
                                                     </div>
@@ -318,7 +325,7 @@ const Header = ({ sidebarClick }: { sidebarClick: boolean }) => {
                                                                             ${isActive ? "text-[var(--color-primary)] font-medium" : "text-[#646b72]"}`}
                                                                     >
                                                                         <span className="flex justify-start items-center gap-2">
-                                                                            <GoDotFill className="text-[10px]" />
+                                                                            <FaCircle className="text-[7px]" />
                                                                             {subItem.name}
                                                                         </span>
                                                                     </Link>
@@ -372,8 +379,8 @@ const Header = ({ sidebarClick }: { sidebarClick: boolean }) => {
                             <span className="text-sm font-medium text-gray-800 dark:text-[var(--ui-text)]">
                                 {displayName}
                             </span>
-                            <IoChevronDown
-                                size={14}
+                            <FaChevronDown
+                                size={12}
                                 className={`text-gray-600 dark:text-[var(--ui-text-muted)] transition-transform duration-200 ${
                                     showUserDropdown ? "rotate-180" : ""
                                 }`}

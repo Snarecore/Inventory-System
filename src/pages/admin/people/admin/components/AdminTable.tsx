@@ -17,7 +17,7 @@ interface AdminDataProps {
 }
 
 type OptionT = { label: string; value: string };
-type FilterKey = 'mainCategoryId' | 'vendorId' | 'isApprove';
+type FilterKey = 'categoryId' | 'vendorId' | 'isApprove';
 type SelectedFilters = Record<FilterKey, OptionT | null>;
 
 interface AdminTableProps {
@@ -28,11 +28,11 @@ interface AdminTableProps {
     pageCount?: number;
     currentPageNumber?: number;
     handlePagination?: (paginationData: { selected: number }) => void;
-    setCurrentPageNumber: React.Dispatch<React.SetStateAction<number>>;
-    searchQuery: string;
-    setSearchQuery: (query: string) => void;
-    selectedFilters: SelectedFilters;
-    setSelectedFilters: React.Dispatch<React.SetStateAction<SelectedFilters>>;
+    setCurrentPageNumber?: React.Dispatch<React.SetStateAction<number>>;
+    searchQuery?: string;
+    setSearchQuery?: (query: string) => void;
+    selectedFilters?: SelectedFilters;
+    setSelectedFilters?: React.Dispatch<React.SetStateAction<SelectedFilters>>;
     refreshKey?: number;
 }
 
@@ -91,10 +91,10 @@ const AdminTable = ({
         closeDeleteModal();
     };
 
-    const debouncedSearch = useDebounce(searchQuery, 250);
+    const debouncedSearch = useDebounce(searchQuery || "", 250);
     const allRows = (dataList && dataList.length ? dataList : DUMMY_ADMINS) as AdminDataProps[];
     const rows = useMemo(() => {
-        if (!debouncedSearch.trim()) return allRows;
+        if (!debouncedSearch || !debouncedSearch.trim()) return allRows;
         const q = debouncedSearch.toLowerCase().trim();
         return allRows.filter((item) =>
             (item.name || "").toLowerCase().includes(q) ||
@@ -111,7 +111,7 @@ const AdminTable = ({
 
     const dropdownOptions = useMemo<Record<FilterKey, OptionT[]>>(
         () => ({
-            mainCategoryId: [
+            categoryId: [
                 { label: "All Categories", value: "" },
                 { label: "Coffee & Beverages", value: "cat_001" },
                 { label: "Bakery & Snacks", value: "cat_002" },
@@ -142,10 +142,10 @@ const AdminTable = ({
             <div className="p-2 sm:p-2.5 border-b border-[var(--ui-border)] flex flex-wrap items-center justify-between gap-2 relative z-40 overflow-visible">
                 <div className="w-full sm:w-56 shrink-0">
                     <Search
-                        searchQuery={searchQuery}
+                        searchQuery={searchQuery || ""}
                         onSearchChange={(value) => {
-                            setSearchQuery(value);
-                            setCurrentPageNumber(1);
+                            setSearchQuery?.(value);
+                            setCurrentPageNumber?.(1);
                         }}
                     />
                 </div>
@@ -155,7 +155,7 @@ const AdminTable = ({
                             <DropdownFilter
                                 key={key}
                                 title={
-                                    key === "mainCategoryId" ? "Category"
+                                    key === "categoryId" ? "Category"
                                         : key === "vendorId" ? "Vendor"
                                             : "Approval"
                                 }
@@ -163,8 +163,8 @@ const AdminTable = ({
                                 isOpen={openDropdown === key}
                                 onToggle={() => setOpenDropdown(openDropdown === key ? null : key)}
                                 onSelect={(selected) => {
-                                    setSelectedFilters(prev => ({ ...prev, [key]: selected }));
-                                    setCurrentPageNumber(1);
+                                    setSelectedFilters?.(prev => ({ ...prev, [key]: selected }));
+                                    setCurrentPageNumber?.(1);
                                     setOpenDropdown(null);
                                 }}
                             />

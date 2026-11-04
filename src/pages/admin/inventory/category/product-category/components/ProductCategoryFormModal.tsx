@@ -7,7 +7,6 @@ import {
 } from "@/hooks/useProductCategoryQueries";
 import type { ProductCategoryItem, ProductCategoryStatus } from "@/types";
 import { showErrorToast } from "@/utils/toast-utils";
-import { TiDelete } from "react-icons/ti";
 import { FaBoxes, FaCheckCircle, FaTimesCircle, FaSpinner } from "react-icons/fa";
 
 interface ProductCategoryFormModalProps {
@@ -113,7 +112,7 @@ const ProductCategoryFormContent: React.FC<FormContentProps> = ({
           className="p-1 rounded-lg text-gray-400 hover:text-red-500 hover:bg-gray-100 transition-colors cursor-pointer"
           title="Close"
         >
-          <TiDelete className="text-2xl text-red-500" />
+          <FaTimesCircle className="text-xl text-red-500" />
         </button>
       </div>
 

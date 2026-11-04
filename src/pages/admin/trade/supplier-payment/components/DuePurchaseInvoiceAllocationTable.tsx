@@ -1,13 +1,11 @@
-import React, { useMemo } from "react";
-import { FaFileInvoiceDollar, FaSpinner } from "react-icons/fa";
-import { formatMoney } from "@/utils/formatters";
+import React from "react";
+import TradeDueInvoiceAllocationTable from "@/components/settlement/TradeDueInvoiceAllocationTable";
 import type { PurchaseInvoiceDueItem, PaymentAllocation } from "@/types/payment.types";
-import { TenderBreakdownPortal } from "@/components/settlement/TenderBreakdownPortal";
 import type { TenderBreakdown } from "@/hooks/useMultiTenderSettlement";
 
 export type { TenderBreakdown };
 
-interface DuePurchaseInvoiceAllocationTableProps {
+export interface DuePurchaseInvoiceAllocationTableProps {
   invoices: PurchaseInvoiceDueItem[];
   isLoading: boolean;
   selectedInvoiceNos: Set<string>;
@@ -20,165 +18,8 @@ interface DuePurchaseInvoiceAllocationTableProps {
   tenderBreakdown?: TenderBreakdown;
 }
 
-export const DuePurchaseInvoiceAllocationTable: React.FC<DuePurchaseInvoiceAllocationTableProps> = ({
-  invoices,
-  isLoading,
-  selectedInvoiceNos,
-  onToggleInvoice,
-  onToggleSelectAll,
-  isAllSelected,
-  allocations,
-  isManualMode,
-  onToggleManualMode,
-  tenderBreakdown,
-}) => {
-
-  const allocationMap = useMemo(() => {
-    const map = new Map<string, PaymentAllocation>();
-    allocations.forEach((a) => map.set(a.invoiceNo, a));
-    return map;
-  }, [allocations]);
-
-  if (isLoading) {
-    return (
-      <div className="p-4 text-center text-xs text-[var(--ui-text-muted)] border border-[var(--ui-border)] rounded-lg bg-[var(--ui-surface-muted)] flex items-center justify-center gap-2">
-        <FaSpinner className="animate-spin text-[var(--color-primary)]" size={13} />
-        <span>Loading pending invoices...</span>
-      </div>
-    );
-  }
-
-  if (invoices.length === 0) {
-    return (
-      <div className="p-4 text-center text-xs text-[var(--ui-text-muted)] border border-[var(--ui-border)] rounded-lg bg-[var(--ui-surface-muted)]">
-        <FaFileInvoiceDollar size={20} className="mx-auto text-[var(--ui-text-subtle)] mb-1" />
-        <p className="font-semibold text-[var(--ui-text)]">No individual invoices due</p>
-        <p className="text-[11px] text-[var(--ui-text-subtle)]">
-          Payment will be debited directly against the supplier ledger balance.
-        </p>
-      </div>
-    );
-  }
-
-  return (
-    <div className="space-y-1">
-      {/* Allocation Header */}
-      <div className="flex items-center justify-between text-xs">
-        <div className="flex items-center gap-2">
-          <span className="font-semibold text-[var(--ui-text)]">
-            Pending Invoices ({invoices.length})
-          </span>
-        </div>
-      </div>
-
-      {/* Table */}
-      <div className="border border-[var(--ui-border)] rounded-lg max-h-52 overflow-y-auto overflow-x-hidden">
-        <table className="w-full text-left text-xs border-collapse table-fixed">
-          <colgroup>
-            {isManualMode && <col className="w-7" />}
-            <col className="w-[30%]" />
-            <col className="w-[14%]" />
-            <col className="w-[14%]" />
-            <col className="w-[14%]" />
-            <col className="w-[14%]" />
-            <col className="w-[14%]" />
-          </colgroup>
-          <thead className="bg-[var(--table-header-bg,var(--primary-color))] text-[var(--table-header-text,var(--ui-on-accent,#ffffff))] font-semibold sticky top-0 z-10 border-b border-[var(--ui-border)] whitespace-nowrap">
-            <tr>
-              {isManualMode && (
-                <th className="py-1 px-1.5 text-center w-7 shrink-0 whitespace-nowrap">
-                  <input
-                    type="checkbox"
-                    checked={isAllSelected}
-                    onChange={onToggleSelectAll}
-                    className="rounded text-[var(--color-primary)] focus:ring-[var(--color-primary)] cursor-pointer"
-                    title="Select All"
-                  />
-                </th>
-              )}
-              <th className="py-1.5 px-2 whitespace-nowrap">Invoice No</th>
-              <th className="py-1.5 px-2 whitespace-nowrap">Date</th>
-              <th className="py-1.5 px-2 text-right whitespace-nowrap">Due (৳)</th>
-              <th className="py-1.5 px-2 text-right whitespace-nowrap">
-                <div className="inline-flex items-center justify-end gap-0.5 select-none">
-                  <span>Paying (৳)</span>
-                  <TenderBreakdownPortal
-                    tenderBreakdown={tenderBreakdown}
-                    title="Payment Breakdown"
-                    totalLabel="Total Paying:"
-                  />
-                </div>
-              </th>
-              <th className="py-1.5 px-2 text-right whitespace-nowrap">Discount (৳)</th>
-              <th className="py-1.5 px-2 text-right whitespace-nowrap">Remaining (৳)</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-[var(--ui-border)] whitespace-nowrap">
-            {invoices.map((inv) => {
-              const isSelected = selectedInvoiceNos.has(inv.invoiceNo);
-              const alloc = allocationMap.get(inv.invoiceNo);
-              const paidAmount = alloc
-                ? Number(alloc.allocatedPaid ?? alloc.paidAmount ?? 0)
-                : 0;
-              const discountAmount = alloc
-                ? Number(alloc.allocatedDiscount ?? alloc.discountAmount ?? 0)
-                : 0;
-              const dueAmount = Number(inv.dueAmount || 0);
-              const remainingDue = alloc
-                ? Number(alloc.remainingDue ?? alloc.dueAmount ?? Math.max(0, dueAmount - paidAmount - discountAmount))
-                : dueAmount;
-
-              return (
-                <tr
-                  key={inv.invoiceNo}
-                  className={`hover:bg-[var(--ui-surface-muted)]/80 transition-colors ${
-                    paidAmount > 0 || discountAmount > 0
-                      ? "bg-[var(--ui-surface-muted)]/70"
-                      : isSelected && isManualMode
-                      ? "bg-[var(--ui-surface-muted)]/40"
-                      : ""
-                  }`}
-                >
-                  {isManualMode && (
-                    <td className="py-1 px-1.5 text-center whitespace-nowrap">
-                      <input
-                        type="checkbox"
-                        checked={isSelected}
-                        onChange={() => onToggleInvoice(inv.invoiceNo)}
-                        className="rounded text-[var(--color-primary)] focus:ring-[var(--color-primary)] cursor-pointer"
-                      />
-                    </td>
-                  )}
-                  <td className="py-1 px-2 text-[var(--ui-text)] font-medium">
-                    <span className="truncate block" title={inv.invoiceNo}>
-                      {inv.invoiceNo}
-                    </span>
-                  </td>
-                  <td className="py-1 px-2 text-[var(--ui-text)] whitespace-nowrap">
-                    {inv.purchaseDate || inv.date
-                      ? String(inv.purchaseDate || inv.date).replace("T", " ").split(" ")[0]
-                      : "-"}
-                  </td>
-                  <td className="py-1 px-2 text-right text-[var(--ui-text)] font-semibold whitespace-nowrap">
-                    {formatMoney(dueAmount)}
-                  </td>
-                  <td className="py-1 px-2 text-right font-bold text-[var(--ui-text)] whitespace-nowrap">
-                    {paidAmount > 0 ? formatMoney(paidAmount) : "-"}
-                  </td>
-                  <td className="py-1 px-2 text-right font-bold text-[var(--ui-text)] whitespace-nowrap">
-                    {discountAmount > 0 ? formatMoney(discountAmount) : "-"}
-                  </td>
-                  <td className="py-1 px-2 text-right text-[var(--ui-text)] font-semibold whitespace-nowrap">
-                    {formatMoney(remainingDue)}
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  );
+export const DuePurchaseInvoiceAllocationTable: React.FC<DuePurchaseInvoiceAllocationTableProps> = (props) => {
+  return <TradeDueInvoiceAllocationTable {...props} partyType="supplier" />;
 };
 
 export default DuePurchaseInvoiceAllocationTable;

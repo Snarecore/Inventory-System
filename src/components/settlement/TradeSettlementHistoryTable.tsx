@@ -2,7 +2,7 @@ import React, { useState, useMemo } from "react";
 import { FiChevronDown, FiPrinter, FiChevronRight } from "react-icons/fi";
 import { FaFileExcel } from "react-icons/fa";
 import moment from "moment";
-import * as XLSX from "xlsx";
+import { buildAndDownloadExcel } from "@/utils/excel-export";
 import Search from "@/components/table-components/Search";
 import DateRangePicker from "@/components/date-range-picker/DateRangePicker";
 import {
@@ -235,7 +235,7 @@ export const TradeSettlementHistoryTable = <T extends GenericSettlementHistoryIt
   };
 
   // Export to Excel
-  const handleExport = () => {
+  const handleExport = async () => {
     if (processedList.length === 0) {
       showErrorToast(`No ${actionTitle.toLowerCase()} history to export`);
       return;
@@ -255,12 +255,26 @@ export const TradeSettlementHistoryTable = <T extends GenericSettlementHistoryIt
         Remark: item.remark || "-",
       }));
 
-      const worksheet = XLSX.utils.json_to_sheet(rows);
-      const workbook = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(workbook, worksheet, `${actionTitle} History`);
       const today = new Date().toISOString().split("T")[0];
       const fname = excelFileName || `${actionTitle}_History_${today}.xlsx`;
-      XLSX.writeFile(workbook, fname);
+      const amountKey = `${isCustomer ? "Collected" : "Paid"} Amount (৳)`;
+      const totalAmount = rows.reduce((s, r) => s + (Number((r as any)[amountKey]) || 0), 0);
+      const totalDiscount = rows.reduce((s, r) => s + (Number(r["Discount (৳)"]) || 0), 0);
+
+      const totalRow = {
+        SL: "TOTAL",
+        Date: "",
+        "Voucher No": `Total Records: ${rows.length}`,
+        [`${partyTitle} Name`]: "",
+        Phone: "",
+        "Payment Mode": "",
+        [amountKey]: totalAmount,
+        "Discount (৳)": totalDiscount,
+        Bills: "",
+        Remark: "",
+      };
+
+      await buildAndDownloadExcel(rows, totalRow, { fileName: fname, sheetName: `${actionTitle} History` });
       showSuccessToast(`Successfully exported ${rows.length} records to Excel!`);
     } catch (err: any) {
       showErrorToast(err?.message || "Failed to export Excel file");

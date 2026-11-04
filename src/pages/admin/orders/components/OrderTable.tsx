@@ -91,21 +91,7 @@ const OrderTable = ({
 	// Search and Filter by Category, Vendor
 	const [openDropdown, setOpenDropdown] = useState<string | null>(null);
 
-	const [customers, setCustomers] = useState<{ label: string, value: string }[]>([]);
-	// const customersApiUrl = apiConfig.site.customerListUrl;
-	// const fetchCustomersData = async () => {
-	// 	try {
-	// 		const result = await fetchData({ apiUrl: `${customersApiUrl}?role=customer` });
-	// 		setCustomers(result.customerList.map((cat: any) => ({ label: cat.name, value: cat.id })));
-	// 	} catch (error) {
-	// 		console.error("Failed to fetch main categories:", error);
-	// 	}
-	// };
-
-
-	// useEffect(() => {
-	// 	fetchCustomersData();
-	// }, []);
+	const [customers] = useState<{ label: string, value: string }[]>([]);
 
 	const dropdownOptions = useMemo(() => {
 		return {

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { LuSend } from "react-icons/lu";
+import { FiSend } from "react-icons/fi";
 import { formatDate } from "@/utils/date-utils";
 
 
@@ -206,7 +206,7 @@ const ChatWindow = ({ selectedUser }: { selectedUser: SelectedUser }) => {
                         onClick={handleSubmitMessage}
                         className="bg-[var(--ui-warning)] hover:bg-[var(--ui-warning)] text-white p-1.5 rounded-lg transition-colors cursor-pointer"
                     >
-                        <LuSend className="w-4 h-5" />
+                        <FiSend className="w-4 h-4" />
                     </button>
                 </div>
             </div>

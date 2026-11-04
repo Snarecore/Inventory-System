@@ -1,4 +1,3 @@
-import * as XLSX from "xlsx";
 import type { PurchaseItem, PurchaseReturnItem, CategoryItem, ProductCategoryItem, BankAccountItem, MfsUserItem } from "@/types";
 import { isCategoryAdmin, normalizeCategoryType } from "@/services/category-service";
 
@@ -35,19 +34,21 @@ const getItemsCount = (p: any): number => {
 };
 
 /**
- * Senior Developer Standard: Unified Excel Builder & File Generator.
- * Handles worksheet transformation, auto-fitting column widths, workbook generation, and trigger download.
+ * Senior Developer Standard: Dynamic Async Excel Builder & File Generator.
+ * SheetJS (281 KB) is lazy loaded on-demand so it doesn't burden initial page load.
  */
-export function buildAndDownloadExcel<T extends Record<string, any>>(
+export async function buildAndDownloadExcel<T extends Record<string, any>>(
   rows: T[],
-  totalRow: Record<string, any>,
-  options: GenericExcelExportOptions
-): void {
+  totalRow?: Record<string, any>,
+  options?: GenericExcelExportOptions
+): Promise<void> {
   if (!rows || rows.length === 0) {
     throw new Error("No data available to export");
   }
 
-  const fullData = [...rows, totalRow];
+  const XLSX = await import("xlsx");
+
+  const fullData = totalRow && Object.keys(totalRow).length > 0 ? [...rows, totalRow] : rows;
   const headers = Object.keys(rows[0]);
   const worksheet = XLSX.utils.json_to_sheet(fullData, { header: headers });
 
@@ -65,8 +66,8 @@ export function buildAndDownloadExcel<T extends Record<string, any>>(
   });
 
   const workbook = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(workbook, worksheet, options.sheetName || "Sheet1");
-  XLSX.writeFile(workbook, options.fileName || "export.xlsx");
+  XLSX.utils.book_append_sheet(workbook, worksheet, options?.sheetName || "Sheet1");
+  XLSX.writeFile(workbook, options?.fileName || "export.xlsx");
 }
 
 /**

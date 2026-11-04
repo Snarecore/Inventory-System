@@ -15,7 +15,7 @@ import {
   EmptyState,
 } from "@/components/common";
 import { formatMoney } from "@/utils/formatters";
-import * as XLSX from "xlsx";
+import { buildAndDownloadExcel } from "@/utils/excel-export";
 import { showSuccessToast, showErrorToast } from "@/utils/toast-utils";
 import moment from "moment";
 import type { SaleItem } from "@/types";
@@ -144,7 +144,7 @@ export const CustomerSalesReportTable: React.FC<CustomerSalesReportTableProps> =
     currentPage * pageSize
   );
 
-  const handleExport = () => {
+  const handleExport = async () => {
     if (customerSummaries.length === 0) {
       showErrorToast("No customer data to export");
       return;
@@ -166,13 +166,27 @@ export const CustomerSalesReportTable: React.FC<CustomerSalesReportTableProps> =
         "Status": c.totalDue > 0 ? "Has Due" : "Settled",
       }));
 
-      const ws = XLSX.utils.json_to_sheet(data);
-      const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, "Customer Sales");
-      XLSX.writeFile(
-        wb,
-        `Customer_Sales_Report_${moment().format("YYYY-MM-DD")}.xlsx`
-      );
+      const totalBilled = data.reduce((s, r) => s + (Number(r["Total Billed (BDT)"]) || 0), 0);
+      const totalPaid = data.reduce((s, r) => s + (Number(r["Total Paid (BDT)"]) || 0), 0);
+      const totalDue = data.reduce((s, r) => s + (Number(r["Outstanding Due (BDT)"]) || 0), 0);
+
+      const totalRow = {
+        SL: "TOTAL",
+        "Customer Name": `Total Customers: ${data.length}`,
+        Phone: "",
+        Address: "",
+        "Total Orders": "",
+        "Total Billed (BDT)": totalBilled,
+        "Total Paid (BDT)": totalPaid,
+        "Outstanding Due (BDT)": totalDue,
+        "Last Order Date": "",
+        Status: "",
+      };
+
+      await buildAndDownloadExcel(data, totalRow, {
+        fileName: `Customer_Sales_Report_${moment().format("YYYY-MM-DD")}.xlsx`,
+        sheetName: "Customer Sales",
+      });
       showSuccessToast("Customer sales report exported successfully");
     } catch (e: any) {
       showErrorToast(e?.message || "Export failed");

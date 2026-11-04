@@ -1,5 +1,5 @@
 import React, { useRef } from "react";
-import { TiDelete } from "react-icons/ti";
+import { FaTimesCircle } from "react-icons/fa";
 import { useFormKeyboardNavigation } from "@/hooks/useFormKeyboardNavigation";
 
 interface ModalProps {
@@ -69,7 +69,7 @@ const Modal: React.FC<ModalProps> = ({
 						className="text-[var(--ui-text-subtle)] hover:text-[var(--ui-danger)] transition-colors p-0.5 rounded-lg hover:bg-[var(--ui-surface-sunken)] cursor-pointer"
 						title="Close Modal"
 					>
-						<TiDelete className="text-2xl text-[var(--ui-danger)] transition-colors" />
+						<FaTimesCircle className="text-xl text-[var(--ui-danger)] transition-colors" />
 					</button>
 				</div>
 				<div className={`mt-2.5 flex-1 ${bodyClassName}`}>{children}</div>

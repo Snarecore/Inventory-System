@@ -15,7 +15,7 @@ import {
   EmptyState,
 } from "@/components/common";
 import { formatMoney } from "@/utils/formatters";
-import * as XLSX from "xlsx";
+import { buildAndDownloadExcel } from "@/utils/excel-export";
 import { showSuccessToast, showErrorToast } from "@/utils/toast-utils";
 import moment from "moment";
 import type { SaleItem } from "@/types";
@@ -147,7 +147,7 @@ export const ProductSalesReportTable: React.FC<ProductSalesReportTableProps> = (
     currentPage * pageSize
   );
 
-  const handleExport = () => {
+  const handleExport = async () => {
     if (productSummaries.length === 0) {
       showErrorToast("No product data to export");
       return;
@@ -169,13 +169,26 @@ export const ProductSalesReportTable: React.FC<ProductSalesReportTableProps> = (
             : "0.0%",
       }));
 
-      const ws = XLSX.utils.json_to_sheet(data);
-      const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, "Product Sales");
-      XLSX.writeFile(
-        wb,
-        `Product_Sales_Report_${moment().format("YYYY-MM-DD")}.xlsx`
-      );
+      const totalQty = data.reduce((s, r) => s + (Number(r["Quantity Sold"]) || 0), 0);
+      const totalRev = data.reduce((s, r) => s + (Number(r["Total Revenue (BDT)"]) || 0), 0);
+      const totalDisc = data.reduce((s, r) => s + (Number(r["Discount (BDT)"]) || 0), 0);
+
+      const totalRow = {
+        SL: "TOTAL",
+        "Product Code": "",
+        "Product Name": `Total Products: ${data.length}`,
+        Unit: "",
+        "Quantity Sold": totalQty,
+        "Invoices Sold": "",
+        "Total Revenue (BDT)": totalRev,
+        "Discount (BDT)": totalDisc,
+        "Share of Sales": "100.0%",
+      };
+
+      await buildAndDownloadExcel(data, totalRow, {
+        fileName: `Product_Sales_Report_${moment().format("YYYY-MM-DD")}.xlsx`,
+        sheetName: "Product Sales",
+      });
       showSuccessToast("Product sales report exported successfully");
     } catch (e: any) {
       showErrorToast(e?.message || "Export failed");
