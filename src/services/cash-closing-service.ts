@@ -44,18 +44,24 @@ export async function fetchCashClosing(closingDate?: string): Promise<CashClosin
 export async function fetchCashClosingReport(params?: {
   month?: string;
   year?: string;
+  yearMonth?: string;
 }): Promise<CashClosingReportData | null> {
   const accessUser = buildAccessUser();
   const currentMonth = moment().format("MM");
   const currentYear = moment().format("YYYY");
+
+  const yearStr = params?.year || currentYear;
+  const monthStr = String(params?.month || currentMonth).padStart(2, "0");
+  const ym = params?.yearMonth || `${yearStr}${monthStr}`;
 
   try {
     const res = await postData<CashClosingReportResponse>({
       url: apiConfig.cashClosing.getCashClosingReportUrl,
       body: {
         accessUser,
-        month: params?.month || currentMonth,
-        year: params?.year || currentYear,
+        yearMonth: ym,
+        month: monthStr,
+        year: yearStr,
       },
     });
 
