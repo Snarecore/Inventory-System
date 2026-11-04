@@ -6,6 +6,8 @@ import {
   FaUnlock,
   FaSpinner,
   FaCalendarAlt,
+  FaTag,
+  FaStickyNote,
 } from "react-icons/fa";
 import { formatMoney } from "@/utils/formatters";
 import { DIFFERENCE_REASONS } from "@/types";
@@ -76,8 +78,8 @@ export const CashClosingSummaryCard: React.FC<CashClosingSummaryCardProps> = ({
           >
             {isClosed ? <FaLock size={13} /> : <FaUnlock size={13} />}
           </div>
-          <div>
-            <h3 className="text-xs font-bold text-[var(--ui-text)] uppercase tracking-wider">
+          <div className="flex gap-2 text-[var(--ui-text)]">
+            <h3 className="text-xs font-bold text-[var(--ui-text)] ">
               Settlement & Closing
             </h3>
             <p className="text-[10px] text-[var(--ui-text-muted)] flex items-center gap-1">
@@ -164,41 +166,50 @@ export const CashClosingSummaryCard: React.FC<CashClosingSummaryCardProps> = ({
           </div>
         </div>
 
-        {/* Reason Select (when difference !== 0) */}
-        {hasDifference && (
-          <div>
-            <label className="block text-xs font-semibold text-[var(--ui-text)] mb-1">
-              Difference Reason <span className="text-rose-500">*</span>
-            </label>
-            <select
-              value={differenceReason}
-              disabled={isReadOnly}
-              onChange={(e) => setDifferenceReason(e.target.value)}
-              className="w-full text-xs p-2 rounded-lg border border-[var(--ui-border)] bg-[var(--ui-surface)] text-[var(--ui-text)] focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500 disabled:opacity-70 disabled:cursor-not-allowed"
-            >
-              <option value="">-- Select Reason --</option>
-              {DIFFERENCE_REASONS.map((r) => (
-                <option key={r.value} value={r.value}>
-                  {r.label}
-                </option>
-              ))}
-            </select>
-          </div>
-        )}
+        {/* Difference Reason & Remarks (Flex / Responsive Grid) */}
+        <div className="rounded-xl border border-[var(--ui-border)] bg-[var(--ui-surface-sunken)]/30 p-2.5">
+          <div className={`grid gap-2.5 items-start ${hasDifference ? "grid-cols-1 sm:grid-cols-2" : "grid-cols-1"}`}>
+            {/* Reason Select (when difference !== 0) */}
+            {hasDifference && (
+              <div className="flex flex-col gap-1">
+                <label className="flex items-center gap-1.5 text-[11px] font-bold text-[var(--ui-text)]">
+                  <FaTag size={11} className="text-amber-500" />
+                  <span>Difference Reason</span>
+                  <span className="text-rose-500 font-bold">*</span>
+                </label>
+                <select
+                  value={differenceReason}
+                  disabled={isReadOnly}
+                  onChange={(e) => setDifferenceReason(e.target.value)}
+                  className="w-full h-9 text-xs px-2.5 py-1.5 rounded-lg border border-[var(--ui-border)] bg-[var(--ui-surface)] text-[var(--ui-text)] font-medium focus:outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-500/15 disabled:opacity-60 disabled:cursor-not-allowed shadow-2xs transition-all cursor-pointer truncate"
+                >
+                  <option value="">-- Select Reason --</option>
+                  {DIFFERENCE_REASONS.map((r) => (
+                    <option key={r.value} value={r.value}>
+                      {r.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
 
-        {/* Remarks Input */}
-        <div>
-          <label className="block text-xs font-semibold text-[var(--ui-text)] mb-1">
-            Closing Remarks / Notes
-          </label>
-          <textarea
-            rows={2}
-            value={remarks}
-            disabled={isReadOnly}
-            onChange={(e) => setRemarks(e.target.value)}
-            placeholder="e.g. Cash count verified by manager..."
-            className="w-full text-xs p-2 rounded-lg border border-[var(--ui-border)] bg-[var(--ui-surface)] text-[var(--ui-text)] focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500 disabled:opacity-70 disabled:cursor-not-allowed resize-none"
-          />
+            {/* Remarks Input */}
+            <div className="flex flex-col gap-1">
+              <label className="flex items-center gap-1.5 text-[11px] font-bold text-[var(--ui-text)]">
+                <FaStickyNote size={11} className="text-sky-500" />
+                <span>Closing Remarks</span>
+                <span className="text-[10px] font-normal text-[var(--ui-text-muted)]">(Optional)</span>
+              </label>
+              <input
+                type="text"
+                value={remarks}
+                disabled={isReadOnly}
+                onChange={(e) => setRemarks(e.target.value)}
+                placeholder="e.g. Cash count verified by manager..."
+                className="w-full h-9 text-xs px-2.5 py-1.5 rounded-lg border border-[var(--ui-border)] bg-[var(--ui-surface)] text-[var(--ui-text)] focus:outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-500/15 disabled:opacity-60 disabled:cursor-not-allowed shadow-2xs transition-all placeholder:text-[var(--ui-text-muted)]/70"
+              />
+            </div>
+          </div>
         </div>
       </div>
 

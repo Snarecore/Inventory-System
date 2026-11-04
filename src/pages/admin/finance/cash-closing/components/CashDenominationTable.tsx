@@ -88,7 +88,7 @@ export const CashDenominationTable: React.FC<CashDenominationTableProps> = ({
         <table className="w-full text-left border-collapse text-xs">
           <thead>
             <tr className="border-b border-[var(--ui-border)] bg-[var(--ui-surface-sunken)]/60 text-xs font-bold text-black dark:text-white tracking-wider sticky top-0 z-10 backdrop-blur-xs">
-              <th className="py-2 px-2.5 text-black dark:text-white font-bold">Note / Coin</th>
+              <th className="py-2 px-2.5 text-black dark:text-white font-bold">Note </th>
               <th className="py-2 px-2.5 w-40 text-center text-black dark:text-white font-bold">Quantity</th>
               {!isReadOnly && <th className="py-2 px-2 text-center w-28 text-black dark:text-white font-bold">Quick Add</th>}
               <th className="py-2 px-2.5 text-right text-black dark:text-white font-bold">Total Amount</th>
@@ -124,7 +124,7 @@ export const CashDenominationTable: React.FC<CashDenominationTableProps> = ({
                         value={qty === 0 ? "" : qty}
                         placeholder="0"
                         onChange={(e) => handleInputChange(item.denomination, e.target.value)}
-                        className={`w-24 text-center font-bold text-xs py-0.5 px-2 rounded-md border transition-all ${
+                        className={`w-16 text-center font-bold text-xs py-0.5 px-2 rounded-md border transition-all ${
                           qty > 0
                             ? "border-sky-500 bg-sky-50/50 dark:bg-sky-950/30 text-sky-700 dark:text-sky-300 ring-1 ring-sky-500/20"
                             : "border-[var(--ui-border)] bg-[var(--ui-surface)] text-[var(--ui-text)]"
@@ -140,7 +140,7 @@ export const CashDenominationTable: React.FC<CashDenominationTableProps> = ({
                         <button
                           type="button"
                           onClick={() => handleQuickAdd(item.denomination, qty, 1)}
-                          className="h-5 px-1.5 rounded bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-[10px] font-semibold text-gray-700 dark:text-gray-300 transition-colors cursor-pointer"
+                          className="h-5 px-1.5 rounded bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-[10px] font-semibold text-black dark:text-gray-300 transition-colors cursor-pointer"
                           title="Add 1 note"
                         >
                           +1
@@ -148,7 +148,7 @@ export const CashDenominationTable: React.FC<CashDenominationTableProps> = ({
                         <button
                           type="button"
                           onClick={() => handleQuickAdd(item.denomination, qty, 10)}
-                          className="h-5 px-1.5 rounded bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-[10px] font-semibold text-gray-700 dark:text-gray-300 transition-colors cursor-pointer"
+                          className="h-5 px-1.5 rounded bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-[10px] font-semibold text-black dark:text-gray-300 transition-colors cursor-pointer"
                           title="Add 10 notes"
                         >
                           +10
@@ -172,7 +172,7 @@ export const CashDenominationTable: React.FC<CashDenominationTableProps> = ({
                     <span
                       className={`font-semibold text-xs ${
                         lineTotal > 0
-                          ? "text-[var(--ui-text)]"
+                          ? "text-black dark:text-white"
                           : "text-[var(--ui-text-muted)]"
                       }`}
                     >
