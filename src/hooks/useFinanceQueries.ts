@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   cashBalanceQueryKey,
+  cashClosingQueryKey,
   bankInfoListQueryKey,
   mfsUserListQueryKey,
   dashboardQueryKey,
@@ -57,10 +58,12 @@ export const useInsertFinancialTransactionMutation = (options?: {
         const accountType = vars.accountType?.toUpperCase();
         if (vars.type === "TRANSFER") {
           queryClient.invalidateQueries({ queryKey: [cashBalanceQueryKey] });
+          queryClient.invalidateQueries({ queryKey: [cashClosingQueryKey] });
           queryClient.invalidateQueries({ queryKey: [bankInfoListQueryKey] });
           queryClient.invalidateQueries({ queryKey: [mfsUserListQueryKey] });
         } else if (accountType === "CASH") {
           queryClient.invalidateQueries({ queryKey: [cashBalanceQueryKey] });
+          queryClient.invalidateQueries({ queryKey: [cashClosingQueryKey] });
         } else if (accountType === "BANK") {
           queryClient.invalidateQueries({ queryKey: [bankInfoListQueryKey] });
         } else if (accountType === "MFS") {
@@ -68,6 +71,7 @@ export const useInsertFinancialTransactionMutation = (options?: {
         } else {
           // Fallback if unspecified
           queryClient.invalidateQueries({ queryKey: [cashBalanceQueryKey] });
+          queryClient.invalidateQueries({ queryKey: [cashClosingQueryKey] });
           queryClient.invalidateQueries({ queryKey: [bankInfoListQueryKey] });
           queryClient.invalidateQueries({ queryKey: [mfsUserListQueryKey] });
         }
