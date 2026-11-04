@@ -3,7 +3,6 @@ import { FiX } from "react-icons/fi";
 import { FaCoins, FaCalendarAlt, FaCheckCircle, FaExclamationTriangle } from "react-icons/fa";
 import { formatMoney } from "@/utils/formatters";
 import type { CashClosingData } from "@/types";
-import { Button } from "@/components/common";
 
 interface DenominationBreakdownModalProps {
   isOpen: boolean;
@@ -162,15 +161,13 @@ export const DenominationBreakdownModal: React.FC<DenominationBreakdownModalProp
 
         {/* Footer */}
         <div className="flex justify-end pt-1">
-          <Button
+          <button
             type="button"
-            variant="secondary"
-            size="sm"
             onClick={onClose}
-            className="font-semibold !px-4"
+            className="px-4 py-1.5 text-xs font-semibold rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-[var(--ui-text)] transition-colors cursor-pointer"
           >
             Close
-          </Button>
+          </button>
         </div>
       </div>
     </div>
