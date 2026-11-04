@@ -28,7 +28,6 @@ interface CashClosingSummaryCardProps {
   status: string;
   onSubmitClosing: () => void;
   isSubmitting: boolean;
-  onEnableEdit?: () => void;
   isReadOnly?: boolean;
 }
 
@@ -47,7 +46,6 @@ export const CashClosingSummaryCard: React.FC<CashClosingSummaryCardProps> = ({
   status,
   onSubmitClosing,
   isSubmitting,
-  onEnableEdit,
   isReadOnly = false,
 }) => {
   const isClosed = status?.toLowerCase() === "closed";
@@ -220,15 +218,11 @@ export const CashClosingSummaryCard: React.FC<CashClosingSummaryCardProps> = ({
 
       {/* Footer Actions */}
       <div className="px-3 py-2 border-t border-[var(--ui-border)] bg-[var(--ui-surface-sunken)]/60 flex items-center justify-end gap-2 mt-auto">
-        {isClosed && isReadOnly ? (
-          <button
-            type="button"
-            onClick={onEnableEdit}
-            className="px-3.5 py-1.5 text-xs font-semibold rounded-lg bg-gray-100 dark:bg-gray-800 text-[var(--ui-text)] hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors cursor-pointer flex items-center justify-center gap-1.5 shadow-2xs"
-          >
-            <FaUnlock size={11} />
-            <span>Recount / Edit</span>
-          </button>
+        {isClosed ? (
+          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-900 text-xs font-semibold shadow-2xs">
+            <FaLock size={11} className="text-rose-500" />
+            <span>Closed & Locked (No edit allowed)</span>
+          </div>
         ) : (
           <button
             type="button"

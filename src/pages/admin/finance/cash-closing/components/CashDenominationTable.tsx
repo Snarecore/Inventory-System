@@ -1,5 +1,5 @@
 import React from "react";
-import { FaCoins, FaRedo, FaPlus } from "react-icons/fa";
+import { FaCoins, FaRedo, FaPlus, FaLock } from "react-icons/fa";
 import { formatMoney } from "@/utils/formatters";
 import type { DenominationItem } from "@/types";
 
@@ -70,7 +70,12 @@ export const CashDenominationTable: React.FC<CashDenominationTableProps> = ({
           </div>
         </div>
 
-        {!isReadOnly && (
+        {isReadOnly ? (
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-semibold text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900 shadow-2xs">
+            <FaLock size={10} />
+            <span>Locked</span>
+          </span>
+        ) : (
           <button
             type="button"
             onClick={onResetAll}

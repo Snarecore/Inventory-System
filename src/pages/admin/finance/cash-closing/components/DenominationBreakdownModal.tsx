@@ -1,4 +1,5 @@
 import React, { useEffect } from "react";
+import moment from "moment";
 import { FiX } from "react-icons/fi";
 import { FaCoins, FaCalendarAlt, FaCheckCircle, FaExclamationTriangle } from "react-icons/fa";
 import { formatMoney } from "@/utils/formatters";
@@ -25,6 +26,19 @@ export const DenominationBreakdownModal: React.FC<DenominationBreakdownModalProp
   }, [isOpen, onClose]);
 
   if (!isOpen || !record) return null;
+
+  const rawDate =
+    record.closingDate ||
+    (record as any).date ||
+    (record as any).closing_date ||
+    (record as any).transactionDate ||
+    (record as any).createdDate ||
+    (record as any).addedDate ||
+    "";
+  const displayDate =
+    rawDate && moment(rawDate).isValid()
+      ? moment(rawDate).format("DD MMM, YYYY")
+      : rawDate || "—";
 
   const denominations = Array.isArray(record.denominations) ? record.denominations : [];
   const totalNotes = denominations.reduce((acc, curr) => acc + (Number(curr.quantity) || 0), 0);
@@ -53,7 +67,7 @@ export const DenominationBreakdownModal: React.FC<DenominationBreakdownModalProp
                 Denomination Breakdown
               </h3>
               <p className="text-[10px] text-[var(--ui-text-muted)] flex items-center gap-1 mt-0.5">
-                <FaCalendarAlt size={10} /> Date: <span className="font-semibold">{record.closingDate}</span>
+                <FaCalendarAlt size={10} /> Date: <span className="font-semibold">{displayDate}</span>
               </p>
             </div>
           </div>

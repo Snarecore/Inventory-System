@@ -40,6 +40,55 @@ interface CashClosingReportTableProps {
   setSelectedYear: (y: string) => void;
 }
 
+// Helper to extract raw date string from potential backend property variants
+const getRowDate = (item: any): string => {
+  return (
+    item?.closingDate ||
+    item?.closing_date ||
+    item?.date ||
+    item?.transactionDate ||
+    item?.transaction_date ||
+    item?.createdDate ||
+    item?.createdAt ||
+    item?.created_at ||
+    item?.addedDate ||
+    item?.added_date ||
+    item?.entryDate ||
+    item?.entry_date ||
+    item?.recordDate ||
+    item?.record_date ||
+    item?.closingDay ||
+    item?.closing_day ||
+    item?.day ||
+    ""
+  );
+};
+
+// Formats date string into readable DD MMM, YYYY format with robust parsing
+const formatDisplayDate = (val?: string | number | null): string => {
+  if (!val) return "—";
+  const str = String(val).trim();
+  if (!str) return "—";
+
+  const m = moment(str);
+  if (m.isValid() && m.year() > 2000 && m.year() < 2100) {
+    return m.format("DD MMM, YYYY");
+  }
+
+  if (/^\d{8}$/.test(str)) {
+    const ym = moment(str, "YYYYMMDD");
+    if (ym.isValid()) return ym.format("DD MMM, YYYY");
+  }
+
+  if (/^\d{10,13}$/.test(str)) {
+    const epoch = Number(str.length === 10 ? Number(str) * 1000 : str);
+    const em = moment(epoch);
+    if (em.isValid()) return em.format("DD MMM, YYYY");
+  }
+
+  return str;
+};
+
 export const CashClosingReportTable: React.FC<CashClosingReportTableProps> = ({
   history,
   summary,
@@ -85,10 +134,12 @@ export const CashClosingReportTable: React.FC<CashClosingReportTableProps> = ({
   const filteredList = useMemo(() => {
     return history.filter((item) => {
       if (!term) return true;
-      const matchDate = (item.closingDate || "").toLowerCase().includes(term);
+      const rawDate = getRowDate(item).toLowerCase();
+      const formattedDate = formatDisplayDate(rawDate).toLowerCase();
+      const matchDate = rawDate.includes(term) || formattedDate.includes(term);
       const matchStatus = (item.status || "").toLowerCase().includes(term);
-      const matchReason = (item.differenceReason || "").toLowerCase().includes(term);
-      const matchRemarks = (item.remarks || "").toLowerCase().includes(term);
+      const matchReason = (item.differenceReason || (item as any).difference_reason || "").toLowerCase().includes(term);
+      const matchRemarks = (item.remarks || (item as any).note || "").toLowerCase().includes(term);
       return matchDate || matchStatus || matchReason || matchRemarks;
     });
   }, [history, term]);
@@ -113,16 +164,16 @@ export const CashClosingReportTable: React.FC<CashClosingReportTableProps> = ({
     try {
       const rows = dataToExport.map((item, index) => ({
         "SL": index + 1,
-        "Closing Date": item.closingDate,
-        "Opening Cash": item.openingCash,
-        "Deposit": item.todayDeposit,
-        "Expense": item.todayExpense,
-        "Expected Cash": item.expectedCash,
-        "Counted Cash": item.countedCash ?? 0,
-        "Variance / Diff": item.differenceAmount ?? 0,
+        "Closing Date": formatDisplayDate(getRowDate(item)),
+        "Opening Cash": Number(item.openingCash ?? (item as any).opening_cash ?? 0),
+        "Deposit": Number(item.todayDeposit ?? (item as any).today_deposit ?? (item as any).deposit ?? 0),
+        "Expense": Number(item.todayExpense ?? (item as any).today_expense ?? (item as any).expense ?? 0),
+        "Expected Cash": Number(item.expectedCash ?? (item as any).expected_cash ?? 0),
+        "Counted Cash": Number(item.countedCash ?? (item as any).counted_cash ?? (item as any).totalAmount ?? 0),
+        "Variance / Diff": Number(item.differenceAmount ?? (item as any).difference_amount ?? 0),
         "Status": item.status,
-        "Reason": item.differenceReason || "N/A",
-        "Remarks": item.remarks || "—",
+        "Reason": item.differenceReason || (item as any).difference_reason || "N/A",
+        "Remarks": item.remarks || (item as any).note || "—",
       }));
 
       await buildAndDownloadExcel(
@@ -281,12 +332,14 @@ export const CashClosingReportTable: React.FC<CashClosingReportTableProps> = ({
                 {paginatedRows.length > 0 ? (
                   paginatedRows.map((item, index) => {
                     const sl = (safeCurrentPage - 1) * pageSize + index + 1;
-                    const diff = Number(item.differenceAmount || 0);
+                    const diff = Number(item.differenceAmount ?? (item as any).difference_amount ?? 0);
                     const isBalanced = diff === 0;
                     const isClosed = (item.status || "").toLowerCase() === "closed";
+                    const rowDateStr = getRowDate(item);
+                    const displayDate = formatDisplayDate(rowDateStr);
 
                     return (
-                      <TableRow key={item.id || item.closingDate || index}>
+                      <TableRow key={item.id || rowDateStr || index}>
                         {/* SL */}
                         <TableCell align="center" className="text-black font-medium">
                           {sl}
@@ -294,32 +347,32 @@ export const CashClosingReportTable: React.FC<CashClosingReportTableProps> = ({
 
                         {/* Date */}
                         <TableCell className="font-semibold text-black whitespace-nowrap">
-                          {item.closingDate}
+                          {displayDate}
                         </TableCell>
 
                         {/* Opening Cash */}
                         <TableCell align="right" className="text-gray-700 dark:text-gray-300">
-                          ৳ {formatMoney(item.openingCash)}
+                          ৳ {formatMoney(item.openingCash ?? (item as any).opening_cash)}
                         </TableCell>
 
                         {/* Deposit */}
                         <TableCell align="right" className="text-emerald-600 dark:text-emerald-400 font-medium">
-                          +৳ {formatMoney(item.todayDeposit)}
+                          +৳ {formatMoney(item.todayDeposit ?? (item as any).today_deposit ?? (item as any).deposit)}
                         </TableCell>
 
                         {/* Expense */}
                         <TableCell align="right" className="text-rose-600 dark:text-rose-400 font-medium">
-                          -৳ {formatMoney(item.todayExpense)}
+                          -৳ {formatMoney(item.todayExpense ?? (item as any).today_expense ?? (item as any).expense)}
                         </TableCell>
 
                         {/* Expected Cash */}
                         <TableCell align="right" className="font-semibold text-sky-700 dark:text-sky-300">
-                          ৳ {formatMoney(item.expectedCash)}
+                          ৳ {formatMoney(item.expectedCash ?? (item as any).expected_cash)}
                         </TableCell>
 
                         {/* Counted Cash */}
                         <TableCell align="right" className="font-bold text-purple-700 dark:text-purple-300">
-                          ৳ {formatMoney(item.countedCash || 0)}
+                          ৳ {formatMoney(item.countedCash ?? (item as any).counted_cash ?? 0)}
                         </TableCell>
 
                         {/* Variance / Difference */}

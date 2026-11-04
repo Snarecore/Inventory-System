@@ -10,6 +10,7 @@ import {
   useInsertCashClosingMutation,
 } from "@/hooks/useCashClosing";
 import { BANGLADESH_DENOMINATIONS, type DenominationItem, type CashClosingData } from "@/types";
+import { showErrorToast } from "@/utils/toast-utils";
 import CashClosingKpiCards from "./components/CashClosingKpiCards";
 import CashDenominationTable from "./components/CashDenominationTable";
 import CashClosingSummaryCard from "./components/CashClosingSummaryCard";
@@ -33,7 +34,6 @@ export const CashClosingPage: React.FC = () => {
   // Form State
   const [differenceReason, setDifferenceReason] = useState<string>("");
   const [remarks, setRemarks] = useState<string>("");
-  const [isManualEditAllowed, setIsManualEditAllowed] = useState<boolean>(false);
 
   // Initialize empty denomination items
   const initialDenominations: DenominationItem[] = useMemo(() => {
@@ -64,7 +64,6 @@ export const CashClosingPage: React.FC = () => {
 
   const insertClosingMutation = useInsertCashClosingMutation({
     onSuccess: () => {
-      setIsManualEditAllowed(false);
       refetchClosing();
       refetchReport();
     },
@@ -96,12 +95,10 @@ export const CashClosingPage: React.FC = () => {
 
       setDifferenceReason(closingData.differenceReason || "");
       setRemarks(closingData.remarks || "");
-      setIsManualEditAllowed(false);
     } else {
       setDenominations(initialDenominations);
       setDifferenceReason("");
       setRemarks("");
-      setIsManualEditAllowed(false);
     }
   }, [closingData, initialDenominations]);
 
@@ -142,10 +139,15 @@ export const CashClosingPage: React.FC = () => {
   }, [countedCash, expectedCash]);
 
   const isClosed = closingData?.status?.toLowerCase() === "closed";
-  const isReadOnly = isClosed && !isManualEditAllowed;
+  const isReadOnly = isClosed;
 
   // Handle Submit Closing
   const handleSubmitClosing = () => {
+    if (isClosed) {
+      showErrorToast("This date's cash register is already closed and cannot be modified.");
+      return;
+    }
+
     insertClosingMutation.mutate({
       closingDate: selectedDate,
       openingCash,
@@ -274,7 +276,6 @@ export const CashClosingPage: React.FC = () => {
                 status={closingData?.status || "Open"}
                 onSubmitClosing={handleSubmitClosing}
                 isSubmitting={insertClosingMutation.isPending}
-                onEnableEdit={() => setIsManualEditAllowed(true)}
                 isReadOnly={isReadOnly}
               />
             </div>
