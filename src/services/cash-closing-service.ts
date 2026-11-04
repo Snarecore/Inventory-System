@@ -66,61 +66,27 @@ export async function fetchCashClosingReport(params?: {
     });
 
     if (res?.data) {
-      const rawData = res.data as any;
-      const rawHistory = Array.isArray(rawData.history)
-        ? rawData.history
-        : Array.isArray(rawData.data)
-        ? rawData.data
-        : Array.isArray(rawData.list)
-        ? rawData.list
-        : Array.isArray(rawData)
-        ? rawData
-        : [];
+      const rawData = res.data;
+      const rawHistory = Array.isArray(rawData.history) ? rawData.history : [];
 
-      const normalizedHistory = rawHistory.map((item: any, idx: number) => {
-        const rawDate =
-          item.closingDate ||
-          item.closing_date ||
-          item.date ||
-          item.transactionDate ||
-          item.transaction_date ||
-          item.createdDate ||
-          item.createdAt ||
-          item.created_at ||
-          item.addedDate ||
-          item.added_date ||
-          item.entryDate ||
-          item.entry_date ||
-          item.recordDate ||
-          item.record_date ||
-          item.closingDay ||
-          item.closing_day ||
-          item.day ||
-          "";
-
-        return {
-          ...item,
-          id: item.id ?? idx + 1,
-          closingDate: rawDate ? String(rawDate) : "",
-          openingCash: Number(item.openingCash ?? item.opening_cash ?? 0),
-          todayDeposit: Number(item.todayDeposit ?? item.today_deposit ?? item.deposit ?? 0),
-          todayExpense: Number(item.todayExpense ?? item.today_expense ?? item.expense ?? 0),
-          expectedCash: Number(item.expectedCash ?? item.expected_cash ?? 0),
-          countedCash: Number(item.countedCash ?? item.counted_cash ?? item.totalAmount ?? 0),
-          differenceAmount: Number(item.differenceAmount ?? item.difference_amount ?? item.diff ?? 0),
-          differenceReason: item.differenceReason || item.difference_reason || item.reason || "",
-          remarks: item.remarks || item.note || "",
-          status: item.status || "Closed",
-        };
-      });
+      const normalizedHistory = rawHistory.map((item: any, idx: number) => ({
+        ...item,
+        id: item.id ?? idx + 1,
+        date: item.date || item.closingDate || "",
+        closingDate: item.date || item.closingDate || "",
+        openingCash: Number(item.openingCash || 0),
+        todayDeposit: Number(item.todayDeposit || 0),
+        todayExpense: Number(item.todayExpense || 0),
+        expectedCash: Number(item.expectedCash || 0),
+        countedCash: Number(item.actualCash ?? item.countedCash ?? 0),
+        differenceAmount: Number(item.difference ?? item.differenceAmount ?? 0),
+        differenceReason: item.differenceReason || "",
+        remarks: item.remarks || "",
+        status: item.status || "Closed",
+      }));
 
       return {
-        month: rawData.month || `${yearStr}-${monthStr}`,
-        summary: rawData.summary || {
-          matchedDays: normalizedHistory.filter((h: any) => Number(h.differenceAmount || 0) === 0).length,
-          mismatchedDays: normalizedHistory.filter((h: any) => Number(h.differenceAmount || 0) !== 0).length,
-          totalDiff: normalizedHistory.reduce((sum: number, h: any) => sum + Number(h.differenceAmount || 0), 0),
-        },
+        ...rawData,
         history: normalizedHistory,
       };
     }

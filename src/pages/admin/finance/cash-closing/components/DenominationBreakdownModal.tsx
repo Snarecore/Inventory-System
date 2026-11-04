@@ -27,18 +27,11 @@ export const DenominationBreakdownModal: React.FC<DenominationBreakdownModalProp
 
   if (!isOpen || !record) return null;
 
-  const rawDate =
-    record.closingDate ||
-    (record as any).date ||
-    (record as any).closing_date ||
-    (record as any).transactionDate ||
-    (record as any).createdDate ||
-    (record as any).addedDate ||
-    "";
+  const rowDate = record.closingDate || (record as any).date || "";
   const displayDate =
-    rawDate && moment(rawDate).isValid()
-      ? moment(rawDate).format("DD MMM, YYYY")
-      : rawDate || "—";
+    rowDate && moment(rowDate).isValid()
+      ? moment(rowDate).format("DD MMM, YYYY")
+      : rowDate || "—";
 
   const denominations = Array.isArray(record.denominations) ? record.denominations : [];
   const totalNotes = denominations.reduce((acc, curr) => acc + (Number(curr.quantity) || 0), 0);
