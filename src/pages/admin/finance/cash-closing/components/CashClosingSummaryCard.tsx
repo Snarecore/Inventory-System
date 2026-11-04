@@ -239,7 +239,7 @@ export const CashClosingSummaryCard: React.FC<CashClosingSummaryCardProps> = ({
             ) : (
               <>
                 <FaCheckCircle size={12} />
-                <span>Submit & Close Cash</span>
+                <span>Close Cash</span>
               </>
             )}
           </button>
@@ -298,7 +298,7 @@ export const CashClosingSummaryCard: React.FC<CashClosingSummaryCardProps> = ({
                 onClick={handleConfirmSubmit}
                 className="px-4 py-1.5 text-xs font-semibold rounded-lg bg-[var(--primary-color)] hover:bg-[var(--primary-color-hover)] text-white transition-colors cursor-pointer"
               >
-                Yes, Finalize Closing
+                Close Cash
               </button>
             </div>
           </div>
