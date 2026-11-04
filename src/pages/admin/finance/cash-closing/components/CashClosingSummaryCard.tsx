@@ -4,7 +4,6 @@ import {
   FaExclamationTriangle,
   FaLock,
   FaUnlock,
-  FaSpinner,
   FaCalendarAlt,
   FaTag,
   FaStickyNote,
@@ -12,6 +11,7 @@ import {
 import { formatMoney } from "@/utils/formatters";
 import { showErrorToast } from "@/utils/toast-utils";
 import { DIFFERENCE_REASONS } from "@/types";
+import { Button } from "@/components/common";
 
 interface CashClosingSummaryCardProps {
   closingDate: string;
@@ -221,30 +221,27 @@ export const CashClosingSummaryCard: React.FC<CashClosingSummaryCardProps> = ({
       {/* Footer Actions */}
       <div className="px-3 py-2 border-t border-[var(--ui-border)] bg-[var(--ui-surface-sunken)]/60 flex items-center justify-end gap-2 mt-auto">
         {isClosed && isReadOnly ? (
-          <button
+          <Button
             type="button"
+            variant="secondary"
+            size="sm"
             onClick={onEnableEdit}
-            className="px-3.5 py-1.5 text-xs font-semibold rounded-lg bg-gray-100 dark:bg-gray-800 text-[var(--ui-text)] hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors cursor-pointer flex items-center justify-center gap-1.5 shadow-2xs"
+            icon={<FaUnlock size={11} />}
+            className="font-semibold !px-3.5"
           >
-            <FaUnlock size={11} />
-            <span>Recount / Edit</span>
-          </button>
+            Recount / Edit
+          </Button>
         ) : (
-          <button
+          <Button
             type="button"
+            variant="primary"
+            size="sm"
             onClick={handleInitialClick}
-            disabled={isSubmitting}
-            className="px-4 py-1.5 text-xs font-semibold rounded-lg bg-[var(--primary-color)] hover:bg-[var(--primary-color-hover)] text-white flex items-center justify-center gap-1.5 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed shadow-xs"
+            isLoading={isSubmitting}
+            className="font-semibold !px-4"
           >
-            {isSubmitting ? (
-              <>
-                <FaSpinner className="animate-spin text-xs" />
-                <span>Saving...</span>
-              </>
-            ) : (
-              <span>Close Cash</span>
-            )}
-          </button>
+            Close Cash
+          </Button>
         )}
       </div>
 
@@ -288,20 +285,24 @@ export const CashClosingSummaryCard: React.FC<CashClosingSummaryCardProps> = ({
             </p>
 
             <div className="flex justify-end gap-2 pt-1">
-              <button
+              <Button
                 type="button"
+                variant="secondary"
+                size="sm"
                 onClick={() => setConfirmOpen(false)}
-                className="px-3.5 py-1.5 text-xs font-semibold rounded-lg border border-[var(--ui-border)] hover:bg-[var(--ui-surface-sunken)] transition-colors cursor-pointer"
+                className="font-semibold"
               >
                 Cancel
-              </button>
-              <button
+              </Button>
+              <Button
                 type="button"
+                variant="primary"
+                size="sm"
                 onClick={handleConfirmSubmit}
-                className="px-4 py-1.5 text-xs font-semibold rounded-lg bg-[var(--primary-color)] hover:bg-[var(--primary-color-hover)] text-white transition-colors cursor-pointer"
+                className="font-semibold !px-4"
               >
                 Close Cash
-              </button>
+              </Button>
             </div>
           </div>
         </div>
