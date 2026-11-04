@@ -61,7 +61,7 @@ export const CashDenominationTable: React.FC<CashDenominationTableProps> = ({
             <FaCoins size={13} />
           </div>
           <div>
-            <h3 className="text-xs font-bold text-[var(--ui-text)] uppercase tracking-wider">
+            <h3 className="text-xs font-bold text-[var(--ui-text)] tracking-wider">
               Cash Denomination Counter
             </h3>
             <p className="text-[10px] text-[var(--ui-text-muted)]">
@@ -87,11 +87,11 @@ export const CashDenominationTable: React.FC<CashDenominationTableProps> = ({
       <div className="overflow-x-auto overflow-y-auto max-h-[480px]">
         <table className="w-full text-left border-collapse text-xs">
           <thead>
-            <tr className="border-b border-[var(--ui-border)] bg-[var(--ui-surface-sunken)]/60 text-[11px] font-semibold text-[var(--ui-text-muted)] uppercase tracking-wider sticky top-0 z-10 backdrop-blur-xs">
-              <th className="py-1.5 px-2.5">Note / Coin</th>
-              <th className="py-1.5 px-2.5 w-40 text-center">Quantity</th>
-              {!isReadOnly && <th className="py-1.5 px-2 text-center w-28">Quick Add</th>}
-              <th className="py-1.5 px-2.5 text-right">Total Amount</th>
+            <tr className="border-b border-[var(--ui-border)] bg-[var(--ui-surface-sunken)]/60 text-xs font-bold text-black dark:text-white tracking-wider sticky top-0 z-10 backdrop-blur-xs">
+              <th className="py-2 px-2.5 text-black dark:text-white font-bold">Note / Coin</th>
+              <th className="py-2 px-2.5 w-40 text-center text-black dark:text-white font-bold">Quantity</th>
+              {!isReadOnly && <th className="py-2 px-2 text-center w-28 text-black dark:text-white font-bold">Quick Add</th>}
+              <th className="py-2 px-2.5 text-right text-black dark:text-white font-bold">Total Amount</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-[var(--ui-border)]">

@@ -98,10 +98,10 @@ export const DenominationBreakdownModal: React.FC<DenominationBreakdownModalProp
         <div className="border border-[var(--ui-border)] rounded-xl overflow-hidden max-h-[300px] overflow-y-auto">
           <table className="w-full text-xs text-left">
             <thead>
-              <tr className="bg-[var(--ui-surface-sunken)]/60 border-b border-[var(--ui-border)] text-[10px] font-semibold text-[var(--ui-text-muted)] uppercase tracking-wider sticky top-0">
-                <th className="py-2 px-3">Denomination</th>
-                <th className="py-2 px-3 text-center">Quantity</th>
-                <th className="py-2 px-3 text-right">Amount</th>
+              <tr className="bg-[var(--ui-surface-sunken)]/60 border-b border-[var(--ui-border)] text-xs font-bold text-black dark:text-white tracking-wider sticky top-0">
+                <th className="py-2 px-3 text-black dark:text-white font-bold">Denomination</th>
+                <th className="py-2 px-3 text-center text-black dark:text-white font-bold">Quantity</th>
+                <th className="py-2 px-3 text-right text-black dark:text-white font-bold">Amount</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[var(--ui-border)]">
