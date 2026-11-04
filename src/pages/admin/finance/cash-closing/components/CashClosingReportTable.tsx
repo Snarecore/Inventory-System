@@ -47,6 +47,25 @@ const formatDisplayDate = (val?: string | null): string => {
   return m.isValid() ? m.format("DD MMM, YYYY") : val;
 };
 
+// Month options (1-12)
+const monthOptions = [
+  { value: "01", label: "January" },
+  { value: "02", label: "February" },
+  { value: "03", label: "March" },
+  { value: "04", label: "April" },
+  { value: "05", label: "May" },
+  { value: "06", label: "June" },
+  { value: "07", label: "July" },
+  { value: "08", label: "August" },
+  { value: "09", label: "September" },
+  { value: "10", label: "October" },
+  { value: "11", label: "November" },
+  { value: "12", label: "December" },
+];
+
+// Year options (2020 through 2035)
+const yearOptions = Array.from({ length: 16 }, (_, i) => String(2020 + i));
+
 export const CashClosingReportTable: React.FC<CashClosingReportTableProps> = ({
   history,
   summary,
@@ -61,31 +80,6 @@ export const CashClosingReportTable: React.FC<CashClosingReportTableProps> = ({
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
-
-  // Month options (1-12)
-  const monthOptions = [
-    { value: "01", label: "January" },
-    { value: "02", label: "February" },
-    { value: "03", label: "March" },
-    { value: "04", label: "April" },
-    { value: "05", label: "May" },
-    { value: "06", label: "June" },
-    { value: "07", label: "July" },
-    { value: "08", label: "August" },
-    { value: "09", label: "September" },
-    { value: "10", label: "October" },
-    { value: "11", label: "November" },
-    { value: "12", label: "December" },
-  ];
-
-  // Year options (last 3 years to next year)
-  const currentYearNum = parseInt(moment().format("YYYY"), 10);
-  const yearOptions = [
-    String(currentYearNum - 2),
-    String(currentYearNum - 1),
-    String(currentYearNum),
-    String(currentYearNum + 1),
-  ];
 
   // Filtering
   const term = searchQuery.trim().toLowerCase();
