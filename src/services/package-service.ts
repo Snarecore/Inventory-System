@@ -116,3 +116,45 @@ export async function initiatePackagePayment(
     };
   }
 }
+
+export interface AppUserExistsResponse {
+  exists: boolean;
+  normalizedPhoneNumber?: string;
+  sources?: Record<string, any>;
+}
+
+export interface SendOtpPayload {
+  phoneNumber: string;
+  encryptedMessage: string;
+  encrypted: boolean;
+  accountType: string;
+}
+
+export interface SendOtpResponse {
+  code?: string;
+  success: boolean;
+  meaning?: string;
+  response?: string;
+  message?: string;
+}
+
+export async function checkAppUserExists(mobile: string): Promise<AppUserExistsResponse> {
+  const endpoint = `${apiConfig.packages.appUserExistsUrl}?mobile=${encodeURIComponent(mobile)}`;
+  const res: any = await getData<AppUserExistsResponse>({
+    url: endpoint,
+    baseUrl: CMS_PUBLIC_BASE,
+    token: "",
+  });
+  return res || { exists: false };
+}
+
+export async function sendPackageOtp(payload: SendOtpPayload): Promise<SendOtpResponse> {
+  const res: any = await postData<SendOtpResponse>({
+    url: apiConfig.packages.otpSendUrl,
+    body: payload,
+    baseUrl: CMS_PUBLIC_BASE,
+    token: "",
+  });
+  return res;
+}
+
