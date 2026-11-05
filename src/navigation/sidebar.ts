@@ -182,6 +182,7 @@ export const menu = [
 					{ id: 710, name: "Income", path: "/admin/income", permissionKey: "income.view" },
 					{ id: 711, name: "Expense", path: "/admin/expense", permissionKey: "expenses.view" },
 					{ id: 712, name: "Fund Transfer", path: "/admin/fund-transfer", permissionKey: "accounts.fund_transfer.view" },
+					{ id: 714, name: "Opening Cash Balance", path: "/admin/opening-cash-balance", permissionKey: "accounts.view" },
 					{ id: 715, name: "Daily Cash Closing", path: "/admin/cash-closing", permissionKey: "accounts.view" },
 					{ id: 66, name: "Chart of Accounts", path: "/accounts/chart-of-accounts", permissionKey: "accounts.coa.view" },
 					{ id: 67, name: "Journal Voucher", path: "/accounts/journal-voucher", permissionKey: "accounts.journal_voucher.view" },

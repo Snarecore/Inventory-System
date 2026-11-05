@@ -22,9 +22,10 @@ export const isCategoryAdmin = (item?: CategoryItem | null): boolean => {
 /**
  * Normalizes category type casing (e.g. "INCOME" -> "Income", "EXPENSE" -> "Expense")
  */
-export const normalizeCategoryType = (rawType?: string): "Income" | "Expense" => {
+export const normalizeCategoryType = (rawType?: string): "Income" | "Expense" | "Cash" => {
   const upper = String(rawType || "").trim().toUpperCase();
   if (upper === "INCOME") return "Income";
+  if (upper === "CASH") return "Cash";
   return "Expense";
 };
 

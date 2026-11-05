@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { categoryListQueryKey } from "@/config/query-key";
+import { categoryListQueryKey, cashBalanceQueryKey } from "@/config/query-key";
 import {
   fetchCategoryList,
   insertCategory,
@@ -37,6 +37,7 @@ export const useInsertCategoryMutation = (options?: { onSuccess?: () => void }) 
     mutationFn: (payload: InsertCategoryPayload) => insertCategory(payload),
     onSuccess: (res, vars) => {
       queryClient.invalidateQueries({ queryKey: [categoryListQueryKey] });
+      queryClient.invalidateQueries({ queryKey: [cashBalanceQueryKey] });
       showSuccessToast(res?.msg || `"${vars.categoryName}" category added successfully`);
       if (options?.onSuccess) options.onSuccess();
     },
@@ -76,6 +77,7 @@ export const useUpdateCategoryMutation = (options?: { onSuccess?: () => void }) 
           };
         }
       );
+      queryClient.invalidateQueries({ queryKey: [cashBalanceQueryKey] });
       showSuccessToast(res?.msg || `"${vars.categoryName}" category updated successfully`);
       if (options?.onSuccess) options.onSuccess();
     },

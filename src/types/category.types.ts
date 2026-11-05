@@ -1,14 +1,15 @@
-export type CategoryType = "Income" | "Expense";
+export type CategoryType = "Income" | "Expense" | "Cash";
 export type CategoryStatus = "Active" | "Inactive";
 
 export interface CategoryItem {
   categoryId: number;
   categoryName: string;
   status: CategoryStatus | string;
-  type: CategoryType | string;
+  type: CategoryType;
   userName?: string;
   username?: string;
   openingBalance?: string | number;
+  transactionDate?: string;
 }
 
 export interface SubCategoryItem {

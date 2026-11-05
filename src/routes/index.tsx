@@ -56,6 +56,7 @@ const FundTransferPage = React.lazy(() => import('@/pages/admin/finance/fund-tra
 const KhatabookPage = React.lazy(() => import('@/pages/admin/khatabook'))
 const StockAdjustmentPage = React.lazy(() => import('@/pages/admin/inventory/stock-adjustment'))
 const CashClosingPage = React.lazy(() => import('@/pages/admin/finance/cash-closing'))
+const OpeningCashBalancePage = React.lazy(() => import('@/pages/admin/finance/opening-cash-balance'))
 
 
 const withSuspense = (Component: React.ComponentType) => (
@@ -284,6 +285,10 @@ export const router = createBrowserRouter([
   {
     path: '/accounts/cash-bank',
     element: <Navigate to="/admin/banks" replace />,
+  },
+  {
+    path: '/accounts/opening-cash-balance',
+    element: <Navigate to="/admin/opening-cash-balance" replace />,
   },
   {
     path: '/accounts/chart-of-accounts',
@@ -530,6 +535,10 @@ export const router = createBrowserRouter([
       {
         path: 'daily-cash-closing',
         element: withSuspense(CashClosingPage),
+      },
+      {
+        path: 'opening-cash-balance',
+        element: withSuspense(OpeningCashBalancePage),
       },
       {
         path: 'ledger',
