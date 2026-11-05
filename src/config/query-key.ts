@@ -62,3 +62,5 @@ export const ledgerTransactionListQueryKey = "ledger-transaction-list";
 export const stockAdjustmentReportQueryKey = "get-adjust-report";
 export const cashClosingQueryKey = "get-cash-closing";
 export const cashClosingReportQueryKey = "get-cash-closing-report";
+export const pricingQueryKey = "packages-pricing";
+export const userSubscriptionQueryKey = "user-subscription";

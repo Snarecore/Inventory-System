@@ -14,8 +14,9 @@ import {
     FaChevronDown,
     FaChevronRight,
     FaCircle,
+    FaCrown,
 } from "react-icons/fa";
-import { getUserInfo, getStoredUser, removeStoredUser } from "@/utils/auth-storage";
+import { getUserInfo, removeStoredUser } from "@/utils/auth-storage";
 import { showSuccessToast } from "@/utils/toast-utils";
 import { useQueryClient } from "@tanstack/react-query";
 import { useUserProfileQuery } from "@/hooks/useUserProfile";
@@ -115,6 +116,12 @@ const Header = ({ sidebarClick }: { sidebarClick: boolean }) => {
         setShowUserDropdown(false);
         setShowMenuDropdown(false);
         navigate("/admin/company");
+    };
+
+    const handleOpenPackages = () => {
+        setShowUserDropdown(false);
+        setShowMenuDropdown(false);
+        navigate("/admin/packages");
     };
 
     return (
@@ -428,6 +435,12 @@ const Header = ({ sidebarClick }: { sidebarClick: boolean }) => {
                                 text="Settings"
                                 className="text-xs text-gray-700 dark:text-[var(--ui-text)] font-medium hover:bg-gray-100 dark:hover:bg-[var(--ui-surface-muted)]"
                                 onClick={handleOpenCompanyProfile}
+                            />
+                            <MenuItem
+                                icon={<FaCrown size={13} className="text-amber-500" />}
+                                text="Packages & Pricing"
+                                className="text-xs text-gray-700 dark:text-[var(--ui-text)] font-medium hover:bg-gray-100 dark:hover:bg-[var(--ui-surface-muted)]"
+                                onClick={handleOpenPackages}
                             />
                         </div>
 

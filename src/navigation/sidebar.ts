@@ -15,7 +15,6 @@ import {
 	FaCog,
 	FaLandmark,
 	FaPaperPlane,
-	FaCoins,
 } from "react-icons/fa";
 
 export const menu = [
@@ -308,6 +307,7 @@ export const menu = [
 				subItems: [
 					{ id: 110, name: "Business Profile", path: "/admin/company", permissionKey: "settings.business_profile.view" },
 					{ id: 124, name: "Appearance", path: "/admin/settings/appearance", permissionKey: "settings.view" },
+					{ id: 126, name: "Subscription Packages", path: "/admin/packages", permissionKey: "settings.view" },
 					{ id: 118, name: "System Settings", path: "/settings/system", permissionKey: "settings.system.view" },
 					{ id: 119, name: "Payment Methods", path: "/settings/payment-methods", permissionKey: "settings.payment_methods.view" },
 					{ id: 120, name: "Tax / VAT", path: "/settings/tax", permissionKey: "settings.tax.view" },

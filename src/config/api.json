@@ -154,5 +154,10 @@
         "getCashClosingUrl": "get-cash-closing",
         "getCashClosingReportUrl": "get-cash-closing-report",
         "insertCashClosingUrl": "insert-cash-closing"
+    },
+    "packages": {
+        "pricingUrl": "pricing",
+        "userSubscriptionUrl": "user-subscription",
+        "paymentInitiateUrl": "payment/initiate"
     }
 }

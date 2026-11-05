@@ -57,6 +57,7 @@ const KhatabookPage = React.lazy(() => import('@/pages/admin/khatabook'))
 const StockAdjustmentPage = React.lazy(() => import('@/pages/admin/inventory/stock-adjustment'))
 const CashClosingPage = React.lazy(() => import('@/pages/admin/finance/cash-closing'))
 const OpeningCashBalancePage = React.lazy(() => import('@/pages/admin/finance/opening-cash-balance'))
+const PackagesPage = React.lazy(() => import('@/pages/admin/packages'))
 
 
 const withSuspense = (Component: React.ComponentType) => (
@@ -117,6 +118,18 @@ export const router = createBrowserRouter([
   {
     path: '/ledger',
     element: <Navigate to="/admin/khatabook" replace />,
+  },
+  {
+    path: '/packages',
+    element: <Navigate to="/admin/packages" replace />,
+  },
+  {
+    path: '/pricing',
+    element: <Navigate to="/admin/packages" replace />,
+  },
+  {
+    path: '/subscription',
+    element: <Navigate to="/admin/packages" replace />,
   },
   {
     path: '/inventory',
@@ -688,6 +701,18 @@ export const router = createBrowserRouter([
       {
         path: 'company',
         element: withSuspense(Company),
+      },
+      {
+        path: 'packages',
+        element: withSuspense(PackagesPage),
+      },
+      {
+        path: 'pricing',
+        element: <Navigate to="/admin/packages" replace />,
+      },
+      {
+        path: 'subscription',
+        element: <Navigate to="/admin/packages" replace />,
       },
       {
         path: 'profile',

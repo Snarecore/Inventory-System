@@ -418,3 +418,4 @@ export * from './ledger.types';
 export * from './stock-adjustment.types';
 export * from './sms.types';
 export * from './cash-closing.types';
+export * from './package.types';
