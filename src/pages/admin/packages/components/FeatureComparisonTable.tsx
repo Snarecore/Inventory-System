@@ -57,16 +57,18 @@ export const FeatureComparisonTable: React.FC<FeatureComparisonTableProps> = ({
               {packages.map((pkg) => (
                 <th
                   key={pkg.id}
-                  className="py-2.5 px-3 text-center text-xs font-bold uppercase tracking-wider text-[var(--ui-text)]"
+                  className="py-2.5 px-3 text-center text-xs font-bold uppercase tracking-wider text-[var(--ui-text)] whitespace-nowrap"
                 >
-                  <span className={pkg.featured ? "text-[var(--primary-color)]" : ""}>
-                    {pkg.name}
-                  </span>
-                  {pkg.featured && (
-                    <span className="block text-[9px] text-[var(--primary-color)] font-medium lowercase tracking-normal">
-                      (popular)
+                  <span className="inline-flex items-center justify-center gap-1.5 flex-nowrap">
+                    <span className={pkg.featured ? "text-[var(--primary-color)]" : ""}>
+                      {pkg.name}
                     </span>
-                  )}
+                    {pkg.featured && (
+                      <span className="text-[10px] text-[var(--primary-color)] font-medium lowercase tracking-normal">
+                        (popular)
+                      </span>
+                    )}
+                  </span>
                 </th>
               ))}
             </tr>
