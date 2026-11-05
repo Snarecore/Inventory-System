@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import {
-  FaShieldAlt,
   FaSpinner,
   FaCheckCircle,
 } from "react-icons/fa";
@@ -266,11 +265,11 @@ const CheckoutFormContent: React.FC<CheckoutFormProps> = ({
         </div>
       )}
 
-      {/* Form Fields */}
-      <div className="space-y-3">
+      {/* Form Fields - Single-row 3 columns */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
         <div>
           <label className="block text-xs font-semibold text-[var(--ui-text)] mb-1">
-            Customer / Organization Name <span className="text-rose-500">*</span>
+            Customer / Org Name <span className="text-rose-500">*</span>
           </label>
           <input
             type="text"
@@ -286,8 +285,8 @@ const CheckoutFormContent: React.FC<CheckoutFormProps> = ({
             }`}
           />
           {isNameLocked && (
-            <p className="text-[10px] text-[var(--ui-text-muted)] mt-0.5">
-              Verified login name — cannot be changed.
+            <p className="text-[10px] text-[var(--ui-text-muted)] mt-0.5 truncate">
+              Verified login name
             </p>
           )}
         </div>
@@ -307,8 +306,8 @@ const CheckoutFormContent: React.FC<CheckoutFormProps> = ({
             placeholder="01XXXXXXXXX"
             className="w-full px-3 py-2 rounded-lg border border-[var(--ui-border)] bg-[var(--ui-surface)] text-xs text-[var(--ui-text)] focus:outline-none focus:border-[var(--primary-color)] transition-colors"
           />
-          <p className="text-[10px] text-[var(--ui-text-muted)] mt-0.5">
-            11-digit Bangladeshi mobile number (01XXXXXXXXX)
+          <p className="text-[10px] text-[var(--ui-text-muted)] mt-0.5 truncate">
+            11-digit mobile (01XXXXXXXXX)
           </p>
         </div>
 
@@ -327,18 +326,10 @@ const CheckoutFormContent: React.FC<CheckoutFormProps> = ({
             placeholder="name@business.com"
             className="w-full px-3 py-2 rounded-lg border border-[var(--ui-border)] bg-[var(--ui-surface)] text-xs text-[var(--ui-text)] focus:outline-none focus:border-[var(--primary-color)] transition-colors"
           />
-          <p className="text-[10px] text-[var(--ui-text-muted)] mt-0.5">
-            For payment receipt and tax invoice
+          <p className="text-[10px] text-[var(--ui-text-muted)] mt-0.5 truncate">
+            For payment receipt & invoice
           </p>
         </div>
-      </div>
-
-      {/* Security Note */}
-      <div className="p-2.5 rounded-lg bg-[var(--ui-surface-muted)] border border-[var(--ui-border)] flex items-center gap-2 text-[11px] text-[var(--ui-text-muted)]">
-        <FaShieldAlt className="text-emerald-500 shrink-0" size={13} />
-        <span>
-          Secured Checkout via PCI-DSS Compliant Payment Gateway.
-        </span>
       </div>
 
       {/* Footer Buttons */}
@@ -390,7 +381,7 @@ export const SubscribeCheckoutModal: React.FC<SubscribeCheckoutModalProps> = ({
       isOpen={isOpen}
       onClose={onClose}
       title="Subscription Checkout & Payment"
-      size="lg"
+      size="xl"
     >
       <CheckoutFormContent
         key={`${pkg.id}_${cycle.code}`}
