@@ -17,10 +17,10 @@ export const PackagesHero: React.FC<PackagesHeroProps> = ({ subscription, curren
       : null);
 
   return (
-    <div className="p-3 sm:p-4 rounded-xl border border-[var(--ui-border)] bg-[var(--ui-surface)] shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3 transition-colors">
+    <div className="p-3 sm:p-3.5 rounded-xl border border-[var(--ui-border)] bg-[var(--ui-surface)] shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3 transition-colors">
       <div className="flex items-start gap-3">
-        <div className="w-9 h-9 rounded-xl bg-[var(--primary-color-light)] text-[var(--primary-color)] flex items-center justify-center shrink-0 border border-[var(--primary-color-muted)] mt-0.5">
-          <FaCrown size={15} />
+        <div className="w-8 h-8 rounded-lg bg-[var(--primary-color-light)] text-[var(--primary-color)] flex items-center justify-center shrink-0 border border-[var(--primary-color-muted)] mt-0.5">
+          <FaCrown size={14} />
         </div>
         <div>
           <div className="flex flex-wrap items-center gap-2">
@@ -32,7 +32,7 @@ export const PackagesHero: React.FC<PackagesHeroProps> = ({ subscription, curren
             </span>
           </div>
           <p className="text-[11px] text-[var(--ui-text-muted)] mt-1 max-w-2xl leading-relaxed">
-            Select the subscription plan that aligns with your operational scale. Change billing cycles below to take advantage of multi-month discounts and unlock premium modules.
+            Select the plan that aligns with your operational scale. Multi-month billing cycles provide significant cost savings and unlock premium capabilities.
           </p>
         </div>
       </div>
