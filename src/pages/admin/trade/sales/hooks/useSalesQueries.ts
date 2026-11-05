@@ -208,7 +208,7 @@ export const useSalesQuery = <TData = SaleItem[]>(
   return useQuery({
     queryKey: [salesListQueryKey],
     queryFn: fetchSalesList,
-    staleTime: 60 * 1000,
+    staleTime: 0,
     ...options,
   });
 };
@@ -223,7 +223,7 @@ export const useSalesAndReturnsQuery = <TData = UnifiedTradeRecord[]>(
   return useQuery({
     queryKey: [salesAndReturnQueryKey],
     queryFn: fetchSalesAndReturnList,
-    staleTime: 60 * 1000,
+    staleTime: 0,
     ...options,
   });
 };

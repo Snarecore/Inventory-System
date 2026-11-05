@@ -44,7 +44,7 @@ export function useCashClosingReportQuery(params?: {
   return useQuery<CashClosingReportData | null>({
     queryKey: [cashClosingReportQueryKey, currentMonth, currentYear],
     queryFn: () => fetchCashClosingReport(params),
-    staleTime: 60 * 1000,
+    staleTime: 0,
     refetchOnWindowFocus: false,
   });
 }

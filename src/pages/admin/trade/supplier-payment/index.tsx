@@ -71,7 +71,7 @@ export const SupplierPayment: React.FC = () => {
     refetch: refetchPurchases,
     isFetching: isPurchasesFetching,
   } = usePurchasesQuery({
-    staleTime: 60 * 1000,
+    staleTime: 0,
   });
 
   const purchasesDueCountMap = useMemo(() => {

@@ -47,7 +47,7 @@ const Products = () => {
             });
             return response;
         },
-        staleTime: 30 * 1000,
+        staleTime: 0,
         refetchOnWindowFocus: false,
     });
 

@@ -48,7 +48,7 @@ export const useLedgerPersonsQuery = (
   return useQuery<LedgerPersonListResponse, Error>({
     queryKey: [ledgerPersonListQueryKey],
     queryFn: fetchLedgerPersonList,
-    staleTime: 60 * 1000,
+    staleTime: 0,
     ...options,
   });
 };
@@ -63,7 +63,7 @@ export const useLedgerTransactionsQuery = (
   return useQuery<LedgerTransactionListResponse, Error>({
     queryKey: [ledgerTransactionListQueryKey, personId ?? "all"],
     queryFn: () => fetchLedgerTransactionList(personId),
-    staleTime: 60 * 1000,
+    staleTime: 0,
     ...options,
   });
 };

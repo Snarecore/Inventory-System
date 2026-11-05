@@ -156,7 +156,7 @@ const SalesReportPage: React.FC = () => {
             (item.invoiceNo ? item.invoiceNo.replace("INV-", "SO-") : `SO-${1000 + (item.id || idx)}`),
         }));
     },
-    staleTime: 60 * 1000,
+    staleTime: 0,
   });
 
   // Effective transactions data (pure live API)

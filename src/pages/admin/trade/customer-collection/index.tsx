@@ -73,7 +73,7 @@ export const CustomerCollection: React.FC = () => {
     refetch: refetchSales,
     isFetching: isSalesFetching,
   } = useSalesQuery({
-    staleTime: 60 * 1000,
+    staleTime: 0,
   });
 
   const salesDueCountMap = useMemo(() => {

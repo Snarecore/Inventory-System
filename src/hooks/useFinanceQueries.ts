@@ -27,7 +27,7 @@ export const useFinanceDashboardQuery = (params?: FinanceDashboardParams) => {
   return useQuery<FinanceDashboardResult>({
     queryKey: [financeDashboardQueryKey, params?.startDate, params?.endDate],
     queryFn: () => fetchFinanceDashboard(params),
-    staleTime: 1000 * 30, // 30 seconds
+    staleTime: 0,
     refetchOnMount: "always",
     refetchOnWindowFocus: false,
   });
@@ -37,7 +37,7 @@ export const useFinancialTransactionsQuery = (params?: FetchFinancialTransaction
   return useQuery<any[]>({
     queryKey: [financialTransactionQueryKey, params?.type, params?.startDate, params?.endDate],
     queryFn: () => fetchFinancialTransactions(params),
-    staleTime: 1000 * 30,
+    staleTime: 0,
     refetchOnMount: "always",
     refetchOnWindowFocus: false,
   });

@@ -98,8 +98,7 @@ export const useCustomersDueQuery = (
   return useQuery({
     queryKey: [customersDueQueryKey],
     queryFn: fetchCustomersDue,
-    staleTime: 60 * 1000,
-    refetchOnMount: false,
+    staleTime: 0,
     refetchOnWindowFocus: false,
     ...options,
   });

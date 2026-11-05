@@ -210,7 +210,7 @@ export const usePurchasesQuery = <TData = PurchaseItem[]>(
   return useQuery({
     queryKey: [purchaseListQueryKey],
     queryFn: fetchPurchasesList,
-    staleTime: 60 * 1000,
+    staleTime: 0,
     ...options,
   });
 };
@@ -225,7 +225,7 @@ export const usePurchaseAndReturnsQuery = <TData = any[]>(
   return useQuery({
     queryKey: [purchaseAndReturnQueryKey],
     queryFn: fetchPurchaseAndReturnList,
-    staleTime: 60 * 1000,
+    staleTime: 0,
     ...options,
   });
 };

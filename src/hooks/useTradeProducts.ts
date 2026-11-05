@@ -25,7 +25,7 @@ export const useTradeProducts = () => {
         return null;
       }
     },
-    staleTime: 60 * 1000,
+    staleTime: 0,
   });
 
   const allProducts: ProductItem[] = useMemo(() => {
