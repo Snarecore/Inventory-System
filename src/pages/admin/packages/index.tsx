@@ -116,26 +116,27 @@ const PackagesPage: React.FC = () => {
 
   return (
     <div className="flex flex-col gap-2.5 px-3 py-2 sm:px-4 sm:py-2.5 max-w-[1600px] mx-auto w-full">
-      {/* Page Header with Billing Cycle Selector */}
+      {/* Page Header */}
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <PageHeader
           headerTitle="Subscription Packages"
           headerDescription="Choose the right business plan and billing cycle to scale your operations"
         />
-
-        {pricingData && cycles && cycles.length > 0 && (
-          <div className="flex items-center gap-2 self-start sm:self-auto">
-            <BillingCycleSelector
-              cycles={cycles}
-              selectedCycleCode={activeCycleCode}
-              onSelectCycle={setUserSelectedCycleCode}
-            />
-          </div>
-        )}
       </div>
 
-      {/* Hero / Overview Banner */}
+      {/* Hero / Overview Description Banner */}
       <PackagesHero subscription={subscription} />
+
+      {/* Billing Cycle Selector - Positioned between Description Banner and Cards */}
+      {pricingData && cycles && cycles.length > 0 && (
+        <div className="flex items-center justify-center my-0.5">
+          <BillingCycleSelector
+            cycles={cycles}
+            selectedCycleCode={activeCycleCode}
+            onSelectCycle={setUserSelectedCycleCode}
+          />
+        </div>
+      )}
 
       {/* Loading State */}
       {isLoading && !pricingData && (
