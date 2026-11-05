@@ -27,6 +27,8 @@ import {
   checkAppUserExists,
   sendPackageOtp,
 } from "@/services/package-service";
+import { getUserProfile } from "@/services/user-profile-service";
+import { getUserInfo, getStoredUser } from "@/utils/auth-storage";
 
 interface SubscribeCheckoutModalProps {
   isOpen: boolean;
@@ -58,13 +60,37 @@ const CheckoutFormContent: React.FC<CheckoutFormProps> = ({
   userId,
   onClose,
 }) => {
-  const [fullName, setFullName] = useState(initialName);
-  const [mobile, setMobile] = useState(initialPhone);
-  const [email, setEmail] = useState(initialEmail);
+  const userInfo = getUserInfo();
+  const storedUser = getStoredUser();
+
+  const rawLoginPhone =
+    (userInfo as any)?.phone ||
+    userInfo?.phoneNumber ||
+    (storedUser as any)?.phone ||
+    (storedUser as any)?.phoneNumber ||
+    initialPhone ||
+    "";
+
+  const rawLoginName =
+    userInfo?.fullName ||
+    (userInfo as any)?.businessName ||
+    storedUser?.name ||
+    initialName ||
+    "";
+
+  const initialResolvedEmail =
+    storedUser?.email ||
+    (isEmailAddress(rawLoginPhone) ? String(rawLoginPhone).trim() : initialEmail) ||
+    "";
+
+  const [fullName, setFullName] = useState(rawLoginName);
+  const [mobile, setMobile] = useState(normalizeBdMobile(rawLoginPhone));
+  const [email, setEmail] = useState(initialResolvedEmail);
+  const [isNameLocked, setIsNameLocked] = useState(Boolean(rawLoginName));
   const [validationError, setValidationError] = useState<string | null>(null);
   const [isRedirecting, setIsRedirecting] = useState(false);
 
-  const isInitialTest = isTestMobile(normalizeBdMobile(initialPhone));
+  const isInitialTest = isTestMobile(normalizeBdMobile(rawLoginPhone));
 
   // OTP State
   const [isCheckingMobile, setIsCheckingMobile] = useState(false);
@@ -99,36 +125,7 @@ const CheckoutFormContent: React.FC<CheckoutFormProps> = ({
     return () => clearInterval(interval);
   }, [resendCooldown]);
 
-  // Initial check for existing account if initial phone is provided
-  useEffect(() => {
-    const cleanPhone = normalizeBdMobile(initialPhone);
-    if (!cleanPhone || isTestMobile(cleanPhone)) return;
-
-    let isMounted = true;
-    (async () => {
-      try {
-        setIsCheckingMobile(true);
-        const res = await checkAppUserExists(cleanPhone);
-        if (!isMounted) return;
-        if (res && res.exists) {
-          setIsExistingUser(true);
-          setIsOtpVerified(true);
-          setOtpSent(true);
-          setOtpMessage("Registered CashBoi account verified. Proceed without OTP.");
-        }
-      } catch {
-        // Fallback to manual OTP
-      } finally {
-        if (isMounted) setIsCheckingMobile(false);
-      }
-    })();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [initialPhone]);
-
-  // Check mobile status on input change
+  // Check mobile status and existing user flag
   const evaluateMobile = useCallback(async (phone: string) => {
     const cleanPhone = normalizeBdMobile(phone);
     if (!cleanPhone) {
@@ -168,6 +165,55 @@ const CheckoutFormContent: React.FC<CheckoutFormProps> = ({
       setIsCheckingMobile(false);
     }
   }, []);
+
+  // Fetch full user profile from /user-profile/phone/{phone} matching cashboi-v2
+  useEffect(() => {
+    if (!rawLoginPhone) return;
+    let alive = true;
+
+    (async () => {
+      let profile: any = null;
+      try {
+        profile = await getUserProfile(rawLoginPhone);
+      } catch (error) {
+        console.error("Failed to load profile for subscribe form:", error);
+      }
+      if (!alive) return;
+
+      // The login phone when it IS a phone; the profile's own number when it
+      // is not (e.g. email login). normalizeBdMobile returns '' for anything that is not a
+      // Bangladeshi mobile.
+      const resolvedMobile =
+        normalizeBdMobile(rawLoginPhone) ||
+        normalizeBdMobile(profile?.phoneNumber) ||
+        "";
+
+      const resolvedEmail =
+        String(profile?.email || "").trim() ||
+        (isEmailAddress(rawLoginPhone) ? String(rawLoginPhone).trim() : (storedUser?.email || ""));
+
+      const resolvedFullName =
+        rawLoginName || profile?.fullName || "";
+
+      if (resolvedFullName) {
+        setFullName((curr) => curr || resolvedFullName);
+        setIsNameLocked(Boolean(rawLoginName || profile?.fullName));
+      }
+
+      if (resolvedMobile) {
+        setMobile((curr) => curr || resolvedMobile);
+        evaluateMobile(resolvedMobile);
+      }
+
+      if (resolvedEmail) {
+        setEmail((curr) => curr || resolvedEmail);
+      }
+    })();
+
+    return () => {
+      alive = false;
+    };
+  }, [rawLoginPhone, rawLoginName, storedUser?.email, evaluateMobile]);
 
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
@@ -433,10 +479,20 @@ const CheckoutFormContent: React.FC<CheckoutFormProps> = ({
             type="text"
             required
             value={fullName}
+            readOnly={isNameLocked}
             onChange={(e) => setFullName(e.target.value)}
             placeholder="e.g. John Doe / Star Enterprises"
-            className="w-full px-3 py-2 rounded-lg border border-[var(--ui-border)] bg-[var(--ui-surface)] text-xs text-[var(--ui-text)] focus:outline-none focus:border-[var(--primary-color)] transition-colors"
+            className={`w-full px-3 py-2 rounded-lg border border-[var(--ui-border)] text-xs text-[var(--ui-text)] focus:outline-none transition-colors ${
+              isNameLocked
+                ? "bg-[var(--ui-surface-muted)] cursor-not-allowed opacity-90"
+                : "bg-[var(--ui-surface)] focus:border-[var(--primary-color)]"
+            }`}
           />
+          {isNameLocked && (
+            <p className="text-[10px] text-[var(--ui-text-muted)] mt-0.5">
+              Verified login name — cannot be changed.
+            </p>
+          )}
         </div>
 
         {/* Mobile Number & OTP Section */}
