@@ -17,39 +17,32 @@ export const PackagesHero: React.FC<PackagesHeroProps> = ({ subscription, curren
       : null);
 
   return (
-    <div className="p-3 sm:p-3.5 rounded-xl border border-[var(--ui-border)] bg-[var(--ui-surface)] shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3 transition-colors">
-      <div className="flex items-start gap-3">
-        <div className="w-8 h-8 rounded-lg bg-[var(--primary-color-light)] text-[var(--primary-color)] flex items-center justify-center shrink-0 border border-[var(--primary-color-muted)] mt-0.5">
-          <FaCrown size={14} />
+    <div className="px-3 py-2 sm:px-3.5 sm:py-2 rounded-xl border border-[var(--ui-border)] bg-[var(--ui-surface)] shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 transition-colors">
+      <div className="flex items-center gap-2.5 min-w-0">
+        <div className="w-7 h-7 rounded-lg bg-[var(--primary-color-light)] text-[var(--primary-color)] flex items-center justify-center shrink-0 border border-[var(--primary-color-muted)]">
+          <FaCrown size={13} />
         </div>
-        <div>
-          <div className="flex flex-wrap items-center gap-2">
-            <h4 className="text-xs font-bold text-[var(--ui-text)]">
-              CashBoi Subscription & Business Plans
-            </h4>
-            <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
-              Auto-Activation
-            </span>
-          </div>
-          <p className="text-[11px] text-[var(--ui-text-muted)] mt-1 max-w-2xl leading-relaxed">
-            Select the plan that aligns with your operational scale. Multi-month billing cycles provide significant cost savings and unlock premium capabilities.
+        <div className="flex items-center gap-2 flex-wrap min-w-0">
+          <h4 className="text-xs font-bold text-[var(--ui-text)] whitespace-nowrap">
+            CashBoi Subscription & Business Plans
+          </h4>
+          <span className="text-[10px] font-semibold px-2 py-0.2 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 whitespace-nowrap">
+            Auto-Activation
+          </span>
+          <span className="text-[var(--ui-border)] hidden lg:inline">|</span>
+          <p className="text-[11px] text-[var(--ui-text-muted)] truncate hidden md:inline">
+            Select the plan that aligns with your scale. Multi-month cycles provide significant cost savings.
           </p>
         </div>
       </div>
 
       {effectivePlanName && (
-        <div className="flex items-center gap-2.5 px-3 py-2 rounded-xl border border-[var(--ui-border)] bg-[var(--ui-surface-muted)] text-[11px] self-start sm:self-auto shrink-0">
-          <div className="w-7 h-7 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center border border-emerald-500/20 shrink-0">
-            <FaShieldAlt size={13} />
+        <div className="flex items-center gap-2 px-2.5 py-1 rounded-lg border border-[var(--ui-border)] bg-[var(--ui-surface-muted)] text-[11px] shrink-0 self-start sm:self-auto">
+          <div className="w-5 h-5 rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+            <FaShieldAlt size={11} />
           </div>
-          <div>
-            <span className="text-[10px] text-[var(--ui-text-muted)] block font-semibold uppercase tracking-wider">
-              Current Plan
-            </span>
-            <span className="font-bold text-[var(--ui-text)] text-xs">
-              {effectivePlanName}
-            </span>
-          </div>
+          <span className="text-[10px] text-[var(--ui-text-muted)] font-medium">Current:</span>
+          <span className="font-bold text-[var(--ui-text)] text-xs">{effectivePlanName}</span>
         </div>
       )}
     </div>
