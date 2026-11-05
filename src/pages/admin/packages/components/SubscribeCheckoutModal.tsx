@@ -285,11 +285,6 @@ const CheckoutFormContent: React.FC<CheckoutFormProps> = ({
                 : "bg-[var(--ui-surface)] focus:border-[var(--primary-color)]"
             }`}
           />
-          {isNameLocked && (
-            <p className="text-[10px] text-[var(--ui-text-muted)] mt-0.5 truncate">
-              Verified login name
-            </p>
-          )}
         </div>
 
         <div>
@@ -307,9 +302,6 @@ const CheckoutFormContent: React.FC<CheckoutFormProps> = ({
             placeholder="01XXXXXXXXX"
             className="w-full px-3 py-2 rounded-lg border border-[var(--ui-border)] bg-[var(--ui-surface)] text-xs text-[var(--ui-text)] focus:outline-none focus:border-[var(--primary-color)] transition-colors"
           />
-          <p className="text-[10px] text-[var(--ui-text-muted)] mt-0.5 truncate">
-            11-digit mobile (01XXXXXXXXX)
-          </p>
         </div>
 
         <div>
@@ -327,9 +319,6 @@ const CheckoutFormContent: React.FC<CheckoutFormProps> = ({
             placeholder="name@business.com"
             className="w-full px-3 py-2 rounded-lg border border-[var(--ui-border)] bg-[var(--ui-surface)] text-xs text-[var(--ui-text)] focus:outline-none focus:border-[var(--primary-color)] transition-colors"
           />
-          <p className="text-[10px] text-[var(--ui-text-muted)] mt-0.5 truncate">
-            For payment receipt & invoice
-          </p>
         </div>
       </div>
 
