@@ -4,6 +4,7 @@ import {
   FaCheckCircle,
 } from "react-icons/fa";
 import Modal from "@/components/modal/Modal";
+import Button from "@/components/button/Button";
 import type { PricedPackage, BillingCycle, PaymentInitiatePayload } from "@/types";
 import { useInitiatePackagePaymentMutation } from "@/hooks/usePackageQueries";
 import {
@@ -334,31 +335,28 @@ const CheckoutFormContent: React.FC<CheckoutFormProps> = ({
 
       {/* Footer Buttons */}
       <div className="pt-2.5 border-t border-[var(--ui-border)] flex items-center justify-end gap-2">
-        <button
-          type="button"
+        <Button
+          label="Cancel"
+          variant="outline"
+          size="sm"
           onClick={onClose}
           disabled={initiatePaymentMutation.isPending}
-          className="px-3.5 py-2 rounded-lg text-xs font-semibold text-[var(--ui-text-muted)] hover:bg-[var(--ui-surface-muted)] transition cursor-pointer"
-        >
-          Cancel
-        </button>
-        <button
+          buttonClass="!bg-[var(--ui-surface)] hover:!bg-[var(--ui-surface-sunken)] !border-[var(--ui-border)] !text-[var(--ui-text)] font-medium !rounded-lg !py-1.5 !px-3.5 text-xs cursor-pointer"
+        />
+        <Button
+          label={
+            initiatePaymentMutation.isPending
+              ? "Redirecting..."
+              : `Proceed to Payment (${formatPackageMoney(totalAmount)})`
+          }
           type="submit"
+          size="sm"
+          color="var(--primary-color)"
+          hoverColor="var(--primary-color-hover)"
+          isLoading={initiatePaymentMutation.isPending}
           disabled={initiatePaymentMutation.isPending}
-          className="inline-flex items-center gap-1.5 px-5 py-2 rounded-lg text-xs font-bold bg-[var(--primary-color)] hover:brightness-110 text-white shadow-xs transition disabled:opacity-50 cursor-pointer"
-        >
-          {initiatePaymentMutation.isPending ? (
-            <>
-              <FaSpinner className="animate-spin" size={12} />
-              <span>Redirecting...</span>
-            </>
-          ) : (
-            <>
-              <FaCheckCircle size={11} />
-              <span>Proceed to Payment ({formatPackageMoney(totalAmount)})</span>
-            </>
-          )}
-        </button>
+          buttonClass="font-semibold !rounded-lg !py-1.5 !px-4 text-xs text-white cursor-pointer shadow-xs"
+        />
       </div>
     </form>
   );
