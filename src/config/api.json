@@ -158,8 +158,6 @@
     "packages": {
         "pricingUrl": "pricing",
         "userSubscriptionUrl": "user-subscription",
-        "paymentInitiateUrl": "payment/initiate",
-        "appUserExistsUrl": "app-user/exists",
-        "otpSendUrl": "otp/send"
+        "paymentInitiateUrl": "payment/initiate"
     }
 }

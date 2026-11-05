@@ -4,7 +4,6 @@ import {
   fetchPricing,
   fetchUserSubscription,
   initiatePackagePayment,
-  readCachedPricing,
 } from "@/services/package-service";
 import type {
   PricingResponse,
@@ -14,14 +13,13 @@ import type {
 } from "@/types";
 
 /**
- * Hook to fetch Pricing Plans and Feature Groups with cache hydration
+ * Hook to fetch Pricing Plans and Feature Groups
  */
 export function usePricingQuery(type: PlanType = "BUSINESS") {
   return useQuery<PricingResponse>({
     queryKey: [pricingQueryKey, type],
     queryFn: () => fetchPricing(type),
-    initialData: () => readCachedPricing(type) ?? undefined,
-    staleTime: 5 * 60 * 1000, // 5 minutes cache
+    staleTime: 5 * 60 * 1000, // 5 minutes in-memory cache
     refetchOnWindowFocus: false,
   });
 }

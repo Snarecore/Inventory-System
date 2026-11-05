@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import {
   FaSpinner,
   FaCheckCircle,
@@ -7,13 +7,13 @@ import Modal from "@/components/modal/Modal";
 import Button from "@/components/button/Button";
 import type { PricedPackage, BillingCycle, PaymentInitiatePayload } from "@/types";
 import { useInitiatePackagePaymentMutation } from "@/hooks/usePackageQueries";
+import { useUserProfileQuery } from "@/hooks/useUserProfile";
 import {
   formatPackageMoney,
   normalizeBdMobile,
   isEmailAddress,
   formatDateForPayment,
 } from "../utils/package-formatters";
-import { getUserProfile } from "@/services/user-profile-service";
 import { getUserInfo, getStoredUser } from "@/utils/auth-storage";
 
 interface SubscribeCheckoutModalProps {
@@ -69,15 +69,25 @@ const CheckoutFormContent: React.FC<CheckoutFormProps> = ({
     return isEmailAddress(s) ? s : "";
   };
 
+  const { data: profile } = useUserProfileQuery();
+
+  const profileMobile = profile?.phoneNumber ? normalizeBdMobile(profile.phoneNumber) : "";
+  const profileEmail = profile?.email ? sanitizeEmail(profile.email) : "";
+  const profileFullName = profile?.fullName?.trim() || "";
+
   const initialResolvedEmail =
+    profileEmail ||
     sanitizeEmail(storedUser?.email) ||
     sanitizeEmail(rawLoginPhone) ||
     sanitizeEmail(initialEmail);
 
-  const [fullName, setFullName] = useState(rawLoginName);
-  const [mobile, setMobile] = useState(normalizeBdMobile(rawLoginPhone));
+  const initialResolvedName = profileFullName || rawLoginName || "";
+  const initialResolvedMobile = normalizeBdMobile(rawLoginPhone) || profileMobile || "";
+
+  const [fullName, setFullName] = useState(initialResolvedName);
+  const [mobile, setMobile] = useState(initialResolvedMobile);
   const [email, setEmail] = useState(initialResolvedEmail);
-  const [isNameLocked, setIsNameLocked] = useState(Boolean(rawLoginName));
+  const [isNameLocked, setIsNameLocked] = useState(Boolean(initialResolvedName));
   const [validationError, setValidationError] = useState<string | null>(null);
   const [isRedirecting, setIsRedirecting] = useState(false);
 
@@ -85,56 +95,21 @@ const CheckoutFormContent: React.FC<CheckoutFormProps> = ({
   const totalAmount = pkg.total ?? 0;
   const cycleMonths = cycle.months || 1;
 
-  // Fetch full user profile from /user-profile/phone/{phone} matching cashboi-v2
-  useEffect(() => {
-    if (!rawLoginPhone) return;
-    let alive = true;
-
-    (async () => {
-      let profile: any = null;
-      try {
-        profile = await getUserProfile(rawLoginPhone);
-      } catch (error) {
-        console.error("Failed to load profile for subscribe form:", error);
-      }
-      if (!alive) return;
-
-      const profileMobile = normalizeBdMobile(profile?.phoneNumber);
-      const resolvedMobile =
-        normalizeBdMobile(rawLoginPhone) ||
-        profileMobile ||
-        "";
-
-      const profileEmail = sanitizeEmail(profile?.email);
-      const fallbackEmail =
-        sanitizeEmail(rawLoginPhone) ||
-        sanitizeEmail(storedUser?.email) ||
-        sanitizeEmail(initialEmail);
-
-      const resolvedFullName =
-        rawLoginName || profile?.fullName || "";
-
-      if (resolvedFullName) {
-        setFullName((curr) => curr || resolvedFullName);
-        setIsNameLocked(Boolean(rawLoginName || profile?.fullName));
-      }
-
-      if (resolvedMobile) {
-        setMobile((curr) => (curr && normalizeBdMobile(curr) ? curr : resolvedMobile));
-      }
-
-      // Prioritize the profile's verified email from the server
-      if (profileEmail) {
-        setEmail(profileEmail);
-      } else if (fallbackEmail) {
-        setEmail((curr) => (isEmailAddress(curr) ? curr : fallbackEmail));
-      }
-    })();
-
-    return () => {
-      alive = false;
-    };
-  }, [rawLoginPhone, rawLoginName, storedUser?.email, initialEmail]);
+  const [prevProfile, setPrevProfile] = useState(profile);
+  if (profile && profile !== prevProfile) {
+    setPrevProfile(profile);
+    if (profile.fullName && !fullName) {
+      setFullName(profile.fullName);
+      setIsNameLocked(true);
+    }
+    if (profile.phoneNumber && !mobile) {
+      setMobile(normalizeBdMobile(profile.phoneNumber));
+    }
+    const verifiedEmail = sanitizeEmail(profile.email);
+    if (verifiedEmail && !email) {
+      setEmail(verifiedEmail);
+    }
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
