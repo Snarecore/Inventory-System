@@ -1,6 +1,5 @@
 import React from "react";
 import { FaCrown, FaShieldAlt } from "react-icons/fa";
-
 import type { UserSubscription } from "@/types";
 
 interface PackagesHeroProps {
@@ -12,44 +11,47 @@ export const PackagesHero: React.FC<PackagesHeroProps> = ({ subscription, curren
   const effectivePlanName =
     currentPlanName ??
     (subscription?.packageName
-      ? subscription.packageNameBn ?? subscription.packageName
+      ? subscription.packageName
       : subscription?.packageStatus && subscription.packageStatus !== "FREE"
       ? subscription.packageStatus
       : null);
 
   return (
-    <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-slate-900 via-sky-950 to-emerald-950 p-5 sm:p-7 text-white shadow-md border border-slate-800">
-      {/* Decorative blurred background shapes */}
-      <div className="absolute -top-10 -left-10 w-44 h-44 rounded-full bg-sky-500/10 blur-3xl pointer-events-none" />
-      <div className="absolute -bottom-10 -right-10 w-44 h-44 rounded-full bg-emerald-500/10 blur-3xl pointer-events-none" />
-
-      <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
+    <div className="p-3 sm:p-4 rounded-xl border border-[var(--ui-border)] bg-[var(--ui-surface)] shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3 transition-colors">
+      <div className="flex items-start gap-3">
+        <div className="w-9 h-9 rounded-xl bg-[var(--primary-color-light)] text-[var(--primary-color)] flex items-center justify-center shrink-0 border border-[var(--primary-color-muted)] mt-0.5">
+          <FaCrown size={15} />
+        </div>
         <div>
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 text-emerald-300 text-[11px] font-semibold tracking-wider uppercase mb-2 border border-white/10 backdrop-blur-xs">
-            <FaCrown className="text-amber-400" size={11} />
-            <span>CashBoi Packages • ক্যাশবই প্যাকেজ</span>
+          <div className="flex flex-wrap items-center gap-2">
+            <h4 className="text-xs font-bold text-[var(--ui-text)]">
+              CashBoi Subscription & Business Plans
+            </h4>
+            <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+              Auto-Activation
+            </span>
           </div>
-
-          <h1 className="text-lg sm:text-2xl font-bold tracking-tight text-white leading-tight">
-            যেভাবে আপনি টাকা পরিচালনা করেন, সেই অনুযায়ী সেরা প্ল্যান বেছে নিন
-          </h1>
-          <p className="text-xs sm:text-sm text-slate-300 mt-1 max-w-2xl leading-relaxed">
-            বিলিং সাইকেল পরিবর্তন করে সরাসরি প্যাকেজের মূল্য ও আকর্ষণীয় সাশ্রয় দেখুন। আপনার ব্যবসার পরিধি বাড়াতে যে কোনো সময় আপগ্রেড বা রিনিউ করুন।
+          <p className="text-[11px] text-[var(--ui-text-muted)] mt-1 max-w-2xl leading-relaxed">
+            Select the subscription plan that aligns with your operational scale. Change billing cycles below to take advantage of multi-month discounts and unlock premium modules.
           </p>
         </div>
-
-        {effectivePlanName && (
-          <div className="self-start md:self-auto shrink-0 flex items-center gap-2.5 px-4 py-2.5 rounded-xl bg-white/10 border border-white/15 backdrop-blur-md">
-            <div className="w-8 h-8 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center border border-emerald-500/30">
-              <FaShieldAlt size={14} />
-            </div>
-            <div>
-              <span className="text-[10px] text-slate-300 block uppercase font-medium">বর্তমান প্ল্যান</span>
-              <span className="text-xs font-bold text-emerald-300">{effectivePlanName}</span>
-            </div>
-          </div>
-        )}
       </div>
+
+      {effectivePlanName && (
+        <div className="flex items-center gap-2.5 px-3 py-2 rounded-xl border border-[var(--ui-border)] bg-[var(--ui-surface-muted)] text-[11px] self-start sm:self-auto shrink-0">
+          <div className="w-7 h-7 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center border border-emerald-500/20 shrink-0">
+            <FaShieldAlt size={13} />
+          </div>
+          <div>
+            <span className="text-[10px] text-[var(--ui-text-muted)] block font-semibold uppercase tracking-wider">
+              Current Plan
+            </span>
+            <span className="font-bold text-[var(--ui-text)] text-xs">
+              {effectivePlanName}
+            </span>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

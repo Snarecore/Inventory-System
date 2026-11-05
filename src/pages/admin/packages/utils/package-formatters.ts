@@ -4,7 +4,7 @@ export function toBengaliNumber(value: number | string): string {
   return String(value).replace(/\d/g, (digit) => BENGALI_DIGITS[Number(digit)] || digit);
 }
 
-export function formatPackageMoney(amount: number | null | undefined, isBengali = true): string {
+export function formatPackageMoney(amount: number | null | undefined, isBengali = false): string {
   if (amount === null || amount === undefined) return isBengali ? "যোগাযোগ করুন" : "Contact Us";
   if (amount === 0) return isBengali ? "ফ্রি" : "Free";
   const rounded = Math.round(amount).toLocaleString("en-IN");
@@ -22,7 +22,7 @@ export const VALUE_TRANSLATIONS: Record<string, string> = {
   Custom: "কাস্টম",
 };
 
-export function translateFeatureValue(value: string, isBengali = true): string {
+export function translateFeatureValue(value: string, isBengali = false): string {
   if (isBengali && VALUE_TRANSLATIONS[value]) {
     return VALUE_TRANSLATIONS[value];
   }
