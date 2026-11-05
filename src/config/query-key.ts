@@ -18,7 +18,6 @@ export const vendorQueryKey = "vendor";
 export const socialLinksQueryKey = "social-link";
 export const shopPageCmsQueryKey = "shop-page-cms";
 export const pageMetaQueryKey = "page-meta";
-export const blogQueryKey = "blog";
 export const productListQueryKey = "get-product-list";
 export const productCategoryListQueryKey = "get-product-categories-list";
 export const productCategoriesListQueryKey = productCategoryListQueryKey;

@@ -32,8 +32,6 @@ const TermsConditions = React.lazy(() => import('@/pages/admin/settings/policy/t
 const ExchangePolicy = React.lazy(() => import('@/pages/admin/settings/policy/exchange-return/ExchangeForm'))
 const Chat = React.lazy(() => import('@/pages/admin/chat'))
 const PageMeta = React.lazy(() => import('@/pages/admin/seo'))
-const Blogs = React.lazy(() => import('@/pages/admin/blog'))
-const BlogCreation = React.lazy(() => import('@/pages/admin/blog-creation'))
 const Purchases = React.lazy(() => import('@/pages/admin/trade/purchases'))
 const CreatePurchase = React.lazy(() => import('@/pages/admin/trade/create-purchase'))
 const Sales = React.lazy(() => import('@/pages/admin/trade/sales'))
@@ -617,7 +615,6 @@ export const router = createBrowserRouter([
         path: 'mfs/edit/:id',
         element: withSuspense(CreateMfsPage),
       },
-
       {
         path: 'customers',
         element: <Navigate to="/admin/parties?type=CUSTOMER" replace />,
@@ -689,14 +686,6 @@ export const router = createBrowserRouter([
       {
         path: 'page-meta',
         element: withSuspense(PageMeta),
-      },
-      {
-        path: 'blogs',
-        element: withSuspense(Blogs),
-      },
-      {
-        path: 'create-blog',
-        element: withSuspense(BlogCreation),
       },
       {
         path: 'company',
