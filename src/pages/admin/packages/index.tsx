@@ -184,6 +184,7 @@ const PackagesPage: React.FC = () => {
                 pkg={pkg}
                 index={idx}
                 cycle={activeCycle}
+                featureGroups={featureGroups}
                 isSelected={pkg.id === activePackageId}
                 subscription={subscription}
                 onSelect={() => setUserSelectedPackageId(pkg.id)}

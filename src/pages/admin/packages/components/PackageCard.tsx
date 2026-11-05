@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo } from "react";
 import {
   FaWallet,
   FaLandmark,
@@ -7,8 +7,9 @@ import {
   FaCheck,
   FaLock,
 } from "react-icons/fa";
-import type { PricedPackage, BillingCycle, UserSubscription } from "@/types";
+import type { PricedPackage, BillingCycle, UserSubscription, FeatureGroup } from "@/types";
 import { formatPackageMoney } from "../utils/package-formatters";
+import { extractPackageHighlights } from "../utils/package-highlights";
 
 interface PackageCardProps {
   pkg: PricedPackage;
@@ -17,6 +18,8 @@ interface PackageCardProps {
   isSelected?: boolean;
   onSelect?: () => void;
   subscription?: UserSubscription | null;
+  featureGroups?: FeatureGroup[] | null;
+  highlights?: string[];
   ctaState?: {
     locked: boolean;
     isRenew: boolean;
@@ -25,37 +28,6 @@ interface PackageCardProps {
   };
   onAction: (pkg: PricedPackage) => void;
 }
-
-const PACKAGE_HIGHLIGHTS: Record<string, string[]> = {
-  FREE: [
-    "60 Sales Invoices / mo",
-    "1 Bank & 1 MFS Account",
-    "Income & Expense Tracking",
-    "Daily Cash Book & Reports",
-    "Community Support",
-  ],
-  BASIC: [
-    "400 Sales Invoices / mo",
-    "Multiple Bank & MFS Accounts",
-    "Stock & Inventory Tracking",
-    "Cloud Data Backup",
-    "Regular Support & Training",
-  ],
-  PREMIUM: [
-    "1,000 Sales Invoices / mo",
-    "Up to 3 Branches & 5 Users",
-    "Full Web Version & POS",
-    "Customer CRM & Orders",
-    "Priority 24/7 Support",
-  ],
-  CUSTOM: [
-    "Unlimited Sales Invoices",
-    "Unlimited Store Branches",
-    "HR, Payroll & Attendance",
-    "Advanced MIS & Analytics",
-    "Dedicated Account Manager",
-  ],
-};
 
 const PackageIcon: React.FC<{ code: string }> = ({ code }) => {
   const upper = String(code || "").toUpperCase();
@@ -67,11 +39,13 @@ const PackageIcon: React.FC<{ code: string }> = ({ code }) => {
 
 export const PackageCard: React.FC<PackageCardProps> = ({
   pkg,
-  index,
+  index = 0,
   cycle,
   isSelected,
   onSelect,
   subscription,
+  featureGroups,
+  highlights,
   ctaState,
   onAction,
 }) => {
@@ -107,13 +81,10 @@ export const PackageCard: React.FC<PackageCardProps> = ({
   else if (isFree) ctaLabel = isCurrent ? "Current Plan" : "Start Free";
   else if (locked) ctaLabel = "Locked";
 
-  const highlights = PACKAGE_HIGHLIGHTS[pkg.code] || [
-    "Core sales management",
-    "Financial accounts",
-    "Reports & statements",
-    "Cloud infrastructure",
-    "Customer support",
-  ];
+  const cardHighlights = useMemo(() => {
+    if (highlights && highlights.length > 0) return highlights;
+    return extractPackageHighlights(pkg, index, featureGroups);
+  }, [highlights, pkg, index, featureGroups]);
 
   return (
     <div
@@ -256,7 +227,7 @@ export const PackageCard: React.FC<PackageCardProps> = ({
             Plan Highlights
           </span>
           <ul className="space-y-1.5">
-            {highlights.map((feat, i) => (
+            {cardHighlights.map((feat, i) => (
               <li key={i} className="flex items-center gap-1.5 text-[11px] text-[var(--ui-text)]">
                 <span
                   className={`w-3.5 h-3.5 rounded-full flex items-center justify-center shrink-0 ${
