@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState } from "react";
 import { FaRedo, FaExclamationTriangle } from "react-icons/fa";
 import PageHeader from "@/components/page-header/PageHeader";
 import { usePricingQuery, useUserSubscriptionQuery } from "@/hooks/usePackageQueries";
@@ -24,17 +24,11 @@ const PackagesPage: React.FC = () => {
   const rawPackages = pricingData?.packages;
   const featureGroups = pricingData?.featureGroups;
 
-  const defaultCycleCode = useMemo(() => {
-    if (!cycles || cycles.length === 0) return "";
-    const sixMonth = cycles.find((c) => c.months === 6 || String(c.code).includes("6"));
-    return sixMonth?.code ?? cycles[0].code;
-  }, [cycles]);
+  const defaultSixMonth = cycles?.find((c) => c.months === 6 || String(c.code).includes("6"));
+  const defaultCycleCode = defaultSixMonth?.code ?? cycles?.[0]?.code ?? "";
 
-  const defaultPackageId = useMemo(() => {
-    if (!rawPackages || rawPackages.length === 0) return null;
-    const featured = rawPackages.find((p) => p.featured);
-    return featured?.id ?? rawPackages[0].id;
-  }, [rawPackages]);
+  const featuredPackage = rawPackages?.find((p) => p.featured);
+  const defaultPackageId = featuredPackage?.id ?? rawPackages?.[0]?.id ?? null;
 
   const [userSelectedCycleCode, setUserSelectedCycleCode] = useState<string>("");
   const [userSelectedPackageId, setUserSelectedPackageId] = useState<string | number | null>(null);
@@ -46,68 +40,64 @@ const PackagesPage: React.FC = () => {
   const [checkoutModalOpen, setCheckoutModalOpen] = useState(false);
   const [checkoutPackage, setCheckoutPackage] = useState<PricedPackage | null>(null);
 
-  const activeCycle = useMemo(() => {
-    if (!cycles || cycles.length === 0) return undefined;
-    return cycles.find((c) => c.code === activeCycleCode) ?? cycles[0];
-  }, [cycles, activeCycleCode]);
+  const activeCycle = cycles?.find((c) => c.code === activeCycleCode) ?? cycles?.[0];
 
-  // Derive package prices for the active cycle
-  const pricedPackages: PricedPackage[] = useMemo(() => {
-    if (!rawPackages || rawPackages.length === 0) return EMPTY_PACKAGES;
-    const months = activeCycle?.months ?? 1;
+  // Derive package prices for the active cycle directly
+  const months = activeCycle?.months ?? 1;
+  const pricedPackages: PricedPackage[] =
+    rawPackages && rawPackages.length > 0
+      ? rawPackages.map((p) => {
+          if (p.customPricing) {
+            return { ...p, total: null, perMonth: null, discountPct: 0 };
+          }
 
-    return rawPackages.map((p) => {
-      if (p.customPricing) {
-        return { ...p, total: null, perMonth: null, discountPct: 0 };
-      }
+          const prices = p.prices || [];
+          const priceEntry = prices.find(
+            (pr) => pr.cycleCode === activeCycle?.code || pr.billingCycle === activeCycle?.code
+          );
 
-      const prices = p.prices || [];
-      const priceEntry = prices.find(
-        (pr) => pr.cycleCode === activeCycle?.code || pr.billingCycle === activeCycle?.code
-      );
+          if (priceEntry && priceEntry.finalPrice != null) {
+            const total = Number(priceEntry.finalPrice);
+            const originalTotal = Number(
+              priceEntry.baseMonthlyPrice != null
+                ? priceEntry.baseMonthlyPrice
+                : p.monthlyPrice != null
+                ? p.monthlyPrice * months
+                : 0
+            );
+            const perMonth = months > 0 ? total / months : total;
+            const originalPerMonth = months > 0 ? originalTotal / months : originalTotal;
+            const savePerMonth = originalPerMonth > perMonth ? originalPerMonth - perMonth : 0;
+            const totalSave = originalTotal > total ? originalTotal - total : 0;
+            return {
+              ...p,
+              total,
+              perMonth,
+              originalTotal,
+              originalPerMonth,
+              savePerMonth,
+              totalSave,
+              discountPct: Number(priceEntry.discountPct || 0),
+            };
+          }
 
-      if (priceEntry && priceEntry.finalPrice != null) {
-        const total = Number(priceEntry.finalPrice);
-        const originalTotal = Number(
-          priceEntry.baseMonthlyPrice != null
-            ? priceEntry.baseMonthlyPrice
-            : p.monthlyPrice != null
-            ? p.monthlyPrice * months
-            : 0
-        );
-        const perMonth = months > 0 ? total / months : total;
-        const originalPerMonth = months > 0 ? originalTotal / months : originalTotal;
-        const savePerMonth = originalPerMonth > perMonth ? originalPerMonth - perMonth : 0;
-        const totalSave = originalTotal > total ? originalTotal - total : 0;
-        return {
-          ...p,
-          total,
-          perMonth,
-          originalTotal,
-          originalPerMonth,
-          savePerMonth,
-          totalSave,
-          discountPct: Number(priceEntry.discountPct || 0),
-        };
-      }
+          if (p.monthlyPrice != null) {
+            const total = p.monthlyPrice * months;
+            return {
+              ...p,
+              total,
+              perMonth: p.monthlyPrice,
+              originalTotal: total,
+              originalPerMonth: p.monthlyPrice,
+              savePerMonth: 0,
+              totalSave: 0,
+              discountPct: 0,
+            };
+          }
 
-      if (p.monthlyPrice != null) {
-        const total = p.monthlyPrice * months;
-        return {
-          ...p,
-          total,
-          perMonth: p.monthlyPrice,
-          originalTotal: total,
-          originalPerMonth: p.monthlyPrice,
-          savePerMonth: 0,
-          totalSave: 0,
-          discountPct: 0,
-        };
-      }
-
-      return { ...p, total: null, perMonth: null, discountPct: 0 };
-    });
-  }, [rawPackages, activeCycle]);
+          return { ...p, total: null, perMonth: null, discountPct: 0 };
+        })
+      : EMPTY_PACKAGES;
 
   const handleSelectPackageForCheckout = (pkg: PricedPackage) => {
     setCheckoutPackage(pkg);

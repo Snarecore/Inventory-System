@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React from "react";
 import {
   FaWallet,
   FaLandmark,
@@ -81,10 +81,10 @@ export const PackageCard: React.FC<PackageCardProps> = ({
   else if (isFree) ctaLabel = isCurrent ? "Current Plan" : "Start Free";
   else if (locked) ctaLabel = "Locked";
 
-  const cardHighlights = useMemo(() => {
-    if (highlights && highlights.length > 0) return highlights;
-    return extractPackageHighlights(pkg, index, featureGroups);
-  }, [highlights, pkg, index, featureGroups]);
+  const cardHighlights =
+    highlights && highlights.length > 0
+      ? highlights
+      : extractPackageHighlights(pkg, index, featureGroups);
 
   return (
     <div
