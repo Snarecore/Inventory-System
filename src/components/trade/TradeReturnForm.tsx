@@ -440,10 +440,12 @@ export const TradeReturnForm: React.FC<TradeReturnFormProps> = ({ mode }) => {
 
   // Refund management hook
   const tradeRefund = useTradeRefund({
+    selectedRecord: selectedOrder,
     refundAmount: totals.refundAmount,
     registeredBankAccounts,
     registeredMfsAccounts,
     autoSyncCash: true,
+    priority: isSale ? "cash_first" : "due_first",
   });
 
   const {
@@ -1116,6 +1118,8 @@ export const TradeReturnForm: React.FC<TradeReturnFormProps> = ({ mode }) => {
             {/* Refund Tender Component */}
             <div className="pt-2 border-t border-[var(--ui-border)]">
               <TradeRefundSection
+                refund={tradeRefund}
+                refundAmount={totals.refundAmount}
                 refundCash={refundCash}
                 refundBank={refundBank}
                 refundMfs={refundMfs}

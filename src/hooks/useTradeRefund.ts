@@ -2,21 +2,23 @@ import { useState, useMemo, useEffect } from "react";
 import type { TradePaymentAccount } from "./useTradePayment";
 
 export interface UseTradeRefundOptions {
-  selectedRecord: any;
+  selectedRecord?: any;
   refundAmount: number;
-  returnMode: "FULL" | "PARTIAL";
+  returnMode?: "FULL" | "PARTIAL";
   registeredBankAccounts?: TradePaymentAccount[];
   registeredMfsAccounts?: TradePaymentAccount[];
   priority?: "cash_first" | "due_first";
+  autoSyncCash?: boolean;
 }
 
 export const useTradeRefund = ({
   selectedRecord,
   refundAmount,
-  returnMode,
+  returnMode = "FULL",
   registeredBankAccounts = [],
   registeredMfsAccounts = [],
   priority = "cash_first",
+  autoSyncCash = false,
 }: UseTradeRefundOptions) => {
   const [refundCashAmount, setRefundCashAmount] = useState<string>("");
   const [refundBankAmount, setRefundBankAmount] = useState<string>("");
@@ -76,6 +78,13 @@ export const useTradeRefund = ({
   // Auto-distribute refund
   useEffect(() => {
     if (!selectedRecord || refundAmount <= 0) {
+      if (autoSyncCash && refundAmount > 0) {
+        setRefundCashAmount(String(refundAmount));
+        setRefundBankAmount("");
+        setRefundMfsAmount("");
+        setRefundDueAmount("");
+        return;
+      }
       setRefundCashAmount("");
       setRefundBankAmount("");
       setRefundMfsAmount("");
@@ -161,6 +170,7 @@ export const useTradeRefund = ({
     origDueAmount,
     origGrandTotal,
     priority,
+    autoSyncCash,
   ]);
 
   // Sync bank / mfs dropdown selection
@@ -200,18 +210,28 @@ export const useTradeRefund = ({
   };
 
   return {
+    refundCash: refundCashAmount,
     refundCashAmount,
     setRefundCashAmount,
+    handleRefundCashChange: setRefundCashAmount,
+    refundBank: refundBankAmount,
     refundBankAmount,
     setRefundBankAmount,
+    handleRefundBankChange: setRefundBankAmount,
+    refundMfs: refundMfsAmount,
     refundMfsAmount,
     setRefundMfsAmount,
+    handleRefundMfsChange: setRefundMfsAmount,
+    refundDue: refundDueAmount,
     refundDueAmount,
     setRefundDueAmount,
+    handleRefundDueChange: setRefundDueAmount,
     selectedRefundBankId,
     setSelectedRefundBankId,
+    handleSelectRefundBank: setSelectedRefundBankId,
     selectedRefundMfsId,
     setSelectedRefundMfsId,
+    handleSelectRefundMfs: setSelectedRefundMfsId,
     origPaymentMode,
     origGrandTotal,
     origDueAmount,

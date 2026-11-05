@@ -5,31 +5,55 @@ import type { UseTradeRefundReturn } from "@/hooks/useTradeRefund";
 import type { TradePaymentAccount } from "@/hooks/useTradePayment";
 
 export interface TradeRefundSectionProps {
-  refund: UseTradeRefundReturn;
-  refundAmount: number;
-  registeredBankAccounts: TradePaymentAccount[];
-  registeredMfsAccounts: TradePaymentAccount[];
+  refund?: UseTradeRefundReturn;
+  refundCash?: string | number;
+  refundBank?: string | number;
+  refundMfs?: string | number;
+  refundDue?: string | number;
+  selectedRefundBankId?: string;
+  selectedRefundMfsId?: string;
+  registeredBankAccounts?: TradePaymentAccount[];
+  registeredMfsAccounts?: TradePaymentAccount[];
+  totalRefundAllocated?: number;
+  refundDifference?: number;
+  refundAmount?: number;
+  origDueAmount?: number;
   title?: string;
+  onRefundCashChange?: (v: string) => void;
+  onRefundBankChange?: (v: string) => void;
+  onRefundMfsChange?: (v: string) => void;
+  onRefundDueChange?: (v: string) => void;
+  onSelectRefundBank?: (id: string) => void;
+  onSelectRefundMfs?: (id: string) => void;
 }
 
 export const TradeRefundSection: React.FC<TradeRefundSectionProps> = ({
   refund,
-  refundAmount,
-  registeredBankAccounts,
-  registeredMfsAccounts,
+  refundAmount = 0,
+  registeredBankAccounts = [],
+  registeredMfsAccounts = [],
   title = "Refund Settlement",
+  ...flatProps
 }) => {
-  const {
-    numRefundCash,
-    numRefundBank,
-    numRefundMfs,
-    numRefundDue,
-    selectedRefundBankId,
-    selectedRefundMfsId,
-    origDueAmount,
-    totalRefundAllocated,
-    refundDifference,
-  } = refund;
+  const numRefundCash = Number(refund?.numRefundCash ?? flatProps.refundCash ?? 0);
+  const numRefundBank = Number(refund?.numRefundBank ?? flatProps.refundBank ?? 0);
+  const numRefundMfs = Number(refund?.numRefundMfs ?? flatProps.refundMfs ?? 0);
+  const numRefundDue = Number(refund?.numRefundDue ?? flatProps.refundDue ?? 0);
+
+  const selectedRefundBankId = String(refund?.selectedRefundBankId ?? flatProps.selectedRefundBankId ?? "");
+  const selectedRefundMfsId = String(refund?.selectedRefundMfsId ?? flatProps.selectedRefundMfsId ?? "");
+
+  const origDueAmount = Number(refund?.origDueAmount ?? flatProps.origDueAmount ?? 0);
+  const totalRefundAllocated = Number(
+    refund?.totalRefundAllocated ??
+      flatProps.totalRefundAllocated ??
+      (numRefundCash + numRefundBank + numRefundMfs + numRefundDue)
+  );
+  const refundDifference = Number(
+    refund?.refundDifference ??
+      flatProps.refundDifference ??
+      Math.max(0, refundAmount - totalRefundAllocated)
+  );
 
   return (
     <>
