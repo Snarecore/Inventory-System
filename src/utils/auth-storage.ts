@@ -148,7 +148,7 @@ export function saveLoginSession(data: LoginSuccessResponse, rememberMe = true):
     const appUser: User = {
         id: data.phoneNumber,
         name: data.fullName || data.businessName || data.phoneNumber,
-        email: data.phoneNumber,
+        email: data.phoneNumber && data.phoneNumber.includes("@") ? data.phoneNumber : "",
         role: data.userRole || "admin",
     };
 

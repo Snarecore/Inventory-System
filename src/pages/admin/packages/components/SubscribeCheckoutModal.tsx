@@ -64,10 +64,15 @@ const CheckoutFormContent: React.FC<CheckoutFormProps> = ({
     initialName ||
     "";
 
+  const sanitizeEmail = (val?: string | null): string => {
+    const s = String(val ?? "").trim();
+    return isEmailAddress(s) ? s : "";
+  };
+
   const initialResolvedEmail =
-    storedUser?.email ||
-    (isEmailAddress(rawLoginPhone) ? String(rawLoginPhone).trim() : initialEmail) ||
-    "";
+    sanitizeEmail(storedUser?.email) ||
+    sanitizeEmail(rawLoginPhone) ||
+    sanitizeEmail(initialEmail);
 
   const [fullName, setFullName] = useState(rawLoginName);
   const [mobile, setMobile] = useState(normalizeBdMobile(rawLoginPhone));
@@ -94,14 +99,17 @@ const CheckoutFormContent: React.FC<CheckoutFormProps> = ({
       }
       if (!alive) return;
 
+      const profileMobile = normalizeBdMobile(profile?.phoneNumber);
       const resolvedMobile =
         normalizeBdMobile(rawLoginPhone) ||
-        normalizeBdMobile(profile?.phoneNumber) ||
+        profileMobile ||
         "";
 
-      const resolvedEmail =
-        String(profile?.email || "").trim() ||
-        (isEmailAddress(rawLoginPhone) ? String(rawLoginPhone).trim() : (storedUser?.email || ""));
+      const profileEmail = sanitizeEmail(profile?.email);
+      const fallbackEmail =
+        sanitizeEmail(rawLoginPhone) ||
+        sanitizeEmail(storedUser?.email) ||
+        sanitizeEmail(initialEmail);
 
       const resolvedFullName =
         rawLoginName || profile?.fullName || "";
@@ -112,18 +120,21 @@ const CheckoutFormContent: React.FC<CheckoutFormProps> = ({
       }
 
       if (resolvedMobile) {
-        setMobile((curr) => curr || resolvedMobile);
+        setMobile((curr) => (curr && normalizeBdMobile(curr) ? curr : resolvedMobile));
       }
 
-      if (resolvedEmail) {
-        setEmail((curr) => curr || resolvedEmail);
+      // Prioritize the profile's verified email from the server
+      if (profileEmail) {
+        setEmail(profileEmail);
+      } else if (fallbackEmail) {
+        setEmail((curr) => (isEmailAddress(curr) ? curr : fallbackEmail));
       }
     })();
 
     return () => {
       alive = false;
     };
-  }, [rawLoginPhone, rawLoginName, storedUser?.email]);
+  }, [rawLoginPhone, rawLoginName, storedUser?.email, initialEmail]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

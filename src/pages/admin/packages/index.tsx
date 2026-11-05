@@ -204,7 +204,7 @@ const PackagesPage: React.FC = () => {
         cycle={activeCycle ?? null}
         initialPhone={userInfo?.phone || userInfo?.phoneNumber || ""}
         initialName={userInfo?.fullName || userInfo?.businessName || storedUser?.name || ""}
-        initialEmail={storedUser?.email || ""}
+        initialEmail={storedUser?.email && storedUser.email.includes("@") ? storedUser.email : ""}
         userId={userId}
       />
     </div>
