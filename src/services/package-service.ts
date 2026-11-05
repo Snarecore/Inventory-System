@@ -13,22 +13,19 @@ const CMS_API_ROOT = CMS_PUBLIC_BASE ? CMS_PUBLIC_BASE.replace(/\/public\/?$/, "
 
 export async function fetchPricing(type: PlanType = "BUSINESS"): Promise<PricingResponse> {
   const endpoint = `${apiConfig.packages.pricingUrl}?type=${type}`;
-  const res = await getData<PricingResponse>({
+  const res = (await getData<PricingResponse>({
     url: endpoint,
     baseUrl: CMS_PUBLIC_BASE,
     token: "",
-  });
+  })) as any;
 
-  if ((res as any)?.error || !res?.packages) {
-    throw new Error((res as any)?.message || "Failed to load pricing packages");
+  if (res?.error || !res?.packages) {
+    throw new Error(res?.message || "Failed to load pricing packages");
   }
 
-  return res;
+  return res as PricingResponse;
 }
 
-/**
- * Fetch current user's active subscription status from CMS backend
- */
 export async function fetchUserSubscription(
   userId?: string | number | null
 ): Promise<UserSubscription | null> {
@@ -61,13 +58,11 @@ export async function initiatePackagePayment(
       token: "",
     });
 
-    if (res?.error || res?.status === 400 || res?.status === "400") {
-      const msg =
-        res?.errorMessage ||
-        res?.ErrorMessage ||
-        res?.message ||
-        "Payment initiation was rejected by gateway.";
-      return { status: "Error", errorMessage: msg };
+    if (res?.error || res?.status === "Error") {
+      return {
+        status: "Error",
+        errorMessage: res?.errorMessage || res?.message || "Payment initiation failed.",
+      };
     }
 
     return res;

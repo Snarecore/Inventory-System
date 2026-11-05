@@ -3,8 +3,7 @@ import { FaRedo, FaExclamationTriangle } from "react-icons/fa";
 import PageHeader from "@/components/page-header/PageHeader";
 import { usePricingQuery, useUserSubscriptionQuery } from "@/hooks/usePackageQueries";
 import { getUserInfo, getStoredUser } from "@/utils/auth-storage";
-import { PricedPackage } from "@/types";
-import { PackagesHero } from "./components/PackagesHero";
+import type { PricedPackage } from "@/types";
 import { BillingCycleSelector } from "./components/BillingCycleSelector";
 import { PackageCard } from "./components/PackageCard";
 import { FeatureComparisonTable } from "./components/FeatureComparisonTable";
@@ -113,9 +112,6 @@ const PackagesPage: React.FC = () => {
           headerDescription="Choose the right business plan and billing cycle to scale your operations"
         />
       </div>
-
-      {/* Hero / Overview Description Banner */}
-      <PackagesHero subscription={subscription} />
 
       {/* Billing Cycle Selector - Positioned between Description Banner and Cards */}
       {pricingData && cycles && cycles.length > 0 && (
