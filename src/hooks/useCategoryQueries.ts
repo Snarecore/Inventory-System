@@ -15,9 +15,6 @@ import type {
 } from "@/types";
 import { showSuccessToast, showErrorToast } from "@/utils/toast-utils";
 
-/**
- * Hook to fetch the category list with optional filters
- */
 export const useCategoryListQuery = (params?: FetchCategoryListParams) => {
   return useQuery<CategoryListResponse>({
     queryKey: [categoryListQueryKey, params?.type, params?.startDate, params?.endDate],
@@ -26,10 +23,6 @@ export const useCategoryListQuery = (params?: FetchCategoryListParams) => {
   });
 };
 
-/**
- * Hook to insert a new financial category
- * Performs 1 authoritative GET fetch on create to guarantee valid database ID & sync
- */
 export const useInsertCategoryMutation = (options?: { onSuccess?: () => void }) => {
   const queryClient = useQueryClient();
 

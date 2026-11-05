@@ -73,11 +73,11 @@ export const fetchMfsUserList = async (): Promise<MfsUserListResponse> => {
     ? res.data.mfsUsers
     : [];
 
-  const mfsUsers: MfsUserItem[] = rawList.map((item: any, idx: number) => {
-    const id = Number(item.id ?? item.mfsId ?? idx + 1);
+  const mfsUsers: MfsUserItem[] = rawList.map((item: any) => {
+    const id = Number(item.id ?? item.mfsId ?? 0);
     const name = item.name || item.accountName || "";
     const phone = item.phoneNumber || item.phone || item.mobileNumber || "";
-    const method = item.method || item.provider || item.mfsMethod || "Bkash";
+    const method = item.method || item.mfsMethod || item.provider || "";
     const mfsName = method ? `${method}${name && name !== "-" ? ` (${name})` : ""}` : name || "MFS";
     return {
       id,

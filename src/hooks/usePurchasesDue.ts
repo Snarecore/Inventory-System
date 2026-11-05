@@ -11,58 +11,34 @@ import type { SupplierDueItem } from "@/types/payment.types";
 export const normalizePurchasesDue = (raw: any): SupplierDueItem[] => {
   if (!raw) return [];
 
-  let list: any[] = [];
-  if (Array.isArray(raw)) {
-    list = raw;
-  } else if (typeof raw === "object") {
-    if (Array.isArray(raw.data)) list = raw.data;
-    else if (Array.isArray(raw.supplierDueList)) list = raw.supplierDueList;
-    else if (Array.isArray(raw.suppliersDue)) list = raw.suppliersDue;
-    else if (Array.isArray(raw.purchaseDueList)) list = raw.purchaseDueList;
-    else if (Array.isArray(raw.suppliers)) list = raw.suppliers;
-    else if (Array.isArray(raw.purchasesDue)) list = raw.purchasesDue;
-  }
+  const list: any[] = Array.isArray(raw)
+    ? raw
+    : Array.isArray(raw?.data)
+    ? raw.data
+    : Array.isArray(raw?.supplierDueList)
+    ? raw.supplierDueList
+    : Array.isArray(raw?.purchaseDueList)
+    ? raw.purchaseDueList
+    : [];
 
-  return list.map((item: any, idx: number) => {
-    const supId = item.supplierId ?? item.id ?? item.partyId ?? `sup_${idx}`;
-    const due = Number(item.totalDue ?? item.dueAmount ?? item.due_amount ?? item.due ?? 0);
-
-    const address =
-      item.supplierAddress ||
-      item.address ||
-      item.partyAddress ||
-      "";
-
-    let invCount = Number(
-      item.invoiceCount ??
-      item.invoicesCount ??
-      item.totalInvoices ??
-      item.totalInvoice ??
-      item.purchaseCount ??
-      item.purchasesCount ??
-      item.count ??
-      0
+  return list.map((item: any) => {
+    const supplierId = item.supplierId || item.id || "";
+    const totalDue = Number(item.totalDue ?? item.dueAmount ?? 0);
+    const invoiceCount = Number(
+      item.invoiceCount ?? (Array.isArray(item.invoices) ? item.invoices.length : 0)
     );
-    if (invCount === 0) {
-      if (Array.isArray(item.invoices)) invCount = item.invoices.length;
-      else if (Array.isArray(item.invoiceList)) invCount = item.invoiceList.length;
-      else if (Array.isArray(item.purchasesDueList)) invCount = item.purchasesDueList.length;
-      else if (Array.isArray(item.details)) invCount = item.details.length;
-    }
 
     return {
       ...item,
-      id: supId,
-      supplierId: supId,
-      supplierName: item.supplierName || item.name || item.partyName || "General Supplier",
-      supplierPhone: item.supplierPhone || item.phone || item.mobile || "",
-      supplierAddress: address,
-      totalDue: due,
-      total_due: due,
-      dueAmount: due,
-      due_amount: due,
-      invoiceCount: invCount,
-      lastPurchaseDate: item.lastPurchaseDate || item.purchaseDate || item.date || null,
+      id: supplierId,
+      supplierId,
+      supplierName: item.supplierName || item.name || "General Supplier",
+      supplierPhone: item.supplierPhone || item.phone || "",
+      supplierAddress: item.supplierAddress || item.address || "",
+      totalDue,
+      dueAmount: totalDue,
+      invoiceCount,
+      lastPurchaseDate: item.lastPurchaseDate || item.purchaseDate || null,
     };
   });
 };

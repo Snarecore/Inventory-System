@@ -30,49 +30,47 @@ export const toApiDate = (isoDate?: string): string => {
 export const normalizePaymentReport = (raw: any): PaymentReportItem[] => {
   if (!raw) return [];
 
-  let list: any[] = [];
-  if (Array.isArray(raw)) {
-    list = raw;
-  } else if (typeof raw === "object") {
-    if (Array.isArray(raw.data)) list = raw.data;
-    else if (Array.isArray(raw.reportData)) list = raw.reportData;
-    else if (Array.isArray(raw.paymentList)) list = raw.paymentList;
-  }
+  const list: any[] = Array.isArray(raw)
+    ? raw
+    : Array.isArray(raw?.data)
+    ? raw.data
+    : Array.isArray(raw?.reportData)
+    ? raw.reportData
+    : Array.isArray(raw?.paymentList)
+    ? raw.paymentList
+    : [];
 
-  return list.map((item: any, idx: number) => {
-    const details = Array.isArray(item.details)
+  return list.map((item: any) => {
+    const rawDetails = Array.isArray(item.details)
       ? item.details
       : Array.isArray(item.paymentDetails)
       ? item.paymentDetails
       : [];
 
+    const details = rawDetails.map((d: any) => ({
+      invoiceNo: d.invoiceNo || "-",
+      paidAmount: Number(d.paidAmount ?? 0),
+      dueAmount: Number(d.dueAmount ?? 0),
+    }));
+
+    const paymentNo = item.paymentNo || item.voucherNo || item.id || "";
+
     return {
       ...item,
-      id: item.id ?? item.paymentNo ?? item.voucherNo ?? `pay_${idx}`,
-      paymentNo: item.paymentNo || item.voucherNo || item.id || `PAY-${idx + 1}`,
-      voucherNo: item.voucherNo || item.paymentNo || item.id || `PAY-${idx + 1}`,
-      supplierId: item.supplierId ?? item.customerId ?? "",
-      supplierName: item.supplierName || item.customerName || "Supplier",
-      customerName: item.supplierName || item.customerName || "Supplier",
-      supplierPhone: item.supplierPhone || item.customerPhone || "",
-      customerPhone: item.supplierPhone || item.customerPhone || "",
-      paymentDate: item.paymentDate || item.collectionDate || item.date || "",
-      collectionDate: item.paymentDate || item.collectionDate || item.date || "",
+      id: item.id || paymentNo,
+      paymentNo,
+      voucherNo: paymentNo,
+      supplierId: item.supplierId ?? "",
+      supplierName: item.supplierName || "Supplier",
+      supplierPhone: item.supplierPhone || "",
+      paymentDate: item.paymentDate || item.date || "",
       addedDate: item.addedDate || item.createdAt || "",
       totalAmount: Number(item.totalAmount ?? item.amount ?? 0),
       totalDiscount: Number(item.totalDiscount ?? item.discount ?? 0),
       paymentMode: item.paymentMode || "Cash",
       remark: item.remark || item.notes || "",
-      details: details.map((d: any) => ({
-        invoiceNo: d.invoiceNo || "-",
-        paidAmount: Number(d.paidAmount ?? 0),
-        dueAmount: Number(d.dueAmount ?? 0),
-      })),
-      paymentDetails: details.map((d: any) => ({
-        invoiceNo: d.invoiceNo || "-",
-        paidAmount: Number(d.paidAmount ?? 0),
-        dueAmount: Number(d.dueAmount ?? 0),
-      })),
+      details,
+      paymentDetails: details,
     };
   });
 };

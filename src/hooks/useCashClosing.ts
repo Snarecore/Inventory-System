@@ -17,9 +17,6 @@ import type {
   InsertCashClosingPayload,
 } from "@/types";
 
-/**
- * Hook to fetch daily cash closing details for a given date
- */
 export function useCashClosingQuery(closingDate?: string) {
   const targetDate = closingDate || moment().format("YYYY-MM-DD");
 
@@ -49,9 +46,6 @@ export function useCashClosingReportQuery(params?: {
   });
 }
 
-/**
- * Hook to insert / close daily cash
- */
 export function useInsertCashClosingMutation(options?: {
   onSuccess?: (data?: CashClosingData | null) => void;
   onError?: (error: unknown) => void;

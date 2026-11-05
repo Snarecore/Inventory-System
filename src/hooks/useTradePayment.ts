@@ -5,15 +5,11 @@ export interface TradePaymentAccount {
   id?: string | number;
   bankId?: string | number;
   mfsId?: string | number;
-  _id?: string | number;
   name?: string;
   bankName?: string;
   mfsName?: string;
   method?: string;
   accountNo?: string;
-  bankAccountNumber?: string;
-  bankAccountNo?: string;
-  accountName?: string;
   bankAccountName?: string;
   branchName?: string;
   phoneNumber?: string;

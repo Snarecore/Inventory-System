@@ -26,25 +26,16 @@ export const useTradeRefund = ({
   const [selectedRefundMfsId, setSelectedRefundMfsId] = useState<string>("");
 
   // Extract original invoice payment figures
-  const origPaymentMode = String(
-    selectedRecord?.paymentType || (selectedRecord as any)?.payment_type || "CASH"
-  ).toUpperCase();
+  const origPaymentMode = String(selectedRecord?.paymentType || "CASH").toUpperCase();
 
   const origGrandTotal = Number(
-    selectedRecord?.grandTotal ??
-      (selectedRecord as any)?.grand_total ??
-      selectedRecord?.totalAmount ??
-      (selectedRecord as any)?.total_amount ??
-      0
+    selectedRecord?.grandTotal ?? selectedRecord?.totalAmount ?? 0
   );
 
-  const origPaidAmount = Number(
-    selectedRecord?.paidAmount ?? (selectedRecord as any)?.paid_amount ?? 0
-  );
+  const origPaidAmount = Number(selectedRecord?.paidAmount ?? 0);
 
   const origDueAmount = Number(
     selectedRecord?.dueAmount ??
-      (selectedRecord as any)?.due_amount ??
       (origPaymentMode === "CREDIT"
         ? origGrandTotal
         : Math.max(0, origGrandTotal - origPaidAmount))
@@ -53,25 +44,13 @@ export const useTradeRefund = ({
   // Split amounts recorded on the original document
   const { origCashPaid, origBankPaid, origMfsPaid } = useMemo(() => {
     const rawCash = Number(
-      selectedRecord?.cashReceived ??
-        (selectedRecord as any)?.cash_received ??
-        (selectedRecord as any)?.cash_amount ??
-        (selectedRecord as any)?.cashAmount ??
-        0
+      selectedRecord?.cashReceived ?? selectedRecord?.cashAmount ?? 0
     );
     const rawBank = Number(
-      selectedRecord?.cardReceived ??
-        (selectedRecord as any)?.card_received ??
-        (selectedRecord as any)?.bankAmount ??
-        (selectedRecord as any)?.bank_amount ??
-        0
+      selectedRecord?.cardReceived ?? selectedRecord?.bankAmount ?? 0
     );
     const rawMfs = Number(
-      selectedRecord?.mfsReceived ??
-        (selectedRecord as any)?.mfs_received ??
-        (selectedRecord as any)?.mfsAmount ??
-        (selectedRecord as any)?.mfs_amount ??
-        0
+      selectedRecord?.mfsReceived ?? selectedRecord?.mfsAmount ?? 0
     );
 
     const hasSplitDetails = rawCash > 0 || rawBank > 0 || rawMfs > 0;
@@ -83,9 +62,9 @@ export const useTradeRefund = ({
     let b = 0;
     let m = 0;
     if (origPaidAmount > 0) {
-      if (origPaymentMode === "BANK" || selectedRecord?.bankId || (selectedRecord as any)?.bank_id) {
+      if (origPaymentMode === "BANK" || selectedRecord?.bankId) {
         b = origPaidAmount;
-      } else if (origPaymentMode === "MFS" || selectedRecord?.mfsId || (selectedRecord as any)?.mfs_id) {
+      } else if (origPaymentMode === "MFS" || selectedRecord?.mfsId) {
         m = origPaidAmount;
       } else {
         c = origPaidAmount;
@@ -186,19 +165,19 @@ export const useTradeRefund = ({
 
   // Sync bank / mfs dropdown selection
   useEffect(() => {
-    if (selectedRecord?.bankId || (selectedRecord as any)?.bank_id) {
-      setSelectedRefundBankId(String(selectedRecord.bankId || (selectedRecord as any)?.bank_id));
+    if (selectedRecord?.bankId) {
+      setSelectedRefundBankId(String(selectedRecord.bankId));
     } else if (registeredBankAccounts.length > 0 && !selectedRefundBankId) {
       setSelectedRefundBankId(
-        String(registeredBankAccounts[0].id || registeredBankAccounts[0].bankId || registeredBankAccounts[0]._id || "")
+        String(registeredBankAccounts[0].id || registeredBankAccounts[0].bankId || "")
       );
     }
 
-    if (selectedRecord?.mfsId || (selectedRecord as any)?.mfs_id) {
-      setSelectedRefundMfsId(String(selectedRecord.mfsId || (selectedRecord as any)?.mfs_id));
+    if (selectedRecord?.mfsId) {
+      setSelectedRefundMfsId(String(selectedRecord.mfsId));
     } else if (registeredMfsAccounts.length > 0 && !selectedRefundMfsId) {
       setSelectedRefundMfsId(
-        String(registeredMfsAccounts[0].id || registeredMfsAccounts[0].mfsId || registeredMfsAccounts[0]._id || "")
+        String(registeredMfsAccounts[0].id || registeredMfsAccounts[0].mfsId || "")
       );
     }
   }, [selectedRecord, registeredBankAccounts, registeredMfsAccounts]);

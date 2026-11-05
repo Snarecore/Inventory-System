@@ -11,9 +11,6 @@ export interface CollectionReportFilterParams {
   endDate?: string;   // YYYY-MM-DD
 }
 
-/**
- * Converts ISO "YYYY-MM-DD" to backend API format "DD-MM-YYYY"
- */
 export const toApiDate = (isoDate?: string): string => {
   if (!isoDate || !isoDate.includes("-")) return "";
   const parts = isoDate.split("-");
@@ -24,32 +21,38 @@ export const toApiDate = (isoDate?: string): string => {
   return isoDate;
 };
 
-/**
- * Standard normalizer for collection report response
- */
 export const normalizeCollectionReport = (raw: any): CollectionReportItem[] => {
   if (!raw) return [];
 
-  let list: any[] = [];
-  if (Array.isArray(raw)) {
-    list = raw;
-  } else if (typeof raw === "object") {
-    if (Array.isArray(raw.data)) list = raw.data;
-    else if (Array.isArray(raw.reportData)) list = raw.reportData;
-    else if (Array.isArray(raw.collectionList)) list = raw.collectionList;
-  }
+  const list: any[] = Array.isArray(raw)
+    ? raw
+    : Array.isArray(raw?.data)
+    ? raw.data
+    : Array.isArray(raw?.reportData)
+    ? raw.reportData
+    : Array.isArray(raw?.collectionList)
+    ? raw.collectionList
+    : [];
 
-  return list.map((item: any, idx: number) => {
-    const details = Array.isArray(item.details)
+  return list.map((item: any) => {
+    const rawDetails = Array.isArray(item.details)
       ? item.details
       : Array.isArray(item.collectionDetails)
       ? item.collectionDetails
       : [];
 
+    const details = rawDetails.map((d: any) => ({
+      invoiceNo: d.invoiceNo || "-",
+      paidAmount: Number(d.paidAmount ?? 0),
+      dueAmount: Number(d.dueAmount ?? 0),
+    }));
+
+    const collectionNo = item.collectionNo || item.id || "";
+
     return {
       ...item,
-      id: item.id ?? item.collectionNo ?? `col_${idx}`,
-      collectionNo: item.collectionNo || item.id || `COL-${idx + 1}`,
+      id: item.id || collectionNo,
+      collectionNo,
       customerId: item.customerId ?? "",
       customerName: item.customerName || "Customer",
       customerPhone: item.customerPhone || "",
@@ -59,16 +62,8 @@ export const normalizeCollectionReport = (raw: any): CollectionReportItem[] => {
       totalDiscount: Number(item.totalDiscount ?? item.discount ?? 0),
       paymentMode: item.paymentMode || "Cash",
       remark: item.remark || item.notes || "",
-      details: details.map((d: any) => ({
-        invoiceNo: d.invoiceNo || "-",
-        paidAmount: Number(d.paidAmount ?? 0),
-        dueAmount: Number(d.dueAmount ?? 0),
-      })),
-      collectionDetails: details.map((d: any) => ({
-        invoiceNo: d.invoiceNo || "-",
-        paidAmount: Number(d.paidAmount ?? 0),
-        dueAmount: Number(d.dueAmount ?? 0),
-      })),
+      details,
+      collectionDetails: details,
     };
   });
 };

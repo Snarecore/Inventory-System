@@ -43,10 +43,7 @@ export const extractBankAccounts = (raw: any): BankAccountItem[] => {
   });
 };
 
-/**
- * Standardized parser for MFS accounts response.
- * Uses strict MfsUserItem fields from backend.
- */
+
 export const extractMfsAccounts = (raw: any): MfsUserItem[] => {
   if (!raw) return [];
   const list: any[] = Array.isArray(raw?.mfsUsers)
@@ -59,11 +56,11 @@ export const extractMfsAccounts = (raw: any): MfsUserItem[] => {
     ? raw
     : [];
 
-  return list.map((m: any, idx: number) => {
-    const id = Number(m.id ?? m.mfsId ?? idx + 1);
-    const method = m.method || m.provider || m.mfsMethod || "bKash";
+  return list.map((m: any) => {
+    const id = Number(m.id ?? m.mfsId ?? 0);
+    const method = m.method || m.mfsMethod || m.provider || "";
     const name = m.name || m.accountName || "";
-    const phone = m.phoneNumber || m.phone || m.mobileNumber || m.mfsPhone || "";
+    const phone = m.phoneNumber || m.phone || m.mfsPhone || "";
     const mfsName = method ? `${method}${name && name !== "-" ? ` (${name})` : ""}` : name || "MFS";
     return {
       id,

@@ -11,34 +11,34 @@ import type { InvoiceDueItem } from "@/types/collection.types";
 export const normalizeCustomerInvoicesDue = (raw: any): InvoiceDueItem[] => {
   if (!raw) return [];
 
-  let list: any[] = [];
-  if (Array.isArray(raw)) {
-    list = raw;
-  } else if (typeof raw === "object") {
-    if (Array.isArray(raw.data)) list = raw.data;
-    else if (Array.isArray(raw.invoicesDueList)) list = raw.invoicesDueList;
-    else if (Array.isArray(raw.invoices)) list = raw.invoices;
-    else if (Array.isArray(raw.invoiceList)) list = raw.invoiceList;
-  }
+  const list: any[] = Array.isArray(raw)
+    ? raw
+    : Array.isArray(raw?.data)
+    ? raw.data
+    : Array.isArray(raw?.invoicesDueList)
+    ? raw.invoicesDueList
+    : [];
 
   return list
-    .map((inv: any, idx: number) => {
-      const invNo = String(inv.invoiceNo || inv.orderNo || `INV_${idx}`).trim();
-      const grand = Number(inv.grandTotal ?? inv.totalAmount ?? inv.grand_total ?? 0);
-      const paid = Number(inv.paidAmount ?? inv.paid_amount ?? 0);
-      const due = Number(inv.dueAmount ?? inv.due_amount ?? 0);
+    .filter((inv: any) => inv && (inv.invoiceNo || inv.orderNo))
+    .map((inv: any) => {
+      const invNo = String(inv.invoiceNo || inv.orderNo).trim();
+      const grandTotal = Number(inv.grandTotal ?? inv.totalAmount ?? 0);
+      const paidAmount = Number(inv.paidAmount ?? 0);
+      const dueAmount = Number(inv.dueAmount ?? Math.max(0, grandTotal - paidAmount));
+      const invoiceDate = inv.salesDate || inv.saleDate || inv.date || null;
 
       return {
         ...inv,
-        id: inv.id ?? invNo,
+        id: inv.id || invNo,
         invoiceNo: invNo,
         orderNo: inv.orderNo || invNo,
-        salesDate: inv.salesDate || inv.saleDate || inv.date || null,
-        saleDate: inv.salesDate || inv.saleDate || inv.date || null,
-        grandTotal: grand,
-        paidAmount: paid,
-        dueAmount: due,
-        paymentType: inv.paymentType || inv.paymentMode || "",
+        salesDate: invoiceDate,
+        saleDate: invoiceDate,
+        grandTotal,
+        paidAmount,
+        dueAmount,
+        paymentType: inv.paymentType || "",
         status: inv.status || "",
       };
     })

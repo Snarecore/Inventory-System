@@ -43,12 +43,6 @@ export interface CollectionMutationResult {
   msg: string;
 }
 
-/**
- * Enterprise standard mutation hook for customer collection.
- * Phase 1: Record collection (updates trade invoices and dues)
- * Phase 2: Post financial transaction (credits cash/bank/MFS balance)
- * Followed by complete TanStack Query multi-cache invalidation.
- */
 export const useCollectionMutation = () => {
   const queryClient = useQueryClient();
 
