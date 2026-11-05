@@ -34,7 +34,7 @@ export const FeatureComparisonTable: React.FC<FeatureComparisonTableProps> = ({
   };
 
   return (
-    <div className="rounded-xl border border-[var(--ui-border)] bg-[var(--ui-surface)] shadow-xs overflow-hidden transition-colors mt-4">
+    <div className="rounded-xl border border-[var(--ui-border)] bg-[var(--ui-surface)] shadow-xs overflow-hidden transition-colors">
       {/* Table Section Header */}
       <div className="px-4 py-3 border-b border-[var(--ui-border)] bg-[var(--ui-surface)] flex items-center justify-between">
         <div>

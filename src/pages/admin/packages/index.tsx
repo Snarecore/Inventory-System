@@ -116,12 +116,22 @@ const PackagesPage: React.FC = () => {
 
   return (
     <div className="flex flex-col gap-2.5 px-3 py-2 sm:px-4 sm:py-2.5 max-w-[1600px] mx-auto w-full">
-      {/* Page Header */}
+      {/* Page Header with Billing Cycle Selector */}
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <PageHeader
           headerTitle="Subscription Packages"
           headerDescription="Choose the right business plan and billing cycle to scale your operations"
         />
+
+        {pricingData && cycles && cycles.length > 0 && (
+          <div className="flex items-center gap-2 self-start sm:self-auto">
+            <BillingCycleSelector
+              cycles={cycles}
+              selectedCycleCode={activeCycleCode}
+              onSelectCycle={setUserSelectedCycleCode}
+            />
+          </div>
+        )}
       </div>
 
       {/* Hero / Overview Banner */}
@@ -165,13 +175,6 @@ const PackagesPage: React.FC = () => {
       {/* Pricing Content */}
       {pricingData && cycles && cycles.length > 0 && (
         <>
-          {/* Billing Cycle Selector Tabs */}
-          <BillingCycleSelector
-            cycles={cycles}
-            selectedCycleCode={activeCycleCode}
-            onSelectCycle={setUserSelectedCycleCode}
-          />
-
           {/* Packages Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-4 items-stretch">
             {pricedPackages.map((pkg, idx) => (
