@@ -30,7 +30,6 @@ export const useBranchListQuery = (
     queryKey: [branchListQueryKey],
     queryFn: getBranchList,
     staleTime: 5 * 60 * 1000,
-    refetchOnMount: "always",
     ...options,
   });
 };

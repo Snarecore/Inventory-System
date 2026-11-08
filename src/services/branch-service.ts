@@ -32,7 +32,15 @@ export async function getBranchList(): Promise<BranchItem[]> {
     ? res
     : [];
 
-  return rawList.map(normaliseBranch).filter((b) => b.branchId !== 0);
+  const branches = rawList.map(normaliseBranch).filter((b) => b.branchId !== 0);
+
+  // Auto-sync active branches into localStorage on every fetch
+  const active = branches.filter((b) => b.active);
+  if (active.length > 0) {
+    setStoredBranches(active);
+  }
+
+  return branches;
 }
 
 /**
@@ -42,11 +50,6 @@ export async function syncStoredBranches(): Promise<{ branches: BranchItem[]; sy
   try {
     const all = await getBranchList();
     const active = all.filter((b) => b.active);
-    if (active.length === 0) {
-      return { branches: getStoredBranches(), synced: false };
-    }
-
-    setStoredBranches(active);
     return { branches: active, synced: true };
   } catch (err) {
     console.warn("Failed to sync branches:", err);
@@ -90,7 +93,6 @@ export async function insertBranch(form: Partial<BranchFormData>): Promise<any> 
     throw new Error(res?.msg || res?.message || "Failed to create branch");
   }
 
-  await syncStoredBranches();
   return res;
 }
 
@@ -138,7 +140,6 @@ export async function updateBranch(form: Partial<BranchItem> & { id: number; org
     throw new Error(res?.msg || res?.message || "Failed to update branch");
   }
 
-  await syncStoredBranches();
   return res;
 }
 

@@ -215,9 +215,8 @@ export const BranchList: React.FC = () => {
                 <TableTh width={230}>Branch Name</TableTh>
                 <TableTh width={110} align="center">Code</TableTh>
                 <TableTh width={140}>Phone</TableTh>
-                <TableTh width={200}>Address</TableTh>
-                <TableTh width={140} align="right">Opening Balance</TableTh>
-                <TableTh width={110} align="center">Opening Date</TableTh>
+                <TableTh width={220}>Address</TableTh>
+                <TableTh width={120} align="center">Opening Date</TableTh>
                 <TableTh width={100} align="center">Status</TableTh>
                 <TableTh width={150} align="center">Actions</TableTh>
               </TableHead>
@@ -285,13 +284,6 @@ export const BranchList: React.FC = () => {
                         <TableCell>
                           <span className="text-xs text-gray-700 dark:text-gray-300 truncate block max-w-[200px]" title={item.address}>
                             {item.address || "-"}
-                          </span>
-                        </TableCell>
-
-                        {/* Opening Balance */}
-                        <TableCell align="right">
-                          <span className="text-xs font-bold text-gray-900 dark:text-gray-100">
-                            {item.currency} {Number(item.openingBalance || 0).toLocaleString("en-BD", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                           </span>
                         </TableCell>
 
