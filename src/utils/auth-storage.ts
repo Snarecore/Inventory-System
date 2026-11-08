@@ -161,8 +161,18 @@ export function saveLoginSession(data: LoginSuccessResponse, rememberMe = true):
 
     setUserInfo(userInfo, rememberMe);
 
-    if (branchId !== undefined) {
-        setActiveBranchId(branchId, rememberMe);
+    const storage = rememberMe ? localStorage : sessionStorage;
+
+    const effectiveBranchId =
+        branchId !== undefined && branchId !== null && Number(branchId) > 0
+            ? Number(branchId)
+            : branches.length > 0
+            ? Number(branches[0].branchId || branches[0].id)
+            : undefined;
+
+    if (effectiveBranchId !== undefined && !isNaN(effectiveBranchId) && effectiveBranchId > 0) {
+        setActiveBranchId(effectiveBranchId, rememberMe);
+        storage.setItem("branch_choice_made", "1");
     }
 
     const appUser: User = {

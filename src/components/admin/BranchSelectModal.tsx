@@ -5,6 +5,8 @@ import {
   setStoredBranches,
   switchBranch,
   filterBranchesByPermission,
+  setActiveBranchId,
+  markBranchChosen,
 } from "@/utils/branch-storage";
 import { useBranchListQuery } from "@/hooks/useBranchQueries";
 import { FaBuilding, FaStar, FaSignOutAlt, FaCheck } from "react-icons/fa";
@@ -47,12 +49,13 @@ export const BranchSelectModal: React.FC<BranchSelectModalProps> = () => {
     }
   }, [apiBranches]);
 
-  // If user only has access to a single branch, auto-select it immediately
+  // If user only has access to a single branch, auto-select it quietly without reload loop
   useEffect(() => {
-    if (branches.length === 1 && !selectedId) {
-      handleSelect(branches[0].branchId);
+    if (branches.length === 1 && branches[0]?.branchId) {
+      setActiveBranchId(branches[0].branchId);
+      markBranchChosen();
     }
-  }, [branches, selectedId]);
+  }, [branches]);
 
   const userInfo = getUserInfo();
 
@@ -65,6 +68,10 @@ export const BranchSelectModal: React.FC<BranchSelectModalProps> = () => {
     removeStoredUser();
     window.location.href = "/login";
   };
+
+  if (branches.length <= 1) {
+    return null;
+  }
 
   return (
     <div

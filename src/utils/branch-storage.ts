@@ -69,12 +69,15 @@ export function getDefaultBranchId(): number | null {
 }
 
 export function isMultiBranch(): boolean {
-  if (isUserAdmin()) {
-    const userInfo = getUserInfo();
-    const branches = getStoredBranches();
-    const branchType = String(userInfo?.branchType || "").toUpperCase();
-    return branchType === "MULTIPLE" || branches.length > 1;
+  const branches = getStoredBranches();
+  if (!branches || branches.length <= 1) {
+    return false;
   }
+
+  if (isUserAdmin()) {
+    return branches.length > 1;
+  }
+
   // For non-admin employees, check their strictly permitted branches count
   const permittedIds = getUserPermittedBranchIds();
   return permittedIds !== null && permittedIds.size > 1;
@@ -82,7 +85,16 @@ export function isMultiBranch(): boolean {
 
 export function isBranchChoicePending(): boolean {
   if (typeof window === "undefined") return false;
+
+  // If an active branch is already stored and valid, choice is NEVER pending!
+  const activeBranchId = getActiveBranchId();
+  if (activeBranchId && Number(activeBranchId) > 0) {
+    return false;
+  }
+
+  // If organization/user only has a single location, never block
   if (!isMultiBranch()) return false;
+
   const made = localStorage.getItem(STORAGE_KEY_BRANCH_CHOSEN) || sessionStorage.getItem(STORAGE_KEY_BRANCH_CHOSEN);
   return made !== "1";
 }
