@@ -17,8 +17,10 @@ import { postData } from "@/services/api-service";
 import { showErrorToast } from "@/utils/toast-utils";
 import type { PartyItem, PartyType } from "@/types";
 import { useDebounce } from "@/hooks/useDebounce";
+import { usePermission } from "@/hooks/usePermission";
 
 const Parties: React.FC = () => {
+  const { canCreate } = usePermission();
   const [searchParams, setSearchParams] = useSearchParams();
   const queryClient = useQueryClient();
 
@@ -391,13 +393,15 @@ const Parties: React.FC = () => {
         />
         <div className="flex items-center gap-2">
           <RefreshButton onClick={handleRefresh} />
-          <Button
-            label="Add Party"
-            onClick={() => openCreateModal(typeFilter === "SUPPLIER" ? "SUPPLIER" : "CUSTOMER")}
-            color="#009fe3"
-            hoverColor="#0085be"
-            icon={<FaPlus className="text-white text-xs" />}
-          />
+          {canCreate("parties") && (
+            <Button
+              label="Add Party"
+              onClick={() => openCreateModal(typeFilter === "SUPPLIER" ? "SUPPLIER" : "CUSTOMER")}
+              color="#009fe3"
+              hoverColor="#0085be"
+              icon={<FaPlus className="text-white text-xs" />}
+            />
+          )}
         </div>
       </div>
 

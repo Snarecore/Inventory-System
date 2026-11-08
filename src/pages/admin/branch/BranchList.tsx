@@ -25,7 +25,7 @@ import {
   useToggleBranchStatusMutation,
 } from "@/hooks/useBranchQueries";
 import { getActiveBranchId } from "@/utils/auth-storage";
-import { switchBranch } from "@/utils/branch-storage";
+import { switchBranch, isUserAdmin, filterBranchesByPermission } from "@/utils/branch-storage";
 import type { BranchItem } from "@/types/branch.types";
 import {
   FaBuilding,
@@ -40,8 +40,12 @@ import {
 
 export const BranchList: React.FC = () => {
   const navigate = useNavigate();
-  const { data: branches = [], isLoading, refetch, isRefetching } = useBranchListQuery();
+  const isAdmin = isUserAdmin();
+  const { data: rawBranches = [], isLoading, refetch, isRefetching } = useBranchListQuery();
   const toggleMutation = useToggleBranchStatusMutation();
+
+  // Strictly filter branches by permission: Non-admin employees see ONLY their assigned branch
+  const branches = useMemo(() => filterBranchesByPermission(rawBranches), [rawBranches]);
 
   const activeBranchId = getActiveBranchId();
   const [search, setSearch] = useState("");
@@ -134,14 +138,16 @@ export const BranchList: React.FC = () => {
         />
         <div className="flex items-center gap-2">
           <RefreshButton onClick={() => refetch()} isLoading={isLoading || isRefetching} />
-          <Button
-            label="Add Branch"
-            onClick={() => navigate("/admin/branches/add")}
-            color="var(--primary-color)"
-            hoverColor="var(--primary-color-hover)"
-            icon={<FaPlus className="text-white text-xs" />}
-            buttonClass="!text-xs !py-1.5 !w-auto justify-center font-medium !text-white cursor-pointer"
-          />
+          {isAdmin && (
+            <Button
+              label="Add Branch"
+              onClick={() => navigate("/admin/branches/add")}
+              color="var(--primary-color)"
+              hoverColor="var(--primary-color-hover)"
+              icon={<FaPlus className="text-white text-xs" />}
+              buttonClass="!text-xs !py-1.5 !w-auto justify-center font-medium !text-white cursor-pointer"
+            />
+          )}
         </div>
       </div>
 
@@ -297,52 +303,56 @@ export const BranchList: React.FC = () => {
 
                         {/* Actions */}
                         <TableCell align="center">
-                          <TableActionButtons
-                            onEdit={() =>
-                              navigate(`/admin/branches/edit/${item.branchId}`, {
-                                state: { branch: item },
-                              })
-                            }
-                            editTitle="Edit Branch"
-                            extraActions={
-                              <>
-                                {/* Switch branch button */}
-                                {item.active && !isCurrent && (
+                          {isAdmin ? (
+                            <TableActionButtons
+                              onEdit={() =>
+                                navigate(`/admin/branches/edit/${item.branchId}`, {
+                                  state: { branch: item },
+                                })
+                              }
+                              editTitle="Edit Branch"
+                              extraActions={
+                                <>
+                                  {/* Switch branch button */}
+                                  {item.active && !isCurrent && (
+                                    <button
+                                      type="button"
+                                      onClick={() => switchBranch(item.branchId)}
+                                      title="Switch workspace to this branch"
+                                      className="p-1 rounded text-[var(--primary-color)] hover:bg-[var(--primary-color-muted)] transition-colors cursor-pointer"
+                                    >
+                                      <FaExchangeAlt size={12} />
+                                    </button>
+                                  )}
+
+                                  {/* Deactivate/Reactivate button */}
                                   <button
                                     type="button"
-                                    onClick={() => switchBranch(item.branchId)}
-                                    title="Switch workspace to this branch"
-                                    className="p-1 rounded text-[var(--primary-color)] hover:bg-[var(--primary-color-muted)] transition-colors cursor-pointer"
+                                    disabled={isBusy || isCurrent}
+                                    onClick={() => handleToggle(item)}
+                                    title={
+                                      isCurrent
+                                        ? "Active session branch cannot be deactivated"
+                                        : item.active
+                                        ? "Deactivate Branch"
+                                        : "Reactivate Branch"
+                                    }
+                                    className={`p-1 rounded transition-colors ${
+                                      isCurrent
+                                        ? "opacity-30 cursor-not-allowed text-[var(--ui-text-subtle)]"
+                                        : item.active
+                                        ? "text-[var(--ui-danger)] hover:bg-[var(--ui-danger-border)] cursor-pointer"
+                                        : "text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 cursor-pointer"
+                                    }`}
                                   >
-                                    <FaExchangeAlt size={12} />
+                                    <FaPowerOff size={12} />
                                   </button>
-                                )}
-
-                                {/* Deactivate/Reactivate button */}
-                                <button
-                                  type="button"
-                                  disabled={isBusy || isCurrent}
-                                  onClick={() => handleToggle(item)}
-                                  title={
-                                    isCurrent
-                                      ? "Active session branch cannot be deactivated"
-                                      : item.active
-                                      ? "Deactivate Branch"
-                                      : "Reactivate Branch"
-                                  }
-                                  className={`p-1 rounded transition-colors ${
-                                    isCurrent
-                                      ? "opacity-30 cursor-not-allowed text-[var(--ui-text-subtle)]"
-                                      : item.active
-                                      ? "text-[var(--ui-danger)] hover:bg-[var(--ui-danger-border)] cursor-pointer"
-                                      : "text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 cursor-pointer"
-                                  }`}
-                                >
-                                  <FaPowerOff size={12} />
-                                </button>
-                              </>
-                            }
-                          />
+                                </>
+                              }
+                            />
+                          ) : (
+                            <span className="text-[11px] text-gray-400 italic">Restricted</span>
+                          )}
                         </TableCell>
                       </TableRow>
                     );

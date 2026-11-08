@@ -19,6 +19,7 @@ import {
 } from "@/components/common";
 import ColumnVisibilityDropdown, { type ColumnItem } from "@/components/table-components/ColumnVisibilityDropdown";
 import type { PartyItem } from "@/types";
+import { usePermission } from "@/hooks/usePermission";
 
 interface PartyTableProps {
   parties: PartyItem[];
@@ -70,6 +71,7 @@ export const PartyTable: React.FC<PartyTableProps> = ({
   onRefresh: _onRefresh,
   onToggleStatus,
 }) => {
+  const { canUpdate } = usePermission();
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
 
   const typeOptions = [
@@ -372,7 +374,7 @@ export const PartyTable: React.FC<PartyTableProps> = ({
                         {/* Status Badge */}
                         {isColVisible("status") && (
                           <td className="py-2.5 px-2.5 text-right">
-                            {onToggleStatus ? (
+                            {onToggleStatus && canUpdate("parties") ? (
                               <button
                                 type="button"
                                 onClick={(e) => {
@@ -408,7 +410,7 @@ export const PartyTable: React.FC<PartyTableProps> = ({
                             <TableActionButtons
                               onView={() => onView(party)}
                               viewTitle="Quick View Details"
-                              onEdit={() => onEdit(party)}
+                              onEdit={canUpdate("parties") ? () => onEdit(party) : undefined}
                               editTitle="Edit Party"
                               onMessage={onMessage ? () => onMessage(party) : undefined}
                               messageTitle="Send SMS / Message"

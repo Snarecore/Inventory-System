@@ -22,10 +22,12 @@ import {
   isPurchaseReturnRecord,
 } from "./hooks/usePurchaseQueries";
 import { useDebounce } from "@/hooks/useDebounce";
+import { usePermission } from "@/hooks/usePermission";
 
 const Purchases: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { canCreate } = usePermission();
 
   // Tab State: "purchases" | "returns"
   const searchParams = useMemo(() => new URLSearchParams(location.search), [location.search]);
@@ -553,22 +555,26 @@ const Purchases: React.FC = () => {
                 <FaSlidersH className="text-[var(--ui-text-muted)]" size={13} />
                 <span className="hidden sm:inline">Challan Settings</span>
               </button>
+              {canCreate("purchase") && (
+                <Button
+                  label="New Purchase"
+                  onClick={() => navigate("/admin/create-purchase")}
+                  color="var(--primary-color)"
+                  hoverColor="var(--primary-color-hover)"
+                  icon={<FaPlus className="text-white text-xs" />}
+                />
+              )}
+            </>
+          ) : (
+            canCreate("purchase") && (
               <Button
-                label="New Purchase"
-                onClick={() => navigate("/admin/create-purchase")}
+                label="Create Return"
+                onClick={() => navigate("/admin/create-purchase-return")}
                 color="var(--primary-color)"
                 hoverColor="var(--primary-color-hover)"
                 icon={<FaPlus className="text-white text-xs" />}
               />
-            </>
-          ) : (
-            <Button
-              label="Create Return"
-              onClick={() => navigate("/admin/create-purchase-return")}
-              color="var(--primary-color)"
-              hoverColor="var(--primary-color-hover)"
-              icon={<FaPlus className="text-white text-xs" />}
-            />
+            )
           )}
         </div>
       </div>

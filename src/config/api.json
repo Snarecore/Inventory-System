@@ -164,5 +164,14 @@
         "getBranchListUrl": "get-branch-list",
         "insertBranchUrl": "insert-branch",
         "updateBranchUrl": "update-branch"
+    },
+    "employee": {
+        "getEmployeesUrl": "get-employees",
+        "insertEmployeeUrl": "insert-employees",
+        "updateEmployeeUrl": "update-employees",
+        "employeeBranchPermissionsUrl": "employee-branch-permissions",
+        "getEmployeeBranchPermissionsUrl": "employee",
+        "getOrganizationPermissionsUrl": "organization",
+        "getBranchPermissionsUrl": "branch"
     }
 }

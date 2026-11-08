@@ -1,8 +1,10 @@
-import React, { useState } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { getUserInfo, removeStoredUser } from "@/utils/auth-storage";
 import {
   getStoredBranches,
+  setStoredBranches,
   switchBranch,
+  filterBranchesByPermission,
 } from "@/utils/branch-storage";
 import { useBranchListQuery } from "@/hooks/useBranchQueries";
 import { FaBuilding, FaStar, FaSignOutAlt, FaCheck } from "react-icons/fa";
@@ -14,9 +16,43 @@ interface BranchSelectModalProps {
 export const BranchSelectModal: React.FC<BranchSelectModalProps> = () => {
   const [selectedId, setSelectedId] = useState<number | null>(null);
 
-  const { data: apiBranches = [], isLoading } = useBranchListQuery();
+  const { data: apiBranches = [], isLoading, isError } = useBranchListQuery();
   const storedBranches = getStoredBranches();
-  const branches = apiBranches.length > 0 ? apiBranches.filter((b) => b.active) : storedBranches;
+
+  // Prioritize live API branches. Sync with localStorage as soon as live branches arrive.
+  const rawBranches = useMemo(() => {
+    if (apiBranches && apiBranches.length > 0) {
+      return apiBranches.filter((b) => b.active);
+    }
+    // If API failed or is empty and not loading, fall back to stored branches
+    if (isError || (!isLoading && storedBranches.length > 0)) {
+      return storedBranches;
+    }
+    return [];
+  }, [apiBranches, isError, isLoading, storedBranches]);
+
+  // Strictly filter branches by user's assigned permissions
+  const branches = useMemo(() => {
+    return filterBranchesByPermission(rawBranches);
+  }, [rawBranches]);
+
+  // Keep localStorage updated with only permitted active branches
+  useEffect(() => {
+    if (apiBranches && apiBranches.length > 0) {
+      const active = apiBranches.filter((b) => b.active);
+      const permitted = filterBranchesByPermission(active);
+      if (permitted.length > 0) {
+        setStoredBranches(permitted);
+      }
+    }
+  }, [apiBranches]);
+
+  // If user only has access to a single branch, auto-select it immediately
+  useEffect(() => {
+    if (branches.length === 1 && !selectedId) {
+      handleSelect(branches[0].branchId);
+    }
+  }, [branches, selectedId]);
 
   const userInfo = getUserInfo();
 

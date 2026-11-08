@@ -17,6 +17,8 @@ const Users = React.lazy(() => import('@/pages/admin/people/user'))
 const Vendors = React.lazy(() => import('@/pages/admin/people/vendor'))
 const Parties = React.lazy(() => import('@/pages/admin/people/parties'))
 const EmployeeEntry = React.lazy(() => import('@/pages/admin/people/employee-entry'))
+const EmployeeList = React.lazy(() => import('@/pages/admin/people/employee/EmployeeList'))
+const RolesAndPermissions = React.lazy(() => import('@/pages/admin/roles/RolesAndPermissions'))
 const HeroSlider = React.lazy(() => import('@/pages/admin/settings/home/hero-slider'))
 const HomePageCms = React.lazy(() => import('@/pages/admin/settings/home/page-cms'))
 const HeaderFooterCms = React.lazy(() => import('@/pages/admin/settings/header-footer-cms'))
@@ -130,6 +132,10 @@ export const router = createBrowserRouter([
   {
     path: '/branches/add',
     element: <Navigate to="/admin/branches/add" replace />,
+  },
+  {
+    path: '/roles',
+    element: <Navigate to="/admin/roles" replace />,
   },
   {
     path: '/pricing',
@@ -440,6 +446,14 @@ export const router = createBrowserRouter([
       {
         path: 'employee-entry',
         element: withSuspense(EmployeeEntry),
+      },
+      {
+        path: 'employees',
+        element: withSuspense(EmployeeList),
+      },
+      {
+        path: 'roles',
+        element: withSuspense(RolesAndPermissions),
       },
       {
         path: 'purchases',

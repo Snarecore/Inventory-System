@@ -23,6 +23,7 @@ import { FaSearch, FaFileExcel } from "react-icons/fa";
 import { exportSalesToExcel } from "@/utils/excel-export";
 import { showSuccessToast, showErrorToast } from "@/utils/toast-utils";
 import { formatMoney } from "@/utils/formatters";
+import { usePermission } from "@/hooks/usePermission";
 
 interface SaleTableProps {
   sales: SaleItem[];
@@ -97,6 +98,7 @@ export const SaleTable: React.FC<SaleTableProps> = ({
   onExport,
 }) => {
   const navigate = useNavigate();
+  const { canUpdate, canDelete } = usePermission();
   const [isCustomerDropdownOpen, setIsCustomerDropdownOpen] = useState<boolean>(false);
   const [customerSearchQuery, setCustomerSearchQuery] = useState<string>("");
   const [copiedId, setCopiedId] = useState<string | number | null>(null);
@@ -624,7 +626,8 @@ export const SaleTable: React.FC<SaleTableProps> = ({
                         <TableActionButtons
                           onView={() => onView(sale)}
                           onPrint={() => onPrint(sale)}
-                          onEdit={() => onEdit(sale)}
+                          onEdit={canUpdate("sales") ? () => onEdit(sale) : undefined}
+                          onDelete={canDelete("sales") && _onDelete ? () => _onDelete(sale) : undefined}
                           onReturn={() =>
                             navigate("/admin/create-sales-return", {
                               state: { sale },

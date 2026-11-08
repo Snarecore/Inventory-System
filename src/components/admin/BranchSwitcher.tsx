@@ -4,6 +4,7 @@ import {
   getStoredBranches,
   isMultiBranch,
   switchBranch,
+  filterBranchesByPermission,
 } from "@/utils/branch-storage";
 import { useBranchListQuery } from "@/hooks/useBranchQueries";
 import { FaBuilding, FaChevronDown, FaCheck, FaStar } from "react-icons/fa";
@@ -12,10 +13,11 @@ export const BranchSwitcher: React.FC = () => {
   const [open, setOpen] = useState(false);
   const wrapRef = useRef<HTMLDivElement>(null);
 
-  // Load live branches to keep stored list updated
+  // Load live branches and strictly filter by user branch permission
   const { data: apiBranches = [] } = useBranchListQuery();
   const storedBranches = getStoredBranches();
-  const branches = apiBranches.length > 0 ? apiBranches.filter((b) => b.active) : storedBranches;
+  const rawBranches = apiBranches.length > 0 ? apiBranches.filter((b) => b.active) : storedBranches;
+  const branches = filterBranchesByPermission(rawBranches);
 
   const userInfo = getUserInfo();
   const activeBranchId = getActiveBranchId();

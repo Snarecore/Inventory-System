@@ -19,6 +19,10 @@ export interface LoginSuccessResponse {
   businessCode?: string;
   business_code?: string;
   userRole?: string;
+  accountType?: string;
+  userId?: number;
+  employeeId?: number;
+  isEmployee?: boolean;
   organizationId?: number;
   branchId?: number;
   branchType?: string;
@@ -44,6 +48,10 @@ export interface UserInfo {
   businessCode?: string;
   business_code?: string;
   userRole?: string;
+  accountType?: string;
+  userId?: number;
+  employeeId?: number;
+  isEmployee?: boolean;
   orgId?: number;
   branchId?: number;
   branchType?: string;

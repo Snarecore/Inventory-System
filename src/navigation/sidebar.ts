@@ -115,12 +115,15 @@ export const menu = [
 		items: [
 			{
 				id: 7,
-				name: "Employee entry",
-				title: "Employee entry",
+				name: "Employee",
+				title: "Employee",
 				icon: FaUsers,
-				path: "/admin/employee-entry",
-				permissionKey: "employees.create",
-				subItems: [],
+				path: "/admin/employees",
+				permissionKey: "employees.view",
+				subItems: [
+					{ id: 71, name: "Employee List", path: "/admin/employees", permissionKey: "employees.list.view" },
+					{ id: 72, name: "Employee Entry", path: "/admin/employee-entry", permissionKey: "employees.create" },
+				],
 			},
 			{
 				id: 6,

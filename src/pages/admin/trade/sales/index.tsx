@@ -21,10 +21,12 @@ import {
   isReturnRecord,
 } from "./hooks/useSalesQueries";
 import { useDebounce } from "@/hooks/useDebounce";
+import { usePermission } from "@/hooks/usePermission";
 
 const Sales: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { canCreate } = usePermission();
 
   // Tab State: "sales" | "returns"
   const searchParams = useMemo(() => new URLSearchParams(location.search), [location.search]);
@@ -549,7 +551,7 @@ const Sales: React.FC = () => {
 
         <div className="flex items-center gap-2 self-end sm:self-auto">
           <RefreshButton onClick={handleRefetchAll} isLoading={isGlobalLoading || isGlobalFetching} />
-          {activeTab === "sales" ? (
+          {activeTab === "sales" && canCreate("sales") && (
             <Button
               label="New Sale"
               onClick={() => navigate("/admin/create-sale")}
@@ -557,7 +559,8 @@ const Sales: React.FC = () => {
               hoverColor="var(--primary-color-hover)"
               icon={<FaPlus className="text-white text-xs" />}
             />
-          ) : (
+          )}
+          {activeTab !== "sales" && canCreate("sales") && (
             <Button
               label="Create Return"
               onClick={() => navigate("/admin/create-sales-return")}

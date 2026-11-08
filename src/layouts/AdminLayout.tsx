@@ -1,15 +1,22 @@
 import Sidebar from "@/components/admin/Sidebar";
 import Header from "@/components/admin/Header";
 import Footer from "@/components/admin/Footer";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { MdKeyboardDoubleArrowLeft, MdKeyboardDoubleArrowRight } from "react-icons/md";
 import { Outlet } from "react-router-dom";
 import BranchSelectModal from "@/components/admin/BranchSelectModal";
-import { isBranchChoicePending } from "@/utils/branch-storage";
+import { isBranchChoicePending, isUserAdmin } from "@/utils/branch-storage";
+import { syncCurrentEmployeePermissions } from "@/services/employee-service";
 
 export default function AdminLayout() {
 	const [sidebarClick, setSidebarClick] = useState(false);
 	const isPending = isBranchChoicePending();
+
+	useEffect(() => {
+		if (!isUserAdmin()) {
+			syncCurrentEmployeePermissions();
+		}
+	}, []);
 
 	const handleSidebarClick = () => setSidebarClick((v) => !v);
 

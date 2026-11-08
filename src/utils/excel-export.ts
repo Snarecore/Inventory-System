@@ -1,4 +1,4 @@
-import type { PurchaseItem, PurchaseReturnItem, CategoryItem, ProductCategoryItem, BankAccountItem, MfsUserItem } from "@/types";
+import type { PurchaseItem, PurchaseReturnItem, CategoryItem, ProductCategoryItem, BankAccountItem, MfsUserItem, EmployeeItem } from "@/types";
 import { isCategoryAdmin, normalizeCategoryType } from "@/services/category-service";
 
 export interface GenericExcelExportOptions {
@@ -536,9 +536,76 @@ export function exportMfsAccountsToExcel(
     "Current Balance": totalBalance,
     Status: "",
   };
-
   buildAndDownloadExcel(rows, totalRow, { fileName, sheetName });
 }
 
+/**
+ * Senior Developer Standard: Export Employee Roster to Excel
+ */
+export function exportEmployeesToExcel(
+  employees: EmployeeItem[],
+  options?: GenericExcelExportOptions
+): void {
+  if (!employees || employees.length === 0) {
+    throw new Error("No employee records available to export");
+  }
 
+  const todayStr = new Date().toISOString().substring(0, 10);
+  const fileName = options?.fileName || `Employees_List_${todayStr}.xlsx`;
+  const sheetName = options?.sheetName || "Employees";
 
+  let totalSalary = 0;
+
+  const rows = employees.map((emp, index) => {
+    const salary = Number(emp.presentSalary || 0);
+    totalSalary += salary;
+
+    return {
+      SL: index + 1,
+      "Employee Code": emp.employeeCode || "—",
+      "Full Name": emp.fullName || "—",
+      "Phone Number": emp.phoneNumber || "—",
+      Designation: emp.designation || "—",
+      Department: emp.department || "—",
+      "Employment Type": emp.employmentType || "FULL_TIME",
+      "Joining Date": emp.dateOfJoining ? String(emp.dateOfJoining).slice(0, 10) : "—",
+      "Present Salary": salary,
+      Currency: emp.salaryCurrency || "BDT",
+      "Work Location": emp.workLocation || "—",
+      "App Access": emp.hasAppAccess ? "Enabled" : "Disabled",
+      "App Username": emp.hasAppAccess ? emp.appUsername || emp.phoneNumber || "—" : "—",
+      Status: emp.active !== false ? "Active" : "Inactive",
+      "National ID": emp.nationalId || "—",
+      Email: emp.email || "—",
+      City: emp.city || "—",
+      Address: emp.address || "—",
+      "Emergency Contact": emp.emergencyContactName
+        ? `${emp.emergencyContactName} (${emp.emergencyContactRelation || "Contact"}: ${emp.emergencyContactPhone || ""})`
+        : "—",
+    };
+  });
+
+  const totalRow = {
+    SL: "TOTAL",
+    "Employee Code": `Count: ${employees.length}`,
+    "Full Name": "",
+    "Phone Number": "",
+    Designation: "",
+    Department: "",
+    "Employment Type": "",
+    "Joining Date": "",
+    "Present Salary": totalSalary,
+    Currency: "BDT",
+    "Work Location": "",
+    "App Access": "",
+    "App Username": "",
+    Status: "",
+    "National ID": "",
+    Email: "",
+    City: "",
+    Address: "",
+    "Emergency Contact": "",
+  };
+
+  buildAndDownloadExcel(rows, totalRow, { fileName, sheetName });
+}

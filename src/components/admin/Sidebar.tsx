@@ -1,7 +1,8 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { RiArrowDropRightLine, RiArrowDropDownLine } from "react-icons/ri";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { menu } from "@/navigation/sidebar";
+import { isUserAdmin } from "@/utils/branch-storage";
 import { MotionDiv } from "@/utils/framer.motion";
 import logoImg from "@/assets/logo.jpeg";
 
@@ -16,10 +17,55 @@ const Sidebar = ({ sidebarClick }: SidebarProps) => {
   const navigate = useNavigate();
 
   const [openSubMenu, setOpenSubMenu] = useState<number | null>(null);
+  const isAdmin = isUserAdmin();
+
+  // Strictly filter menu: Non-admin employees cannot see administration, branch management, or employee management
+  const filteredMenu = useMemo(() => {
+    return menu
+      .map((section) => {
+        // Hide entire Administration section for non-admin staff
+        if (!isAdmin && section.sectionName === "Administration") {
+          return null;
+        }
+
+        const items = section.items
+          .map((item) => {
+            // Hide Employee module management for non-admin staff
+            if (!isAdmin && item.name === "Employee") {
+              return null;
+            }
+
+            // Filter subItems
+            if (item.subItems && item.subItems.length > 0) {
+              const sub = item.subItems.filter((s) => {
+                // Non-admin staff cannot manage branches
+                if (!isAdmin && (s.path === "/admin/branches" || s.path === "/admin/branches/add")) {
+                  return false;
+                }
+                return true;
+              });
+              if (sub.length === 0) return null;
+              return { ...item, subItems: sub };
+            }
+
+            // Hide standalone branch management
+            if (!isAdmin && item.path === "/admin/branches") {
+              return null;
+            }
+
+            return item;
+          })
+          .filter(Boolean);
+
+        if (items.length === 0) return null;
+        return { ...section, items: items as any[] };
+      })
+      .filter(Boolean) as typeof menu;
+  }, [isAdmin]);
 
   useEffect(() => {
     if (!sidebarClick) {
-      menu.forEach((section) => {
+      filteredMenu.forEach((section) => {
         section.items.forEach((item) => {
           if (
             item.subItems?.some((sub) => sub.path === pathname) ||
@@ -32,13 +78,13 @@ const Sidebar = ({ sidebarClick }: SidebarProps) => {
     } else {
       setOpenSubMenu(null);
     }
-  }, [pathname, sidebarClick]);
+  }, [pathname, sidebarClick, filteredMenu]);
 
   const toggleSubMenu = (id: number) => {
     setOpenSubMenu((prev) => (prev === id ? null : id));
   };
 
-  const isAnySubmenuActive = menu.some((section) =>
+  const isAnySubmenuActive = filteredMenu.some((section) =>
     section.items.some((menuItem) =>
       menuItem.subItems?.some((subItem) => subItem.path === pathname)
     )
@@ -79,7 +125,7 @@ const Sidebar = ({ sidebarClick }: SidebarProps) => {
       </div>
 
       <div className="flex-1 px-2 py-2 overflow-y-auto custom-scrollbar">
-        {menu.map((section) => (
+        {filteredMenu.map((section) => (
           <div key={section.sectionName} className={sidebarClick ? "mb-1" : "mb-2"}>
             {!sidebarClick && section.sectionName && (
               <p className="text-[11px] text-[#092c4c] font-bold px-2 mb-1">

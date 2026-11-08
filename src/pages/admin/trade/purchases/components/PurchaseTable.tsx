@@ -25,6 +25,7 @@ import { FaPhone, FaCalendarAlt, FaSearch, FaFileExcel } from "react-icons/fa";
 import { exportPurchasesToExcel } from "@/utils/excel-export";
 import { showSuccessToast, showErrorToast } from "@/utils/toast-utils";
 import { formatMoney } from "@/utils/formatters";
+import { usePermission } from "@/hooks/usePermission";
 
 interface PurchaseTableProps {
   purchases: PurchaseItem[];
@@ -114,6 +115,7 @@ export const PurchaseTable: React.FC<PurchaseTableProps> = ({
   onExport,
 }) => {
   const navigate = useNavigate();
+  const { canUpdate } = usePermission();
   const [isSupplierDropdownOpen, setIsSupplierDropdownOpen] = useState<boolean>(false);
   const [supplierSearchQuery, setSupplierSearchQuery] = useState<string>("");
   const [copiedId, setCopiedId] = useState<string | number | null>(null);
@@ -624,7 +626,7 @@ export const PurchaseTable: React.FC<PurchaseTableProps> = ({
                           <TableActionButtons
                             onView={() => onView(purchase)}
                             onPrint={() => onPrint(purchase)}
-                            onEdit={() => onEdit(purchase)}
+                            onEdit={canUpdate("purchase") ? () => onEdit(purchase) : undefined}
                             onReturn={() => {
                               if (onReturn) {
                                 onReturn(purchase);

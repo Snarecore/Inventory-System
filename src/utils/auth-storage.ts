@@ -129,6 +129,18 @@ export function saveLoginSession(data: LoginSuccessResponse, rememberMe = true):
         data.businessCode || data.business_code || (data as any)?.businessCode || (data as any)?.business_code || ""
     ).trim();
 
+    const isEmployee =
+        data.msg === "Employee account found" ||
+        String(data.userRole || "").toUpperCase() === "EMPLOYEE" ||
+        String(data.userRole || "").toUpperCase() === "STAFF" ||
+        String(data.userRole || "").toUpperCase() === "MANAGER" ||
+        (String(data.userRole || "").toUpperCase() !== "ADMIN" &&
+            String(data.userRole || "").toUpperCase() !== "OWNER" &&
+            Boolean((data as any)?.userId));
+
+    const numericUserId = (data as any)?.userId ? Number((data as any).userId) : undefined;
+    const employeeId = isEmployee && numericUserId ? numericUserId : undefined;
+
     const userInfo: UserInfo = {
         phone: data.phoneNumber,
         phoneNumber: data.phoneNumber,
@@ -136,7 +148,11 @@ export function saveLoginSession(data: LoginSuccessResponse, rememberMe = true):
         fullName: data.fullName,
         businessName: data.businessName,
         businessCode: businessCode,
-        userRole: data.userRole || "ADMIN",
+        userRole: data.userRole || (isEmployee ? "EMPLOYEE" : "ADMIN"),
+        accountType: data.accountType || (data as any)?.account_type || "",
+        userId: numericUserId,
+        employeeId: employeeId,
+        isEmployee: isEmployee,
         orgId: orgId,
         branchId: branchId,
         branchType: branchType,
@@ -150,10 +166,10 @@ export function saveLoginSession(data: LoginSuccessResponse, rememberMe = true):
     }
 
     const appUser: User = {
-        id: data.phoneNumber,
+        id: String(numericUserId || data.phoneNumber),
         name: data.fullName || data.businessName || data.phoneNumber,
         email: data.phoneNumber && data.phoneNumber.includes("@") ? data.phoneNumber : "",
-        role: data.userRole || "admin",
+        role: data.userRole || (isEmployee ? "employee" : "admin"),
     };
 
     setStoredUser(appUser, undefined, rememberMe);
