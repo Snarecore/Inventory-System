@@ -82,7 +82,9 @@ type EmployeeField = keyof EmployeeFormValues;
 type EmployeeErrors = Partial<Record<EmployeeField, string>>;
 
 const fieldClass =
-  "ui-control w-full bg-[var(--ui-surface)] text-[var(--ui-text)]";
+  "ui-control ui-select w-full bg-[var(--ui-surface)] text-[var(--ui-text)] cursor-pointer text-xs";
+const textareaClass =
+  "ui-control ui-control-multiline w-full bg-[var(--ui-surface)] text-[var(--ui-text)] text-xs";
 
 export default function EmployeeEntryPage() {
   const navigate = useNavigate();
@@ -284,9 +286,10 @@ export default function EmployeeEntryPage() {
   const isPending = insertMutation.isPending || updateMutation.isPending;
 
   return (
-    <div className="min-h-full bg-[var(--ui-surface-muted)] px-4 py-5 text-[var(--ui-text)] sm:px-6 lg:px-8">
-      <div className="ui-page mx-auto w-full space-y-5">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+    <div className="flex flex-col gap-2.5 px-2.5 py-2 sm:px-4 sm:py-2.5 max-w-[1600px] mx-auto w-full text-[var(--ui-text)]">
+      <div className="w-full space-y-3">
+        {/* Page Top Header Bar */}
+        <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between border-b border-[var(--ui-border)] pb-2.5">
           <PageHeader
             headerTitle={isEditMode ? `Edit Employee: ${values.fullName || values.employeeCode}` : "Employee entry"}
             headerDescription={
@@ -298,34 +301,37 @@ export default function EmployeeEntryPage() {
           <Button
             label="View Employee List"
             variant="secondary"
+            size="sm"
             onClick={() => navigate("/admin/employees")}
             icon={<FaList className="text-xs" />}
             className="self-start sm:self-auto cursor-pointer"
           />
         </div>
 
-        <div className="grid items-start gap-5 lg:grid-cols-[280px_minmax(0,1fr)]">
+        {/* 2-Column Responsive Layout */}
+        <div className="grid items-start gap-3 sm:gap-3.5 lg:grid-cols-[280px_minmax(0,1fr)]">
           {/* Left Aside Profile Preview Card */}
-          <aside className="space-y-4">
-            <section className="overflow-hidden rounded-2xl border border-[var(--ui-border)] bg-[var(--ui-surface)] shadow-[var(--ui-shadow-card)]">
-              <div className="h-24 bg-[var(--primary-color)]" />
-              <div className="px-5 pb-5">
-                <div className="-mt-10 flex h-20 w-20 items-center justify-center rounded-2xl border-4 border-[var(--ui-surface)] bg-[var(--primary-color-light)] text-3xl font-bold text-[var(--primary-color)] shadow-sm">
+          <aside className="space-y-3">
+            <section className="overflow-hidden rounded-xl border border-[var(--ui-border)] bg-[var(--ui-surface)] shadow-xs">
+              <div className="h-20 bg-[var(--primary-color)]" />
+              <div className="px-4 pb-4">
+                <div className="-mt-8 flex h-16 w-16 items-center justify-center rounded-xl border-2 border-[var(--ui-surface)] bg-[var(--primary-color-light)] text-2xl font-bold text-[var(--primary-color)] shadow-xs">
                   {values.fullName.trim().charAt(0).toUpperCase() || (
-                    <FaIdBadge aria-hidden="true" className="text-xl" />
+                    <FaIdBadge aria-hidden="true" className="text-lg" />
                   )}
                 </div>
-                <p className="mt-4 text-lg font-bold">
+                <p className="mt-3 text-base font-bold text-[var(--ui-text)] truncate">
                   {values.fullName.trim() || "New employee"}
                 </p>
-                <p className="mt-1 text-sm text-[var(--ui-text-muted)]">
+                <p className="mt-0.5 text-xs text-[var(--ui-text-muted)] truncate">
                   {values.designation || "Designation"}
                 </p>
-                <div className="mt-5 flex flex-wrap gap-2">
-                  <span className="rounded-full border border-[var(--ui-success-border)] bg-[var(--ui-success-light)] px-3 py-1 text-xs font-semibold text-[var(--ui-success-dark)]">
+
+                <div className="mt-3 flex flex-wrap gap-1.5">
+                  <span className="rounded-full border border-[var(--ui-success-border)] bg-[var(--ui-success-light)] px-2.5 py-0.5 text-[11px] font-semibold text-[var(--ui-success-dark)]">
                     {values.department || "Employee"}
                   </span>
-                  <span className="rounded-full border border-[var(--ui-border)] bg-[var(--ui-surface-muted)] px-3 py-1 text-xs font-medium text-[var(--ui-text-muted)]">
+                  <span className="rounded-full border border-[var(--ui-border)] bg-[var(--ui-surface-muted)] px-2.5 py-0.5 text-[11px] font-medium text-[var(--ui-text-muted)]">
                     {values.employmentType === "FULL_TIME"
                       ? "Full-time"
                       : values.employmentType === "PART_TIME"
@@ -335,30 +341,31 @@ export default function EmployeeEntryPage() {
                       : values.employmentType}
                   </span>
                 </div>
-                <div className="mt-5 space-y-3 border-t border-[var(--ui-border)] pt-4 text-sm">
-                  <div className="flex items-center justify-between gap-3">
+
+                <div className="mt-3.5 space-y-2 border-t border-[var(--ui-border)] pt-3 text-xs">
+                  <div className="flex items-center justify-between gap-2">
                     <span className="text-[var(--ui-text-muted)]">Employee Code</span>
-                    <span className="font-medium font-mono">{values.employeeCode || "Not set"}</span>
+                    <span className="font-semibold font-mono">{values.employeeCode || "Not set"}</span>
                   </div>
-                  <div className="flex items-center justify-between gap-3">
+                  <div className="flex items-center justify-between gap-2">
                     <span className="text-[var(--ui-text-muted)]">Department</span>
                     <span className="font-medium">{values.department || "Not set"}</span>
                   </div>
-                  <div className="flex items-center justify-between gap-3">
+                  <div className="flex items-center justify-between gap-2">
                     <span className="text-[var(--ui-text-muted)]">Work Location</span>
                     <span className="font-medium">{values.workLocation || "Not set"}</span>
                   </div>
-                  <div className="flex items-center justify-between gap-3">
+                  <div className="flex items-center justify-between gap-2">
                     <span className="text-[var(--ui-text-muted)]">Joining Date</span>
                     <span className="font-medium">{values.dateOfJoining || "Not set"}</span>
                   </div>
                   {values.dateOfLeaving && (
-                    <div className="flex items-center justify-between gap-3">
+                    <div className="flex items-center justify-between gap-2">
                       <span className="text-[var(--ui-text-muted)]">Leaving Date</span>
                       <span className="font-medium text-rose-600">{values.dateOfLeaving}</span>
                     </div>
                   )}
-                  <div className="flex items-center justify-between gap-3">
+                  <div className="flex items-center justify-between gap-2">
                     <span className="text-[var(--ui-text-muted)]">App Access</span>
                     <span
                       className={`font-semibold text-xs ${
@@ -372,34 +379,34 @@ export default function EmployeeEntryPage() {
               </div>
             </section>
 
-            <div className="rounded-2xl border border-[var(--primary-color-muted)] bg-[var(--primary-color-light)] p-4">
-              <div className="flex items-center gap-2 font-semibold text-[var(--primary-color-dark)]">
+            <div className="rounded-xl border border-[var(--primary-color-muted)] bg-[var(--primary-color-light)] p-3.5 shadow-2xs">
+              <div className="flex items-center gap-2 text-xs font-semibold text-[var(--primary-color-dark)]">
                 <FaBriefcase aria-hidden="true" />
                 Employee profile rules
               </div>
-              <p className="mt-2 text-sm text-[var(--ui-text-muted)]">
+              <p className="mt-1.5 text-xs text-[var(--ui-text-muted)] leading-relaxed">
                 Required fields are marked with *. When App Access is enabled, login username automatically matches the employee's phone number with a 4-digit numeric PIN.
               </p>
             </div>
           </aside>
 
           {/* Right Form */}
-          <form onSubmit={handleSubmit} noValidate className="space-y-4">
+          <form onSubmit={handleSubmit} noValidate className="space-y-3">
             {/* Section 1: Professional & Employment Information */}
-            <section className="rounded-2xl border border-[var(--ui-border)] bg-[var(--ui-surface)] p-5 shadow-[var(--ui-shadow-card)] sm:p-6">
-              <div className="mb-5 flex items-center gap-3">
-                <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--primary-color-light)] text-[var(--primary-color)]">
+            <section className="rounded-xl border border-[var(--ui-border)] bg-[var(--ui-surface)] p-3.5 sm:p-4 shadow-xs">
+              <div className="mb-3 flex items-center gap-2.5 border-b border-[var(--ui-border)]/60 pb-2">
+                <span className="flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-lg bg-[var(--primary-color-light)] text-[var(--primary-color)] text-xs sm:text-sm shrink-0">
                   <FaIdBadge aria-hidden="true" />
                 </span>
                 <div>
-                  <h2 className="font-semibold">Professional information</h2>
-                  <p className="text-xs text-[var(--ui-text-muted)]">Role, designation, and employment details</p>
+                  <h2 className="text-xs sm:text-sm font-bold text-[var(--ui-text)]">Professional information</h2>
+                  <p className="text-[11px] text-[var(--ui-text-muted)]">Role, designation, and employment details</p>
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5 sm:gap-3">
                 <InputField
-                  label="Full name *"
+                  label="Full name"
                   name="fullName"
                   value={values.fullName}
                   placeholder="e.g. Rahat Ahmed"
@@ -408,7 +415,7 @@ export default function EmployeeEntryPage() {
                   onChange={updateField("fullName")}
                 />
                 <InputField
-                  label="Employee code *"
+                  label="Employee code"
                   name="employeeCode"
                   value={values.employeeCode}
                   placeholder="e.g. EMP-321"
@@ -417,7 +424,7 @@ export default function EmployeeEntryPage() {
                   onChange={updateField("employeeCode")}
                 />
                 <InputField
-                  label="Designation *"
+                  label="Designation"
                   name="designation"
                   value={values.designation}
                   placeholder="e.g. Software Engineer"
@@ -426,7 +433,7 @@ export default function EmployeeEntryPage() {
                   onChange={updateField("designation")}
                 />
                 <InputField
-                  label="Department *"
+                  label="Department"
                   name="department"
                   value={values.department}
                   placeholder="e.g. IT, Sales"
@@ -464,7 +471,7 @@ export default function EmployeeEntryPage() {
                   </select>
                 </div>
                 <InputField
-                  label="Date of joining *"
+                  label="Date of joining"
                   name="dateOfJoining"
                   type="date"
                   value={values.dateOfJoining}
@@ -504,20 +511,20 @@ export default function EmployeeEntryPage() {
             </section>
 
             {/* Section 2: Contact & Address Information */}
-            <section className="rounded-2xl border border-[var(--ui-border)] bg-[var(--ui-surface)] p-5 shadow-[var(--ui-shadow-card)] sm:p-6">
-              <div className="mb-5 flex items-center gap-3">
-                <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400">
+            <section className="rounded-xl border border-[var(--ui-border)] bg-[var(--ui-surface)] p-3.5 sm:p-4 shadow-xs">
+              <div className="mb-3 flex items-center gap-2.5 border-b border-[var(--ui-border)]/60 pb-2">
+                <span className="flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-lg bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 text-xs sm:text-sm shrink-0">
                   <FaPhoneAlt aria-hidden="true" />
                 </span>
                 <div>
-                  <h2 className="font-semibold">Contact & address information</h2>
-                  <p className="text-xs text-[var(--ui-text-muted)]">Personal contact details and residential address</p>
+                  <h2 className="text-xs sm:text-sm font-bold text-[var(--ui-text)]">Contact & address information</h2>
+                  <p className="text-[11px] text-[var(--ui-text-muted)]">Personal contact details and residential address</p>
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5 sm:gap-3">
                 <InputField
-                  label="Phone number *"
+                  label="Phone number"
                   name="phoneNumber"
                   type="tel"
                   value={values.phoneNumber}
@@ -550,18 +557,6 @@ export default function EmployeeEntryPage() {
                   placeholder="e.g. 1234567890123"
                   onChange={updateField("nationalId")}
                 />
-                <div className="ui-field sm:col-span-2">
-                  <label className="ui-label" htmlFor="address">Address</label>
-                  <textarea
-                    id="address"
-                    name="address"
-                    value={values.address}
-                    onChange={updateField("address")}
-                    rows={2}
-                    placeholder="e.g. Dhaka, Bangladesh"
-                    className={`${fieldClass} h-auto py-2.5`}
-                  />
-                </div>
                 <InputField
                   label="City"
                   name="city"
@@ -590,19 +585,31 @@ export default function EmployeeEntryPage() {
                   placeholder="e.g. 1207"
                   onChange={updateField("postalCode")}
                 />
+                <div className="ui-field col-span-1 sm:col-span-2 md:col-span-3">
+                  <label className="ui-label" htmlFor="address">Address</label>
+                  <textarea
+                    id="address"
+                    name="address"
+                    value={values.address}
+                    onChange={updateField("address")}
+                    rows={2}
+                    placeholder="e.g. Dhaka, Bangladesh"
+                    className={textareaClass}
+                  />
+                </div>
               </div>
             </section>
 
             {/* Section 3: Cash-Boi App Access (Login Phone & 4-Digit PIN) */}
-            <section className="rounded-2xl border border-[var(--ui-border)] bg-[var(--ui-surface)] p-5 shadow-[var(--ui-shadow-card)] sm:p-6">
-              <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
-                <div className="flex items-center gap-3">
-                  <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400">
+            <section className="rounded-xl border border-[var(--ui-border)] bg-[var(--ui-surface)] p-3.5 sm:p-4 shadow-xs">
+              <div className="mb-3 flex flex-wrap items-center justify-between gap-2.5 border-b border-[var(--ui-border)]/60 pb-2">
+                <div className="flex items-center gap-2.5">
+                  <span className="flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-lg bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 text-xs sm:text-sm shrink-0">
                     <FaMobileAlt aria-hidden="true" />
                   </span>
                   <div>
-                    <h2 className="font-semibold">Cash-Boi App Access</h2>
-                    <p className="text-xs text-[var(--ui-text-muted)]">
+                    <h2 className="text-xs sm:text-sm font-bold text-[var(--ui-text)]">Cash-Boi App Access</h2>
+                    <p className="text-[11px] text-[var(--ui-text-muted)]">
                       Enable mobile application login access for this employee
                     </p>
                   </div>
@@ -613,17 +620,17 @@ export default function EmployeeEntryPage() {
                     type="checkbox"
                     checked={values.hasAppAccess}
                     onChange={(e) => handleAppAccessToggle(e.target.checked)}
-                    className="h-4 w-4 rounded text-[var(--primary-color)] focus:ring-[var(--primary-color)]"
+                    className="h-4 w-4 rounded accent-[var(--primary-color)] text-[var(--primary-color)] focus:ring-[var(--primary-color)] cursor-pointer"
                   />
-                  <span className="text-xs font-semibold">Enable App Access</span>
+                  <span className="text-xs font-semibold text-[var(--ui-text)]">Enable App Access</span>
                 </label>
               </div>
 
               {values.hasAppAccess ? (
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 pt-2 border-t border-[var(--ui-border)]">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5 sm:gap-3 pt-1">
                   <div>
                     <InputField
-                      label="App Login Phone Number *"
+                      label="App Login Phone Number"
                       name="appUsername"
                       value={values.appUsername || values.phoneNumber}
                       placeholder="01712345671"
@@ -638,7 +645,7 @@ export default function EmployeeEntryPage() {
 
                   <div>
                     <InputField
-                      label="4-Digit App PIN *"
+                      label="4-Digit App PIN"
                       name="appPassword"
                       type="password"
                       value={values.appPassword}
@@ -658,25 +665,25 @@ export default function EmployeeEntryPage() {
                   </div>
                 </div>
               ) : (
-                <p className="text-xs text-[var(--ui-text-muted)] italic">
+                <p className="text-xs text-[var(--ui-text-muted)] italic py-0.5">
                   Check "Enable App Access" above to assign an app login phone number and 4-digit PIN.
                 </p>
               )}
             </section>
 
             {/* Section 4: Payroll & Banking Details */}
-            <section className="rounded-2xl border border-[var(--ui-border)] bg-[var(--ui-surface)] p-5 shadow-[var(--ui-shadow-card)] sm:p-6">
-              <div className="mb-5 flex items-center gap-3">
-                <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400">
+            <section className="rounded-xl border border-[var(--ui-border)] bg-[var(--ui-surface)] p-3.5 sm:p-4 shadow-xs">
+              <div className="mb-3 flex items-center gap-2.5 border-b border-[var(--ui-border)]/60 pb-2">
+                <span className="flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-lg bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 text-xs sm:text-sm shrink-0">
                   <FaMoneyBillWave aria-hidden="true" />
                 </span>
                 <div>
-                  <h2 className="font-semibold">Payroll & bank details</h2>
-                  <p className="text-xs text-[var(--ui-text-muted)]">Salary, currency, frequency and banking information</p>
+                  <h2 className="text-xs sm:text-sm font-bold text-[var(--ui-text)]">Payroll & bank details</h2>
+                  <p className="text-[11px] text-[var(--ui-text-muted)]">Salary, currency, frequency and banking information</p>
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5 sm:gap-3">
                 <InputField
                   label="Present salary"
                   name="presentSalary"
@@ -727,18 +734,18 @@ export default function EmployeeEntryPage() {
             </section>
 
             {/* Section 5: Emergency Contact & Notes */}
-            <section className="rounded-2xl border border-[var(--ui-border)] bg-[var(--ui-surface)] p-5 shadow-[var(--ui-shadow-card)] sm:p-6">
-              <div className="mb-5 flex items-center gap-3">
-                <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-purple-50 dark:bg-purple-950/40 text-purple-600 dark:text-purple-400">
+            <section className="rounded-xl border border-[var(--ui-border)] bg-[var(--ui-surface)] p-3.5 sm:p-4 shadow-xs">
+              <div className="mb-3 flex items-center gap-2.5 border-b border-[var(--ui-border)]/60 pb-2">
+                <span className="flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-lg bg-purple-50 dark:bg-purple-950/40 text-purple-600 dark:text-purple-400 text-xs sm:text-sm shrink-0">
                   <FaShieldAlt aria-hidden="true" />
                 </span>
                 <div>
-                  <h2 className="font-semibold">Emergency contact & notes</h2>
-                  <p className="text-xs text-[var(--ui-text-muted)]">Emergency contact person and administrative notes</p>
+                  <h2 className="text-xs sm:text-sm font-bold text-[var(--ui-text)]">Emergency contact & notes</h2>
+                  <p className="text-[11px] text-[var(--ui-text-muted)]">Emergency contact person and administrative notes</p>
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5 sm:gap-3">
                 <InputField
                   label="Emergency contact name"
                   name="emergencyContactName"
@@ -761,28 +768,30 @@ export default function EmployeeEntryPage() {
                   placeholder="e.g. Father, Spouse, Brother"
                   onChange={updateField("emergencyContactRelation")}
                 />
-                <div className="ui-field sm:col-span-2">
+                <div className="ui-field col-span-1 sm:col-span-2 md:col-span-3">
                   <label className="ui-label" htmlFor="notes">Notes</label>
                   <textarea
                     id="notes"
                     name="notes"
                     value={values.notes}
                     onChange={updateField("notes")}
-                    placeholder="e.g. New employee"
-                    rows={3}
-                    className={`${fieldClass} h-auto py-2.5`}
+                    placeholder="e.g. New employee notes"
+                    rows={2}
+                    className={textareaClass}
                   />
                 </div>
               </div>
             </section>
 
             {/* Bottom Buttons */}
-            <div className="flex flex-col-reverse justify-end gap-3 sm:flex-row pb-6">
+            <div className="flex flex-col-reverse justify-end gap-2.5 sm:flex-row pt-2 pb-4">
               <Button
                 label={isEditMode ? "Cancel / Reset" : "Reset form"}
                 variant="secondary"
+                size="sm"
                 onClick={handleReset}
                 disabled={isPending}
+                className="cursor-pointer"
               />
               <Button
                 label={
@@ -795,8 +804,11 @@ export default function EmployeeEntryPage() {
                     : "Save Employee"
                 }
                 variant="primary"
+                size="sm"
                 type="submit"
+                color="var(--primary-color)"
                 disabled={isPending}
+                className="cursor-pointer !text-white"
               />
             </div>
           </form>

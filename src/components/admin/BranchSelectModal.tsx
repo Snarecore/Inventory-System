@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from "react";
-import { getUserInfo, removeStoredUser } from "@/utils/auth-storage";
+import { getUserInfo } from "@/utils/auth-storage";
 import {
   getStoredBranches,
   setStoredBranches,
@@ -10,7 +10,7 @@ import {
   clearAllBranchScoped,
 } from "@/utils/branch-storage";
 import { useBranchListQuery } from "@/hooks/useBranchQueries";
-import { FaBuilding, FaStar, FaSignOutAlt, FaCheck } from "react-icons/fa";
+import { FaBuilding, FaStar, FaCheck } from "react-icons/fa";
 
 interface BranchSelectModalProps {
   onSelected?: (branchId: number) => void;
@@ -63,11 +63,6 @@ export const BranchSelectModal: React.FC<BranchSelectModalProps> = ({ onSelected
     } else {
       switchBranch(branchId);
     }
-  };
-
-  const handleLogout = () => {
-    removeStoredUser();
-    window.location.href = "/login";
   };
 
   return (
@@ -147,21 +142,6 @@ export const BranchSelectModal: React.FC<BranchSelectModalProps> = ({ onSelected
               );
             })
           )}
-        </div>
-
-        {/* Modal Footer */}
-        <div className="p-3 bg-gray-50 dark:bg-gray-900/60 border-t border-gray-200 dark:border-gray-700 flex items-center justify-between gap-3">
-          <span className="text-[11px] text-gray-500 dark:text-gray-400">
-            A branch selection is required to proceed.
-          </span>
-          <button
-            type="button"
-            onClick={handleLogout}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-red-200 dark:border-red-900/60 bg-red-50 dark:bg-red-950/40 text-red-600 dark:text-red-400 text-xs font-semibold hover:bg-red-100 dark:hover:bg-red-900/60 transition-colors cursor-pointer"
-          >
-            <FaSignOutAlt className="text-xs" />
-            <span>Sign Out</span>
-          </button>
         </div>
       </div>
     </div>
