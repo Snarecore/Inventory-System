@@ -134,6 +134,11 @@ export const AddBranch: React.FC = () => {
         ...INITIAL_FORM,
         ...passed,
         openingBalance: String(passed.openingBalance ?? 0),
+        categoryCopy: false,
+        productCopy: false,
+        partyCopy: false,
+        bankCopy: false,
+        mfsCopy: false,
         copybranchId: "",
       };
     }
@@ -152,6 +157,12 @@ export const AddBranch: React.FC = () => {
           ...INITIAL_FORM,
           ...found,
           openingBalance: String(found.openingBalance ?? 0),
+          categoryCopy: false,
+          productCopy: false,
+          partyCopy: false,
+          bankCopy: false,
+          mfsCopy: false,
+          copybranchId: "",
         });
       }
     }
@@ -193,7 +204,7 @@ export const AddBranch: React.FC = () => {
   const validate = (): boolean => {
     const errs: Record<string, string> = {};
     if (!form.name.trim()) errs.name = "Branch name is required";
-    if (!isEdit && wantsCopy && !form.copybranchId) {
+    if (wantsCopy && !form.copybranchId) {
       errs.copybranchId = "Please choose a branch to copy data from";
     }
     setErrors(errs);
@@ -221,6 +232,12 @@ export const AddBranch: React.FC = () => {
           openingBalance: Number(form.openingBalance || 0),
           openingDate: form.openingDate,
           active: form.active,
+          categoryCopy: form.categoryCopy,
+          productCopy: form.productCopy,
+          partyCopy: form.partyCopy,
+          bankCopy: form.bankCopy,
+          mfsCopy: form.mfsCopy,
+          copybranchId: wantsCopy ? form.copybranchId : undefined,
         },
         {
           onSuccess: () => navigate("/admin/branches"),
@@ -336,100 +353,100 @@ export const AddBranch: React.FC = () => {
           </div>
         </div>
 
-        {/* Card 2: Initial Data Cloning (Create mode only) */}
-        {!isEdit && (
-          <div className="bg-white dark:bg-gray-800 p-3.5 sm:p-4 rounded-xl border border-gray-200 dark:border-gray-700 shadow-xs flex flex-col gap-3.5">
-            <div className="border-b border-gray-100 dark:border-gray-700 pb-2 flex items-center justify-between">
-              <h2 className="text-xs sm:text-sm font-bold text-gray-800 dark:text-gray-100 flex items-center gap-2">
-                <FaCopy className="text-[var(--primary-color,#009fe3)]" size={14} />
-                <span>Start from an Existing Branch (Optional)</span>
-              </h2>
-              <span className="text-[11px] text-gray-400">
-                Clones setup data once upon creation
-              </span>
-            </div>
-
-            <p className="text-xs text-gray-500 dark:text-gray-400 -mt-1 leading-relaxed">
-              A new branch starts empty. Select what data you would like to copy over from an existing active branch:
-            </p>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-3">
-              {COPY_OPTIONS.map((item) => {
-                const on = Boolean(form[item.key]);
-                const Icon = item.icon;
-                return (
-                  <label
-                    key={item.key}
-                    className={`group relative flex flex-col justify-between p-3.5 rounded-xl border-2 cursor-pointer transition-all duration-200 select-none ${
-                      on
-                        ? `${item.accent.border} ${item.accent.bg} shadow-xs scale-[1.01]`
-                        : `border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800/80 ${item.accent.hoverBorder} hover:shadow-xs`
-                    }`}
-                  >
-                    <div>
-                      {/* Icon & Checkbox Header */}
-                      <div className="flex items-center justify-between mb-2.5">
-                        <div
-                          className={`w-9 h-9 rounded-lg flex items-center justify-center transition-all duration-200 ${item.accent.icon} ${
-                            on ? "shadow-xs scale-105" : "group-hover:scale-105"
-                          }`}
-                        >
-                          <Icon size={16} />
-                        </div>
-                        <input
-                          type="checkbox"
-                          checked={on}
-                          onChange={(e) => setField(item.key, e.target.checked)}
-                          className={`w-4 h-4 rounded cursor-pointer transition-colors ${item.accent.checkbox}`}
-                        />
-                      </div>
-
-                      {/* Content */}
-                      <span className="block text-xs font-bold text-gray-800 dark:text-gray-100 leading-snug">
-                        {item.label}
-                      </span>
-                      <span className="block text-[11px] text-gray-500 dark:text-gray-400 mt-1 leading-normal line-clamp-2">
-                        {item.hint}
-                      </span>
-                    </div>
-
-                    {/* Bottom Status Badge */}
-                    <div className="pt-2.5 mt-2.5 border-t border-gray-100 dark:border-gray-700/60 flex items-center justify-between">
-                      <span className="text-[10px] text-gray-400 dark:text-gray-500 font-medium">
-                        Clone data
-                      </span>
-                      {on ? (
-                        <span
-                          className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${item.accent.badge}`}
-                        >
-                          ✓ Selected
-                        </span>
-                      ) : (
-                        <span className="text-[10px] font-medium text-gray-400 dark:text-gray-500 px-1.5 py-0.5 rounded bg-gray-100 dark:bg-gray-700/40">
-                          Skip
-                        </span>
-                      )}
-                    </div>
-                  </label>
-                );
-              })}
-            </div>
-
-            {wantsCopy && (
-              <div className="max-w-md pt-1.5">
-                <SelectInput
-                  label="Copy From Branch"
-                  required
-                  value={selectedSourceOption}
-                  options={copySourceOptions}
-                  onChange={(opt) => setField("copybranchId", opt.value)}
-                  placeholder="-- Choose active branch to copy from --"
-                  error={errors.copybranchId}
-                />
-              </div>
-            )}
+        {/* Card 2: Initial Data Cloning / Copy Options */}
+        <div className="bg-white dark:bg-gray-800 p-3.5 sm:p-4 rounded-xl border border-gray-200 dark:border-gray-700 shadow-xs flex flex-col gap-3.5">
+          <div className="border-b border-gray-100 dark:border-gray-700 pb-2 flex items-center justify-between">
+            <h2 className="text-xs sm:text-sm font-bold text-gray-800 dark:text-gray-100 flex items-center gap-2">
+              <FaCopy className="text-[var(--primary-color,#009fe3)]" size={14} />
+              <span>{isEdit ? "Copy Data from Another Branch (Optional)" : "Start from an Existing Branch (Optional)"}</span>
+            </h2>
+            <span className="text-[11px] text-gray-400">
+              {isEdit ? "Import setup data into this branch" : "Clones setup data once upon creation"}
+            </span>
           </div>
-        )}
+
+          <p className="text-xs text-gray-500 dark:text-gray-400 -mt-1 leading-relaxed">
+            {isEdit
+              ? "Select what data you would like to copy into this branch from an active branch:"
+              : "A new branch starts empty. Select what data you would like to copy over from an existing active branch:"}
+          </p>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-3">
+            {COPY_OPTIONS.map((item) => {
+              const on = Boolean(form[item.key]);
+              const Icon = item.icon;
+              return (
+                <label
+                  key={item.key}
+                  className={`group relative flex flex-col justify-between p-3.5 rounded-xl border-2 cursor-pointer transition-all duration-200 select-none ${
+                    on
+                      ? `${item.accent.border} ${item.accent.bg} shadow-xs scale-[1.01]`
+                      : `border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800/80 ${item.accent.hoverBorder} hover:shadow-xs`
+                  }`}
+                >
+                  <div>
+                    {/* Icon & Checkbox Header */}
+                    <div className="flex items-center justify-between mb-2.5">
+                      <div
+                        className={`w-9 h-9 rounded-lg flex items-center justify-center transition-all duration-200 ${item.accent.icon} ${
+                          on ? "shadow-xs scale-105" : "group-hover:scale-105"
+                        }`}
+                      >
+                        <Icon size={16} />
+                      </div>
+                      <input
+                        type="checkbox"
+                        checked={on}
+                        onChange={(e) => setField(item.key, e.target.checked)}
+                        className={`w-4 h-4 rounded cursor-pointer transition-colors ${item.accent.checkbox}`}
+                      />
+                    </div>
+
+                    {/* Content */}
+                    <span className="block text-xs font-bold text-gray-800 dark:text-gray-100 leading-snug">
+                      {item.label}
+                    </span>
+                    <span className="block text-[11px] text-gray-500 dark:text-gray-400 mt-1 leading-normal line-clamp-2">
+                      {item.hint}
+                    </span>
+                  </div>
+
+                  {/* Bottom Status Badge */}
+                  <div className="pt-2.5 mt-2.5 border-t border-gray-100 dark:border-gray-700/60 flex items-center justify-between">
+                    <span className="text-[10px] text-gray-400 dark:text-gray-500 font-medium">
+                      Clone data
+                    </span>
+                    {on ? (
+                      <span
+                        className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${item.accent.badge}`}
+                      >
+                        ✓ Selected
+                      </span>
+                    ) : (
+                      <span className="text-[10px] font-medium text-gray-400 dark:text-gray-500 px-1.5 py-0.5 rounded bg-gray-100 dark:bg-gray-700/40">
+                        Skip
+                      </span>
+                    )}
+                  </div>
+                </label>
+              );
+            })}
+          </div>
+
+          {wantsCopy && (
+            <div className="max-w-md pt-1.5">
+              <SelectInput
+                label="Copy From Branch"
+                required
+                value={selectedSourceOption}
+                options={copySourceOptions}
+                onChange={(opt) => setField("copybranchId", opt.value)}
+                placeholder="-- Choose active branch to copy from --"
+                error={errors.copybranchId}
+              />
+            </div>
+          )}
+        </div>
 
         {/* Card 3: Branch Status (Edit mode only) */}
         {isEdit && (

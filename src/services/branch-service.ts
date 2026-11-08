@@ -103,6 +103,9 @@ export async function updateBranch(form: Partial<BranchItem> & { id: number; org
   if (!branchId) throw new Error("Branch ID is required for update");
 
   const orgId = toId(form.orgId ?? accessUser.orgId) || Number(accessUser.orgId);
+  const wantsCopy = Boolean(
+    form.categoryCopy || form.productCopy || form.partyCopy || form.bankCopy || form.mfsCopy
+  );
 
   const body = {
     accessUser,
@@ -116,6 +119,14 @@ export async function updateBranch(form: Partial<BranchItem> & { id: number; org
     openingBalance: Number(form.openingBalance || 0),
     openingDate: form.openingDate || "",
     active: form.active !== false,
+    ...(wantsCopy && {
+      categoryCopy: Boolean(form.categoryCopy),
+      productCopy: Boolean(form.productCopy),
+      partyCopy: Boolean(form.partyCopy),
+      bankCopy: Boolean(form.bankCopy),
+      mfsCopy: Boolean(form.mfsCopy),
+      copybranchId: toId(form.copybranchId ?? (form as any).copyBranchId),
+    }),
   };
 
   const res = (await postData<any>({

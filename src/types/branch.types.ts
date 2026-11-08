@@ -17,6 +17,7 @@ export interface BranchItem {
   partyCopy?: boolean;
   bankCopy?: boolean;
   mfsCopy?: boolean;
+  copybranchId?: number | string | null;
   copyBranchId?: number | null;
   primary?: boolean;
 }
@@ -56,6 +57,12 @@ export interface BranchUpdatePayload {
   openingBalance: number;
   openingDate: string;
   active: boolean;
+  categoryCopy?: boolean;
+  productCopy?: boolean;
+  partyCopy?: boolean;
+  bankCopy?: boolean;
+  mfsCopy?: boolean;
+  copybranchId?: number | null;
 }
 
 export interface BranchFormData {
