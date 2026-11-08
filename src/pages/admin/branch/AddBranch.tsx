@@ -365,12 +365,6 @@ export const AddBranch: React.FC = () => {
             </span>
           </div>
 
-          <p className="text-xs text-gray-500 dark:text-gray-400 -mt-1 leading-relaxed">
-            {isEdit
-              ? "Select what data you would like to copy into this branch from an active branch:"
-              : "A new branch starts empty. Select what data you would like to copy over from an existing active branch:"}
-          </p>
-
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-2 sm:gap-2.5">
             {COPY_OPTIONS.map((item) => {
               const on = Boolean(form[item.key]);
@@ -450,13 +444,11 @@ export const AddBranch: React.FC = () => {
 
         {/* Card 3: Branch Status (Edit mode only) */}
         {isEdit && (
-          <div className="bg-white dark:bg-gray-800 p-3.5 sm:p-4 rounded-xl border border-gray-200 dark:border-gray-700 shadow-xs flex flex-col gap-3.5">
-            <div className="border-b border-gray-100 dark:border-gray-700 pb-2 flex items-center justify-between">
-              <h2 className="text-xs sm:text-sm font-bold text-gray-800 dark:text-gray-100 flex items-center gap-2">
-                <FaPowerOff className="text-[var(--primary-color,#009fe3)]" size={14} />
-                <span>Branch Lifecycle Status</span>
-              </h2>
-            </div>
+          <div className="bg-white dark:bg-gray-800 p-3 sm:p-3.5 rounded-xl border border-gray-200 dark:border-gray-700 shadow-xs flex flex-col gap-2.5">
+            <h2 className="text-xs sm:text-sm font-bold text-gray-800 dark:text-gray-100 flex items-center gap-2">
+              <FaPowerOff className="text-[var(--primary-color,#009fe3)]" size={13} />
+              <span>Branch Lifecycle Status</span>
+            </h2>
 
             <div
               className={`flex items-center justify-between p-3.5 rounded-xl border transition-all ${
