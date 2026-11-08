@@ -354,10 +354,10 @@ export const AddBranch: React.FC = () => {
         </div>
 
         {/* Card 2: Initial Data Cloning / Copy Options */}
-        <div className="bg-white dark:bg-gray-800 p-3.5 sm:p-4 rounded-xl border border-gray-200 dark:border-gray-700 shadow-xs flex flex-col gap-3.5">
-          <div className="border-b border-gray-100 dark:border-gray-700 pb-2 flex items-center justify-between">
+        <div className="bg-white dark:bg-gray-800 p-3 sm:p-3.5 rounded-xl border border-gray-200 dark:border-gray-700 shadow-xs flex flex-col gap-2.5">
+          <div className="border-b border-gray-100 dark:border-gray-700 pb-1.5 flex items-center justify-between">
             <h2 className="text-xs sm:text-sm font-bold text-gray-800 dark:text-gray-100 flex items-center gap-2">
-              <FaCopy className="text-[var(--primary-color,#009fe3)]" size={14} />
+              <FaCopy className="text-[var(--primary-color,#009fe3)]" size={13} />
               <span>{isEdit ? "Copy Data from Another Branch (Optional)" : "Start from an Existing Branch (Optional)"}</span>
             </h2>
             <span className="text-[11px] text-gray-400">
@@ -371,14 +371,14 @@ export const AddBranch: React.FC = () => {
               : "A new branch starts empty. Select what data you would like to copy over from an existing active branch:"}
           </p>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-2 sm:gap-2.5">
             {COPY_OPTIONS.map((item) => {
               const on = Boolean(form[item.key]);
               const Icon = item.icon;
               return (
                 <label
                   key={item.key}
-                  className={`group relative flex flex-col justify-between p-3.5 rounded-xl border-2 cursor-pointer transition-all duration-200 select-none ${
+                  className={`group relative flex flex-col justify-between p-2.5 rounded-lg border cursor-pointer transition-all duration-200 select-none ${
                     on
                       ? `${item.accent.border} ${item.accent.bg} shadow-xs scale-[1.01]`
                       : `border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800/80 ${item.accent.hoverBorder} hover:shadow-xs`
@@ -386,19 +386,19 @@ export const AddBranch: React.FC = () => {
                 >
                   <div>
                     {/* Icon & Checkbox Header */}
-                    <div className="flex items-center justify-between mb-2.5">
+                    <div className="flex items-center justify-between mb-1.5">
                       <div
-                        className={`w-9 h-9 rounded-lg flex items-center justify-center transition-all duration-200 ${item.accent.icon} ${
-                          on ? "shadow-xs scale-105" : "group-hover:scale-105"
+                        className={`w-7 h-7 rounded-md flex items-center justify-center transition-all duration-200 ${item.accent.icon} ${
+                          on ? "scale-105" : "group-hover:scale-105"
                         }`}
                       >
-                        <Icon size={16} />
+                        <Icon size={13} />
                       </div>
                       <input
                         type="checkbox"
                         checked={on}
                         onChange={(e) => setField(item.key, e.target.checked)}
-                        className={`w-4 h-4 rounded cursor-pointer transition-colors ${item.accent.checkbox}`}
+                        className={`w-3.5 h-3.5 rounded cursor-pointer transition-colors ${item.accent.checkbox}`}
                       />
                     </div>
 
@@ -406,24 +406,24 @@ export const AddBranch: React.FC = () => {
                     <span className="block text-xs font-bold text-gray-800 dark:text-gray-100 leading-snug">
                       {item.label}
                     </span>
-                    <span className="block text-[11px] text-gray-500 dark:text-gray-400 mt-1 leading-normal line-clamp-2">
+                    <span className="block text-[11px] text-gray-500 dark:text-gray-400 mt-0.5 leading-snug line-clamp-2">
                       {item.hint}
                     </span>
                   </div>
 
                   {/* Bottom Status Badge */}
-                  <div className="pt-2.5 mt-2.5 border-t border-gray-100 dark:border-gray-700/60 flex items-center justify-between">
+                  <div className="pt-1.5 mt-1.5 border-t border-gray-100 dark:border-gray-700/60 flex items-center justify-between">
                     <span className="text-[10px] text-gray-400 dark:text-gray-500 font-medium">
                       Clone data
                     </span>
                     {on ? (
                       <span
-                        className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${item.accent.badge}`}
+                        className={`text-[9.5px] font-bold px-1.5 py-0.5 rounded ${item.accent.badge}`}
                       >
                         ✓ Selected
                       </span>
                     ) : (
-                      <span className="text-[10px] font-medium text-gray-400 dark:text-gray-500 px-1.5 py-0.5 rounded bg-gray-100 dark:bg-gray-700/40">
+                      <span className="text-[9.5px] font-medium text-gray-400 dark:text-gray-500 px-1 py-0.5 rounded bg-gray-100 dark:bg-gray-700/40">
                         Skip
                       </span>
                     )}
@@ -434,7 +434,7 @@ export const AddBranch: React.FC = () => {
           </div>
 
           {wantsCopy && (
-            <div className="max-w-md pt-1.5">
+            <div className="max-w-md pt-1">
               <SelectInput
                 label="Copy From Branch"
                 required
