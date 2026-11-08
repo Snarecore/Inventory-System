@@ -396,10 +396,7 @@ export default function EmployeeEntryPage() {
                 <span className="flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-lg bg-[var(--primary-color-light)] text-[var(--primary-color)] text-xs sm:text-sm shrink-0">
                   <FaIdBadge aria-hidden="true" />
                 </span>
-                <div>
-                  <h2 className="text-xs sm:text-sm font-bold text-[var(--ui-text)]">Professional information</h2>
-                  <p className="text-[11px] text-[var(--ui-text-muted)]">Role, designation, and employment details</p>
-                </div>
+                <h2 className="text-xs sm:text-sm font-bold text-[var(--ui-text)]">Professional information</h2>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5 sm:gap-3">
@@ -518,10 +515,7 @@ export default function EmployeeEntryPage() {
                 <span className="flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-lg bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 text-xs sm:text-sm shrink-0">
                   <FaPhoneAlt aria-hidden="true" />
                 </span>
-                <div>
-                  <h2 className="text-xs sm:text-sm font-bold text-[var(--ui-text)]">Contact & address information</h2>
-                  <p className="text-[11px] text-[var(--ui-text-muted)]">Personal contact details and residential address</p>
-                </div>
+                <h2 className="text-xs sm:text-sm font-bold text-[var(--ui-text)]">Contact & address information</h2>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5 sm:gap-3">
@@ -604,12 +598,7 @@ export default function EmployeeEntryPage() {
                   <span className="flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-lg bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 text-xs sm:text-sm shrink-0">
                     <FaMobileAlt aria-hidden="true" />
                   </span>
-                  <div>
-                    <h2 className="text-xs sm:text-sm font-bold text-[var(--ui-text)]">Cash-Boi App Access</h2>
-                    <p className="text-[11px] text-[var(--ui-text-muted)]">
-                      Enable mobile application login access for this employee
-                    </p>
-                  </div>
+                  <h2 className="text-xs sm:text-sm font-bold text-[var(--ui-text)]">Cash-Boi App Access</h2>
                 </div>
 
                 <label className="flex items-center gap-2 cursor-pointer select-none">
@@ -674,10 +663,7 @@ export default function EmployeeEntryPage() {
                 <span className="flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-lg bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 text-xs sm:text-sm shrink-0">
                   <FaMoneyBillWave aria-hidden="true" />
                 </span>
-                <div>
-                  <h2 className="text-xs sm:text-sm font-bold text-[var(--ui-text)]">Payroll & bank details</h2>
-                  <p className="text-[11px] text-[var(--ui-text-muted)]">Salary, currency, frequency and banking information</p>
-                </div>
+                <h2 className="text-xs sm:text-sm font-bold text-[var(--ui-text)]">Payroll & bank details</h2>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5 sm:gap-3">
@@ -736,10 +722,7 @@ export default function EmployeeEntryPage() {
                 <span className="flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-lg bg-purple-50 dark:bg-purple-950/40 text-purple-600 dark:text-purple-400 text-xs sm:text-sm shrink-0">
                   <FaShieldAlt aria-hidden="true" />
                 </span>
-                <div>
-                  <h2 className="text-xs sm:text-sm font-bold text-[var(--ui-text)]">Emergency contact & notes</h2>
-                  <p className="text-[11px] text-[var(--ui-text-muted)]">Emergency contact person and administrative notes</p>
-                </div>
+                <h2 className="text-xs sm:text-sm font-bold text-[var(--ui-text)]">Emergency contact & notes</h2>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5 sm:gap-3">
