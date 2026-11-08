@@ -78,22 +78,24 @@ export const BranchSelectModal: React.FC<BranchSelectModalProps> = ({ onSelected
     >
       <div className="w-full max-w-md max-h-[90vh] flex flex-col bg-white dark:bg-gray-800 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 overflow-hidden animate-in fade-in zoom-in-95 duration-150">
         {/* Modal Header */}
-        <div className="p-5 bg-gradient-to-r from-slate-900 to-slate-800 text-white">
+        <div
+          className="p-4 sm:p-5 text-white shadow-xs"
+          style={{ backgroundColor: "var(--primary-color, #009fe3)" }}
+        >
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-white/10 flex items-center justify-center text-base">
+            <div className="w-10 h-10 rounded-xl bg-white/20 backdrop-blur-xs flex items-center justify-center text-lg text-white shadow-2xs shrink-0">
               <FaBuilding />
             </div>
-            <div>
-              <h2 className="text-base font-bold leading-tight">Select Active Branch</h2>
-              <p className="text-xs text-white/70 mt-0.5">
+            <div className="min-w-0">
+              <h2 className="text-base font-bold leading-tight text-white truncate">
+                Select Active Branch
+              </h2>
+              <p className="text-xs text-white/90 mt-0.5 truncate">
                 {userInfo?.businessName || "Your Organization"}
                 {isLoading ? " · checking branches..." : ` · ${branches.length} active locations`}
               </p>
             </div>
           </div>
-          <p className="text-xs text-white/80 mt-3 leading-relaxed">
-            Please choose the branch you are working in. All entries, transactions, and reports will be scoped to this branch. You can switch branches anytime from the top bar.
-          </p>
         </div>
 
         {/* Modal List */}
