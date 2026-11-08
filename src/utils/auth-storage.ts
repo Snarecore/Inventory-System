@@ -123,6 +123,8 @@ export function saveLoginSession(data: LoginSuccessResponse, rememberMe = true):
 
     const orgId = data.organizationId;
     const branchId = data.branchId;
+    const branchType = data.branchType || (data as any)?.branch_type || "";
+    const branches = Array.isArray(data.branches) ? data.branches : [];
     const businessCode = String(
         data.businessCode || data.business_code || (data as any)?.businessCode || (data as any)?.business_code || ""
     ).trim();
@@ -137,6 +139,8 @@ export function saveLoginSession(data: LoginSuccessResponse, rememberMe = true):
         userRole: data.userRole || "ADMIN",
         orgId: orgId,
         branchId: branchId,
+        branchType: branchType,
+        branches: branches,
     };
 
     setUserInfo(userInfo, rememberMe);
@@ -165,6 +169,7 @@ export function removeStoredUser(): void {
             STORAGE_KEY_ACTIVE_BRANCH,
             STORAGE_KEY_SESSION_EXPIRES_AT,
             STORAGE_KEY_LAST_ACTIVITY,
+            "branch_choice_made",
             "token",
             "phone",
             "businessCode",

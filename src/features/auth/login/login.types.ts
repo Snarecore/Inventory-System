@@ -21,6 +21,8 @@ export interface LoginSuccessResponse {
   userRole?: string;
   organizationId?: number;
   branchId?: number;
+  branchType?: string;
+  branches?: any[];
 }
 
 export interface LoginErrorResponse {
@@ -44,4 +46,6 @@ export interface UserInfo {
   userRole?: string;
   orgId?: number;
   branchId?: number;
+  branchType?: string;
+  branches?: any[];
 }

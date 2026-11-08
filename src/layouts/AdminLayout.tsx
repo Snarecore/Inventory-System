@@ -4,14 +4,18 @@ import Footer from "@/components/admin/Footer";
 import { useState } from "react";
 import { MdKeyboardDoubleArrowLeft, MdKeyboardDoubleArrowRight } from "react-icons/md";
 import { Outlet } from "react-router-dom";
+import BranchSelectModal from "@/components/admin/BranchSelectModal";
+import { isBranchChoicePending } from "@/utils/branch-storage";
 
 export default function AdminLayout() {
 	const [sidebarClick, setSidebarClick] = useState(false);
+	const isPending = isBranchChoicePending();
 
 	const handleSidebarClick = () => setSidebarClick((v) => !v);
 
 	return (
 		<div className="relative flex h-screen overflow-hidden">
+			{isPending && <BranchSelectModal />}
 			<button
 				onClick={handleSidebarClick}
 				aria-label={sidebarClick ? "Expand sidebar" : "Collapse sidebar"}

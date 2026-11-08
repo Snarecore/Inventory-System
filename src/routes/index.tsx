@@ -56,6 +56,8 @@ const StockAdjustmentPage = React.lazy(() => import('@/pages/admin/inventory/sto
 const CashClosingPage = React.lazy(() => import('@/pages/admin/finance/cash-closing'))
 const OpeningCashBalancePage = React.lazy(() => import('@/pages/admin/finance/opening-cash-balance'))
 const PackagesPage = React.lazy(() => import('@/pages/admin/packages'))
+const BranchList = React.lazy(() => import('@/pages/admin/branch/BranchList'))
+const AddBranch = React.lazy(() => import('@/pages/admin/branch/AddBranch'))
 
 
 const withSuspense = (Component: React.ComponentType) => (
@@ -120,6 +122,14 @@ export const router = createBrowserRouter([
   {
     path: '/packages',
     element: <Navigate to="/admin/packages" replace />,
+  },
+  {
+    path: '/branches',
+    element: <Navigate to="/admin/branches" replace />,
+  },
+  {
+    path: '/branches/add',
+    element: <Navigate to="/admin/branches/add" replace />,
   },
   {
     path: '/pricing',
@@ -690,6 +700,18 @@ export const router = createBrowserRouter([
       {
         path: 'company',
         element: withSuspense(Company),
+      },
+      {
+        path: 'branches',
+        element: withSuspense(BranchList),
+      },
+      {
+        path: 'branches/add',
+        element: withSuspense(AddBranch),
+      },
+      {
+        path: 'branches/edit/:id',
+        element: withSuspense(AddBranch),
       },
       {
         path: 'packages',

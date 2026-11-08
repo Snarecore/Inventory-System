@@ -306,6 +306,7 @@ export const menu = [
 				permissionKey: "settings.view",
 				subItems: [
 					{ id: 110, name: "Business Profile", path: "/admin/company", permissionKey: "settings.business_profile.view" },
+					{ id: 109, name: "Branch Management", path: "/admin/branches", permissionKey: "settings.view" },
 					{ id: 124, name: "Appearance", path: "/admin/settings/appearance", permissionKey: "settings.view" },
 					{ id: 126, name: "Subscription Packages", path: "/admin/packages", permissionKey: "settings.view" },
 					{ id: 118, name: "System Settings", path: "/settings/system", permissionKey: "settings.system.view" },

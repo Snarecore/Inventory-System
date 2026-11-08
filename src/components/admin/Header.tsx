@@ -24,6 +24,7 @@ import { getUserProfileImageUrl } from "@/services/user-profile-service";
 import { UserAvatar, Badge } from "@/components/common";
 import { useAppearance } from "@/theme";
 import logoImg from "@/assets/logo.jpeg";
+import BranchSwitcher from "@/components/admin/BranchSwitcher";
 
 const MenuItem = ({
     icon,
@@ -155,6 +156,7 @@ const Header = ({ sidebarClick }: { sidebarClick: boolean }) => {
                 </div>
 
                 <div className="flex items-center gap-2">
+                    <BranchSwitcher />
                     {/* Mobile Dark Mode Toggle Button */}
                     <button
                         type="button"
@@ -356,6 +358,7 @@ const Header = ({ sidebarClick }: { sidebarClick: boolean }) => {
             )}
 
             <div className="hidden lg:flex justify-end items-center gap-2.5 px-4 h-12 bg-white dark:bg-[var(--ui-surface)] border-b border-gray-200 dark:border-[var(--ui-border)] transition-colors">
+                <BranchSwitcher />
                 {/* Dark Mode / Light Mode Toggle Button */}
                 <button
                     type="button"

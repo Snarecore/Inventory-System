@@ -159,5 +159,10 @@
         "pricingUrl": "pricing",
         "userSubscriptionUrl": "user-subscription",
         "paymentInitiateUrl": "payment/initiate"
+    },
+    "branch": {
+        "getBranchListUrl": "get-branch-list",
+        "insertBranchUrl": "insert-branch",
+        "updateBranchUrl": "update-branch"
     }
 }

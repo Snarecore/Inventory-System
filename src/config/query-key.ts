@@ -63,3 +63,4 @@ export const cashClosingQueryKey = "get-cash-closing";
 export const cashClosingReportQueryKey = "get-cash-closing-report";
 export const pricingQueryKey = "packages-pricing";
 export const userSubscriptionQueryKey = "user-subscription";
+export const branchListQueryKey = "get-branch-list";
