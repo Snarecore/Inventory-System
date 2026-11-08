@@ -85,17 +85,9 @@ export function isMultiBranch(): boolean {
 
 export function isBranchChoicePending(): boolean {
   if (typeof window === "undefined") return false;
-
-  // If an active branch is already stored and valid, choice is NEVER pending!
-  const activeBranchId = getActiveBranchId();
-  if (activeBranchId && Number(activeBranchId) > 0) {
-    return false;
-  }
-
-  // If organization/user only has a single location, never block
-  if (!isMultiBranch()) return false;
-
-  const made = localStorage.getItem(STORAGE_KEY_BRANCH_CHOSEN) || sessionStorage.getItem(STORAGE_KEY_BRANCH_CHOSEN);
+  const made =
+    sessionStorage.getItem(STORAGE_KEY_BRANCH_CHOSEN) ||
+    localStorage.getItem(STORAGE_KEY_BRANCH_CHOSEN);
   return made !== "1";
 }
 

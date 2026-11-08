@@ -5,12 +5,18 @@ import { useState, useEffect } from "react";
 import { MdKeyboardDoubleArrowLeft, MdKeyboardDoubleArrowRight } from "react-icons/md";
 import { Outlet } from "react-router-dom";
 import BranchSelectModal from "@/components/admin/BranchSelectModal";
-import { isBranchChoicePending, isUserAdmin } from "@/utils/branch-storage";
+import {
+	isBranchChoicePending,
+	isUserAdmin,
+	setActiveBranchId,
+	markBranchChosen,
+	clearAllBranchScoped,
+} from "@/utils/branch-storage";
 import { syncCurrentEmployeePermissions } from "@/services/employee-service";
 
 export default function AdminLayout() {
 	const [sidebarClick, setSidebarClick] = useState(false);
-	const isPending = isBranchChoicePending();
+	const [isBranchModalOpen, setIsBranchModalOpen] = useState(() => isBranchChoicePending());
 
 	useEffect(() => {
 		if (!isUserAdmin()) {
@@ -18,11 +24,25 @@ export default function AdminLayout() {
 		}
 	}, []);
 
+	const handleBranchSelected = (branchId: number) => {
+		setActiveBranchId(branchId);
+		markBranchChosen();
+		clearAllBranchScoped();
+		setIsBranchModalOpen(false);
+
+		// Synchronize fresh branch permissions if non-admin employee
+		if (!isUserAdmin()) {
+			syncCurrentEmployeePermissions();
+		}
+	};
+
 	const handleSidebarClick = () => setSidebarClick((v) => !v);
 
 	return (
 		<div className="relative flex h-screen overflow-hidden">
-			{isPending && <BranchSelectModal />}
+			{isBranchModalOpen && (
+				<BranchSelectModal onSelected={handleBranchSelected} />
+			)}
 			<button
 				onClick={handleSidebarClick}
 				aria-label={sidebarClick ? "Expand sidebar" : "Collapse sidebar"}

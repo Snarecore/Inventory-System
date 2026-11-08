@@ -172,8 +172,11 @@ export function saveLoginSession(data: LoginSuccessResponse, rememberMe = true):
 
     if (effectiveBranchId !== undefined && !isNaN(effectiveBranchId) && effectiveBranchId > 0) {
         setActiveBranchId(effectiveBranchId, rememberMe);
-        storage.setItem("branch_choice_made", "1");
     }
+
+    // Reset branch_choice_made on fresh login so the user selects their active branch in the modal first
+    sessionStorage.removeItem("branch_choice_made");
+    localStorage.removeItem("branch_choice_made");
 
     const appUser: User = {
         id: String(numericUserId || data.phoneNumber),
