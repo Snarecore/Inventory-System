@@ -121,10 +121,21 @@ export function saveLoginSession(data: LoginSuccessResponse, rememberMe = true):
         setStoredToken(data.token, rememberMe);
     }
 
-    const orgId = data.organizationId;
+    const rawOrg =
+        data.organizationId ??
+        (data as any)?.orgId ??
+        (data as any)?.organization_id ??
+        (Array.isArray(data.branches) && data.branches.length > 0
+            ? data.branches[0].orgId ?? data.branches[0].organizationId
+            : undefined);
+    const orgId = rawOrg !== undefined && rawOrg !== null && !isNaN(Number(rawOrg)) ? Number(rawOrg) : undefined;
     const branchId = data.branchId;
     const branchType = data.branchType || (data as any)?.branch_type || "";
-    const branches = Array.isArray(data.branches) ? data.branches : [];
+    const rawBranches = Array.isArray(data.branches) ? data.branches : [];
+    const branches = rawBranches.map((b) => ({
+        ...b,
+        orgId: b.orgId || b.organizationId || orgId || 0,
+    }));
     const businessCode = String(
         data.businessCode || data.business_code || (data as any)?.businessCode || (data as any)?.business_code || ""
     ).trim();
@@ -154,6 +165,7 @@ export function saveLoginSession(data: LoginSuccessResponse, rememberMe = true):
         employeeId: employeeId,
         isEmployee: isEmployee,
         orgId: orgId,
+        organizationId: orgId,
         branchId: branchId,
         branchType: branchType,
         branches: branches,

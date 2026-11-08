@@ -16,10 +16,15 @@ export function buildAccessUser(): AccessUser {
 
     const phone = userInfo?.phone || userInfo?.phoneNumber || user?.id || user?.email || "";
     const businessCode = getBusinessCode();
-    const rawOrg = userInfo?.orgId ?? (userInfo as any)?.organizationId;
-    const orgId = rawOrg !== undefined && rawOrg !== null && !isNaN(Number(rawOrg)) ? Number(rawOrg) : 1;
+    const rawOrg =
+        userInfo?.orgId ??
+        (userInfo as any)?.organizationId ??
+        (Array.isArray(userInfo?.branches) && userInfo.branches.length > 0
+            ? userInfo.branches[0].orgId ?? userInfo.branches[0].organizationId
+            : undefined);
+    const orgId = rawOrg !== undefined && rawOrg !== null && !isNaN(Number(rawOrg)) ? Number(rawOrg) : 0;
     const rawBranch = activeBranchId ?? userInfo?.branchId;
-    const branchId = rawBranch !== undefined && rawBranch !== null && !isNaN(Number(rawBranch)) ? Number(rawBranch) : 1;
+    const branchId = rawBranch !== undefined && rawBranch !== null && !isNaN(Number(rawBranch)) ? Number(rawBranch) : 0;
 
     return {
         phone,

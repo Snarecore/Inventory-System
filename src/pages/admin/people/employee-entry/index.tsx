@@ -402,7 +402,7 @@ export default function EmployeeEntryPage() {
                   label="Full name *"
                   name="fullName"
                   value={values.fullName}
-                  placeholder="e.g. Sakib Al Amin"
+                  placeholder="e.g. Rahat Ahmed"
                   required
                   error={errors.fullName}
                   onChange={updateField("fullName")}
@@ -539,7 +539,7 @@ export default function EmployeeEntryPage() {
                   name="email"
                   type="email"
                   value={values.email}
-                  placeholder="sakib@example.com"
+                  placeholder="employee@example.com"
                   error={errors.email}
                   onChange={updateField("email")}
                 />

@@ -53,6 +53,7 @@ export interface UserInfo {
   employeeId?: number;
   isEmployee?: boolean;
   orgId?: number;
+  organizationId?: number;
   branchId?: number;
   branchType?: string;
   branches?: any[];

@@ -19,12 +19,13 @@ export function toId(value: unknown): number | null {
   return Number.isFinite(n) ? n : null;
 }
 
-export function normaliseBranch(b: any = {}): BranchItem {
+export function normaliseBranch(b: any = {}, fallbackOrgId?: number): BranchItem {
   const branchId = toId(b.id ?? b.branchId) || 0;
+  const orgId = toId(b.orgId ?? b.organizationId) || fallbackOrgId || 0;
   return {
     id: branchId,
     branchId: branchId,
-    orgId: toId(b.orgId ?? b.organizationId) || 0,
+    orgId: orgId,
     name: b.name || b.branchName || "",
     code: b.code || b.branchCode || "",
     address: b.address || "",
@@ -46,20 +47,47 @@ export function normaliseBranch(b: any = {}): BranchItem {
 export function getStoredBranches(): BranchItem[] {
   if (typeof window === "undefined") return [];
   const userInfo = getUserInfo();
+  const currentOrgId = toId(userInfo?.orgId ?? (userInfo as any)?.organizationId);
   const list = userInfo?.branches;
   if (!Array.isArray(list)) return [];
-  return list
-    .map(normaliseBranch)
-    .filter((b) => b.branchId !== 0);
+
+  const normalised = list
+    .map((b) => normaliseBranch(b, currentOrgId || undefined))
+    .filter((b) => {
+      if (b.branchId === 0) return false;
+      // Strict multi-tenant boundary: discard branches from other organizations (e.g. rogue Sakib orgId 1)
+      if (currentOrgId && currentOrgId > 0 && b.orgId && b.orgId !== currentOrgId) {
+        return false;
+      }
+      return true;
+    });
+
+  // Auto-cleanse localStorage if foreign or poisoned branch records were detected
+  if (currentOrgId && currentOrgId > 0 && list.length !== normalised.length) {
+    setStoredBranches(normalised);
+  }
+
+  return normalised;
 }
 
 export function setStoredBranches(branches: BranchItem[]): void {
   if (typeof window === "undefined") return;
   const userInfo = getUserInfo();
   if (!userInfo) return;
+  const currentOrgId = toId(userInfo.orgId ?? (userInfo as any).organizationId);
+
+  // Strict tenant boundary: never store branches belonging to a different tenant
+  const cleanBranches = branches.filter((b) => {
+    if (b.branchId === 0) return false;
+    if (currentOrgId && currentOrgId > 0 && b.orgId && b.orgId !== currentOrgId) {
+      return false;
+    }
+    return true;
+  });
+
   setUserInfo({
     ...userInfo,
-    branches,
+    branches: cleanBranches,
   });
 }
 

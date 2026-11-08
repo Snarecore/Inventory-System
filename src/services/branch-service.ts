@@ -16,10 +16,18 @@ import type {
 /**
  * 1. Fetch all branches for the organization using session accessUser.
  */
-export async function getBranchList(): Promise<BranchItem[]> {
+export async function getBranchList(explicitOrgId?: number): Promise<BranchItem[]> {
+  const accessUser = buildAccessUser();
+  const orgId = explicitOrgId ?? (Number(accessUser.orgId) || 0);
+
+  // If no valid orgId is present yet, never query backend with fallback 1; return current stored branches
+  if (!orgId || orgId <= 0) {
+    return getStoredBranches();
+  }
+
   const res = (await postData<BranchListResponse>({
     url: apiConfig.branch.getBranchListUrl,
-    body: { accessUser: buildAccessUser() },
+    body: { accessUser: { ...accessUser, orgId } },
   })) as any;
 
   if (res?.error || res?.status === "Error") {
@@ -32,7 +40,10 @@ export async function getBranchList(): Promise<BranchItem[]> {
     ? res
     : [];
 
-  const branches = rawList.map(normaliseBranch).filter((b) => b.branchId !== 0);
+  // Filter only branches belonging to this tenant and normalize
+  const branches = rawList
+    .map((b) => normaliseBranch(b, orgId))
+    .filter((b) => b.branchId !== 0 && (!b.orgId || b.orgId === orgId));
 
   // Auto-sync active branches into localStorage on every fetch
   const active = branches.filter((b) => b.active);

@@ -9,6 +9,8 @@ import {
 import type { BranchItem, BranchFormData } from "@/types/branch.types";
 import { showSuccessToast, showErrorToast } from "@/utils/toast-utils";
 
+import { buildAccessUser } from "@/utils/access-user";
+
 export interface BranchMutationCallbacks<TData = any, TVariables = any> {
   onSuccess?: (data: TData, variables: TVariables, context?: unknown) => void;
   onError?: (error: Error, variables: TVariables, context?: unknown) => void;
@@ -23,16 +25,32 @@ export interface BranchMutationCallbacks<TData = any, TVariables = any> {
 /**
  * Hook to fetch all branches for the organization.
  */
-export const useBranchListQuery = (
+export function useBranchListQuery(
   options?: Omit<UseQueryOptions<BranchItem[], Error>, "queryKey" | "queryFn">
-) => {
+): ReturnType<typeof useQuery<BranchItem[], Error>>;
+export function useBranchListQuery(
+  orgIdParam?: number | string,
+  options?: Omit<UseQueryOptions<BranchItem[], Error>, "queryKey" | "queryFn">
+): ReturnType<typeof useQuery<BranchItem[], Error>>;
+export function useBranchListQuery(
+  arg1?: number | string | Omit<UseQueryOptions<BranchItem[], Error>, "queryKey" | "queryFn">,
+  arg2?: Omit<UseQueryOptions<BranchItem[], Error>, "queryKey" | "queryFn">
+) {
+  const isArg1Options = typeof arg1 === "object" && arg1 !== null;
+  const orgIdParam = isArg1Options ? undefined : arg1;
+  const options = isArg1Options ? arg1 : arg2;
+
+  const accessUser = buildAccessUser();
+  const orgId = Number(orgIdParam ?? accessUser.orgId) || 0;
+
   return useQuery<BranchItem[], Error>({
-    queryKey: [branchListQueryKey],
-    queryFn: getBranchList,
+    queryKey: [branchListQueryKey, orgId],
+    queryFn: () => getBranchList(orgId),
+    enabled: (options?.enabled !== false) && orgId > 0,
     staleTime: 5 * 60 * 1000,
     ...options,
   });
-};
+}
 
 /**
  * Hook to insert a new branch.
