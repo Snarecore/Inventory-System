@@ -18,10 +18,87 @@ import {
   FaBuilding,
   FaCopy,
   FaPowerOff,
-  FaCheckCircle,
+  FaFolderOpen,
+  FaBoxOpen,
+  FaUserFriends,
+  FaUniversity,
+  FaMobileAlt,
 } from "react-icons/fa";
 
 const today = () => new Date().toISOString().slice(0, 10);
+
+const COPY_OPTIONS = [
+  {
+    key: "categoryCopy" as const,
+    label: "Copy Categories",
+    hint: "Income and expense financial categories",
+    icon: FaFolderOpen,
+    accent: {
+      border: "border-amber-400 dark:border-amber-500",
+      bg: "bg-amber-50/70 dark:bg-amber-950/30",
+      icon: "bg-amber-100 text-amber-600 dark:bg-amber-900/60 dark:text-amber-300",
+      badge: "bg-amber-100 text-amber-700 dark:bg-amber-950/80 dark:text-amber-300",
+      checkbox: "text-amber-600 focus:ring-amber-500",
+      hoverBorder: "hover:border-amber-300 dark:hover:border-amber-600",
+    },
+  },
+  {
+    key: "productCopy" as const,
+    label: "Copy Products",
+    hint: "Product catalogue with purchase & sales prices",
+    icon: FaBoxOpen,
+    accent: {
+      border: "border-sky-400 dark:border-sky-500",
+      bg: "bg-sky-50/70 dark:bg-sky-950/30",
+      icon: "bg-sky-100 text-sky-600 dark:bg-sky-900/60 dark:text-sky-300",
+      badge: "bg-sky-100 text-sky-700 dark:bg-sky-950/80 dark:text-sky-300",
+      checkbox: "text-sky-600 focus:ring-sky-500",
+      hoverBorder: "hover:border-sky-300 dark:hover:border-sky-600",
+    },
+  },
+  {
+    key: "partyCopy" as const,
+    label: "Copy Parties",
+    hint: "Registered customers and suppliers directory",
+    icon: FaUserFriends,
+    accent: {
+      border: "border-emerald-400 dark:border-emerald-500",
+      bg: "bg-emerald-50/70 dark:bg-emerald-950/30",
+      icon: "bg-emerald-100 text-emerald-600 dark:bg-emerald-900/60 dark:text-emerald-300",
+      badge: "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/80 dark:text-emerald-300",
+      checkbox: "text-emerald-600 focus:ring-emerald-500",
+      hoverBorder: "hover:border-emerald-300 dark:hover:border-emerald-600",
+    },
+  },
+  {
+    key: "bankCopy" as const,
+    label: "Copy Bank Accounts",
+    hint: "Registered bank accounts and details",
+    icon: FaUniversity,
+    accent: {
+      border: "border-indigo-400 dark:border-indigo-500",
+      bg: "bg-indigo-50/70 dark:bg-indigo-950/30",
+      icon: "bg-indigo-100 text-indigo-600 dark:bg-indigo-900/60 dark:text-indigo-300",
+      badge: "bg-indigo-100 text-indigo-700 dark:bg-indigo-950/80 dark:text-indigo-300",
+      checkbox: "text-indigo-600 focus:ring-indigo-500",
+      hoverBorder: "hover:border-indigo-300 dark:hover:border-indigo-600",
+    },
+  },
+  {
+    key: "mfsCopy" as const,
+    label: "Copy MFS Accounts",
+    hint: "Mobile banking wallets (bKash, Nagad, etc.)",
+    icon: FaMobileAlt,
+    accent: {
+      border: "border-pink-400 dark:border-pink-500",
+      bg: "bg-pink-50/70 dark:bg-pink-950/30",
+      icon: "bg-pink-100 text-pink-600 dark:bg-pink-900/60 dark:text-pink-300",
+      badge: "bg-pink-100 text-pink-700 dark:bg-pink-950/80 dark:text-pink-300",
+      checkbox: "text-pink-600 focus:ring-pink-500",
+      hoverBorder: "hover:border-pink-300 dark:hover:border-pink-600",
+    },
+  },
+];
 
 const INITIAL_FORM: BranchFormData = {
   name: "",
@@ -276,57 +353,62 @@ export const AddBranch: React.FC = () => {
               A new branch starts empty. Select what data you would like to copy over from an existing active branch:
             </p>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-2.5 sm:gap-3">
-              {[
-                {
-                  key: "categoryCopy" as const,
-                  label: "Copy Categories",
-                  hint: "Income and expense financial categories",
-                },
-                {
-                  key: "productCopy" as const,
-                  label: "Copy Products",
-                  hint: "The product catalogue, with its sales & purchase prices",
-                },
-                {
-                  key: "partyCopy" as const,
-                  label: "Copy Parties",
-                  hint: "Registered customers and suppliers directory",
-                },
-                {
-                  key: "bankCopy" as const,
-                  label: "Copy Bank Accounts",
-                  hint: "Registered bank accounts and details",
-                },
-                {
-                  key: "mfsCopy" as const,
-                  label: "Copy MFS Accounts",
-                  hint: "Mobile banking wallets (bKash, Nagad, etc.)",
-                },
-              ].map((item) => {
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-3">
+              {COPY_OPTIONS.map((item) => {
                 const on = Boolean(form[item.key]);
+                const Icon = item.icon;
                 return (
                   <label
                     key={item.key}
-                    className={`flex items-start gap-2.5 p-3 rounded-lg border cursor-pointer transition-all ${
+                    className={`group relative flex flex-col justify-between p-3.5 rounded-xl border-2 cursor-pointer transition-all duration-200 select-none ${
                       on
-                        ? "border-[var(--primary-color,#009fe3)] bg-blue-50/50 dark:bg-blue-950/30"
-                        : "border-gray-200 dark:border-gray-700 bg-gray-50/40 dark:bg-gray-900/30 hover:bg-gray-50 dark:hover:bg-gray-800"
+                        ? `${item.accent.border} ${item.accent.bg} shadow-xs scale-[1.01]`
+                        : `border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800/80 ${item.accent.hoverBorder} hover:shadow-xs`
                     }`}
                   >
-                    <input
-                      type="checkbox"
-                      checked={on}
-                      onChange={(e) => setField(item.key, e.target.checked)}
-                      className="mt-0.5 rounded text-[var(--primary-color,#009fe3)] focus:ring-[var(--primary-color,#009fe3)] cursor-pointer"
-                    />
                     <div>
-                      <span className="block text-xs font-bold text-gray-800 dark:text-gray-200">
+                      {/* Icon & Checkbox Header */}
+                      <div className="flex items-center justify-between mb-2.5">
+                        <div
+                          className={`w-9 h-9 rounded-lg flex items-center justify-center transition-all duration-200 ${item.accent.icon} ${
+                            on ? "shadow-xs scale-105" : "group-hover:scale-105"
+                          }`}
+                        >
+                          <Icon size={16} />
+                        </div>
+                        <input
+                          type="checkbox"
+                          checked={on}
+                          onChange={(e) => setField(item.key, e.target.checked)}
+                          className={`w-4 h-4 rounded cursor-pointer transition-colors ${item.accent.checkbox}`}
+                        />
+                      </div>
+
+                      {/* Content */}
+                      <span className="block text-xs font-bold text-gray-800 dark:text-gray-100 leading-snug">
                         {item.label}
                       </span>
-                      <span className="block text-[11px] text-gray-500 dark:text-gray-400 mt-0.5">
+                      <span className="block text-[11px] text-gray-500 dark:text-gray-400 mt-1 leading-normal line-clamp-2">
                         {item.hint}
                       </span>
+                    </div>
+
+                    {/* Bottom Status Badge */}
+                    <div className="pt-2.5 mt-2.5 border-t border-gray-100 dark:border-gray-700/60 flex items-center justify-between">
+                      <span className="text-[10px] text-gray-400 dark:text-gray-500 font-medium">
+                        Clone data
+                      </span>
+                      {on ? (
+                        <span
+                          className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${item.accent.badge}`}
+                        >
+                          ✓ Selected
+                        </span>
+                      ) : (
+                        <span className="text-[10px] font-medium text-gray-400 dark:text-gray-500 px-1.5 py-0.5 rounded bg-gray-100 dark:bg-gray-700/40">
+                          Skip
+                        </span>
+                      )}
                     </div>
                   </label>
                 );
