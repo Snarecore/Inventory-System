@@ -1,8 +1,9 @@
 import { useState, useEffect, type ChangeEvent, type FormEvent } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { FaBriefcase, FaIdBadge, FaPhoneAlt, FaMobileAlt, FaMoneyBillWave, FaShieldAlt, FaList } from "react-icons/fa";
+import { FaIdBadge, FaPhoneAlt, FaMobileAlt, FaMoneyBillWave, FaShieldAlt, FaList } from "react-icons/fa";
 import Button from "@/components/button/Button";
 import InputField from "@/components/form/TextInput";
+import DatePicker from "@/components/common/DatePicker";
 import PageHeader from "@/components/page-header/PageHeader";
 import { showErrorToast, showSuccessToast } from "@/utils/toast-utils";
 import { useInsertEmployeeMutation, useUpdateEmployeeMutation } from "@/hooks/useEmployeeQueries";
@@ -172,6 +173,13 @@ export default function EmployeeEntryPage() {
 
         return next;
       });
+      setErrors((current) => ({ ...current, [field]: undefined }));
+    };
+
+  const handleDateChange =
+    (field: keyof EmployeeFormValues) =>
+    (dateStr: string) => {
+      setValues((current) => ({ ...current, [field]: dateStr }));
       setErrors((current) => ({ ...current, [field]: undefined }));
     };
 
@@ -378,16 +386,6 @@ export default function EmployeeEntryPage() {
                 </div>
               </div>
             </section>
-
-            <div className="rounded-xl border border-[var(--primary-color-muted)] bg-[var(--primary-color-light)] p-3.5 shadow-2xs">
-              <div className="flex items-center gap-2 text-xs font-semibold text-[var(--primary-color-dark)]">
-                <FaBriefcase aria-hidden="true" />
-                Employee profile rules
-              </div>
-              <p className="mt-1.5 text-xs text-[var(--ui-text-muted)] leading-relaxed">
-                Required fields are marked with *. When App Access is enabled, login username automatically matches the employee's phone number with a 4-digit numeric PIN.
-              </p>
-            </div>
           </aside>
 
           {/* Right Form */}
@@ -470,28 +468,32 @@ export default function EmployeeEntryPage() {
                     <option value="Other">Other</option>
                   </select>
                 </div>
-                <InputField
+                <DatePicker
                   label="Date of joining"
-                  name="dateOfJoining"
-                  type="date"
                   value={values.dateOfJoining}
                   required
                   error={errors.dateOfJoining}
-                  onChange={updateField("dateOfJoining")}
+                  onChange={handleDateChange("dateOfJoining")}
+                  displayFormat="DD MMM, YYYY"
+                  placeholder="Select joining date"
+                  isClearable={false}
                 />
-                <InputField
+                <DatePicker
                   label="Date of birth"
-                  name="dateOfBirth"
-                  type="date"
                   value={values.dateOfBirth}
-                  onChange={updateField("dateOfBirth")}
+                  onChange={handleDateChange("dateOfBirth")}
+                  displayFormat="DD MMM, YYYY"
+                  placeholder="Select birth date"
+                  isClearable
                 />
-                <InputField
+                <DatePicker
                   label="Date of leaving"
-                  name="dateOfLeaving"
-                  type="date"
                   value={values.dateOfLeaving}
-                  onChange={updateField("dateOfLeaving")}
+                  onChange={handleDateChange("dateOfLeaving")}
+                  displayFormat="DD MMM, YYYY"
+                  placeholder="Select leaving date"
+                  align="right"
+                  isClearable
                 />
                 <InputField
                   label="Work location"
@@ -585,18 +587,13 @@ export default function EmployeeEntryPage() {
                   placeholder="e.g. 1207"
                   onChange={updateField("postalCode")}
                 />
-                <div className="ui-field col-span-1 sm:col-span-2 md:col-span-3">
-                  <label className="ui-label" htmlFor="address">Address</label>
-                  <textarea
-                    id="address"
-                    name="address"
-                    value={values.address}
-                    onChange={updateField("address")}
-                    rows={2}
-                    placeholder="e.g. Dhaka, Bangladesh"
-                    className={textareaClass}
-                  />
-                </div>
+                <InputField
+                  label="Address"
+                  name="address"
+                  value={values.address}
+                  placeholder="e.g. Dhaka, Bangladesh"
+                  onChange={updateField("address")}
+                />
               </div>
             </section>
 
