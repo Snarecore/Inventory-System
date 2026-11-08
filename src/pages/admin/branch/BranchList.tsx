@@ -235,30 +235,18 @@ export const BranchList: React.FC = () => {
 
                         {/* Branch Name */}
                         <TableCell>
-                          <div className="flex items-center gap-2.5">
-                            <div className="w-8 h-8 rounded-lg bg-[var(--primary-color-light,#e0f2fe)] text-[var(--primary-color,#009fe3)] flex items-center justify-center font-bold text-xs flex-shrink-0">
-                              {(item.name || "B").trim().charAt(0).toUpperCase()}
-                            </div>
-                            <div className="min-w-0">
-                              <div className="flex items-center gap-1.5 flex-wrap">
-                                <span className="font-bold text-xs text-gray-900 dark:text-gray-100 truncate">
-                                  {item.name || `Branch #${item.branchId}`}
-                                </span>
-                                {item.primary && (
-                                  <FaStar className="text-amber-400 text-[10px] flex-shrink-0" title="Primary Branch" />
-                                )}
-                                {isCurrent && (
-                                  <span className="px-1.5 py-0.2 rounded-full text-[9px] font-extrabold uppercase bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300">
-                                    Current
-                                  </span>
-                                )}
-                              </div>
-                              {item.copyBranchId ? (
-                                <span className="text-[10px] text-purple-600 dark:text-purple-400 flex items-center gap-1 mt-0.5">
-                                  <FaCopy className="text-[8px]" /> Cloned from #{item.copyBranchId}
-                                </span>
-                              ) : null}
-                            </div>
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <span className="font-bold text-xs text-gray-900 dark:text-gray-100">
+                              {item.name || `Branch #${item.branchId}`}
+                            </span>
+                            {item.primary && (
+                              <FaStar className="text-amber-400 text-[10px] flex-shrink-0" title="Primary Branch" />
+                            )}
+                            {isCurrent && (
+                              <span className="px-1.5 py-0.2 rounded-full text-[9px] font-extrabold uppercase bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300">
+                                Current
+                              </span>
+                            )}
                           </div>
                         </TableCell>
 
