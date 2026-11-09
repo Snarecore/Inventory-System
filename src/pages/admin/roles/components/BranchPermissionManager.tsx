@@ -500,13 +500,6 @@ export const BranchPermissionManager: React.FC<BranchPermissionManagerProps> = (
     setEditingPermissionId(null);
   };
 
-  if (!employee) {
-    return (
-      <div className="p-8 text-center text-xs text-gray-500 bg-white dark:bg-gray-800 rounded-xl border border-dashed border-gray-200 dark:border-gray-700">
-        Please select a staff member to view and manage role permissions.
-      </div>
-    );
-  }
 
   const assignedBranchIds = new Set(
     permissions.map((p: any) => Number(p.branchId || p.branch_id))
@@ -914,6 +907,14 @@ export const BranchPermissionManager: React.FC<BranchPermissionManagerProps> = (
       setCollapsedSections(next);
     }
   };
+
+  if (!employee) {
+    return (
+      <div className="p-8 text-center text-xs text-gray-500 bg-white dark:bg-gray-800 rounded-xl border border-dashed border-gray-200 dark:border-gray-700">
+        Please select a staff member to view and manage role permissions.
+      </div>
+    );
+  }
 
   return (
     <div className={`flex flex-col gap-3.5 text-xs ${isModal ? "py-1" : "w-full"}`}>

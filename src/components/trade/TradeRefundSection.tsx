@@ -19,6 +19,8 @@ export interface TradeRefundSectionProps {
   refundAmount?: number;
   origDueAmount?: number;
   title?: string;
+  paidLabel?: string;
+  dueLabel?: string;
   onRefundCashChange?: (v: string) => void;
   onRefundBankChange?: (v: string) => void;
   onRefundMfsChange?: (v: string) => void;
@@ -33,6 +35,8 @@ export const TradeRefundSection: React.FC<TradeRefundSectionProps> = ({
   registeredBankAccounts = [],
   registeredMfsAccounts = [],
   title = "Refund Settlement",
+  paidLabel = "Total Paid",
+  dueLabel = "Outstanding",
   ...flatProps
 }) => {
   const numRefundCash = Number(refund?.numRefundCash ?? flatProps.refundCash ?? 0);
@@ -284,56 +288,34 @@ export const TradeRefundSection: React.FC<TradeRefundSectionProps> = ({
       </div>
 
       {/* Financial Settlement Summary Ribbon */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 border-t border-[var(--ui-border)]/90 pt-1.5 items-center">
-        {/* Total Refunded Card with status badge */}
-        <div className="bg-[var(--ui-success-light)]/90 px-2.5 py-1 rounded-md border border-[var(--ui-success-border)]/90 flex items-center justify-between shadow-2xs">
-          <div className="flex items-center gap-1.5">
-            <span className="w-1.5 h-1.5 rounded-full bg-[var(--ui-success)] inline-block" />
-            <span className="text-[10.5px] font-bold text-[var(--ui-success-dark)] tracking-wide">
-              Total Refunded
-            </span>
-            <span className="text-[9.5px] font-semibold px-1 py-0.2 rounded bg-[var(--ui-success-border)] text-[var(--ui-success-dark)]">
-              {totalRefundAllocated >= refundAmount && refundAmount > 0
-                ? "SETTLED"
-                : totalRefundAllocated > 0
-                ? "PARTIAL"
-                : "UNALLOCATED"}
-            </span>
-          </div>
-          <span className="text-xs sm:text-[13px] font-extrabold text-[var(--ui-success-dark)]">
+      <div className="grid grid-cols-2 items-stretch gap-1.5 border-t border-[var(--ui-border)]/90 pt-1.5">
+        {/* Total Paid Card */}
+        <div className="bg-[var(--ui-success-light)]/90 px-2.5 py-1.5 rounded-[var(--ui-radius-sm)] border border-[var(--ui-success-border)]/90 flex flex-col justify-center shadow-[var(--ui-shadow-control)] min-h-[46px]">
+          <span className="text-[10.5px] font-semibold text-[var(--ui-success-dark)]/85 tracking-wide truncate">
+            {paidLabel}
+          </span>
+          <span className="text-xs sm:text-[13px] font-extrabold tabular-nums text-[var(--ui-success-dark)] truncate leading-tight mt-0.5 whitespace-nowrap">
             ৳ {formatMoney(totalRefundAllocated)}
           </span>
         </div>
 
-        {/* Remaining to Refund / Due Balance Card */}
+        {/* Outstanding Card */}
         <div
-          className={`px-2.5 py-1 rounded-md border flex items-center justify-between transition-colors shadow-2xs ${
+          className={`px-2.5 py-1.5 rounded-[var(--ui-radius-sm)] border flex flex-col justify-center transition-colors shadow-[var(--ui-shadow-control)] min-h-[46px] ${
             refundDifference > 0.01
               ? "bg-[var(--ui-danger-light)]/90 border-[var(--ui-danger-border)]/90"
               : "bg-[var(--ui-surface-muted)] border-[var(--ui-border)]"
           }`}
         >
-          <div className="flex items-center gap-1.5">
-            <span
-              className={`w-1.5 h-1.5 rounded-full inline-block ${
-                refundDifference > 0.01 ? "bg-[var(--ui-danger)]" : "bg-[var(--ui-text-subtle)]"
-              }`}
-            />
-            <span
-              className={`text-[10.5px] font-bold tracking-wide ${
-                refundDifference > 0.01 ? "text-[var(--ui-danger-dark)]" : "text-[var(--ui-text)]"
-              }`}
-            >
-              {refundDifference > 0.01 ? "Unallocated Balance" : "Due Balance"}
-            </span>
-            {refundDifference > 0.01 && (
-              <span className="text-[9.5px] font-semibold px-1 py-0.2 rounded bg-[var(--ui-danger-border)] text-[var(--ui-danger-dark)]">
-                PENDING
-              </span>
-            )}
-          </div>
           <span
-            className={`text-xs sm:text-[13px] font-extrabold ${
+            className={`text-[10.5px] font-semibold tracking-wide truncate ${
+              refundDifference > 0.01 ? "text-[var(--ui-danger-dark)]/85" : "text-[var(--ui-text-muted)]"
+            }`}
+          >
+            {dueLabel}
+          </span>
+          <span
+            className={`text-xs sm:text-[13px] font-extrabold tabular-nums truncate leading-tight mt-0.5 whitespace-nowrap ${
               refundDifference > 0.01 ? "text-[var(--ui-danger)]" : "text-[var(--ui-text)]"
             }`}
           >

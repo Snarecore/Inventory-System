@@ -85,15 +85,10 @@ export const TradeAddSettlementModal: React.FC<TradeAddSettlementModalProps> = (
 
   const {
     settlementDate,
-    setSettlementDate,
-    paymentMode,
-    setPaymentMode,
     remark,
     setRemark,
     isManualMode,
     selectedInvoiceNos,
-    selectedBankId,
-    selectedMfsId,
     selectedBankObj,
     selectedMfsObj,
     numericCash,
@@ -102,7 +97,6 @@ export const TradeAddSettlementModal: React.FC<TradeAddSettlementModalProps> = (
     numericTotalPaid,
     numericDiscount,
     totalSettleAmount,
-    effectiveMaxDue,
     finalPaymentMode,
     tenderBreakdown,
     allocations,
@@ -112,12 +106,6 @@ export const TradeAddSettlementModal: React.FC<TradeAddSettlementModalProps> = (
     handleToggleManualMode,
     isAllSelected,
     validateSettlement,
-    handleCashChange,
-    handleBankChange,
-    handleMfsChange,
-    handleDiscountChange,
-    handleSelectBank,
-    handleSelectMfs,
   } = settlement;
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -224,25 +212,8 @@ export const TradeAddSettlementModal: React.FC<TradeAddSettlementModalProps> = (
 
         {/* Multi-tender Payment Entry */}
         <MultiTenderFormSection
-          effectiveMaxDue={effectiveMaxDue}
-          settlementDate={settlementDate}
-          onDateChange={setSettlementDate}
-          paymentMode={paymentMode}
-          onPaymentModeChange={setPaymentMode}
-          numericCash={numericCash}
-          numericBank={numericBank}
-          numericMfs={numericMfs}
-          numericTotalPaid={numericTotalPaid}
-          numericDiscount={numericDiscount}
-          totalSettleAmount={totalSettleAmount}
-          selectedBankId={selectedBankId}
-          selectedMfsId={selectedMfsId}
-          onCashChange={handleCashChange}
-          onBankChange={handleBankChange}
-          onMfsChange={handleMfsChange}
-          onDiscountChange={handleDiscountChange}
-          onSelectBank={handleSelectBank}
-          onSelectMfs={handleSelectMfs}
+          settlement={settlement}
+          dateLabel="Date"
         />
 
         {/* Remark Note */}

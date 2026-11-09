@@ -6,7 +6,7 @@ import DatePicker from "@/components/common/DatePicker";
 import type { useMultiTenderSettlement } from "@/hooks/useMultiTenderSettlement";
 
 export interface MultiTenderFormSectionProps {
-  settlement: ReturnType<typeof useMultiTenderSettlement>;
+  settlement?: ReturnType<typeof useMultiTenderSettlement>;
   dateLabel?: string;
 }
 
@@ -14,6 +14,10 @@ export const MultiTenderFormSection: React.FC<MultiTenderFormSectionProps> = ({
   settlement,
   dateLabel = "Date",
 }) => {
+  if (!settlement) {
+    return null;
+  }
+
   const {
     currentAmountValue,
     handleAmountChange,
