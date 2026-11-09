@@ -310,9 +310,11 @@ export const menu = [
 				subItems: [
 					{ id: 110, name: "Business Profile", path: "/admin/company", permissionKey: "settings.business_profile.view" },
 					{ id: 109, name: "Branch Management", path: "/admin/branches", permissionKey: "settings.view" },
+					{ id: 125, name: "Role Management", path: "/admin/settings/roles", permissionKey: "settings.view" },
 					{ id: 124, name: "Appearance", path: "/admin/settings/appearance", permissionKey: "settings.view" },
-					{ id: 126, name: "Subscription Packages", path: "/admin/packages", permissionKey: "settings.view" },
-					{ id: 118, name: "System Settings", path: "/settings/system", permissionKey: "settings.system.view" },
+					{ id: 127, name: "Website CMS", title: "Website CMS", path: "/admin/home-page-cms", permissionKey: "settings.view" },
+					{ id: 126, name: "Subscription Packages", title: "Subscription Packages", path: "/admin/packages", permissionKey: "settings.view" },
+					{ id: 118, name: "System Settings", title: "System Settings", path: "/settings/system", permissionKey: "settings.system.view" },
 					{ id: 119, name: "Payment Methods", path: "/settings/payment-methods", permissionKey: "settings.payment_methods.view" },
 					{ id: 120, name: "Tax / VAT", path: "/settings/tax", permissionKey: "settings.tax.view" },
 					{ id: 121, name: "SMS Bundles", path: "/admin/settings/sms", permissionKey: "settings.sms.view" },

@@ -23,7 +23,6 @@ import { useEmployeeListQuery, useUpdateEmployeeMutation } from "@/hooks/useEmpl
 import type { EmployeeItem } from "@/types/employee.types";
 import { exportEmployeesToExcel } from "@/utils/excel-export";
 import { showSuccessToast, showErrorToast } from "@/utils/toast-utils";
-import BranchPermissionModal from "./components/BranchPermissionModal";
 import EmployeeDetailsModal from "./components/EmployeeDetailsModal";
 import {
   FaUserTie,
@@ -52,9 +51,6 @@ export const EmployeeList: React.FC = () => {
 
   // Selected employee for view details modal
   const [selectedEmployee, setSelectedEmployee] = useState<EmployeeItem | null>(null);
-
-  // Selected employee for branch permissions modal
-  const [permEmployee, setPermEmployee] = useState<EmployeeItem | null>(null);
 
   // Statistics counts
   const activeCount = useMemo(
@@ -381,11 +377,14 @@ export const EmployeeList: React.FC = () => {
                               <FaEye size={13} />
                             </button>
 
-                            {/* Branch Permissions button */}
+                            {/* Branch Role & CRUD Permissions button -> Navigates directly to Role Management */}
                             <button
                               type="button"
-                              onClick={() => setPermEmployee(item)}
-                              title="Branch CRUD Permissions (Read, Post, Update, Delete)"
+                              onClick={() => {
+                                const empId = item.id || (item as any)?.employeeId;
+                                navigate(`/admin/settings/roles?employeeId=${empId}`);
+                              }}
+                              title="Manage Role & Branch Permissions"
                               className="p-1 rounded text-[var(--primary-color)] hover:bg-[var(--primary-color-muted,#e0f2fe)] transition-colors cursor-pointer"
                             >
                               <FaShieldAlt size={13} />
@@ -464,14 +463,11 @@ export const EmployeeList: React.FC = () => {
         isOpen={Boolean(selectedEmployee)}
         onClose={() => setSelectedEmployee(null)}
         employee={selectedEmployee}
-        onOpenBranchPermissions={(emp) => setPermEmployee(emp)}
-      />
-
-      {/* Branch Permission Modal */}
-      <BranchPermissionModal
-        isOpen={Boolean(permEmployee)}
-        onClose={() => setPermEmployee(null)}
-        employee={permEmployee}
+        onOpenBranchPermissions={(emp) => {
+          setSelectedEmployee(null);
+          const empId = emp.id || (emp as any)?.employeeId;
+          navigate(`/admin/settings/roles?employeeId=${empId}`);
+        }}
       />
     </div>
   );

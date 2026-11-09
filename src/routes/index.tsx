@@ -369,6 +369,10 @@ export const router = createBrowserRouter([
     path: '/settings/sms',
     element: <Navigate to="/admin/settings/sms" replace />,
   },
+  {
+    path: '/settings/roles',
+    element: <Navigate to="/admin/settings/roles" replace />,
+  },
 
   // Admin Protected / Management Routes
   {
@@ -682,6 +686,10 @@ export const router = createBrowserRouter([
       {
         path: 'settings/sms',
         element: withSuspense(SmsSettings),
+      },
+      {
+        path: 'settings/roles',
+        element: withSuspense(RolesAndPermissions),
       },
       {
         path: 'sms',

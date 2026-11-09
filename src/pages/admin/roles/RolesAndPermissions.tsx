@@ -1,8 +1,8 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import PageHeader from "@/components/page-header/PageHeader";
 import {
   RefreshButton,
-  StatsCards,
   Search,
   TableSkeleton,
   TableContainer,
@@ -17,34 +17,299 @@ import {
   TablePaginationFooter,
   EmptyState,
 } from "@/components/common";
-import { useEmployeeListQuery } from "@/hooks/useEmployeeQueries";
-import { useBranchListQuery } from "@/hooks/useBranchQueries";
-import type { EmployeeItem } from "@/types/employee.types";
-import BranchPermissionModal from "../people/employee/components/BranchPermissionModal";
 import {
-  FaUserShield,
+  useEmployeeListQuery,
+  useEmployeeBranchPermissionsQuery,
+} from "@/hooks/useEmployeeQueries";
+import { useBranchListQuery } from "@/hooks/useBranchQueries";
+import { useQueryClient } from "@tanstack/react-query";
+import { employeeBranchPermissionsQueryKey } from "@/config/query-key";
+import {
+  getLocalEmployeeBranchPermissions,
+  deleteEmployeeBranchPermission,
+} from "@/services/employee-service";
+import { showSuccessToast, showErrorToast } from "@/utils/toast-utils";
+import type { EmployeeItem } from "@/types/employee.types";
+import type { BranchItem } from "@/types/branch.types";
+import BranchPermissionManager from "./components/BranchPermissionManager";
+import {
   FaShieldAlt,
-  FaBuilding,
-  FaLock,
-  FaMobileAlt,
-  FaUsers,
-  FaCheckCircle,
-  FaKey,
+  FaEdit,
+  FaTrash,
 } from "react-icons/fa";
+
+interface EmployeeAssignedBranchProps {
+  employee: EmployeeItem;
+  branches: BranchItem[];
+  onSelectEmployee?: (emp: EmployeeItem, branchId?: number) => void;
+}
+
+const EmployeeAssignedBranch: React.FC<EmployeeAssignedBranchProps> = ({
+  employee,
+  branches,
+  onSelectEmployee,
+}) => {
+  const empId = employee.id || (employee as any)?.employeeId;
+  const { data: dbPermissions = [] } = useEmployeeBranchPermissionsQuery(
+    Number(empId),
+    {
+      enabled: Boolean(empId),
+      staleTime: 60 * 1000,
+    }
+  );
+
+  const localPerms = useMemo(() => {
+    return empId ? getLocalEmployeeBranchPermissions(Number(empId)) : [];
+  }, [empId]);
+
+  const activePerms = dbPermissions.length > 0 ? dbPermissions : localPerms;
+
+  const assignedBranches = useMemo(() => {
+    const list: { branchId: number; name: string; isPrimary: boolean }[] = [];
+
+    if (activePerms && activePerms.length > 0) {
+      activePerms.forEach((p: any) => {
+        const bId = Number(p.branchId || p.branch_id);
+        const branchMatch = branches.find(
+          (b) => Number(b.id ?? b.branchId) === bId
+        );
+        const name = branchMatch?.name || p.branchName || `Branch #${bId}`;
+        list.push({
+          branchId: bId,
+          name,
+          isPrimary: Boolean(p.primary),
+        });
+      });
+    }
+
+    if (list.length === 0) {
+      const directBranchName = (employee as any)?.branchName;
+      const directBranchId = Number((employee as any)?.branchId);
+      if (directBranchName) {
+        list.push({
+          branchId: directBranchId || 0,
+          name: directBranchName,
+          isPrimary: true,
+        });
+      } else if (directBranchId) {
+        const branchMatch = branches.find(
+          (b) => Number(b.id ?? b.branchId) === directBranchId
+        );
+        if (branchMatch) {
+          list.push({
+            branchId: directBranchId,
+            name: branchMatch.name,
+            isPrimary: true,
+          });
+        }
+      }
+    }
+
+    return list;
+  }, [activePerms, branches, employee]);
+
+  if (assignedBranches.length === 0) {
+    return (
+      <span className="text-gray-400 dark:text-gray-500 text-xs italic">
+        Not Assigned
+      </span>
+    );
+  }
+
+  return (
+    <div className="flex flex-wrap items-center gap-1">
+      {assignedBranches.map((item, i) => (
+        <button
+          key={i}
+          type="button"
+          onClick={() => onSelectEmployee?.(employee, item.branchId)}
+          className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md text-[11px] font-semibold border transition-all cursor-pointer hover:border-[var(--primary-color,#009fe3)] hover:shadow-2xs ${
+            item.isPrimary
+              ? "bg-sky-50 dark:bg-sky-950/60 text-sky-700 dark:text-sky-300 border-sky-200 dark:border-sky-800"
+              : "bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-700"
+          }`}
+          title="Click to view & edit assigned permissions for this branch"
+        >
+          <span className="truncate max-w-[120px]">{item.name}</span>
+          {item.isPrimary && (
+            <span className="text-[9px] uppercase px-1 py-0.2 rounded bg-sky-200/80 dark:bg-sky-800 text-sky-800 dark:text-sky-100 font-bold ml-0.5">
+              Primary
+            </span>
+          )}
+        </button>
+      ))}
+    </div>
+  );
+};
+
+interface EmployeeActionCellProps {
+  employee: EmployeeItem;
+  branches: BranchItem[];
+  onSelectEmployee: (emp: EmployeeItem, branchId?: number) => void;
+}
+
+const EmployeeActionCell: React.FC<EmployeeActionCellProps> = ({
+  employee,
+  branches,
+  onSelectEmployee,
+}) => {
+  const queryClient = useQueryClient();
+  const [isDeleting, setIsDeleting] = useState(false);
+  const empId = employee.id || (employee as any)?.employeeId;
+  const { data: dbPermissions = [], refetch } = useEmployeeBranchPermissionsQuery(
+    Number(empId),
+    {
+      enabled: Boolean(empId),
+      staleTime: 60 * 1000,
+    }
+  );
+
+  const localPerms = useMemo(() => {
+    return empId ? getLocalEmployeeBranchPermissions(Number(empId)) : [];
+  }, [empId]);
+
+  const activePerms = dbPermissions.length > 0 ? dbPermissions : localPerms;
+
+  const firstBranchId = useMemo(() => {
+    if (activePerms && activePerms.length > 0) {
+      const primaryPerm = activePerms.find((p: any) => Boolean(p.primary)) || activePerms[0];
+      return Number(primaryPerm?.branchId || primaryPerm?.branch_id) || undefined;
+    }
+    const directBranchId = Number((employee as any)?.branchId);
+    if (directBranchId) return directBranchId;
+    return undefined;
+  }, [activePerms, employee]);
+
+  const hasAccess = Boolean(firstBranchId);
+
+  const handleDeleteAllAccess = async () => {
+    if (!empId) return;
+    const staffName = employee.fullName || `Staff #${empId}`;
+    if (!window.confirm(`Are you sure you want to revoke all branch access for ${staffName}?`)) {
+      return;
+    }
+
+    setIsDeleting(true);
+    try {
+      if (activePerms && activePerms.length > 0) {
+        await Promise.all(
+          activePerms.map(async (p: any) => {
+            const pId = Number(p.id || p.permissionId);
+            if (pId && pId > 0) {
+              try {
+                await deleteEmployeeBranchPermission(pId, Number(empId));
+              } catch (err) {
+                console.warn(`Could not delete permission ID ${pId} on backend:`, err);
+              }
+            }
+          })
+        );
+      }
+
+      if (typeof window !== "undefined") {
+        try {
+          localStorage.removeItem(`cb_emp_branch_permissions_${empId}`);
+        } catch {}
+      }
+
+      await queryClient.invalidateQueries({ queryKey: [employeeBranchPermissionsQueryKey] });
+      await queryClient.invalidateQueries({ queryKey: [employeeBranchPermissionsQueryKey, Number(empId)] });
+      refetch();
+
+      showSuccessToast(`All branch access revoked for ${staffName}!`);
+    } catch (err: any) {
+      showErrorToast(err?.message || "Failed to revoke branch permissions");
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  return (
+    <div className="flex items-center justify-center gap-1.5">
+      {hasAccess ? (
+        <>
+          <button
+            type="button"
+            onClick={() => onSelectEmployee(employee, firstBranchId)}
+            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold bg-[var(--primary-color,#009fe3)] text-white hover:bg-[var(--primary-color-hover,#008bc7)] transition-colors cursor-pointer shadow-2xs"
+            title="Edit existing branch access and view assigned permissions"
+          >
+            <FaEdit size={11} />
+            <span>Edit</span>
+          </button>
+          <button
+            type="button"
+            onClick={handleDeleteAllAccess}
+            disabled={isDeleting}
+            className="p-1.5 rounded-lg text-rose-600 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-950/40 border border-rose-200 dark:border-rose-900/60 transition-colors cursor-pointer shadow-2xs disabled:opacity-50"
+            title="Revoke all branch access for this staff member"
+          >
+            <FaTrash size={11} />
+          </button>
+        </>
+      ) : (
+        <button
+          type="button"
+          onClick={() => onSelectEmployee(employee)}
+          className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 border border-gray-200 dark:border-gray-700 transition-colors cursor-pointer shadow-2xs"
+          title="Assign branch permissions"
+        >
+          <FaShieldAlt size={10} />
+          <span>Manage Access</span>
+        </button>
+      )}
+    </div>
+  );
+};
 
 export const RolesAndPermissions: React.FC = () => {
   const { data: employees = [], isLoading, refetch, isRefetching } = useEmployeeListQuery();
   const { data: branches = [] } = useBranchListQuery();
 
+  const [searchParams, setSearchParams] = useSearchParams();
+  const urlEmployeeId = searchParams.get("employeeId");
+  const urlBranchId = searchParams.get("branchId");
+
   const [search, setSearch] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [permEmployee, setPermEmployee] = useState<EmployeeItem | null>(null);
+  const [targetBranchId, setTargetBranchId] = useState<number | undefined>(undefined);
 
-  // Statistics
-  const totalEmployees = employees.length;
-  const appAccessCount = employees.filter((e) => e.hasAppAccess).length;
-  const activeStaff = employees.filter((e) => e.active !== false).length;
+  // Sync employee with URL search params if present
+  useEffect(() => {
+    if (urlEmployeeId && employees.length > 0) {
+      const match = employees.find(
+        (e) => String(e.id || (e as any)?.employeeId) === String(urlEmployeeId)
+      );
+      if (match) {
+        setPermEmployee(match);
+        if (urlBranchId) {
+          setTargetBranchId(Number(urlBranchId));
+        }
+      }
+    } else if (!urlEmployeeId) {
+      setPermEmployee(null);
+      setTargetBranchId(undefined);
+    }
+  }, [urlEmployeeId, urlBranchId, employees]);
+
+  const handleSelectEmployee = (emp: EmployeeItem | null, branchId?: number) => {
+    setPermEmployee(emp);
+    setTargetBranchId(branchId);
+    if (emp) {
+      const id = emp.id || (emp as any)?.employeeId;
+      if (id) {
+        const params: Record<string, string> = { employeeId: String(id) };
+        if (branchId) {
+          params.branchId = String(branchId);
+        }
+        setSearchParams(params);
+      }
+    } else {
+      setSearchParams({});
+    }
+  };
 
   const filteredEmployees = useMemo(() => {
     if (!search.trim()) return employees;
@@ -66,154 +331,30 @@ export const RolesAndPermissions: React.FC = () => {
     return filteredEmployees.slice(start, start + pageSize);
   }, [filteredEmployees, safeCurrentPage, pageSize]);
 
-  const statCards = [
-    {
-      title: "Total Staff",
-      value: totalEmployees,
-      icon: FaUsers,
-      color: "text-blue-600 dark:text-blue-400",
-      bg: "bg-blue-50/60 dark:bg-blue-950/20 border-blue-200 dark:border-blue-900",
-      iconBg: "bg-blue-100 dark:bg-blue-900/50 text-blue-600 dark:text-blue-400",
-    },
-    {
-      title: "Active Staff",
-      value: activeStaff,
-      icon: FaCheckCircle,
-      color: "text-emerald-600 dark:text-emerald-400",
-      bg: "bg-emerald-50/60 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-900",
-      iconBg: "bg-emerald-100 dark:bg-emerald-900/50 text-emerald-600 dark:text-emerald-400",
-    },
-    {
-      title: "App Access Users",
-      value: appAccessCount,
-      icon: FaMobileAlt,
-      color: "text-purple-600 dark:text-purple-400",
-      bg: "bg-purple-50/60 dark:bg-purple-950/20 border-purple-300 dark:border-purple-900",
-      iconBg: "bg-purple-100 dark:bg-purple-900/50 text-purple-600 dark:text-purple-400",
-    },
-    {
-      title: "Organization Branches",
-      value: branches.length,
-      icon: FaBuilding,
-      color: "text-amber-600 dark:text-amber-400",
-      bg: "bg-amber-50/60 dark:bg-amber-950/20 border-amber-200 dark:border-amber-900",
-      iconBg: "bg-amber-100 dark:bg-amber-900/50 text-amber-600 dark:text-amber-400",
-    },
-  ];
+  if (permEmployee) {
+    return (
+      <div className="flex flex-col gap-3 px-2.5 py-2 sm:px-4 sm:py-2.5 max-w-[1600px] mx-auto w-full font-sans">
+        {/* Dedicated In-Page Manager */}
+        <BranchPermissionManager
+          employee={permEmployee}
+          onBack={() => handleSelectEmployee(null)}
+          initialBranchId={targetBranchId}
+        />
+      </div>
+    );
+  }
 
-  const roleDefinitions = [
-    {
-      name: "Super Admin / Owner",
-      description: "Unrestricted global access to all branches, financial records, branch creation, and security roles.",
-      badge: "Full Organization Access",
-      color: "border-blue-500 bg-blue-50/40 dark:bg-blue-950/20 text-blue-700 dark:text-blue-300",
-    },
-    {
-      name: "Branch Manager",
-      description: "Full operational authority strictly within assigned branches: Sales, Purchases, Stock, Parties, and Reports.",
-      badge: "Branch Scoped",
-      color: "border-emerald-500 bg-emerald-50/40 dark:bg-emerald-950/20 text-emerald-700 dark:text-emerald-300",
-    },
-    {
-      name: "Sales Executive / Cashier",
-      description: "Point-of-sale invoice creation and customer payment collection strictly locked to assigned branch.",
-      badge: "Branch POS Scoped",
-      color: "border-purple-500 bg-purple-50/40 dark:bg-purple-950/20 text-purple-700 dark:text-purple-300",
-    },
-    {
-      name: "Store / Inventory Keeper",
-      description: "Goods receipt, purchase voucher management, and inventory stock adjustments for assigned branch.",
-      badge: "Branch Stock Scoped",
-      color: "border-amber-500 bg-amber-50/40 dark:bg-amber-950/20 text-amber-700 dark:text-amber-300",
-    },
-  ];
-
+  // Staff Directory & Overview View
   return (
     <div className="flex flex-col gap-3 px-2.5 py-2 sm:px-4 sm:py-2.5 max-w-[1600px] mx-auto w-full font-sans">
       {/* Header */}
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <PageHeader
-          headerTitle="Roles & Branch Permissions"
-          headerDescription="Manage staff access levels and enforce strict branch isolation policies"
+          headerTitle="Role Management & Branch Permissions"
+          headerDescription="Manage staff access levels, branch assignments, and enforce strict branch isolation policies"
         />
         <div className="flex items-center gap-2">
           <RefreshButton onClick={() => refetch()} isLoading={isLoading || isRefetching} />
-        </div>
-      </div>
-
-      {/* Stats Cards */}
-      <StatsCards cards={statCards} />
-
-      {/* Strict Branch Isolation Notice */}
-      <div className="p-4 rounded-2xl bg-gradient-to-r from-blue-900 to-indigo-950 text-white shadow-sm flex items-start gap-3">
-        <div className="w-9 h-9 rounded-xl bg-white/10 flex items-center justify-center text-base shrink-0 mt-0.5">
-          <FaLock />
-        </div>
-        <div>
-          <h4 className="text-sm font-bold">Strict Branch Isolation Enforced</h4>
-          <p className="text-xs text-white/80 mt-0.5 leading-relaxed">
-            Whoever is granted access to a specific branch can <strong>ONLY</strong> view and enter data for that branch. All other organization branches, invoices, and reports remain strictly hidden and inaccessible to them.
-          </p>
-        </div>
-      </div>
-
-      {/* Role Templates Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
-        {roleDefinitions.map((role) => (
-          <div
-            key={role.name}
-            className={`p-3.5 rounded-2xl border-l-4 border bg-white dark:bg-gray-800 shadow-xs flex flex-col justify-between gap-2 ${role.color}`}
-          >
-            <div>
-              <div className="flex items-center justify-between gap-1 mb-1">
-                <span className="font-bold text-xs text-gray-900 dark:text-gray-100">{role.name}</span>
-              </div>
-              <p className="text-[11px] text-gray-600 dark:text-gray-300 leading-snug">{role.description}</p>
-            </div>
-            <span className="self-start px-2 py-0.5 rounded-full text-[9px] font-bold bg-white dark:bg-gray-900 border border-current shadow-2xs">
-              {role.badge}
-            </span>
-          </div>
-        ))}
-      </div>
-
-      {/* 4-Tier CRUD Control Standard Cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-        <div className="p-3 rounded-xl bg-blue-50/70 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-900 text-xs">
-          <div className="flex items-center gap-1.5 font-bold text-blue-700 dark:text-blue-300">
-            <span className="w-2 h-2 rounded-full bg-blue-600"></span>
-            <span>Read (View)</span>
-          </div>
-          <p className="text-[11px] text-gray-600 dark:text-gray-400 mt-1">
-            Browse tables, search invoices, inspect reports and view customer balances.
-          </p>
-        </div>
-        <div className="p-3 rounded-xl bg-emerald-50/70 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-900 text-xs">
-          <div className="flex items-center gap-1.5 font-bold text-emerald-700 dark:text-emerald-300">
-            <span className="w-2 h-2 rounded-full bg-emerald-600"></span>
-            <span>Post (Create)</span>
-          </div>
-          <p className="text-[11px] text-gray-600 dark:text-gray-400 mt-1">
-            Create new sales, generate purchase bills, receive payments and add stock.
-          </p>
-        </div>
-        <div className="p-3 rounded-xl bg-amber-50/70 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900 text-xs">
-          <div className="flex items-center gap-1.5 font-bold text-amber-700 dark:text-amber-300">
-            <span className="w-2 h-2 rounded-full bg-amber-600"></span>
-            <span>Update (Edit)</span>
-          </div>
-          <p className="text-[11px] text-gray-600 dark:text-gray-400 mt-1">
-            Edit drafted bills, update sale prices, modify party info and adjust counts.
-          </p>
-        </div>
-        <div className="p-3 rounded-xl bg-rose-50/70 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-900 text-xs">
-          <div className="flex items-center gap-1.5 font-bold text-rose-700 dark:text-rose-300">
-            <span className="w-2 h-2 rounded-full bg-rose-600"></span>
-            <span>Delete (Revoke)</span>
-          </div>
-          <p className="text-[11px] text-gray-600 dark:text-gray-400 mt-1">
-            Void invoices, cancel transactions, delete records and revoke entries.
-          </p>
         </div>
       </div>
 
@@ -240,18 +381,19 @@ export const RolesAndPermissions: React.FC = () => {
         <TableScroll>
           {isLoading && employees.length === 0 ? (
             <div className="p-3">
-              <TableSkeleton columnCount={7} rowCount={5} />
+              <TableSkeleton columnCount={8} rowCount={5} />
             </div>
           ) : (
-            <Table minWidth={950}>
+            <Table minWidth={1000}>
               <TableHead>
                 <TableTh width={50} align="center">SL</TableTh>
-                <TableTh width={240}>Staff Member</TableTh>
-                <TableTh width={110} align="center">Code</TableTh>
+                <TableTh width={200}>Staff Member</TableTh>
+                <TableTh width={130}>Phone</TableTh>
+                <TableTh width={100} align="center">Code</TableTh>
                 <TableTh width={140}>Designation</TableTh>
-                <TableTh width={130}>System Role</TableTh>
-                <TableTh width={120} align="center">App Access</TableTh>
-                <TableTh width={160} align="center">Branch Permissions</TableTh>
+                <TableTh width={180}>Assigned Branch</TableTh>
+                <TableTh width={110} align="center">System Role</TableTh>
+                <TableTh width={150} align="center">Action</TableTh>
               </TableHead>
 
               <TableBody>
@@ -267,19 +409,16 @@ export const RolesAndPermissions: React.FC = () => {
 
                         {/* Staff Member */}
                         <TableCell>
-                          <div className="flex items-center gap-2">
-                            <div className="w-7 h-7 rounded-lg bg-[var(--primary-color-light,#e0f2fe)] text-[var(--primary-color,#009fe3)] flex items-center justify-center text-xs font-bold shrink-0">
-                              {(emp.fullName || "E").charAt(0).toUpperCase()}
-                            </div>
-                            <div className="min-w-0">
-                              <span className="font-bold text-xs text-gray-900 dark:text-gray-100 truncate block">
-                                {emp.fullName || `Staff #${empId}`}
-                              </span>
-                              <span className="text-[10px] text-gray-400 font-mono">
-                                {emp.phoneNumber || "No phone"}
-                              </span>
-                            </div>
-                          </div>
+                          <span className="font-bold text-xs text-gray-900 dark:text-gray-100 truncate block">
+                            {emp.fullName || `Staff #${empId}`}
+                          </span>
+                        </TableCell>
+
+                        {/* Phone */}
+                        <TableCell>
+                          <span className="text-xs text-gray-700 dark:text-gray-300 font-mono">
+                            {emp.phoneNumber || "-"}
+                          </span>
                         </TableCell>
 
                         {/* Code */}
@@ -296,42 +435,36 @@ export const RolesAndPermissions: React.FC = () => {
                           </span>
                         </TableCell>
 
-                        {/* Role */}
+                        {/* Assigned Branch */}
                         <TableCell>
+                          <EmployeeAssignedBranch
+                            employee={emp}
+                            branches={branches}
+                            onSelectEmployee={handleSelectEmployee}
+                          />
+                        </TableCell>
+
+                        {/* Role */}
+                        <TableCell align="center">
                           <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-50 text-[var(--primary-color,#009fe3)] dark:bg-blue-950/50 border border-blue-200 dark:border-blue-800">
                             {emp.role || "EMPLOYEE"}
                           </span>
                         </TableCell>
 
-                        {/* App Access */}
-                        <TableCell align="center">
-                          {emp.hasAppAccess ? (
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                              <FaMobileAlt size={9} />
-                              <span>Enabled</span>
-                            </span>
-                          ) : (
-                            <span className="text-gray-400 text-xs">Disabled</span>
-                          )}
-                        </TableCell>
-
                         {/* Branch Permissions action */}
                         <TableCell align="center">
-                          <button
-                            type="button"
-                            onClick={() => setPermEmployee(emp)}
-                            className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold bg-[var(--primary-color,#009fe3)] text-white hover:bg-[var(--primary-color-hover,#008bc7)] transition-colors cursor-pointer shadow-2xs"
-                          >
-                            <FaShieldAlt size={10} />
-                            <span>Manage Access</span>
-                          </button>
+                          <EmployeeActionCell
+                            employee={emp}
+                            branches={branches}
+                            onSelectEmployee={handleSelectEmployee}
+                          />
                         </TableCell>
                       </TableRow>
                     );
                   })
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={7}>
+                    <TableCell colSpan={8}>
                       <EmptyState
                         title="No staff members found"
                         description="Try adjusting your search criteria."
@@ -357,13 +490,6 @@ export const RolesAndPermissions: React.FC = () => {
           }}
         />
       </TableContainer>
-
-      {/* Branch Permission Modal */}
-      <BranchPermissionModal
-        isOpen={Boolean(permEmployee)}
-        onClose={() => setPermEmployee(null)}
-        employee={permEmployee}
-      />
     </div>
   );
 };

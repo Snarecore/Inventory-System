@@ -8,6 +8,11 @@ import type {
   EmployeeUpdatePayload,
   EmployeeBranchPermissionPayload,
 } from "@/types/employee.types";
+import {
+  PERMISSION_MODULES,
+  getReadOnlyPermissionKeys,
+  buildPermissionKey,
+} from "@/utils/permission-utils";
 
 export async function getEmployeeList(organizationId?: number): Promise<EmployeeItem[]> {
   const accessUser = buildAccessUser();
@@ -429,35 +434,24 @@ export async function getEmployeeBranchPermissions(employeeId: number): Promise<
       let perms = Array.isArray(p.permissions) ? [...p.permissions] : [];
       if (perms.length === 0) {
         if (canView) {
-          perms.push(
-            "sales:read",
-            "purchase:read",
-            "inventory:read",
-            "parties:read",
-            "accounts:read",
-            "reports:read"
-          );
+          perms.push(...getReadOnlyPermissionKeys());
         }
         if (canEdit) {
           perms.push(
-            "sales:create",
-            "sales:update",
-            "purchase:create",
-            "purchase:update",
-            "inventory:create",
-            "inventory:update",
-            "parties:create",
-            "parties:update",
+            ...PERMISSION_MODULES.flatMap((m) => [
+              buildPermissionKey(m.id, "create"),
+              buildPermissionKey(m.id, "update"),
+            ]),
+            "banking:create",
+            "banking:update",
             "accounts:create",
             "accounts:update"
           );
         }
         if (canDelete) {
           perms.push(
-            "sales:delete",
-            "purchase:delete",
-            "inventory:delete",
-            "parties:delete",
+            ...PERMISSION_MODULES.map((m) => buildPermissionKey(m.id, "delete")),
+            "banking:delete",
             "accounts:delete"
           );
         }

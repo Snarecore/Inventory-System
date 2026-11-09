@@ -44,7 +44,11 @@ export const EmployeeDetailsModal: React.FC<EmployeeDetailsModalProps> = ({
 
   const handlePermissions = () => {
     onClose();
-    onOpenBranchPermissions?.(employee);
+    if (onOpenBranchPermissions) {
+      onOpenBranchPermissions(employee);
+    } else {
+      navigate(`/admin/settings/roles?employeeId=${empId}`);
+    }
   };
 
   return (
