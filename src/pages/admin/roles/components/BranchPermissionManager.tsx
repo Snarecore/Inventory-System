@@ -5,7 +5,6 @@ import {
   useEmployeeBranchPermissionsQuery,
   useCreateEmployeeBranchPermissionMutation,
   useUpdateEmployeeBranchPermissionMutation,
-  useDeleteEmployeeBranchPermissionMutation,
 } from "@/hooks/useEmployeeQueries";
 import type { EmployeeItem } from "@/types/employee.types";
 import {
@@ -18,13 +17,13 @@ import {
   type CrudAction,
 } from "@/utils/permission-utils";
 import {
-  FaBuilding,
-  FaShieldAlt,
-  FaTrash,
   FaUserCog,
-  FaEdit,
   FaArrowLeft,
   FaTimes,
+  FaSearch,
+  FaChevronDown,
+  FaChevronRight,
+  FaFilter,
 } from "react-icons/fa";
 
 const ACTION_TITLES: Record<string, Record<CrudAction, string>> = {
@@ -336,6 +335,7 @@ interface CrudColumnDef {
   tooltip: string;
   badgeClass: string;
   activeBadgeClass: string;
+  activeCardClass: string;
   checkboxColor: string;
   headerTextColor: string;
 }
@@ -350,18 +350,22 @@ export const CRUD_COLUMNS: CrudColumnDef[] = [
       "bg-blue-50/70 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300 border-blue-200 dark:border-blue-800",
     activeBadgeClass:
       "bg-blue-100 dark:bg-blue-900/60 text-blue-800 dark:text-blue-200 border-blue-400 dark:border-blue-600 shadow-2xs",
+    activeCardClass:
+      "bg-blue-50/90 dark:bg-blue-950/50 border-blue-300 dark:border-blue-700 text-blue-950 dark:text-blue-100 shadow-2xs",
     checkboxColor: "text-blue-600 focus:ring-blue-500",
     headerTextColor: "text-blue-600 dark:text-blue-400",
   },
   {
     action: "create",
-    label: "Edit",
-    tableLabel: "Edit (Create)",
-    tooltip: "Toggle Edit (Create/Post) for all modules",
+    label: "Create",
+    tableLabel: "Create",
+    tooltip: "Toggle Create for all modules",
     badgeClass:
       "bg-emerald-50/70 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800",
     activeBadgeClass:
       "bg-emerald-100 dark:bg-emerald-900/60 text-emerald-800 dark:text-emerald-200 border-emerald-400 dark:border-emerald-600 shadow-2xs",
+    activeCardClass:
+      "bg-emerald-50/90 dark:bg-emerald-950/50 border-emerald-300 dark:border-emerald-700 text-emerald-950 dark:text-emerald-100 shadow-2xs",
     checkboxColor: "text-emerald-600 focus:ring-emerald-500",
     headerTextColor: "text-emerald-600 dark:text-emerald-400",
   },
@@ -374,6 +378,8 @@ export const CRUD_COLUMNS: CrudColumnDef[] = [
       "bg-amber-50/70 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300 border-amber-200 dark:border-amber-800",
     activeBadgeClass:
       "bg-amber-100 dark:bg-amber-900/60 text-amber-800 dark:text-amber-200 border-amber-400 dark:border-amber-600 shadow-2xs",
+    activeCardClass:
+      "bg-amber-50/90 dark:bg-amber-950/50 border-amber-300 dark:border-amber-700 text-amber-950 dark:text-amber-100 shadow-2xs",
     checkboxColor: "text-amber-500 focus:ring-amber-500",
     headerTextColor: "text-amber-600 dark:text-amber-400",
   },
@@ -386,10 +392,19 @@ export const CRUD_COLUMNS: CrudColumnDef[] = [
       "bg-rose-50/70 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300 border-rose-200 dark:border-rose-800",
     activeBadgeClass:
       "bg-rose-100 dark:bg-rose-900/60 text-rose-800 dark:text-rose-200 border-rose-400 dark:border-rose-600 shadow-2xs",
+    activeCardClass:
+      "bg-rose-50/90 dark:bg-rose-950/50 border-rose-300 dark:border-rose-700 text-rose-950 dark:text-rose-100 shadow-2xs",
     checkboxColor: "text-rose-600 focus:ring-rose-500",
     headerTextColor: "text-rose-600 dark:text-rose-400",
   },
 ];
+
+export const ACTION_STANDARD_NAMES: Record<CrudAction, string> = {
+  read: "Can View",
+  create: "Can Create",
+  update: "Can Update",
+  delete: "Can Delete",
+};
 
 interface IndeterminateCheckboxProps
   extends Omit<React.InputHTMLAttributes<HTMLInputElement>, "onChange"> {
@@ -460,6 +475,9 @@ export const BranchPermissionManager: React.FC<BranchPermissionManagerProps> = (
   const [selectedPermissions, setSelectedPermissions] = useState<string[]>([]);
   const [isPrimary, setIsPrimary] = useState<boolean>(false);
   const [editingPermissionId, setEditingPermissionId] = useState<number | null>(null);
+  const [searchQuery, setSearchQuery] = useState<string>("");
+  const [filterStatus, setFilterStatus] = useState<"all" | "configured" | "unconfigured">("all");
+  const [collapsedSections, setCollapsedSections] = useState<Record<string, boolean>>({});
 
   const createMutation = useCreateEmployeeBranchPermissionMutation({
     onSuccess: () => {
@@ -471,12 +489,6 @@ export const BranchPermissionManager: React.FC<BranchPermissionManagerProps> = (
   const updateMutation = useUpdateEmployeeBranchPermissionMutation({
     onSuccess: () => {
       resetForm();
-      refetch();
-    },
-  });
-
-  const deleteMutation = useDeleteEmployeeBranchPermissionMutation({
-    onSuccess: () => {
       refetch();
     },
   });
@@ -819,88 +831,147 @@ export const BranchPermissionManager: React.FC<BranchPermissionManagerProps> = (
     }
   }, [permissions, initialBranchId]);
 
-  const handleRemove = (permissionId: number) => {
-    if (!permissionId || Number(permissionId) <= 0) return;
-    deleteMutation.mutate({ permissionId: Number(permissionId), employeeId });
-  };
-
   const totalPossiblePermissions = getAllSystemPermissionKeys().length;
   const isSaving = createMutation.isPending || updateMutation.isPending;
 
+  const moduleCheckedCounts: Record<string, number> = React.useMemo(() => {
+    const counts: Record<string, number> = {};
+    PERMISSION_MODULES.forEach((mod) => {
+      counts[mod.id] = mod.actions.filter((act) => isChecked(mod.id, act)).length;
+    });
+    return counts;
+  }, [selectedPermissions]);
+
+  const totalConfiguredModules = PERMISSION_MODULES.filter(
+    (m) => (moduleCheckedCounts[m.id] || 0) > 0
+  ).length;
+  const totalUnconfiguredModules = PERMISSION_MODULES.length - totalConfiguredModules;
+
+  const filteredModules = React.useMemo(() => {
+    return PERMISSION_MODULES.filter((mod) => {
+      const checkedCount = moduleCheckedCounts[mod.id] || 0;
+      if (filterStatus === "configured" && checkedCount === 0) return false;
+      if (filterStatus === "unconfigured" && checkedCount > 0) return false;
+
+      if (!searchQuery.trim()) return true;
+      const q = searchQuery.toLowerCase().trim();
+      const nameMatch = mod.name.toLowerCase().includes(q);
+      const catMatch = mod.category.toLowerCase().includes(q);
+      const actionMatch = mod.actions.some((act) => {
+        const title = ACTION_TITLES[mod.id]?.[act] || "";
+        const stdName = ACTION_STANDARD_NAMES[act] || "";
+        return (
+          title.toLowerCase().includes(q) ||
+          stdName.toLowerCase().includes(q) ||
+          act.toLowerCase().includes(q)
+        );
+      });
+      return nameMatch || catMatch || actionMatch;
+    });
+  }, [filterStatus, searchQuery, moduleCheckedCounts]);
+
+  const groupedSections = React.useMemo(() => {
+    const map: Record<string, typeof PERMISSION_MODULES> = {};
+    filteredModules.forEach((mod) => {
+      if (!map[mod.category]) {
+        map[mod.category] = [];
+      }
+      map[mod.category].push(mod);
+    });
+    return map;
+  }, [filteredModules]);
+
+  const toggleSectionCollapse = (cat: string) => {
+    setCollapsedSections((prev) => ({
+      ...prev,
+      [cat]: !prev[cat],
+    }));
+  };
+
+  const allCategories = React.useMemo(
+    () => Array.from(new Set(PERMISSION_MODULES.map((m) => m.category))),
+    []
+  );
+  const allCollapsed =
+    allCategories.length > 0 && allCategories.every((c) => Boolean(collapsedSections[c]));
+
+  const toggleAllSections = () => {
+    if (allCollapsed) {
+      setCollapsedSections({});
+    } else {
+      const next: Record<string, boolean> = {};
+      allCategories.forEach((c) => {
+        next[c] = true;
+      });
+      setCollapsedSections(next);
+    }
+  };
+
   return (
     <div className={`flex flex-col gap-3.5 text-xs ${isModal ? "py-1" : "w-full"}`}>
-      {/* Top Header Card (In-Page Mode) */}
-      {!isModal && (
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 sm:p-4 rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-2xs">
-          <div className="flex items-center gap-3">
+      {/* Main Permissions Configuration Card */}
+      <div className="p-3.5 sm:p-4 rounded-xl bg-white dark:bg-gray-800/95 border border-gray-200 dark:border-gray-700/80 shadow-2xs flex flex-col gap-3">
+        {/* Row 1: Unified Staff Header + Branch Selector & Primary Checkbox */}
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-2.5 border-b border-gray-100 dark:border-gray-700/60 pb-2.5">
+          {/* Left: Back Button + Staff Identity + Mode Title */}
+          <div className="flex items-center gap-2 sm:gap-2.5 flex-wrap">
             {onBack && (
               <button
                 type="button"
                 onClick={onBack}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 transition-colors cursor-pointer border border-gray-200 dark:border-gray-600 shadow-2xs shrink-0"
+                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 transition-colors cursor-pointer border border-gray-200 dark:border-gray-600 shadow-2xs shrink-0"
                 title="Back to Staff Directory"
               >
-                <FaArrowLeft size={11} />
+                <FaArrowLeft size={10} />
                 <span>Back</span>
               </button>
             )}
 
-            <div className="w-9 h-9 rounded-xl bg-[var(--primary-color-light,#e0f2fe)] text-[var(--primary-color,#009fe3)] flex items-center justify-center text-sm font-bold shrink-0">
-              {(employee.fullName || "E").charAt(0).toUpperCase()}
+            <div className="flex items-center gap-2">
+              <h3 className="text-xs sm:text-sm font-bold text-gray-900 dark:text-gray-100 whitespace-nowrap">
+                {employee.fullName}
+              </h3>
+              <span className="px-1.5 py-0.5 rounded text-[10px] font-mono font-bold bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300">
+                {employee.employeeCode || `ID #${employeeId}`}
+              </span>
+              <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-blue-50 text-[var(--primary-color,#009fe3)] dark:bg-blue-950/50 border border-blue-200 dark:border-blue-800">
+                {employee.role || "EMPLOYEE"}
+              </span>
             </div>
 
-            <div>
-              <div className="flex items-center gap-2 flex-wrap">
-                <h3 className="text-sm font-bold text-gray-900 dark:text-gray-100 leading-tight">
-                  {employee.fullName}
-                </h3>
-                <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300">
-                  {employee.employeeCode || `ID #${employeeId}`}
-                </span>
-                <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-50 text-[var(--primary-color,#009fe3)] dark:bg-blue-950/50 border border-blue-200 dark:border-blue-800">
-                  {employee.role || "EMPLOYEE"}
+            <div className="h-4 w-[1px] bg-gray-200 dark:bg-gray-700 hidden sm:block shrink-0" />
+
+            <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1.5 text-xs font-semibold text-gray-700 dark:text-gray-300">
+                <FaUserCog className="text-[var(--primary-color,#009fe3)] text-xs shrink-0" />
+                <span className="whitespace-nowrap">
+                  {editingPermissionId ? "Edit Branch CRUD Access" : "Assign Branch Access"}
                 </span>
               </div>
-              <p className="text-[11px] text-gray-500 font-normal mt-0.5">
-                {employee.designation || employee.department || "Staff Member"} &bull; Manage Branch & CRUD Access
-              </p>
+              {editingPermissionId && (
+                <button
+                  type="button"
+                  onClick={resetForm}
+                  className="px-2 py-0.5 rounded-md text-[10.5px] font-semibold text-[var(--primary-color,#009fe3)] bg-[var(--primary-color,#009fe3)]/10 hover:bg-[var(--primary-color,#009fe3)]/20 transition-colors cursor-pointer whitespace-nowrap"
+                  title="Switch to assign a new branch"
+                >
+                  + Assign New Branch
+                </button>
+              )}
             </div>
           </div>
-        </div>
-      )}
 
-      {/* Main Permissions Configuration Card */}
-      <div className="p-3.5 sm:p-4 rounded-xl bg-gray-50/80 dark:bg-gray-800/60 border border-gray-200 dark:border-gray-700 flex flex-col gap-2.5">
-        {/* Row 1: Title, Target Branch Selector, Primary Branch Checkbox - ALL IN ONE SINGLE LINE */}
-        <div className="flex items-center justify-between gap-2 border-b border-gray-200 dark:border-gray-700 pb-2.5 flex-nowrap">
-          <div className="flex items-center gap-2 font-semibold text-black dark:text-gray-200 shrink-0">
-            <FaUserCog className="text-[var(--primary-color,#009fe3)] text-sm" />
-            <span className="text-xs sm:text-sm whitespace-nowrap">
-              {editingPermissionId ? "Edit Branch CRUD Access" : "Assign Branch Access"}
-            </span>
-            {editingPermissionId && (
-              <button
-                type="button"
-                onClick={resetForm}
-                className="ml-1.5 px-2 py-0.5 rounded text-[10px] font-semibold bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 transition-colors cursor-pointer"
-                title="Switch to assign a new branch"
-              >
-                + Assign New Branch
-              </button>
-            )}
-          </div>
-
-          {/* Target Branch and Primary Checkbox */}
-          <div className="flex items-center gap-2 shrink-0 flex-nowrap">
+          {/* Right: Target Branch Selector & Primary Checkbox */}
+          <div className="flex items-center gap-2 shrink-0 flex-wrap sm:flex-nowrap">
             <div className="flex items-center gap-1.5 flex-nowrap">
-              <span className="text-[11px] font-semibold text-gray-600 dark:text-gray-400 whitespace-nowrap">
-                Target Branch *:
+              <span className="text-[11px] font-semibold text-gray-500 dark:text-gray-400 whitespace-nowrap">
+                Target Branch <span className="text-rose-500">*</span>:
               </span>
               <select
                 value={selectedBranchId}
                 onChange={(e) => setSelectedBranchId(e.target.value ? Number(e.target.value) : "")}
                 disabled={isSaving || Boolean(editingPermissionId)}
-                className="px-2.5 py-1 text-xs bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-1 focus:ring-[var(--primary-color,#009fe3)] font-medium disabled:opacity-60 max-w-[190px] truncate"
+                className="px-2.5 py-1 text-xs bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-1 focus:ring-[var(--primary-color,#009fe3)] focus:border-[var(--primary-color,#009fe3)] font-medium text-gray-800 dark:text-gray-200 disabled:opacity-60 max-w-[210px] truncate transition-colors shadow-2xs"
               >
                 <option value="">
                   {availableBranches.length === 0
@@ -915,7 +986,7 @@ export const BranchPermissionManager: React.FC<BranchPermissionManagerProps> = (
               </select>
             </div>
 
-            <label className="flex items-center gap-1.5 cursor-pointer text-[11px] font-semibold text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-900 px-2.5 py-1 border border-gray-300 dark:border-gray-600 rounded-lg select-none hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors whitespace-nowrap shrink-0">
+            <label className="flex items-center gap-1.5 cursor-pointer text-[11px] font-semibold text-gray-700 dark:text-gray-300 bg-gray-50 dark:bg-gray-900 px-2.5 py-1 border border-gray-300 dark:border-gray-600 rounded-lg select-none hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors whitespace-nowrap shrink-0 shadow-2xs">
               <input
                 type="checkbox"
                 checked={isPrimary}
@@ -928,18 +999,95 @@ export const BranchPermissionManager: React.FC<BranchPermissionManagerProps> = (
           </div>
         </div>
 
-        {/* Row 2: Quick Presets: Read, Edit, Update, Delete Checkboxes, Clear All, Selected Counter - ALL IN ONE SINGLE LINE */}
-        <div className="flex items-center justify-between gap-2 pt-0.5 flex-nowrap">
-          <div className="flex items-center gap-1.5 sm:gap-2 flex-nowrap">
+        {/* Row 2: Search Bar, Status Filter Tabs & Expand/Collapse Toggle */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+          {/* Search Bar */}
+          <div className="relative flex-1 max-w-sm sm:max-w-md">
+            <FaSearch className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 text-xs pointer-events-none" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search permissions or menus (e.g. sales, mfs, bank, cms)..."
+              className="w-full pl-8 pr-7 py-1.5 text-xs bg-gray-50/70 dark:bg-gray-900/80 border border-gray-300/90 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-1 focus:ring-[var(--primary-color,#009fe3)] focus:border-[var(--primary-color,#009fe3)] placeholder-gray-400 dark:placeholder-gray-500 transition-colors shadow-2xs"
+            />
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={() => setSearchQuery("")}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 cursor-pointer"
+                title="Clear search"
+              >
+                <FaTimes size={10} />
+              </button>
+            )}
+          </div>
+
+          {/* Status Filters and Expand/Collapse All */}
+          <div className="flex items-center gap-2 shrink-0 flex-wrap">
+            <div className="flex items-center bg-gray-100 dark:bg-gray-900/90 p-0.5 rounded-lg border border-gray-200 dark:border-gray-700 text-[11px] font-semibold">
+              <button
+                type="button"
+                onClick={() => setFilterStatus("all")}
+                className={`px-2.5 py-1 rounded-md transition-all cursor-pointer ${
+                  filterStatus === "all"
+                    ? "bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 shadow-2xs"
+                    : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200"
+                }`}
+              >
+                All ({PERMISSION_MODULES.length})
+              </button>
+              <button
+                type="button"
+                onClick={() => setFilterStatus("configured")}
+                className={`px-2.5 py-1 rounded-md transition-all cursor-pointer flex items-center gap-1.5 ${
+                  filterStatus === "configured"
+                    ? "bg-white dark:bg-gray-800 text-emerald-700 dark:text-emerald-400 shadow-2xs"
+                    : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200"
+                }`}
+              >
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block" />
+                Configured ({totalConfiguredModules})
+              </button>
+              <button
+                type="button"
+                onClick={() => setFilterStatus("unconfigured")}
+                className={`px-2.5 py-1 rounded-md transition-all cursor-pointer flex items-center gap-1.5 ${
+                  filterStatus === "unconfigured"
+                    ? "bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 shadow-2xs"
+                    : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200"
+                }`}
+              >
+                <span className="w-1.5 h-1.5 rounded-full bg-gray-400 inline-block" />
+                Unconfigured ({totalUnconfiguredModules})
+              </button>
+            </div>
+
+            {/* Collapse / Expand All Sections Button */}
+            <button
+              type="button"
+              onClick={toggleAllSections}
+              className="px-2.5 py-1 text-[11px] font-semibold rounded-lg bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors cursor-pointer flex items-center gap-1.5 whitespace-nowrap shadow-2xs"
+              title={allCollapsed ? "Expand all sections" : "Collapse all sections"}
+            >
+              {allCollapsed ? <FaChevronRight size={9} /> : <FaChevronDown size={9} />}
+              <span>{allCollapsed ? "Expand All" : "Collapse All"}</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Row 3: Quick Presets: Read, Create, Update, Delete Checkboxes, Clear All, Selected Counter */}
+        <div className="flex items-center justify-between gap-2 pt-2 border-t border-gray-100 dark:border-gray-700/60 flex-nowrap overflow-x-auto">
+          <div className="flex items-center gap-1.5 sm:gap-2 flex-nowrap shrink-0">
             <span className="text-[11px] font-semibold text-gray-500 dark:text-gray-400 whitespace-nowrap mr-0.5">
               Quick Presets:
             </span>
 
             {/* All / Full Access Checkbox Chip */}
             <label
-              className={`px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-md text-[11px] font-semibold flex items-center gap-1.5 border transition-all cursor-pointer select-none whitespace-nowrap ${
+              className={`px-2.5 py-0.5 sm:py-1 rounded-lg text-[11px] font-semibold flex items-center gap-1.5 border transition-all cursor-pointer select-none whitespace-nowrap shadow-2xs ${
                 isAllSystemChecked
-                  ? "bg-purple-100 dark:bg-purple-900/60 text-purple-800 dark:text-purple-200 border-purple-400 dark:border-purple-600 shadow-2xs"
+                  ? "bg-purple-100 dark:bg-purple-900/60 text-purple-800 dark:text-purple-200 border-purple-400 dark:border-purple-600"
                   : "bg-purple-50/70 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800 hover:bg-purple-100/70"
               }`}
               title="Toggle all 21 permissions across all modules"
@@ -953,7 +1101,7 @@ export const BranchPermissionManager: React.FC<BranchPermissionManagerProps> = (
               <span>All</span>
             </label>
 
-            {/* Read, Edit, Update, Delete Checkbox Chips */}
+            {/* Read, Create, Update, Delete Checkbox Chips */}
             {CRUD_COLUMNS.map((col) => {
               const allChecked = isActionAllChecked(col.action);
               const someChecked = isActionSomeChecked(col.action);
@@ -961,7 +1109,7 @@ export const BranchPermissionManager: React.FC<BranchPermissionManagerProps> = (
               return (
                 <label
                   key={col.action}
-                  className={`px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-md text-[11px] font-semibold flex items-center gap-1.5 border transition-all cursor-pointer select-none whitespace-nowrap ${
+                  className={`px-2.5 py-0.5 sm:py-1 rounded-lg text-[11px] font-semibold flex items-center gap-1.5 border transition-all cursor-pointer select-none whitespace-nowrap shadow-2xs ${
                     allChecked ? col.activeBadgeClass : col.badgeClass
                   }`}
                   title={col.tooltip}
@@ -984,138 +1132,239 @@ export const BranchPermissionManager: React.FC<BranchPermissionManagerProps> = (
               <button
                 type="button"
                 onClick={() => applyPreset("clear")}
-                className="px-2 py-0.5 rounded text-[11px] font-semibold text-gray-500 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors cursor-pointer border border-transparent hover:border-rose-200 dark:hover:border-rose-800"
+                className="px-2 py-0.5 rounded text-[11px] font-semibold text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors cursor-pointer border border-rose-200/60 dark:border-rose-900/40"
               >
                 Clear All
               </button>
             )}
 
-            <span className="text-[11px] font-mono font-semibold text-gray-500 dark:text-gray-400">
-              Selected:{" "}
-              <strong className="text-[var(--primary-color,#009fe3)]">
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-lg bg-gray-100/80 dark:bg-gray-900/80 border border-gray-200 dark:border-gray-700/80 text-[11px]">
+              <span className="font-medium text-gray-500 dark:text-gray-400">Selected:</span>
+              <span className="font-bold font-mono text-[var(--primary-color,#009fe3)]">
                 {selectedPermissions.length}
-              </strong>{" "}
-              / {totalPossiblePermissions}
-            </span>
+              </span>
+              <span className="text-gray-400 dark:text-gray-600">/</span>
+              <span className="font-semibold font-mono text-gray-600 dark:text-gray-300">
+                {totalPossiblePermissions}
+              </span>
+            </div>
           </div>
         </div>
 
-        {/* Menu & Sub-Menu Permissions Hierarchy (Option 1 - Clean Described Way like Image 1) */}
-        <div className="flex flex-col divide-y divide-gray-100 dark:divide-gray-800/80 bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700/80 shadow-2xs overflow-hidden">
-          {PERMISSION_MODULES.map((mod, idx) => {
-            const showSectionHeader =
-              idx === 0 || PERMISSION_MODULES[idx - 1].category !== mod.category;
-            const modKeys = mod.actions.map((act) => buildPermissionKey(mod.id, act));
-            const isAllChecked =
-              modKeys.length > 0 && modKeys.every((k) => selectedPermissions.includes(k));
-            const isSomeChecked = modKeys.some((k) => selectedPermissions.includes(k));
-            const checkedCount = modKeys.filter((k) => selectedPermissions.includes(k)).length;
+        {/* Menu & Sub-Menu Permissions Hierarchy */}
+        <div className="flex flex-col bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700/80 shadow-2xs overflow-hidden">
+          {Object.keys(groupedSections).length === 0 ? (
+            <div className="py-10 px-4 text-center flex flex-col items-center justify-center gap-2">
+              <div className="w-9 h-9 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-gray-400 text-sm">
+                <FaFilter />
+              </div>
+              <p className="text-xs font-semibold text-gray-700 dark:text-gray-300">
+                No modules match your current filter or search query.
+              </p>
+              <button
+                type="button"
+                onClick={() => {
+                  setSearchQuery("");
+                  setFilterStatus("all");
+                }}
+                className="text-[11px] font-semibold text-[var(--primary-color,#009fe3)] hover:underline cursor-pointer"
+              >
+                Clear filter & search
+              </button>
+            </div>
+          ) : (
+            Object.entries(groupedSections).map(([category, modules]) => {
+              const isCollapsed = !searchQuery.trim() && Boolean(collapsedSections[category]);
 
-            return (
-              <React.Fragment key={mod.id}>
-                {showSectionHeader && (
+              return (
+                <div key={category} className="border-b last:border-b-0 border-gray-200 dark:border-gray-700/80">
+                  {/* Section Header */}
                   <div
                     style={{
                       backgroundColor: "var(--table-header-bg, var(--primary-color, #009fe3))",
                       color: "var(--table-header-text, var(--ui-on-accent, #ffffff))",
                     }}
-                    className="px-3.5 py-1.5 border-b border-t first:border-t-0 border-black/10 dark:border-white/10 flex items-center shadow-2xs"
+                    onClick={() => toggleSectionCollapse(category)}
+                    className="px-3.5 py-1.5 border-t first:border-t-0 border-black/10 dark:border-white/10 flex items-center justify-between shadow-2xs cursor-pointer select-none transition-opacity hover:opacity-95"
+                    title="Click to expand/collapse this section"
                   >
-                    <span className="text-[11px] font-bold uppercase tracking-wider text-inherit">
-                      {mod.category} Section
-                    </span>
-                  </div>
-                )}
-                <div className="p-3 sm:p-3.5 transition-colors hover:bg-gray-50/30 dark:hover:bg-gray-800/20">
-                {/* Parent Menu Header with Master Checkbox */}
-                <div className="flex items-center justify-between gap-2 pb-2">
-                  <label className="flex items-center gap-2.5 cursor-pointer select-none group">
-                    <IndeterminateCheckbox
-                      checked={isAllChecked}
-                      indeterminate={isSomeChecked && !isAllChecked}
-                      onChange={() => toggleRowAll(mod.id)}
-                      className="rounded text-[var(--primary-color,#009fe3)] focus:ring-0 h-4 w-4"
-                    />
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="font-bold text-xs sm:text-sm text-black dark:text-gray-100 group-hover:text-[var(--primary-color,#009fe3)] transition-colors">
-                        {mod.name}
-                      </span>
-                      <span className="px-1.5 py-0.5 text-[9px] font-semibold rounded bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400">
-                        {mod.category}
-                      </span>
-                      {mod.actions.length === 1 && (
-                        <span
-                          className={`px-1.5 py-0.5 text-[9px] font-semibold rounded border ${
-                            mod.actions[0] === "read"
-                              ? "bg-blue-50 dark:bg-blue-950/50 text-blue-600 dark:text-blue-300 border-blue-200 dark:border-blue-900"
-                              : mod.actions[0] === "update"
-                              ? "bg-amber-50 dark:bg-amber-950/50 text-amber-600 dark:text-amber-300 border-amber-200 dark:border-amber-900"
-                              : "bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-300 border-emerald-200 dark:border-emerald-900"
-                          }`}
-                        >
-                          {mod.actions[0] === "read"
-                            ? "View Only"
-                            : mod.actions[0] === "update"
-                            ? "Update Only"
-                            : "Single Action"}
-                        </span>
+                    <div className="flex items-center gap-2">
+                      {isCollapsed ? (
+                        <FaChevronRight size={10} className="shrink-0 transition-transform" />
+                      ) : (
+                        <FaChevronDown size={10} className="shrink-0 transition-transform" />
                       )}
+                      <span className="text-[11px] font-bold uppercase tracking-wider text-inherit">
+                        {category} Section
+                      </span>
                     </div>
-                  </label>
+                  </div>
 
-                  {/* Counter Badge */}
-                  <span className="text-[11px] font-mono text-gray-400 dark:text-gray-500 shrink-0">
-                    <strong className={checkedCount > 0 ? "text-[var(--primary-color,#009fe3)] font-bold" : "text-gray-400"}>
-                      {checkedCount}
-                    </strong>{" "}
-                    / {mod.actions.length} selected
-                  </span>
+                  {/* Modules List in Section */}
+                  {!isCollapsed && (
+                    <div className="divide-y divide-gray-100 dark:divide-gray-800/60 bg-white dark:bg-gray-900">
+                      {modules.map((mod) => {
+                        const modKeys = mod.actions.map((act) => buildPermissionKey(mod.id, act));
+                        const isAllChecked =
+                          modKeys.length > 0 && modKeys.every((k) => selectedPermissions.includes(k));
+                        const isSomeChecked = modKeys.some((k) => selectedPermissions.includes(k));
+                        const checkedCount = moduleCheckedCounts[mod.id] || 0;
+
+                        return (
+                          <div
+                            key={mod.id}
+                            className={`px-3 py-1.5 transition-colors flex flex-col lg:flex-row lg:items-center justify-between gap-2 ${
+                              isAllChecked
+                                ? "bg-emerald-50/25 dark:bg-emerald-950/10 hover:bg-emerald-50/40"
+                                : isSomeChecked
+                                ? "bg-blue-50/15 dark:bg-blue-950/5 hover:bg-blue-50/30"
+                                : "hover:bg-gray-50/60 dark:hover:bg-gray-800/30"
+                            }`}
+                          >
+                            {/* Left: Module Name + Master Checkbox + Counter */}
+                            <div className="lg:w-60 xl:w-72 shrink-0 flex items-center justify-between lg:justify-start gap-2.5 min-w-0 pr-0 lg:pr-3 border-r-0 lg:border-r border-gray-100 dark:border-gray-800">
+                              <label className="flex items-center gap-2 cursor-pointer select-none group min-w-0">
+                                <IndeterminateCheckbox
+                                  checked={isAllChecked}
+                                  indeterminate={isSomeChecked && !isAllChecked}
+                                  onChange={() => toggleRowAll(mod.id)}
+                                  className="rounded text-[var(--primary-color,#009fe3)] focus:ring-0 h-3.5 w-3.5 shrink-0"
+                                />
+                                <span className="font-bold text-xs text-gray-900 dark:text-gray-100 group-hover:text-[var(--primary-color,#009fe3)] transition-colors truncate">
+                                  {mod.name}
+                                </span>
+                                {mod.actions.length === 1 && (
+                                  <span
+                                    className={`px-1.5 py-0.2 rounded text-[8.5px] font-bold border shrink-0 ${
+                                      mod.actions[0] === "read"
+                                        ? "bg-blue-50 text-blue-700 dark:bg-blue-950/50 dark:text-blue-300 border-blue-200 dark:border-blue-800"
+                                        : "bg-amber-50 text-amber-700 dark:bg-amber-950/50 dark:text-amber-300 border-amber-200 dark:border-amber-800"
+                                    }`}
+                                  >
+                                    {mod.actions[0] === "read" ? "View Only" : "Update Only"}
+                                  </span>
+                                )}
+                              </label>
+
+                              {/* Counter Badge */}
+                              <span
+                                className={`ml-auto lg:ml-auto px-1.5 py-0.2 rounded font-mono text-[9.5px] font-bold shrink-0 border ${
+                                  isAllChecked
+                                    ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800"
+                                    : isSomeChecked
+                                    ? "bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300 border-blue-200 dark:border-blue-800"
+                                    : "bg-gray-50 text-gray-400 dark:bg-gray-800 dark:text-gray-500 border-gray-200 dark:border-gray-700"
+                                }`}
+                                title={`${checkedCount} of ${mod.actions.length} permissions granted`}
+                              >
+                                {checkedCount}/{mod.actions.length}
+                              </span>
+                            </div>
+
+                            {/* Right: Actions */}
+                            <div className="flex-1 min-w-0 pl-0 lg:pl-3">
+                              {mod.actions.length === 1 ? (
+                                // Single Action pill
+                                <div className="flex items-center">
+                                  {CRUD_COLUMNS.filter((col) => mod.actions.includes(col.action)).map((col) => {
+                                    const checked = isChecked(mod.id, col.action);
+                                    const subTitle = ACTION_TITLES[mod.id]?.[col.action] || `${col.label} ${mod.name}`;
+                                    const standardLabel = ACTION_STANDARD_NAMES[col.action] || col.label;
+                                    return (
+                                      <label
+                                        key={col.action}
+                                        className={`flex items-center justify-between gap-2 py-1 px-2.5 rounded-md border cursor-pointer select-none transition-all w-full sm:w-auto sm:min-w-[200px] max-w-xs ${
+                                          checked
+                                            ? col.activeCardClass
+                                            : "bg-gray-50/70 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 hover:bg-gray-100/80"
+                                        }`}
+                                        title={`${standardLabel} (${subTitle})`}
+                                      >
+                                        <div className="flex items-center gap-2 min-w-0">
+                                          <input
+                                            type="checkbox"
+                                            checked={checked}
+                                            onChange={() => toggleSingle(mod.id, col.action)}
+                                            className={`rounded h-3.5 w-3.5 shrink-0 ${col.checkboxColor}`}
+                                          />
+                                          <span className="font-semibold text-xs truncate">
+                                            {standardLabel}
+                                          </span>
+                                        </div>
+                                        <span
+                                          className={`px-1.5 py-0.2 rounded text-[8.5px] font-bold shrink-0 border ${
+                                            checked ? col.activeBadgeClass : col.badgeClass
+                                          }`}
+                                        >
+                                          {col.label}
+                                        </span>
+                                      </label>
+                                    );
+                                  })}
+                                </div>
+                              ) : (
+                                // 4-column responsive grid
+                                <div className="grid grid-cols-2 lg:grid-cols-4 gap-1.5">
+                                  {CRUD_COLUMNS.map((col) => {
+                                    const hasAction = mod.actions.includes(col.action);
+                                    if (!hasAction) {
+                                      return (
+                                        <div
+                                          key={col.action}
+                                          className="hidden lg:flex items-center justify-center py-1 px-2 rounded-md border border-dashed border-gray-100 dark:border-gray-800 text-[10px] text-gray-300 dark:text-gray-700 select-none"
+                                        >
+                                          &mdash;
+                                        </div>
+                                      );
+                                    }
+
+                                    const checked = isChecked(mod.id, col.action);
+                                    const subTitle = ACTION_TITLES[mod.id]?.[col.action] || `${col.label} ${mod.name}`;
+                                    const standardLabel = ACTION_STANDARD_NAMES[col.action] || col.label;
+
+                                    return (
+                                      <label
+                                        key={col.action}
+                                        className={`flex items-center justify-between gap-1.5 py-1 px-2 rounded-md border cursor-pointer select-none transition-all ${
+                                          checked
+                                            ? col.activeCardClass
+                                            : "bg-gray-50/70 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 hover:bg-gray-100/80"
+                                        }`}
+                                        title={`${standardLabel} (${subTitle})`}
+                                      >
+                                        <div className="flex items-center gap-1.5 min-w-0">
+                                          <input
+                                            type="checkbox"
+                                            checked={checked}
+                                            onChange={() => toggleSingle(mod.id, col.action)}
+                                            className={`rounded h-3.5 w-3.5 shrink-0 ${col.checkboxColor}`}
+                                          />
+                                          <span className="font-medium text-[11.5px] truncate">
+                                            {standardLabel}
+                                          </span>
+                                        </div>
+                                        <span
+                                          className={`px-1 py-0.2 rounded text-[8.5px] font-bold shrink-0 border ${
+                                            checked ? col.activeBadgeClass : col.badgeClass
+                                          }`}
+                                        >
+                                          {col.label}
+                                        </span>
+                                      </label>
+                                    );
+                                  })}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
-
-                {/* Sub-menus Grid with Checkboxes */}
-                <div className="pl-6 sm:pl-7 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 pt-1">
-                  {CRUD_COLUMNS.map((col) => {
-                    const hasAction = mod.actions.includes(col.action);
-                    if (!hasAction) return null; // Option 1: Only render valid backend actions!
-
-                    const checked = isChecked(mod.id, col.action);
-                    const subTitle = ACTION_TITLES[mod.id]?.[col.action] || `${col.label} ${mod.name}`;
-
-                    return (
-                      <label
-                        key={col.action}
-                        className={`flex items-center justify-between gap-2 p-2 rounded-lg border cursor-pointer select-none transition-all ${
-                          checked
-                            ? "bg-blue-50/70 dark:bg-blue-950/40 border-blue-300 dark:border-blue-800 shadow-2xs"
-                            : "bg-gray-50/70 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 hover:bg-gray-100/80 dark:hover:bg-gray-800/80"
-                        }`}
-                      >
-                        <div className="flex items-center gap-2 min-w-0">
-                          <input
-                            type="checkbox"
-                            checked={checked}
-                            onChange={() => toggleSingle(mod.id, col.action)}
-                            className={`rounded h-4 w-4 shrink-0 ${col.checkboxColor}`}
-                          />
-                          <span className="font-semibold text-xs text-black dark:text-gray-200 truncate">
-                            {subTitle}
-                          </span>
-                        </div>
-                        <span
-                          className={`px-1.5 py-0.5 rounded text-[9px] font-bold shrink-0 border ${
-                            checked ? col.activeBadgeClass : col.badgeClass
-                          }`}
-                        >
-                          {col.label}
-                        </span>
-                      </label>
-                    );
-                  })}
-                </div>
-              </div>
-            </React.Fragment>
-          );
-        })}
+              );
+            })
+          )}
         </div>
 
         {/* Action Save Button */}
@@ -1147,111 +1396,6 @@ export const BranchPermissionManager: React.FC<BranchPermissionManagerProps> = (
             />
           </div>
         </div>
-      </div>
-
-      {/* Assigned Branches List */}
-      <div className="flex flex-col gap-2">
-        <span className="text-xs font-semibold text-gray-700 dark:text-gray-300">
-          Assigned Branches with Active CRUD Grants ({permissions.length})
-        </span>
-
-        {isLoadingPerms || isLoadingBranches ? (
-          <div className="py-6 flex flex-col items-center justify-center gap-1.5 text-gray-400 text-xs">
-            <div className="w-5 h-5 border-2 border-[var(--primary-color,#009fe3)] border-t-transparent rounded-full animate-spin" />
-            <span>Loading assigned permissions...</span>
-          </div>
-        ) : permissions.length === 0 ? (
-          <div className="py-6 text-center text-xs text-gray-500 bg-gray-50/50 dark:bg-gray-900/30 rounded-xl border border-dashed border-gray-200 dark:border-gray-700">
-            No branch access assigned yet. Select a branch above and check the permitted actions to grant access.
-          </div>
-        ) : (
-          <div className="flex flex-col gap-2">
-            {permissions.map((p: any) => {
-              const pId = p.id || p.permissionId;
-              const bId = Number(p.branchId || p.branch_id);
-              const branchObj = branches.find((b) => b.branchId === bId);
-              const branchName = branchObj?.name || p.branchName || `Branch #${bId}`;
-              const branchCode = branchObj?.code || p.branchCode || "";
-              const permsList: string[] = Array.isArray(p.permissions) ? p.permissions : [];
-
-              return (
-                <div
-                  key={pId || bId}
-                  className="flex flex-col sm:flex-row sm:items-center justify-between p-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-xs shadow-xs gap-2"
-                >
-                  <div className="flex items-start gap-2.5 min-w-0">
-                    <div className="w-7 h-7 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 flex items-center justify-center text-xs shrink-0 mt-0.5">
-                      <FaBuilding />
-                    </div>
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-2">
-                        <span className="font-bold text-black dark:text-gray-100 truncate block">
-                          {branchName}
-                        </span>
-                        {branchCode && (
-                          <span className="text-[10px] text-gray-400 font-mono">
-                            ({branchCode})
-                          </span>
-                        )}
-                        {Boolean(p.primary) && (
-                          <span className="px-1.5 py-0.5 text-[9px] font-bold rounded-md bg-purple-50 text-purple-700 dark:bg-purple-950/60 dark:text-purple-300 border border-purple-200 dark:border-purple-800">
-                            Primary
-                          </span>
-                        )}
-                      </div>
-
-                      {/* CRUD Capability Badges */}
-                      <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
-                        {CRUD_COLUMNS.map((col) => {
-                          const count = permsList.filter(
-                            (k) => k.endsWith(`:${col.action}`) || k.endsWith(`.${col.action}`)
-                          ).length;
-                          if (count === 0) return null;
-                          return (
-                            <span
-                              key={col.action}
-                              className={`px-2 py-0.5 text-[9px] font-bold rounded-md border ${col.badgeClass}`}
-                            >
-                              {col.label} ({count})
-                            </span>
-                          );
-                        })}
-                        {permsList.length === 0 && (
-                          <span className="px-2 py-0.5 text-[9px] font-bold rounded-md bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400">
-                            No Access Assigned
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-1.5 self-end sm:self-auto">
-                    <button
-                      type="button"
-                      onClick={() => handleEditExisting(p)}
-                      className="p-1.5 text-blue-600 hover:text-blue-800 hover:bg-blue-50 dark:hover:bg-blue-950/40 rounded-lg transition-colors cursor-pointer flex items-center gap-1 text-[11px]"
-                      title="Edit CRUD permissions"
-                    >
-                      <FaEdit size={11} />
-                      <span>Edit</span>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => handleRemove(pId)}
-                      disabled={deleteMutation.isPending}
-                      className="p-1.5 text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-lg transition-colors cursor-pointer flex items-center gap-1 text-[11px]"
-                      title="Revoke branch access"
-                    >
-                      <FaTrash size={10} />
-                      <span>Revoke</span>
-                    </button>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
       </div>
     </div>
   );

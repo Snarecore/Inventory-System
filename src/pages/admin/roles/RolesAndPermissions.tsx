@@ -231,11 +231,10 @@ const EmployeeActionCell: React.FC<EmployeeActionCellProps> = ({
           <button
             type="button"
             onClick={() => onSelectEmployee(employee, firstBranchId)}
-            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold bg-[var(--primary-color,#009fe3)] text-white hover:bg-[var(--primary-color-hover,#008bc7)] transition-colors cursor-pointer shadow-2xs"
-            title="Edit existing branch access and view assigned permissions"
+            className="p-1.5 rounded-lg bg-[var(--primary-color,#009fe3)] text-white hover:bg-[var(--primary-color-hover,#008bc7)] transition-colors cursor-pointer shadow-2xs"
+            title="Edit branch permissions"
           >
             <FaEdit size={11} />
-            <span>Edit</span>
           </button>
           <button
             type="button"
