@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { menu } from "@/navigation/sidebar";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { MotionDiv } from "@/utils/framer.motion";
@@ -25,6 +25,8 @@ import { UserAvatar, Badge } from "@/components/common";
 import { useAppearance } from "@/theme";
 import logoImg from "@/assets/logo.jpeg";
 import BranchSwitcher from "@/components/admin/BranchSwitcher";
+import { usePermission } from "@/hooks/usePermission";
+import { canAccessMenuItem } from "@/utils/permission-utils";
 
 const MenuItem = ({
     icon,
@@ -63,6 +65,53 @@ const Header = ({ sidebarClick }: { sidebarClick: boolean }) => {
     const toggleColorMode = () => {
         setOverrides({ colorMode: isDark ? "light" : "dark" });
     };
+
+    const { permissions, isAdmin } = usePermission();
+
+    const filteredMenu = useMemo(() => {
+        return menu
+            .map((section) => {
+                // Strict multi-tenant security: non-admins cannot manage employees, branches, or system administration
+                if (!isAdmin && (section.sectionName === "Administration" || section.sectionName === "System")) {
+                    return null;
+                }
+
+                const items = section.items
+                    .map((item) => {
+                        // Strict multi-tenant security: non-admins cannot manage employees
+                        if (
+                            !isAdmin &&
+                            (item.name === "Employee" ||
+                                item.path?.includes("/employee") ||
+                                item.path?.includes("/branches") ||
+                                item.name === "Branch Management" ||
+                                item.name === "Administration" ||
+                                item.name === "Roles & Permissions" ||
+                                item.path?.includes("/roles") ||
+                                item.path?.includes("/users"))
+                        ) {
+                            return null;
+                        }
+
+                        if (!canAccessMenuItem(item, permissions, isAdmin)) {
+                            return null;
+                        }
+
+                        if (item.subItems && item.subItems.length > 0) {
+                            const sub = item.subItems.filter((s) => canAccessMenuItem(s, permissions, isAdmin));
+                            if (sub.length === 0) return null;
+                            return { ...item, subItems: sub };
+                        }
+
+                        return item;
+                    })
+                    .filter(Boolean);
+
+                if (items.length === 0) return null;
+                return { ...section, items: items as any[] };
+            })
+            .filter(Boolean) as typeof menu;
+    }, [isAdmin, permissions]);
 
     const userInfo = getUserInfo();
     const displayName = userProfile?.fullName || userInfo?.fullName || "Admin";
@@ -233,7 +282,7 @@ const Header = ({ sidebarClick }: { sidebarClick: boolean }) => {
                             }`}
                     >
                         <div className="p-4">
-                            {menu.map((section) => (
+                            {filteredMenu.map((section) => (
                                 <div key={section.sectionName} className="p-2 mb-2">
                                     <p className="text-[12px] text-[#092c4c] font-bold mb-2">
                                         {section.sectionName}

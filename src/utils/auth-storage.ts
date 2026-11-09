@@ -150,7 +150,12 @@ export function saveLoginSession(data: LoginSuccessResponse, rememberMe = true):
             Boolean((data as any)?.userId));
 
     const numericUserId = (data as any)?.userId ? Number((data as any).userId) : undefined;
-    const employeeId = isEmployee && numericUserId ? numericUserId : undefined;
+    const rawEmpId =
+        data.employeeId ??
+        (data as any)?.employee_id ??
+        (data as any)?.empId;
+    const numericEmpId = rawEmpId !== undefined && !isNaN(Number(rawEmpId)) ? Number(rawEmpId) : undefined;
+    const employeeId = isEmployee ? (numericEmpId || numericUserId) : undefined;
 
     const userInfo: UserInfo = {
         phone: data.phoneNumber,

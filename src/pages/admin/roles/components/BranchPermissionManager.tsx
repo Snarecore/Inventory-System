@@ -667,9 +667,17 @@ export const BranchPermissionManager: React.FC<BranchPermissionManagerProps> = (
   const handleEditExisting = (perm: any) => {
     const pId = Number(perm.id || perm.permissionId);
     const bId = Number(perm.branchId || perm.branch_id);
-    let permsList: string[] = Array.isArray(perm.permissions) ? [...perm.permissions] : [];
+    let permsList: string[] = [];
+    if (Array.isArray(perm.permissions)) {
+      permsList = [...perm.permissions];
+    } else if (typeof perm.permissions === "string" && perm.permissions.trim()) {
+      try {
+        const parsed = JSON.parse(perm.permissions);
+        if (Array.isArray(parsed)) permsList = parsed;
+      } catch {}
+    }
 
-    if (permsList.length === 0) {
+    if (permsList.length === 0 && (perm.permissions === undefined || perm.permissions === null)) {
       if (perm.canView) {
         permsList.push(...getReadOnlyPermissionKeys());
       }
@@ -686,7 +694,7 @@ export const BranchPermissionManager: React.FC<BranchPermissionManagerProps> = (
           ...PERMISSION_MODULES.map((m) => buildPermissionKey(m.id, "delete"))
         );
       }
-    } else {
+    } else if (permsList.length > 0) {
       // Map legacy saved permissions so the granular UI checkboxes correctly show previous access
       const expandedPerms = new Set(permsList);
 

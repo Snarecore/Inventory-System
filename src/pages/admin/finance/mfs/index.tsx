@@ -7,8 +7,10 @@ import { useMfsUserListQuery } from "@/hooks/useMfsQueries";
 import { formatMoney } from "@/utils/formatters";
 import { calculateAccountMetrics } from "../utils/finance-metrics";
 import { FaPlus, FaMobileAlt, FaWallet, FaCheckCircle, FaTimesCircle } from "react-icons/fa";
+import { usePermission } from "@/hooks/usePermission";
 
 export const MfsPage: React.FC = () => {
+  const { canCreate } = usePermission();
   const navigate = useNavigate();
   const { data, isLoading, refetch, isRefetching } = useMfsUserListQuery();
   const accounts = data?.mfsUsers || [];
@@ -67,13 +69,15 @@ export const MfsPage: React.FC = () => {
         />
         <div className="flex items-center gap-2 self-end sm:self-auto">
           <RefreshButton onClick={() => refetch()} isLoading={isLoading || isRefetching} />
-          <Button
-            label="Add MFS Account"
-            onClick={handleAddNew}
-            color="var(--primary-color)"
-            hoverColor="var(--primary-color-hover)"
-            icon={<FaPlus className="text-white text-xs" />}
-          />
+          {canCreate("mfs") && (
+            <Button
+              label="Add MFS Account"
+              onClick={handleAddNew}
+              color="var(--primary-color)"
+              hoverColor="var(--primary-color-hover)"
+              icon={<FaPlus className="text-white text-xs" />}
+            />
+          )}
         </div>
       </div>
 

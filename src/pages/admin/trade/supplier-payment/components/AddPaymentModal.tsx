@@ -4,6 +4,8 @@ import { usePaymentMutation } from "@/hooks/usePaymentMutation";
 import { sortPurchaseInvoicesFIFO } from "@/services/payment-service";
 import type { PaymentReceiptData, SupplierDueItem } from "@/types/payment.types";
 import TradeAddSettlementModal from "@/components/settlement/TradeAddSettlementModal";
+import { usePermission } from "@/hooks/usePermission";
+import { showErrorToast } from "@/utils/toast-utils";
 
 export interface AddPaymentModalProps {
   isOpen: boolean;
@@ -18,6 +20,7 @@ export const AddPaymentModal: React.FC<AddPaymentModalProps> = ({
   onClose,
   onSuccess,
 }) => {
+  const { canCreate } = usePermission();
   const supplierId = supplier?.supplierId ? String(supplier.supplierId) : "";
   const { data: rawInvoices = [], isLoading: isInvoicesLoading } =
     usePurchasesInvoicesDueQuery(supplierId, {
@@ -45,6 +48,11 @@ export const AddPaymentModal: React.FC<AddPaymentModalProps> = ({
     totalSettleAmount: number;
   }) => {
     if (!supplier) return;
+
+    if (!canCreate("supplier_payment")) {
+      showErrorToast("You do not have permission to record supplier payment.");
+      return;
+    }
 
     const remainingTotalDue = Math.max(
       0,

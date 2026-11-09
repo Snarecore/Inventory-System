@@ -35,8 +35,10 @@ import { showErrorToast } from "@/utils/toast-utils";
 import type { CategoryItem, InsertCategoryPayload } from "@/types";
 import { FaCoins, FaMoneyBillWave, FaCalendarAlt, FaCheckCircle, FaPlus } from "react-icons/fa";
 import moment from "moment";
+import { usePermission } from "@/hooks/usePermission";
 
 export const OpeningCashBalancePage: React.FC = () => {
+  const { canCreate } = usePermission();
   const queryClient = useQueryClient();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [balanceInput, setBalanceInput] = useState("");
@@ -127,6 +129,11 @@ export const OpeningCashBalancePage: React.FC = () => {
   // Submit handler - records a new opening cash entry in backend
   const handleSubmit = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
+
+    if (!canCreate("opening_cash")) {
+      showErrorToast("You do not have permission to record opening cash balance.");
+      return;
+    }
 
     const num = Number(balanceInput);
     if (balanceInput === "" || isNaN(num) || num <= 0) {
@@ -220,13 +227,15 @@ export const OpeningCashBalancePage: React.FC = () => {
             }}
             isLoading={isCatLoading || isCashLoading || isTxnLoading}
           />
-          <Button
-            label="New Opening Cash"
-            onClick={handleOpenNewModal}
-            color="var(--color-primary)"
-            hoverColor="var(--color-primary-hover)"
-            icon={<FaPlus className="text-white text-xs" />}
-          />
+          {canCreate("opening_cash") && (
+            <Button
+              label="New Opening Cash"
+              onClick={handleOpenNewModal}
+              color="var(--color-primary)"
+              hoverColor="var(--color-primary-hover)"
+              icon={<FaPlus className="text-white text-xs" />}
+            />
+          )}
         </div>
       </div>
 
@@ -307,8 +316,8 @@ export const OpeningCashBalancePage: React.FC = () => {
                   colSpan={6}
                   title="No Opening Cash Balance Found"
                   description="No opening cash balance recorded yet. Click 'New Opening Cash' to initialize your starting cash in hand."
-                  actionLabel="New Opening Cash"
-                  onAction={handleOpenNewModal}
+                  actionLabel={canCreate("opening_cash") ? "New Opening Cash" : undefined}
+                  onAction={canCreate("opening_cash") ? handleOpenNewModal : undefined}
                 />
               )}
             </TableBody>

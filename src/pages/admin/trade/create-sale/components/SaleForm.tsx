@@ -43,6 +43,7 @@ import { cashLeg, bankLeg, mfsLeg, type TradeTender } from "@/services/financial
 import { useTradeProducts } from "@/hooks/useTradeProducts";
 import { useTradeParties } from "@/hooks/useTradeParties";
 import { useTradeLineItems, type TradeLineItem } from "@/hooks/useTradeLineItems";
+import { usePermission } from "@/hooks/usePermission";
 import type { SaleItem, PartyItem } from "@/types";
 
 type FormLineItem = TradeLineItem;
@@ -68,6 +69,8 @@ export const CreateSaleForm: React.FC = () => {
 
   const stateEditData: SaleItem | undefined = (location.state as any)?.editData;
   const isEditMode = Boolean(routeId || stateEditData);
+  const { canCreate, canUpdate } = usePermission();
+  const hasPermission = isEditMode ? canUpdate("sales") : canCreate("sales");
 
   // Basic Information
   const [invoiceNo, setInvoiceNo] = useState<string>("");
@@ -416,6 +419,10 @@ export const CreateSaleForm: React.FC = () => {
   // Pre-Submit validation & Modal Open
   const handlePreSubmit = (shouldPrint = false) => {
     if (isSubmittingRef.current || isSubmitting) return;
+    if (!hasPermission) {
+      showErrorToast(`You do not have permission to ${isEditMode ? "update" : "create"} sales!`);
+      return;
+    }
     if (!selectedCustomer) {
       showErrorToast("Please select or add a customer");
       return;
@@ -836,6 +843,7 @@ export const CreateSaleForm: React.FC = () => {
             isSubmitting={isSubmitting}
             isEditMode={isEditMode}
             saveLabel="Sale"
+            disabled={!hasPermission}
             onSave={() => handlePreSubmit(false)}
             onSaveAndPrint={() => handlePreSubmit(true)}
           />

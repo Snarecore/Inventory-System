@@ -16,8 +16,10 @@ import {
 import { formatMoney } from "@/utils/formatters";
 import type { LedgerPerson, LedgerTransaction } from "@/types";
 import { FaPlus, FaUsers, FaMoneyBillWave } from "react-icons/fa";
+import { usePermission } from "@/hooks/usePermission";
 
 export const KhatabookPage: React.FC = () => {
+  const { canCreate } = usePermission();
   const { persons, kpi, isLoading, isFetching, refetch } = useKhatabookDashboardQuery();
 
   // Drawer States
@@ -65,27 +67,31 @@ export const KhatabookPage: React.FC = () => {
         <div className="flex flex-wrap items-center gap-2">
           <RefreshButton onClick={() => refetch()} isLoading={isLoading || isFetching} />
 
-          <Button
-            label="Record Transaction"
-            onClick={() => {
-              setTxnToEdit(null);
-              setTxnDefaultPersonId(null);
-              setTxnDefaultType("PABO");
-              setIsTxnDrawerOpen(true);
-            }}
-            color="#059669"
-            icon={<FaPlus size={11} />}
-          />
+          {canCreate("khatabook") && (
+            <>
+              <Button
+                label="Record Transaction"
+                onClick={() => {
+                  setTxnToEdit(null);
+                  setTxnDefaultPersonId(null);
+                  setTxnDefaultType("PABO");
+                  setIsTxnDrawerOpen(true);
+                }}
+                color="#059669"
+                icon={<FaPlus size={11} />}
+              />
 
-          <Button
-            label="Add Person"
-            onClick={() => {
-              setPersonToEdit(null);
-              setIsPersonDrawerOpen(true);
-            }}
-            color="#009fe3"
-            icon={<FaPlus size={11} />}
-          />
+              <Button
+                label="Add Person"
+                onClick={() => {
+                  setPersonToEdit(null);
+                  setIsPersonDrawerOpen(true);
+                }}
+                color="#009fe3"
+                icon={<FaPlus size={11} />}
+              />
+            </>
+          )}
         </div>
       </div>
 

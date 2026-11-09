@@ -21,6 +21,7 @@ import { exportProductCategoriesToExcel } from "@/utils/excel-export";
 import { showSuccessToast, showErrorToast } from "@/utils/toast-utils";
 import { FaCheckCircle, FaTimesCircle } from "react-icons/fa";
 import { FiChevronDown } from "react-icons/fi";
+import { usePermission } from "@/hooks/usePermission";
 
 interface ProductCategoryTableProps {
   categories: ProductCategoryItem[];
@@ -41,6 +42,7 @@ export const ProductCategoryTable: React.FC<ProductCategoryTableProps> = ({
   onToggleStatus,
   togglingId,
 }) => {
+  const { canCreate, canUpdate, canDelete } = usePermission();
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
 
@@ -287,16 +289,22 @@ export const ProductCategoryTable: React.FC<ProductCategoryTableProps> = ({
                         <TableCell align="center">
                           <button
                             type="button"
-                            onClick={() => onToggleStatus(item)}
-                            disabled={isToggling}
+                            onClick={() => canUpdate("category_product") && onToggleStatus(item)}
+                            disabled={isToggling || !canUpdate("category_product")}
                             className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-semibold border transition-all ${
-                              isToggling
+                              !canUpdate("category_product")
+                                ? "bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed"
+                                : isToggling
                                 ? "bg-gray-100 text-gray-500 border-gray-300 cursor-wait"
                                 : isActive
                                 ? "bg-emerald-100 text-emerald-800 border-emerald-300 hover:bg-emerald-200 cursor-pointer"
                                 : "bg-rose-100 text-rose-800 border-rose-300 hover:bg-rose-200 cursor-pointer"
                             }`}
-                            title="Click to toggle status"
+                            title={
+                              !canUpdate("category_product")
+                                ? "Permission required to change status"
+                                : "Click to toggle status"
+                            }
                           >
                             {isToggling ? "Updating..." : isActive ? "Active" : "Inactive"}
                           </button>
@@ -305,8 +313,8 @@ export const ProductCategoryTable: React.FC<ProductCategoryTableProps> = ({
                         {/* Action: Edit & Delete */}
                         <TableCell align="center">
                           <TableActionButtons
-                            onEdit={() => onEdit(item)}
-                            onDelete={() => onDelete(item)}
+                            onEdit={canUpdate("category_product") ? () => onEdit(item) : undefined}
+                            onDelete={canDelete("category_product") ? () => onDelete(item) : undefined}
                             editTitle="Edit Category"
                             deleteTitle="Delete Category"
                             className="justify-center"
@@ -321,8 +329,8 @@ export const ProductCategoryTable: React.FC<ProductCategoryTableProps> = ({
                       <EmptyState
                         title="No categories found"
                         description="There are no product categories matching your search or filters."
-                        buttonText="+ Add Category"
-                        onButtonClick={onAddNew}
+                        buttonText={canCreate("category_product") ? "+ Add Category" : undefined}
+                        onButtonClick={canCreate("category_product") ? onAddNew : undefined}
                       />
                     </td>
                   </tr>

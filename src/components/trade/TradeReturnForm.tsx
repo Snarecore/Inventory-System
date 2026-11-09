@@ -45,6 +45,7 @@ import { useTradeRefund } from "@/hooks/useTradeRefund";
 import TradeRefundSection from "@/components/trade/TradeRefundSection";
 import TradeInvoiceModal from "@/components/invoice/TradeInvoiceModal";
 import { normalizeSalesReturnInvoice, normalizePurchaseReturnInvoice } from "@/components/invoice/trade-invoice-adapters";
+import { usePermission } from "@/hooks/usePermission";
 
 export interface TradeReturnLineItem {
   id: string | number;
@@ -75,6 +76,8 @@ export const TradeReturnForm: React.FC<TradeReturnFormProps> = ({ mode }) => {
   const { recordTradeLedger } = useFinancialLedger();
 
   const isSale = mode === "sale";
+  const { canCreate } = usePermission();
+  const canCreateReturn = canCreate(isSale ? "sales_return" : "purchase_return") || canCreate(isSale ? "sales" : "purchase");
   const partyLabel = isSale ? "Customer" : "Supplier";
   const invoiceLabel = isSale ? "Sales Invoice" : "Purchase Invoice";
   const reasonsList = isSale ? RETURN_REASONS : PURCHASE_RETURN_REASONS;
@@ -533,6 +536,11 @@ export const TradeReturnForm: React.FC<TradeReturnFormProps> = ({ mode }) => {
 
   // Submit Pre-check
   const handlePreSubmit = (autoPrint: boolean) => {
+    if (!canCreateReturn) {
+      showErrorToast(`You do not have permission to process ${isSale ? "sales" : "purchase"} returns.`);
+      return;
+    }
+
     if (!selectedOrder) {
       showErrorToast(`Please select a ${invoiceLabel} first.`);
       return;
@@ -1147,7 +1155,7 @@ export const TradeReturnForm: React.FC<TradeReturnFormProps> = ({ mode }) => {
               color="var(--primary-color)"
               size="md"
               onClick={() => handlePreSubmit(false)}
-              disabled={!selectedOrder || lines.filter((l) => l.isSelected && l.quantity > 0).length === 0}
+              disabled={!canCreateReturn || !selectedOrder || lines.filter((l) => l.isSelected && l.quantity > 0).length === 0}
             />
             <Button
               label="Save & Print Receipt"
@@ -1155,7 +1163,7 @@ export const TradeReturnForm: React.FC<TradeReturnFormProps> = ({ mode }) => {
               size="md"
               icon={<FaPrint size={13} />}
               onClick={() => handlePreSubmit(true)}
-              disabled={!selectedOrder || lines.filter((l) => l.isSelected && l.quantity > 0).length === 0}
+              disabled={!canCreateReturn || !selectedOrder || lines.filter((l) => l.isSelected && l.quantity > 0).length === 0}
             />
           </div>
         </div>

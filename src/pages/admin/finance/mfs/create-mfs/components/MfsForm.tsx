@@ -10,6 +10,7 @@ import { MFS_METHODS, methodMeta, PHONE_REGEX, sanitizeDigits } from "@/services
 import MfsLogo from "../../components/MfsLogo";
 import { formatMoney } from "@/utils/formatters";
 import { showSuccessToast, showErrorToast } from "@/utils/toast-utils";
+import { usePermission } from "@/hooks/usePermission";
 import type { MfsUserItem } from "@/types";
 
 interface MfsFormProps {
@@ -38,6 +39,8 @@ export const MfsForm: React.FC<MfsFormProps> = ({
   const navigate = useNavigate();
   const { id } = useParams<{ id?: string }>();
   const isEdit = Boolean(id);
+  const { canCreate, canUpdate } = usePermission();
+  const hasPermission = isEdit ? canUpdate("mfs") : canCreate("mfs");
 
   // Pure state initialization: mounts once directly with initialData via parent key
   const [form, setForm] = useState(() => getInitialForm(initialData));
@@ -93,6 +96,9 @@ export const MfsForm: React.FC<MfsFormProps> = ({
   const handleSubmit = useCallback(
     (e?: React.FormEvent) => {
       if (e) e.preventDefault();
+      if (!hasPermission) {
+        return showErrorToast(`You do not have permission to ${isEdit ? "update" : "create"} MFS accounts.`);
+      }
       if (isPending) return;
       const validationErrors = validate();
       if (Object.keys(validationErrors).length > 0) {
@@ -124,7 +130,7 @@ export const MfsForm: React.FC<MfsFormProps> = ({
         });
       }
     },
-    [isPending, validate, isEdit, id, form, initialData, updateMutation, insertMutation]
+    [isPending, validate, isEdit, id, form, initialData, updateMutation, insertMutation, hasPermission]
   );
 
   const brand = methodMeta(form.method);
@@ -162,7 +168,7 @@ export const MfsForm: React.FC<MfsFormProps> = ({
             label={isPending ? (isEdit ? "Updating..." : "Saving...") : (isEdit ? "Update MFS Account" : "Save MFS Account")}
             onClick={() => handleSubmit()}
             color="var(--color-primary)"
-            disabled={isPending}
+            disabled={!hasPermission || isPending}
             buttonClass="!text-xs !py-1.5 !w-auto justify-center font-medium !text-white"
           />
         </div>

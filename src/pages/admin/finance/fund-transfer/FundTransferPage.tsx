@@ -9,6 +9,7 @@ import { showErrorToast } from "@/utils/toast-utils";
 import { useInsertFinancialTransactionMutation } from "@/hooks/useFinanceQueries";
 import { yearmonthOf, type FinancialAccountType } from "@/services/financial-ledger-service";
 import type { BankAccountItem, MfsUserItem } from "@/types";
+import { usePermission } from "@/hooks/usePermission";
 import {
   FaWallet,
   FaLandmark,
@@ -30,6 +31,7 @@ const getTodayString = () => {
 };
 
 export const FundTransferPage: React.FC = () => {
+  const { canCreate } = usePermission();
   const todayStr = useMemo(() => getTodayString(), []);
 
   // Form State
@@ -282,6 +284,12 @@ export const FundTransferPage: React.FC = () => {
   // Submit Handler connected to backend API
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!canCreate("fund_transfer")) {
+      showErrorToast("You do not have permission to execute fund transfers.");
+      return;
+    }
+
     const newErrors: Record<string, string> = {};
 
     if (!amountNum || amountNum <= 0) {
@@ -734,7 +742,7 @@ export const FundTransferPage: React.FC = () => {
                   label={insertMutation.isPending ? "Transferring..." : "Transfer Now"}
                   type="submit"
                   size="sm"
-                  disabled={amountNum <= 0 || isInsufficient || isSameAccount || insertMutation.isPending}
+                  disabled={amountNum <= 0 || isInsufficient || isSameAccount || insertMutation.isPending || !canCreate("fund_transfer")}
                   isLoading={insertMutation.isPending}
                   color="var(--color-primary)"
                   hoverColor="var(--color-primary-hover)"

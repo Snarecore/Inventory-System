@@ -6,6 +6,9 @@ import { isUserAdmin } from "@/utils/branch-storage";
 import { MotionDiv } from "@/utils/framer.motion";
 import logoImg from "@/assets/logo.jpeg";
 
+import { usePermission } from "@/hooks/usePermission";
+import { canAccessMenuItem } from "@/utils/permission-utils";
+
 type SidebarProps = {
   sidebarClick: boolean;
   setSidebarClick: React.Dispatch<React.SetStateAction<boolean>>;
@@ -17,40 +20,44 @@ const Sidebar = ({ sidebarClick }: SidebarProps) => {
   const navigate = useNavigate();
 
   const [openSubMenu, setOpenSubMenu] = useState<number | null>(null);
-  const isAdmin = isUserAdmin();
+  const { permissions, isAdmin } = usePermission();
 
-  // Strictly filter menu: Non-admin employees cannot see administration, branch management, or employee management
+  // Strictly filter menu: Non-admin employees only see modules they have explicit permission for
   const filteredMenu = useMemo(() => {
     return menu
       .map((section) => {
-        // Hide entire Administration section for non-admin staff
-        if (!isAdmin && section.sectionName === "Administration") {
+        // Strict multi-tenant security: non-admins cannot manage employees, branches, or system administration
+        if (!isAdmin && (section.sectionName === "Administration" || section.sectionName === "System")) {
           return null;
         }
 
         const items = section.items
           .map((item) => {
-            // Hide Employee module management for non-admin staff
-            if (!isAdmin && item.name === "Employee") {
+            // Strict multi-tenant security: non-admins cannot manage employees
+            if (
+              !isAdmin &&
+              (item.name === "Employee" ||
+                item.path?.includes("/employee") ||
+                item.path?.includes("/branches") ||
+                item.name === "Branch Management" ||
+                item.name === "Administration" ||
+                item.name === "Roles & Permissions" ||
+                item.path?.includes("/roles") ||
+                item.path?.includes("/users"))
+            ) {
               return null;
             }
 
-            // Filter subItems
+            // Strict check: if user cannot access this module, hide it completely
+            if (!canAccessMenuItem(item, permissions, isAdmin)) {
+              return null;
+            }
+
+            // Filter subItems to only allowed ones
             if (item.subItems && item.subItems.length > 0) {
-              const sub = item.subItems.filter((s) => {
-                // Non-admin staff cannot manage branches
-                if (!isAdmin && (s.path === "/admin/branches" || s.path === "/admin/branches/add")) {
-                  return false;
-                }
-                return true;
-              });
+              const sub = item.subItems.filter((s) => canAccessMenuItem(s, permissions, isAdmin));
               if (sub.length === 0) return null;
               return { ...item, subItems: sub };
-            }
-
-            // Hide standalone branch management
-            if (!isAdmin && item.path === "/admin/branches") {
-              return null;
             }
 
             return item;
@@ -61,7 +68,7 @@ const Sidebar = ({ sidebarClick }: SidebarProps) => {
         return { ...section, items: items as any[] };
       })
       .filter(Boolean) as typeof menu;
-  }, [isAdmin]);
+  }, [isAdmin, permissions]);
 
   useEffect(() => {
     if (!sidebarClick) {

@@ -16,6 +16,7 @@ import {
   FaExclamationTriangle,
   FaSpinner,
 } from "react-icons/fa";
+import { usePermission } from "@/hooks/usePermission";
 
 interface StockAdjustmentDrawerProps {
   isOpen: boolean;
@@ -43,6 +44,7 @@ export const StockAdjustmentDrawer: React.FC<StockAdjustmentDrawerProps> = ({
   products,
   onSuccess,
 }) => {
+  const { canCreate } = usePermission();
   // Search State
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -136,6 +138,11 @@ export const StockAdjustmentDrawer: React.FC<StockAdjustmentDrawerProps> = ({
   const handleSubmit = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
 
+    if (!canCreate("stock_adjustment")) {
+      setSubmitError("You do not have permission to record stock adjustments.");
+      return;
+    }
+
     // Collect all products where qty > 0
     const itemsToSave: {
       productId: number;
@@ -212,7 +219,7 @@ export const StockAdjustmentDrawer: React.FC<StockAdjustmentDrawerProps> = ({
             </button>
             <button
               type="submit"
-              disabled={saveMutation.isPending || selectedCount === 0}
+              disabled={saveMutation.isPending || selectedCount === 0 || !canCreate("stock_adjustment")}
               className="h-8 px-4 text-xs font-semibold rounded-md bg-[var(--primary-color)] hover:bg-[var(--primary-color-hover)] text-white flex items-center justify-center gap-1.5 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed shadow-none"
             >
               {saveMutation.isPending ? (

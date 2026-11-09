@@ -11,6 +11,7 @@ export interface TradeActionButtonsProps {
   saveColor?: string;
   saveAndPrintColor?: string;
   className?: string;
+  disabled?: boolean;
 }
 
 export const TradeActionButtons: React.FC<TradeActionButtonsProps> = ({
@@ -23,6 +24,7 @@ export const TradeActionButtons: React.FC<TradeActionButtonsProps> = ({
   saveColor = "var(--primary-color)",
   saveAndPrintColor = "#059669",
   className = "",
+  disabled = false,
 }) => {
   const mainLabel = isSubmitting
     ? "Saving..."
@@ -36,14 +38,14 @@ export const TradeActionButtons: React.FC<TradeActionButtonsProps> = ({
         label={mainLabel}
         onClick={onSave}
         color={saveColor}
-        disabled={isSubmitting}
+        disabled={disabled || isSubmitting}
         buttonClass="flex-1 !w-auto justify-center !py-2 text-[length:var(--ui-font-size-sm)] font-semibold !text-white"
       />
       <Button
         label={saveAndPrintLabel}
         onClick={onSaveAndPrint}
         color={saveAndPrintColor}
-        disabled={isSubmitting}
+        disabled={disabled || isSubmitting}
         buttonClass="flex-1 !w-auto justify-center !py-2 text-[length:var(--ui-font-size-sm)] font-semibold !text-white"
       />
     </div>

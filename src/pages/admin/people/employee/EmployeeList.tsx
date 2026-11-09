@@ -24,6 +24,7 @@ import type { EmployeeItem } from "@/types/employee.types";
 import { exportEmployeesToExcel } from "@/utils/excel-export";
 import { showSuccessToast, showErrorToast } from "@/utils/toast-utils";
 import EmployeeDetailsModal from "./components/EmployeeDetailsModal";
+import { usePermission } from "@/hooks/usePermission";
 import {
   FaUserTie,
   FaCheckCircle,
@@ -40,6 +41,7 @@ import {
 
 export const EmployeeList: React.FC = () => {
   const navigate = useNavigate();
+  const { canCreate, canUpdate } = usePermission();
   const { data: employees = [], isLoading, refetch, isRefetching } = useEmployeeListQuery();
   const updateMutation = useUpdateEmployeeMutation();
 
@@ -188,14 +190,16 @@ export const EmployeeList: React.FC = () => {
             icon={<FaFileExcel className="text-emerald-600 text-xs" />}
             buttonClass="!text-xs !py-1.5 !w-auto justify-center font-medium cursor-pointer"
           />
-          <Button
-            label="Add Employee"
-            onClick={() => navigate("/admin/employee-entry")}
-            color="var(--primary-color)"
-            hoverColor="var(--primary-color-hover)"
-            icon={<FaPlus className="text-white text-xs" />}
-            buttonClass="!text-xs !py-1.5 !w-auto justify-center font-medium !text-white cursor-pointer"
-          />
+          {canCreate("employee") && (
+            <Button
+              label="Add Employee"
+              onClick={() => navigate("/admin/employee-entry")}
+              color="var(--primary-color)"
+              hoverColor="var(--primary-color-hover)"
+              icon={<FaPlus className="text-white text-xs" />}
+              buttonClass="!text-xs !py-1.5 !w-auto justify-center font-medium !text-white cursor-pointer"
+            />
+          )}
         </div>
       </div>
 
@@ -378,46 +382,52 @@ export const EmployeeList: React.FC = () => {
                             </button>
 
                             {/* Branch Role & CRUD Permissions button -> Navigates directly to Role Management */}
-                            <button
-                              type="button"
-                              onClick={() => {
-                                const empId = item.id || (item as any)?.employeeId;
-                                navigate(`/admin/settings/roles?employeeId=${empId}`);
-                              }}
-                              title="Manage Role & Branch Permissions"
-                              className="p-1 rounded text-[var(--primary-color)] hover:bg-[var(--primary-color-muted,#e0f2fe)] transition-colors cursor-pointer"
-                            >
-                              <FaShieldAlt size={13} />
-                            </button>
+                            {canUpdate("employee") && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const empId = item.id || (item as any)?.employeeId;
+                                  navigate(`/admin/settings/roles?employeeId=${empId}`);
+                                }}
+                                title="Manage Role & Branch Permissions"
+                                className="p-1 rounded text-[var(--primary-color)] hover:bg-[var(--primary-color-muted,#e0f2fe)] transition-colors cursor-pointer"
+                              >
+                                <FaShieldAlt size={13} />
+                              </button>
+                            )}
 
                             {/* Edit button */}
-                            <button
-                              type="button"
-                              onClick={() =>
-                                navigate("/admin/employee-entry", {
-                                  state: { employee: item },
-                                })
-                              }
-                              title="Edit Employee"
-                              className="p-1 rounded text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-950/40 transition-colors cursor-pointer"
-                            >
-                              <FaEdit size={13} />
-                            </button>
+                            {canUpdate("employee") && (
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  navigate("/admin/employee-entry", {
+                                    state: { employee: item },
+                                  })
+                                }
+                                title="Edit Employee"
+                                className="p-1 rounded text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-950/40 transition-colors cursor-pointer"
+                              >
+                                <FaEdit size={13} />
+                              </button>
+                            )}
 
                             {/* Active/Inactive Power toggle */}
-                            <button
-                              type="button"
-                              disabled={isBusy}
-                              onClick={() => handleToggleStatus(item)}
-                              title={item.active !== false ? "Deactivate Employee" : "Activate Employee"}
-                              className={`p-1 rounded transition-colors cursor-pointer ${
-                                item.active !== false
-                                  ? "text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40"
-                                  : "text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/40"
-                              }`}
-                            >
-                              <FaPowerOff size={12} className={isBusy ? "animate-spin opacity-50" : ""} />
-                            </button>
+                            {canUpdate("employee") && (
+                              <button
+                                type="button"
+                                disabled={isBusy}
+                                onClick={() => handleToggleStatus(item)}
+                                title={item.active !== false ? "Deactivate Employee" : "Activate Employee"}
+                                className={`p-1 rounded transition-colors cursor-pointer ${
+                                  item.active !== false
+                                    ? "text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40"
+                                    : "text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/40"
+                                }`}
+                              >
+                                <FaPowerOff size={12} className={isBusy ? "animate-spin opacity-50" : ""} />
+                              </button>
+                            )}
                           </div>
                         </TableCell>
                       </TableRow>
@@ -433,8 +443,8 @@ export const EmployeeList: React.FC = () => {
                             ? `No employee matching "${search}"`
                             : "No employee records exist for this organization yet."
                         }
-                        actionText="Add Employee"
-                        onAction={() => navigate("/admin/employee-entry")}
+                        actionText={canCreate("employee") ? "Add Employee" : undefined}
+                        onAction={canCreate("employee") ? () => navigate("/admin/employee-entry") : undefined}
                       />
                     </TableCell>
                   </TableRow>

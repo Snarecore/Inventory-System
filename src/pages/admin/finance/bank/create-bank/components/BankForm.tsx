@@ -9,6 +9,7 @@ import {
   useUpdateBankAccountMutation,
 } from "@/hooks/useBankQueries";
 import { showErrorToast, showSuccessToast } from "@/utils/toast-utils";
+import { usePermission } from "@/hooks/usePermission";
 
 interface BankFormProps {
   onSuccessNavigate?: () => void;
@@ -28,6 +29,8 @@ export const BankForm: React.FC<BankFormProps> = ({ onSuccessNavigate, onCancel 
   const navigate = useNavigate();
   const { id } = useParams<{ id?: string }>();
   const isEdit = Boolean(id);
+  const { canCreate, canUpdate } = usePermission();
+  const hasPermission = isEdit ? canUpdate("bank") : canCreate("bank");
 
   const [form, setForm] = useState(getInitialForm());
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -107,6 +110,10 @@ export const BankForm: React.FC<BankFormProps> = ({ onSuccessNavigate, onCancel 
 
   const handleSubmit = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
+    if (!hasPermission) {
+      showErrorToast(`You do not have permission to ${isEdit ? "update" : "create"} bank accounts.`);
+      return;
+    }
     if (isPending) return;
     if (!validate()) return;
 
@@ -166,7 +173,7 @@ export const BankForm: React.FC<BankFormProps> = ({ onSuccessNavigate, onCancel 
             label={isPending ? (isEdit ? "Updating..." : "Saving...") : (isEdit ? "Update Bank Account" : "Save Bank Account")}
             onClick={() => handleSubmit()}
             color="var(--primary-color)"
-            disabled={isPending}
+            disabled={!hasPermission || isPending}
             buttonClass="!text-xs !py-1.5 !w-auto justify-center font-medium !text-white"
           />
         </div>

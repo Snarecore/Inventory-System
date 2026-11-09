@@ -7,8 +7,10 @@ import { useBankInfoListQuery } from "@/hooks/useBankQueries";
 import { formatMoney } from "@/utils/formatters";
 import { calculateAccountMetrics } from "../utils/finance-metrics";
 import { FaPlus, FaLandmark, FaWallet, FaCheckCircle, FaTimesCircle } from "react-icons/fa";
+import { usePermission } from "@/hooks/usePermission";
 
 export const BankPage: React.FC = () => {
+  const { canCreate } = usePermission();
   const navigate = useNavigate();
   const { data, isLoading, refetch, isRefetching } = useBankInfoListQuery();
   const accounts = data?.bankAccounts || [];
@@ -59,13 +61,15 @@ export const BankPage: React.FC = () => {
         <PageHeader headerTitle="Bank Accounts" headerDescription="Manage registered bank accounts and opening balances" />
         <div className="flex items-center gap-2">
           <RefreshButton onClick={() => refetch()} isLoading={isLoading || isRefetching} />
-          <Button
-            label="Add Bank Account"
-            onClick={() => navigate("/admin/create-bank")}
-            color="var(--color-primary)"
-            hoverColor="var(--color-primary-hover)"
-            icon={<FaPlus className="text-white text-xs" />}
-          />
+          {canCreate("bank") && (
+            <Button
+              label="Add Bank Account"
+              onClick={() => navigate("/admin/create-bank")}
+              color="var(--color-primary)"
+              hoverColor="var(--color-primary-hover)"
+              icon={<FaPlus className="text-white text-xs" />}
+            />
+          )}
         </div>
       </div>
       <StatsCards cards={statCards} />

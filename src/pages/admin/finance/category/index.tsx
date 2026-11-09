@@ -11,8 +11,10 @@ import { isCategoryAdmin } from "@/services/category-service";
 import type { CategoryItem } from "@/types";
 import { showErrorToast } from "@/utils/toast-utils";
 import { FaPlus } from "react-icons/fa";
+import { usePermission } from "@/hooks/usePermission";
 
 export const CategoryPage: React.FC = () => {
+  const { canCreate } = usePermission();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [categoryToEdit, setCategoryToEdit] = useState<CategoryItem | null>(null);
   const [togglingId, setTogglingId] = useState<number | null>(null);
@@ -77,13 +79,15 @@ export const CategoryPage: React.FC = () => {
         />
         <div className="flex items-center gap-2">
           <RefreshButton onClick={() => refetch()} isLoading={isLoading} />
-          <Button
-            label="Add Category"
-            onClick={handleAddNew}
-            color="var(--color-primary)"
-            hoverColor="var(--color-primary-hover)"
-            icon={<FaPlus className="text-white text-xs" />}
-          />
+          {canCreate("category_finance") && (
+            <Button
+              label="Add Category"
+              onClick={handleAddNew}
+              color="var(--color-primary)"
+              hoverColor="var(--color-primary-hover)"
+              icon={<FaPlus className="text-white text-xs" />}
+            />
+          )}
         </div>
       </div>
 

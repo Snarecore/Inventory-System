@@ -28,6 +28,7 @@ import {
   FaTimesCircle,
 } from "react-icons/fa";
 import { FiChevronDown, FiLock } from "react-icons/fi";
+import { usePermission } from "@/hooks/usePermission";
 
 interface CategoryTableProps {
   categories: CategoryItem[];
@@ -46,6 +47,7 @@ export const CategoryTable: React.FC<CategoryTableProps> = ({
   onToggleStatus,
   togglingId,
 }) => {
+  const { canCreate, canUpdate } = usePermission();
   const [searchQuery, setSearchQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
@@ -377,10 +379,10 @@ export const CategoryTable: React.FC<CategoryTableProps> = ({
                         <TableCell align="center">
                           <button
                             type="button"
-                            onClick={() => !isAdmin && onToggleStatus(item)}
-                            disabled={isAdmin || isToggling}
+                            onClick={() => !isAdmin && canUpdate("category_finance") && onToggleStatus(item)}
+                            disabled={isAdmin || isToggling || !canUpdate("category_finance")}
                             className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-semibold border transition-all ${
-                              isAdmin
+                              isAdmin || !canUpdate("category_finance")
                                 ? "bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed"
                                 : isToggling
                                 ? "bg-gray-100 text-gray-500 border-gray-300 cursor-wait"
@@ -391,6 +393,8 @@ export const CategoryTable: React.FC<CategoryTableProps> = ({
                             title={
                               isAdmin
                                 ? "System default category status cannot be changed"
+                                : !canUpdate("category_finance")
+                                ? "Permission required to change status"
                                 : "Click to toggle status"
                             }
                           >
@@ -409,7 +413,7 @@ export const CategoryTable: React.FC<CategoryTableProps> = ({
                             </span>
                           ) : (
                             <TableActionButtons
-                              onEdit={() => onEdit(item)}
+                              onEdit={canUpdate("category_finance") ? () => onEdit(item) : undefined}
                               editTitle="Edit Category"
                               className="justify-center"
                             />
@@ -424,8 +428,8 @@ export const CategoryTable: React.FC<CategoryTableProps> = ({
                       <EmptyState
                         title="No categories found"
                         description="There are no categories matching your search or filters."
-                        buttonText="+ Add Category"
-                        onButtonClick={onAddNew}
+                        buttonText={canCreate("category_finance") ? "+ Add Category" : undefined}
+                        onButtonClick={canCreate("category_finance") ? onAddNew : undefined}
                       />
                     </td>
                   </tr>

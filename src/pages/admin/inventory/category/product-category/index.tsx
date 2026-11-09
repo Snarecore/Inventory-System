@@ -10,8 +10,10 @@ import {
 } from "@/hooks/useProductCategoryQueries";
 import type { ProductCategoryItem } from "@/types";
 import { FaPlus } from "react-icons/fa";
+import { usePermission } from "@/hooks/usePermission";
 
 export const ProductCategoryPage: React.FC = () => {
+  const { canCreate } = usePermission();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [categoryToEdit, setCategoryToEdit] = useState<ProductCategoryItem | null>(null);
   const [categoryToDelete, setCategoryToDelete] = useState<ProductCategoryItem | null>(null);
@@ -85,14 +87,16 @@ export const ProductCategoryPage: React.FC = () => {
         />
         <div className="flex items-center gap-2">
           <RefreshButton onClick={() => refetch()} isLoading={isLoading} />
-          <button
-            type="button"
-            onClick={handleAddNew}
-            className="bg-[var(--primary-color)] hover:bg-[var(--primary-color-hover)] text-white text-xs font-medium cursor-pointer h-8 px-3 rounded-md flex justify-center items-center gap-1.5 transition-all ease-in duration-200 whitespace-nowrap shrink-0 shadow-none"
-          >
-            <FaPlus size={11} className="text-white" />
-            <span>Add Category</span>
-          </button>
+          {canCreate("category_product") && (
+            <button
+              type="button"
+              onClick={handleAddNew}
+              className="bg-[var(--primary-color)] hover:bg-[var(--primary-color-hover)] text-white text-xs font-medium cursor-pointer h-8 px-3 rounded-md flex justify-center items-center gap-1.5 transition-all ease-in duration-200 whitespace-nowrap shrink-0 shadow-none"
+            >
+              <FaPlus size={11} className="text-white" />
+              <span>Add Category</span>
+            </button>
+          )}
         </div>
       </div>
 

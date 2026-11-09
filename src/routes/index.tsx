@@ -62,6 +62,9 @@ const BranchList = React.lazy(() => import('@/pages/admin/branch/BranchList'))
 const AddBranch = React.lazy(() => import('@/pages/admin/branch/AddBranch'))
 
 
+import { usePermission } from '@/hooks/usePermission'
+import type { CrudAction } from '@/utils/permission-utils'
+
 const withSuspense = (Component: React.ComponentType) => (
   <Suspense
     fallback={
@@ -72,6 +75,28 @@ const withSuspense = (Component: React.ComponentType) => (
   >
     <Component />
   </Suspense>
+);
+
+const PermissionGuardedRoute: React.FC<{
+  module: string;
+  action?: CrudAction;
+  children: React.ReactNode;
+}> = ({ module, action = "read", children }) => {
+  const { can, isAdmin } = usePermission();
+  if (isAdmin || can(action, module)) {
+    return <>{children}</>;
+  }
+  return <Navigate to="/admin" replace />;
+};
+
+const withPermission = (
+  Component: React.ComponentType,
+  module: string,
+  action: CrudAction = "read"
+) => (
+  <PermissionGuardedRoute module={module} action={action}>
+    {withSuspense(Component)}
+  </PermissionGuardedRoute>
 );
 
 const RequireAuth = () => {
@@ -389,19 +414,19 @@ export const router = createBrowserRouter([
       },
       {
         path: 'products',
-        element: withSuspense(Products),
+        element: withPermission(Products, 'product'),
       },
       {
         path: 'create-product',
-        element: withSuspense(CreateProduct),
+        element: withPermission(CreateProduct, 'product', 'create'),
       },
       {
         path: 'edit-product/:id',
-        element: withSuspense(CreateProduct),
+        element: withPermission(CreateProduct, 'product', 'update'),
       },
       {
         path: 'products/:id',
-        element: withSuspense(ProductDetails),
+        element: withPermission(ProductDetails, 'product'),
       },
       {
         path: 'inventory',
@@ -413,19 +438,19 @@ export const router = createBrowserRouter([
       },
       {
         path: 'inventory/adjustment',
-        element: withSuspense(StockAdjustmentPage),
+        element: withPermission(StockAdjustmentPage, 'stock_adjustment'),
       },
       {
         path: 'stock-adjustment',
-        element: withSuspense(StockAdjustmentPage),
+        element: withPermission(StockAdjustmentPage, 'stock_adjustment'),
       },
       {
         path: 'product-category',
-        element: withSuspense(ProductCategory),
+        element: withPermission(ProductCategory, 'category_product'),
       },
       {
         path: 'product-categories',
-        element: withSuspense(ProductCategory),
+        element: withPermission(ProductCategory, 'category_product'),
       },
       {
         path: 'orders',
@@ -433,67 +458,67 @@ export const router = createBrowserRouter([
       },
       {
         path: 'admins',
-        element: withSuspense(Admins),
+        element: withPermission(Admins, 'administration'),
       },
       {
         path: 'users',
-        element: withSuspense(Users),
+        element: withPermission(Users, 'administration'),
       },
       {
         path: 'vendors',
-        element: withSuspense(Vendors),
+        element: withPermission(Vendors, 'parties'),
       },
       {
         path: 'parties',
-        element: withSuspense(Parties),
+        element: withPermission(Parties, 'parties'),
       },
       {
         path: 'employee-entry',
-        element: withSuspense(EmployeeEntry),
+        element: withPermission(EmployeeEntry, 'employee', 'create'),
       },
       {
         path: 'employees',
-        element: withSuspense(EmployeeList),
+        element: withPermission(EmployeeList, 'employee'),
       },
       {
         path: 'roles',
-        element: withSuspense(RolesAndPermissions),
+        element: withPermission(RolesAndPermissions, 'role_management'),
       },
       {
         path: 'purchases',
-        element: withSuspense(Purchases),
+        element: withPermission(Purchases, 'purchase'),
       },
       {
         path: 'create-purchase',
-        element: withSuspense(CreatePurchase),
+        element: withPermission(CreatePurchase, 'purchase', 'create'),
       },
       {
         path: 'edit-purchase/:id',
-        element: withSuspense(CreatePurchase),
+        element: withPermission(CreatePurchase, 'purchase', 'update'),
       },
       {
         path: 'sales',
-        element: withSuspense(Sales),
+        element: withPermission(Sales, 'sales'),
       },
       {
         path: 'create-sale',
-        element: withSuspense(CreateSale),
+        element: withPermission(CreateSale, 'sales', 'create'),
       },
       {
         path: 'edit-sale/:id',
-        element: withSuspense(CreateSale),
+        element: withPermission(CreateSale, 'sales', 'update'),
       },
       {
         path: 'sales-report',
-        element: withSuspense(SalesReport),
+        element: withPermission(SalesReport, 'reports'),
       },
       {
         path: 'reports/sales',
-        element: withSuspense(SalesReport),
+        element: withPermission(SalesReport, 'reports'),
       },
       {
         path: 'sales-return',
-        element: withSuspense(Sales),
+        element: withPermission(Sales, 'sales_return'),
       },
       {
         path: 'sales-return-sales',
@@ -501,11 +526,11 @@ export const router = createBrowserRouter([
       },
       {
         path: 'create-sales-return',
-        element: withSuspense(CreateSalesReturn),
+        element: withPermission(CreateSalesReturn, 'sales_return', 'create'),
       },
       {
         path: 'purchase-return',
-        element: withSuspense(Purchases),
+        element: withPermission(Purchases, 'purchase_return'),
       },
       {
         path: 'purchase-return-purchases',
@@ -513,11 +538,11 @@ export const router = createBrowserRouter([
       },
       {
         path: 'create-purchase-return',
-        element: withSuspense(CreatePurchaseReturn),
+        element: withPermission(CreatePurchaseReturn, 'purchase_return', 'create'),
       },
       {
         path: 'customer-collection',
-        element: withSuspense(CustomerCollection),
+        element: withPermission(CustomerCollection, 'customer_collection'),
       },
       {
         path: 'collection',
@@ -525,7 +550,7 @@ export const router = createBrowserRouter([
       },
       {
         path: 'supplier-payment',
-        element: withSuspense(SupplierPayment),
+        element: withPermission(SupplierPayment, 'supplier_payment'),
       },
       {
         path: 'payment',
@@ -533,19 +558,19 @@ export const router = createBrowserRouter([
       },
       {
         path: 'financial-categories',
-        element: withSuspense(FinancialCategory),
+        element: withPermission(FinancialCategory, 'category_finance'),
       },
       {
         path: 'categories',
-        element: withSuspense(FinancialCategory),
+        element: withPermission(FinancialCategory, 'category_finance'),
       },
       {
         path: 'expense-categories',
-        element: withSuspense(FinancialCategory),
+        element: withPermission(FinancialCategory, 'category_finance'),
       },
       {
         path: 'expense',
-        element: withSuspense(ExpensePage),
+        element: withPermission(ExpensePage, 'expense'),
       },
       {
         path: 'expenses',
@@ -553,7 +578,7 @@ export const router = createBrowserRouter([
       },
       {
         path: 'income',
-        element: withSuspense(IncomePage),
+        element: withPermission(IncomePage, 'income'),
       },
       {
         path: 'incomes',
@@ -561,23 +586,23 @@ export const router = createBrowserRouter([
       },
       {
         path: 'fund-transfer',
-        element: withSuspense(FundTransferPage),
+        element: withPermission(FundTransferPage, 'fund_transfer'),
       },
       {
         path: 'khatabook',
-        element: withSuspense(KhatabookPage),
+        element: withPermission(KhatabookPage, 'khatabook'),
       },
       {
         path: 'cash-closing',
-        element: withSuspense(CashClosingPage),
+        element: withPermission(CashClosingPage, 'cash_closing'),
       },
       {
         path: 'daily-cash-closing',
-        element: withSuspense(CashClosingPage),
+        element: withPermission(CashClosingPage, 'cash_closing'),
       },
       {
         path: 'opening-cash-balance',
-        element: withSuspense(OpeningCashBalancePage),
+        element: withPermission(OpeningCashBalancePage, 'opening_cash'),
       },
       {
         path: 'ledger',
@@ -589,59 +614,59 @@ export const router = createBrowserRouter([
       },
       {
         path: 'banks',
-        element: withSuspense(BankPage),
+        element: withPermission(BankPage, 'bank'),
       },
       {
         path: 'bank-accounts',
-        element: withSuspense(BankPage),
+        element: withPermission(BankPage, 'bank'),
       },
       {
         path: 'cash-bank',
-        element: withSuspense(BankPage),
+        element: withPermission(BankPage, 'bank'),
       },
       {
         path: 'create-bank',
-        element: withSuspense(CreateBankPage),
+        element: withPermission(CreateBankPage, 'bank', 'create'),
       },
       {
         path: 'banks/create',
-        element: withSuspense(CreateBankPage),
+        element: withPermission(CreateBankPage, 'bank', 'create'),
       },
       {
         path: 'add-bank',
-        element: withSuspense(CreateBankPage),
+        element: withPermission(CreateBankPage, 'bank', 'create'),
       },
       {
         path: 'edit-bank/:id',
-        element: withSuspense(CreateBankPage),
+        element: withPermission(CreateBankPage, 'bank', 'update'),
       },
       {
         path: 'banks/edit/:id',
-        element: withSuspense(CreateBankPage),
+        element: withPermission(CreateBankPage, 'bank', 'update'),
       },
       {
         path: 'mfs',
-        element: withSuspense(MfsPage),
+        element: withPermission(MfsPage, 'mfs'),
       },
       {
         path: 'mfs-list',
-        element: withSuspense(MfsPage),
+        element: withPermission(MfsPage, 'mfs'),
       },
       {
         path: 'create-mfs',
-        element: withSuspense(CreateMfsPage),
+        element: withPermission(CreateMfsPage, 'mfs', 'create'),
       },
       {
         path: 'add-mfs',
-        element: withSuspense(CreateMfsPage),
+        element: withPermission(CreateMfsPage, 'mfs', 'create'),
       },
       {
         path: 'edit-mfs/:id',
-        element: withSuspense(CreateMfsPage),
+        element: withPermission(CreateMfsPage, 'mfs', 'update'),
       },
       {
         path: 'mfs/edit/:id',
-        element: withSuspense(CreateMfsPage),
+        element: withPermission(CreateMfsPage, 'mfs', 'update'),
       },
       {
         path: 'customers',
@@ -657,11 +682,11 @@ export const router = createBrowserRouter([
       },
       {
         path: 'home-page-cms',
-        element: withSuspense(HomePageCms),
+        element: withPermission(HomePageCms, 'website_cms', 'update'),
       },
       {
         path: 'header-footer-cms',
-        element: withSuspense(HeaderFooterCms),
+        element: withPermission(HeaderFooterCms, 'website_cms', 'update'),
       },
       {
         path: 'contact-message',
@@ -669,11 +694,11 @@ export const router = createBrowserRouter([
       },
       {
         path: 'contact-page-cms',
-        element: withSuspense(ContactPageCms),
+        element: withPermission(ContactPageCms, 'website_cms', 'update'),
       },
       {
         path: 'shop-page-cms',
-        element: withSuspense(ShopPageCms),
+        element: withPermission(ShopPageCms, 'website_cms', 'update'),
       },
       {
         path: 'social-link',
@@ -681,23 +706,23 @@ export const router = createBrowserRouter([
       },
       {
         path: 'settings/appearance',
-        element: withSuspense(AppearanceSettings),
+        element: withPermission(AppearanceSettings, 'appearance', 'update'),
       },
       {
         path: 'settings/sms',
-        element: withSuspense(SmsSettings),
+        element: withPermission(SmsSettings, 'sms'),
       },
       {
         path: 'settings/roles',
-        element: withSuspense(RolesAndPermissions),
+        element: withPermission(RolesAndPermissions, 'role_management'),
       },
       {
         path: 'sms',
-        element: withSuspense(SendSmsPage),
+        element: withPermission(SendSmsPage, 'sms'),
       },
       {
         path: 'sms/send',
-        element: withSuspense(SendSmsPage),
+        element: withPermission(SendSmsPage, 'sms', 'create'),
       },
       {
         path: 'privacy-policy',
@@ -721,23 +746,23 @@ export const router = createBrowserRouter([
       },
       {
         path: 'company',
-        element: withSuspense(Company),
+        element: withPermission(Company, 'business_profile', 'update'),
       },
       {
         path: 'branches',
-        element: withSuspense(BranchList),
+        element: withPermission(BranchList, 'branch_management'),
       },
       {
         path: 'branches/add',
-        element: withSuspense(AddBranch),
+        element: withPermission(AddBranch, 'branch_management', 'create'),
       },
       {
         path: 'branches/edit/:id',
-        element: withSuspense(AddBranch),
+        element: withPermission(AddBranch, 'branch_management', 'update'),
       },
       {
         path: 'packages',
-        element: withSuspense(PackagesPage),
+        element: withPermission(PackagesPage, 'subscription_packages'),
       },
       {
         path: 'pricing',

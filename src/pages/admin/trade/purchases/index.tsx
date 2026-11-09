@@ -566,7 +566,7 @@ const Purchases: React.FC = () => {
               )}
             </>
           ) : (
-            canCreate("purchase") && (
+            (canCreate("purchase_return") || canCreate("purchase")) && (
               <Button
                 label="Create Return"
                 onClick={() => navigate("/admin/create-purchase-return")}

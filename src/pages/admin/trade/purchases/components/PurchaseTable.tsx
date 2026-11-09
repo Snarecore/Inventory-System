@@ -115,7 +115,7 @@ export const PurchaseTable: React.FC<PurchaseTableProps> = ({
   onExport,
 }) => {
   const navigate = useNavigate();
-  const { canUpdate } = usePermission();
+  const { canUpdate, canCreate } = usePermission();
   const [isSupplierDropdownOpen, setIsSupplierDropdownOpen] = useState<boolean>(false);
   const [supplierSearchQuery, setSupplierSearchQuery] = useState<string>("");
   const [copiedId, setCopiedId] = useState<string | number | null>(null);
@@ -627,15 +627,19 @@ export const PurchaseTable: React.FC<PurchaseTableProps> = ({
                             onView={() => onView(purchase)}
                             onPrint={() => onPrint(purchase)}
                             onEdit={canUpdate("purchase") ? () => onEdit(purchase) : undefined}
-                            onReturn={() => {
-                              if (onReturn) {
-                                onReturn(purchase);
-                              } else {
-                                navigate("/admin/create-purchase-return", {
-                                  state: { purchase },
-                                });
-                              }
-                            }}
+                            onReturn={
+                              (canCreate("purchase_return") || canCreate("purchase"))
+                                ? () => {
+                                    if (onReturn) {
+                                      onReturn(purchase);
+                                    } else {
+                                      navigate("/admin/create-purchase-return", {
+                                        state: { purchase },
+                                      });
+                                    }
+                                  }
+                                : undefined
+                            }
                             isReturnDisabled={isAlreadyReturned}
                             returnDisabledTitle="Already Returned"
                           />

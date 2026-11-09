@@ -44,6 +44,7 @@ import type { PurchaseItem, ProductItem, PartyItem, PurchaseChallanSettings } fr
 import { useTradeParties } from "@/hooks/useTradeParties";
 import { useTradeProducts } from "@/hooks/useTradeProducts";
 import { useTradeLineItems, type TradeLineItem } from "@/hooks/useTradeLineItems";
+import { usePermission } from "@/hooks/usePermission";
 
 const defaultChallanSettings: PurchaseChallanSettings = {
   showChallanRefNo: true,
@@ -75,6 +76,8 @@ const CreatePurchaseForm: React.FC = () => {
 
   const stateEditData: PurchaseItem | undefined = (location.state as any)?.editData;
   const isEditMode = Boolean(routeId || stateEditData);
+  const { canCreate, canUpdate } = usePermission();
+  const hasPermission = isEditMode ? canUpdate("purchase") : canCreate("purchase");
 
   // Form Basic Info
   const [invoiceNo, setInvoiceNo] = useState<string>("");
@@ -471,6 +474,10 @@ const CreatePurchaseForm: React.FC = () => {
   // Pre-validate & Open Confirmation Modal
   const handlePreSubmit = (shouldPrint = false) => {
     if (isSubmittingRef.current || isSubmitting) return;
+    if (!hasPermission) {
+      showErrorToast(`You do not have permission to ${isEditMode ? "update" : "create"} purchases!`);
+      return;
+    }
 
     if (!selectedSupplier) {
       showErrorToast("Please select a supplier for this purchase");
@@ -1068,6 +1075,7 @@ const CreatePurchaseForm: React.FC = () => {
             isSubmitting={isSubmitting}
             isEditMode={isEditMode}
             saveLabel="Purchase"
+            disabled={!hasPermission}
             onSave={() => handlePreSubmit(false)}
             onSaveAndPrint={() => handlePreSubmit(true)}
           />

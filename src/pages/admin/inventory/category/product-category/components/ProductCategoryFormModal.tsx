@@ -8,6 +8,7 @@ import {
 import type { ProductCategoryItem, ProductCategoryStatus } from "@/types";
 import { showErrorToast } from "@/utils/toast-utils";
 import { FaBoxes, FaCheckCircle, FaTimesCircle, FaSpinner } from "react-icons/fa";
+import { usePermission } from "@/hooks/usePermission";
 
 interface ProductCategoryFormModalProps {
   isOpen: boolean;
@@ -27,6 +28,7 @@ const ProductCategoryFormContent: React.FC<FormContentProps> = ({
   existingCategories,
   onClose,
 }) => {
+  const { canCreate, canUpdate } = usePermission();
   const [name, setName] = useState(categoryToEdit?.name || "");
   const [description, setDescription] = useState(categoryToEdit?.description || "");
   const [status, setStatus] = useState<ProductCategoryStatus>(
@@ -54,6 +56,15 @@ const ProductCategoryFormContent: React.FC<FormContentProps> = ({
   const handleSubmit = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     if (isSaving) return;
+
+    if (isEditing && !canUpdate("category_product")) {
+      showErrorToast("You do not have permission to update product categories.");
+      return;
+    }
+    if (!isEditing && !canCreate("category_product")) {
+      showErrorToast("You do not have permission to create product categories.");
+      return;
+    }
 
     const trimmedName = name.trim();
     if (!trimmedName) {
@@ -145,39 +156,41 @@ const ProductCategoryFormContent: React.FC<FormContentProps> = ({
           />
         </div>
 
-        {/* Status Toggle */}
-        <div>
-          <label className="block text-xs font-semibold text-gray-800 mb-1.5">
-            Status
-          </label>
-          <div className="grid grid-cols-2 gap-2">
-            <button
-              type="button"
-              onClick={() => setStatus("Active")}
-              className={`flex items-center justify-center gap-1.5 py-2 px-2 rounded-lg border text-xs font-semibold transition-all cursor-pointer ${
-                status === "Active"
-                  ? "border-emerald-400 bg-emerald-50 text-emerald-700 ring-1 ring-emerald-400"
-                  : "border-gray-200 bg-gray-50/60 text-gray-600 hover:border-gray-300 hover:bg-gray-100"
-              }`}
-            >
-              <FaCheckCircle className="text-xs shrink-0 text-emerald-600" />
-              <span>Active</span>
-            </button>
+        {/* Status Toggle - Only visible when editing */}
+        {isEditing && (
+          <div>
+            <label className="block text-xs font-semibold text-gray-800 mb-1.5">
+              Status
+            </label>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => setStatus("Active")}
+                className={`flex items-center justify-center gap-1.5 py-2 px-2 rounded-lg border text-xs font-semibold transition-all cursor-pointer ${
+                  status === "Active"
+                    ? "border-emerald-400 bg-emerald-50 text-emerald-700 ring-1 ring-emerald-400"
+                    : "border-gray-200 bg-gray-50/60 text-gray-600 hover:border-gray-300 hover:bg-gray-100"
+                }`}
+              >
+                <FaCheckCircle className="text-xs shrink-0 text-emerald-600" />
+                <span>Active</span>
+              </button>
 
-            <button
-              type="button"
-              onClick={() => setStatus("Inactive")}
-              className={`flex items-center justify-center gap-1.5 py-2 px-2 rounded-lg border text-xs font-semibold transition-all cursor-pointer ${
-                status === "Inactive"
-                  ? "border-rose-400 bg-rose-50 text-rose-700 ring-1 ring-rose-400"
-                  : "border-gray-200 bg-gray-50/60 text-gray-600 hover:border-gray-300 hover:bg-gray-100"
-              }`}
-            >
-              <FaTimesCircle className="text-xs shrink-0 text-rose-600" />
-              <span>Inactive</span>
-            </button>
+              <button
+                type="button"
+                onClick={() => setStatus("Inactive")}
+                className={`flex items-center justify-center gap-1.5 py-2 px-2 rounded-lg border text-xs font-semibold transition-all cursor-pointer ${
+                  status === "Inactive"
+                    ? "border-rose-400 bg-rose-50 text-rose-700 ring-1 ring-rose-400"
+                    : "border-gray-200 bg-gray-50/60 text-gray-600 hover:border-gray-300 hover:bg-gray-100"
+                }`}
+              >
+                <FaTimesCircle className="text-xs shrink-0 text-rose-600" />
+                <span>Inactive</span>
+              </button>
+            </div>
           </div>
-        </div>
+        )}
       </form>
 
       {/* Drawer Footer */}
@@ -193,7 +206,7 @@ const ProductCategoryFormContent: React.FC<FormContentProps> = ({
         <button
           type="button"
           onClick={() => handleSubmit()}
-          disabled={isSaving}
+          disabled={isSaving || (isEditing ? !canUpdate("category_product") : !canCreate("category_product"))}
           className="h-8 px-4 text-xs font-semibold rounded-md bg-[var(--primary-color)] hover:bg-[var(--primary-color-hover)] text-white flex items-center justify-center gap-1.5 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed shadow-none"
         >
           {isSaving ? (

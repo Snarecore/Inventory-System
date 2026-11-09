@@ -26,6 +26,7 @@ import { useDebounce } from "@/hooks/useDebounce";
 import { AccountStatusBadge, AccountStatusTabs } from "@/pages/admin/finance/components";
 import { FaCreditCard } from "react-icons/fa";
 import { FiChevronDown } from "react-icons/fi";
+import { usePermission } from "@/hooks/usePermission";
 
 interface BankTableProps {
   bankAccounts: BankAccountItem[];
@@ -36,6 +37,7 @@ interface BankTableProps {
 type SortKey = "bankName" | "bankAccountName" | "currentBalance" | "status";
 
 export const BankTable: React.FC<BankTableProps> = ({ bankAccounts, isLoading, onAddNew }) => {
+  const { canCreate, canUpdate } = usePermission();
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
@@ -201,13 +203,13 @@ export const BankTable: React.FC<BankTableProps> = ({ bankAccounts, isLoading, o
                       <TableCell align="center">
                         <AccountStatusBadge
                           status={item.status}
-                          onToggle={() => handleToggleStatus(item)}
-                          disabled={updateMutation.isPending}
+                          onToggle={() => canUpdate("bank") && handleToggleStatus(item)}
+                          disabled={updateMutation.isPending || !canUpdate("bank")}
                         />
                       </TableCell>
                       <TableCell align="center">
                         <TableActionButtons
-                          onEdit={() => navigate(`/admin/edit-bank/${item.bankId}`)}
+                          onEdit={canUpdate("bank") ? () => navigate(`/admin/edit-bank/${item.bankId}`) : undefined}
                           editTitle="Edit Bank Account"
                         />
                       </TableCell>
@@ -217,7 +219,12 @@ export const BankTable: React.FC<BankTableProps> = ({ bankAccounts, isLoading, o
               ) : (
                 <tr>
                   <td colSpan={8} className="py-12 text-center">
-                    <EmptyState title="No bank accounts found" description="There are no bank accounts registered yet or matching your search." buttonText="+ Add Bank Account" onButtonClick={onAddNew} />
+                    <EmptyState
+                      title="No bank accounts found"
+                      description="There are no bank accounts registered yet or matching your search."
+                      buttonText={canCreate("bank") ? "+ Add Bank Account" : undefined}
+                      onButtonClick={canCreate("bank") ? onAddNew : undefined}
+                    />
                   </td>
                 </tr>
               )}

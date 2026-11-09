@@ -3,11 +3,13 @@ import { DrawerModal, Button, TextInput as InputField } from "@/components/commo
 import {
   useInsertCategoryMutation,
   useUpdateCategoryMutation,
+  useUpdateCategoryStatusMutation,
 } from "@/hooks/useCategoryQueries";
 import { isCategoryAdmin, normalizeCategoryType } from "@/services/category-service";
-import type { CategoryItem, CategoryType } from "@/types";
+import type { CategoryItem, CategoryStatus, CategoryType } from "@/types";
 import { showErrorToast } from "@/utils/toast-utils";
-import { FaLayerGroup, FaArrowDown, FaArrowUp } from "react-icons/fa";
+import { FaLayerGroup, FaArrowDown, FaArrowUp, FaCheckCircle, FaTimesCircle } from "react-icons/fa";
+import { usePermission } from "@/hooks/usePermission";
 
 interface CategoryFormModalProps {
   isOpen: boolean;
@@ -42,12 +44,18 @@ export const CategoryFormModal: React.FC<CategoryFormModalProps> = ({
   categoryToEdit,
   existingCategories = [],
 }) => {
+  const { canCreate, canUpdate } = usePermission();
   const [prevCategoryToEdit, setPrevCategoryToEdit] = useState(categoryToEdit);
   const [categoryName, setCategoryName] = useState(categoryToEdit?.categoryName || "");
   const [categoryType, setCategoryType] = useState<CategoryType>(
     categoryToEdit && normalizeCategoryType(String(categoryToEdit.type || "")) === "Income"
       ? "Income"
       : "Expense"
+  );
+  const [status, setStatus] = useState<CategoryStatus>(
+    (categoryToEdit?.status && String(categoryToEdit.status).toLowerCase() === "inactive")
+      ? "Inactive"
+      : "Active"
   );
   const [nameError, setNameError] = useState("");
 
@@ -58,6 +66,11 @@ export const CategoryFormModal: React.FC<CategoryFormModalProps> = ({
       categoryToEdit && normalizeCategoryType(String(categoryToEdit.type || "")) === "Income"
         ? "Income"
         : "Expense"
+    );
+    setStatus(
+      (categoryToEdit?.status && String(categoryToEdit.status).toLowerCase() === "inactive")
+        ? "Inactive"
+        : "Active"
     );
     setNameError("");
   }
@@ -72,7 +85,9 @@ export const CategoryFormModal: React.FC<CategoryFormModalProps> = ({
     onSuccess: () => onClose(),
   });
 
-  const isSaving = insertMutation.isPending || updateMutation.isPending;
+  const statusMutation = useUpdateCategoryStatusMutation();
+
+  const isSaving = insertMutation.isPending || updateMutation.isPending || statusMutation.isPending;
 
   const handleNameChange = (val: string) => {
     setCategoryName(val);
@@ -81,6 +96,16 @@ export const CategoryFormModal: React.FC<CategoryFormModalProps> = ({
 
   const handleSubmit = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
+    if (isSaving) return;
+
+    if (isEditing && !canUpdate("category_finance")) {
+      showErrorToast("You do not have permission to update categories.");
+      return;
+    }
+    if (!isEditing && !canCreate("category_finance")) {
+      showErrorToast("You do not have permission to create categories.");
+      return;
+    }
 
     const trimmedName = categoryName.trim();
     if (!trimmedName) {
@@ -114,6 +139,15 @@ export const CategoryFormModal: React.FC<CategoryFormModalProps> = ({
         categoryType,
         openingBalance: 0,
       });
+
+      const currentStatus: CategoryStatus =
+        String(categoryToEdit.status || "").toLowerCase() === "inactive" ? "Inactive" : "Active";
+      if (status !== currentStatus) {
+        statusMutation.mutate({
+          categoryId: categoryToEdit.categoryId,
+          status,
+        });
+      }
     } else {
       insertMutation.mutate({
         categoryName: trimmedName,
@@ -148,7 +182,7 @@ export const CategoryFormModal: React.FC<CategoryFormModalProps> = ({
             color="var(--color-primary)"
             hoverColor="var(--color-primary-hover)"
             isLoading={isSaving}
-            disabled={isSaving}
+            disabled={isSaving || (isEditing ? !canUpdate("category_finance") : !canCreate("category_finance"))}
           />
         </>
       }
@@ -193,6 +227,42 @@ export const CategoryFormModal: React.FC<CategoryFormModalProps> = ({
           })}
         </div>
       </div>
+
+      {/* Status Toggle - Only visible when editing */}
+      {isEditing && (
+        <div>
+          <label className="block text-xs font-semibold text-gray-800 mb-1.5">
+            Status
+          </label>
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              type="button"
+              onClick={() => setStatus("Active")}
+              className={`flex items-center justify-center gap-1.5 py-2 px-2 rounded-lg border text-xs font-semibold transition-all cursor-pointer ${
+                status === "Active"
+                  ? "border-emerald-400 bg-emerald-50 text-emerald-700 ring-1 ring-emerald-400"
+                  : "border-gray-200 bg-gray-50/60 text-gray-600 hover:border-gray-300 hover:bg-gray-100"
+              }`}
+            >
+              <FaCheckCircle className="text-xs shrink-0 text-emerald-600" />
+              <span>Active</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setStatus("Inactive")}
+              className={`flex items-center justify-center gap-1.5 py-2 px-2 rounded-lg border text-xs font-semibold transition-all cursor-pointer ${
+                status === "Inactive"
+                  ? "border-rose-400 bg-rose-50 text-rose-700 ring-1 ring-rose-400"
+                  : "border-gray-200 bg-gray-50/60 text-gray-600 hover:border-gray-300 hover:bg-gray-100"
+              }`}
+            >
+              <FaTimesCircle className="text-xs shrink-0 text-rose-600" />
+              <span>Inactive</span>
+            </button>
+          </div>
+        </div>
+      )}
     </DrawerModal>
   );
 };

@@ -14,8 +14,10 @@ import { buildAccessUser } from "@/utils/access-user";
 import { postData } from "@/services/api-service";
 import type { ProductItem } from "@/types";
 import { useDebounce } from "@/hooks/useDebounce";
+import { usePermission } from "@/hooks/usePermission";
 
 const Products = () => {
+    const { canCreate } = usePermission();
     const [dataLimit, setDataLimit] = useState(10);
     const navigate = useNavigate();
 
@@ -215,14 +217,16 @@ const Products = () => {
                 />
                 <div className="flex items-center gap-2">
                     <RefreshButton onClick={handleRefresh} />
-                    <button
-                        type="button"
-                        onClick={() => navigate("/admin/create-product")}
-                        className="bg-[var(--primary-color)] hover:bg-[var(--primary-color-hover)] text-white text-xs font-medium cursor-pointer h-8 px-3 rounded-md flex justify-center items-center gap-1.5 transition-all ease-in duration-200 whitespace-nowrap shrink-0 shadow-none"
-                    >
-                        <FaPlus size={11} className="text-white" />
-                        <span>Add Product</span>
-                    </button>
+                    {canCreate("product") && (
+                        <button
+                            type="button"
+                            onClick={() => navigate("/admin/create-product")}
+                            className="bg-[var(--primary-color)] hover:bg-[var(--primary-color-hover)] text-white text-xs font-medium cursor-pointer h-8 px-3 rounded-md flex justify-center items-center gap-1.5 transition-all ease-in duration-200 whitespace-nowrap shrink-0 shadow-none"
+                        >
+                            <FaPlus size={11} className="text-white" />
+                            <span>Add Product</span>
+                        </button>
+                    )}
                 </div>
             </div>
 

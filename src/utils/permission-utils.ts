@@ -466,8 +466,11 @@ export function getActiveUserPermissions(): string[] {
       localStorage.getItem(`cb_branch_perms_${activeBranchId}`) ||
       sessionStorage.getItem(`cb_branch_perms_${activeBranchId}`);
     if (raw) {
-      const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      let parsed = JSON.parse(raw);
+      if (typeof parsed === "string") {
+        try { parsed = JSON.parse(parsed); } catch {}
+      }
+      if (Array.isArray(parsed)) return parsed;
     }
   } catch {
     // fallback
@@ -490,8 +493,19 @@ export function getActiveUserPermissions(): string[] {
           ? list.find((item: any) => Number(item.branchId || item.branch_id) === Number(activeBranchId))
           : null;
         if (match) {
-          const perms: string[] = Array.isArray(match.permissions) && match.permissions.length > 0 ? [...match.permissions] : [];
-          if (perms.length === 0) {
+          let perms: string[] = [];
+          if (Array.isArray(match.permissions)) {
+            perms = [...match.permissions];
+          } else if (typeof match.permissions === "string" && match.permissions.trim()) {
+            try {
+              const p = JSON.parse(match.permissions);
+              if (Array.isArray(p)) perms = p;
+            } catch {}
+          }
+          if (perms.length > 0) return perms;
+
+          // Only synthesize if permissions array was never defined on match
+          if (match.permissions === undefined || match.permissions === null) {
             if (match.canView) {
               perms.push(...getReadOnlyPermissionKeys());
             }
@@ -525,8 +539,9 @@ export function getActiveUserPermissions(): string[] {
                 "accounts:delete"
               );
             }
+            if (perms.length > 0) return perms;
           }
-          if (perms.length > 0) return perms;
+          return [];
         }
       }
     } catch {}
@@ -567,6 +582,23 @@ export function hasPermission(
   // 1. Admins & Owners ALWAYS have full CRUD permissions
   if (isUserAdmin()) return true;
 
+  // Strict multi-tenant security: non-admins cannot manage employees, branches, or system administration
+  const modLower = (module || "").toLowerCase().trim();
+  if (
+    modLower === "employee" ||
+    modLower === "employees" ||
+    modLower === "people" ||
+    modLower === "branch_management" ||
+    modLower === "branch" ||
+    modLower === "branches" ||
+    modLower === "role_management" ||
+    modLower === "roles" ||
+    modLower === "administration" ||
+    modLower === "admin"
+  ) {
+    return false;
+  }
+
   const userPerms = permissions || getActiveUserPermissions();
   if (!userPerms || userPerms.length === 0) return false;
 
@@ -587,8 +619,6 @@ export function hasPermission(
   ) {
     return true;
   }
-
-  const modLower = module.toLowerCase();
 
   // Smart fallback aliases for Trade:
   if (["sales_return", "customer_collection"].includes(modLower)) {
@@ -617,17 +647,6 @@ export function hasPermission(
       userPerms.includes(`product:${action}`) ||
       userPerms.includes(`inventory:${action}`) ||
       userPerms.includes(`products:${action}`)
-    ) {
-      return true;
-    }
-  }
-
-  // People & SMS aliases:
-  if (["employee", "employees", "people"].includes(modLower)) {
-    if (
-      userPerms.includes(`employee:${action}`) ||
-      userPerms.includes(`employees:${action}`) ||
-      userPerms.includes(`people:${action}`)
     ) {
       return true;
     }
@@ -757,4 +776,222 @@ export function hasPermission(
   }
 
   return false;
+}
+
+/**
+ * Maps a sidebar menu item path/name/permissionKey to its corresponding system module & CRUD action.
+ */
+export function getSidebarItemModule(item: {
+  name?: string;
+  path?: string;
+  permissionKey?: string;
+}): { module: string; action: CrudAction } | null {
+  const path = (item.path || "").toLowerCase();
+  const name = (item.name || "").toLowerCase();
+  const key = (item.permissionKey || "").toLowerCase();
+
+  // Dashboard: Always visible to employees who have system access
+  if (path === "/admin" || name === "dashboard" || key.includes("dashboard")) {
+    return { module: "dashboard", action: "read" };
+  }
+
+  // Categories
+  if (path.includes("product-category") || name.includes("product category")) {
+    return { module: "category_product", action: "read" };
+  }
+  if (path.includes("financial-categories") || name.includes("expense & income")) {
+    return { module: "category_finance", action: "read" };
+  }
+
+  // Trade - Sales
+  if (path.includes("create-sales-return") || (name === "create return" && path.includes("sales"))) {
+    return { module: "sales_return", action: "create" };
+  }
+  if (path.includes("sales-return") || name.includes("sales return")) {
+    return { module: "sales_return", action: "read" };
+  }
+  if (path.includes("customer-collection") || name.includes("customer collection")) {
+    return { module: "customer_collection", action: "read" };
+  }
+  if (path.includes("create-sale") || name === "create sale") {
+    return { module: "sales", action: "create" };
+  }
+  if (path.includes("sales") || name.includes("sales") || key.includes("sales")) {
+    return { module: "sales", action: "read" };
+  }
+
+  // Trade - Purchase
+  if (path.includes("create-purchase-return") || (name === "create return" && path.includes("purchase"))) {
+    return { module: "purchase_return", action: "create" };
+  }
+  if (path.includes("purchase-return") || name.includes("purchase return")) {
+    return { module: "purchase_return", action: "read" };
+  }
+  if (path.includes("supplier-payment") || name.includes("supplier payment")) {
+    return { module: "supplier_payment", action: "read" };
+  }
+  if (path.includes("create-purchase") || name === "create purchase") {
+    return { module: "purchase", action: "create" };
+  }
+  if (path.includes("purchase") || name.includes("purchase") || key.includes("purchase")) {
+    return { module: "purchase", action: "read" };
+  }
+
+  // Inventory
+  if (path.includes("create-product") || name === "create product") {
+    return { module: "product", action: "create" };
+  }
+  if (path.includes("stock-adjustment") || path.includes("adjustment") || name.includes("stock adjustment")) {
+    return { module: "stock_adjustment", action: "read" };
+  }
+  if (path.includes("products") || name === "product" || name === "inventory" || key.includes("product")) {
+    return { module: "product", action: "read" };
+  }
+
+  // People
+  if (path.includes("employee-entry") || name === "employee entry") {
+    return { module: "employee", action: "create" };
+  }
+  if (path.includes("employees") || name === "employee" || name === "employee list") {
+    return { module: "employee", action: "read" };
+  }
+  if (path.includes("parties") || name.includes("parties") || name.includes("customer") || name.includes("supplier")) {
+    return { module: "parties", action: "read" };
+  }
+  if (path.includes("/sms") || name.includes("sms")) {
+    return { module: "sms", action: "read" };
+  }
+
+  // Finance
+  if (path.includes("khatabook") || name.includes("khatabook")) {
+    return { module: "khatabook", action: "read" };
+  }
+  if (path.includes("/mfs") || name === "mfs") {
+    return { module: "mfs", action: "read" };
+  }
+  if (path.includes("/banks") || path.includes("/bank") || name === "bank" || name === "banking") {
+    return { module: "bank", action: "read" };
+  }
+  if (path.includes("/income") || name === "income") {
+    return { module: "income", action: "read" };
+  }
+  if (path.includes("/expense") || name === "expense") {
+    return { module: "expense", action: "read" };
+  }
+  if (path.includes("fund-transfer") || name.includes("fund transfer")) {
+    return { module: "fund_transfer", action: "read" };
+  }
+  if (path.includes("opening-cash") || name.includes("opening cash")) {
+    return { module: "opening_cash", action: "read" };
+  }
+  if (path.includes("cash-closing") || name.includes("cash closing")) {
+    return { module: "cash_closing", action: "read" };
+  }
+  if (
+    path.includes("chart-of-accounts") ||
+    path.includes("voucher") ||
+    path.includes("general-ledger") ||
+    path.includes("bank-recon") ||
+    name.includes("voucher") ||
+    name.includes("ledger") ||
+    name.includes("chart of accounts")
+  ) {
+    return { module: "coa_vouchers", action: "read" };
+  }
+  if (path.includes("/tax") || name.includes("tax") || name.includes("vat")) {
+    return { module: "tax", action: "read" };
+  }
+  if (path.includes("/assets") || name.includes("asset")) {
+    return { module: "assets", action: "read" };
+  }
+  if (path.includes("/budget") || name.includes("budget")) {
+    return { module: "budget", action: "read" };
+  }
+
+  // Reports & Approvals
+  if (path.includes("/reports") || name.includes("report")) {
+    return { module: "reports", action: "read" };
+  }
+  if (path.includes("/approvals") || name.includes("approval")) {
+    return { module: "approvals", action: "read" };
+  }
+
+  // System & Administration
+  if (path.includes("/roles") || name.includes("roles")) {
+    return { module: "role_management", action: "read" };
+  }
+  if (path.includes("/branches") || name.includes("branch")) {
+    return { module: "branch_management", action: "read" };
+  }
+  if (path.includes("/appearance") || name.includes("appearance")) {
+    return { module: "appearance", action: "update" };
+  }
+  if (path.includes("cms") || name.includes("cms")) {
+    return { module: "website_cms", action: "update" };
+  }
+  if (path.includes("packages") || name.includes("package")) {
+    return { module: "subscription_packages", action: "read" };
+  }
+  if (path.includes("company") || name.includes("business profile")) {
+    return { module: "business_profile", action: "update" };
+  }
+  if (path.includes("/admin/users") || name === "administration" || name === "users") {
+    return { module: "administration", action: "read" };
+  }
+
+  return null;
+}
+
+/**
+ * Checks whether a sidebar menu item or submenu is allowed for the given permissions.
+ */
+export function canAccessMenuItem(
+  item: any,
+  permissions?: string[],
+  isAdmin = isUserAdmin()
+): boolean {
+  if (isAdmin) return true;
+
+  // Strict multi-tenant security: non-admins cannot manage employees, branches, or system administration
+  const path = (item.path || "").toLowerCase();
+  const name = (item.name || "").toLowerCase();
+  if (
+    path === "/admin/branches" ||
+    path === "/admin/branches/add" ||
+    path.startsWith("/admin/branches") ||
+    name === "branch management" ||
+    name === "branch" ||
+    name === "branches" ||
+    path === "/admin/employees" ||
+    path === "/admin/employee-entry" ||
+    path.startsWith("/admin/employee") ||
+    name === "employee" ||
+    name === "employee list" ||
+    name === "employee entry" ||
+    name === "administration" ||
+    name === "roles" ||
+    name === "role management" ||
+    path === "/admin/roles" ||
+    path === "/admin/users"
+  ) {
+    return false;
+  }
+
+  // If item has subItems, it is allowed if AT LEAST ONE subItem is allowed
+  if (Array.isArray(item.subItems) && item.subItems.length > 0) {
+    return item.subItems.some((sub: any) => canAccessMenuItem(sub, permissions, isAdmin));
+  }
+
+  // Standalone menu item or subItem
+  const mapping = getSidebarItemModule(item);
+  if (!mapping) {
+    return false;
+  }
+
+  // Dashboard is always viewable for any staff with active session access
+  if (mapping.module === "dashboard") {
+    return true;
+  }
+
+  return hasPermission(mapping.action, mapping.module, permissions);
 }

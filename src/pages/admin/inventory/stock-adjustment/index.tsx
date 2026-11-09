@@ -17,8 +17,10 @@ import {
   FaArrowDown,
   FaExchangeAlt,
 } from "react-icons/fa";
+import { usePermission } from "@/hooks/usePermission";
 
 export const StockAdjustmentPage: React.FC = () => {
+  const { canCreate } = usePermission();
   // Query adjustment report
   const { data: reportData, isLoading, isFetching, refetch } =
     useStockAdjustmentReportQuery();
@@ -174,14 +176,16 @@ export const StockAdjustmentPage: React.FC = () => {
             isLoading={isLoading || isFetching || isProductsLoading}
           />
 
-          <button
-            type="button"
-            onClick={handleOpenCreate}
-            className="bg-[var(--primary-color)] hover:bg-[var(--primary-color-hover)] text-white text-xs sm:text-xs font-medium cursor-pointer h-8 px-3 rounded-md flex justify-center items-center gap-1.5 transition-all ease-in duration-200 whitespace-nowrap shrink-0"
-          >
-            <FaPlus size={11} className="text-white" />
-            <span>Stock Adjustment</span>
-          </button>
+          {canCreate("stock_adjustment") && (
+            <button
+              type="button"
+              onClick={handleOpenCreate}
+              className="bg-[var(--primary-color)] hover:bg-[var(--primary-color-hover)] text-white text-xs sm:text-xs font-medium cursor-pointer h-8 px-3 rounded-md flex justify-center items-center gap-1.5 transition-all ease-in duration-200 whitespace-nowrap shrink-0"
+            >
+              <FaPlus size={11} className="text-white" />
+              <span>Stock Adjustment</span>
+            </button>
+          )}
         </div>
       </div>
 

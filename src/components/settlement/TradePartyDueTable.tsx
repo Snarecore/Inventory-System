@@ -21,6 +21,7 @@ import ColumnVisibilityDropdown, { type ColumnItem } from "@/components/table-co
 import { useDebounce } from "@/hooks/useDebounce";
 import { formatMoney } from "@/utils/formatters";
 import { showSuccessToast, showErrorToast } from "@/utils/toast-utils";
+import { usePermission } from "@/hooks/usePermission";
 
 export interface GenericTradePartyDue {
   id?: string | number;
@@ -65,7 +66,9 @@ export const TradePartyDueTable = <T extends GenericTradePartyDue>({
   showIdColumn = false,
   excelFileName,
 }: TradePartyDueTableProps<T>) => {
+  const { canCreate } = usePermission();
   const isCustomer = partyType === "customer";
+  const canPerformAction = canCreate(isCustomer ? "customer_collection" : "supplier_payment");
   const partyTitle = isCustomer ? "Customer" : "Supplier";
 
   // Search & Filter State
@@ -411,15 +414,19 @@ export const TradePartyDueTable = <T extends GenericTradePartyDue>({
                     {/* Action */}
                     {isColVisible("action") && (
                       <td className="py-2 px-3 text-center whitespace-nowrap">
-                        <button
-                          type="button"
-                          onClick={() => onAction(party)}
-                          className="inline-flex items-center justify-center gap-1.5 px-3 py-1 text-xs font-semibold text-white bg-[var(--primary-color)] hover:bg-[var(--primary-color-hover)] rounded-md shadow-xs transition-all cursor-pointer active:scale-95 whitespace-nowrap shrink-0"
-                          title={`${actionLabel} ${getPartyName(party)}`}
-                        >
-                          {actionIcon}
-                          <span className="whitespace-nowrap">{actionLabel}</span>
-                        </button>
+                        {canPerformAction ? (
+                          <button
+                            type="button"
+                            onClick={() => onAction(party)}
+                            className="inline-flex items-center justify-center gap-1.5 px-3 py-1 text-xs font-semibold text-white bg-[var(--primary-color)] hover:bg-[var(--primary-color-hover)] rounded-md shadow-xs transition-all cursor-pointer active:scale-95 whitespace-nowrap shrink-0"
+                            title={`${actionLabel} ${getPartyName(party)}`}
+                          >
+                            {actionIcon}
+                            <span className="whitespace-nowrap">{actionLabel}</span>
+                          </button>
+                        ) : (
+                          <span className="text-gray-400 text-xs italic">View Only</span>
+                        )}
                       </td>
                     )}
                   </tr>

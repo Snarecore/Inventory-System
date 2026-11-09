@@ -7,6 +7,7 @@ import DatePicker from "@/components/common/DatePicker";
 import PageHeader from "@/components/page-header/PageHeader";
 import { showErrorToast, showSuccessToast } from "@/utils/toast-utils";
 import { useInsertEmployeeMutation, useUpdateEmployeeMutation } from "@/hooks/useEmployeeQueries";
+import { usePermission } from "@/hooks/usePermission";
 import type { EmployeeInsertPayload, EmployeeItem } from "@/types/employee.types";
 
 type EmployeeFormValues = {
@@ -90,10 +91,12 @@ const textareaClass =
 export default function EmployeeEntryPage() {
   const navigate = useNavigate();
   const location = useLocation();
+  const { canCreate, canUpdate } = usePermission();
 
   const editEmployee = location.state?.employee as EmployeeItem | undefined;
   const editId = editEmployee?.id || (editEmployee as any)?.employeeId;
   const isEditMode = Boolean(editId);
+  const hasPermission = isEditMode ? canUpdate("employee") : canCreate("employee");
 
   const getFormValuesFromEmployee = (emp: EmployeeItem): EmployeeFormValues => ({
     fullName: emp.fullName || "",
@@ -194,6 +197,10 @@ export default function EmployeeEntryPage() {
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (!hasPermission) {
+      showErrorToast(`You do not have permission to ${isEditMode ? "update" : "create"} employees.`);
+      return;
+    }
     const nextErrors: EmployeeErrors = {};
 
     // Validate required fields
@@ -787,7 +794,7 @@ export default function EmployeeEntryPage() {
                 size="sm"
                 type="submit"
                 color="var(--primary-color)"
-                disabled={isPending}
+                disabled={!hasPermission || isPending}
                 className="cursor-pointer !text-white"
               />
             </div>

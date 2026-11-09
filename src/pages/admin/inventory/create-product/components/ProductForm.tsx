@@ -18,6 +18,7 @@ import {
 } from '@/config/query-key';
 import { buildAccessUser, withBranchScope } from '@/utils/access-user';
 import { getData, postData } from '@/services/api-service';
+import { usePermission } from '@/hooks/usePermission';
 import type { ProductItem } from '@/types';
 
 interface Option {
@@ -70,6 +71,8 @@ const CreateProductForm = () => {
     const editId = routeId || searchParams.get("id") || searchParams.get("edit");
     const stateEditData: ProductItem | undefined = (location.state as any)?.editData;
     const isEditMode = Boolean(editId || stateEditData);
+    const { canCreate, canUpdate } = usePermission();
+    const hasPermission = isEditMode ? canUpdate("product") : canCreate("product");
 
     const [isOpen, setIsOpen] = useState(true);
     const [fieldValues, setFieldValues] = useState<ProductFormState>(initialFieldValues);
@@ -435,6 +438,10 @@ const CreateProductForm = () => {
 
     const handleSubmitForm = async (e: React.FormEvent) => {
         e.preventDefault();
+        if (!hasPermission) {
+            showErrorToast(`You do not have permission to ${isEditMode ? "update" : "create"} products!`);
+            return;
+        }
         if (!fieldValues.name.trim()) {
             showErrorToast("Product Name is required!");
             return;
@@ -827,7 +834,7 @@ const CreateProductForm = () => {
                     <button
                         type="button"
                         onClick={handleSubmitForm}
-                        disabled={isLoading}
+                        disabled={!hasPermission || isLoading}
                         className="h-8 px-4 text-xs font-semibold rounded-md bg-[var(--primary-color)] hover:bg-[var(--primary-color-hover)] text-white flex items-center justify-center gap-1.5 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed shadow-none"
                     >
                         {isLoading ? (

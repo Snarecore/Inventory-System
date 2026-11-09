@@ -27,6 +27,7 @@ import { methodMeta } from "@/services/mfs-service";
 import MfsLogo from "./MfsLogo";
 import { AccountStatusBadge, AccountStatusTabs } from "@/pages/admin/finance/components";
 import { FiChevronDown } from "react-icons/fi";
+import { usePermission } from "@/hooks/usePermission";
 
 interface MfsTableProps {
   mfsAccounts: MfsUserItem[];
@@ -37,6 +38,7 @@ interface MfsTableProps {
 type SortKey = "method" | "name" | "phoneNumber" | "currentBalance" | "status";
 
 export const MfsTable: React.FC<MfsTableProps> = ({ mfsAccounts, isLoading, onAddNew }) => {
+  const { canCreate, canUpdate } = usePermission();
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
@@ -232,14 +234,14 @@ export const MfsTable: React.FC<MfsTableProps> = ({ mfsAccounts, isLoading, onAd
                       <TableCell align="center">
                         <AccountStatusBadge
                           status={item.status}
-                          onToggle={() => handleToggleStatus(item)}
-                          disabled={updateStatusMutation.isPending}
+                          onToggle={() => canUpdate("mfs") && handleToggleStatus(item)}
+                          disabled={updateStatusMutation.isPending || !canUpdate("mfs")}
                         />
                       </TableCell>
 
                       <TableCell align="center">
                         <TableActionButtons
-                          onEdit={() => navigate(`/admin/edit-mfs/${item.id}`)}
+                          onEdit={canUpdate("mfs") ? () => navigate(`/admin/edit-mfs/${item.id}`) : undefined}
                           editTitle="Edit MFS Account"
                         />
                       </TableCell>
@@ -252,8 +254,8 @@ export const MfsTable: React.FC<MfsTableProps> = ({ mfsAccounts, isLoading, onAd
                     <EmptyState
                       title="No MFS accounts found"
                       description="There are no Mobile Financial Service accounts registered yet or matching your search."
-                      buttonText="+ Add MFS Account"
-                      onButtonClick={onAddNew}
+                      buttonText={canCreate("mfs") ? "+ Add MFS Account" : undefined}
+                      onButtonClick={canCreate("mfs") ? onAddNew : undefined}
                     />
                   </td>
                 </tr>

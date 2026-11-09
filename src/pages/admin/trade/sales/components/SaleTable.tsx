@@ -98,7 +98,7 @@ export const SaleTable: React.FC<SaleTableProps> = ({
   onExport,
 }) => {
   const navigate = useNavigate();
-  const { canUpdate, canDelete } = usePermission();
+  const { canUpdate, canDelete, canCreate } = usePermission();
   const [isCustomerDropdownOpen, setIsCustomerDropdownOpen] = useState<boolean>(false);
   const [customerSearchQuery, setCustomerSearchQuery] = useState<string>("");
   const [copiedId, setCopiedId] = useState<string | number | null>(null);
@@ -628,10 +628,13 @@ export const SaleTable: React.FC<SaleTableProps> = ({
                           onPrint={() => onPrint(sale)}
                           onEdit={canUpdate("sales") ? () => onEdit(sale) : undefined}
                           onDelete={canDelete("sales") && _onDelete ? () => _onDelete(sale) : undefined}
-                          onReturn={() =>
-                            navigate("/admin/create-sales-return", {
-                              state: { sale },
-                            })
+                          onReturn={
+                            (canCreate("sales_return") || canCreate("sales"))
+                              ? () =>
+                                  navigate("/admin/create-sales-return", {
+                                    state: { sale },
+                                  })
+                              : undefined
                           }
                           returnTitle="Return Sale / পণ্য ফেরত"
                           isReturnDisabled={isAlreadyReturned}

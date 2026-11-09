@@ -11,6 +11,7 @@ import {
 } from "@/hooks/useCashClosing";
 import { BANGLADESH_DENOMINATIONS, type DenominationItem, type CashClosingData } from "@/types";
 import { showErrorToast } from "@/utils/toast-utils";
+import { usePermission } from "@/hooks/usePermission";
 import CashClosingKpiCards from "./components/CashClosingKpiCards";
 import CashDenominationTable from "./components/CashDenominationTable";
 import CashClosingSummaryCard from "./components/CashClosingSummaryCard";
@@ -20,6 +21,8 @@ import DenominationBreakdownModal from "./components/DenominationBreakdownModal"
 type TabMode = "DAILY" | "HISTORY";
 
 export const CashClosingPage: React.FC = () => {
+  const { canCreate, canUpdate } = usePermission();
+  const canClose = canCreate("cash_closing") || canUpdate("cash_closing");
   const [activeTab, setActiveTab] = useState<TabMode>("DAILY");
   const [selectedDate, setSelectedDate] = useState<string>(moment().format("YYYY-MM-DD"));
 
@@ -139,12 +142,16 @@ export const CashClosingPage: React.FC = () => {
   }, [countedCash, expectedCash]);
 
   const isClosed = closingData?.status?.toLowerCase() === "closed";
-  const isReadOnly = isClosed;
+  const isReadOnly = isClosed || !canClose;
 
   // Handle Submit Closing
   const handleSubmitClosing = () => {
     if (isClosed) {
       showErrorToast("This date's cash register is already closed and cannot be modified.");
+      return;
+    }
+    if (!canClose) {
+      showErrorToast("You do not have permission to close the cash register.");
       return;
     }
 

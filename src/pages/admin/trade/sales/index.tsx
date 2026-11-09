@@ -560,7 +560,7 @@ const Sales: React.FC = () => {
               icon={<FaPlus className="text-white text-xs" />}
             />
           )}
-          {activeTab !== "sales" && canCreate("sales") && (
+          {activeTab !== "sales" && (canCreate("sales_return") || canCreate("sales")) && (
             <Button
               label="Create Return"
               onClick={() => navigate("/admin/create-sales-return")}

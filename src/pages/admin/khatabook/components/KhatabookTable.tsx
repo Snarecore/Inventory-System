@@ -20,6 +20,7 @@ import { formatMoney } from "@/utils/formatters";
 import { buildAndDownloadExcel } from "@/utils/excel-export";
 import { useDebounce } from "@/hooks/useDebounce";
 import { FiPlus } from "react-icons/fi";
+import { usePermission } from "@/hooks/usePermission";
 
 interface KhatabookTableProps {
   persons: LedgerPerson[];
@@ -38,6 +39,7 @@ export const KhatabookTable: React.FC<KhatabookTableProps> = ({
   onEditPerson,
   onDeletePerson,
 }) => {
+  const { canCreate, canUpdate, canDelete } = usePermission();
   const [searchQuery, setSearchQuery] = useState("");
   const [balanceFilter, setBalanceFilter] = useState<string>("");
   const [statusFilter, setStatusFilter] = useState<string>("");
@@ -321,19 +323,21 @@ export const KhatabookTable: React.FC<KhatabookTableProps> = ({
                         <TableActionButtons
                           onView={() => onViewLedger(person)}
                           viewTitle="View Ledger Statement"
-                          onEdit={() => onEditPerson(person)}
+                          onEdit={canUpdate("khatabook") ? () => onEditPerson(person) : undefined}
                           editTitle="Edit Person"
-                          onDelete={() => onDeletePerson(person)}
+                          onDelete={canDelete("khatabook") ? () => onDeletePerson(person) : undefined}
                           deleteTitle="Delete Person"
                           extraActions={
-                            <button
-                              type="button"
-                              onClick={() => onAddTransaction(person)}
-                              title="Record Transaction"
-                              className="p-1 rounded text-[var(--ui-success)] hover:bg-[var(--ui-success-border)] transition-colors cursor-pointer"
-                            >
-                              <FiPlus size={14} />
-                            </button>
+                            canCreate("khatabook") ? (
+                              <button
+                                type="button"
+                                onClick={() => onAddTransaction(person)}
+                                title="Record Transaction"
+                                className="p-1 rounded text-[var(--ui-success)] hover:bg-[var(--ui-success-border)] transition-colors cursor-pointer"
+                              >
+                                <FiPlus size={14} />
+                              </button>
+                            ) : undefined
                           }
                           className="justify-end"
                         />

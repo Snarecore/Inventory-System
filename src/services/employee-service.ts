@@ -16,7 +16,16 @@ import {
 
 export async function getEmployeeList(organizationId?: number): Promise<EmployeeItem[]> {
   const accessUser = buildAccessUser();
-  const orgId = organizationId || accessUser.orgId;
+  const userInfo = getUserInfo();
+  const storedUser = getStoredUser();
+  const orgId =
+    organizationId ||
+    accessUser.orgId ||
+    userInfo?.orgId ||
+    (userInfo as any)?.organizationId ||
+    (storedUser as any)?.orgId ||
+    (storedUser as any)?.organizationId ||
+    (Array.isArray(userInfo?.branches) && userInfo.branches.length > 0 ? userInfo.branches[0].orgId : 0);
 
   const res = (await getData<any>({
     url: `${apiConfig.employee.getEmployeesUrl}/${orgId}`,
@@ -200,6 +209,9 @@ export function saveLocalEmployeeBranchPermission(record: any): void {
       localStorage.setItem(`branch_perms_${branchId}`, val);
       sessionStorage.setItem(`cb_branch_perms_${branchId}`, val);
       sessionStorage.setItem(`branch_perms_${branchId}`, val);
+      try {
+        window.dispatchEvent(new Event("permissions-updated"));
+      } catch {}
     }
   } catch (err) {
     console.error("Failed to save local employee branch permission", err);
@@ -266,6 +278,9 @@ export async function createEmployeeBranchPermission(
     canEdit,
     canDelete,
     grantedBy,
+    permissions: perms,
+    permissionKeys: perms,
+    permissionsJson: JSON.stringify(perms),
     active: payload.active !== false,
     accessUser,
   };
@@ -279,7 +294,9 @@ export async function createEmployeeBranchPermission(
     throw new Error(res?.msg || res?.message || "Failed to assign branch permission in database");
   }
 
-  const savedId = Number(res?.data?.id || res?.id);
+  const savedId = Number(
+    res?.data?.id || res?.id || res?.data?.permissionId || res?.insertId || Date.now()
+  );
   if (savedId && savedId > 0) {
     saveLocalEmployeeBranchPermission({
       id: savedId,
@@ -343,6 +360,13 @@ export async function updateEmployeeBranchPermission(
     ...(canEdit !== undefined ? { canEdit: Boolean(canEdit) } : {}),
     ...(canDelete !== undefined ? { canDelete: Boolean(canDelete) } : {}),
     ...(payload.primary !== undefined ? { primary: Boolean(payload.primary) } : {}),
+    ...(perms !== undefined
+      ? {
+          permissions: perms,
+          permissionKeys: perms,
+          permissionsJson: JSON.stringify(perms),
+        }
+      : {}),
     grantedBy,
     accessUser,
   };
@@ -431,8 +455,27 @@ export async function getEmployeeBranchPermissions(employeeId: number): Promise<
       const canDelete = p.canDelete !== undefined ? Boolean(p.canDelete) : false;
 
       // Synthesize standard granular keys for UI matrix
-      let perms = Array.isArray(p.permissions) ? [...p.permissions] : [];
+      let perms: string[] = [];
+      if (Array.isArray(p.permissions)) {
+        perms = [...p.permissions];
+      } else if (typeof p.permissions === "string" && p.permissions.trim()) {
+        try {
+          const parsed = JSON.parse(p.permissions);
+          if (Array.isArray(parsed)) perms = parsed;
+        } catch {}
+      }
+
+      // Check if local cache has explicit granular permissions if backend returned empty array/null
       if (perms.length === 0) {
+        const localList = getLocalEmployeeBranchPermissions(employeeId);
+        const localMatch = localList.find((l: any) => Number(l.branchId || l.branch_id) === bId);
+        if (localMatch && Array.isArray(localMatch.permissions) && localMatch.permissions.length > 0) {
+          perms = [...localMatch.permissions];
+        }
+      }
+
+      // Fallback synthesis only if no granular permissions were ever specified
+      if (perms.length === 0 && (canView || canEdit || canDelete)) {
         if (canView) {
           perms.push(...getReadOnlyPermissionKeys());
         }
@@ -485,6 +528,7 @@ export async function getEmployeeBranchPermissions(employeeId: number): Promise<
             sessionStorage.setItem(`cb_branch_perms_${item.branchId}`, val);
           }
         });
+        window.dispatchEvent(new Event("permissions-updated"));
       } catch {}
     }
 

@@ -28,6 +28,7 @@ import { productListQueryKey, productQueryKey } from "@/config/query-key";
 import { buildAccessUser, withBranchScope } from "@/utils/access-user";
 import type { ProductItem } from "@/types";
 import { getProductStockDisplay } from "@/utils/product-unit";
+import { usePermission } from "@/hooks/usePermission";
 
 interface ProductTableProps {
     products: ProductItem[];
@@ -83,6 +84,7 @@ export const ProductTable = ({
     categoryOptions,
     onRefresh,
 }: ProductTableProps) => {
+    const { canCreate, canUpdate, canDelete } = usePermission();
     const [selectedProduct, setSelectedProduct] = useState<ProductItem | null>(null);
     const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -490,13 +492,19 @@ export const ProductTable = ({
                                                     <td className="py-2.5 px-3 text-center" onClick={(e) => e.stopPropagation()}>
                                                         <button
                                                             type="button"
-                                                            disabled={togglingId === prodId}
-                                                            onClick={() => handleToggleProductStatus(product)}
-                                                            title={`Click to mark as ${active ? "Inactive" : "Active"}`}
-                                                            className={`inline-flex items-center px-1.5 py-0.5 rounded-md text-[10px] font-semibold border cursor-pointer transition-colors ${
-                                                                active
-                                                                    ? "bg-[var(--ui-success-border)] text-[var(--ui-success-dark)] border-[var(--ui-success-border)] hover:bg-[var(--ui-success-border)]"
-                                                                    : "bg-[var(--ui-danger-border)] text-[var(--ui-danger-dark)] border-[var(--ui-danger-border)] hover:bg-[var(--ui-danger-border)]"
+                                                            disabled={togglingId === prodId || !canUpdate("product")}
+                                                            onClick={() => canUpdate("product") && handleToggleProductStatus(product)}
+                                                            title={
+                                                                !canUpdate("product")
+                                                                    ? "Permission required to change status"
+                                                                    : `Click to mark as ${active ? "Inactive" : "Active"}`
+                                                            }
+                                                            className={`inline-flex items-center px-1.5 py-0.5 rounded-md text-[10px] font-semibold border transition-colors ${
+                                                                !canUpdate("product")
+                                                                    ? "bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed"
+                                                                    : active
+                                                                    ? "bg-[var(--ui-success-border)] text-[var(--ui-success-dark)] border-[var(--ui-success-border)] hover:bg-[var(--ui-success-border)] cursor-pointer"
+                                                                    : "bg-[var(--ui-danger-border)] text-[var(--ui-danger-dark)] border-[var(--ui-danger-border)] hover:bg-[var(--ui-danger-border)] cursor-pointer"
                                                             } ${togglingId === prodId ? "opacity-50 cursor-wait" : ""}`}
                                                         >
                                                             {active ? "Active" : "Inactive"}
@@ -519,24 +527,28 @@ export const ProductTable = ({
                                                             </button>
 
                                                             {/* Edit Icon */}
-                                                            <Link
-                                                                to={`/admin/edit-product/${product.id || product.pcode || ""}`}
-                                                                state={{ editData: product }}
-                                                                title="Edit Product"
-                                                                className="p-1 rounded-md hover:bg-[var(--ui-warning-light)] text-[var(--ui-warning)] transition-colors cursor-pointer"
-                                                            >
-                                                                <FiEdit size={14} />
-                                                            </Link>
+                                                            {canUpdate("product") && (
+                                                                <Link
+                                                                    to={`/admin/edit-product/${product.id || product.pcode || ""}`}
+                                                                    state={{ editData: product }}
+                                                                    title="Edit Product"
+                                                                    className="p-1 rounded-md hover:bg-[var(--ui-warning-light)] text-[var(--ui-warning)] transition-colors cursor-pointer"
+                                                                >
+                                                                    <FiEdit size={14} />
+                                                                </Link>
+                                                            )}
 
                                                             {/* Delete Icon */}
-                                                            <button
-                                                                type="button"
-                                                                onClick={() => openDeleteModal(product)}
-                                                                title="Delete Product"
-                                                                className="p-1 rounded-md hover:bg-[var(--ui-danger-light)] text-[var(--ui-danger)] transition-colors cursor-pointer"
-                                                            >
-                                                                <FiTrash2 size={14} />
-                                                            </button>
+                                                            {canDelete("product") && (
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => openDeleteModal(product)}
+                                                                    title="Delete Product"
+                                                                    className="p-1 rounded-md hover:bg-[var(--ui-danger-light)] text-[var(--ui-danger)] transition-colors cursor-pointer"
+                                                                >
+                                                                    <FiTrash2 size={14} />
+                                                                </button>
+                                                            )}
                                                         </div>
                                                     </td>
                                                 )}
@@ -731,14 +743,16 @@ export const ProductTable = ({
                             >
                                 Close
                             </button>
-                            <Link
-                                to={`/admin/edit-product/${selectedProduct.id || selectedProduct.pcode || ""}`}
-                                state={{ editData: selectedProduct }}
-                                className="h-8 px-3.5 text-xs font-medium text-white bg-[var(--primary-color)] hover:bg-[var(--primary-color-hover)] rounded-md transition-colors inline-flex items-center gap-1.5 cursor-pointer shadow-none"
-                            >
-                                <FiEdit className="w-3.5 h-3.5" />
-                                <span>Edit Product</span>
-                            </Link>
+                            {canUpdate("product") && (
+                                <Link
+                                    to={`/admin/edit-product/${selectedProduct.id || selectedProduct.pcode || ""}`}
+                                    state={{ editData: selectedProduct }}
+                                    className="h-8 px-3.5 text-xs font-medium text-white bg-[var(--primary-color)] hover:bg-[var(--primary-color-hover)] rounded-md transition-colors inline-flex items-center gap-1.5 cursor-pointer shadow-none"
+                                >
+                                    <FiEdit className="w-3.5 h-3.5" />
+                                    <span>Edit Product</span>
+                                </Link>
+                            )}
                         </div>
                     </div>
                 </Modal>

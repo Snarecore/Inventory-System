@@ -12,6 +12,8 @@ import AccountPickerModal from "./AccountPickerModal";
 import CategoryPickerModal from "./CategoryPickerModal";
 import { formatMoney } from "@/utils/formatters";
 import type { BankAccountItem, MfsUserItem, CategoryItem, CategoryType } from "@/types";
+import { showErrorToast } from "@/utils/toast-utils";
+import { usePermission } from "@/hooks/usePermission";
 import {
   FaArrowDown,
   FaArrowUp,
@@ -42,6 +44,7 @@ const getTodayString = () => {
 };
 
 export const FinancialEntryPage: React.FC<FinancialEntryPageProps> = ({ mode }) => {
+  const { canCreate } = usePermission();
   const isExpense = mode === "EXPENSE";
   const todayStr = useMemo(() => getTodayString(), []);
 
@@ -221,6 +224,13 @@ export const FinancialEntryPage: React.FC<FinancialEntryPageProps> = ({ mode }) 
   // Form submit validation & execution
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+
+    const permModule = isExpense ? "expense" : "income";
+    if (!canCreate(permModule)) {
+      showErrorToast(`You do not have permission to record ${permModule}.`);
+      return;
+    }
+
     const newErrors: Record<string, string> = {};
 
     if (!amountNum || amountNum <= 0) {
@@ -606,7 +616,7 @@ export const FinancialEntryPage: React.FC<FinancialEntryPageProps> = ({ mode }) 
                   type="submit"
                   size="sm"
                   isLoading={insertMutation.isPending}
-                  disabled={insertMutation.isPending}
+                  disabled={insertMutation.isPending || !canCreate(isExpense ? "expense" : "income")}
                   color="var(--color-primary)"
                   hoverColor="var(--color-primary-hover)"
                   buttonClass="!text-xs !py-1.5 !px-3 !rounded-lg font-semibold shadow-2xs !text-white"

@@ -9,6 +9,7 @@ import apiConfig from "@/config/api.json";
 import type { PartyItem, PartyType } from "@/types";
 import { FaUserTie, FaTruck, FaPhone, FaEnvelope, FaMapMarkerAlt, FaMoneyBillWave } from "react-icons/fa";
 import { RiArrowDropDownLine } from "react-icons/ri";
+import { usePermission } from "@/hooks/usePermission";
 
 interface PartyModalProps {
   isOpen: boolean;
@@ -27,6 +28,8 @@ const PartyModal: React.FC<PartyModalProps> = ({
 }) => {
   const partyId = partyData?.id ?? partyData?.partyId;
   const isEdit = Boolean(partyData && partyId);
+  const { canCreate, canUpdate } = usePermission();
+  const hasPermission = isEdit ? canUpdate("parties") : canCreate("parties");
 
   const [partyType, setPartyType] = useState<PartyType>(defaultType);
   const [partyName, setPartyName] = useState("");
@@ -83,6 +86,10 @@ const PartyModal: React.FC<PartyModalProps> = ({
 
   const handleSubmit = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
+    if (!hasPermission) {
+      showErrorToast(`You do not have permission to ${isEdit ? "update" : "create"} parties.`);
+      return;
+    }
     if (!validate()) return;
 
     setIsSubmitting(true);
@@ -278,7 +285,7 @@ const PartyModal: React.FC<PartyModalProps> = ({
             label={isSubmitting ? "Saving..." : isEdit ? "Update Party" : `Create ${partyType === "CUSTOMER" ? "Customer" : "Supplier"}`}
             type="submit"
             onClick={() => handleSubmit()}
-            disabled={isSubmitting}
+            disabled={!hasPermission || isSubmitting}
             isLoading={isSubmitting}
             color={partyType === "CUSTOMER" ? "var(--primary-color)" : "#059669"}
             hoverColor={partyType === "CUSTOMER" ? "var(--primary-color-hover)" : "#047857"}

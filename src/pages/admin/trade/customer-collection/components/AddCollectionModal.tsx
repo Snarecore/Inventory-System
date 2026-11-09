@@ -5,6 +5,8 @@ import { sortInvoicesFIFO } from "@/services/collection-service";
 import type { CollectionReceiptData } from "./CollectionReceiptModal";
 import type { CustomerDueItem } from "@/types/collection.types";
 import TradeAddSettlementModal from "@/components/settlement/TradeAddSettlementModal";
+import { usePermission } from "@/hooks/usePermission";
+import { showErrorToast } from "@/utils/toast-utils";
 
 export interface AddCollectionModalProps {
   isOpen: boolean;
@@ -19,6 +21,7 @@ export const AddCollectionModal: React.FC<AddCollectionModalProps> = ({
   onClose,
   onSuccess,
 }) => {
+  const { canCreate } = usePermission();
   const customerId = customer?.customerId ? String(customer.customerId) : "";
   const { data: rawInvoices = [], isLoading: isInvoicesLoading } =
     useCustomerInvoicesDueQuery(customerId, {
@@ -46,6 +49,11 @@ export const AddCollectionModal: React.FC<AddCollectionModalProps> = ({
     totalSettleAmount: number;
   }) => {
     if (!customer) return;
+
+    if (!canCreate("customer_collection")) {
+      showErrorToast("You do not have permission to record customer collection.");
+      return;
+    }
 
     const result = await collectionMutation.mutateAsync({
       customerId: customer.customerId,
