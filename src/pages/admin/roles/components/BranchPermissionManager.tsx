@@ -1019,16 +1019,10 @@ export const BranchPermissionManager: React.FC<BranchPermissionManagerProps> = (
                       backgroundColor: "var(--table-header-bg, var(--primary-color, #009fe3))",
                       color: "var(--table-header-text, var(--ui-on-accent, #ffffff))",
                     }}
-                    className="px-3.5 py-1.5 border-b border-t first:border-t-0 border-black/10 dark:border-white/10 flex items-center justify-between shadow-2xs"
+                    className="px-3.5 py-1.5 border-b border-t first:border-t-0 border-black/10 dark:border-white/10 flex items-center shadow-2xs"
                   >
-                    <div className="flex items-center gap-2">
-                      <span className="w-1.5 h-1.5 rounded-full bg-white/90"></span>
-                      <span className="text-[11px] font-bold uppercase tracking-wider text-inherit">
-                        {mod.category} Section
-                      </span>
-                    </div>
-                    <span className="text-[10px] font-medium bg-black/15 dark:bg-black/25 text-inherit px-2 py-0.5 rounded-full">
-                      Sidebar Menus
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-inherit">
+                      {mod.category} Section
                     </span>
                   </div>
                 )}
