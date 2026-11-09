@@ -16,6 +16,7 @@ import {
   TableCell,
   TablePaginationFooter,
   EmptyState,
+  TableActionButtons,
 } from "@/components/common";
 import {
   useEmployeeListQuery,
@@ -32,11 +33,7 @@ import { showSuccessToast, showErrorToast } from "@/utils/toast-utils";
 import type { EmployeeItem } from "@/types/employee.types";
 import type { BranchItem } from "@/types/branch.types";
 import BranchPermissionManager from "./components/BranchPermissionManager";
-import {
-  FaShieldAlt,
-  FaEdit,
-  FaTrash,
-} from "react-icons/fa";
+import { FaShieldAlt } from "react-icons/fa";
 
 interface EmployeeAssignedBranchProps {
   employee: EmployeeItem;
@@ -227,25 +224,12 @@ const EmployeeActionCell: React.FC<EmployeeActionCellProps> = ({
   return (
     <div className="flex items-center justify-center gap-1.5">
       {hasAccess ? (
-        <>
-          <button
-            type="button"
-            onClick={() => onSelectEmployee(employee, firstBranchId)}
-            className="p-1.5 rounded-lg bg-[var(--primary-color,#009fe3)] text-white hover:bg-[var(--primary-color-hover,#008bc7)] transition-colors cursor-pointer shadow-2xs"
-            title="Edit branch permissions"
-          >
-            <FaEdit size={11} />
-          </button>
-          <button
-            type="button"
-            onClick={handleDeleteAllAccess}
-            disabled={isDeleting}
-            className="p-1.5 rounded-lg text-rose-600 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-950/40 border border-rose-200 dark:border-rose-900/60 transition-colors cursor-pointer shadow-2xs disabled:opacity-50"
-            title="Revoke all branch access for this staff member"
-          >
-            <FaTrash size={11} />
-          </button>
-        </>
+        <TableActionButtons
+          onEdit={() => onSelectEmployee(employee, firstBranchId)}
+          editTitle="Edit Branch Permissions"
+          onDelete={isDeleting ? undefined : handleDeleteAllAccess}
+          deleteTitle="Revoke all branch access for this staff member"
+        />
       ) : (
         <button
           type="button"

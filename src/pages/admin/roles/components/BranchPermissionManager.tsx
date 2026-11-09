@@ -999,37 +999,88 @@ export const BranchPermissionManager: React.FC<BranchPermissionManagerProps> = (
           </div>
         </div>
 
-        {/* Row 2: Search Bar, Status Filter Tabs & Expand/Collapse Toggle */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
-          {/* Search Bar */}
-          <div className="relative flex-1 max-w-sm sm:max-w-md">
-            <FaSearch className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 text-xs pointer-events-none" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search permissions or menus (e.g. sales, mfs, bank, cms)..."
-              className="w-full pl-8 pr-7 py-1.5 text-xs bg-gray-50/70 dark:bg-gray-900/80 border border-gray-300/90 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-1 focus:ring-[var(--primary-color,#009fe3)] focus:border-[var(--primary-color,#009fe3)] placeholder-gray-400 dark:placeholder-gray-500 transition-colors shadow-2xs"
-            />
-            {searchQuery && (
-              <button
-                type="button"
-                onClick={() => setSearchQuery("")}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 cursor-pointer"
-                title="Clear search"
+        {/* Row 2: Search Bar, Action Chips, Status Filters & Counter */}
+        <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-2.5">
+          {/* Left: Search Bar + Action Chips (WITHOUT "Quick Presets:" text) */}
+          <div className="flex items-center gap-2.5 flex-wrap">
+            {/* Search Bar */}
+            <div className="relative w-48 sm:w-56 lg:w-64 shrink-0">
+              <FaSearch className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 text-xs pointer-events-none" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search permissions..."
+                className="w-full pl-8 pr-7 py-1 text-xs bg-gray-50/70 dark:bg-gray-900/80 border border-gray-300/90 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-1 focus:ring-[var(--primary-color,#009fe3)] focus:border-[var(--primary-color,#009fe3)] placeholder-gray-400 dark:placeholder-gray-500 transition-colors shadow-2xs"
+              />
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={() => setSearchQuery("")}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 cursor-pointer"
+                  title="Clear search"
+                >
+                  <FaTimes size={10} />
+                </button>
+              )}
+            </div>
+
+            <div className="h-4 w-[1px] bg-gray-200 dark:bg-gray-700 hidden sm:block shrink-0" />
+
+            {/* Action Chips: All, Read, Create, Update, Delete */}
+            <div className="flex items-center gap-1.5 flex-nowrap shrink-0 overflow-x-auto">
+              {/* All / Full Access Checkbox Chip */}
+              <label
+                className={`px-2 py-0.5 rounded-md text-[11px] font-semibold flex items-center gap-1.5 border transition-all cursor-pointer select-none whitespace-nowrap shadow-2xs ${
+                  isAllSystemChecked
+                    ? "bg-purple-100 dark:bg-purple-900/60 text-purple-800 dark:text-purple-200 border-purple-400 dark:border-purple-600"
+                    : "bg-purple-50/70 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800 hover:bg-purple-100/70"
+                }`}
+                title="Toggle all 21 permissions across all modules"
               >
-                <FaTimes size={10} />
-              </button>
-            )}
+                <IndeterminateCheckbox
+                  checked={isAllSystemChecked}
+                  indeterminate={isAllSystemSomeChecked}
+                  onChange={toggleAllSystem}
+                  className="rounded text-purple-600 focus:ring-purple-500 h-3.5 w-3.5"
+                />
+                <span>All</span>
+              </label>
+
+              {/* Read, Create, Update, Delete Checkbox Chips */}
+              {CRUD_COLUMNS.map((col) => {
+                const allChecked = isActionAllChecked(col.action);
+                const someChecked = isActionSomeChecked(col.action);
+
+                return (
+                  <label
+                    key={col.action}
+                    className={`px-2 py-0.5 rounded-md text-[11px] font-semibold flex items-center gap-1.5 border transition-all cursor-pointer select-none whitespace-nowrap shadow-2xs ${
+                      allChecked ? col.activeBadgeClass : col.badgeClass
+                    }`}
+                    title={col.tooltip}
+                  >
+                    <IndeterminateCheckbox
+                      checked={allChecked}
+                      indeterminate={someChecked && !allChecked}
+                      onChange={() => toggleColumnAll(col.action)}
+                      className={`rounded h-3.5 w-3.5 ${col.checkboxColor}`}
+                    />
+                    <span>{col.label}</span>
+                  </label>
+                );
+              })}
+            </div>
           </div>
 
-          {/* Status Filters and Expand/Collapse All */}
-          <div className="flex items-center gap-2 shrink-0 flex-wrap">
+          {/* Right: Status Filters + Clear All + Selected Count */}
+          <div className="flex items-center gap-2 shrink-0 flex-wrap xl:ml-auto">
+            {/* Status Filters */}
             <div className="flex items-center bg-gray-100 dark:bg-gray-900/90 p-0.5 rounded-lg border border-gray-200 dark:border-gray-700 text-[11px] font-semibold">
               <button
                 type="button"
                 onClick={() => setFilterStatus("all")}
-                className={`px-2.5 py-1 rounded-md transition-all cursor-pointer ${
+                className={`px-2.5 py-0.5 rounded-md transition-all cursor-pointer ${
                   filterStatus === "all"
                     ? "bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 shadow-2xs"
                     : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200"
@@ -1040,7 +1091,7 @@ export const BranchPermissionManager: React.FC<BranchPermissionManagerProps> = (
               <button
                 type="button"
                 onClick={() => setFilterStatus("configured")}
-                className={`px-2.5 py-1 rounded-md transition-all cursor-pointer flex items-center gap-1.5 ${
+                className={`px-2.5 py-0.5 rounded-md transition-all cursor-pointer flex items-center gap-1.5 ${
                   filterStatus === "configured"
                     ? "bg-white dark:bg-gray-800 text-emerald-700 dark:text-emerald-400 shadow-2xs"
                     : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200"
@@ -1052,7 +1103,7 @@ export const BranchPermissionManager: React.FC<BranchPermissionManagerProps> = (
               <button
                 type="button"
                 onClick={() => setFilterStatus("unconfigured")}
-                className={`px-2.5 py-1 rounded-md transition-all cursor-pointer flex items-center gap-1.5 ${
+                className={`px-2.5 py-0.5 rounded-md transition-all cursor-pointer flex items-center gap-1.5 ${
                   filterStatus === "unconfigured"
                     ? "bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 shadow-2xs"
                     : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200"
@@ -1063,82 +1114,19 @@ export const BranchPermissionManager: React.FC<BranchPermissionManagerProps> = (
               </button>
             </div>
 
-            {/* Collapse / Expand All Sections Button */}
-            <button
-              type="button"
-              onClick={toggleAllSections}
-              className="px-2.5 py-1 text-[11px] font-semibold rounded-lg bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors cursor-pointer flex items-center gap-1.5 whitespace-nowrap shadow-2xs"
-              title={allCollapsed ? "Expand all sections" : "Collapse all sections"}
-            >
-              {allCollapsed ? <FaChevronRight size={9} /> : <FaChevronDown size={9} />}
-              <span>{allCollapsed ? "Expand All" : "Collapse All"}</span>
-            </button>
-          </div>
-        </div>
-
-        {/* Row 3: Quick Presets: Read, Create, Update, Delete Checkboxes, Clear All, Selected Counter */}
-        <div className="flex items-center justify-between gap-2 pt-2 border-t border-gray-100 dark:border-gray-700/60 flex-nowrap overflow-x-auto">
-          <div className="flex items-center gap-1.5 sm:gap-2 flex-nowrap shrink-0">
-            <span className="text-[11px] font-semibold text-gray-500 dark:text-gray-400 whitespace-nowrap mr-0.5">
-              Quick Presets:
-            </span>
-
-            {/* All / Full Access Checkbox Chip */}
-            <label
-              className={`px-2.5 py-0.5 sm:py-1 rounded-lg text-[11px] font-semibold flex items-center gap-1.5 border transition-all cursor-pointer select-none whitespace-nowrap shadow-2xs ${
-                isAllSystemChecked
-                  ? "bg-purple-100 dark:bg-purple-900/60 text-purple-800 dark:text-purple-200 border-purple-400 dark:border-purple-600"
-                  : "bg-purple-50/70 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800 hover:bg-purple-100/70"
-              }`}
-              title="Toggle all 21 permissions across all modules"
-            >
-              <IndeterminateCheckbox
-                checked={isAllSystemChecked}
-                indeterminate={isAllSystemSomeChecked}
-                onChange={toggleAllSystem}
-                className="rounded text-purple-600 focus:ring-purple-500 h-3.5 w-3.5"
-              />
-              <span>All</span>
-            </label>
-
-            {/* Read, Create, Update, Delete Checkbox Chips */}
-            {CRUD_COLUMNS.map((col) => {
-              const allChecked = isActionAllChecked(col.action);
-              const someChecked = isActionSomeChecked(col.action);
-
-              return (
-                <label
-                  key={col.action}
-                  className={`px-2.5 py-0.5 sm:py-1 rounded-lg text-[11px] font-semibold flex items-center gap-1.5 border transition-all cursor-pointer select-none whitespace-nowrap shadow-2xs ${
-                    allChecked ? col.activeBadgeClass : col.badgeClass
-                  }`}
-                  title={col.tooltip}
-                >
-                  <IndeterminateCheckbox
-                    checked={allChecked}
-                    indeterminate={someChecked && !allChecked}
-                    onChange={() => toggleColumnAll(col.action)}
-                    className={`rounded h-3.5 w-3.5 ${col.checkboxColor}`}
-                  />
-                  <span>{col.label}</span>
-                </label>
-              );
-            })}
-          </div>
-
-          {/* Clear All & Count Indicator */}
-          <div className="flex items-center gap-2 sm:gap-3 shrink-0 whitespace-nowrap ml-auto">
+            {/* Clear All */}
             {selectedPermissions.length > 0 && (
               <button
                 type="button"
                 onClick={() => applyPreset("clear")}
-                className="px-2 py-0.5 rounded text-[11px] font-semibold text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors cursor-pointer border border-rose-200/60 dark:border-rose-900/40"
+                className="px-2 py-0.5 rounded text-[11px] font-semibold text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors cursor-pointer border border-rose-200/60 dark:border-rose-900/40 whitespace-nowrap"
               >
                 Clear All
               </button>
             )}
 
-            <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-lg bg-gray-100/80 dark:bg-gray-900/80 border border-gray-200 dark:border-gray-700/80 text-[11px]">
+            {/* Selected Count Indicator */}
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-lg bg-gray-100/80 dark:bg-gray-900/80 border border-gray-200 dark:border-gray-700/80 text-[11px] shadow-2xs whitespace-nowrap">
               <span className="font-medium text-gray-500 dark:text-gray-400">Selected:</span>
               <span className="font-bold font-mono text-[var(--primary-color,#009fe3)]">
                 {selectedPermissions.length}
