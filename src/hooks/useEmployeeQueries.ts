@@ -80,6 +80,37 @@ export const useUpdateEmployeeMutation = (callbacks?: EmployeeMutationCallbacks)
   return useMutation<any, Error, { id: number; data: Partial<EmployeeUpdatePayload> }>({
     mutationFn: ({ id, data }) => updateEmployee(id, data),
     onSuccess: (data, variables, context) => {
+      const empId = Number(variables.id);
+      if (empId) {
+        queryClient.setQueriesData<EmployeeItem[]>(
+          { queryKey: [employeeListQueryKey] },
+          (old) => {
+            if (!Array.isArray(old)) return old;
+            return old.map((emp) => {
+              const currentId = Number(emp.id || (emp as any)?.employeeId);
+              if (currentId === empId) {
+                const nextActive =
+                  variables.data.active !== undefined
+                    ? Boolean(variables.data.active)
+                    : variables.data.status !== undefined
+                    ? String(variables.data.status).toLowerCase() === "active"
+                    : emp.active;
+
+                return {
+                  ...emp,
+                  ...variables.data,
+                  active: nextActive,
+                  status: nextActive ? "ACTIVE" : "INACTIVE",
+                  isActive: nextActive,
+                  is_active: nextActive ? 1 : 0,
+                };
+              }
+              return emp;
+            });
+          }
+        );
+      }
+
       showSuccessToast("Employee updated successfully!");
       queryClient.invalidateQueries({ queryKey: [employeeListQueryKey] });
       callbacks?.onSuccess?.(data, variables, context);

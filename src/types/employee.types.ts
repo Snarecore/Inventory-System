@@ -46,6 +46,8 @@ export interface EmployeeItem {
   adminUserId?: number;
   active?: boolean;
   status?: string;
+  isActive?: boolean;
+  is_active?: number | boolean;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -93,6 +95,10 @@ export interface EmployeeInsertPayload {
   profilePhotoUrl?: string | null;
   notes?: string;
   adminUserId?: number;
+  active?: boolean;
+  status?: string;
+  isActive?: boolean;
+  is_active?: number | boolean;
 }
 
 /**
@@ -100,6 +106,10 @@ export interface EmployeeInsertPayload {
  */
 export interface EmployeeUpdatePayload extends Partial<EmployeeInsertPayload> {
   id?: number;
+  active?: boolean;
+  status?: string;
+  isActive?: boolean;
+  is_active?: number | boolean;
 }
 
 /**

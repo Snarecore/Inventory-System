@@ -18,12 +18,15 @@ import {
   TableRow,
   TableCell,
   TablePaginationFooter,
+  ConfirmModal,
 } from "@/components/common";
 import { useEmployeeListQuery, useUpdateEmployeeMutation } from "@/hooks/useEmployeeQueries";
 import type { EmployeeItem } from "@/types/employee.types";
 import { exportEmployeesToExcel } from "@/utils/excel-export";
 import { showSuccessToast, showErrorToast } from "@/utils/toast-utils";
+import { getUserInfo } from "@/utils/auth-storage";
 import EmployeeDetailsModal from "./components/EmployeeDetailsModal";
+import { isEmployeeActive } from "@/services/employee-service";
 import { usePermission } from "@/hooks/usePermission";
 import {
   FaUserTie,
@@ -31,13 +34,13 @@ import {
   FaTimesCircle,
   FaMobileAlt,
   FaPlus,
-  FaBuilding,
   FaShieldAlt,
   FaEdit,
   FaEye,
   FaFileExcel,
   FaPowerOff,
 } from "react-icons/fa";
+import { FiAlertCircle, FiCheckCircle } from "react-icons/fi";
 
 export const EmployeeList: React.FC = () => {
   const navigate = useNavigate();
@@ -51,12 +54,68 @@ export const EmployeeList: React.FC = () => {
   const [pageSize, setPageSize] = useState(10);
   const [busyId, setBusyId] = useState<number | null>(null);
 
+  // Current logged in user details for security boundary checks
+  const userInfo = useMemo(() => getUserInfo(), []);
+  const currentPhone = useMemo(() => {
+    return String(userInfo?.phoneNumber || userInfo?.phone || "").trim().replace(/^(\+88)?0?/, "");
+  }, [userInfo]);
+  const currentUserId = userInfo?.userId ? Number(userInfo.userId) : null;
+  const currentEmpId = userInfo?.employeeId ? Number(userInfo.employeeId) : null;
+  const currentFullName = useMemo(() => {
+    return String(userInfo?.fullName || "").trim().toLowerCase();
+  }, [userInfo]);
+
+  const isCurrentUser = (item: EmployeeItem): boolean => {
+    if (!userInfo) return false;
+    const empId = Number(item.id || (item as any)?.employeeId);
+    if (currentEmpId && currentEmpId === empId) return true;
+    if (currentUserId && item.adminUserId && currentUserId === Number(item.adminUserId)) return true;
+
+    const itemPhone = String(item.phoneNumber || item.appUsername || "").trim().replace(/^(\+88)?0?/, "");
+    if (currentPhone && itemPhone && currentPhone === itemPhone) return true;
+
+    if (currentFullName && item.fullName && currentFullName === String(item.fullName).trim().toLowerCase()) {
+      return true;
+    }
+
+    return false;
+  };
+
+  const isProtectedAdmin = (item: EmployeeItem): boolean => {
+    if (isCurrentUser(item)) return true;
+
+    const role = String(item.role || "").toUpperCase();
+    const isAdminRole =
+      role === "ADMIN" ||
+      role === "OWNER" ||
+      role === "SUPERADMIN" ||
+      role === "BUSINESS_OWNER";
+
+    if (isAdminRole) {
+      const activeAdmins = employees.filter((e) => {
+        const r = String(e.role || "").toUpperCase();
+        return (
+          isEmployeeActive(e) &&
+          (r === "ADMIN" || r === "OWNER" || r === "SUPERADMIN" || r === "BUSINESS_OWNER")
+        );
+      });
+      if (activeAdmins.length <= 1 && isEmployeeActive(item)) {
+        return true;
+      }
+    }
+
+    return false;
+  };
+
   // Selected employee for view details modal
   const [selectedEmployee, setSelectedEmployee] = useState<EmployeeItem | null>(null);
 
+  // Status toggle confirmation modal state
+  const [pendingStatusToggle, setPendingStatusToggle] = useState<EmployeeItem | null>(null);
+
   // Statistics counts
   const activeCount = useMemo(
-    () => employees.filter((e) => e.active !== false).length,
+    () => employees.filter((e) => isEmployeeActive(e)).length,
     [employees]
   );
   const inactiveCount = employees.length - activeCount;
@@ -65,12 +124,37 @@ export const EmployeeList: React.FC = () => {
     [employees]
   );
 
+  // Sort employees: latest / last entry always appears at the top (DESC)
+  const sortedEmployees = useMemo(() => {
+    return [...employees].sort((a, b) => {
+      // 1. Sort by creation date if available (newest first)
+      const dateA = a.createdAt || (a as any)?.created_at;
+      const dateB = b.createdAt || (b as any)?.created_at;
+      if (dateA && dateB) {
+        const timeA = new Date(dateA).getTime();
+        const timeB = new Date(dateB).getTime();
+        if (!isNaN(timeA) && !isNaN(timeB) && timeA !== timeB) {
+          return timeB - timeA;
+        }
+      }
+
+      // 2. Sort by ID descending (newest database record has highest numeric ID)
+      const idA = Number(a.id || (a as any)?.employeeId || 0);
+      const idB = Number(b.id || (b as any)?.employeeId || 0);
+      if (idA > 0 && idB > 0 && idA !== idB) {
+        return idB - idA;
+      }
+
+      return 0;
+    });
+  }, [employees]);
+
   // Filtered employees list
   const filteredEmployees = useMemo(() => {
-    return employees.filter((emp) => {
+    return sortedEmployees.filter((emp) => {
       // Tab filter
-      if (filter === "active" && emp.active === false) return false;
-      if (filter === "inactive" && emp.active !== false) return false;
+      if (filter === "active" && !isEmployeeActive(emp)) return false;
+      if (filter === "inactive" && isEmployeeActive(emp)) return false;
       if (filter === "app" && !emp.hasAppAccess) return false;
 
       // Text search
@@ -90,7 +174,7 @@ export const EmployeeList: React.FC = () => {
         dept.includes(q)
       );
     });
-  }, [employees, search, filter]);
+  }, [sortedEmployees, search, filter]);
 
   // Pagination
   const totalItems = filteredEmployees.length;
@@ -101,21 +185,62 @@ export const EmployeeList: React.FC = () => {
     return filteredEmployees.slice(start, start + pageSize);
   }, [filteredEmployees, safeCurrentPage, pageSize]);
 
-  // Toggle active/inactive status
-  const handleToggleStatus = (item: EmployeeItem) => {
-    const empId = item.id || (item as any)?.employeeId;
+  // Request toggle active/inactive status (opens confirm modal with guard checks)
+  const handleRequestToggleStatus = (item: EmployeeItem) => {
+    if (isCurrentUser(item)) {
+      showErrorToast("You cannot deactivate your own account.");
+      return;
+    }
+    if (isProtectedAdmin(item) && isEmployeeActive(item)) {
+      showErrorToast("Primary organization administrator cannot be deactivated.");
+      return;
+    }
+    setPendingStatusToggle(item);
+  };
+
+  // Confirm active/inactive toggle
+  const handleConfirmToggleStatus = () => {
+    if (!pendingStatusToggle) return;
+    const item = pendingStatusToggle;
+    const empId = Number(item.id || (item as any)?.employeeId);
     if (!empId) return;
 
-    const nextStatus = item.active === false ? true : false;
+    if (isCurrentUser(item)) {
+      showErrorToast("You cannot deactivate your own account.");
+      setPendingStatusToggle(null);
+      return;
+    }
+    if (isProtectedAdmin(item) && isEmployeeActive(item)) {
+      showErrorToast("Primary organization administrator cannot be deactivated.");
+      setPendingStatusToggle(null);
+      return;
+    }
+
+    const currentlyActive = isEmployeeActive(item);
+    const nextStatus = !currentlyActive;
     setBusyId(empId);
 
     updateMutation.mutate(
-      { id: empId, data: { active: nextStatus } },
+      {
+        id: empId,
+        data: {
+          ...item,
+          active: nextStatus,
+          status: nextStatus ? "ACTIVE" : "INACTIVE",
+          isActive: nextStatus,
+          is_active: nextStatus ? 1 : 0,
+        },
+      },
       {
         onSuccess: () => {
           showSuccessToast(
-            `Employee marked as ${nextStatus ? "Active" : "Inactive"} successfully!`
+            `Staff member "${item.fullName}" marked as ${nextStatus ? "Active" : "Inactive"} successfully!`
           );
+          setPendingStatusToggle(null);
+        },
+        onError: (err: any) => {
+          showErrorToast(err?.message || "Failed to update employee status");
+          setPendingStatusToggle(null);
         },
         onSettled: () => setBusyId(null),
       }
@@ -125,7 +250,7 @@ export const EmployeeList: React.FC = () => {
   // Export to Excel
   const handleExportExcel = () => {
     try {
-      const dataToExport = filteredEmployees.length > 0 ? filteredEmployees : employees;
+      const dataToExport = filteredEmployees.length > 0 ? filteredEmployees : sortedEmployees;
       if (dataToExport.length === 0) {
         showErrorToast("No employee records to export.");
         return;
@@ -288,6 +413,10 @@ export const EmployeeList: React.FC = () => {
                   paginatedEmployees.map((item, idx) => {
                     const empId = item.id || (item as any)?.employeeId || idx;
                     const isBusy = busyId === empId;
+                    const isCurrent = isCurrentUser(item);
+                    const isProtected = isProtectedAdmin(item);
+                    const empActive = isEmployeeActive(item);
+                    const cannotDeactivate = (isCurrent && empActive) || (isProtected && empActive);
 
                     return (
                       <TableRow key={empId}>
@@ -302,9 +431,19 @@ export const EmployeeList: React.FC = () => {
                             <div className="w-6 h-6 rounded-full bg-[var(--primary-color-light,#e0f2fe)] text-[var(--primary-color,#009fe3)] flex items-center justify-center text-[10px] font-bold flex-shrink-0">
                               {(item.fullName || "E").charAt(0).toUpperCase()}
                             </div>
-                            <span className="font-bold text-xs text-gray-900 dark:text-gray-100 truncate block">
-                              {item.fullName || `Employee #${empId}`}
-                            </span>
+                            <div className="flex items-center gap-1.5 truncate">
+                              <span className="font-bold text-xs text-gray-900 dark:text-gray-100 truncate block">
+                                {item.fullName || `Employee #${empId}`}
+                              </span>
+                              {isCurrent && (
+                                <span
+                                  className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-sky-100 text-sky-700 dark:bg-sky-950 dark:text-sky-300 border border-sky-200 dark:border-sky-800 shrink-0"
+                                  title="This is your currently logged-in account"
+                                >
+                                  You
+                                </span>
+                              )}
+                            </div>
                           </div>
                         </TableCell>
 
@@ -343,13 +482,23 @@ export const EmployeeList: React.FC = () => {
                         {/* App Access */}
                         <TableCell align="center">
                           {item.hasAppAccess ? (
-                            <span
-                              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-[var(--primary-color,#009fe3)] dark:bg-blue-950/60 dark:text-blue-300 border border-blue-200 dark:border-blue-800"
-                              title={`Username: ${item.appUsername || item.phoneNumber}`}
-                            >
-                              <FaMobileAlt size={9} />
-                              <span>Active</span>
-                            </span>
+                            empActive ? (
+                              <span
+                                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-[var(--primary-color,#009fe3)] dark:bg-blue-950/60 dark:text-blue-300 border border-blue-200 dark:border-blue-800"
+                                title={`Username: ${item.appUsername || item.phoneNumber}`}
+                              >
+                                <FaMobileAlt size={9} />
+                                <span>Active</span>
+                              </span>
+                            ) : (
+                              <span
+                                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400 border border-gray-200 dark:border-gray-700"
+                                title="Account inactive - app access suspended"
+                              >
+                                <FaMobileAlt size={9} />
+                                <span>Suspended</span>
+                              </span>
+                            )
                           ) : (
                             <span className="text-gray-400 text-xs">-</span>
                           )}
@@ -359,12 +508,12 @@ export const EmployeeList: React.FC = () => {
                         <TableCell align="center">
                           <span
                             className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
-                              item.active !== false
+                              empActive
                                 ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800"
                                 : "bg-rose-50 text-rose-700 dark:bg-rose-950/60 dark:text-rose-300 border border-rose-200 dark:border-rose-800"
                             }`}
                           >
-                            {item.active !== false ? "Active" : "Inactive"}
+                            {empActive ? "Active" : "Inactive"}
                           </span>
                         </TableCell>
 
@@ -416,13 +565,23 @@ export const EmployeeList: React.FC = () => {
                             {canUpdate("employee") && (
                               <button
                                 type="button"
-                                disabled={isBusy}
-                                onClick={() => handleToggleStatus(item)}
-                                title={item.active !== false ? "Deactivate Employee" : "Activate Employee"}
-                                className={`p-1 rounded transition-colors cursor-pointer ${
-                                  item.active !== false
-                                    ? "text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40"
-                                    : "text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/40"
+                                disabled={isBusy || cannotDeactivate}
+                                onClick={() => handleRequestToggleStatus(item)}
+                                title={
+                                  isCurrent && empActive
+                                    ? "You cannot deactivate your own account"
+                                    : isProtected && empActive
+                                    ? "Primary organization administrator cannot be deactivated"
+                                    : empActive
+                                    ? "Deactivate Staff Member"
+                                    : "Activate Staff Member"
+                                }
+                                className={`p-1 rounded transition-colors ${
+                                  cannotDeactivate
+                                    ? "opacity-30 cursor-not-allowed text-gray-400"
+                                    : empActive
+                                    ? "text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 cursor-pointer"
+                                    : "text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 cursor-pointer"
                                 }`}
                               >
                                 <FaPowerOff size={12} className={isBusy ? "animate-spin opacity-50" : ""} />
@@ -479,6 +638,50 @@ export const EmployeeList: React.FC = () => {
           navigate(`/admin/settings/roles?employeeId=${empId}`);
         }}
       />
+
+      {/* Deactivation / Activation Confirmation Modal */}
+      {pendingStatusToggle && (() => {
+        const isPendingActive = isEmployeeActive(pendingStatusToggle);
+        return (
+          <ConfirmModal
+            isOpen={Boolean(pendingStatusToggle)}
+            onClose={() => setPendingStatusToggle(null)}
+            onConfirm={handleConfirmToggleStatus}
+            isLoading={busyId !== null}
+            title={
+              isPendingActive
+                ? "Deactivate Staff Member"
+                : "Reactivate Staff Member"
+            }
+            message={
+              isPendingActive
+                ? `Are you sure you want to deactivate "${pendingStatusToggle.fullName}"? They will immediately lose access to the system, POS, and all assigned branch workspaces.`
+                : `Are you sure you want to activate "${pendingStatusToggle.fullName}"? They will regain access to their assigned branch workspaces.`
+            }
+            confirmText={
+              isPendingActive ? "Deactivate Staff" : "Activate Staff"
+            }
+            cancelText="Cancel"
+            confirmButtonColor={
+              isPendingActive
+                ? "bg-rose-600 hover:bg-rose-700 text-white"
+                : "bg-emerald-600 hover:bg-emerald-700 text-white"
+            }
+            icon={
+              isPendingActive ? (
+                <FiAlertCircle className="text-2xl text-rose-600" />
+              ) : (
+                <FiCheckCircle className="text-2xl text-emerald-600" />
+              )
+            }
+            iconBgColor={
+              isPendingActive
+                ? "bg-rose-100 dark:bg-rose-900/40"
+                : "bg-emerald-100 dark:bg-emerald-900/40"
+            }
+          />
+        );
+      })()}
     </div>
   );
 };

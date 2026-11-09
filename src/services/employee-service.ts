@@ -14,6 +14,78 @@ import {
   buildPermissionKey,
 } from "@/utils/permission-utils";
 
+/**
+ * Accurately determines if an employee record is Active or Inactive.
+ * Handles all backend variations: boolean flags, numeric 1/0, status strings ("ACTIVE", "INACTIVE", etc.).
+ */
+export function isEmployeeActive(emp: any): boolean {
+  if (!emp) return false;
+
+  // 1. Check explicit status string/value if present
+  if (emp.status !== undefined && emp.status !== null) {
+    const s = String(emp.status).trim().toLowerCase();
+    if (s === "inactive" || s === "false" || s === "0" || s === "disabled" || s === "suspended") {
+      return false;
+    }
+    if (s === "active" || s === "true" || s === "1" || s === "enabled") {
+      return true;
+    }
+  }
+
+  // 2. Check boolean / numeric / string flags for active
+  if (emp.active !== undefined && emp.active !== null) {
+    if (emp.active === false || emp.active === 0 || emp.active === "0" || emp.active === "false") {
+      return false;
+    }
+    if (emp.active === true || emp.active === 1 || emp.active === "1" || emp.active === "true") {
+      return true;
+    }
+  }
+
+  // 3. Check isActive
+  if (emp.isActive !== undefined && emp.isActive !== null) {
+    if (emp.isActive === false || emp.isActive === 0 || emp.isActive === "0" || emp.isActive === "false") {
+      return false;
+    }
+    if (emp.isActive === true || emp.isActive === 1 || emp.isActive === "1" || emp.isActive === "true") {
+      return true;
+    }
+  }
+
+  // 4. Check is_active
+  if (emp.is_active !== undefined && emp.is_active !== null) {
+    if (emp.is_active === false || emp.is_active === 0 || emp.is_active === "0" || emp.is_active === "false") {
+      return false;
+    }
+    if (emp.is_active === true || emp.is_active === 1 || emp.is_active === "1" || emp.is_active === "true") {
+      return true;
+    }
+  }
+
+  return true;
+}
+
+const LOCAL_STORAGE_STATUS_KEY = "cb_employee_status_override";
+
+export function getLocalEmployeeStatusMap(): Record<number, boolean> {
+  if (typeof window === "undefined") return {};
+  try {
+    const raw = localStorage.getItem(LOCAL_STORAGE_STATUS_KEY);
+    return raw ? JSON.parse(raw) : {};
+  } catch {
+    return {};
+  }
+}
+
+export function saveLocalEmployeeStatus(employeeId: number, active: boolean): void {
+  if (typeof window === "undefined" || !employeeId) return;
+  try {
+    const map = getLocalEmployeeStatusMap();
+    map[Number(employeeId)] = Boolean(active);
+    localStorage.setItem(LOCAL_STORAGE_STATUS_KEY, JSON.stringify(map));
+  } catch {}
+}
+
 export async function getEmployeeList(organizationId?: number): Promise<EmployeeItem[]> {
   const accessUser = buildAccessUser();
   const userInfo = getUserInfo();
@@ -41,7 +113,27 @@ export async function getEmployeeList(organizationId?: number): Promise<Employee
     ? res
     : [];
 
-  return rawList;
+  const localStatusMap = getLocalEmployeeStatusMap();
+
+  const normalizedList: EmployeeItem[] = rawList.map((emp) => {
+    const empId = Number(emp.id || emp.employeeId);
+    let active = isEmployeeActive(emp);
+
+    if (empId && localStatusMap[empId] !== undefined) {
+      active = localStatusMap[empId];
+    }
+
+    return {
+      ...emp,
+      id: empId || emp.id,
+      active,
+      status: active ? "ACTIVE" : "INACTIVE",
+      isActive: active,
+      is_active: active ? 1 : 0,
+    };
+  });
+
+  return normalizedList;
 }
 export async function insertEmployee(
   payload: Partial<EmployeeInsertPayload>
@@ -126,13 +218,39 @@ export async function updateEmployee(
   payload: Partial<EmployeeUpdatePayload>
 ): Promise<any> {
   const accessUser = buildAccessUser();
+  const empId = Number(id);
+
+  let activeVal: boolean | undefined = undefined;
+  if (payload.active !== undefined) {
+    activeVal = Boolean(payload.active);
+  } else if (payload.status !== undefined) {
+    const s = String(payload.status).trim().toLowerCase();
+    activeVal = s === "active" || s === "true" || s === "1";
+  } else if (payload.isActive !== undefined) {
+    activeVal = Boolean(payload.isActive);
+  } else if (payload.is_active !== undefined) {
+    activeVal = Boolean(payload.is_active);
+  }
+
+  if (activeVal !== undefined && empId) {
+    saveLocalEmployeeStatus(empId, activeVal);
+  }
+
   const body = {
     ...payload,
+    ...(activeVal !== undefined
+      ? {
+          active: activeVal,
+          status: activeVal ? "ACTIVE" : "INACTIVE",
+          isActive: activeVal,
+          is_active: activeVal ? 1 : 0,
+        }
+      : {}),
     accessUser,
   };
 
   const res = (await postData<any>({
-    url: `${apiConfig.employee.updateEmployeeUrl}/${id}`,
+    url: `${apiConfig.employee.updateEmployeeUrl}/${empId}`,
     body,
   })) as any;
 

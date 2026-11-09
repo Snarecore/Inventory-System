@@ -2,6 +2,7 @@ import React from "react";
 import { useNavigate } from "react-router-dom";
 import { Modal, Button } from "@/components/common";
 import type { EmployeeItem } from "@/types/employee.types";
+import { isEmployeeActive } from "@/services/employee-service";
 import {
   FaUserTie,
   FaPhoneAlt,
@@ -36,6 +37,7 @@ export const EmployeeDetailsModal: React.FC<EmployeeDetailsModalProps> = ({
 
   const empId = employee.id || (employee as any)?.employeeId;
   const initial = (employee.fullName || "E").charAt(0).toUpperCase();
+  const isActive = isEmployeeActive(employee);
 
   const handleEdit = () => {
     onClose();
@@ -68,12 +70,12 @@ export const EmployeeDetailsModal: React.FC<EmployeeDetailsModalProps> = ({
               </h3>
               <span
                 className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider ${
-                  employee.active !== false
+                  isActive
                     ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800"
                     : "bg-rose-50 text-rose-700 dark:bg-rose-950/60 dark:text-rose-300 border border-rose-200 dark:border-rose-800"
                 }`}
               >
-                {employee.active !== false ? "Active" : "Inactive"}
+                {isActive ? "Active" : "Inactive"}
               </span>
             </div>
             <p className="text-xs text-gray-500 font-mono mt-0.5">

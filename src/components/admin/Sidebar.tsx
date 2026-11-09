@@ -33,12 +33,10 @@ const Sidebar = ({ sidebarClick }: SidebarProps) => {
 
         const items = section.items
           .map((item) => {
-            // Strict multi-tenant security: non-admins cannot manage employees
+            // Strict multi-tenant security: non-admins cannot manage branches or system administration
             if (
               !isAdmin &&
-              (item.name === "Employee" ||
-                item.path?.includes("/employee") ||
-                item.path?.includes("/branches") ||
+              (item.path?.includes("/branches") ||
                 item.name === "Branch Management" ||
                 item.name === "Administration" ||
                 item.name === "Roles & Permissions" ||

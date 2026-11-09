@@ -582,12 +582,9 @@ export function hasPermission(
   // 1. Admins & Owners ALWAYS have full CRUD permissions
   if (isUserAdmin()) return true;
 
-  // Strict multi-tenant security: non-admins cannot manage employees, branches, or system administration
+  // Strict multi-tenant security: non-admins cannot manage branches or system administration
   const modLower = (module || "").toLowerCase().trim();
   if (
-    modLower === "employee" ||
-    modLower === "employees" ||
-    modLower === "people" ||
     modLower === "branch_management" ||
     modLower === "branch" ||
     modLower === "branches" ||
@@ -618,6 +615,49 @@ export function hasPermission(
     userPerms.includes(targetUnderscore)
   ) {
     return true;
+  }
+
+  // Employee & People aliases:
+  if (["employee", "employees", "people"].includes(modLower)) {
+    if (
+      userPerms.includes(`employee:${action}`) ||
+      userPerms.includes(`employees:${action}`) ||
+      userPerms.includes(`people:${action}`) ||
+      userPerms.includes(`${action}:employee`) ||
+      userPerms.includes(`${action}:employees`) ||
+      userPerms.includes(`${action}:people`) ||
+      userPerms.includes(`employee.${action}`) ||
+      userPerms.includes(`employees.${action}`) ||
+      userPerms.includes(`employee_${action}`) ||
+      userPerms.includes(`employees_${action}`) ||
+      (action === "read" && (
+        userPerms.includes("employees.view") ||
+        userPerms.includes("employees.list.view") ||
+        userPerms.includes("employee.view") ||
+        userPerms.includes("employees:view") ||
+        userPerms.includes("employee:view")
+      )) ||
+      (action === "create" && (
+        userPerms.includes("employees.create") ||
+        userPerms.includes("employee.create") ||
+        userPerms.includes("employees:create") ||
+        userPerms.includes("employee:create")
+      )) ||
+      (action === "update" && (
+        userPerms.includes("employees.update") ||
+        userPerms.includes("employee.update") ||
+        userPerms.includes("employees:update") ||
+        userPerms.includes("employee:update")
+      )) ||
+      (action === "delete" && (
+        userPerms.includes("employees.delete") ||
+        userPerms.includes("employee.delete") ||
+        userPerms.includes("employees:delete") ||
+        userPerms.includes("employee:delete")
+      ))
+    ) {
+      return true;
+    }
   }
 
   // Smart fallback aliases for Trade:
@@ -952,7 +992,7 @@ export function canAccessMenuItem(
 ): boolean {
   if (isAdmin) return true;
 
-  // Strict multi-tenant security: non-admins cannot manage employees, branches, or system administration
+  // Strict multi-tenant security: non-admins cannot manage branches or system administration
   const path = (item.path || "").toLowerCase();
   const name = (item.name || "").toLowerCase();
   if (
@@ -962,17 +1002,14 @@ export function canAccessMenuItem(
     name === "branch management" ||
     name === "branch" ||
     name === "branches" ||
-    path === "/admin/employees" ||
-    path === "/admin/employee-entry" ||
-    path.startsWith("/admin/employee") ||
-    name === "employee" ||
-    name === "employee list" ||
-    name === "employee entry" ||
     name === "administration" ||
     name === "roles" ||
     name === "role management" ||
+    name === "roles & permissions" ||
     path === "/admin/roles" ||
-    path === "/admin/users"
+    path.startsWith("/admin/roles") ||
+    path === "/admin/users" ||
+    path.startsWith("/admin/users")
   ) {
     return false;
   }
