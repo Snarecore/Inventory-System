@@ -29,6 +29,106 @@ import {
   FaTimes,
 } from "react-icons/fa";
 
+interface CrudColumnDef {
+  action: CrudAction;
+  label: string;
+  tableLabel: string;
+  tooltip: string;
+  badgeClass: string;
+  activeBadgeClass: string;
+  checkboxColor: string;
+  headerTextColor: string;
+}
+
+export const CRUD_COLUMNS: CrudColumnDef[] = [
+  {
+    action: "read",
+    label: "Read",
+    tableLabel: "Read",
+    tooltip: "Toggle Read for all modules",
+    badgeClass:
+      "bg-blue-50/70 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300 border-blue-200 dark:border-blue-800",
+    activeBadgeClass:
+      "bg-blue-100 dark:bg-blue-900/60 text-blue-800 dark:text-blue-200 border-blue-400 dark:border-blue-600 shadow-2xs",
+    checkboxColor: "text-blue-600 focus:ring-blue-500",
+    headerTextColor: "text-blue-600 dark:text-blue-400",
+  },
+  {
+    action: "create",
+    label: "Edit",
+    tableLabel: "Edit (Create)",
+    tooltip: "Toggle Edit (Create/Post) for all modules",
+    badgeClass:
+      "bg-emerald-50/70 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800",
+    activeBadgeClass:
+      "bg-emerald-100 dark:bg-emerald-900/60 text-emerald-800 dark:text-emerald-200 border-emerald-400 dark:border-emerald-600 shadow-2xs",
+    checkboxColor: "text-emerald-600 focus:ring-emerald-500",
+    headerTextColor: "text-emerald-600 dark:text-emerald-400",
+  },
+  {
+    action: "update",
+    label: "Update",
+    tableLabel: "Update",
+    tooltip: "Toggle Update for all modules",
+    badgeClass:
+      "bg-amber-50/70 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300 border-amber-200 dark:border-amber-800",
+    activeBadgeClass:
+      "bg-amber-100 dark:bg-amber-900/60 text-amber-800 dark:text-amber-200 border-amber-400 dark:border-amber-600 shadow-2xs",
+    checkboxColor: "text-amber-500 focus:ring-amber-500",
+    headerTextColor: "text-amber-600 dark:text-amber-400",
+  },
+  {
+    action: "delete",
+    label: "Delete",
+    tableLabel: "Delete",
+    tooltip: "Toggle Delete for all modules",
+    badgeClass:
+      "bg-rose-50/70 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300 border-rose-200 dark:border-rose-800",
+    activeBadgeClass:
+      "bg-rose-100 dark:bg-rose-900/60 text-rose-800 dark:text-rose-200 border-rose-400 dark:border-rose-600 shadow-2xs",
+    checkboxColor: "text-rose-600 focus:ring-rose-500",
+    headerTextColor: "text-rose-600 dark:text-rose-400",
+  },
+];
+
+interface IndeterminateCheckboxProps
+  extends Omit<React.InputHTMLAttributes<HTMLInputElement>, "onChange"> {
+  checked: boolean;
+  indeterminate?: boolean;
+  onChange: () => void;
+}
+
+const IndeterminateCheckbox: React.FC<IndeterminateCheckboxProps> = ({
+  checked,
+  indeterminate = false,
+  onChange,
+  className = "",
+  disabled = false,
+  title,
+  ...rest
+}) => {
+  const ref = React.useRef<HTMLInputElement>(null);
+
+  React.useEffect(() => {
+    if (ref.current) {
+      ref.current.indeterminate = !checked && indeterminate;
+    }
+  }, [checked, indeterminate]);
+
+  return (
+    <input
+      ref={ref}
+      type="checkbox"
+      checked={checked}
+      onChange={onChange}
+      disabled={disabled}
+      title={title}
+      className={`rounded cursor-pointer ${className}`}
+      {...rest}
+    />
+  );
+};
+
 interface BranchPermissionModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -136,16 +236,44 @@ export const BranchPermissionModal: React.FC<BranchPermissionModalProps> = ({
     }
   };
 
-  const toggleColumnAll = (action: CrudAction) => {
-    const colKeys = PERMISSION_MODULES.filter((m) => m.actions.includes(action)).map((m) =>
+  const getActionKeys = (action: CrudAction): string[] => {
+    return PERMISSION_MODULES.filter((m) => m.actions.includes(action)).map((m) =>
       buildPermissionKey(m.id, action)
     );
+  };
+
+  const isActionAllChecked = (action: CrudAction): boolean => {
+    const keys = getActionKeys(action);
+    return keys.length > 0 && keys.every((k) => selectedPermissions.includes(k));
+  };
+
+  const isActionSomeChecked = (action: CrudAction): boolean => {
+    const keys = getActionKeys(action);
+    return keys.some((k) => selectedPermissions.includes(k));
+  };
+
+  const toggleColumnAll = (action: CrudAction) => {
+    const colKeys = getActionKeys(action);
     const allColChecked = colKeys.every((k) => selectedPermissions.includes(k));
 
     if (allColChecked) {
       setSelectedPermissions((prev) => prev.filter((k) => !colKeys.includes(k)));
     } else {
       setSelectedPermissions((prev) => Array.from(new Set([...prev, ...colKeys])));
+    }
+  };
+
+  const allSystemKeys = getAllSystemPermissionKeys();
+  const isAllSystemChecked =
+    allSystemKeys.length > 0 && allSystemKeys.every((k) => selectedPermissions.includes(k));
+  const isAllSystemSomeChecked =
+    selectedPermissions.length > 0 && !isAllSystemChecked;
+
+  const toggleAllSystem = () => {
+    if (isAllSystemChecked) {
+      setSelectedPermissions([]);
+    } else {
+      setSelectedPermissions(allSystemKeys);
     }
   };
 
@@ -285,7 +413,7 @@ export const BranchPermissionModal: React.FC<BranchPermissionModalProps> = ({
         resetForm();
         onClose();
       }}
-      size="xl"
+      size="2xl"
       title={
         <div className="flex items-center gap-2.5">
           <div className="w-8 h-8 rounded-lg bg-[var(--primary-color-light,#e0f2fe)] text-[var(--primary-color,#009fe3)] flex items-center justify-center text-sm">
@@ -302,40 +430,43 @@ export const BranchPermissionModal: React.FC<BranchPermissionModalProps> = ({
         </div>
       }
     >
-      <div className="flex flex-col gap-4 py-1 text-xs">
+      <div className="flex flex-col gap-3 py-1 text-xs">
         {/* Strict Branch Policy Notice */}
-        <div className="p-3 rounded-xl bg-blue-50/70 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-900/60 flex items-start gap-2.5">
-          <FaLock className="text-[var(--primary-color,#009fe3)] text-xs mt-0.5 shrink-0" />
-          <p className="text-[11px] text-blue-900 dark:text-blue-200 leading-relaxed">
-            <strong>Senior Developer Security Standard:</strong> Granular 4-tier CRUD access (Read, Post/Create, Update, Delete). The employee can ONLY execute the exact checked actions in their assigned branch.
-          </p>
+        <div className="p-2.5 sm:p-3 rounded-xl bg-blue-50/70 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-900/60 flex items-center justify-between gap-2.5">
+          <div className="flex items-center gap-2">
+            <FaLock className="text-[var(--primary-color,#009fe3)] text-xs shrink-0" />
+            <p className="text-[11px] text-blue-900 dark:text-blue-200 leading-tight">
+              <strong>Senior Developer Security Standard:</strong> Granular 4-tier CRUD access (Read, Post/Create, Update, Delete). The employee can ONLY execute the exact checked actions in their assigned branch.
+            </p>
+          </div>
         </div>
 
         {/* Matrix Configuration Card */}
-        <div className="p-4 rounded-xl bg-gray-50/80 dark:bg-gray-800/60 border border-gray-200 dark:border-gray-700 flex flex-col gap-3">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-gray-200 dark:border-gray-700 pb-2.5">
-            <div className="flex items-center gap-2 font-semibold text-gray-800 dark:text-gray-200">
-              <FaUserCog className="text-[var(--primary-color,#009fe3)]" />
-              <span>
+        <div className="p-3.5 sm:p-4 rounded-xl bg-gray-50/80 dark:bg-gray-800/60 border border-gray-200 dark:border-gray-700 flex flex-col gap-2.5">
+          {/* Row 1: Title, Target Branch Selector, Primary Branch Checkbox - ALL IN ONE SINGLE LINE */}
+          <div className="flex items-center justify-between gap-2 border-b border-gray-200 dark:border-gray-700 pb-2.5 flex-nowrap">
+            <div className="flex items-center gap-2 font-semibold text-gray-800 dark:text-gray-200 shrink-0">
+              <FaUserCog className="text-[var(--primary-color,#009fe3)] text-sm" />
+              <span className="text-xs sm:text-sm whitespace-nowrap">
                 {editingPermissionId ? "Edit Branch CRUD Access" : "Assign Branch with CRUD Permissions"}
               </span>
             </div>
 
-            {/* Branch Selector & Primary Checkbox */}
-            <div className="flex flex-wrap items-center gap-2.5">
-              <div className="flex items-center gap-1.5">
-                <span className="text-[11px] font-semibold text-gray-600 dark:text-gray-400">
+            {/* Target Branch and Primary Checkbox */}
+            <div className="flex items-center gap-2 shrink-0 flex-nowrap">
+              <div className="flex items-center gap-1.5 flex-nowrap">
+                <span className="text-[11px] font-semibold text-gray-600 dark:text-gray-400 whitespace-nowrap">
                   Target Branch *:
                 </span>
                 <select
                   value={selectedBranchId}
                   onChange={(e) => setSelectedBranchId(e.target.value ? Number(e.target.value) : "")}
                   disabled={isSaving || Boolean(editingPermissionId)}
-                  className="px-3 py-1.5 text-xs bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-1 focus:ring-[var(--primary-color,#009fe3)] font-medium disabled:opacity-60"
+                  className="px-2.5 py-1 text-xs bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-1 focus:ring-[var(--primary-color,#009fe3)] font-medium disabled:opacity-60 max-w-[190px] truncate"
                 >
                   <option value="">
                     {availableBranches.length === 0
-                      ? "All branches already assigned"
+                      ? "All branches assigned"
                       : "Select branch..."}
                   </option>
                   {availableBranches.map((b) => (
@@ -346,63 +477,89 @@ export const BranchPermissionModal: React.FC<BranchPermissionModalProps> = ({
                 </select>
               </div>
 
-              <label className="flex items-center gap-1.5 cursor-pointer text-[11px] font-semibold text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-900 px-2.5 py-1.5 border border-gray-300 dark:border-gray-600 rounded-lg select-none hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+              <label className="flex items-center gap-1.5 cursor-pointer text-[11px] font-semibold text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-900 px-2.5 py-1 border border-gray-300 dark:border-gray-600 rounded-lg select-none hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors whitespace-nowrap shrink-0">
                 <input
                   type="checkbox"
                   checked={isPrimary}
                   onChange={(e) => setIsPrimary(e.target.checked)}
                   disabled={isSaving}
-                  className="rounded border-gray-300 text-[var(--primary-color,#009fe3)] focus:ring-0 cursor-pointer"
+                  className="rounded border-gray-300 text-[var(--primary-color,#009fe3)] focus:ring-0 cursor-pointer h-3.5 w-3.5"
                 />
                 <span>Primary Branch</span>
               </label>
             </div>
           </div>
 
-          {/* Quick Presets Bar */}
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <div className="flex flex-wrap items-center gap-1.5">
-              <span className="text-[11px] font-semibold text-gray-500 mr-1">Quick Presets:</span>
-              <button
-                type="button"
-                onClick={() => applyPreset("all")}
-                className="px-2.5 py-1 rounded-md text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 transition-colors cursor-pointer"
+          {/* Row 2: Quick Presets: Read, Edit, Update, Delete Checkboxes, Clear All, Selected Counter - ALL IN ONE SINGLE LINE */}
+          <div className="flex items-center justify-between gap-2 pt-0.5 flex-nowrap">
+            <div className="flex items-center gap-1.5 sm:gap-2 flex-nowrap">
+              <span className="text-[11px] font-semibold text-gray-500 dark:text-gray-400 whitespace-nowrap mr-0.5">
+                Quick Presets:
+              </span>
+
+              {/* All / Full Access Checkbox Chip */}
+              <label
+                className={`px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-md text-[11px] font-semibold flex items-center gap-1.5 border transition-all cursor-pointer select-none whitespace-nowrap ${
+                  isAllSystemChecked
+                    ? "bg-purple-100 dark:bg-purple-900/60 text-purple-800 dark:text-purple-200 border-purple-400 dark:border-purple-600 shadow-2xs"
+                    : "bg-purple-50/70 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800 hover:bg-purple-100/70"
+                }`}
+                title="Toggle all 21 permissions across all modules"
               >
-                Full Access (CRUD)
-              </button>
-              <button
-                type="button"
-                onClick={() => applyPreset("operator")}
-                className="px-2.5 py-1 rounded-md text-[11px] font-semibold bg-blue-50 text-[var(--primary-color,#009fe3)] border border-blue-200 hover:bg-blue-100 transition-colors cursor-pointer"
-              >
-                Standard Operator (No Delete)
-              </button>
-              <button
-                type="button"
-                onClick={() => applyPreset("cashier")}
-                className="px-2.5 py-1 rounded-md text-[11px] font-semibold bg-purple-50 text-purple-700 border border-purple-200 hover:bg-purple-100 transition-colors cursor-pointer"
-              >
-                Cashier / POS Only
-              </button>
-              <button
-                type="button"
-                onClick={() => applyPreset("readonly")}
-                className="px-2.5 py-1 rounded-md text-[11px] font-semibold bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100 transition-colors cursor-pointer"
-              >
-                Read Only
-              </button>
-              <button
-                type="button"
-                onClick={() => applyPreset("clear")}
-                className="px-2.5 py-1 rounded-md text-[11px] font-semibold bg-gray-100 text-gray-600 border border-gray-200 hover:bg-gray-200 transition-colors cursor-pointer"
-              >
-                Clear All
-              </button>
+                <IndeterminateCheckbox
+                  checked={isAllSystemChecked}
+                  indeterminate={isAllSystemSomeChecked}
+                  onChange={toggleAllSystem}
+                  className="rounded text-purple-600 focus:ring-purple-500 h-3.5 w-3.5"
+                />
+                <span>All</span>
+              </label>
+
+              {/* Read, Edit, Update, Delete Checkbox Chips */}
+              {CRUD_COLUMNS.map((col) => {
+                const allChecked = isActionAllChecked(col.action);
+                const someChecked = isActionSomeChecked(col.action);
+
+                return (
+                  <label
+                    key={col.action}
+                    className={`px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-md text-[11px] font-semibold flex items-center gap-1.5 border transition-all cursor-pointer select-none whitespace-nowrap ${
+                      allChecked ? col.activeBadgeClass : col.badgeClass
+                    }`}
+                    title={col.tooltip}
+                  >
+                    <IndeterminateCheckbox
+                      checked={allChecked}
+                      indeterminate={someChecked && !allChecked}
+                      onChange={() => toggleColumnAll(col.action)}
+                      className={`rounded h-3.5 w-3.5 ${col.checkboxColor}`}
+                    />
+                    <span>{col.label}</span>
+                  </label>
+                );
+              })}
             </div>
 
-            <span className="text-[11px] font-mono font-semibold text-gray-500">
-              Selected: <strong className="text-[var(--primary-color,#009fe3)]">{selectedPermissions.length}</strong> / {totalPossiblePermissions}
-            </span>
+            {/* Clear All & Count Indicator */}
+            <div className="flex items-center gap-2 sm:gap-3 shrink-0 whitespace-nowrap ml-auto">
+              {selectedPermissions.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => applyPreset("clear")}
+                  className="px-2 py-0.5 rounded text-[11px] font-semibold text-gray-500 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors cursor-pointer border border-transparent hover:border-rose-200 dark:hover:border-rose-800"
+                >
+                  Clear All
+                </button>
+              )}
+
+              <span className="text-[11px] font-mono font-semibold text-gray-500 dark:text-gray-400">
+                Selected:{" "}
+                <strong className="text-[var(--primary-color,#009fe3)]">
+                  {selectedPermissions.length}
+                </strong>{" "}
+                / {totalPossiblePermissions}
+              </span>
+            </div>
           </div>
 
           {/* Interactive CRUD Matrix Table */}
@@ -411,59 +568,39 @@ export const BranchPermissionModal: React.FC<BranchPermissionModalProps> = ({
               <thead>
                 <tr className="bg-gray-100/80 dark:bg-gray-800 text-gray-700 dark:text-gray-200 font-bold border-b border-gray-200 dark:border-gray-700">
                   <th className="py-2.5 px-3">Module / Resource</th>
-                  <th className="py-2.5 px-2 text-center w-16">All</th>
-                  <th className="py-2.5 px-2 text-center w-24">
-                    <button
-                      type="button"
-                      onClick={() => toggleColumnAll("read")}
-                      className="text-[11px] text-blue-600 dark:text-blue-400 hover:underline cursor-pointer"
-                      title="Toggle Read for all modules"
-                    >
-                      Read (View)
-                    </button>
-                  </th>
-                  <th className="py-2.5 px-2 text-center w-24">
-                    <button
-                      type="button"
-                      onClick={() => toggleColumnAll("create")}
-                      className="text-[11px] text-emerald-600 dark:text-emerald-400 hover:underline cursor-pointer"
-                      title="Toggle Create for all modules"
-                    >
-                      Post (Create)
-                    </button>
-                  </th>
-                  <th className="py-2.5 px-2 text-center w-24">
-                    <button
-                      type="button"
-                      onClick={() => toggleColumnAll("update")}
-                      className="text-[11px] text-amber-600 dark:text-amber-400 hover:underline cursor-pointer"
-                      title="Toggle Update for all modules"
-                    >
-                      Update (Edit)
-                    </button>
-                  </th>
-                  <th className="py-2.5 px-2 text-center w-24">
-                    <button
-                      type="button"
-                      onClick={() => toggleColumnAll("delete")}
-                      className="text-[11px] text-rose-600 dark:text-rose-400 hover:underline cursor-pointer"
-                      title="Toggle Delete for all modules"
-                    >
-                      Delete (Revoke)
-                    </button>
-                  </th>
+                  <th className="py-2.5 px-2 text-center w-14">All</th>
+                  {CRUD_COLUMNS.map((col) => {
+                    const allChecked = isActionAllChecked(col.action);
+                    const someChecked = isActionSomeChecked(col.action);
+
+                    return (
+                      <th key={col.action} className="py-2.5 px-2 text-center w-24">
+                        <label className="inline-flex items-center justify-center gap-1.5 cursor-pointer group select-none">
+                          <IndeterminateCheckbox
+                            checked={allChecked}
+                            indeterminate={someChecked && !allChecked}
+                            onChange={() => toggleColumnAll(col.action)}
+                            className={`rounded h-3.5 w-3.5 ${col.checkboxColor}`}
+                          />
+                          <span
+                            className={`text-[11px] font-bold group-hover:underline ${col.headerTextColor}`}
+                            title={col.tooltip}
+                          >
+                            {col.tableLabel}
+                          </span>
+                        </label>
+                      </th>
+                    );
+                  })}
                 </tr>
               </thead>
 
               <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
                 {PERMISSION_MODULES.map((mod) => {
-                  const hasRead = mod.actions.includes("read");
-                  const hasCreate = mod.actions.includes("create");
-                  const hasUpdate = mod.actions.includes("update");
-                  const hasDelete = mod.actions.includes("delete");
-
                   const modKeys = mod.actions.map((act) => buildPermissionKey(mod.id, act));
-                  const isAllRowChecked = modKeys.every((k) => selectedPermissions.includes(k));
+                  const isAllRowChecked =
+                    modKeys.length > 0 && modKeys.every((k) => selectedPermissions.includes(k));
+                  const isSomeRowChecked = modKeys.some((k) => selectedPermissions.includes(k));
 
                   return (
                     <tr
@@ -488,6 +625,8 @@ export const BranchPermissionModal: React.FC<BranchPermissionModalProps> = ({
                           className={`p-1 rounded text-[11px] transition-colors cursor-pointer ${
                             isAllRowChecked
                               ? "text-[var(--primary-color,#009fe3)] font-bold bg-blue-50 dark:bg-blue-950/60"
+                              : isSomeRowChecked
+                              ? "text-[var(--primary-color,#009fe3)] opacity-70"
                               : "text-gray-400 hover:text-gray-600"
                           }`}
                           title={`Toggle all ${mod.name} actions`}
@@ -496,61 +635,24 @@ export const BranchPermissionModal: React.FC<BranchPermissionModalProps> = ({
                         </button>
                       </td>
 
-                      {/* Read */}
-                      <td className="py-2 px-2 text-center">
-                        {hasRead ? (
-                          <input
-                            type="checkbox"
-                            checked={isChecked(mod.id, "read")}
-                            onChange={() => toggleSingle(mod.id, "read")}
-                            className="rounded text-blue-600 focus:ring-blue-500 h-4 w-4 cursor-pointer"
-                          />
-                        ) : (
-                          <span className="text-gray-300 dark:text-gray-700 text-xs">—</span>
-                        )}
-                      </td>
-
-                      {/* Create (Post) */}
-                      <td className="py-2 px-2 text-center">
-                        {hasCreate ? (
-                          <input
-                            type="checkbox"
-                            checked={isChecked(mod.id, "create")}
-                            onChange={() => toggleSingle(mod.id, "create")}
-                            className="rounded text-emerald-600 focus:ring-emerald-500 h-4 w-4 cursor-pointer"
-                          />
-                        ) : (
-                          <span className="text-gray-300 dark:text-gray-700 text-xs">—</span>
-                        )}
-                      </td>
-
-                      {/* Update */}
-                      <td className="py-2 px-2 text-center">
-                        {hasUpdate ? (
-                          <input
-                            type="checkbox"
-                            checked={isChecked(mod.id, "update")}
-                            onChange={() => toggleSingle(mod.id, "update")}
-                            className="rounded text-amber-500 focus:ring-amber-500 h-4 w-4 cursor-pointer"
-                          />
-                        ) : (
-                          <span className="text-gray-300 dark:text-gray-700 text-xs">—</span>
-                        )}
-                      </td>
-
-                      {/* Delete */}
-                      <td className="py-2 px-2 text-center">
-                        {hasDelete ? (
-                          <input
-                            type="checkbox"
-                            checked={isChecked(mod.id, "delete")}
-                            onChange={() => toggleSingle(mod.id, "delete")}
-                            className="rounded text-rose-600 focus:ring-rose-500 h-4 w-4 cursor-pointer"
-                          />
-                        ) : (
-                          <span className="text-gray-300 dark:text-gray-700 text-xs">—</span>
-                        )}
-                      </td>
+                      {/* Dynamic CRUD Action Columns */}
+                      {CRUD_COLUMNS.map((col) => {
+                        const hasAction = mod.actions.includes(col.action);
+                        return (
+                          <td key={col.action} className="py-2 px-2 text-center">
+                            {hasAction ? (
+                              <input
+                                type="checkbox"
+                                checked={isChecked(mod.id, col.action)}
+                                onChange={() => toggleSingle(mod.id, col.action)}
+                                className={`rounded h-4 w-4 cursor-pointer ${col.checkboxColor}`}
+                              />
+                            ) : (
+                              <span className="text-gray-300 dark:text-gray-700 text-xs">—</span>
+                            )}
+                          </td>
+                        );
+                      })}
                     </tr>
                   );
                 })}
@@ -614,11 +716,6 @@ export const BranchPermissionModal: React.FC<BranchPermissionModalProps> = ({
                 const branchCode = branchObj?.code || p.branchCode || "";
                 const permsList: string[] = Array.isArray(p.permissions) ? p.permissions : [];
 
-                const readCount = permsList.filter((k) => k.endsWith(":read") || k.endsWith(".read")).length;
-                const createCount = permsList.filter((k) => k.endsWith(":create") || k.endsWith(".create")).length;
-                const updateCount = permsList.filter((k) => k.endsWith(":update") || k.endsWith(".update")).length;
-                const deleteCount = permsList.filter((k) => k.endsWith(":delete") || k.endsWith(".delete")).length;
-
                 return (
                   <div
                     key={pId || bId}
@@ -647,26 +744,20 @@ export const BranchPermissionModal: React.FC<BranchPermissionModalProps> = ({
 
                         {/* CRUD Capability Badges */}
                         <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
-                          {readCount > 0 && (
-                            <span className="px-2 py-0.5 text-[9px] font-bold rounded-md bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
-                              Read ({readCount})
-                            </span>
-                          )}
-                          {createCount > 0 && (
-                            <span className="px-2 py-0.5 text-[9px] font-bold rounded-md bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
-                              Post/Create ({createCount})
-                            </span>
-                          )}
-                          {updateCount > 0 && (
-                            <span className="px-2 py-0.5 text-[9px] font-bold rounded-md bg-amber-50 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300 border border-amber-200 dark:border-amber-800">
-                              Update ({updateCount})
-                            </span>
-                          )}
-                          {deleteCount > 0 && (
-                            <span className="px-2 py-0.5 text-[9px] font-bold rounded-md bg-rose-50 text-rose-700 dark:bg-rose-950/60 dark:text-rose-300 border border-rose-200 dark:border-rose-800">
-                              Delete ({deleteCount})
-                            </span>
-                          )}
+                          {CRUD_COLUMNS.map((col) => {
+                            const count = permsList.filter(
+                              (k) => k.endsWith(`:${col.action}`) || k.endsWith(`.${col.action}`)
+                            ).length;
+                            if (count === 0) return null;
+                            return (
+                              <span
+                                key={col.action}
+                                className={`px-2 py-0.5 text-[9px] font-bold rounded-md border ${col.badgeClass}`}
+                              >
+                                {col.label} ({count})
+                              </span>
+                            );
+                          })}
                           {permsList.length === 0 && (
                             <span className="px-2 py-0.5 text-[9px] font-bold rounded-md bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400">
                               No Access Assigned
