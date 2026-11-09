@@ -1,12 +1,22 @@
-import React, { useMemo } from "react";
+import React, { useState, useEffect } from "react";
+import moment from "moment";
+import Modal from "@/components/modal/Modal";
+import Button from "@/components/button/Button";
+import DatePicker from "@/components/common/DatePicker";
 import { useCustomerInvoicesDueQuery } from "@/hooks/useCustomerInvoicesDue";
+import { useFinancialAccounts } from "@/hooks/useFinancialAccounts";
 import { useCollectionMutation } from "@/hooks/useCollectionMutation";
 import { sortInvoicesFIFO } from "@/services/collection-service";
+import DueInvoiceAllocationTable from "./DueInvoiceAllocationTable";
 import type { CollectionReceiptData } from "./CollectionReceiptModal";
+import { formatMoney } from "@/utils/formatters";
+import { showErrorToast, showSuccessToast } from "@/utils/toast-utils";
 import type { CustomerDueItem } from "@/types/collection.types";
-import TradeAddSettlementModal from "@/components/settlement/TradeAddSettlementModal";
 import { usePermission } from "@/hooks/usePermission";
-import { showErrorToast } from "@/utils/toast-utils";
+import { computeFIFOAllocations } from "@/components/settlement/settlement-utils";
+import TradePartyInfoStrip from "@/components/settlement/TradePartyInfoStrip";
+import TradeQuickAmountSection from "@/components/settlement/TradeQuickAmountSection";
+import TradePaymentTenderSection from "@/components/settlement/TradePaymentTenderSection";
 
 export interface AddCollectionModalProps {
   isOpen: boolean;
@@ -23,115 +33,361 @@ export const AddCollectionModal: React.FC<AddCollectionModalProps> = ({
 }) => {
   const { canCreate } = usePermission();
   const customerId = customer?.customerId ? String(customer.customerId) : "";
+
+  // 1. Fetch Invoices Due for Customer
   const { data: rawInvoices = [], isLoading: isInvoicesLoading } =
     useCustomerInvoicesDueQuery(customerId, {
       enabled: Boolean(isOpen && customerId),
     });
 
-  const invoices = useMemo(() => {
-    return sortInvoicesFIFO(rawInvoices);
-  }, [rawInvoices]);
+  const invoices = sortInvoicesFIFO(rawInvoices);
 
+  // 2. Fetch Bank & MFS Accounts
+  const {
+    registeredBankAccounts,
+    registeredMfsAccounts,
+    isLoading: isAccountsLoading,
+  } = useFinancialAccounts();
+
+  // 3. Collection Mutation
   const collectionMutation = useCollectionMutation();
 
-  const handleSettlementSubmit = async (data: {
-    settlementDate: string;
-    finalPaymentMode: string;
-    remark: string;
-    allocations: any[];
-    selectedBank: any;
-    selectedMfs: any;
-    numericTotalPaid: number;
-    numericCash: number;
-    numericBank: number;
-    numericMfs: number;
-    numericDiscount: number;
-    totalSettleAmount: number;
-  }) => {
-    if (!customer) return;
+  // 4. Form States
+  const [amountInput, setAmountInput] = useState<string>("");
+  const [paymentMode, setPaymentMode] = useState<"Cash" | "Bank" | "MFS">("Cash");
+  const [selectedBankId, setSelectedBankId] = useState<string>("");
+  const [selectedMfsId, setSelectedMfsId] = useState<string>("");
+  const [collectionDate, setCollectionDate] = useState<string>(
+    moment().format("YYYY-MM-DD")
+  );
+  const [remark, setRemark] = useState<string>("");
+  const [selectedInvoiceNos, setSelectedInvoiceNos] = useState<Set<string>>(() => new Set());
+
+  // Reset state on modal open
+  useEffect(() => {
+    if (isOpen && customer) {
+      setAmountInput("");
+      setPaymentMode("Cash");
+      setSelectedBankId(
+        registeredBankAccounts.length > 0
+          ? String(registeredBankAccounts[0].id || registeredBankAccounts[0].bankId || "")
+          : ""
+      );
+      setSelectedMfsId(
+        registeredMfsAccounts.length > 0
+          ? String(registeredMfsAccounts[0].id || registeredMfsAccounts[0].mfsId || "")
+          : ""
+      );
+      setCollectionDate(moment().format("YYYY-MM-DD"));
+      setRemark("");
+      setSelectedInvoiceNos(new Set());
+    }
+  }, [isOpen, customer, registeredBankAccounts, registeredMfsAccounts]);
+
+  // Derived Account Objects
+  const selectedBankObj =
+    registeredBankAccounts.find(
+      (b) => String(b.id || b.bankId) === String(selectedBankId)
+    ) || null;
+
+  const selectedMfsObj =
+    registeredMfsAccounts.find(
+      (m) => String(m.id || m.mfsId) === String(selectedMfsId)
+    ) || null;
+
+  // Derived Dues & Selection Calculations (Pure, no useMemo overhead)
+  const totalDueFromInvoices =
+    invoices.length > 0
+      ? invoices.reduce((sum, inv) => sum + Number(inv.dueAmount || 0), 0)
+      : Number(customer?.totalDue || 0);
+
+  const hasManualSelection = selectedInvoiceNos.size > 0;
+  const selectedInvoicesDue = hasManualSelection
+    ? invoices
+        .filter((inv) => selectedInvoiceNos.has(inv.invoiceNo))
+        .reduce((sum, inv) => sum + Number(inv.dueAmount || 0), 0)
+    : 0;
+
+  const effectiveTotalDue = hasManualSelection ? selectedInvoicesDue : totalDueFromInvoices;
+  const effectiveInvoices = hasManualSelection
+    ? invoices.filter((inv) => selectedInvoiceNos.has(inv.invoiceNo))
+    : invoices;
+
+  const enteredAmount = Math.max(0, parseFloat(amountInput) || 0);
+
+  // FIFO Allocation Engine
+  const allocations = computeFIFOAllocations(effectiveInvoices, enteredAmount);
+
+  const allocatedAmount = Number(
+    allocations.reduce((sum, a) => sum + (a.allocatedAmount || 0), 0).toFixed(2)
+  );
+
+  const remainingDue = Math.max(0, Number((effectiveTotalDue - allocatedAmount).toFixed(2)));
+
+  const allocatedPct =
+    effectiveTotalDue > 0
+      ? Math.min(100, Math.round((allocatedAmount / effectiveTotalDue) * 100))
+      : 0;
+
+  const isAllSelected = invoices.length > 0 && selectedInvoiceNos.size === invoices.length;
+
+  // Toggle invoice checkbox selection
+  const handleToggleInvoice = (invoiceNo: string) => {
+    setSelectedInvoiceNos((prev) => {
+      const next = new Set(prev);
+      if (next.has(invoiceNo)) next.delete(invoiceNo);
+      else next.add(invoiceNo);
+      return next;
+    });
+  };
+
+  const handleToggleSelectAll = () => {
+    if (isAllSelected) {
+      setSelectedInvoiceNos(new Set());
+    } else {
+      setSelectedInvoiceNos(new Set(invoices.map((inv) => inv.invoiceNo)));
+    }
+  };
+
+  // Form Submission Handler
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (collectionMutation.isPending) return;
+
+    if (!customer) {
+      showErrorToast("No customer selected");
+      return;
+    }
 
     if (!canCreate("customer_collection")) {
       showErrorToast("You do not have permission to record customer collection.");
       return;
     }
 
-    const result = await collectionMutation.mutateAsync({
-      customerId: customer.customerId,
-      customerName: customer.customerName,
-      customerPhone: customer.customerPhone,
-      collectionDate: data.settlementDate,
-      paymentMode: data.finalPaymentMode,
-      remark: data.remark,
-      allocations: data.allocations,
-      selectedBank: data.selectedBank,
-      selectedMfs: data.selectedMfs,
-      totalPaid: data.numericTotalPaid,
-      cashPaid: data.numericCash,
-      bankPaid: data.numericBank,
-      mfsPaid: data.numericMfs,
-      discount: data.numericDiscount,
-      totalSettled: data.totalSettleAmount,
-    });
+    if (!allocatedAmount || allocatedAmount <= 0) {
+      showErrorToast("Please enter a valid collection amount");
+      return;
+    }
 
-    onClose();
+    if (allocatedAmount > effectiveTotalDue) {
+      showErrorToast(
+        hasManualSelection
+          ? "Collection amount cannot be greater than the selected bills' due"
+          : "Collection amount cannot be greater than total due"
+      );
+      return;
+    }
 
-    if (onSuccess && result) {
-      onSuccess({
-        receiptNo: result.collectionNo,
-        collectionDate: data.settlementDate,
-        customerName: customer.customerName,
-        customerPhone: customer.customerPhone,
-        customerId: customer.customerId || (customer as any).id || "",
-        totalAmount: data.numericTotalPaid,
-        totalDiscount: data.numericDiscount,
-        paymentMode: data.finalPaymentMode,
-        cashAmount: data.numericCash,
-        bankAmount: data.numericBank,
-        mfsAmount: data.numericMfs,
-        bankDetails: data.selectedBank
-          ? {
-              bankName: data.selectedBank.bankName,
-              accountNumber: data.selectedBank.accountNo,
-              accountHolderName: data.selectedBank.bankAccountName,
-            }
-          : null,
-        mfsDetails: data.selectedMfs
-          ? {
-              mfsName: data.selectedMfs.mfsName,
-              mfsPhone: data.selectedMfs.mfsPhone,
-            }
-          : null,
-        remark: data.remark,
-        allocations: data.allocations
-          .filter((a: any) => (a.allocatedPaid ?? a.allocatedAmount ?? 0) > 0 || (a.allocatedDiscount ?? 0) > 0)
-          .map((a: any) => ({
-            invoiceNo: a.invoiceNo,
-            paidAmount: a.allocatedPaid ?? a.allocatedAmount ?? a.paidAmount ?? 0,
-            discountAmount: a.allocatedDiscount ?? 0,
-            dueAmount: a.remainingDue ?? a.dueAmount ?? 0,
-          })),
-        customerAddress: customer.customerAddress,
-        totalCollected: data.numericTotalPaid,
-        discount: data.numericDiscount,
-        totalSettled: data.totalSettleAmount,
-        previousDue: Number(customer.totalDue || 0),
-        remainingDue: Math.max(0, Number(customer.totalDue || 0) - data.totalSettleAmount),
-        rawResult: result,
-      } as any);
+    if (paymentMode === "Bank" && !selectedBankObj) {
+      showErrorToast("Please select a valid bank account");
+      return;
+    }
+
+    if (paymentMode === "MFS" && !selectedMfsObj) {
+      showErrorToast("Please select a valid MFS account");
+      return;
+    }
+
+    const activeAllocations = allocations.filter((a) => (a.allocatedAmount || 0) > 0);
+    if (invoices.length > 0 && activeAllocations.length === 0) {
+      showErrorToast("No due invoices were allocated with this amount");
+      return;
+    }
+
+    const numCash = paymentMode === "Cash" ? allocatedAmount : 0;
+    const numBank = paymentMode === "Bank" ? allocatedAmount : 0;
+    const numMfs = paymentMode === "MFS" ? allocatedAmount : 0;
+
+    try {
+      const result = await collectionMutation.mutateAsync({
+        customerId: customer.customerId || customer.id || "",
+        customerName: customer.customerName || "Customer",
+        customerPhone: customer.customerPhone || "",
+        collectionDate,
+        paymentMode,
+        remark: remark.trim(),
+        allocations: activeAllocations,
+        selectedBank: selectedBankObj,
+        selectedMfs: selectedMfsObj,
+        totalCollected: allocatedAmount,
+        totalDiscount: 0,
+        remainingTotalDue: remainingDue,
+        cashAmount: numCash,
+        bankAmount: numBank,
+        mfsAmount: numMfs,
+      });
+
+      if (result.success) {
+        showSuccessToast(result.msg || "Collection recorded successfully!");
+
+        if (onSuccess) {
+          const receiptData: CollectionReceiptData = {
+            receiptNo: `REC-${Date.now().toString().slice(-6)}`,
+            collectionDate,
+            customerName: customer.customerName || "Customer",
+            customerPhone: customer.customerPhone || "",
+            customerId: customer.customerId || customer.id || "",
+            totalAmount: allocatedAmount,
+            totalDiscount: 0,
+            paymentMode,
+            cashAmount: numCash,
+            bankAmount: numBank,
+            mfsAmount: numMfs,
+            bankDetails: selectedBankObj
+              ? {
+                  bankName: selectedBankObj.bankName,
+                  accountNumber: selectedBankObj.accountNo,
+                  accountHolderName: selectedBankObj.bankAccountName,
+                }
+              : null,
+            mfsDetails: selectedMfsObj
+              ? {
+                  mfsName: selectedMfsObj.mfsName,
+                  mfsPhone: selectedMfsObj.mfsPhone,
+                }
+              : null,
+            remark: remark.trim(),
+            allocations: activeAllocations.map((a) => ({
+              invoiceNo: a.invoiceNo,
+              paidAmount: a.allocatedAmount || 0,
+              dueAmount: a.dueAmount || 0,
+            })),
+          };
+
+          onSuccess(receiptData);
+        }
+
+        onClose();
+      }
+    } catch (err: any) {
+      console.error("Collection submission failed:", err);
+      showErrorToast(err?.message || "Failed to submit customer collection");
     }
   };
 
+  if (!isOpen || !customer) return null;
+
   return (
-    <TradeAddSettlementModal
+    <Modal
       isOpen={isOpen}
-      partyType="customer"
-      party={customer}
-      invoices={invoices}
-      isInvoicesLoading={isInvoicesLoading}
-      isSubmitting={collectionMutation.isPending}
+      title="Customer Collection"
       onClose={onClose}
-      onSubmit={handleSettlementSubmit}
-    />
+      width="w-full max-w-[740px]"
+      className="!pt-2 !pb-2.5 sm:!pt-2.5 sm:!pb-3.5"
+      headerClassName="!pb-1.5"
+      bodyClassName="!mt-1"
+    >
+      <form onSubmit={handleSubmit} className="space-y-2">
+        {/* Customer Information Strip */}
+        <TradePartyInfoStrip
+          name={customer.customerName}
+          phone={customer.customerPhone}
+          totalDue={effectiveTotalDue}
+          partyType="customer"
+        />
+
+        {/* Amount Input & Quick Chips & Progress Meter */}
+        <TradeQuickAmountSection
+          label="Collection Amount"
+          placeholder="Enter collection amount (e.g. 500)"
+          amountInput={amountInput}
+          onAmountChange={setAmountInput}
+          effectiveTotalDue={effectiveTotalDue}
+          allocatedAmount={allocatedAmount}
+          allocatedPct={allocatedPct}
+        />
+
+        {/* Due Invoices Allocation Table */}
+        <DueInvoiceAllocationTable
+          invoices={invoices}
+          isLoading={isInvoicesLoading}
+          selectedInvoiceNos={selectedInvoiceNos}
+          onToggleInvoice={handleToggleInvoice}
+          onToggleSelectAll={handleToggleSelectAll}
+          isAllSelected={isAllSelected}
+          allocations={allocations}
+        />
+
+        {/* Payment Tender Selector (Cash, Bank, MFS) */}
+        <TradePaymentTenderSection
+          paymentMode={paymentMode}
+          onPaymentModeChange={setPaymentMode}
+          bankAccounts={registeredBankAccounts}
+          selectedBankId={selectedBankId}
+          onBankChange={setSelectedBankId}
+          mfsAccounts={registeredMfsAccounts}
+          selectedMfsId={selectedMfsId}
+          onMfsChange={setSelectedMfsId}
+          isAccountsLoading={isAccountsLoading}
+        />
+
+        {/* Date and Remark Section */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-0.5">
+          <div>
+            <label className="text-[11px] font-semibold text-[var(--ui-text)] mb-0.5 block">
+              Collection Date <span className="text-red-500">*</span>
+            </label>
+            <DatePicker
+              value={collectionDate}
+              onChange={(date: string) => setCollectionDate(date)}
+              className="w-full text-xs"
+            />
+          </div>
+
+          <div>
+            <label className="text-[11px] font-semibold text-[var(--ui-text)] mb-0.5 block">
+              Remark / Note (Optional)
+            </label>
+            <input
+              type="text"
+              value={remark}
+              onChange={(e) => setRemark(e.target.value)}
+              placeholder="e.g. Received via bKash personal"
+              className="w-full px-2.5 py-1.5 text-xs bg-[var(--ui-surface)] border border-[var(--ui-border)] rounded-md focus:border-[var(--primary-color)] focus:ring-1 focus:ring-[var(--primary-color)] outline-none text-[var(--ui-text)]"
+            />
+          </div>
+        </div>
+
+        {/* Summary Footer & Action Buttons */}
+        <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-[var(--ui-border)] mt-2">
+          <div className="flex items-center gap-3 text-xs">
+            <div>
+              <span className="text-[10px] text-[var(--ui-text-muted)] block">Remaining Due</span>
+              <span className="font-bold text-[var(--ui-text)]">৳{formatMoney(remainingDue)}</span>
+            </div>
+            <div className="h-6 w-px bg-[var(--ui-border)]" />
+            <div>
+              <span className="text-[10px] text-[var(--ui-text-muted)] block">Paying Now</span>
+              <span className="font-bold text-emerald-600 dark:text-emerald-400">
+                ৳{formatMoney(allocatedAmount)}
+              </span>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={onClose}
+              disabled={collectionMutation.isPending}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              size="sm"
+              disabled={collectionMutation.isPending || allocatedAmount <= 0}
+              className="bg-[var(--primary-color)] text-white hover:opacity-90"
+            >
+              {collectionMutation.isPending
+                ? "Recording..."
+                : `Collect ৳${formatMoney(allocatedAmount)}`}
+            </Button>
+          </div>
+        </div>
+      </form>
+    </Modal>
   );
 };
 

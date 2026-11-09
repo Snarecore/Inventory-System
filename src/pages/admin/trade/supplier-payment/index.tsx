@@ -80,10 +80,10 @@ export const SupplierPayment: React.FC = () => {
     const nameMap = new Map<string, Set<string>>();
 
     if (Array.isArray(purchasesList)) {
-      purchasesList.forEach((p: any) => {
+      purchasesList.forEach((p: any, idx: number) => {
         const due = Number(p.dueAmount ?? p.due_amount ?? p.due ?? 0);
         if (due > 0) {
-          const invNo = String(p.invoiceNo || p.purchaseNo || p.challanNo || p.id || Math.random());
+          const invNo = String(p.invoiceNo || p.purchaseNo || p.challanNo || p.id || `purchase-${idx}`);
           const sId = String(p.supplierId ?? p.supplier_id ?? "");
           const sPhone = String(p.supplierPhone ?? p.supplier_phone ?? p.phone ?? "").trim();
           const sName = String(p.supplierName ?? p.supplier_name ?? p.name ?? "").trim().toLowerCase();

@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import PageHeader from "@/components/page-header/PageHeader";
 import RefreshButton from "@/components/table-components/RefreshButton";
@@ -81,10 +81,10 @@ export const CustomerCollection: React.FC = () => {
     const phoneMap = new Map<string, Set<string>>();
 
     if (Array.isArray(salesList)) {
-      salesList.forEach((s: any) => {
+      salesList.forEach((s: any, idx: number) => {
         const due = Number(s.dueAmount ?? s.due_amount ?? 0);
         if (due > 0) {
-          const invNo = String(s.invoiceNo || s.orderNo || s.id || Math.random());
+          const invNo = String(s.invoiceNo || s.orderNo || s.id || `sale-${idx}`);
           const cId = String(s.customerId ?? s.customer_id ?? "");
           const cPhone = String(s.customerPhone ?? s.customer_phone ?? s.phone ?? "").trim();
 
