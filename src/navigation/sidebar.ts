@@ -255,7 +255,7 @@ export const menu = [
 					{ id: 96, name: "Sales Reports", path: "/admin/reports/sales", permissionKey: "reports.sales.view" },
 					{ id: 97, name: "Purchase Reports", path: "/admin/reports/purchase", permissionKey: "reports.purchase.view" },
 					{ id: 128, name: "Cash Closing Report", path: "/admin/reports/cash-closing", permissionKey: "reports.cash_closing.view" },
-					{ id: 98, name: "Inventory Reports", path: "/reports/inventory", permissionKey: "reports.inventory.view" },
+					{ id: 98, name: "Inventory Reports", path: "/admin/reports/inventory", permissionKey: "reports.inventory.view" },
 					{ id: 99, name: "Customer Reports", path: "/reports/customer", permissionKey: "reports.customer.view" },
 					{ id: 100, name: "Supplier Reports", path: "/reports/supplier", permissionKey: "reports.supplier.view" },
 					{ id: 101, name: "Accounting Reports", path: "/reports/accounting", permissionKey: "reports.accounting.view" },

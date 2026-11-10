@@ -482,15 +482,28 @@ export async function buildAndDownloadExcel<T extends Record<string, any>>(
         h === "Order ID" ||
         h.includes("Grand Total") ||
         h === "Customer Name" ||
-        h === "Supplier Name"
+        h === "Supplier Name" ||
+        h === "Product Name" ||
+        h === "Category Name" ||
+        h === "Category"
       ) {
         isBold = true;
       }
 
-      if (h.includes("Paid") || h.includes("Deposit")) {
+      if (
+        h.includes("Paid") ||
+        h.includes("Deposit") ||
+        h.includes("Retail Value") ||
+        h.includes("Est. Profit")
+      ) {
         isBold = true;
         fontColor = "FF047857"; // Emerald Green
-      } else if (h.includes("Due") || h.includes("Expense")) {
+      } else if (
+        h.includes("Due") ||
+        h.includes("Expense") ||
+        h.includes("Restock Cost") ||
+        h.includes("Shortfall")
+      ) {
         isBold = true;
         fontColor = Number(val) !== 0 ? "FFB91C1C" : "FF64748B"; // Rose Red / Gray
       } else if (h.includes("Variance")) {
@@ -498,24 +511,43 @@ export async function buildAndDownloadExcel<T extends Record<string, any>>(
         const nVal = Number(val);
         fontColor =
           nVal === 0 ? "FF047857" : nVal < 0 ? "FFB91C1C" : "FFD97706";
-      } else if (h === "Status" || h === "Payment Status") {
+      } else if (
+        h === "Status" ||
+        h === "Payment Status" ||
+        h === "Stock Status" ||
+        h === "Alert Level"
+      ) {
         isBold = true;
         const statusUpper = String(val).toUpperCase();
-        if (statusUpper === "PAID" || statusUpper === "CLOSED") {
+        if (
+          statusUpper === "PAID" ||
+          statusUpper === "CLOSED" ||
+          statusUpper === "ACTIVE" ||
+          statusUpper === "IN STOCK"
+        ) {
           fontColor = "FF047857";
           cell.fill = {
             type: "pattern",
             pattern: "solid",
             fgColor: { argb: "FFECFDF5" },
           };
-        } else if (statusUpper === "PARTIAL" || statusUpper === "OPEN") {
+        } else if (
+          statusUpper === "PARTIAL" ||
+          statusUpper === "OPEN" ||
+          statusUpper === "LOW STOCK"
+        ) {
           fontColor = "FFD97706";
           cell.fill = {
             type: "pattern",
             pattern: "solid",
             fgColor: { argb: "FFFEF3C7" },
           };
-        } else if (statusUpper === "DUE" || statusUpper === "PENDING") {
+        } else if (
+          statusUpper === "DUE" ||
+          statusUpper === "PENDING" ||
+          statusUpper === "INACTIVE" ||
+          statusUpper === "OUT OF STOCK"
+        ) {
           fontColor = "FFB91C1C";
           cell.fill = {
             type: "pattern",
@@ -579,10 +611,26 @@ export async function buildAndDownloadExcel<T extends Record<string, any>>(
       };
 
       let fontColor = "FF0F172A";
-      if (h.includes("Grand Total") || h.includes("Expected")) fontColor = themeArgb;
-      else if (h.includes("Paid") || h.includes("Deposit")) fontColor = "FF047857";
-      else if (h.includes("Due") || h.includes("Expense")) fontColor = "FFB91C1C";
-      else if (h.includes("Variance")) {
+      if (
+        h.includes("Grand Total") ||
+        h.includes("Expected") ||
+        h.includes("Cost Value")
+      ) {
+        fontColor = themeArgb;
+      } else if (
+        h.includes("Paid") ||
+        h.includes("Deposit") ||
+        h.includes("Retail Value") ||
+        h.includes("Est. Profit")
+      ) {
+        fontColor = "FF047857";
+      } else if (
+        h.includes("Due") ||
+        h.includes("Expense") ||
+        h.includes("Restock Cost")
+      ) {
+        fontColor = "FFB91C1C";
+      } else if (h.includes("Variance")) {
         const nVal = Number(val);
         fontColor =
           nVal === 0 ? "FF047857" : nVal < 0 ? "FFB91C1C" : "FFD97706";
