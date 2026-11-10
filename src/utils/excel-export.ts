@@ -374,7 +374,7 @@ export async function buildAndDownloadExcel<T extends Record<string, any>>(
   const getColAlign = (h: string): "center" | "right" | "left" => {
     const headerLower = h.toLowerCase();
     if (
-      /^(sl|items|method|status|type|system default|has card|app access)$/i.test(
+      /^(sl|items|method|status|type|system default|has card|app access|primary unit|secondary unit)$/i.test(
         headerLower
       ) ||
       /date|phone/i.test(headerLower)
@@ -384,7 +384,8 @@ export async function buildAndDownloadExcel<T extends Record<string, any>>(
     if (
       /(৳|bdt|amount|total|subtotal|discount|vat|paid|due|balance|salary|revenue|value|delivery|transport|share|quantity|qty)/i.test(
         headerLower
-      )
+      ) ||
+      /^stock$/i.test(headerLower)
     ) {
       return "right";
     }

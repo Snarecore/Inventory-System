@@ -46,6 +46,7 @@ const AVAILABLE_COLUMNS: ColumnItem[] = [
   { key: "category", label: "Category" },
   { key: "primaryUnit", label: "Primary Unit" },
   { key: "secondaryUnit", label: "Secondary Unit" },
+  { key: "stock", label: "Stock" },
   { key: "buyPrice", label: "Buy Price" },
   { key: "sellPrice", label: "Sell Price" },
   { key: "margin", label: "Margin %" },
@@ -336,7 +337,7 @@ export const InventoryStockReportTable: React.FC<
             description="There are no inventory products matching the current search or filter criteria."
           />
         ) : (
-          <Table minWidth={1120}>
+          <Table minWidth={1180}>
             <TableHead>
               {isColVisible("sl") && (
                 <TableTh align="center" width={42}>
@@ -365,12 +366,18 @@ export const InventoryStockReportTable: React.FC<
               )}
               {isColVisible("category") && <TableTh>Category</TableTh>}
               {isColVisible("primaryUnit") && (
+                <TableTh align="center">Primary Unit</TableTh>
+              )}
+              {isColVisible("secondaryUnit") && (
+                <TableTh align="center">Secondary Unit</TableTh>
+              )}
+              {isColVisible("stock") && (
                 <TableTh align="right">
                   <span
                     onClick={() => toggleHeaderSort("qty_asc", "qty_desc")}
                     className="inline-flex items-center gap-1 cursor-pointer select-none"
                   >
-                    <span>Primary Unit</span>
+                    <span>Stock</span>
                     <FiChevronDown
                       size={11}
                       className={`transition-transform ${
@@ -379,9 +386,6 @@ export const InventoryStockReportTable: React.FC<
                     />
                   </span>
                 </TableTh>
-              )}
-              {isColVisible("secondaryUnit") && (
-                <TableTh align="right">Secondary Unit</TableTh>
               )}
               {isColVisible("buyPrice") && (
                 <TableTh align="right">Buy Price</TableTh>
@@ -473,19 +477,23 @@ export const InventoryStockReportTable: React.FC<
                     )}
 
                     {isColVisible("primaryUnit") && (
-                      <td className="py-2.5 px-3 text-right text-xs whitespace-nowrap tabular-nums">
-                        <div className="inline-flex flex-col items-end">
-                          <div className="inline-flex items-center gap-1.5">
-                            <span className="font-semibold text-[var(--ui-text)]">
-                              {m.primaryStockDisplay}
-                            </span>
-                            {!m.hasSecondaryUnit && stockAlertBadge}
-                          </div>
+                      <td
+                        className="py-2.5 px-3 text-center text-xs whitespace-nowrap"
+                        title={
+                          m.hasSecondaryUnit
+                            ? `${m.primaryStockDisplay} (${m.packingLevels})`
+                            : undefined
+                        }
+                      >
+                        <div className="inline-flex flex-col items-center">
+                          <span className="inline-flex items-center px-1.5 py-0.5 rounded-md text-[10.5px] font-medium bg-[var(--ui-surface-sunken)] text-[var(--ui-text)] border border-[var(--ui-border)]">
+                            {m.primaryUnit}
+                          </span>
                           {m.hasSecondaryUnit &&
                             m.packingLevels &&
                             m.packingLevels.toLowerCase() !==
                               m.primaryUnit.toLowerCase() && (
-                              <span className="text-[10px] text-[var(--ui-text-subtle)]">
+                              <span className="mt-0.5 text-[10px] text-[var(--ui-text-subtle)]">
                                 {m.packingLevels}
                               </span>
                             )}
@@ -494,17 +502,34 @@ export const InventoryStockReportTable: React.FC<
                     )}
 
                     {isColVisible("secondaryUnit") && (
-                      <td className="py-2.5 px-3 text-right text-xs whitespace-nowrap tabular-nums">
+                      <td className="py-2.5 px-3 text-center text-xs whitespace-nowrap">
                         {m.hasSecondaryUnit ? (
-                          <div className="inline-flex items-center justify-end gap-1.5">
-                            <span className="font-semibold text-[var(--ui-text)]">
-                              {m.secondaryStockDisplay}
-                            </span>
-                            {stockAlertBadge}
-                          </div>
+                          <span className="inline-flex items-center px-1.5 py-0.5 rounded-md text-[10.5px] font-medium bg-[var(--ui-surface-sunken)] text-[var(--ui-text-muted)] border border-[var(--ui-border)]">
+                            {m.secondaryUnit}
+                          </span>
                         ) : (
                           <span className="text-[var(--ui-text-subtle)]">—</span>
                         )}
+                      </td>
+                    )}
+
+                    {isColVisible("stock") && (
+                      <td
+                        className="py-2.5 px-3 text-right text-xs whitespace-nowrap tabular-nums"
+                        title={
+                          m.hasSecondaryUnit
+                            ? `${m.primaryStockDisplay} (${m.packingLevels})`
+                            : undefined
+                        }
+                      >
+                        <div className="inline-flex items-center justify-end gap-1.5">
+                          <span className="font-semibold text-[var(--ui-text)]">
+                            {m.quantity.toLocaleString("en-IN", {
+                              maximumFractionDigits: 2,
+                            })}
+                          </span>
+                          {stockAlertBadge}
+                        </div>
                       </td>
                     )}
 

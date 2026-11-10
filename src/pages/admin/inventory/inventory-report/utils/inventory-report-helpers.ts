@@ -132,7 +132,9 @@ export function extractInventoryProductMetrics(
 ): NormalizedProductMetrics {
   const raw: any = product || {};
   const id = String(raw.id ?? raw.productId ?? raw.pcode ?? fallbackIndex);
-  const code = String(raw.pcode || raw.productCode || raw.sku || "-").trim();
+  const code = String(
+    raw.pcode || raw.productCode || raw.code || raw.sku || "-"
+  ).trim();
   const sku = String(raw.sku || "-").trim();
   const barcode = String(raw.barcode || "-").trim();
   const name = String(raw.name || raw.productName || "Unnamed Product").trim();
@@ -361,9 +363,9 @@ export async function exportInventoryStockExcel(
       Code: m.code,
       "Product Name": m.name,
       Category: m.category,
-      "Primary Unit": m.primaryStockDisplay,
-      "Secondary Unit": m.secondaryStockDisplay,
-      "Stock Qty": m.quantity,
+      "Primary Unit": m.primaryUnit,
+      "Secondary Unit": m.hasSecondaryUnit ? m.secondaryUnit : "-",
+      Stock: m.quantity,
       "Buy Price (BDT)": m.buyPrice,
       "Sell Price (BDT)": m.sellPrice,
       "Margin (%)": `${m.marginPct.toFixed(1)}%`,
@@ -387,7 +389,7 @@ export async function exportInventoryStockExcel(
     Category: "",
     "Primary Unit": "",
     "Secondary Unit": "",
-    "Stock Qty": sumQty,
+    Stock: sumQty,
     "Buy Price (BDT)": "-",
     "Sell Price (BDT)": "-",
     "Margin (%)":
@@ -452,8 +454,9 @@ export async function downloadInventoryStockPdf(
       m.code,
       m.name,
       m.category,
-      m.primaryStockDisplay,
-      m.secondaryStockDisplay,
+      m.primaryUnit,
+      m.hasSecondaryUnit ? m.secondaryUnit : "-",
+      m.quantity.toLocaleString("en-IN", { maximumFractionDigits: 2 }),
       formatMoney(m.buyPrice),
       formatMoney(m.sellPrice),
       formatMoney(m.costValue),
@@ -478,7 +481,7 @@ export async function downloadInventoryStockPdf(
   bodyRows.push([
     {
       content: "TOTAL INVENTORY VALUATION",
-      colSpan: 4,
+      colSpan: 6,
       styles: {
         halign: "center",
         fontStyle: "bold",
@@ -487,8 +490,7 @@ export async function downloadInventoryStockPdf(
       },
     },
     {
-      content: `${sumQty.toLocaleString("en-IN")} units`,
-      colSpan: 2,
+      content: sumQty.toLocaleString("en-IN", { maximumFractionDigits: 2 }),
       styles: {
         halign: "right",
         fontStyle: "bold",
@@ -553,6 +555,7 @@ export async function downloadInventoryStockPdf(
       "Category",
       "Primary Unit",
       "Secondary Unit",
+      "Stock",
       "Buy Price",
       "Sell Price",
       "Cost Value",
@@ -563,23 +566,24 @@ export async function downloadInventoryStockPdf(
     bodyRows,
     meta,
     columnStyles: {
-      0: { halign: "center", cellWidth: 10 },
-      1: { halign: "left", cellWidth: 24 },
+      0: { halign: "center", cellWidth: 9 },
+      1: { halign: "left", cellWidth: 22 },
       2: { halign: "left", fontStyle: "bold" },
-      3: { halign: "left", cellWidth: 24 },
-      4: { halign: "right", cellWidth: 24 },
-      5: { halign: "right", cellWidth: 24 },
-      6: { halign: "right", cellWidth: 20 },
-      7: { halign: "right", cellWidth: 20 },
-      8: { halign: "right", cellWidth: 24, fontStyle: "bold" },
-      9: {
+      3: { halign: "left", cellWidth: 22 },
+      4: { halign: "center", cellWidth: 20 },
+      5: { halign: "center", cellWidth: 20 },
+      6: { halign: "right", cellWidth: 16, fontStyle: "bold" },
+      7: { halign: "right", cellWidth: 19 },
+      8: { halign: "right", cellWidth: 19 },
+      9: { halign: "right", cellWidth: 23, fontStyle: "bold" },
+      10: {
         halign: "right",
-        cellWidth: 24,
+        cellWidth: 23,
         fontStyle: "bold",
         textColor: REPORT_RGB.emerald,
       },
-      10: { halign: "center", cellWidth: 22 },
-      11: { halign: "center", cellWidth: 18 },
+      11: { halign: "center", cellWidth: 21 },
+      12: { halign: "center", cellWidth: 17 },
     },
   });
 }
