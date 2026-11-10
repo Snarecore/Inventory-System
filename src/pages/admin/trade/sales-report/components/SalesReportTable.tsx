@@ -21,6 +21,7 @@ import { formatMoney } from "@/utils/formatters";
 import { exportSalesToExcel } from "@/utils/excel-export";
 import { showSuccessToast, showErrorToast } from "@/utils/toast-utils";
 import { useBusinessProfileQuery } from "@/hooks/useBusinessProfile";
+import { getFileViewUrl } from "@/services/file-upload-service";
 import { getUserInfo } from "@/utils/auth-storage";
 import type { SaleItem } from "@/types";
 import { useDebounce } from "@/hooks/useDebounce";
@@ -28,6 +29,8 @@ import { useDebounce } from "@/hooks/useDebounce";
 interface SalesReportTableProps {
   transactions: SaleItem[];
   isLoading?: boolean;
+  startDate?: string;
+  endDate?: string;
   onView: (item: SaleItem) => void;
   onPrint: (item: SaleItem) => void;
 }
@@ -35,6 +38,8 @@ interface SalesReportTableProps {
 export const SalesReportTable: React.FC<SalesReportTableProps> = ({
   transactions,
   isLoading,
+  startDate,
+  endDate,
   onView,
   onPrint,
 }) => {
@@ -242,19 +247,26 @@ export const SalesReportTable: React.FC<SalesReportTableProps> = ({
     currentPage * pageSize
   );
 
-  const handleExport = () => {
+  const handleExport = async () => {
     if (!filtered || filtered.length === 0) {
       showErrorToast("No sales records available to export");
       return;
     }
     try {
-      exportSalesToExcel(filtered, {
+      const logoKey = businessProfile?.businessLogo || businessProfile?.businessLogoRefNo || "";
+      const businessLogoUrl =
+        businessProfile?.businessLogoUrl || (logoKey ? getFileViewUrl(logoKey) : "");
+
+      await exportSalesToExcel(filtered, {
         fileName: `Sales_Report_${moment().format("YYYY-MM-DD")}.xlsx`,
         sheetName: "Sales Report",
         reportTitle: "Sales Report",
         businessName: businessProfile?.businessName || userInfo?.orgName || "Cash Boi Trade Ltd",
         businessAddress: businessProfile?.address || "",
         businessPhone: businessProfile?.businessPhone1 || "",
+        businessLogoUrl,
+        startDate,
+        endDate,
       });
       showSuccessToast(`Successfully exported ${filtered.length} sales to Excel!`);
     } catch (e: any) {

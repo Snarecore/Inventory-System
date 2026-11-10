@@ -24,6 +24,7 @@ import { buildAccessUser } from "@/utils/access-user";
 import { postData } from "@/services/api-service";
 import { fetchSalesList, normalizeSaleRecord } from "@/pages/admin/trade/sales/hooks/useSalesQueries";
 import { useBusinessProfileQuery } from "@/hooks/useBusinessProfile";
+import { getFileViewUrl } from "@/services/file-upload-service";
 import { exportSalesToExcel } from "@/utils/excel-export";
 import { showSuccessToast, showErrorToast } from "@/utils/toast-utils";
 import { getUserInfo } from "@/utils/auth-storage";
@@ -252,19 +253,24 @@ const SalesReportPage: React.FC = () => {
   };
 
   // Direct Designed Excel Export
-  const handleExportAllSalesExcel = () => {
+  const handleExportAllSalesExcel = async () => {
     if (!transactions || transactions.length === 0) {
       showErrorToast("No sales records available to export");
       return;
     }
     try {
-      exportSalesToExcel(transactions, {
+      const logoKey = businessProfile?.businessLogo || businessProfile?.businessLogoRefNo || "";
+      const businessLogoUrl =
+        businessProfile?.businessLogoUrl || (logoKey ? getFileViewUrl(logoKey) : "");
+
+      await exportSalesToExcel(transactions, {
         fileName: `Sales_Report_${moment().format("YYYY-MM-DD")}.xlsx`,
         sheetName: "Sales Report",
         reportTitle: "Sales Report",
         businessName: businessProfile?.businessName || userInfo?.orgName || "Cash Boi Trade Ltd",
         businessAddress: businessProfile?.address || "",
         businessPhone: businessProfile?.businessPhone1 || "",
+        businessLogoUrl,
         startDate,
         endDate,
       });
@@ -387,6 +393,8 @@ const SalesReportPage: React.FC = () => {
           <SalesReportTable
             transactions={transactions}
             isLoading={isLoading}
+            startDate={startDate}
+            endDate={endDate}
             onView={handleView}
             onPrint={handlePrint}
           />
@@ -396,6 +404,8 @@ const SalesReportPage: React.FC = () => {
           <ProductSalesReportTable
             transactions={transactions}
             isLoading={isLoading}
+            startDate={startDate}
+            endDate={endDate}
           />
         )}
 
@@ -403,6 +413,8 @@ const SalesReportPage: React.FC = () => {
           <CustomerSalesReportTable
             transactions={transactions}
             isLoading={isLoading}
+            startDate={startDate}
+            endDate={endDate}
           />
         )}
       </div>

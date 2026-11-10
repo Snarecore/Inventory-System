@@ -17,6 +17,9 @@ import {
 import { formatMoney } from "@/utils/formatters";
 import { buildAndDownloadExcel } from "@/utils/excel-export";
 import { showSuccessToast, showErrorToast } from "@/utils/toast-utils";
+import { useBusinessProfileQuery } from "@/hooks/useBusinessProfile";
+import { getFileViewUrl } from "@/services/file-upload-service";
+import { getUserInfo } from "@/utils/auth-storage";
 import moment from "moment";
 import type { SaleItem } from "@/types";
 import { useDebounce } from "@/hooks/useDebounce";
@@ -24,6 +27,8 @@ import { useDebounce } from "@/hooks/useDebounce";
 interface ProductSalesReportTableProps {
   transactions: SaleItem[];
   isLoading?: boolean;
+  startDate?: string;
+  endDate?: string;
 }
 
 interface ProductSummary {
@@ -40,7 +45,11 @@ interface ProductSummary {
 export const ProductSalesReportTable: React.FC<ProductSalesReportTableProps> = ({
   transactions,
   isLoading,
+  startDate,
+  endDate,
 }) => {
+  const { data: businessProfile } = useBusinessProfileQuery();
+  const userInfo = getUserInfo();
   const [searchQuery, setSearchQuery] = useState("");
   const debouncedSearch = useDebounce(searchQuery, 250);
   const [sortBy, setSortBy] = useState<string>("revenue_desc");
@@ -173,10 +182,14 @@ export const ProductSalesReportTable: React.FC<ProductSalesReportTableProps> = (
       const totalRev = data.reduce((s, r) => s + (Number(r["Total Revenue (BDT)"]) || 0), 0);
       const totalDisc = data.reduce((s, r) => s + (Number(r["Discount (BDT)"]) || 0), 0);
 
+      const logoKey = businessProfile?.businessLogo || businessProfile?.businessLogoRefNo || "";
+      const businessLogoUrl =
+        businessProfile?.businessLogoUrl || (logoKey ? getFileViewUrl(logoKey) : "");
+
       const totalRow = {
-        SL: "TOTAL",
+        SL: `TOTAL SUMMARY (${data.length} Products)`,
         "Product Code": "",
-        "Product Name": `Total Products: ${data.length}`,
+        "Product Name": "",
         Unit: "",
         "Quantity Sold": totalQty,
         "Invoices Sold": "",
@@ -188,7 +201,16 @@ export const ProductSalesReportTable: React.FC<ProductSalesReportTableProps> = (
       await buildAndDownloadExcel(data, totalRow, {
         fileName: `Product_Sales_Report_${moment().format("YYYY-MM-DD")}.xlsx`,
         sheetName: "Product Sales",
-        reportTitle: "Product Sales Report",
+        reportTitle: "Product-Wise Sales Report",
+        businessName: businessProfile?.businessName || userInfo?.orgName || "Cash Boi Trade Ltd",
+        businessAddress: businessProfile?.address || "",
+        businessPhone: businessProfile?.businessPhone1 || "",
+        businessLogoUrl,
+        startDate,
+        endDate,
+        totalLabel: "Total Products",
+        totalSummarySpan: 4,
+        includeSignatures: true,
       });
       showSuccessToast("Product sales report exported successfully");
     } catch (e: any) {

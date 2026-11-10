@@ -67,18 +67,19 @@ export const PrintableSalesReportModal: React.FC<PrintableSalesReportModalProps>
   }, 0);
 
   // Excel Export Handler
-  const handleExportExcel = () => {
+  const handleExportExcel = async () => {
     if (!transactions || transactions.length === 0) {
       showErrorToast("No sales records available to export");
       return;
     }
     try {
-      exportSalesToExcel(transactions, {
+      await exportSalesToExcel(transactions, {
         fileName: `Sales_Report_${moment().format("YYYY-MM-DD")}.xlsx`,
         sheetName: "Sales Report",
         businessName,
         businessAddress,
         businessPhone,
+        businessLogoUrl,
         startDate,
         endDate,
       });

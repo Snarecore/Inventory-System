@@ -7,9 +7,14 @@ export interface GenericExcelExportOptions {
   businessName?: string;
   businessAddress?: string;
   businessPhone?: string;
+  businessLogoUrl?: string;
   reportTitle?: string;
   startDate?: string;
   endDate?: string;
+  themeColorHex?: string;
+  includeSignatures?: boolean;
+  totalLabel?: string;
+  totalSummarySpan?: number;
 }
 
 export type ExportPurchasesOptions = GenericExcelExportOptions;
@@ -39,9 +44,144 @@ const getItemsCount = (p: any): number => {
 };
 
 /**
- * Senior Developer Standard: Dynamic Async Excel Builder & File Generator.
- * SheetJS (281 KB) is lazy loaded on-demand so it doesn't burden initial page load.
- * Formats a designed corporate header (Company Name, Address, Report Title, Period) when provided.
+ * Resolves dynamic CSS variable color (e.g. --table-header-bg, --primary-color) into ExcelJS 8-char ARGB hex
+ */
+function resolveThemeArgb(customHex?: string): string {
+  const parseColor = (col: string): string | null => {
+    const c = col.trim();
+    if (c.startsWith("#")) {
+      let hex = c.slice(1).toUpperCase();
+      if (hex.length === 3) {
+        hex = hex.split("").map((ch) => ch + ch).join("");
+      }
+      if (hex.length === 6) return `FF${hex}`;
+      if (hex.length === 8) return hex;
+    } else if (c.startsWith("rgb")) {
+      const m = c.match(/\d+/g);
+      if (m && m.length >= 3) {
+        const r = Number(m[0]).toString(16).padStart(2, "0");
+        const g = Number(m[1]).toString(16).padStart(2, "0");
+        const b = Number(m[2]).toString(16).padStart(2, "0");
+        return `FF${r}${g}${b}`.toUpperCase();
+      }
+    }
+    return null;
+  };
+
+  if (customHex) {
+    const parsed = parseColor(customHex);
+    if (parsed) return parsed;
+  }
+
+  try {
+    if (typeof window !== "undefined" && typeof document !== "undefined") {
+      const style = getComputedStyle(document.documentElement);
+      const headerBg = style.getPropertyValue("--table-header-bg")?.trim();
+      const primary = style.getPropertyValue("--primary-color")?.trim();
+      const parsed =
+        (headerBg && parseColor(headerBg)) || (primary && parseColor(primary));
+      if (parsed) return parsed;
+    }
+  } catch {
+    // Ignore in SSR
+  }
+  return "FF009FE3"; // Default Brand Blue
+}
+
+/**
+ * Convert 1-based column number to Excel column letter (1 -> A, 14 -> N, 27 -> AA)
+ */
+function colToLetter(colIdx: number): string {
+  let temp = "";
+  let col = colIdx;
+  while (col > 0) {
+    const rem = (col - 1) % 26;
+    temp = String.fromCharCode(65 + rem) + temp;
+    col = Math.floor((col - 1) / 26);
+  }
+  return temp;
+}
+
+/**
+ * Format date string to DD-MMM-YYYY (e.g. 10-NOV-2026) matching PDF
+ */
+function formatReportDate(d?: string): string {
+  if (!d) return "";
+  const months = [
+    "JAN",
+    "FEB",
+    "MAR",
+    "APR",
+    "MAY",
+    "JUN",
+    "JUL",
+    "AUG",
+    "SEP",
+    "OCT",
+    "NOV",
+    "DEC",
+  ];
+  const parsed = new Date(d);
+  if (!isNaN(parsed.getTime())) {
+    const dd = String(parsed.getDate()).padStart(2, "0");
+    const mmm = months[parsed.getMonth()];
+    const yyyy = parsed.getFullYear();
+    return `${dd}-${mmm}-${yyyy}`;
+  }
+  return String(d).toUpperCase();
+}
+
+/**
+ * Gracefully fetches logo image and converts to base64 for embedding in Excel
+ */
+async function fetchLogoBase64(
+  url?: string
+): Promise<{ base64: string; extension: "png" | "jpeg" } | null> {
+  if (!url) return null;
+  try {
+    if (url.startsWith("data:image/")) {
+      const ext =
+        url.includes("image/jpeg") || url.includes("image/jpg")
+          ? "jpeg"
+          : "png";
+      const base64 = url.split(",")[1];
+      return base64 ? { base64, extension: ext } : null;
+    }
+
+    const res = await fetch(url, { mode: "cors" });
+    if (!res.ok) return null;
+    const blob = await res.blob();
+    const mime = blob.type.toLowerCase();
+    const extension: "png" | "jpeg" =
+      mime.includes("jpeg") || mime.includes("jpg") ? "jpeg" : "png";
+    return await new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const result = (reader.result as string) || "";
+        const base64 = result.split(",")[1];
+        resolve(base64 ? { base64, extension } : null);
+      };
+      reader.onerror = () => resolve(null);
+      reader.readAsDataURL(blob);
+    });
+  } catch (err) {
+    console.warn("Could not fetch logo for Excel export:", err);
+    return null;
+  }
+}
+
+/**
+ * Senior Developer Standard: Dynamic Async ExcelJS Builder & File Generator.
+ * Replicates the PDF report design in Excel with:
+ * - Embedded Company Business Logo (top-left)
+ * - Company Name, Address, Phone & Print Date (top-right)
+ * - Centered Report Title & Date Range Meta Row
+ * - Dynamic Global Primary Theme Color Table Header with white bold text
+ * - Clean grid borders across all cells
+ * - Auto number formatting (#,##0.00; - for zero)
+ * - Highlighted Total Summary Row (rendered once at the bottom)
+ * - Professional Signatures Row (Prepared By, Checked By, Authorized Signatory)
+ * - Landscape A4 Print Setup (fit-to-page width)
  */
 export async function buildAndDownloadExcel<T extends Record<string, any>>(
   rows: T[],
@@ -52,104 +192,565 @@ export async function buildAndDownloadExcel<T extends Record<string, any>>(
     throw new Error("No data available to export");
   }
 
-  const XLSX = await import("xlsx");
-  const fullData = totalRow && Object.keys(totalRow).length > 0 ? [...rows, totalRow] : rows;
-  const headers = Object.keys(rows[0]);
-
-  let worksheet: any;
-
-  if (options?.reportTitle || options?.businessName) {
-    const aoa: any[][] = [];
-
-    // Row 1: Company Name
-    if (options.businessName) {
-      aoa.push([options.businessName]);
-    }
-    // Row 2: Address & Phone
-    const contactLine = [
-      options.businessAddress,
-      options.businessPhone ? `Phone: ${options.businessPhone}` : "",
-    ]
-      .filter(Boolean)
-      .join(" | ");
-    if (contactLine) {
-      aoa.push([contactLine]);
-    }
-    // Row 3: Report Title
-    if (options.reportTitle) {
-      aoa.push([options.reportTitle.toUpperCase()]);
-    }
-    // Row 4: Period & Print Date
-    const metaParts: string[] = [];
-    if (options.startDate || options.endDate) {
-      metaParts.push(
-        `From Date: ${options.startDate || "ALL"}   To Date: ${options.endDate || "ALL"}`
-      );
-    }
-    metaParts.push(`Print Date: ${new Date().toISOString().substring(0, 10)}`);
-    aoa.push([metaParts.join("   |   ")]);
-
-    // Row 5: Blank spacer row
-    aoa.push([]);
-
-    // Row 6: Column Headers
-    aoa.push(headers);
-
-    // Rows 7+: Data Rows
-    rows.forEach((r) => {
-      aoa.push(headers.map((h) => r[h] ?? ""));
-    });
-
-    // Final Row: Total Summary Row
-    if (totalRow && Object.keys(totalRow).length > 0) {
-      aoa.push(headers.map((h) => totalRow[h] ?? ""));
-    }
-
-    worksheet = XLSX.utils.aoa_to_sheet(aoa);
-
-    // Merge header rows across columns for clean presentation
-    const maxCols = Math.max(headers.length - 1, 6);
-    const merges = [{ s: { r: 0, c: 0 }, e: { r: 0, c: maxCols } }];
-    let curR = 1;
-    if (contactLine) {
-      merges.push({ s: { r: curR, c: 0 }, e: { r: curR, c: maxCols } });
-      curR++;
-    }
-    if (options.reportTitle) {
-      merges.push({ s: { r: curR, c: 0 }, e: { r: curR, c: maxCols } });
-      curR++;
-    }
-    merges.push({ s: { r: curR, c: 0 }, e: { r: curR, c: maxCols } });
-    worksheet["!merges"] = merges;
-  } else {
-    worksheet = XLSX.utils.json_to_sheet(fullData, { header: headers });
+  // Lazy-load ExcelJS on-demand with resilient ESM/UMD resolution
+  const ExcelJSModule: any = await import("exceljs");
+  const WorkbookClass =
+    ExcelJSModule?.Workbook ||
+    ExcelJSModule?.default?.Workbook ||
+    ExcelJSModule?.default?.default?.Workbook ||
+    (typeof window !== "undefined" ? (window as any).ExcelJS?.Workbook : undefined);
+  if (!WorkbookClass) {
+    throw new Error("ExcelJS engine could not be initialized");
   }
 
-  // Auto-calculate column widths based on maximum content length
-  worksheet["!cols"] = headers.map((key) => {
-    let maxLen = key.length;
-    fullData.forEach((row: any) => {
-      const val = row[key];
-      if (val !== undefined && val !== null) {
-        const len = String(val).length;
-        if (len > maxLen) maxLen = len;
-      }
-    });
-    return { wch: Math.min(Math.max(maxLen + 3, 10), 40) };
+  const workbook = new WorkbookClass();
+  workbook.creator = options?.businessName || "Cash Boi";
+  workbook.created = new Date();
+
+  const rawSheetName = options?.sheetName || "Report";
+  const cleanSheetName =
+    rawSheetName.replace(/[\\/*?:[\]]/g, "").slice(0, 31) || "Report";
+  const worksheet = workbook.addWorksheet(cleanSheetName, {
+    views: [{ showGridLines: true }],
   });
 
-  const workbook = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(workbook, worksheet, options?.sheetName || "Report");
-  XLSX.writeFile(workbook, options?.fileName || "export.xlsx");
+  const headers = Object.keys(rows[0]);
+  const colCount = headers.length;
+  const lastColLetter = colToLetter(colCount);
+  const themeArgb = resolveThemeArgb(options?.themeColorHex);
+
+  const isCorporateReport = Boolean(
+    options?.reportTitle || options?.businessName || options?.businessLogoUrl
+  );
+
+  let currentExcelRow = 1;
+
+  // ── Corporate Header Block ──
+  if (isCorporateReport) {
+    const logoData = await fetchLogoBase64(options?.businessLogoUrl);
+    const startTextCol = logoData && colCount >= 4 ? 3 : 1;
+    const rightSplitCol = Math.max(startTextCol + 1, colCount - 2);
+
+    // Embed Logo image (spans approx A1:B3)
+    if (logoData) {
+      try {
+        const imageId = workbook.addImage({
+          base64: logoData.base64,
+          extension: logoData.extension,
+        });
+        worksheet.addImage(imageId, {
+          tl: { col: 0.15, row: 0.15 },
+          ext: { width: 95, height: 44 },
+          editAs: "oneCell",
+        });
+      } catch (err) {
+        console.warn("Error embedding image into worksheet:", err);
+      }
+    }
+
+    // Row 1: Company Name (Left) & Print Date (Right)
+    const row1 = worksheet.getRow(1);
+    row1.height = 20;
+
+    worksheet.mergeCells(
+      `${colToLetter(startTextCol)}1:${colToLetter(rightSplitCol - 1)}1`
+    );
+    const nameCell = worksheet.getCell(`${colToLetter(startTextCol)}1`);
+    nameCell.value = options?.businessName || "Cash Boi Trade Ltd";
+    nameCell.font = {
+      name: "Calibri",
+      size: 14,
+      bold: true,
+      color: { argb: "FF0F172A" },
+    };
+    nameCell.alignment = { vertical: "middle", horizontal: "left" };
+
+    worksheet.mergeCells(`${colToLetter(rightSplitCol)}1:${lastColLetter}1`);
+    const dateCell = worksheet.getCell(`${colToLetter(rightSplitCol)}1`);
+    dateCell.value = `Print Date: ${formatReportDate(new Date().toISOString())}`;
+    dateCell.font = {
+      name: "Calibri",
+      size: 10,
+      bold: true,
+      color: { argb: "FF0F172A" },
+    };
+    dateCell.alignment = { vertical: "middle", horizontal: "right" };
+
+    // Row 2: Company Address
+    const row2 = worksheet.getRow(2);
+    row2.height = 15;
+    if (options?.businessAddress) {
+      worksheet.mergeCells(`${colToLetter(startTextCol)}2:${lastColLetter}2`);
+      const addrCell = worksheet.getCell(`${colToLetter(startTextCol)}2`);
+      addrCell.value = options.businessAddress;
+      addrCell.font = {
+        name: "Calibri",
+        size: 9.5,
+        color: { argb: "FF475569" },
+      };
+      addrCell.alignment = { vertical: "middle", horizontal: "left" };
+    }
+
+    // Row 3: Company Phone
+    const row3 = worksheet.getRow(3);
+    row3.height = 15;
+    if (options?.businessPhone) {
+      worksheet.mergeCells(`${colToLetter(startTextCol)}3:${lastColLetter}3`);
+      const phoneCell = worksheet.getCell(`${colToLetter(startTextCol)}3`);
+      phoneCell.value = `Phone: ${options.businessPhone}`;
+      phoneCell.font = {
+        name: "Calibri",
+        size: 9.5,
+        color: { argb: "FF475569" },
+      };
+      phoneCell.alignment = { vertical: "middle", horizontal: "left" };
+    }
+
+    // Row 4: Centered Report Title
+    const row4 = worksheet.getRow(4);
+    row4.height = 22;
+    worksheet.mergeCells(`A4:${lastColLetter}4`);
+    const titleCell = worksheet.getCell("A4");
+    titleCell.value = (options?.reportTitle || "SALES REPORT").toUpperCase();
+    titleCell.font = {
+      name: "Calibri",
+      size: 13,
+      bold: true,
+      color: { argb: "FF0F172A" },
+    };
+    titleCell.alignment = { vertical: "middle", horizontal: "center" };
+
+    // Row 5: Date Period & Total Records Meta
+    const row5 = worksheet.getRow(5);
+    row5.height = 18;
+    const metaSplit = Math.max(2, Math.floor(colCount * 0.65));
+
+    const fromStr = options?.startDate
+      ? formatReportDate(options.startDate)
+      : "ALL";
+    const toStr = options?.endDate
+      ? formatReportDate(options.endDate)
+      : formatReportDate(new Date().toISOString());
+
+    worksheet.mergeCells(`A5:${colToLetter(metaSplit)}5`);
+    const metaLeft = worksheet.getCell("A5");
+    metaLeft.value = `From Date: ${fromStr}   To Date: ${toStr}`;
+    metaLeft.font = {
+      name: "Calibri",
+      size: 9.5,
+      bold: true,
+      color: { argb: "FF334155" },
+    };
+    metaLeft.alignment = { vertical: "middle", horizontal: "left" };
+
+    worksheet.mergeCells(`${colToLetter(metaSplit + 1)}5:${lastColLetter}5`);
+    const metaRight = worksheet.getCell(`${colToLetter(metaSplit + 1)}5`);
+    metaRight.value = `${options?.totalLabel || "Total Invoices"}: ${rows.length}`;
+    metaRight.font = {
+      name: "Calibri",
+      size: 9.5,
+      bold: true,
+      color: { argb: "FF334155" },
+    };
+    metaRight.alignment = { vertical: "middle", horizontal: "right" };
+
+    // Bottom border for meta row
+    for (let c = 1; c <= colCount; c++) {
+      const cell = worksheet.getCell(5, c);
+      cell.border = {
+        bottom: { style: "thin", color: { argb: "FFCBD5E1" } },
+      };
+    }
+
+    // Row 6: Blank compact spacer
+    const row6 = worksheet.getRow(6);
+    row6.height = 6;
+
+    currentExcelRow = 7;
+  }
+
+  // ── Column Alignment Classifier ──
+  const getColAlign = (h: string): "center" | "right" | "left" => {
+    const headerLower = h.toLowerCase();
+    if (
+      /^(sl|items|method|status|type|system default|has card|app access)$/i.test(
+        headerLower
+      ) ||
+      /date|phone/i.test(headerLower)
+    ) {
+      return "center";
+    }
+    if (
+      /(৳|bdt|amount|total|subtotal|discount|vat|paid|due|balance|salary|revenue|value|delivery|transport|share|quantity|qty)/i.test(
+        headerLower
+      )
+    ) {
+      return "right";
+    }
+    return "left";
+  };
+
+  const isMoneyCol = (h: string): boolean => {
+    return /(৳|bdt|amount|total|subtotal|discount|vat|paid|due|balance|salary|revenue|value|delivery|transport)/i.test(
+      h
+    );
+  };
+
+  // ── Table Header Row ──
+  const headerRow = worksheet.getRow(currentExcelRow);
+  headerRow.height = 24;
+
+  for (let c = 1; c <= colCount; c++) {
+    const h = headers[c - 1];
+    const cell = headerRow.getCell(c);
+    cell.value = h;
+    cell.fill = {
+      type: "pattern",
+      pattern: "solid",
+      fgColor: { argb: themeArgb },
+    };
+    cell.font = {
+      name: "Calibri",
+      size: 10,
+      bold: true,
+      color: { argb: "FFFFFFFF" },
+    };
+    cell.alignment = {
+      vertical: "middle",
+      horizontal: getColAlign(h),
+    };
+    cell.border = {
+      top: { style: "thin", color: { argb: "FF94A3B8" } },
+      left: { style: "thin", color: { argb: "FF94A3B8" } },
+      right: { style: "thin", color: { argb: "FF94A3B8" } },
+      bottom: { style: "medium", color: { argb: "FF475569" } },
+    };
+  }
+
+  currentExcelRow++;
+
+  // ── Table Data Rows ──
+  rows.forEach((rowObj: any, rIdx: number) => {
+    const dataRow = worksheet.getRow(currentExcelRow);
+    dataRow.height = 19;
+    const isEven = rIdx % 2 === 1;
+
+    for (let c = 1; c <= colCount; c++) {
+      const h = headers[c - 1];
+      const val = rowObj[h];
+      const cell = dataRow.getCell(c);
+      const align = getColAlign(h);
+
+      // Borders
+      cell.border = {
+        top: { style: "thin", color: { argb: "FFCBD5E1" } },
+        left: { style: "thin", color: { argb: "FFCBD5E1" } },
+        bottom: { style: "thin", color: { argb: "FFCBD5E1" } },
+        right: { style: "thin", color: { argb: "FFCBD5E1" } },
+      };
+
+      // Subtle zebra background
+      cell.fill = {
+        type: "pattern",
+        pattern: "solid",
+        fgColor: { argb: isEven ? "FFF8FAFC" : "FFFFFFFF" },
+      };
+
+      cell.alignment = {
+        vertical: "middle",
+        horizontal: align,
+      };
+
+      // Cell Value & Number Formatting
+      if (typeof val === "number") {
+        cell.value = val;
+        if (isMoneyCol(h)) {
+          cell.numFmt = '#,##0.00;-#,##0.00;"-"';
+        } else {
+          cell.numFmt = "#,##0";
+        }
+      } else {
+        cell.value = val !== undefined && val !== null ? String(val) : "";
+      }
+
+      // Semantic Font Styling (matching PDF)
+      let fontColor = "FF0F172A";
+      let isBold = false;
+
+      if (
+        h === "Order ID" ||
+        h.includes("Grand Total") ||
+        h === "Customer Name"
+      ) {
+        isBold = true;
+      }
+
+      if (h.includes("Paid")) {
+        isBold = true;
+        fontColor = "FF047857"; // Emerald Green
+      } else if (h.includes("Due")) {
+        isBold = true;
+        fontColor = Number(val) > 0 ? "FFB91C1C" : "FF64748B"; // Rose Red / Gray
+      } else if (h === "Status" || h === "Payment Status") {
+        isBold = true;
+        const statusUpper = String(val).toUpperCase();
+        if (statusUpper === "PAID") {
+          fontColor = "FF047857";
+          cell.fill = {
+            type: "pattern",
+            pattern: "solid",
+            fgColor: { argb: "FFECFDF5" },
+          };
+        } else if (statusUpper === "PARTIAL") {
+          fontColor = "FFD97706";
+          cell.fill = {
+            type: "pattern",
+            pattern: "solid",
+            fgColor: { argb: "FFFEF3C7" },
+          };
+        } else if (statusUpper === "DUE" || statusUpper === "PENDING") {
+          fontColor = "FFB91C1C";
+          cell.fill = {
+            type: "pattern",
+            pattern: "solid",
+            fgColor: { argb: "FFFEF2F2" },
+          };
+        }
+      }
+
+      cell.font = {
+        name: "Calibri",
+        size: 9.5,
+        bold: isBold,
+        color: { argb: fontColor },
+      };
+    }
+
+    currentExcelRow++;
+  });
+
+  // ── Total Summary Row (Appears Once on the Last Row) ──
+  if (totalRow && Object.keys(totalRow).length > 0) {
+    const summaryRow = worksheet.getRow(currentExcelRow);
+    summaryRow.height = 24;
+
+    const span = Math.min(options?.totalSummarySpan || 0, colCount);
+
+    for (let c = 1; c <= colCount; c++) {
+      const h = headers[c - 1];
+      const val = totalRow[h];
+      const cell = summaryRow.getCell(c);
+      const align = getColAlign(h);
+
+      if (typeof val === "number") {
+        cell.value = val;
+        if (isMoneyCol(h)) {
+          cell.numFmt = '#,##0.00;-#,##0.00;"-"';
+        } else {
+          cell.numFmt = "#,##0";
+        }
+      } else {
+        cell.value = val !== undefined && val !== null ? String(val) : "";
+      }
+
+      cell.fill = {
+        type: "pattern",
+        pattern: "solid",
+        fgColor: { argb: "FFF1F5F9" },
+      };
+
+      cell.border = {
+        top: { style: "medium", color: { argb: "FF64748B" } },
+        bottom: { style: "double", color: { argb: "FF475569" } },
+        left: { style: "thin", color: { argb: "FFCBD5E1" } },
+        right: { style: "thin", color: { argb: "FFCBD5E1" } },
+      };
+
+      cell.alignment = {
+        vertical: "middle",
+        horizontal: c <= span ? "center" : align,
+      };
+
+      let fontColor = "FF0F172A";
+      if (h.includes("Grand Total")) fontColor = themeArgb;
+      else if (h.includes("Paid")) fontColor = "FF047857";
+      else if (h.includes("Due")) fontColor = "FFB91C1C";
+
+      cell.font = {
+        name: "Calibri",
+        size: 10,
+        bold: true,
+        color: { argb: fontColor },
+      };
+    }
+
+    // Merge leading label columns (e.g. SL to Phone)
+    if (span > 1) {
+      worksheet.mergeCells(
+        `A${currentExcelRow}:${colToLetter(span)}${currentExcelRow}`
+      );
+    }
+
+    currentExcelRow++;
+  }
+
+  // ── Signatures Section ──
+  if (isCorporateReport || options?.includeSignatures) {
+    currentExcelRow += 2; // Blank spacing
+    const sigRow = worksheet.getRow(currentExcelRow);
+    sigRow.height = 20;
+
+    if (colCount >= 9) {
+      const b1End = Math.max(2, Math.floor(colCount * 0.28));
+      const b2Start = Math.floor(colCount * 0.42);
+      const b2End = Math.floor(colCount * 0.65);
+      const b3Start = Math.floor(colCount * 0.78);
+
+      // Block 1: Prepared By
+      worksheet.mergeCells(`B${currentExcelRow}:${colToLetter(b1End)}${currentExcelRow}`);
+      const sig1 = worksheet.getCell("B" + currentExcelRow);
+      sig1.value = "Prepared By";
+      sig1.font = { name: "Calibri", size: 9.5, color: { argb: "FF475569" } };
+      sig1.alignment = { vertical: "middle", horizontal: "center" };
+      for (let c = 2; c <= b1End; c++) {
+        worksheet.getCell(currentExcelRow, c).border = {
+          top: { style: "thin", color: { argb: "FF94A3B8" } },
+        };
+      }
+
+      // Block 2: Checked By
+      worksheet.mergeCells(
+        `${colToLetter(b2Start)}${currentExcelRow}:${colToLetter(b2End)}${currentExcelRow}`
+      );
+      const sig2 = worksheet.getCell(`${colToLetter(b2Start)}${currentExcelRow}`);
+      sig2.value = "Checked By";
+      sig2.font = { name: "Calibri", size: 9.5, color: { argb: "FF475569" } };
+      sig2.alignment = { vertical: "middle", horizontal: "center" };
+      for (let c = b2Start; c <= b2End; c++) {
+        worksheet.getCell(currentExcelRow, c).border = {
+          top: { style: "thin", color: { argb: "FF94A3B8" } },
+        };
+      }
+
+      // Block 3: Authorized Signatory
+      worksheet.mergeCells(
+        `${colToLetter(b3Start)}${currentExcelRow}:${lastColLetter}${currentExcelRow}`
+      );
+      const sig3 = worksheet.getCell(`${colToLetter(b3Start)}${currentExcelRow}`);
+      sig3.value = "Authorized Signatory";
+      sig3.font = { name: "Calibri", size: 9.5, color: { argb: "FF475569" } };
+      sig3.alignment = { vertical: "middle", horizontal: "center" };
+      for (let c = b3Start; c <= colCount; c++) {
+        worksheet.getCell(currentExcelRow, c).border = {
+          top: { style: "thin", color: { argb: "FF94A3B8" } },
+        };
+      }
+    } else if (colCount >= 4) {
+      // Compact 2-signature layout for narrower tables
+      worksheet.mergeCells(`A${currentExcelRow}:B${currentExcelRow}`);
+      const sig1 = worksheet.getCell(`A${currentExcelRow}`);
+      sig1.value = "Prepared By";
+      sig1.font = { name: "Calibri", size: 9.5, color: { argb: "FF475569" } };
+      sig1.alignment = { vertical: "middle", horizontal: "center" };
+      for (let c = 1; c <= 2; c++) {
+        worksheet.getCell(currentExcelRow, c).border = {
+          top: { style: "thin", color: { argb: "FF94A3B8" } },
+        };
+      }
+
+      worksheet.mergeCells(
+        `${colToLetter(colCount - 1)}${currentExcelRow}:${lastColLetter}${currentExcelRow}`
+      );
+      const sig2 = worksheet.getCell(
+        `${colToLetter(colCount - 1)}${currentExcelRow}`
+      );
+      sig2.value = "Authorized Signatory";
+      sig2.font = { name: "Calibri", size: 9.5, color: { argb: "FF475569" } };
+      sig2.alignment = { vertical: "middle", horizontal: "center" };
+      for (let c = colCount - 1; c <= colCount; c++) {
+        worksheet.getCell(currentExcelRow, c).border = {
+          top: { style: "thin", color: { argb: "FF94A3B8" } },
+        };
+      }
+    }
+  }
+
+  // ── Auto Calculate Column Widths Safely (Preserves Merged Header Cells) ──
+  const spanCount = options?.totalSummarySpan || 0;
+  headers.forEach((key, idx) => {
+    let maxLen = key.length;
+    rows.forEach((r: any) => {
+      const v = r[key];
+      if (v !== undefined && v !== null) {
+        const l = String(v).length;
+        if (l > maxLen) maxLen = l;
+      }
+    });
+
+    if (
+      totalRow &&
+      idx >= spanCount &&
+      totalRow[key] !== undefined &&
+      totalRow[key] !== null
+    ) {
+      const l = String(totalRow[key]).length + 2;
+      if (l > maxLen) maxLen = l;
+    }
+
+    const isMoney = isMoneyCol(key);
+    let minW = 10;
+    if (key === "SL") minW = 6;
+    else if (key.includes("Order")) minW = 16;
+    else if (key.includes("Date")) minW = 14;
+    else if (key.includes("Customer") || key.includes("Name")) minW = 22;
+    else if (key.includes("Phone")) minW = 15;
+    else if (isMoney) minW = 15;
+
+    worksheet.getColumn(idx + 1).width = Math.min(
+      Math.max(maxLen + (isMoney ? 4 : 3), minW),
+      38
+    );
+  });
+
+  // ── Page Setup for Printing from Excel ──
+  worksheet.pageSetup = {
+    orientation: colCount > 6 ? "landscape" : "portrait",
+    paperSize: 9, // A4
+    fitToPage: true,
+    fitToWidth: 1,
+    fitToHeight: 0,
+    margins: {
+      left: 0.3,
+      right: 0.3,
+      top: 0.4,
+      bottom: 0.4,
+      header: 0.2,
+      footer: 0.2,
+    },
+  };
+
+  // ── Trigger Download in Browser ──
+  const buffer = await workbook.xlsx.writeBuffer();
+  const blob = new Blob([buffer], {
+    type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  });
+  const url = window.URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = options?.fileName || "export.xlsx";
+  document.body.appendChild(anchor);
+  anchor.click();
+  document.body.removeChild(anchor);
+  window.URL.revokeObjectURL(url);
 }
 
 /**
  * Enterprise standard Excel export for Purchases
  */
-export function exportPurchasesToExcel(
+export async function exportPurchasesToExcel(
   purchases: PurchaseItem[],
   options?: ExportPurchasesOptions
-): void {
+): Promise<void> {
   if (!purchases || purchases.length === 0) {
     throw new Error("No purchase data available to export");
   }
@@ -231,100 +832,117 @@ export function exportPurchasesToExcel(
     Notes: "",
   };
 
-  buildAndDownloadExcel(rows, totalRow, { fileName, sheetName });
+  await buildAndDownloadExcel(rows, totalRow, { fileName, sheetName });
 }
 
 /**
- * Enterprise standard Excel export for Sales Invoices / Orders
+ * Enterprise standard Excel export for Sales Invoices / Orders.
+ * Matches the PDF report design identically with:
+ * - 14 standard columns matching PDF
+ * - SL, Order ID, Date, Customer Name, Phone, Items, Subtotal (৳), Discount (৳), VAT (৳), Grand Total (৳), Paid (৳), Due (৳), Method, Status
+ * - TOTAL SUMMARY row spanning first 5 columns with full totals
+ * - Business Logo, Theme Color headers, and Signatures
  */
-export function exportSalesToExcel(
+export async function exportSalesToExcel(
   sales: any[],
   options?: ExportSalesOptions
-): void {
+): Promise<void> {
   if (!sales || sales.length === 0) {
     throw new Error("No sales data available to export");
   }
 
   const todayStr = new Date().toISOString().substring(0, 10);
   const fileName = options?.fileName || `Sales_Report_${todayStr}.xlsx`;
-  const sheetName = options?.sheetName || "Sales";
+  const sheetName = options?.sheetName || "Sales Report";
 
   let sumGrandTotal = 0;
   let sumPaid = 0;
   let sumDue = 0;
+  let sumSubtotal = 0;
+  let sumDiscount = 0;
+  let sumVat = 0;
   let sumItems = 0;
 
   const rows = sales.map((item: any, index: number) => {
-    const grandTotal = Number(item.grandTotal ?? item.totalAmount ?? 0);
-    const paidAmount = Number(item.paidAmount ?? 0);
-    const dueAmount = Number(item.dueAmount ?? 0);
-    const itemsCount = getItemsCount(item);
-    const discount = Number(item.discount ?? 0);
+    const gt = Number(item.grandTotal ?? item.grand_total ?? item.totalAmount ?? 0);
+    const paid = Number(item.paidAmount ?? item.paid_amount ?? 0);
+    const due = Number(item.dueAmount ?? item.due_amount ?? Math.max(0, gt - paid));
+    const sub = Number(item.totalAmount ?? item.total_amount ?? gt);
+    const disc = Number(item.discount ?? 0);
     const vat = Number(item.vat ?? 0);
-    const delivery = Number(item.deliveryCharge ?? 0);
+    const pType = String(item.paymentType || item.payment_type || "CASH").toUpperCase();
 
-    sumGrandTotal += grandTotal;
-    sumPaid += paidAmount;
-    sumDue += dueAmount;
+    const details =
+      item.salesDetails || item.saleDetails || item.details || item.items || [];
+    const itemsCount =
+      Array.isArray(details) && details.length > 0
+        ? details.length
+        : Number(item.itemsCount || getItemsCount(item) || 1);
+
+    const status =
+      due <= 0 && gt > 0 ? "PAID" : due > 0 && paid > 0 ? "PARTIAL" : "DUE";
+
+    const dateStr =
+      item.salesDate || item.date
+        ? formatReportDate(item.salesDate || item.date)
+        : "-";
+
+    sumGrandTotal += gt;
+    sumPaid += paid;
+    sumDue += due;
+    sumSubtotal += sub;
+    sumDiscount += disc;
+    sumVat += vat;
     sumItems += itemsCount;
-
-    let status = String(item.status || "").toUpperCase();
-    if (!status) {
-      if (dueAmount <= 0) status = "PAID";
-      else if (paidAmount > 0) status = "PARTIAL";
-      else status = "PENDING";
-    }
 
     return {
       SL: index + 1,
-      "Order ID": item.orderNo || "",
-      "Sales Date": item.salesDate || todayStr,
-      "Customer Name": item.customerName || "Walk-in Customer",
-      "Customer Phone": item.customerPhone || "-",
-      "Customer Address": item.customerAddress || "-",
-      "Items Count": itemsCount,
-      "Subtotal (BDT)": Number((item.totalAmount ?? grandTotal).toFixed(2)),
-      "Discount (BDT)": discount,
-      "VAT (BDT)": vat,
-      "Delivery (BDT)": delivery,
-      "Grand Total (BDT)": grandTotal,
-      "Paid Amount (BDT)": paidAmount,
-      "Due Amount (BDT)": dueAmount,
-      "Payment Type": (item.paymentType || "CASH").toUpperCase(),
+      "Order ID": item.orderNo || item.invoiceNo || `ORD-${item.id || index + 1}`,
+      Date: dateStr,
+      "Customer Name": item.customerName || item.customer_name || "Walk-in Customer",
+      Phone: item.customerPhone || item.customer_phone || "-",
+      Items: itemsCount,
+      "Subtotal (৳)": sub,
+      "Discount (৳)": disc,
+      "VAT (৳)": vat,
+      "Grand Total (৳)": gt,
+      "Paid (৳)": paid,
+      "Due (৳)": due,
+      Method: pType,
       Status: status,
-      Notes: item.note || "",
     };
   });
 
   const totalRow = {
-    SL: "TOTAL",
-    "Order ID": `Total Invoices: ${sales.length}`,
-    "Sales Date": "",
+    SL: `TOTAL SUMMARY (${sales.length} Invoices)`,
+    "Order ID": "",
+    Date: "",
     "Customer Name": "",
-    "Customer Phone": "",
-    "Customer Address": "",
-    "Items Count": sumItems,
-    "Subtotal (BDT)": "",
-    "Discount (BDT)": "",
-    "VAT (BDT)": "",
-    "Delivery (BDT)": "",
-    "Grand Total (BDT)": Number(sumGrandTotal.toFixed(2)),
-    "Paid Amount (BDT)": Number(sumPaid.toFixed(2)),
-    "Due Amount (BDT)": Number(sumDue.toFixed(2)),
-    "Payment Type": "",
+    Phone: "",
+    Items: sumItems,
+    "Subtotal (৳)": Number(sumSubtotal.toFixed(2)),
+    "Discount (৳)": Number(sumDiscount.toFixed(2)),
+    "VAT (৳)": Number(sumVat.toFixed(2)),
+    "Grand Total (৳)": Number(sumGrandTotal.toFixed(2)),
+    "Paid (৳)": Number(sumPaid.toFixed(2)),
+    "Due (৳)": Number(sumDue.toFixed(2)),
+    Method: "",
     Status: "",
-    Notes: "",
   };
 
-  buildAndDownloadExcel(rows, totalRow, {
+  await buildAndDownloadExcel(rows, totalRow, {
     fileName,
     sheetName,
     reportTitle: options?.reportTitle || "Sales Report",
     businessName: options?.businessName,
     businessAddress: options?.businessAddress,
     businessPhone: options?.businessPhone,
+    businessLogoUrl: options?.businessLogoUrl,
     startDate: options?.startDate,
     endDate: options?.endDate,
+    totalLabel: "Total Invoices",
+    totalSummarySpan: 5, // Merges SL through Phone (5 columns)
+    includeSignatures: true,
   });
 }
 

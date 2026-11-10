@@ -17,6 +17,9 @@ import {
 import { formatMoney } from "@/utils/formatters";
 import { buildAndDownloadExcel } from "@/utils/excel-export";
 import { showSuccessToast, showErrorToast } from "@/utils/toast-utils";
+import { useBusinessProfileQuery } from "@/hooks/useBusinessProfile";
+import { getFileViewUrl } from "@/services/file-upload-service";
+import { getUserInfo } from "@/utils/auth-storage";
 import moment from "moment";
 import type { SaleItem } from "@/types";
 import { useDebounce } from "@/hooks/useDebounce";
@@ -24,6 +27,8 @@ import { useDebounce } from "@/hooks/useDebounce";
 interface CustomerSalesReportTableProps {
   transactions: SaleItem[];
   isLoading?: boolean;
+  startDate?: string;
+  endDate?: string;
 }
 
 interface CustomerSummary {
@@ -41,7 +46,11 @@ interface CustomerSummary {
 export const CustomerSalesReportTable: React.FC<CustomerSalesReportTableProps> = ({
   transactions,
   isLoading,
+  startDate,
+  endDate,
 }) => {
+  const { data: businessProfile } = useBusinessProfileQuery();
+  const userInfo = getUserInfo();
   const [searchQuery, setSearchQuery] = useState("");
   const debouncedSearch = useDebounce(searchQuery, 250);
   const [statusFilter, setStatusFilter] = useState<string>("all");
@@ -170,9 +179,13 @@ export const CustomerSalesReportTable: React.FC<CustomerSalesReportTableProps> =
       const totalPaid = data.reduce((s, r) => s + (Number(r["Total Paid (BDT)"]) || 0), 0);
       const totalDue = data.reduce((s, r) => s + (Number(r["Outstanding Due (BDT)"]) || 0), 0);
 
+      const logoKey = businessProfile?.businessLogo || businessProfile?.businessLogoRefNo || "";
+      const businessLogoUrl =
+        businessProfile?.businessLogoUrl || (logoKey ? getFileViewUrl(logoKey) : "");
+
       const totalRow = {
-        SL: "TOTAL",
-        "Customer Name": `Total Customers: ${data.length}`,
+        SL: `TOTAL SUMMARY (${data.length} Customers)`,
+        "Customer Name": "",
         Phone: "",
         Address: "",
         "Total Orders": "",
@@ -186,7 +199,16 @@ export const CustomerSalesReportTable: React.FC<CustomerSalesReportTableProps> =
       await buildAndDownloadExcel(data, totalRow, {
         fileName: `Customer_Sales_Report_${moment().format("YYYY-MM-DD")}.xlsx`,
         sheetName: "Customer Sales",
-        reportTitle: "Customer Sales Report",
+        reportTitle: "Customer-Wise Sales Report",
+        businessName: businessProfile?.businessName || userInfo?.orgName || "Cash Boi Trade Ltd",
+        businessAddress: businessProfile?.address || "",
+        businessPhone: businessProfile?.businessPhone1 || "",
+        businessLogoUrl,
+        startDate,
+        endDate,
+        totalLabel: "Total Customers",
+        totalSummarySpan: 4,
+        includeSignatures: true,
       });
       showSuccessToast("Customer sales report exported successfully");
     } catch (e: any) {
