@@ -487,23 +487,28 @@ export async function buildAndDownloadExcel<T extends Record<string, any>>(
         isBold = true;
       }
 
-      if (h.includes("Paid")) {
+      if (h.includes("Paid") || h.includes("Deposit")) {
         isBold = true;
         fontColor = "FF047857"; // Emerald Green
-      } else if (h.includes("Due")) {
+      } else if (h.includes("Due") || h.includes("Expense")) {
         isBold = true;
-        fontColor = Number(val) > 0 ? "FFB91C1C" : "FF64748B"; // Rose Red / Gray
+        fontColor = Number(val) !== 0 ? "FFB91C1C" : "FF64748B"; // Rose Red / Gray
+      } else if (h.includes("Variance")) {
+        isBold = true;
+        const nVal = Number(val);
+        fontColor =
+          nVal === 0 ? "FF047857" : nVal < 0 ? "FFB91C1C" : "FFD97706";
       } else if (h === "Status" || h === "Payment Status") {
         isBold = true;
         const statusUpper = String(val).toUpperCase();
-        if (statusUpper === "PAID") {
+        if (statusUpper === "PAID" || statusUpper === "CLOSED") {
           fontColor = "FF047857";
           cell.fill = {
             type: "pattern",
             pattern: "solid",
             fgColor: { argb: "FFECFDF5" },
           };
-        } else if (statusUpper === "PARTIAL") {
+        } else if (statusUpper === "PARTIAL" || statusUpper === "OPEN") {
           fontColor = "FFD97706";
           cell.fill = {
             type: "pattern",
@@ -574,9 +579,14 @@ export async function buildAndDownloadExcel<T extends Record<string, any>>(
       };
 
       let fontColor = "FF0F172A";
-      if (h.includes("Grand Total")) fontColor = themeArgb;
-      else if (h.includes("Paid")) fontColor = "FF047857";
-      else if (h.includes("Due")) fontColor = "FFB91C1C";
+      if (h.includes("Grand Total") || h.includes("Expected")) fontColor = themeArgb;
+      else if (h.includes("Paid") || h.includes("Deposit")) fontColor = "FF047857";
+      else if (h.includes("Due") || h.includes("Expense")) fontColor = "FFB91C1C";
+      else if (h.includes("Variance")) {
+        const nVal = Number(val);
+        fontColor =
+          nVal === 0 ? "FF047857" : nVal < 0 ? "FFB91C1C" : "FFD97706";
+      }
 
       cell.font = {
         name: "Calibri",

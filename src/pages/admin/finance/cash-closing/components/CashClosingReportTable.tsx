@@ -24,8 +24,14 @@ import {
   FaCalendarAlt,
 } from "react-icons/fa";
 import { formatMoney } from "@/utils/formatters";
-import { buildAndDownloadExcel } from "@/utils/excel-export";
 import { showSuccessToast, showErrorToast } from "@/utils/toast-utils";
+import { useReportCompanyMeta } from "@/utils/trade-report-helpers";
+import {
+  CASH_CLOSING_MONTH_OPTIONS,
+  CASH_CLOSING_YEAR_OPTIONS,
+  getPeriodDateBounds,
+  exportCashClosingReportExcel,
+} from "@/pages/admin/finance/cash-closing-report/utils/cash-closing-report-helpers";
 import type { CashClosingData, CashClosingReportSummary } from "@/types";
 
 interface CashClosingReportTableProps {
@@ -47,25 +53,6 @@ const formatDisplayDate = (val?: string | null): string => {
   return m.isValid() ? m.format("DD MMM, YYYY") : val;
 };
 
-// Month options (1-12)
-const monthOptions = [
-  { value: "01", label: "January" },
-  { value: "02", label: "February" },
-  { value: "03", label: "March" },
-  { value: "04", label: "April" },
-  { value: "05", label: "May" },
-  { value: "06", label: "June" },
-  { value: "07", label: "July" },
-  { value: "08", label: "August" },
-  { value: "09", label: "September" },
-  { value: "10", label: "October" },
-  { value: "11", label: "November" },
-  { value: "12", label: "December" },
-];
-
-// Year options (2020 through 2035)
-const yearOptions = Array.from({ length: 16 }, (_, i) => String(2020 + i));
-
 export const CashClosingReportTable: React.FC<CashClosingReportTableProps> = ({
   history,
   summary,
@@ -77,6 +64,8 @@ export const CashClosingReportTable: React.FC<CashClosingReportTableProps> = ({
   selectedYear,
   setSelectedYear,
 }) => {
+  const { startDate, endDate } = getPeriodDateBounds(selectedMonth, selectedYear);
+  const companyMeta = useReportCompanyMeta(startDate, endDate);
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
@@ -108,35 +97,12 @@ export const CashClosingReportTable: React.FC<CashClosingReportTableProps> = ({
   // Export to Excel
   const handleExport = async () => {
     const dataToExport = filteredList.length > 0 ? filteredList : history;
-    if (!dataToExport || dataToExport.length === 0) {
-      showErrorToast("No cash closing history records available to export");
-      return;
-    }
-
     try {
-      const rows = dataToExport.map((item, index) => {
-        const rowDate = (item as any).date || item.closingDate || "";
-        return {
-          "SL": index + 1,
-          "Closing Date": formatDisplayDate(rowDate),
-          "Opening Cash": Number(item.openingCash || 0),
-          "Deposit": Number(item.todayDeposit || 0),
-          "Expense": Number(item.todayExpense || 0),
-          "Expected Cash": Number(item.expectedCash || 0),
-          "Counted Cash": Number(item.countedCash ?? (item as any).actualCash ?? 0),
-          "Variance / Diff": Number(item.differenceAmount ?? (item as any).difference ?? 0),
-          "Status": item.status,
-          "Reason": item.differenceReason || "N/A",
-          "Remarks": item.remarks || "—",
-        };
+      const count = await exportCashClosingReportExcel(dataToExport, companyMeta, {
+        selectedMonth,
+        selectedYear,
       });
-
-      await buildAndDownloadExcel(
-        rows,
-        `Cash_Closing_Report_${selectedYear}_${selectedMonth}`,
-        "Cash Closing History"
-      );
-      showSuccessToast(`Exported ${dataToExport.length} cash closing records!`);
+      showSuccessToast(`Exported ${count} cash closing records!`);
     } catch (err: any) {
       showErrorToast(err?.message || "Failed to export Excel file");
     }
@@ -227,7 +193,7 @@ export const CashClosingReportTable: React.FC<CashClosingReportTableProps> = ({
                   }}
                   className="bg-transparent text-xs font-semibold text-[var(--ui-text)] focus:outline-none cursor-pointer"
                 >
-                  {monthOptions.map((m) => (
+                  {CASH_CLOSING_MONTH_OPTIONS.map((m) => (
                     <option key={m.value} value={m.value}>
                       {m.label}
                     </option>
@@ -245,7 +211,7 @@ export const CashClosingReportTable: React.FC<CashClosingReportTableProps> = ({
                   }}
                   className="bg-transparent text-xs font-semibold text-[var(--ui-text)] focus:outline-none cursor-pointer"
                 >
-                  {yearOptions.map((y) => (
+                  {CASH_CLOSING_YEAR_OPTIONS.map((y) => (
                     <option key={y} value={y}>
                       {y}
                     </option>

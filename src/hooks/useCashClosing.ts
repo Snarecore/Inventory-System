@@ -29,18 +29,36 @@ export function useCashClosingQuery(closingDate?: string) {
 }
 
 /**
- * Hook to fetch reconciliation history & summary report
+ * Hook to fetch reconciliation history & summary report (by month/year or startDate/endDate range)
  */
 export function useCashClosingReportQuery(params?: {
   month?: string;
   year?: string;
+  startDate?: string;
+  endDate?: string;
 }) {
+  const hasDateRange =
+    params?.startDate !== undefined || params?.endDate !== undefined;
   const currentMonth = params?.month || moment().format("MM");
   const currentYear = params?.year || moment().format("YYYY");
 
+  const queryKey = hasDateRange
+    ? [
+        cashClosingReportQueryKey,
+        "range",
+        params?.startDate || "",
+        params?.endDate || "",
+      ]
+    : [cashClosingReportQueryKey, currentMonth, currentYear];
+
   return useQuery<CashClosingReportData | null>({
-    queryKey: [cashClosingReportQueryKey, currentMonth, currentYear],
-    queryFn: () => fetchCashClosingReport(params),
+    queryKey,
+    queryFn: () =>
+      fetchCashClosingReport(
+        hasDateRange
+          ? { startDate: params?.startDate, endDate: params?.endDate }
+          : { month: currentMonth, year: currentYear }
+      ),
     staleTime: 0,
     refetchOnWindowFocus: false,
   });

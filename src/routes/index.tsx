@@ -57,6 +57,7 @@ const FundTransferPage = React.lazy(() => import('@/pages/admin/finance/fund-tra
 const KhatabookPage = React.lazy(() => import('@/pages/admin/khatabook'))
 const StockAdjustmentPage = React.lazy(() => import('@/pages/admin/inventory/stock-adjustment'))
 const CashClosingPage = React.lazy(() => import('@/pages/admin/finance/cash-closing'))
+const CashClosingReport = React.lazy(() => import('@/pages/admin/finance/cash-closing-report'))
 const OpeningCashBalancePage = React.lazy(() => import('@/pages/admin/finance/opening-cash-balance'))
 const PackagesPage = React.lazy(() => import('@/pages/admin/packages'))
 const BranchList = React.lazy(() => import('@/pages/admin/branch/BranchList'))
@@ -226,6 +227,14 @@ export const router = createBrowserRouter([
   {
     path: '/purchases/reports',
     element: <Navigate to="/admin/reports/purchase" replace />,
+  },
+  {
+    path: '/reports/cash-closing',
+    element: <Navigate to="/admin/reports/cash-closing" replace />,
+  },
+  {
+    path: '/cash-closing-report',
+    element: <Navigate to="/admin/reports/cash-closing" replace />,
   },
   {
     path: '/sales/collection',
@@ -536,6 +545,14 @@ export const router = createBrowserRouter([
       {
         path: 'reports/purchase',
         element: withPermission(PurchaseReport, 'reports'),
+      },
+      {
+        path: 'cash-closing-report',
+        element: withPermission(CashClosingReport, 'reports'),
+      },
+      {
+        path: 'reports/cash-closing',
+        element: withPermission(CashClosingReport, 'reports'),
       },
       {
         path: 'sales-return',
