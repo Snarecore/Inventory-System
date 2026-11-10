@@ -49,7 +49,24 @@ export const DateRangePicker: React.FC<DateRangePickerProps> = ({
   error,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
+  const [autoAlign, setAutoAlign] = useState<"left" | "right">(align);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  const handleToggleOpen = () => {
+    if (disabled) return;
+    if (!isOpen && containerRef.current && typeof window !== "undefined") {
+      const rect = containerRef.current.getBoundingClientRect();
+      const dropdownWidth = 288 + 12; // w-72 + breathing room
+      if (align === "left" && window.innerWidth - rect.left < dropdownWidth && rect.right >= dropdownWidth) {
+        setAutoAlign("right");
+      } else if (align === "right" && rect.right < dropdownWidth && window.innerWidth - rect.left >= dropdownWidth) {
+        setAutoAlign("left");
+      } else {
+        setAutoAlign(align);
+      }
+    }
+    setIsOpen((prev) => !prev);
+  };
 
   // Range state
   const [rangeStart, setRangeStart] = useState<string>(() => {
@@ -319,7 +336,7 @@ export const DateRangePicker: React.FC<DateRangePickerProps> = ({
       <button
         type="button"
         disabled={disabled}
-        onClick={() => !disabled && setIsOpen(!isOpen)}
+        onClick={handleToggleOpen}
         className={`ui-control flex w-full items-center justify-between cursor-pointer select-none ${
           sizeClasses[size] || ""
         } ${
@@ -349,8 +366,8 @@ export const DateRangePicker: React.FC<DateRangePickerProps> = ({
       {isOpen && (
         <div
           className={`absolute ${
-            align === "right" ? "right-0" : "left-0"
-          } top-full mt-1 w-72 bg-[var(--ui-surface)] rounded-xl shadow-2xl border border-[var(--ui-border)] p-3 z-[99999] animate-in fade-in zoom-in-95 duration-150 select-none`}
+            autoAlign === "right" ? "right-0" : "left-0"
+          } top-full mt-1 w-72 max-w-[calc(100vw-20px)] bg-[var(--ui-surface)] rounded-xl shadow-2xl border border-[var(--ui-border)] p-3 z-[99999] animate-in fade-in zoom-in-95 duration-150 select-none`}
         >
           {/* Quick Filters Header */}
           <div className="flex items-center justify-between mb-1.5 px-0.5">

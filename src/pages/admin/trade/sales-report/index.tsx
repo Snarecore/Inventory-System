@@ -259,6 +259,7 @@ const SalesReportPage: React.FC = () => {
                 if (e) setCustomEndDate(e);
                 if (label) setDateRange(label);
               }}
+              align="right"
               size="sm"
             />
           </div>
