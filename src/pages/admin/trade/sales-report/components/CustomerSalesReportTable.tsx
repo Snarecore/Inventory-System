@@ -288,7 +288,7 @@ export const CustomerSalesReportTable: React.FC<CustomerSalesReportTableProps> =
       {/* Table */}
       <TableScroll>
         {isLoading ? (
-          <TableSkeleton columnCount={8} rowCount={8} />
+          <TableSkeleton columnCount={10} rowCount={8} />
         ) : paginated.length === 0 ? (
           <EmptyState
             title="No Customers Found"
@@ -298,7 +298,9 @@ export const CustomerSalesReportTable: React.FC<CustomerSalesReportTableProps> =
           <Table>
             <TableHead>
               <TableTh align="center" width={40}>SL</TableTh>
-              <TableTh>Customer Name & Details</TableTh>
+              <TableTh>Customer Name</TableTh>
+              <TableTh width={130}>Phone</TableTh>
+              <TableTh width={180}>Address</TableTh>
               <TableTh align="center" width={90}>Orders</TableTh>
               <TableTh align="right" width={130}>Gross Billed (৳)</TableTh>
               <TableTh align="right" width={130}>Total Paid (৳)</TableTh>
@@ -318,22 +320,18 @@ export const CustomerSalesReportTable: React.FC<CustomerSalesReportTableProps> =
                     <td className="py-2.5 px-3 text-center text-[var(--ui-text)] font-semibold text-xs">
                       {(currentPage - 1) * pageSize + idx + 1}
                     </td>
-                    <td className="py-2.5 px-3">
-                      <div className="font-semibold text-[var(--ui-text)] text-xs">
-                        {c.customerName}
-                      </div>
-                      <div className="text-[11px] text-[var(--ui-text-muted)] mt-0.5 flex flex-wrap items-center gap-2">
-                        {c.customerPhone && (
-                          <span className="text-[var(--ui-text-muted)]">
-                            {c.customerPhone}
-                          </span>
-                        )}
-                        {c.customerAddress && (
-                          <span className="text-[var(--ui-text-subtle)] truncate max-w-xs">
-                            • {c.customerAddress}
-                          </span>
-                        )}
-                      </div>
+                    <td className="py-2.5 px-3 font-medium text-[var(--ui-text)] text-xs whitespace-nowrap">
+                      {c.customerName}
+                    </td>
+                    <td className="py-2.5 px-3 text-xs text-[var(--ui-text)] whitespace-nowrap">
+                      {c.customerPhone || (
+                        <span className="text-[var(--ui-text-subtle)] font-normal">N/A</span>
+                      )}
+                    </td>
+                    <td className="py-2.5 px-3 text-xs text-[var(--ui-text-muted)] max-w-[200px] truncate">
+                      {c.customerAddress || (
+                        <span className="text-[var(--ui-text-subtle)] font-normal">N/A</span>
+                      )}
                     </td>
                     <td className="py-2.5 px-3 text-center text-xs text-[var(--ui-text)]">
                       {c.invoicesCount}
