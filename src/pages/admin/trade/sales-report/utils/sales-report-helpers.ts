@@ -400,7 +400,7 @@ export function downloadTabReportPdf(
     theadHtml = `
       <tr>
         <th class="text-center" style="width: 32px;">SL</th>
-        <th>Customer Name</th>
+        <th style="width: 32px;">Customer Name</th>
         <th class="text-center">Phone</th>
         <th>Address</th>
         <th class="text-center">Orders</th>
