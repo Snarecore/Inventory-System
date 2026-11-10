@@ -4,7 +4,6 @@ import PageHeader from "@/components/page-header/PageHeader";
 import {
   Button,
   RefreshButton,
-  StatsCards,
   Search,
   EmptyState,
   TableSkeleton,
@@ -28,13 +27,11 @@ import { getActiveBranchId } from "@/utils/auth-storage";
 import { switchBranch, isUserAdmin, filterBranchesByPermission } from "@/utils/branch-storage";
 import type { BranchItem } from "@/types/branch.types";
 import {
-  FaBuilding,
   FaCheckCircle,
   FaTimesCircle,
   FaPlus,
   FaExchangeAlt,
   FaPowerOff,
-  FaCopy,
   FaStar,
 } from "react-icons/fa";
 
@@ -59,9 +56,36 @@ export const BranchList: React.FC = () => {
     [branches]
   );
   const inactiveCount = branches.length - activeCount;
-  const copiedCount = useMemo(
-    () => branches.filter((b) => b.copyBranchId).length,
-    [branches]
+
+  // Status Segmented Tabs Configuration (matching Cash-Boi Expense & Income standard)
+  const statusTabs = useMemo(
+    () => [
+      {
+        key: "all" as const,
+        label: "All Branches",
+        count: branches.length,
+        icon: null,
+        activeText: "text-[var(--primary-color,#009fe3)]",
+        activeBadge: "bg-sky-100 text-sky-700 dark:bg-sky-950/60 dark:text-sky-300",
+      },
+      {
+        key: "active" as const,
+        label: "Active",
+        count: activeCount,
+        icon: FaCheckCircle,
+        activeText: "text-emerald-600 dark:text-emerald-400",
+        activeBadge: "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300",
+      },
+      {
+        key: "inactive" as const,
+        label: "Inactive",
+        count: inactiveCount,
+        icon: FaTimesCircle,
+        activeText: "text-rose-600 dark:text-rose-400",
+        activeBadge: "bg-rose-100 text-rose-700 dark:bg-rose-950/60 dark:text-rose-300",
+      },
+    ],
+    [branches.length, activeCount, inactiveCount]
   );
 
   const filteredBranches = useMemo(() => {
@@ -93,41 +117,6 @@ export const BranchList: React.FC = () => {
     });
   };
 
-  const statCards = [
-    {
-      title: "Total Branches",
-      value: branches.length,
-      icon: FaBuilding,
-      color: "text-blue-600 dark:text-blue-400",
-      bg: "bg-blue-50/60 dark:bg-blue-950/20 border-blue-300 dark:border-blue-900 hover:border-blue-400",
-      iconBg: "bg-blue-100 dark:bg-blue-900/50 text-blue-600 dark:text-blue-400",
-    },
-    {
-      title: "Active Branches",
-      value: activeCount,
-      icon: FaCheckCircle,
-      color: "text-emerald-600 dark:text-emerald-400",
-      bg: "bg-emerald-50/60 dark:bg-emerald-950/20 border-emerald-300 dark:border-emerald-900 hover:border-emerald-400",
-      iconBg: "bg-emerald-100 dark:bg-emerald-900/50 text-emerald-600 dark:text-emerald-400",
-    },
-    {
-      title: "Inactive Branches",
-      value: inactiveCount,
-      icon: FaTimesCircle,
-      color: "text-rose-600 dark:text-rose-400",
-      bg: "bg-rose-50/60 dark:bg-rose-950/20 border-rose-300 dark:border-rose-900 hover:border-rose-400",
-      iconBg: "bg-rose-100 dark:bg-rose-900/50 text-rose-600 dark:text-rose-400",
-    },
-    {
-      title: "Cloned Branches",
-      value: copiedCount,
-      icon: FaCopy,
-      color: "text-purple-600 dark:text-purple-400",
-      bg: "bg-purple-50/60 dark:bg-purple-950/20 border-purple-300 dark:border-purple-900 hover:border-purple-400",
-      iconBg: "bg-purple-100 dark:bg-purple-900/50 text-purple-600 dark:text-purple-400",
-    },
-  ];
-
   return (
     <div className="flex flex-col gap-2.5 px-2.5 py-2 sm:px-4 sm:py-2.5 max-w-[1600px] mx-auto w-full">
       {/* Header */}
@@ -151,9 +140,6 @@ export const BranchList: React.FC = () => {
         </div>
       </div>
 
-      {/* Stats Cards */}
-      <StatsCards cards={statCards} />
-
       {/* Table Container */}
       <TableContainer className="w-full">
         {/* Table Toolbar */}
@@ -170,33 +156,41 @@ export const BranchList: React.FC = () => {
               />
             </div>
 
-            <div className="flex items-center gap-1.5 self-start sm:self-auto overflow-x-auto">
-              {[
-                { key: "all", label: "All Branches", count: branches.length },
-                { key: "active", label: "Active", count: activeCount },
-                { key: "inactive", label: "Inactive", count: inactiveCount },
-              ].map((tab) => {
-                const on = filter === tab.key;
+            {/* Status Segmented Tabs (matching Expense & Income / Cash-Boi Standard) */}
+            <div className="inline-flex items-center rounded-lg border border-gray-200 dark:border-gray-700 p-0.5 bg-gray-50 dark:bg-gray-800 h-8 max-w-full overflow-x-auto scrollbar-none self-start sm:self-auto">
+              {statusTabs.map((tab) => {
+                const isActive = filter === tab.key;
+                const Icon = tab.icon;
                 return (
                   <button
                     key={tab.key}
                     type="button"
                     onClick={() => {
-                      setFilter(tab.key as any);
+                      setFilter(tab.key);
                       setCurrentPage(1);
                     }}
-                    className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold transition-all cursor-pointer ${
-                      on
-                        ? "bg-blue-50 dark:bg-blue-950/60 text-[var(--primary-color,#009fe3)] border border-blue-200 dark:border-blue-800 shadow-2xs"
-                        : "bg-gray-100 dark:bg-gray-700/50 text-gray-600 dark:text-gray-400 border border-transparent hover:bg-gray-200 dark:hover:bg-gray-700"
+                    className={`h-7 px-2.5 sm:px-3 rounded-md text-xs font-bold transition-all cursor-pointer whitespace-nowrap flex items-center gap-1.5 ${
+                      isActive
+                        ? `bg-white dark:bg-gray-700 shadow-xs ${tab.activeText}`
+                        : "text-gray-600 dark:text-gray-300 hover:text-black dark:hover:text-white"
                     }`}
                   >
+                    {Icon && (
+                      <Icon
+                        size={11}
+                        className={
+                          isActive
+                            ? tab.activeText
+                            : "text-gray-400 dark:text-gray-500"
+                        }
+                      />
+                    )}
                     <span>{tab.label}</span>
                     <span
-                      className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
-                        on
-                          ? "bg-blue-200/60 dark:bg-blue-900 text-blue-700 dark:text-blue-300"
-                          : "bg-gray-200 dark:bg-gray-600 text-gray-600 dark:text-gray-300"
+                      className={`text-[10px] px-1.5 py-0.2 rounded-full font-semibold transition-colors ${
+                        isActive
+                          ? tab.activeBadge
+                          : "bg-gray-200/70 dark:bg-gray-600 text-gray-600 dark:text-gray-300"
                       }`}
                     >
                       {tab.count}
