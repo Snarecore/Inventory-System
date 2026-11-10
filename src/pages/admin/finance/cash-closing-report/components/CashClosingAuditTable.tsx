@@ -16,9 +16,13 @@ import {
   EmptyState,
 } from "@/components/common";
 import ReportExportButtons from "@/components/reports/ReportExportButtons";
+import ReportDateRangeControl from "@/components/reports/ReportDateRangeControl";
 import { formatMoney } from "@/utils/formatters";
 import { useDebounce } from "@/hooks/useDebounce";
-import { useReportCompanyMeta } from "@/utils/trade-report-helpers";
+import {
+  useReportCompanyMeta,
+  type ReportDateFilterProps,
+} from "@/utils/trade-report-helpers";
 import type { CashClosingData } from "@/types";
 import {
   extractCashClosingMetrics,
@@ -27,11 +31,9 @@ import {
   downloadCashClosingAuditPdf,
 } from "../utils/cash-closing-report-helpers";
 
-interface CashClosingAuditTableProps {
+interface CashClosingAuditTableProps extends ReportDateFilterProps {
   records: CashClosingData[];
   isLoading?: boolean;
-  startDate?: string;
-  endDate?: string;
   onViewDenominations: (record: CashClosingData) => void;
 }
 
@@ -40,6 +42,9 @@ export const CashClosingAuditTable: React.FC<CashClosingAuditTableProps> = ({
   isLoading,
   startDate,
   endDate,
+  dateRange,
+  onPresetChange,
+  onDateChange,
   onViewDenominations,
 }) => {
   const companyMeta = useReportCompanyMeta(startDate, endDate);
@@ -130,19 +135,30 @@ export const CashClosingAuditTable: React.FC<CashClosingAuditTableProps> = ({
 
       <TableContainer>
         <TableToolbar>
-          <div className="w-full sm:w-56 shrink-0">
-            <Search
-              searchQuery={searchQuery}
-              onSearchChange={(val) => {
-                setSearchQuery(val);
-                setCurrentPage(1);
-              }}
-              setSearchQuery={setSearchQuery}
-              placeholder="Search date, reason, closed by..."
+          <div className="flex flex-wrap items-center gap-2 flex-1 min-w-0">
+            <div className="w-full sm:w-56 shrink-0">
+              <Search
+                searchQuery={searchQuery}
+                onSearchChange={(val) => {
+                  setSearchQuery(val);
+                  setCurrentPage(1);
+                }}
+                setSearchQuery={setSearchQuery}
+                placeholder="Search date, reason, closed by..."
+              />
+            </div>
+
+            <ReportDateRangeControl
+              startDate={startDate}
+              endDate={endDate}
+              dateRange={dateRange}
+              onPresetChange={onPresetChange}
+              onDateChange={onDateChange}
+              onAfterChange={() => setCurrentPage(1)}
             />
           </div>
 
-          <div className="flex flex-wrap items-center justify-end gap-2">
+          <div className="flex flex-wrap items-center justify-end gap-2 shrink-0">
             <div className="relative w-40 shrink-0">
               <select
                 value={typeFilter}

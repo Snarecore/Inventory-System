@@ -19,9 +19,13 @@ import ColumnVisibilityDropdown, {
   type ColumnItem,
 } from "@/components/table-components/ColumnVisibilityDropdown";
 import ReportExportButtons from "@/components/reports/ReportExportButtons";
+import ReportDateRangeControl from "@/components/reports/ReportDateRangeControl";
 import { formatMoney } from "@/utils/formatters";
 import { useDebounce } from "@/hooks/useDebounce";
-import { useReportCompanyMeta } from "@/utils/trade-report-helpers";
+import {
+  useReportCompanyMeta,
+  type ReportDateFilterProps,
+} from "@/utils/trade-report-helpers";
 import type { CashClosingData } from "@/types";
 import {
   extractCashClosingMetrics,
@@ -29,11 +33,9 @@ import {
   downloadCashClosingReportPdf,
 } from "../utils/cash-closing-report-helpers";
 
-interface CashClosingHistoryReportTableProps {
+interface CashClosingHistoryReportTableProps extends ReportDateFilterProps {
   records: CashClosingData[];
   isLoading?: boolean;
-  startDate?: string;
-  endDate?: string;
   onViewDenominations: (record: CashClosingData) => void;
 }
 
@@ -59,6 +61,9 @@ export const CashClosingHistoryReportTable: React.FC<
   isLoading,
   startDate,
   endDate,
+  dateRange,
+  onPresetChange,
+  onDateChange,
   onViewDenominations,
 }) => {
   const companyMeta = useReportCompanyMeta(startDate, endDate);
@@ -257,6 +262,16 @@ export const CashClosingHistoryReportTable: React.FC<
               placeholder="Search date, reason, remarks..."
             />
           </div>
+
+          <ReportDateRangeControl
+            startDate={startDate}
+            endDate={endDate}
+            dateRange={dateRange}
+            onPresetChange={onPresetChange}
+            onDateChange={onDateChange}
+            onAfterChange={() => setCurrentPage(1)}
+            className="w-full sm:w-40 lg:w-44 shrink-0 z-50"
+          />
 
           {/* Variance Filter */}
           <div className="relative w-[calc(50%-4px)] sm:w-36 shrink-0">

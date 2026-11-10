@@ -19,6 +19,7 @@ import ColumnVisibilityDropdown, {
   type ColumnItem,
 } from "@/components/table-components/ColumnVisibilityDropdown";
 import ReportExportButtons from "@/components/reports/ReportExportButtons";
+import ReportDateRangeControl from "@/components/reports/ReportDateRangeControl";
 import ReportPartyFilterDropdown, {
   type ReportPartyOption,
 } from "@/components/reports/ReportPartyFilterDropdown";
@@ -26,18 +27,19 @@ import { formatMoney } from "@/utils/formatters";
 import { showSuccessToast } from "@/utils/toast-utils";
 import type { PurchaseItem } from "@/types";
 import { useDebounce } from "@/hooks/useDebounce";
-import { useReportCompanyMeta } from "@/utils/trade-report-helpers";
+import {
+  useReportCompanyMeta,
+  type ReportDateFilterProps,
+} from "@/utils/trade-report-helpers";
 import {
   extractPurchaseReportMetrics,
   exportFilteredPurchasesExcel,
   downloadFilteredPurchasesPdf,
 } from "../utils/purchase-report-helpers";
 
-interface PurchaseReportTableProps {
+interface PurchaseReportTableProps extends ReportDateFilterProps {
   transactions: PurchaseItem[];
   isLoading?: boolean;
-  startDate?: string;
-  endDate?: string;
   onView: (item: PurchaseItem) => void;
   onPrint: (item: PurchaseItem) => void;
 }
@@ -66,6 +68,9 @@ export const PurchaseReportTable: React.FC<PurchaseReportTableProps> = ({
   isLoading,
   startDate,
   endDate,
+  dateRange,
+  onPresetChange,
+  onDateChange,
   onView,
   onPrint,
 }) => {
@@ -318,6 +323,16 @@ export const PurchaseReportTable: React.FC<PurchaseReportTableProps> = ({
               placeholder="Search order, supplier..."
             />
           </div>
+
+          <ReportDateRangeControl
+            startDate={startDate}
+            endDate={endDate}
+            dateRange={dateRange}
+            onPresetChange={onPresetChange}
+            onDateChange={onDateChange}
+            onAfterChange={() => setCurrentPage(1)}
+            className="w-[calc(50%-4px)] sm:w-40 lg:w-44 shrink-0 z-50"
+          />
 
           {/* Searchable Supplier Filter */}
           <ReportPartyFilterDropdown

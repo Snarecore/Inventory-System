@@ -1,3 +1,4 @@
+import moment from "moment";
 import apiConfig from "@/config/api.json";
 import { postData } from "@/services/api-service";
 import { buildAccessUser } from "@/utils/access-user";
@@ -32,7 +33,7 @@ export const saveStockAdjustment = async (
   const body: any = {
     accessUser,
     adjustmentType: rootAdjustmentType,
-    date: payload.date || new Date().toISOString().split("T")[0],
+    date: payload.date || moment().format("YYYY-MM-DD"),
     note: (payload.note || payload.remarks || "").trim(),
     remarks: (payload.remarks || payload.note || "").trim(),
     items,
@@ -58,10 +59,9 @@ export const fetchStockAdjustmentReport = async (
   const url = apiConfig.inventory.stockAdjustmentReportUrl;
 
   // Default date window: past 365 days to today if not specified
-  const now = new Date();
-  const oneYearAgo = new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000);
-  const fromDate = params?.fromDate || oneYearAgo.toISOString().split("T")[0];
-  const toDate = params?.toDate || now.toISOString().split("T")[0];
+  const fromDate =
+    params?.fromDate || moment().subtract(365, "days").format("YYYY-MM-DD");
+  const toDate = params?.toDate || moment().format("YYYY-MM-DD");
 
   const body = {
     accessUser,
@@ -81,7 +81,7 @@ export const fetchStockAdjustmentReport = async (
     rawList = res;
   }
 
-  const data: StockAdjustmentReportItem[] = rawList.map((item: any, index: number) => {
+  let data: StockAdjustmentReportItem[] = rawList.map((item: any, index: number) => {
     const rawType = String(item.adjustmentType || "").trim().toUpperCase();
     const isOut = rawType.includes("OUT");
     const adjustmentType: "IN" | "OUT" = isOut ? "OUT" : "IN";
@@ -107,6 +107,18 @@ export const fetchStockAdjustmentReport = async (
       createdAt: item.createdAt || item.date || "",
     };
   });
+
+  // Enforce inclusive [fromDate, toDate] filtering when backend returns a wider window
+  if (params?.fromDate && params?.toDate) {
+    const startBoundary = moment(params.fromDate, "YYYY-MM-DD").startOf("day");
+    const endBoundary = moment(params.toDate, "YYYY-MM-DD").endOf("day");
+    data = data.filter((item) => {
+      if (!item.createdAt) return true;
+      const parsed = moment(item.createdAt);
+      if (!parsed.isValid()) return true;
+      return parsed.isBetween(startBoundary, endBoundary, undefined, "[]");
+    });
+  }
 
   return {
     status: res?.status || "Success",

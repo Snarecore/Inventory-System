@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import PageHeader from "@/components/page-header/PageHeader";
 import RefreshButton from "@/components/table-components/RefreshButton";
 import { formatMoney } from "@/utils/formatters";
+import { useReportDateRange } from "@/utils/trade-report-helpers";
 import { useStockAdjustmentReportQuery } from "@/hooks/useStockAdjustment";
 import { useTradeProducts } from "@/hooks/useTradeProducts";
 import { calculateStockAdjustmentKpi } from "@/services/stock-adjustment-service";
@@ -21,9 +22,15 @@ import { usePermission } from "@/hooks/usePermission";
 
 export const StockAdjustmentPage: React.FC = () => {
   const { canCreate } = usePermission();
-  // Query adjustment report
+  const { dateRange, setDateRange, startDate, endDate, handleDateChange } =
+    useReportDateRange("all");
+
+  // Query adjustment report filtered by selected date range
   const { data: reportData, isLoading, isFetching, refetch } =
-    useStockAdjustmentReportQuery();
+    useStockAdjustmentReportQuery({
+      fromDate: startDate || undefined,
+      toDate: endDate || undefined,
+    });
   const items = reportData?.data || [];
 
   // Query product catalog
@@ -170,7 +177,7 @@ export const StockAdjustmentPage: React.FC = () => {
           headerDescription="Audit, track, and record physical inventory adjustments, additions, damages, and write-offs"
         />
 
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2 shrink-0">
           <RefreshButton
             onClick={handleRefresh}
             isLoading={isLoading || isFetching || isProductsLoading}
@@ -196,6 +203,11 @@ export const StockAdjustmentPage: React.FC = () => {
       <StockAdjustmentTable
         items={activeAdjustmentItems}
         isLoading={isTableLoading}
+        startDate={startDate}
+        endDate={endDate}
+        dateRange={dateRange}
+        onPresetChange={(r) => setDateRange(r)}
+        onDateChange={handleDateChange}
         onViewDetails={handleViewDetails}
       />
 

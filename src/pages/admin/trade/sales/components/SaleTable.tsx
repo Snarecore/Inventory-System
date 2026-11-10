@@ -258,9 +258,9 @@ export const SaleTable: React.FC<SaleTableProps> = ({
   const activeVisibleColumnCount = availableColumns.filter((c) => isColVisible(c.key)).length;
 
   return (
-    <TableContainer className="!rounded-xl !border-[var(--ui-border)] !shadow-sm">
+    <TableContainer>
       {/* Search and Filters Bar */}
-      <TableToolbar className="!border-[var(--ui-border)] !p-3 sm:!p-4">
+      <TableToolbar>
         {/* Left Section: Compact Search Box + Filters Group */}
         <div className="flex flex-wrap items-center gap-2 flex-1 min-w-0">
           {/* Compact Search Box */}

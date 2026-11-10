@@ -7,7 +7,6 @@ import {
 } from "react-icons/fa";
 import PageHeader from "@/components/page-header/PageHeader";
 import RefreshButton from "@/components/table-components/RefreshButton";
-import DateRangePicker from "@/components/date-range-picker/DateRangePicker";
 import TradeInvoiceStats from "@/components/trade/TradeInvoiceStats";
 import SalesReportTable from "./components/SalesReportTable";
 import ProductSalesReportTable from "./components/ProductSalesReportTable";
@@ -27,8 +26,7 @@ import type { ReportTab } from "./utils/sales-report-helpers";
 import type { SaleItem } from "@/types";
 
 const SalesReportPage: React.FC = () => {
-  const { dateRange, setDateRange, startDate, endDate, handleDateChange } =
-    useReportDateRange();
+  const { startDate, endDate, datePickerProps } = useReportDateRange();
 
   // Active report tab
   const [activeTab, setActiveTab] = useState<ReportTab>("invoices");
@@ -127,19 +125,6 @@ const SalesReportPage: React.FC = () => {
         />
 
         <div className="flex items-center flex-wrap sm:flex-nowrap gap-2 self-start md:self-auto shrink-0">
-          {/* Date Range Picker */}
-          <div className="w-36 sm:w-40 shrink-0">
-            <DateRangePicker
-              startDate={startDate}
-              endDate={endDate}
-              selectedPreset={dateRange}
-              onPresetChange={(r) => setDateRange(r)}
-              onChange={handleDateChange}
-              align="right"
-              size="sm"
-            />
-          </div>
-
           {/* Refresh (Far Right) */}
           <RefreshButton
             onClick={() => refetch()}
@@ -205,8 +190,7 @@ const SalesReportPage: React.FC = () => {
           <SalesReportTable
             transactions={transactions}
             isLoading={isLoading}
-            startDate={startDate}
-            endDate={endDate}
+            {...datePickerProps}
             onView={handleView}
             onPrint={handlePrint}
           />
@@ -216,8 +200,7 @@ const SalesReportPage: React.FC = () => {
           <ProductSalesReportTable
             transactions={transactions}
             isLoading={isLoading}
-            startDate={startDate}
-            endDate={endDate}
+            {...datePickerProps}
           />
         )}
 
@@ -225,8 +208,7 @@ const SalesReportPage: React.FC = () => {
           <CustomerSalesReportTable
             transactions={transactions}
             isLoading={isLoading}
-            startDate={startDate}
-            endDate={endDate}
+            {...datePickerProps}
           />
         )}
       </div>

@@ -8,7 +8,6 @@ import {
   FaExclamationTriangle,
 } from "react-icons/fa";
 import PageHeader from "@/components/page-header/PageHeader";
-import DateRangePicker from "@/components/date-range-picker/DateRangePicker";
 import RefreshButton from "@/components/table-components/RefreshButton";
 import StatsCards, { type StatCardItem } from "@/components/common/StatsCards";
 import { formatMoney } from "@/utils/formatters";
@@ -24,8 +23,7 @@ import {
 } from "./utils/cash-closing-report-helpers";
 
 const CashClosingReportPage: React.FC = () => {
-  const { dateRange, setDateRange, startDate, endDate, handleDateChange } =
-    useReportDateRange();
+  const { startDate, endDate, datePickerProps } = useReportDateRange();
   const [activeTab, setActiveTab] = useState<CashClosingReportTab>("history");
 
   // Denomination breakdown modal state (reuses existing cash-closing modal)
@@ -116,20 +114,6 @@ const CashClosingReportPage: React.FC = () => {
         />
 
         <div className="flex items-center flex-wrap sm:flex-nowrap gap-2 self-start md:self-auto shrink-0">
-          {/* Date Range Picker (Matches Sales & Purchase Reports) */}
-          <div className="w-36 sm:w-40 shrink-0">
-            <DateRangePicker
-              startDate={startDate}
-              endDate={endDate}
-              selectedPreset={dateRange}
-              onPresetChange={(r) => setDateRange(r)}
-              onChange={handleDateChange}
-              align="right"
-              size="sm"
-              inputClassName="h-8"
-            />
-          </div>
-
           {/* Refresh (Far Right) */}
           <RefreshButton onClick={() => refetch()} isLoading={isLoading} />
         </div>
@@ -173,16 +157,14 @@ const CashClosingReportPage: React.FC = () => {
           <CashClosingHistoryReportTable
             records={records}
             isLoading={isLoading}
-            startDate={startDate}
-            endDate={endDate}
+            {...datePickerProps}
             onViewDenominations={handleViewDenominations}
           />
         ) : (
           <CashClosingAuditTable
             records={records}
             isLoading={isLoading}
-            startDate={startDate}
-            endDate={endDate}
+            {...datePickerProps}
             onViewDenominations={handleViewDenominations}
           />
         )}

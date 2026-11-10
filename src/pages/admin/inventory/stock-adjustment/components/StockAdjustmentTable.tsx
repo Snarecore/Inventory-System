@@ -1,5 +1,7 @@
 import React, { useState } from "react";
+import moment from "moment";
 import Search from "@/components/table-components/Search";
+import ReportDateRangeControl from "@/components/reports/ReportDateRangeControl";
 import DropdownFilter from "@/components/table-components/DropdownFilter";
 import EmptyState from "@/components/empty-state/EmptyState";
 import TableSkeleton from "@/components/skeleton/TableSkeleton";
@@ -19,8 +21,9 @@ import type { StockAdjustmentReportItem } from "@/types";
 import { formatMoney } from "@/utils/formatters";
 import { buildAndDownloadExcel } from "@/utils/excel-export";
 import { useDebounce } from "@/hooks/useDebounce";
+import type { ReportDateFilterProps } from "@/utils/trade-report-helpers";
 
-interface StockAdjustmentTableProps {
+interface StockAdjustmentTableProps extends ReportDateFilterProps {
   items: StockAdjustmentReportItem[];
   isLoading: boolean;
   onViewDetails: (item: StockAdjustmentReportItem) => void;
@@ -29,6 +32,11 @@ interface StockAdjustmentTableProps {
 export const StockAdjustmentTable: React.FC<StockAdjustmentTableProps> = ({
   items,
   isLoading,
+  startDate,
+  endDate,
+  dateRange = "all",
+  onPresetChange,
+  onDateChange,
   onViewDetails,
 }) => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -130,8 +138,13 @@ export const StockAdjustmentTable: React.FC<StockAdjustmentTableProps> = ({
       "Remarks": "-",
     };
 
+    const dateSuffix =
+      startDate && endDate
+        ? `${startDate}_to_${endDate}`
+        : moment().format("YYYY-MM-DD");
+
     buildAndDownloadExcel(rows, totalRow, {
-      fileName: `Stock_Adjustments_${new Date().toISOString().split("T")[0]}.xlsx`,
+      fileName: `Stock_Adjustments_${dateSuffix}.xlsx`,
       sheetName: "Stock_Adjustments",
     });
   };
@@ -141,9 +154,9 @@ export const StockAdjustmentTable: React.FC<StockAdjustmentTableProps> = ({
       {/* Table Toolbar */}
       <TableToolbar>
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 w-full">
-          {/* Left: Search Box */}
-          <div className="flex items-center gap-2 w-full sm:w-auto">
-            <div className="w-full sm:w-64">
+          {/* Left: Search Box & Date Range Filter */}
+          <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto flex-1 min-w-0">
+            <div className="w-full sm:w-64 shrink-0">
               <Search
                 searchQuery={searchQuery}
                 onSearchChange={(value) => {
@@ -153,6 +166,15 @@ export const StockAdjustmentTable: React.FC<StockAdjustmentTableProps> = ({
                 placeholder="Search by product, P-code..."
               />
             </div>
+
+            <ReportDateRangeControl
+              startDate={startDate}
+              endDate={endDate}
+              dateRange={dateRange}
+              onPresetChange={onPresetChange}
+              onDateChange={onDateChange}
+              onAfterChange={() => setCurrentPage(1)}
+            />
           </div>
 
           {/* Right: Type Filter & Excel Button */}
@@ -207,13 +229,13 @@ export const StockAdjustmentTable: React.FC<StockAdjustmentTableProps> = ({
                   <td colSpan={9} className="py-12 text-center">
                     <EmptyState
                       title={
-                        searchQuery || typeFilter
+                        searchQuery || typeFilter || (startDate && endDate)
                           ? "No adjustments matching your filters"
                           : "No stock adjustments recorded yet"
                       }
                       description={
-                        searchQuery || typeFilter
-                          ? "Try clearing the search or filters to see all adjustment records."
+                        searchQuery || typeFilter || (startDate && endDate)
+                          ? "Try adjusting your date range, search query, or type filter to see adjustment records."
                           : "Click 'Record Adjustment' above to adjust product stock levels."
                       }
                     />

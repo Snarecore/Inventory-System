@@ -16,22 +16,22 @@ import {
 import { formatMoney } from "@/utils/formatters";
 import { useDebounce } from "@/hooks/useDebounce";
 import ReportExportButtons from "./ReportExportButtons";
+import ReportDateRangeControl from "./ReportDateRangeControl";
 import {
   type TradeDomain,
   type ProductTradeSummary,
   type ReportCompanyMeta,
+  type ReportDateFilterProps,
   aggregateTradeProducts,
   calculateProductTotals,
   calculateRevenueSharePct,
   useReportCompanyMeta,
 } from "@/utils/trade-report-helpers";
 
-interface ProductTradeReportTableProps {
+interface ProductTradeReportTableProps extends ReportDateFilterProps {
   domain: TradeDomain;
   transactions: any[];
   isLoading?: boolean;
-  startDate?: string;
-  endDate?: string;
   onExportExcel: (
     products: ProductTradeSummary[],
     meta: ReportCompanyMeta
@@ -85,6 +85,9 @@ export const ProductTradeReportTable: React.FC<ProductTradeReportTableProps> = (
   isLoading,
   startDate,
   endDate,
+  dateRange,
+  onPresetChange,
+  onDateChange,
   onExportExcel,
   onDownloadPdf,
   excelSuccessText,
@@ -130,19 +133,30 @@ export const ProductTradeReportTable: React.FC<ProductTradeReportTableProps> = (
     <TableContainer>
       {/* Top Filter Bar */}
       <TableToolbar>
-        <div className="w-full sm:w-48 md:w-56 shrink-0">
-          <Search
-            searchQuery={searchQuery}
-            onSearchChange={(val) => {
-              setSearchQuery(val);
-              setCurrentPage(1);
-            }}
-            setSearchQuery={setSearchQuery}
-            placeholder="Search product code, name..."
+        <div className="flex flex-wrap items-center gap-2 flex-1 min-w-0">
+          <div className="w-full sm:w-48 md:w-56 shrink-0">
+            <Search
+              searchQuery={searchQuery}
+              onSearchChange={(val) => {
+                setSearchQuery(val);
+                setCurrentPage(1);
+              }}
+              setSearchQuery={setSearchQuery}
+              placeholder="Search product code, name..."
+            />
+          </div>
+
+          <ReportDateRangeControl
+            startDate={startDate}
+            endDate={endDate}
+            dateRange={dateRange}
+            onPresetChange={onPresetChange}
+            onDateChange={onDateChange}
+            onAfterChange={() => setCurrentPage(1)}
           />
         </div>
 
-        <div className="flex flex-wrap items-center justify-end gap-2">
+        <div className="flex flex-wrap items-center justify-end gap-2 shrink-0">
           {/* Sort selector */}
           <div className="relative w-44 shrink-0">
             <select

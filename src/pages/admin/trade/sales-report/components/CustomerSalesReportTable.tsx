@@ -1,27 +1,25 @@
 import React from "react";
 import type { SaleItem } from "@/types";
+import type { ReportDateFilterProps } from "@/utils/trade-report-helpers";
 import PartyTradeReportTable from "@/components/reports/PartyTradeReportTable";
 import {
   exportFilteredCustomersExcel,
   downloadFilteredCustomersPdf,
 } from "../utils/sales-report-helpers";
 
-interface CustomerSalesReportTableProps {
+interface CustomerSalesReportTableProps extends ReportDateFilterProps {
   transactions: SaleItem[];
   isLoading?: boolean;
-  startDate?: string;
-  endDate?: string;
 }
 
 export const CustomerSalesReportTable: React.FC<
   CustomerSalesReportTableProps
-> = ({ transactions, isLoading, startDate, endDate }) => (
+> = ({ transactions, isLoading, ...dateFilterProps }) => (
   <PartyTradeReportTable
     domain="sale"
     transactions={transactions}
     isLoading={isLoading}
-    startDate={startDate}
-    endDate={endDate}
+    {...dateFilterProps}
     onExportExcel={exportFilteredCustomersExcel}
     onDownloadPdf={downloadFilteredCustomersPdf}
     excelSuccessText={(count) => `Exported ${count} customers to Excel!`}

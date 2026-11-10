@@ -3,7 +3,6 @@ import { useQuery } from "@tanstack/react-query";
 import { FaShoppingBag, FaBoxes, FaTruck } from "react-icons/fa";
 import PageHeader from "@/components/page-header/PageHeader";
 import RefreshButton from "@/components/table-components/RefreshButton";
-import DateRangePicker from "@/components/date-range-picker/DateRangePicker";
 import TradeInvoiceStats from "@/components/trade/TradeInvoiceStats";
 import PurchaseInvoiceModal from "@/pages/admin/trade/purchases/components/PurchaseInvoiceModal";
 import PurchaseReportTable from "./components/PurchaseReportTable";
@@ -25,8 +24,7 @@ import type { PurchaseReportTab } from "./utils/purchase-report-helpers";
 import type { PurchaseItem } from "@/types";
 
 const PurchaseReportPage: React.FC = () => {
-  const { dateRange, setDateRange, startDate, endDate, handleDateChange } =
-    useReportDateRange();
+  const { startDate, endDate, datePickerProps } = useReportDateRange();
 
   const [activeTab, setActiveTab] = useState<PurchaseReportTab>("invoices");
 
@@ -105,18 +103,6 @@ const PurchaseReportPage: React.FC = () => {
         />
 
         <div className="flex items-center flex-wrap sm:flex-nowrap gap-2 self-start md:self-auto shrink-0">
-          <div className="w-36 sm:w-40 shrink-0">
-            <DateRangePicker
-              startDate={startDate}
-              endDate={endDate}
-              selectedPreset={dateRange}
-              onPresetChange={(r) => setDateRange(r)}
-              onChange={handleDateChange}
-              align="right"
-              size="sm"
-            />
-          </div>
-
           <RefreshButton onClick={() => refetch()} isLoading={isLoading} />
         </div>
       </div>
@@ -178,8 +164,7 @@ const PurchaseReportPage: React.FC = () => {
           <PurchaseReportTable
             transactions={transactions}
             isLoading={isLoading}
-            startDate={startDate}
-            endDate={endDate}
+            {...datePickerProps}
             onView={handleView}
             onPrint={handlePrint}
           />
@@ -189,8 +174,7 @@ const PurchaseReportPage: React.FC = () => {
           <ProductPurchaseReportTable
             transactions={transactions}
             isLoading={isLoading}
-            startDate={startDate}
-            endDate={endDate}
+            {...datePickerProps}
           />
         )}
 
@@ -198,8 +182,7 @@ const PurchaseReportPage: React.FC = () => {
           <SupplierPurchaseReportTable
             transactions={transactions}
             isLoading={isLoading}
-            startDate={startDate}
-            endDate={endDate}
+            {...datePickerProps}
           />
         )}
       </div>

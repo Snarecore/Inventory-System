@@ -79,16 +79,32 @@ export const REPORT_RGB = {
   muted: [100, 116, 139] as [number, number, number],
 };
 
+export interface ReportDateFilterProps {
+  startDate?: string;
+  endDate?: string;
+  dateRange?: string;
+  onPresetChange?: (preset: string) => void;
+  onDateChange?: (range: {
+    startDate: string;
+    endDate: string;
+    label?: string;
+  }) => void;
+}
+
 /**
  * Shared hook to manage preset + custom date range synchronized with DateRangePicker
  */
-export function useReportDateRange() {
-  const [dateRange, setDateRange] = useState<string>("this_month");
+export function useReportDateRange(
+  defaultPreset: "this_month" | "all" = "this_month"
+) {
+  const [dateRange, setDateRange] = useState<string>(defaultPreset);
   const [startDate, setStartDate] = useState<string>(() =>
-    moment().startOf("month").format("YYYY-MM-DD")
+    defaultPreset === "all"
+      ? ""
+      : moment().startOf("month").format("YYYY-MM-DD")
   );
   const [endDate, setEndDate] = useState<string>(() =>
-    moment().endOf("month").format("YYYY-MM-DD")
+    defaultPreset === "all" ? "" : moment().endOf("month").format("YYYY-MM-DD")
   );
 
   const handleDateChange = ({
@@ -119,12 +135,21 @@ export function useReportDateRange() {
     if (label) setDateRange(label);
   };
 
+  const datePickerProps: ReportDateFilterProps = {
+    startDate,
+    endDate,
+    dateRange,
+    onPresetChange: (preset) => setDateRange(preset),
+    onDateChange: handleDateChange,
+  };
+
   return {
     dateRange,
     setDateRange,
     startDate,
     endDate,
     handleDateChange,
+    datePickerProps,
   };
 }
 
