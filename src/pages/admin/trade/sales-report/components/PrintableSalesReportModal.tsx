@@ -115,7 +115,7 @@ export const PrintableSalesReportModal: React.FC<PrintableSalesReportModalProps>
           <style>
             @page {
               size: landscape;
-              margin: 8mm;
+              margin: 6mm;
             }
             * {
               box-sizing: border-box;
@@ -125,7 +125,7 @@ export const PrintableSalesReportModal: React.FC<PrintableSalesReportModalProps>
             body {
               font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
               margin: 0;
-              padding: 10px;
+              padding: 4px;
               color: #0f172a;
               background: #ffffff;
             }
@@ -133,58 +133,63 @@ export const PrintableSalesReportModal: React.FC<PrintableSalesReportModalProps>
               display: flex;
               align-items: flex-start;
               justify-content: space-between;
-              padding-bottom: 6px;
+              padding-bottom: 2px;
+              margin-bottom: 0px;
             }
             .company-info {
               display: flex;
-              align-items: flex-start;
-              gap: 12px;
+              align-items: center;
+              gap: 10px;
             }
             .company-logo {
-              height: 48px;
-              max-width: 140px;
+              height: 36px;
+              max-width: 120px;
               object-fit: contain;
             }
             .company-name {
-              font-size: 18px;
+              font-size: 15px;
               font-weight: 800;
               color: #0f172a;
-              line-height: 1.2;
+              line-height: 1.15;
             }
             .company-sub {
-              font-size: 11px;
+              font-size: 10px;
               color: #475569;
-              margin-top: 2px;
+              line-height: 1.2;
+              margin-top: 1px;
             }
             .print-date {
-              font-size: 11px;
+              font-size: 10px;
               font-weight: 700;
               color: #0f172a;
               text-align: right;
+              padding-top: 2px;
             }
             .report-title {
-              font-size: 18px;
+              font-size: 14px;
               font-weight: 800;
               text-align: center;
               text-transform: uppercase;
-              margin: 8px 0 4px 0;
+              margin: 2px 0 3px 0;
               color: #0f172a;
-              letter-spacing: -0.3px;
+              letter-spacing: 0.5px;
+              line-height: 1.2;
             }
             .filter-row {
-              font-size: 11px;
+              font-size: 10px;
               font-weight: 600;
               color: #334155;
               display: flex;
               justify-content: space-between;
               border-bottom: 1px solid #cbd5e1;
-              padding-bottom: 6px;
-              margin-bottom: 8px;
+              padding-bottom: 3px;
+              margin-bottom: 4px;
+              line-height: 1.2;
             }
             table {
               width: 100%;
               border-collapse: collapse;
-              margin-top: 6px;
+              margin-top: 2px;
               page-break-inside: auto;
             }
             tr {
@@ -193,8 +198,8 @@ export const PrintableSalesReportModal: React.FC<PrintableSalesReportModalProps>
             }
             th, td {
               border: 1px solid #94a3b8;
-              padding: 5px 6px;
-              font-size: 10px;
+              padding: 4px 5px;
+              font-size: 9.5px;
             }
             th {
               background-color: ${primaryColor} !important;
@@ -205,22 +210,28 @@ export const PrintableSalesReportModal: React.FC<PrintableSalesReportModalProps>
             .text-center { text-align: center; }
             .text-right { text-align: right; }
             .font-bold { font-weight: 700; }
+            tfoot {
+              display: table-row-group !important;
+            }
             .total-row {
               background-color: #f1f5f9 !important;
               font-weight: 800;
               border-top: 2px solid #64748b;
+              page-break-inside: avoid !important;
+              break-inside: avoid !important;
             }
             .signatures {
-              margin-top: 36px;
+              margin-top: 24px;
               display: flex;
               justify-content: space-between;
-              font-size: 10.5px;
+              font-size: 10px;
               color: #475569;
-              page-break-inside: avoid;
+              page-break-inside: avoid !important;
+              break-inside: avoid !important;
             }
             .sig-block {
               text-align: center;
-              width: 150px;
+              width: 140px;
             }
             .sig-line {
               border-bottom: 1px solid #94a3b8;
@@ -261,12 +272,12 @@ export const PrintableSalesReportModal: React.FC<PrintableSalesReportModalProps>
           <table>
             <thead>
               <tr>
-                <th class="text-center" style="width: 35px;">SL</th>
+                <th class="text-center" style="width: 32px;">SL</th>
                 <th>Order ID</th>
                 <th class="text-center">Date</th>
                 <th>Customer Name</th>
                 <th class="text-center">Phone</th>
-                <th class="text-center" style="width: 45px;">Items</th>
+                <th class="text-center" style="width: 40px;">Items</th>
                 <th class="text-right">Subtotal (৳)</th>
                 <th class="text-right">Discount (৳)</th>
                 <th class="text-right">VAT (৳)</th>
@@ -312,20 +323,18 @@ export const PrintableSalesReportModal: React.FC<PrintableSalesReportModalProps>
                   `;
                 })
                 .join("")}
-            </tbody>
-            <tfoot>
               <tr class="total-row">
                 <td colspan="5" class="text-center font-bold">TOTAL SUMMARY (${transactions.length} Invoices)</td>
                 <td class="text-center">${totalItemsCount}</td>
                 <td class="text-right">${formatMoney(totalSubtotal)}</td>
-                <td class="text-right">${formatMoney(stats.totalDiscount)}</td>
-                <td class="text-right">${formatMoney(totalVat)}</td>
+                <td class="text-right">${stats.totalDiscount > 0 ? formatMoney(stats.totalDiscount) : "-"}</td>
+                <td class="text-right">${totalVat > 0 ? formatMoney(totalVat) : "-"}</td>
                 <td class="text-right font-bold" style="color: ${primaryColor};">${formatMoney(stats.totalSalesVolume)}</td>
                 <td class="text-right font-bold" style="color: #047857;">${formatMoney(stats.totalCollected)}</td>
-                <td class="text-right font-bold" style="color: #b91c1c;">${formatMoney(stats.totalDue)}</td>
+                <td class="text-right font-bold" style="color: #b91c1c;">${stats.totalDue > 0 ? formatMoney(stats.totalDue) : "-"}</td>
                 <td colspan="2"></td>
               </tr>
-            </tfoot>
+            </tbody>
           </table>
 
           <div class="signatures">
@@ -413,34 +422,34 @@ export const PrintableSalesReportModal: React.FC<PrintableSalesReportModalProps>
         {/* Printable Paper Area (matches user's reference design) */}
         <div
           ref={printRef}
-          className="bg-white p-5 sm:p-7 border border-gray-300 rounded-lg text-gray-900 font-sans shadow-xs"
+          className="bg-white p-3.5 sm:p-4 border border-gray-300 rounded-lg text-gray-900 font-sans shadow-xs"
         >
           {/* Header Row: Left = Logo + Company Name + Address, Right = Print Date */}
-          <div className="flex items-start justify-between gap-4 pb-2">
-            <div className="flex items-start gap-3">
+          <div className="flex items-start justify-between gap-3 pb-1">
+            <div className="flex items-center gap-2.5">
               {businessLogoUrl ? (
                 <img
                   src={businessLogoUrl}
                   alt="Business Logo"
-                  className="h-11 sm:h-12 w-auto max-w-[140px] object-contain shrink-0"
+                  className="h-9 sm:h-10 w-auto max-w-[120px] object-contain shrink-0"
                   crossOrigin="anonymous"
                 />
               ) : (
-                <div className="w-10 h-10 rounded-md bg-[var(--primary-color,#009fe3)]/10 text-[var(--primary-color,#009fe3)] font-black text-sm flex items-center justify-center shrink-0 border border-[var(--primary-color,#009fe3)]/20">
+                <div className="w-9 h-9 rounded-md bg-[var(--primary-color,#009fe3)]/10 text-[var(--primary-color,#009fe3)] font-black text-xs flex items-center justify-center shrink-0 border border-[var(--primary-color,#009fe3)]/20">
                   {(businessName || "CB").slice(0, 2).toUpperCase()}
                 </div>
               )}
               <div className="flex flex-col">
-                <h1 className="text-base sm:text-lg font-black text-gray-900 tracking-tight leading-tight">
+                <h1 className="text-sm sm:text-base font-extrabold text-gray-900 tracking-tight leading-tight">
                   {businessName}
                 </h1>
                 {businessAddress && (
-                  <p className="text-[11px] text-gray-600 font-medium leading-normal mt-0.5">
+                  <p className="text-[10px] text-gray-600 font-medium leading-tight mt-0.5">
                     {businessAddress}
                   </p>
                 )}
                 {businessPhone && (
-                  <p className="text-[11px] text-gray-500 font-medium leading-normal">
+                  <p className="text-[10px] text-gray-500 font-medium leading-tight">
                     Phone: {businessPhone}
                   </p>
                 )}
@@ -448,22 +457,22 @@ export const PrintableSalesReportModal: React.FC<PrintableSalesReportModalProps>
             </div>
 
             {/* Print Date (Right Aligned) */}
-            <div className="text-right shrink-0">
-              <span className="text-xs font-bold text-gray-900">
+            <div className="text-right shrink-0 pt-0.5">
+              <span className="text-[11px] font-bold text-gray-900">
                 Print Date: {moment().format("DD-MMM-YYYY").toUpperCase()}
               </span>
             </div>
           </div>
 
           {/* Centered Report Title */}
-          <div className="text-center my-3">
-            <h2 className="text-base sm:text-lg font-black uppercase text-gray-900 tracking-wide">
+          <div className="text-center my-1">
+            <h2 className="text-xs sm:text-sm font-black uppercase text-gray-900 tracking-wide leading-tight">
               Sales Report
             </h2>
           </div>
 
           {/* Subtitle / Filter Row (Left-aligned) */}
-          <div className="flex items-center justify-between text-xs font-semibold text-gray-700 pb-2 mb-2 border-b border-gray-200">
+          <div className="flex items-center justify-between text-[11px] font-semibold text-gray-700 pb-1 mb-1.5 border-b border-gray-200 leading-tight">
             <div>
               <span>From Date: </span>
               <span className="font-bold text-gray-900">
@@ -484,20 +493,20 @@ export const PrintableSalesReportModal: React.FC<PrintableSalesReportModalProps>
             <table className="w-full text-left border-collapse border border-gray-300 text-xs">
               <thead>
                 <tr className="bg-[var(--table-header-bg,var(--primary-color,#009fe3))] text-white font-bold">
-                  <th className="py-2 px-2 text-center border border-gray-300 w-10">SL</th>
-                  <th className="py-2 px-2 border border-gray-300 whitespace-nowrap">Order ID</th>
-                  <th className="py-2 px-2 border border-gray-300 text-center whitespace-nowrap">Date</th>
-                  <th className="py-2 px-2 border border-gray-300">Customer Name</th>
-                  <th className="py-2 px-2 border border-gray-300 text-center whitespace-nowrap">Phone</th>
-                  <th className="py-2 px-2 border border-gray-300 text-center w-12">Items</th>
-                  <th className="py-2 px-2 border border-gray-300 text-right whitespace-nowrap">Subtotal (৳)</th>
-                  <th className="py-2 px-2 border border-gray-300 text-right whitespace-nowrap">Discount (৳)</th>
-                  <th className="py-2 px-2 border border-gray-300 text-right whitespace-nowrap">VAT (৳)</th>
-                  <th className="py-2 px-2 border border-gray-300 text-right whitespace-nowrap">Grand Total (৳)</th>
-                  <th className="py-2 px-2 border border-gray-300 text-right whitespace-nowrap">Paid (৳)</th>
-                  <th className="py-2 px-2 border border-gray-300 text-right whitespace-nowrap">Due (৳)</th>
-                  <th className="py-2 px-2 border border-gray-300 text-center whitespace-nowrap">Method</th>
-                  <th className="py-2 px-2 border border-gray-300 text-center whitespace-nowrap">Status</th>
+                  <th className="py-1.5 px-2 text-center border border-gray-300 w-10">SL</th>
+                  <th className="py-1.5 px-2 border border-gray-300 whitespace-nowrap">Order ID</th>
+                  <th className="py-1.5 px-2 border border-gray-300 text-center whitespace-nowrap">Date</th>
+                  <th className="py-1.5 px-2 border border-gray-300">Customer Name</th>
+                  <th className="py-1.5 px-2 border border-gray-300 text-center whitespace-nowrap">Phone</th>
+                  <th className="py-1.5 px-2 border border-gray-300 text-center w-12">Items</th>
+                  <th className="py-1.5 px-2 border border-gray-300 text-right whitespace-nowrap">Subtotal (৳)</th>
+                  <th className="py-1.5 px-2 border border-gray-300 text-right whitespace-nowrap">Discount (৳)</th>
+                  <th className="py-1.5 px-2 border border-gray-300 text-right whitespace-nowrap">VAT (৳)</th>
+                  <th className="py-1.5 px-2 border border-gray-300 text-right whitespace-nowrap">Grand Total (৳)</th>
+                  <th className="py-1.5 px-2 border border-gray-300 text-right whitespace-nowrap">Paid (৳)</th>
+                  <th className="py-1.5 px-2 border border-gray-300 text-right whitespace-nowrap">Due (৳)</th>
+                  <th className="py-1.5 px-2 border border-gray-300 text-center whitespace-nowrap">Method</th>
+                  <th className="py-1.5 px-2 border border-gray-300 text-center whitespace-nowrap">Status</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
@@ -515,42 +524,42 @@ export const PrintableSalesReportModal: React.FC<PrintableSalesReportModalProps>
 
                   return (
                     <tr key={idx} className="hover:bg-gray-50/80">
-                      <td className="py-1.5 px-2 text-center border border-gray-300">{idx + 1}</td>
-                      <td className="py-1.5 px-2 font-semibold border border-gray-300 whitespace-nowrap">
+                      <td className="py-1 px-2 text-center border border-gray-300">{idx + 1}</td>
+                      <td className="py-1 px-2 font-semibold border border-gray-300 whitespace-nowrap">
                         {t.orderNo || t.invoiceNo || `ORD-${t.id || idx + 1}`}
                       </td>
-                      <td className="py-1.5 px-2 text-center text-gray-600 border border-gray-300 whitespace-nowrap">
+                      <td className="py-1 px-2 text-center text-gray-600 border border-gray-300 whitespace-nowrap">
                         {t.salesDate || t.date ? moment(t.salesDate || t.date).format("DD-MMM-YYYY").toUpperCase() : "-"}
                       </td>
-                      <td className="py-1.5 px-2 border border-gray-300 truncate max-w-[150px]">
+                      <td className="py-1 px-2 border border-gray-300 truncate max-w-[150px]">
                         {t.customerName || t.customer_name || "Walk-in Customer"}
                       </td>
-                      <td className="py-1.5 px-2 text-center text-gray-600 border border-gray-300 whitespace-nowrap">
+                      <td className="py-1 px-2 text-center text-gray-600 border border-gray-300 whitespace-nowrap">
                         {t.customerPhone || t.customer_phone || "-"}
                       </td>
-                      <td className="py-1.5 px-2 text-center border border-gray-300">{itemsCount}</td>
-                      <td className="py-1.5 px-2 text-right border border-gray-300 font-medium">
+                      <td className="py-1 px-2 text-center border border-gray-300">{itemsCount}</td>
+                      <td className="py-1 px-2 text-right border border-gray-300 font-medium">
                         {formatMoney(sub)}
                       </td>
-                      <td className="py-1.5 px-2 text-right border border-gray-300 text-gray-600">
+                      <td className="py-1 px-2 text-right border border-gray-300 text-gray-600">
                         {disc > 0 ? formatMoney(disc) : "-"}
                       </td>
-                      <td className="py-1.5 px-2 text-right border border-gray-300 text-gray-600">
+                      <td className="py-1 px-2 text-right border border-gray-300 text-gray-600">
                         {vat > 0 ? formatMoney(vat) : "-"}
                       </td>
-                      <td className="py-1.5 px-2 text-right border border-gray-300 font-bold text-gray-900">
+                      <td className="py-1 px-2 text-right border border-gray-300 font-bold text-gray-900">
                         {formatMoney(gt)}
                       </td>
-                      <td className="py-1.5 px-2 text-right border border-gray-300 text-emerald-700 font-bold">
+                      <td className="py-1 px-2 text-right border border-gray-300 text-emerald-700 font-bold">
                         {formatMoney(paid)}
                       </td>
-                      <td className="py-1.5 px-2 text-right border border-gray-300 text-rose-700 font-bold">
+                      <td className="py-1 px-2 text-right border border-gray-300 text-rose-700 font-bold">
                         {due > 0 ? formatMoney(due) : "-"}
                       </td>
-                      <td className="py-1.5 px-2 text-center border border-gray-300 font-medium text-[11px]">
+                      <td className="py-1 px-2 text-center border border-gray-300 font-medium text-[11px]">
                         {pType}
                       </td>
-                      <td className="py-1.5 px-2 text-center border border-gray-300">
+                      <td className="py-1 px-2 text-center border border-gray-300">
                         <span
                           className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${
                             status === "PAID"
@@ -566,43 +575,47 @@ export const PrintableSalesReportModal: React.FC<PrintableSalesReportModalProps>
                     </tr>
                   );
                 })}
-              </tbody>
-              <tfoot>
+
+                {/* Total Summary Row - renders once at the end of all items (Last Page) */}
                 <tr className="bg-gray-100 font-black text-gray-900 border-t-2 border-gray-400">
-                  <td colSpan={5} className="py-2 px-2 text-center border border-gray-300 font-bold">
+                  <td colSpan={5} className="py-1.5 px-2 text-center border border-gray-300 font-bold">
                     TOTAL SUMMARY ({transactions.length} Invoices)
                   </td>
-                  <td className="py-2 px-2 text-center border border-gray-300 font-bold">{totalItemsCount}</td>
-                  <td className="py-2 px-2 text-right border border-gray-300">{formatMoney(totalSubtotal)}</td>
-                  <td className="py-2 px-2 text-right border border-gray-300">{formatMoney(stats.totalDiscount)}</td>
-                  <td className="py-2 px-2 text-right border border-gray-300">{formatMoney(totalVat)}</td>
-                  <td className="py-2 px-2 text-right border border-gray-300 font-black text-[var(--primary-color,#009fe3)]">
+                  <td className="py-1.5 px-2 text-center border border-gray-300 font-bold">{totalItemsCount}</td>
+                  <td className="py-1.5 px-2 text-right border border-gray-300">{formatMoney(totalSubtotal)}</td>
+                  <td className="py-1.5 px-2 text-right border border-gray-300">
+                    {stats.totalDiscount > 0 ? formatMoney(stats.totalDiscount) : "-"}
+                  </td>
+                  <td className="py-1.5 px-2 text-right border border-gray-300">
+                    {totalVat > 0 ? formatMoney(totalVat) : "-"}
+                  </td>
+                  <td className="py-1.5 px-2 text-right border border-gray-300 font-black text-[var(--primary-color,#009fe3)]">
                     {formatMoney(stats.totalSalesVolume)}
                   </td>
-                  <td className="py-2 px-2 text-right border border-gray-300 text-emerald-700 font-black">
+                  <td className="py-1.5 px-2 text-right border border-gray-300 text-emerald-700 font-black">
                     {formatMoney(stats.totalCollected)}
                   </td>
-                  <td className="py-2 px-2 text-right border border-gray-300 text-rose-700 font-black">
-                    {formatMoney(stats.totalDue)}
+                  <td className="py-1.5 px-2 text-right border border-gray-300 text-rose-700 font-black">
+                    {stats.totalDue > 0 ? formatMoney(stats.totalDue) : "-"}
                   </td>
                   <td colSpan={2} className="border border-gray-300"></td>
                 </tr>
-              </tfoot>
+              </tbody>
             </table>
           </div>
 
           {/* Signatures */}
-          <div className="mt-14 pt-6 border-t border-gray-300 flex items-center justify-between text-xs text-gray-600">
+          <div className="mt-8 pt-4 border-t border-gray-300 flex items-center justify-between text-xs text-gray-600">
             <div className="text-center">
-              <div className="w-36 border-b border-gray-400 mb-1"></div>
+              <div className="w-32 border-b border-gray-400 mb-1"></div>
               <span>Prepared By</span>
             </div>
             <div className="text-center">
-              <div className="w-36 border-b border-gray-400 mb-1"></div>
+              <div className="w-32 border-b border-gray-400 mb-1"></div>
               <span>Checked By</span>
             </div>
             <div className="text-center">
-              <div className="w-36 border-b border-gray-400 mb-1"></div>
+              <div className="w-32 border-b border-gray-400 mb-1"></div>
               <span>Authorized Signatory</span>
             </div>
           </div>
