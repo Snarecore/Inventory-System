@@ -14,19 +14,31 @@ import {
   EmptyState,
 } from "@/components/common";
 import { formatMoney } from "@/utils/formatters";
+import { showSuccessToast, showErrorToast } from "@/utils/toast-utils";
 import type { SaleItem } from "@/types";
 import { useDebounce } from "@/hooks/useDebounce";
-import { aggregateProductSales } from "../utils/sales-report-helpers";
+import ReportExportButtons from "./ReportExportButtons";
+import {
+  aggregateProductSales,
+  useReportCompanyMeta,
+  exportFilteredProductsExcel,
+  downloadFilteredProductsPdf,
+} from "../utils/sales-report-helpers";
 
 interface ProductSalesReportTableProps {
   transactions: SaleItem[];
   isLoading?: boolean;
+  startDate?: string;
+  endDate?: string;
 }
 
 export const ProductSalesReportTable: React.FC<ProductSalesReportTableProps> = ({
   transactions,
   isLoading,
+  startDate,
+  endDate,
 }) => {
+  const companyMeta = useReportCompanyMeta(startDate, endDate);
   const [searchQuery, setSearchQuery] = useState("");
   const debouncedSearch = useDebounce(searchQuery, 250);
   const [sortBy, setSortBy] = useState<string>("revenue_desc");
@@ -63,6 +75,24 @@ export const ProductSalesReportTable: React.FC<ProductSalesReportTableProps> = (
     currentPage * pageSize
   );
 
+  const handleExportExcel = async () => {
+    try {
+      const count = await exportFilteredProductsExcel(filtered, companyMeta);
+      showSuccessToast(`Exported ${count} products to Excel!`);
+    } catch (e: any) {
+      showErrorToast(e?.message || "Excel export failed");
+    }
+  };
+
+  const handleDownloadPdf = async () => {
+    try {
+      await downloadFilteredProductsPdf(filtered, companyMeta);
+      showSuccessToast("Product sales report PDF downloaded!");
+    } catch (e: any) {
+      showErrorToast(e?.message || "PDF download failed");
+    }
+  };
+
   return (
     <TableContainer>
       {/* Top Filter Bar */}
@@ -79,7 +109,7 @@ export const ProductSalesReportTable: React.FC<ProductSalesReportTableProps> = (
           />
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center justify-end gap-2">
           {/* Sort selector */}
           <div className="relative w-40 shrink-0">
             <select
@@ -103,6 +133,11 @@ export const ProductSalesReportTable: React.FC<ProductSalesReportTableProps> = (
               size={13}
             />
           </div>
+
+          <ReportExportButtons
+            onExportExcel={handleExportExcel}
+            onDownloadPdf={handleDownloadPdf}
+          />
         </div>
       </TableToolbar>
 

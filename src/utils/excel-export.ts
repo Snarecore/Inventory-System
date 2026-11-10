@@ -46,7 +46,7 @@ const getItemsCount = (p: any): number => {
 /**
  * Resolves dynamic CSS variable color (e.g. --table-header-bg, --primary-color) into ExcelJS 8-char ARGB hex
  */
-function resolveThemeArgb(customHex?: string): string {
+export function resolveThemeArgb(customHex?: string): string {
   const parseColor = (col: string): string | null => {
     const c = col.trim();
     if (c.startsWith("#")) {
@@ -89,6 +89,22 @@ function resolveThemeArgb(customHex?: string): string {
 }
 
 /**
+ * Converts 8-char ARGB or 6-char hex to [R, G, B] tuple for jsPDF styling
+ */
+export function argbToRgbTuple(argb: string): [number, number, number] {
+  const clean =
+    argb.length === 8 ? argb.slice(2) : argb.replace("#", "").slice(0, 6);
+  const r = parseInt(clean.slice(0, 2), 16);
+  const g = parseInt(clean.slice(2, 4), 16);
+  const b = parseInt(clean.slice(4, 6), 16);
+  return [
+    Number.isNaN(r) ? 0 : r,
+    Number.isNaN(g) ? 159 : g,
+    Number.isNaN(b) ? 227 : b,
+  ];
+}
+
+/**
  * Convert 1-based column number to Excel column letter (1 -> A, 14 -> N, 27 -> AA)
  */
 function colToLetter(colIdx: number): string {
@@ -105,7 +121,7 @@ function colToLetter(colIdx: number): string {
 /**
  * Format date string to DD-MMM-YYYY (e.g. 10-NOV-2026) matching PDF
  */
-function formatReportDate(d?: string): string {
+export function formatReportDate(d?: string): string {
   if (!d) return "";
   const months = [
     "JAN",
@@ -132,9 +148,9 @@ function formatReportDate(d?: string): string {
 }
 
 /**
- * Gracefully fetches logo image and converts to base64 for embedding in Excel
+ * Gracefully fetches logo image and converts to base64 for embedding in Excel/PDF
  */
-async function fetchLogoBase64(
+export async function fetchLogoBase64(
   url?: string
 ): Promise<{ base64: string; extension: "png" | "jpeg" } | null> {
   if (!url) return null;

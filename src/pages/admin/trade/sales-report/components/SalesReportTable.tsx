@@ -18,13 +18,21 @@ import {
 } from "@/components/common";
 import ColumnVisibilityDropdown, { type ColumnItem } from "@/components/table-components/ColumnVisibilityDropdown";
 import { formatMoney } from "@/utils/formatters";
-import { showSuccessToast } from "@/utils/toast-utils";
+import { showSuccessToast, showErrorToast } from "@/utils/toast-utils";
 import type { SaleItem } from "@/types";
 import { useDebounce } from "@/hooks/useDebounce";
+import ReportExportButtons from "./ReportExportButtons";
+import {
+  useReportCompanyMeta,
+  exportFilteredInvoicesExcel,
+  downloadFilteredInvoicesPdf,
+} from "../utils/sales-report-helpers";
 
 interface SalesReportTableProps {
   transactions: SaleItem[];
   isLoading?: boolean;
+  startDate?: string;
+  endDate?: string;
   onView: (item: SaleItem) => void;
   onPrint: (item: SaleItem) => void;
 }
@@ -32,9 +40,12 @@ interface SalesReportTableProps {
 export const SalesReportTable: React.FC<SalesReportTableProps> = ({
   transactions,
   isLoading,
+  startDate,
+  endDate,
   onView,
   onPrint,
 }) => {
+  const companyMeta = useReportCompanyMeta(startDate, endDate);
   const [searchQuery, setSearchQuery] = useState<string>("");
   const debouncedSearch = useDebounce(searchQuery, 250);
   const [paymentFilter, setPaymentFilter] = useState<string>("all");
@@ -236,6 +247,24 @@ export const SalesReportTable: React.FC<SalesReportTableProps> = ({
     currentPage * pageSize
   );
 
+  const handleExportExcel = async () => {
+    try {
+      const count = await exportFilteredInvoicesExcel(filtered, companyMeta);
+      showSuccessToast(`Successfully exported ${count} sales to Excel!`);
+    } catch (e: any) {
+      showErrorToast(e?.message || "Excel export failed");
+    }
+  };
+
+  const handleDownloadPdf = async () => {
+    try {
+      await downloadFilteredInvoicesPdf(filtered, companyMeta);
+      showSuccessToast("Sales report PDF downloaded!");
+    } catch (e: any) {
+      showErrorToast(e?.message || "PDF download failed");
+    }
+  };
+
   const renderSortHeader = (label: string, activeKey: "customer" | "amount") => {
     const isAsc =
       sortBy === (activeKey === "customer" ? "customer_a_to_z" : "amount_low_to_high");
@@ -403,8 +432,8 @@ export const SalesReportTable: React.FC<SalesReportTableProps> = ({
           </div>
         </div>
 
-        {/* Right Actions: Reset & Excel Export Button */}
-        <div className="flex items-center justify-end gap-1.5 sm:gap-2 shrink-0 w-full sm:w-auto pt-1 sm:pt-0 border-t sm:border-t-0 border-[var(--ui-border)]">
+        {/* Right Actions: Reset, Column Visibility & Excel / PDF Export Buttons */}
+        <div className="flex items-center flex-wrap justify-end gap-1.5 sm:gap-2 shrink-0 w-full sm:w-auto pt-1 sm:pt-0 border-t sm:border-t-0 border-[var(--ui-border)]">
           {isAnyFilterActive && (
             <button
               type="button"
@@ -423,6 +452,12 @@ export const SalesReportTable: React.FC<SalesReportTableProps> = ({
             visibleColumns={visibleColumns}
             onToggle={handleToggleColumn}
             onReset={handleResetColumns}
+          />
+
+          {/* Excel & Download PDF */}
+          <ReportExportButtons
+            onExportExcel={handleExportExcel}
+            onDownloadPdf={handleDownloadPdf}
           />
         </div>
       </TableToolbar>

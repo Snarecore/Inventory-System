@@ -2,14 +2,11 @@ import React, { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import moment from "moment";
 import {
-  FaFilePdf,
-  FaFileExcel,
   FaShoppingCart,
   FaBoxes,
   FaUserFriends,
 } from "react-icons/fa";
 import PageHeader from "@/components/page-header/PageHeader";
-import Button from "@/components/button/Button";
 import RefreshButton from "@/components/table-components/RefreshButton";
 import DateRangePicker from "@/components/date-range-picker/DateRangePicker";
 import TradeInvoiceStats from "@/components/trade/TradeInvoiceStats";
@@ -22,15 +19,7 @@ import { salesTransactionReportQueryKey } from "@/config/query-key";
 import { buildAccessUser } from "@/utils/access-user";
 import { postData } from "@/services/api-service";
 import { fetchSalesList, normalizeSaleRecord } from "@/pages/admin/trade/sales/hooks/useSalesQueries";
-import { useBusinessProfileQuery } from "@/hooks/useBusinessProfile";
-import { getFileViewUrl } from "@/services/file-upload-service";
-import { showSuccessToast, showErrorToast } from "@/utils/toast-utils";
-import { getUserInfo } from "@/utils/auth-storage";
-import {
-  exportTabReportToExcel,
-  downloadTabReportPdf,
-  type ReportTab,
-} from "./utils/sales-report-helpers";
+import type { ReportTab } from "./utils/sales-report-helpers";
 import type { SaleItem } from "@/types";
 
 const SalesReportPage: React.FC = () => {
@@ -50,10 +39,6 @@ const SalesReportPage: React.FC = () => {
   const [selectedInvoice, setSelectedInvoice] = useState<SaleItem | null>(null);
   const [isInvoiceModalOpen, setIsInvoiceModalOpen] = useState<boolean>(false);
   const [isAutoPrint, setIsAutoPrint] = useState<boolean>(false);
-
-  // Business Profile & User info for reports
-  const { data: businessProfile } = useBusinessProfileQuery();
-  const userInfo = getUserInfo();
 
   // Compute startDate and endDate formatted as YYYY-MM-DD
   const { startDate, endDate } = useMemo(() => {
@@ -252,43 +237,6 @@ const SalesReportPage: React.FC = () => {
     setIsInvoiceModalOpen(true);
   };
 
-  const getCompanyMeta = () => {
-    const logoKey = businessProfile?.businessLogo || businessProfile?.businessLogoRefNo || "";
-    const businessLogoUrl =
-      businessProfile?.businessLogoUrl || (logoKey ? getFileViewUrl(logoKey) : "");
-
-    return {
-      businessName: businessProfile?.businessName || userInfo?.orgName || "Cash Boi Trade Ltd",
-      businessAddress: businessProfile?.address || "",
-      businessLogoUrl,
-      startDate,
-      endDate,
-    };
-  };
-
-  // Direct Designed Excel Export for active tab
-  const handleExportExcel = async () => {
-    if (!transactions || transactions.length === 0) {
-      showErrorToast("No sales records available to export");
-      return;
-    }
-    try {
-      const count = await exportTabReportToExcel(activeTab, transactions, getCompanyMeta());
-      showSuccessToast(`Successfully exported ${count} records to Excel!`);
-    } catch (e: any) {
-      showErrorToast(e?.message || "Export failed");
-    }
-  };
-
-  // Direct Landscape PDF / Save as PDF Print for active tab
-  const handleDownloadPdf = () => {
-    if (!transactions || transactions.length === 0) {
-      showErrorToast("No sales records available to download PDF");
-      return;
-    }
-    downloadTabReportPdf(activeTab, transactions, stats, getCompanyMeta());
-  };
-
   return (
     <div className="flex flex-col gap-2 sm:gap-2.5 px-3 py-1.5 sm:px-4 sm:py-2 max-w-[1600px] mx-auto w-full">
       {/* ── Top Header & Global Actions ── */}
@@ -314,28 +262,6 @@ const SalesReportPage: React.FC = () => {
               size="sm"
             />
           </div>
-
-          {/* Export Designed Excel */}
-          <button
-            type="button"
-            onClick={handleExportExcel}
-            className="h-8 rounded-md text-xs font-semibold px-3 whitespace-nowrap shrink-0 flex items-center gap-1.5 text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 border border-emerald-200 dark:border-emerald-800 transition-colors shadow-2xs cursor-pointer"
-            title="Download Designed Excel Report"
-          >
-            <FaFileExcel className="text-emerald-600 dark:text-emerald-400 text-xs" />
-            <span>Export Excel</span>
-          </button>
-
-          {/* Download PDF Report */}
-          <Button
-            label="Download PDF"
-            size="sm"
-            onClick={handleDownloadPdf}
-            color="var(--primary-color)"
-            hoverColor="var(--primary-color-hover)"
-            className="h-8 rounded-md text-xs font-medium px-3 whitespace-nowrap shrink-0 flex items-center gap-1.5 shadow-2xs cursor-pointer !text-white"
-            icon={<FaFilePdf className="text-white text-xs" />}
-          />
 
           {/* Refresh (Far Right) */}
           <RefreshButton
@@ -402,6 +328,8 @@ const SalesReportPage: React.FC = () => {
           <SalesReportTable
             transactions={transactions}
             isLoading={isLoading}
+            startDate={startDate}
+            endDate={endDate}
             onView={handleView}
             onPrint={handlePrint}
           />
@@ -411,6 +339,8 @@ const SalesReportPage: React.FC = () => {
           <ProductSalesReportTable
             transactions={transactions}
             isLoading={isLoading}
+            startDate={startDate}
+            endDate={endDate}
           />
         )}
 
@@ -418,6 +348,8 @@ const SalesReportPage: React.FC = () => {
           <CustomerSalesReportTable
             transactions={transactions}
             isLoading={isLoading}
+            startDate={startDate}
+            endDate={endDate}
           />
         )}
       </div>

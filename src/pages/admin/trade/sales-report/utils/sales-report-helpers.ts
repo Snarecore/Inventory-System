@@ -1,7 +1,18 @@
 import moment from "moment";
 import { formatMoney } from "@/utils/formatters";
-import { buildAndDownloadExcel, exportSalesToExcel } from "@/utils/excel-export";
+import {
+  buildAndDownloadExcel,
+  exportSalesToExcel,
+  resolveThemeArgb,
+  argbToRgbTuple,
+  formatReportDate,
+  fetchLogoBase64,
+} from "@/utils/excel-export";
+import { useBusinessProfileQuery } from "@/hooks/useBusinessProfile";
+import { getFileViewUrl } from "@/services/file-upload-service";
+import { getUserInfo } from "@/utils/auth-storage";
 import type { SaleItem } from "@/types";
+import type { RowInput, Styles } from "jspdf-autotable";
 
 export type ReportTab = "invoices" | "products" | "customers";
 
@@ -32,14 +43,43 @@ export interface ReportCompanyMeta {
   businessName: string;
   businessAddress: string;
   businessLogoUrl: string;
-  startDate: string;
-  endDate: string;
+  startDate?: string;
+  endDate?: string;
+}
+
+/**
+ * Shared hook to resolve business name, address, and logo URL consistently across report tables
+ */
+export function useReportCompanyMeta(
+  startDate?: string,
+  endDate?: string
+): ReportCompanyMeta {
+  const { data: businessProfile } = useBusinessProfileQuery();
+  const userInfo = getUserInfo();
+  const logoKey =
+    businessProfile?.businessLogo || businessProfile?.businessLogoRefNo || "";
+  const businessLogoUrl =
+    businessProfile?.businessLogoUrl ||
+    (logoKey ? getFileViewUrl(logoKey) : "");
+
+  return {
+    businessName:
+      businessProfile?.businessName ||
+      userInfo?.orgName ||
+      "Cash Boi Trade Ltd",
+    businessAddress: businessProfile?.address || "",
+    businessLogoUrl,
+    startDate,
+    endDate,
+  };
 }
 
 /**
  * Aggregates transaction line items into unique Product-Wise Sales summaries
  */
-export function aggregateProductSales(transactions: SaleItem[]): ProductSummary[] {
+export function aggregateProductSales(
+  transactions: SaleItem[]
+): ProductSummary[] {
   const map: Record<string, ProductSummary> = {};
 
   transactions.forEach((tx: any) => {
@@ -57,7 +97,11 @@ export function aggregateProductSales(transactions: SaleItem[]): ProductSummary[
           line.productId || line.product_id || line.id || line.pcode || "unknown"
         );
         const pCode =
-          line.productCode || line.product_code || line.pcode || line.code || "-";
+          line.productCode ||
+          line.product_code ||
+          line.pcode ||
+          line.code ||
+          "-";
         const pName =
           line.productName ||
           line.product_name ||
@@ -102,7 +146,9 @@ export function aggregateProductSales(transactions: SaleItem[]): ProductSummary[
 /**
  * Aggregates transactions into unique Customer-Wise Sales summaries
  */
-export function aggregateCustomerSales(transactions: SaleItem[]): CustomerSummary[] {
+export function aggregateCustomerSales(
+  transactions: SaleItem[]
+): CustomerSummary[] {
   const map: Record<string, CustomerSummary> = {};
 
   transactions.forEach((tx: any) => {
@@ -114,14 +160,17 @@ export function aggregateCustomerSales(transactions: SaleItem[]): CustomerSummar
       tx.customer_name ||
       tx.partyName ||
       "Walk-in Customer";
-    const cPhone = tx.customerPhone || tx.customer_phone || tx.partyPhone || "";
+    const cPhone =
+      tx.customerPhone || tx.customer_phone || tx.partyPhone || "";
     const cAddr =
       tx.customerAddress || tx.customer_address || tx.partyAddress || "";
     const date = tx.salesDate || tx.saleDate || tx.date || "";
 
     const gt = Number(tx.grandTotal ?? tx.grand_total ?? tx.totalAmount ?? 0);
     const paid = Number(tx.paidAmount ?? tx.paid_amount ?? 0);
-    const due = Number(tx.dueAmount ?? tx.due_amount ?? Math.max(0, gt - paid));
+    const due = Number(
+      tx.dueAmount ?? tx.due_amount ?? Math.max(0, gt - paid)
+    );
 
     const key = cPhone ? `${cName}_${cPhone}` : cName;
 
@@ -155,589 +204,788 @@ export function aggregateCustomerSales(transactions: SaleItem[]): CustomerSummar
   return Object.values(map);
 }
 
-/**
- * Exports the currently active Sales Report tab (Invoices / Products / Customers) to designed Excel
- */
-export async function exportTabReportToExcel(
-  activeTab: ReportTab,
-  transactions: SaleItem[],
+export async function exportFilteredInvoicesExcel(
+  invoices: SaleItem[],
   meta: ReportCompanyMeta
 ): Promise<number> {
-  const { businessName, businessAddress, businessLogoUrl, startDate, endDate } = meta;
-  const dateStamp = moment().format("YYYY-MM-DD");
-
-  if (activeTab === "products") {
-    const products = aggregateProductSales(transactions).sort(
-      (a, b) => b.totalRevenue - a.totalRevenue
-    );
-    if (products.length === 0) {
-      throw new Error("No product sales records available to export");
-    }
-
-    const grandRevenue = products.reduce((acc, p) => acc + p.totalRevenue, 0);
-    const data = products.map((p, idx) => ({
-      SL: idx + 1,
-      "Product Code": p.productCode,
-      "Product Name": p.productName,
-      Unit: p.unit,
-      "Quantity Sold": p.totalQuantity,
-      "Invoices Sold": p.invoicesCount,
-      "Total Revenue (BDT)": p.totalRevenue,
-      "Discount (BDT)": p.totalDiscount,
-      "Share of Sales":
-        grandRevenue > 0
-          ? `${((p.totalRevenue / grandRevenue) * 100).toFixed(1)}%`
-          : "0.0%",
-    }));
-
-    const totalQty = data.reduce((s, r) => s + (Number(r["Quantity Sold"]) || 0), 0);
-    const totalRev = data.reduce((s, r) => s + (Number(r["Total Revenue (BDT)"]) || 0), 0);
-    const totalDisc = data.reduce((s, r) => s + (Number(r["Discount (BDT)"]) || 0), 0);
-
-    const totalRow = {
-      SL: `TOTAL SUMMARY (${data.length} Products)`,
-      "Product Code": "",
-      "Product Name": "",
-      Unit: "",
-      "Quantity Sold": totalQty,
-      "Invoices Sold": "",
-      "Total Revenue (BDT)": Number(totalRev.toFixed(2)),
-      "Discount (BDT)": Number(totalDisc.toFixed(2)),
-      "Share of Sales": "100.0%",
-    };
-
-    await buildAndDownloadExcel(data, totalRow, {
-      fileName: `Product_Sales_Report_${dateStamp}.xlsx`,
-      sheetName: "Product Sales",
-      reportTitle: "Product-Wise Sales Report",
-      businessName,
-      businessAddress,
-      businessLogoUrl,
-      startDate,
-      endDate,
-      totalLabel: "Total Products",
-      totalSummarySpan: 4,
-      includeSignatures: true,
-    });
-    return data.length;
-  }
-
-  if (activeTab === "customers") {
-    const customers = aggregateCustomerSales(transactions).sort(
-      (a, b) => b.totalBilled - a.totalBilled
-    );
-    if (customers.length === 0) {
-      throw new Error("No customer sales records available to export");
-    }
-
-    const data = customers.map((c, idx) => ({
-      SL: idx + 1,
-      "Customer Name": c.customerName,
-      Phone: c.customerPhone || "-",
-      Address: c.customerAddress || "-",
-      "Total Orders": c.invoicesCount,
-      "Total Billed (BDT)": c.totalBilled,
-      "Total Paid (BDT)": c.totalPaid,
-      "Outstanding Due (BDT)": c.totalDue,
-      "Last Order Date": c.lastDate ? moment(c.lastDate).format("DD MMM YYYY") : "-",
-      Status: c.totalDue > 0 ? "Has Due" : "Settled",
-    }));
-
-    const totalBilled = data.reduce((s, r) => s + (Number(r["Total Billed (BDT)"]) || 0), 0);
-    const totalPaid = data.reduce((s, r) => s + (Number(r["Total Paid (BDT)"]) || 0), 0);
-    const totalDue = data.reduce((s, r) => s + (Number(r["Outstanding Due (BDT)"]) || 0), 0);
-
-    const totalRow = {
-      SL: `TOTAL SUMMARY (${data.length} Customers)`,
-      "Customer Name": "",
-      Phone: "",
-      Address: "",
-      "Total Orders": "",
-      "Total Billed (BDT)": Number(totalBilled.toFixed(2)),
-      "Total Paid (BDT)": Number(totalPaid.toFixed(2)),
-      "Outstanding Due (BDT)": Number(totalDue.toFixed(2)),
-      "Last Order Date": "",
-      Status: "",
-    };
-
-    await buildAndDownloadExcel(data, totalRow, {
-      fileName: `Customer_Sales_Report_${dateStamp}.xlsx`,
-      sheetName: "Customer Sales",
-      reportTitle: "Customer-Wise Sales Report",
-      businessName,
-      businessAddress,
-      businessLogoUrl,
-      startDate,
-      endDate,
-      totalLabel: "Total Customers",
-      totalSummarySpan: 4,
-      includeSignatures: true,
-    });
-    return data.length;
-  }
-
-  if (!transactions || transactions.length === 0) {
+  if (!invoices || invoices.length === 0) {
     throw new Error("No sales records available to export");
   }
-
-  await exportSalesToExcel(transactions, {
-    fileName: `Sales_Report_${dateStamp}.xlsx`,
+  await exportSalesToExcel(invoices, {
+    fileName: `Sales_Report_${moment().format("YYYY-MM-DD")}.xlsx`,
     sheetName: "Sales Report",
     reportTitle: "Sales Report",
-    businessName,
-    businessAddress,
-    businessLogoUrl,
-    startDate,
-    endDate,
+    businessName: meta.businessName,
+    businessAddress: meta.businessAddress,
+    businessLogoUrl: meta.businessLogoUrl,
+    startDate: meta.startDate,
+    endDate: meta.endDate,
   });
-  return transactions.length;
+  return invoices.length;
 }
 
-export function downloadTabReportPdf(
-  activeTab: ReportTab,
-  transactions: SaleItem[],
-  stats: {
-    totalSalesVolume: number;
-    totalCollected: number;
-    totalDue: number;
-    totalDiscount: number;
-  },
+export async function exportFilteredProductsExcel(
+  products: ProductSummary[],
   meta: ReportCompanyMeta
-): void {
-  const { businessName, businessAddress, businessLogoUrl, startDate, endDate } = meta;
-
-  const rootStyle = getComputedStyle(document.documentElement);
-  const primaryColor =
-    rootStyle.getPropertyValue("--table-header-bg")?.trim() ||
-    rootStyle.getPropertyValue("--primary-color")?.trim() ||
-    "#009fe3";
-
-  const printDate = moment().format("DD-MMM-YYYY").toUpperCase();
-  const fromStr = startDate
-    ? moment(startDate).format("DD-MMM-YYYY").toUpperCase()
-    : "01-JAN-2020";
-  const toStr = endDate
-    ? moment(endDate).format("DD-MMM-YYYY").toUpperCase()
-    : printDate;
-
-  let reportTitle = "Sales Report";
-  let fileTitle = `Sales_Report_${moment().format("YYYY-MM-DD")}`;
-  let metaRightText = `Total Invoices: <b>${transactions.length}</b>`;
-  let theadHtml = "";
-  let tbodyHtml = "";
-
-  if (activeTab === "products") {
-    reportTitle = "Product-Wise Sales Report";
-    fileTitle = `Product_Sales_Report_${moment().format("YYYY-MM-DD")}`;
-    const products = aggregateProductSales(transactions).sort(
-      (a, b) => b.totalRevenue - a.totalRevenue
-    );
-    metaRightText = `Total Products: <b>${products.length}</b>`;
-
-    const grandRev = products.reduce((s, p) => s + p.totalRevenue, 0);
-    const totalQty = products.reduce((s, p) => s + p.totalQuantity, 0);
-    const totalDisc = products.reduce((s, p) => s + p.totalDiscount, 0);
-
-    theadHtml = `
-      <tr>
-        <th class="text-center" style="width: 32px;">SL</th>
-        <th>Product Code</th>
-        <th>Product Description</th>
-        <th class="text-center">Unit</th>
-        <th class="text-center">Orders</th>
-        <th class="text-right">Qty Sold</th>
-        <th class="text-right">Avg Rate (৳)</th>
-        <th class="text-right">Discounts (৳)</th>
-        <th class="text-right">Net Revenue (৳)</th>
-        <th class="text-right">Share (%)</th>
-      </tr>
-    `;
-
-    tbodyHtml =
-      products
-        .map((p, idx) => {
-          const avgRate = p.totalQuantity > 0 ? p.totalRevenue / p.totalQuantity : 0;
-          const share = grandRev > 0 ? ((p.totalRevenue / grandRev) * 100).toFixed(1) : "0.0";
-          return `
-            <tr>
-              <td class="text-center">${idx + 1}</td>
-              <td class="font-bold">${p.productCode}</td>
-              <td>${p.productName}</td>
-              <td class="text-center">${p.unit}</td>
-              <td class="text-center">${p.invoicesCount}</td>
-              <td class="text-right font-bold">${p.totalQuantity}</td>
-              <td class="text-right">${formatMoney(avgRate)}</td>
-              <td class="text-right">${p.totalDiscount > 0 ? formatMoney(p.totalDiscount) : "-"}</td>
-              <td class="text-right font-bold">${formatMoney(p.totalRevenue)}</td>
-              <td class="text-right font-bold">${share}%</td>
-            </tr>
-          `;
-        })
-        .join("") +
-      `
-      <tr class="total-row">
-        <td colspan="5" class="text-center font-bold">TOTAL SUMMARY (${products.length} Products)</td>
-        <td class="text-right font-bold">${totalQty}</td>
-        <td></td>
-        <td class="text-right">${totalDisc > 0 ? formatMoney(totalDisc) : "-"}</td>
-        <td class="text-right font-bold" style="color: ${primaryColor};">${formatMoney(grandRev)}</td>
-        <td class="text-right font-bold">100.0%</td>
-      </tr>
-    `;
-  } else if (activeTab === "customers") {
-    reportTitle = "Customer-Wise Sales Report";
-    fileTitle = `Customer_Sales_Report_${moment().format("YYYY-MM-DD")}`;
-    const customers = aggregateCustomerSales(transactions).sort(
-      (a, b) => b.totalBilled - a.totalBilled
-    );
-    metaRightText = `Total Customers: <b>${customers.length}</b>`;
-
-    const totalOrders = customers.reduce((s, c) => s + c.invoicesCount, 0);
-    const totalBilled = customers.reduce((s, c) => s + c.totalBilled, 0);
-    const totalPaid = customers.reduce((s, c) => s + c.totalPaid, 0);
-    const totalDue = customers.reduce((s, c) => s + c.totalDue, 0);
-
-    theadHtml = `
-      <tr>
-        <th class="text-center" style="width: 32px;">SL</th>
-        <th style="width: 32px;">Customer Name</th>
-        <th class="text-center">Phone</th>
-        <th>Address</th>
-        <th class="text-center">Orders</th>
-        <th class="text-right">Gross Billed (৳)</th>
-        <th class="text-right">Total Paid (৳)</th>
-        <th class="text-right">Outstanding Due (৳)</th>
-        <th class="text-center">Last Order</th>
-        <th class="text-center">Status</th>
-      </tr>
-    `;
-
-    tbodyHtml =
-      customers
-        .map((c, idx) => {
-          const status = c.totalDue > 0 ? "Has Due" : "Settled";
-          const lastStr = c.lastDate ? moment(c.lastDate).format("DD-MMM-YYYY").toUpperCase() : "-";
-          return `
-            <tr>
-              <td class="text-center">${idx + 1}</td>
-              <td class="font-bold">${c.customerName}</td>
-              <td class="text-center">${c.customerPhone || "-"}</td>
-              <td>${c.customerAddress || "-"}</td>
-              <td class="text-center">${c.invoicesCount}</td>
-              <td class="text-right font-bold">${formatMoney(c.totalBilled)}</td>
-              <td class="text-right font-bold" style="color: #047857;">${formatMoney(c.totalPaid)}</td>
-              <td class="text-right font-bold" style="color: #b91c1c;">${c.totalDue > 0 ? formatMoney(c.totalDue) : "-"}</td>
-              <td class="text-center">${lastStr}</td>
-              <td class="text-center font-bold">${status}</td>
-            </tr>
-          `;
-        })
-        .join("") +
-      `
-      <tr class="total-row">
-        <td colspan="4" class="text-center font-bold">TOTAL SUMMARY (${customers.length} Customers)</td>
-        <td class="text-center font-bold">${totalOrders}</td>
-        <td class="text-right font-bold" style="color: ${primaryColor};">${formatMoney(totalBilled)}</td>
-        <td class="text-right font-bold" style="color: #047857;">${formatMoney(totalPaid)}</td>
-        <td class="text-right font-bold" style="color: #b91c1c;">${totalDue > 0 ? formatMoney(totalDue) : "-"}</td>
-        <td colspan="2"></td>
-      </tr>
-    `;
-  } else {
-    // Invoices (default)
-    const totalSubtotal = transactions.reduce((acc, t: any) => {
-      const gt = Number(t.grandTotal ?? t.grand_total ?? t.totalAmount ?? 0);
-      return acc + Number(t.totalAmount ?? t.total_amount ?? gt);
-    }, 0);
-    const totalVat = transactions.reduce((acc, t: any) => acc + Number(t.vat ?? 0), 0);
-    const totalItemsCount = transactions.reduce((acc, t: any) => {
-      const details = t.salesDetails || t.saleDetails || t.details || t.items || [];
-      return (
-        acc +
-        (Array.isArray(details) && details.length > 0
-          ? details.length
-          : Number(t.itemsCount || 1))
-      );
-    }, 0);
-
-    theadHtml = `
-      <tr>
-        <th class="text-center" style="width: 32px;">SL</th>
-        <th>Order ID</th>
-        <th class="text-center">Date</th>
-        <th>Customer Name</th>
-        <th class="text-center">Phone</th>
-        <th class="text-center" style="width: 40px;">Items</th>
-        <th class="text-right">Subtotal (৳)</th>
-        <th class="text-right">Discount (৳)</th>
-        <th class="text-right">VAT (৳)</th>
-        <th class="text-right">Grand Total (৳)</th>
-        <th class="text-right">Paid (৳)</th>
-        <th class="text-right">Due (৳)</th>
-        <th class="text-center">Method</th>
-        <th class="text-center">Status</th>
-      </tr>
-    `;
-
-    tbodyHtml =
-      transactions
-        .map((t: any, idx: number) => {
-          const gt = Number(t.grandTotal ?? t.grand_total ?? t.totalAmount ?? 0);
-          const paid = Number(t.paidAmount ?? t.paid_amount ?? 0);
-          const due = Number(t.dueAmount ?? t.due_amount ?? Math.max(0, gt - paid));
-          const sub = Number(t.totalAmount ?? t.total_amount ?? gt);
-          const disc = Number(t.discount ?? 0);
-          const vat = Number(t.vat ?? 0);
-          const pType = String(t.paymentType || t.payment_type || "CASH").toUpperCase();
-          const details = t.salesDetails || t.saleDetails || t.details || t.items || [];
-          const itemsCount =
-            Array.isArray(details) && details.length > 0
-              ? details.length
-              : Number(t.itemsCount || 1);
-          const status = due <= 0 && gt > 0 ? "PAID" : due > 0 && paid > 0 ? "PARTIAL" : "DUE";
-          const dateStr =
-            t.salesDate || t.date
-              ? moment(t.salesDate || t.date).format("DD-MMM-YYYY").toUpperCase()
-              : "-";
-
-          return `
-            <tr>
-              <td class="text-center">${idx + 1}</td>
-              <td class="font-bold">${t.orderNo || t.invoiceNo || `ORD-${t.id || idx + 1}`}</td>
-              <td class="text-center">${dateStr}</td>
-              <td>${t.customerName || t.customer_name || "Walk-in Customer"}</td>
-              <td class="text-center">${t.customerPhone || t.customer_phone || "-"}</td>
-              <td class="text-center">${itemsCount}</td>
-              <td class="text-right">${formatMoney(sub)}</td>
-              <td class="text-right">${disc > 0 ? formatMoney(disc) : "-"}</td>
-              <td class="text-right">${vat > 0 ? formatMoney(vat) : "-"}</td>
-              <td class="text-right font-bold">${formatMoney(gt)}</td>
-              <td class="text-right font-bold" style="color: #047857;">${formatMoney(paid)}</td>
-              <td class="text-right font-bold" style="color: #b91c1c;">${due > 0 ? formatMoney(due) : "-"}</td>
-              <td class="text-center">${pType}</td>
-              <td class="text-center font-bold">${status}</td>
-            </tr>
-          `;
-        })
-        .join("") +
-      `
-      <tr class="total-row">
-        <td colspan="5" class="text-center font-bold">TOTAL SUMMARY (${transactions.length} Invoices)</td>
-        <td class="text-center">${totalItemsCount}</td>
-        <td class="text-right">${formatMoney(totalSubtotal)}</td>
-        <td class="text-right">${stats.totalDiscount > 0 ? formatMoney(stats.totalDiscount) : "-"}</td>
-        <td class="text-right">${totalVat > 0 ? formatMoney(totalVat) : "-"}</td>
-        <td class="text-right font-bold" style="color: ${primaryColor};">${formatMoney(stats.totalSalesVolume)}</td>
-        <td class="text-right font-bold" style="color: #047857;">${formatMoney(stats.totalCollected)}</td>
-        <td class="text-right font-bold" style="color: #b91c1c;">${stats.totalDue > 0 ? formatMoney(stats.totalDue) : "-"}</td>
-        <td colspan="2"></td>
-      </tr>
-    `;
+): Promise<number> {
+  if (!products || products.length === 0) {
+    throw new Error("No product sales records available to export");
   }
 
-  const printWindow = window.open("", "_blank", "width=1200,height=900");
-  if (!printWindow) {
-    window.print();
-    return;
-  }
+  const grandRevenue = products.reduce((acc, p) => acc + p.totalRevenue, 0);
+  const data = products.map((p, idx) => ({
+    SL: idx + 1,
+    "Product Code": p.productCode,
+    "Product Name": p.productName,
+    Unit: p.unit,
+    "Quantity Sold": p.totalQuantity,
+    "Invoices Sold": p.invoicesCount,
+    "Total Revenue (BDT)": p.totalRevenue,
+    "Discount (BDT)": p.totalDiscount,
+    "Share of Sales":
+      grandRevenue > 0
+        ? `${((p.totalRevenue / grandRevenue) * 100).toFixed(1)}%`
+        : "0.0%",
+  }));
 
-  const doc = printWindow.document;
-  doc.open();
-  doc.write(`
-    <!DOCTYPE html>
-    <html>
-      <head>
-        <meta charset="utf-8" />
-        <title>${fileTitle}</title>
-        <style>
-          @page {
-            size: landscape;
-            margin: 6mm;
-          }
-          * {
-            box-sizing: border-box;
-            -webkit-print-color-adjust: exact !important;
-            print-color-adjust: exact !important;
-          }
-          body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-            margin: 0;
-            padding: 4px;
-            color: #0f172a;
-            background: #ffffff;
-          }
-          .header-row {
-            display: flex;
-            align-items: flex-start;
-            justify-content: space-between;
-            padding-bottom: 2px;
-            margin-bottom: 0px;
-          }
-          .company-info {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-          }
-          .company-logo {
-            height: 36px;
-            max-width: 120px;
-            object-fit: contain;
-          }
-          .company-name {
-            font-size: 15px;
-            font-weight: 800;
-            color: #0f172a;
-            line-height: 1.15;
-          }
-          .company-sub {
-            font-size: 10px;
-            color: #475569;
-            line-height: 1.2;
-            margin-top: 1px;
-          }
-          .print-date {
-            font-size: 10px;
-            font-weight: 700;
-            color: #0f172a;
-            text-align: right;
-            padding-top: 2px;
-          }
-          .report-title {
-            font-size: 14px;
-            font-weight: 800;
-            text-align: center;
-            text-transform: uppercase;
-            margin: 2px 0 3px 0;
-            color: #0f172a;
-            letter-spacing: 0.5px;
-            line-height: 1.2;
-          }
-          .filter-row {
-            font-size: 10px;
-            font-weight: 600;
-            color: #334155;
-            display: flex;
-            justify-content: space-between;
-            border-bottom: 1px solid #cbd5e1;
-            padding-bottom: 3px;
-            margin-bottom: 4px;
-            line-height: 1.2;
-          }
-          table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 2px;
-            page-break-inside: auto;
-          }
-          tr {
-            page-break-inside: avoid;
-            page-break-after: auto;
-          }
-          th, td {
-            border: 1px solid #94a3b8;
-            padding: 4px 5px;
-            font-size: 9.5px;
-          }
-          th {
-            background-color: ${primaryColor} !important;
-            color: #ffffff !important;
-            font-weight: 700;
-            text-align: left;
-          }
-          .text-center { text-align: center; }
-          .text-right { text-align: right; }
-          .font-bold { font-weight: 700; }
-          tfoot {
-            display: table-row-group !important;
-          }
-          .total-row {
-            background-color: #f1f5f9 !important;
-            font-weight: 800;
-            border-top: 2px solid #64748b;
-            page-break-inside: avoid !important;
-            break-inside: avoid !important;
-          }
-          .signatures {
-            margin-top: 24px;
-            display: flex;
-            justify-content: space-between;
-            font-size: 10px;
-            color: #475569;
-            page-break-inside: avoid !important;
-            break-inside: avoid !important;
-          }
-          .sig-block {
-            text-align: center;
-            width: 140px;
-          }
-          .sig-line {
-            border-bottom: 1px solid #94a3b8;
-            margin-bottom: 4px;
-          }
-        </style>
-      </head>
-      <body>
-        <div class="header-row">
-          <div class="company-info">
-            ${
-              businessLogoUrl
-                ? `<img src="${businessLogoUrl}" class="company-logo" crossOrigin="anonymous" />`
-                : ""
-            }
-            <div>
-              <div class="company-name">${businessName}</div>
-              ${businessAddress ? `<div class="company-sub">${businessAddress}</div>` : ""}
-            </div>
-          </div>
-          <div class="print-date">
-            Print Date: ${printDate}
-          </div>
-        </div>
+  const totalQty = data.reduce(
+    (s, r) => s + (Number(r["Quantity Sold"]) || 0),
+    0
+  );
+  const totalRev = data.reduce(
+    (s, r) => s + (Number(r["Total Revenue (BDT)"]) || 0),
+    0
+  );
+  const totalDisc = data.reduce(
+    (s, r) => s + (Number(r["Discount (BDT)"]) || 0),
+    0
+  );
 
-        <div class="report-title">${reportTitle}</div>
-
-        <div class="filter-row">
-          <div>
-            From Date: <b>${fromStr}</b> &nbsp;&nbsp; To Date: <b>${toStr}</b>
-          </div>
-          <div>
-            ${metaRightText}
-          </div>
-        </div>
-
-        <table>
-          <thead>${theadHtml}</thead>
-          <tbody>${tbodyHtml}</tbody>
-        </table>
-
-        <div class="signatures">
-          <div class="sig-block">
-            <div class="sig-line"></div>
-            <span>Prepared By</span>
-          </div>
-          <div class="sig-block">
-            <div class="sig-line"></div>
-            <span>Checked By</span>
-          </div>
-          <div class="sig-block">
-            <div class="sig-line"></div>
-            <span>Authorized Signatory</span>
-          </div>
-        </div>
-      </body>
-    </html>
-  `);
-  doc.close();
-
-  printWindow.focus();
-  setTimeout(() => {
-    try {
-      printWindow.print();
-    } catch (err) {
-      console.error("Print trigger error:", err);
-    }
-  }, 450);
-  printWindow.onafterprint = () => {
-    printWindow.close();
+  const totalRow = {
+    SL: `TOTAL SUMMARY (${data.length} Products)`,
+    "Product Code": "",
+    "Product Name": "",
+    Unit: "",
+    "Quantity Sold": totalQty,
+    "Invoices Sold": "",
+    "Total Revenue (BDT)": Number(totalRev.toFixed(2)),
+    "Discount (BDT)": Number(totalDisc.toFixed(2)),
+    "Share of Sales": "100.0%",
   };
+
+  await buildAndDownloadExcel(data, totalRow, {
+    fileName: `Product_Sales_Report_${moment().format("YYYY-MM-DD")}.xlsx`,
+    sheetName: "Product Sales",
+    reportTitle: "Product-Wise Sales Report",
+    businessName: meta.businessName,
+    businessAddress: meta.businessAddress,
+    businessLogoUrl: meta.businessLogoUrl,
+    startDate: meta.startDate,
+    endDate: meta.endDate,
+    totalLabel: "Total Products",
+    totalSummarySpan: 4,
+    includeSignatures: true,
+  });
+
+  return data.length;
+}
+
+export async function exportFilteredCustomersExcel(
+  customers: CustomerSummary[],
+  meta: ReportCompanyMeta
+): Promise<number> {
+  if (!customers || customers.length === 0) {
+    throw new Error("No customer sales records available to export");
+  }
+
+  const data = customers.map((c, idx) => ({
+    SL: idx + 1,
+    "Customer Name": c.customerName,
+    Phone: c.customerPhone || "-",
+    Address: c.customerAddress || "-",
+    "Total Orders": c.invoicesCount,
+    "Total Billed (BDT)": c.totalBilled,
+    "Total Paid (BDT)": c.totalPaid,
+    "Outstanding Due (BDT)": c.totalDue,
+    "Last Order Date": c.lastDate
+      ? moment(c.lastDate).format("DD MMM YYYY")
+      : "-",
+    Status: c.totalDue > 0 ? "Has Due" : "Settled",
+  }));
+
+  const totalBilled = data.reduce(
+    (s, r) => s + (Number(r["Total Billed (BDT)"]) || 0),
+    0
+  );
+  const totalPaid = data.reduce(
+    (s, r) => s + (Number(r["Total Paid (BDT)"]) || 0),
+    0
+  );
+  const totalDue = data.reduce(
+    (s, r) => s + (Number(r["Outstanding Due (BDT)"]) || 0),
+    0
+  );
+
+  const totalRow = {
+    SL: `TOTAL SUMMARY (${data.length} Customers)`,
+    "Customer Name": "",
+    Phone: "",
+    Address: "",
+    "Total Orders": "",
+    "Total Billed (BDT)": Number(totalBilled.toFixed(2)),
+    "Total Paid (BDT)": Number(totalPaid.toFixed(2)),
+    "Outstanding Due (BDT)": Number(totalDue.toFixed(2)),
+    "Last Order Date": "",
+    Status: "",
+  };
+
+  await buildAndDownloadExcel(data, totalRow, {
+    fileName: `Customer_Sales_Report_${moment().format("YYYY-MM-DD")}.xlsx`,
+    sheetName: "Customer Sales",
+    reportTitle: "Customer-Wise Sales Report",
+    businessName: meta.businessName,
+    businessAddress: meta.businessAddress,
+    businessLogoUrl: meta.businessLogoUrl,
+    startDate: meta.startDate,
+    endDate: meta.endDate,
+    totalLabel: "Total Customers",
+    totalSummarySpan: 4,
+    includeSignatures: true,
+  });
+
+  return data.length;
+}
+interface PdfLogoResult {
+  dataUri: string;
+  format: "PNG" | "JPEG";
+  w: number;
+  h: number;
+}
+
+async function getLogoForPdf(url?: string): Promise<PdfLogoResult | null> {
+  const logo = await fetchLogoBase64(url);
+  if (!logo) return null;
+  const dataUri = `data:image/${logo.extension};base64,${logo.base64}`;
+  const format = logo.extension === "jpeg" ? "JPEG" : "PNG";
+
+  try {
+    const dims = await new Promise<{ w: number; h: number }>((resolve) => {
+      const img = new Image();
+      img.onload = () => {
+        const natW = img.naturalWidth || 100;
+        const natH = img.naturalHeight || 40;
+        const maxH = 10.5; // mm
+        const maxW = 28; // mm
+        let w = (natW / natH) * maxH;
+        let h = maxH;
+        if (w > maxW) {
+          h = (natH / natW) * maxW;
+          w = maxW;
+        }
+        resolve({ w, h });
+      };
+      img.onerror = () => resolve({ w: 11, h: 10.5 });
+      img.src = dataUri;
+    });
+    return { dataUri, format, w: dims.w, h: dims.h };
+  } catch {
+    return { dataUri, format, w: 11, h: 10.5 };
+  }
+}
+
+interface CorporatePdfConfig {
+  fileName: string;
+  reportTitle: string;
+  metaRightLabel: string;
+  headers: string[];
+  bodyRows: RowInput[];
+  columnStyles: { [key: string]: Partial<Styles> };
+  meta: ReportCompanyMeta;
+}
+
+async function generateAndDownloadCorporatePdf(
+  config: CorporatePdfConfig
+): Promise<void> {
+  const [{ jsPDF }, autoTableMod] = await Promise.all([
+    import("jspdf"),
+    import("jspdf-autotable"),
+  ]);
+  const autoTable = autoTableMod.default || autoTableMod.autoTable;
+
+  const doc = new jsPDF({
+    orientation: "landscape",
+    unit: "mm",
+    format: "a4",
+  });
+
+  const pageWidth = doc.internal.pageSize.getWidth(); // 297mm
+  const pageHeight = doc.internal.pageSize.getHeight(); // 210mm
+  const marginX = 10;
+  const rightEdge = pageWidth - marginX;
+  const themeRgb = argbToRgbTuple(resolveThemeArgb());
+
+  const { businessName, businessAddress, businessLogoUrl, startDate, endDate } =
+    config.meta;
+
+  const printDate = formatReportDate(new Date().toISOString());
+  const fromStr = startDate ? formatReportDate(startDate) : "ALL";
+  const toStr = endDate ? formatReportDate(endDate) : printDate;
+
+  // ── Top Corporate Header (Compact, No Phone Number) ──
+  const logo = await getLogoForPdf(businessLogoUrl);
+  let textStartX = marginX;
+
+  if (logo) {
+    try {
+      doc.addImage(logo.dataUri, logo.format, marginX, 7.5, logo.w, logo.h);
+      textStartX = marginX + logo.w + 3;
+    } catch (err) {
+      console.warn("Could not embed logo in PDF:", err);
+    }
+  }
+
+  // Company Name
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(13);
+  doc.setTextColor(15, 23, 42);
+  doc.text(businessName || "Cash Boi Trade Ltd", textStartX, 11.5);
+
+  // Company Address
+  if (businessAddress) {
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(8.5);
+    doc.setTextColor(71, 85, 105);
+    doc.text(businessAddress, textStartX, 16);
+  }
+
+  // Print Date (Top Right)
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(8.5);
+  doc.setTextColor(15, 23, 42);
+  doc.text(`Print Date: ${printDate}`, rightEdge, 11.5, { align: "right" });
+
+  // Centered Report Title
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(12);
+  doc.setTextColor(15, 23, 42);
+  doc.text(config.reportTitle.toUpperCase(), pageWidth / 2, 22, {
+    align: "center",
+  });
+
+  // Meta Filter Row
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(8.5);
+  doc.setTextColor(51, 65, 85);
+  doc.text(`From Date: ${fromStr}   To Date: ${toStr}`, marginX, 27);
+  doc.text(config.metaRightLabel, rightEdge, 27, { align: "right" });
+
+  // Divider line
+  doc.setDrawColor(203, 213, 225);
+  doc.setLineWidth(0.25);
+  doc.line(marginX, 29, rightEdge, 29);
+
+  // ── Data Table (Global Theme Color Header + Last-Page Summary Row) ──
+  autoTable(doc, {
+    head: [config.headers],
+    body: config.bodyRows,
+    startY: 31,
+    margin: { top: 10, right: marginX, bottom: 14, left: marginX },
+    theme: "grid",
+    showHead: "everyPage",
+    headStyles: {
+      fillColor: themeRgb,
+      textColor: [255, 255, 255],
+      fontStyle: "bold",
+      fontSize: 7.5,
+      valign: "middle",
+      lineWidth: 0.2,
+      lineColor: [148, 163, 184],
+      cellPadding: { top: 2.2, right: 1.8, bottom: 2.2, left: 1.8 },
+    },
+    bodyStyles: {
+      fontSize: 7.5,
+      textColor: [15, 23, 42],
+      valign: "middle",
+      lineWidth: 0.2,
+      lineColor: [203, 213, 225],
+      cellPadding: { top: 1.8, right: 1.8, bottom: 1.8, left: 1.8 },
+    },
+    alternateRowStyles: {
+      fillColor: [248, 250, 252],
+    },
+    columnStyles: config.columnStyles,
+    didParseCell: (hookData) => {
+      // Match header horizontal alignment with its column alignment
+      if (hookData.section === "head") {
+        const colStyle = config.columnStyles[String(hookData.column.index)];
+        if (colStyle?.halign) {
+          hookData.cell.styles.halign = colStyle.halign;
+        }
+      }
+    },
+  });
+
+  // ── Signatures Block on Last Page ──
+  let sigY = ((doc as any).lastAutoTable?.finalY || 45) + 18;
+  if (sigY > pageHeight - 16) {
+    doc.addPage();
+    sigY = 26;
+  }
+
+  doc.setDrawColor(148, 163, 184);
+  doc.setLineWidth(0.3);
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(8.5);
+  doc.setTextColor(71, 85, 105);
+
+  const sigBlocks = [
+    { x1: 20, x2: 68, cx: 44, label: "Prepared By" },
+    { x1: 124.5, x2: 172.5, cx: 148.5, label: "Checked By" },
+    { x1: 229, x2: 277, cx: 253, label: "Authorized Signatory" },
+  ];
+  sigBlocks.forEach((b) => {
+    doc.line(b.x1, sigY, b.x2, sigY);
+    doc.text(b.label, b.cx, sigY + 4.5, { align: "center" });
+  });
+
+  // ── Page Numbers ──
+  const totalPages = doc.getNumberOfPages();
+  for (let p = 1; p <= totalPages; p++) {
+    doc.setPage(p);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(7.5);
+    doc.setTextColor(100, 116, 139);
+    doc.text(`Page ${p} of ${totalPages}`, rightEdge, pageHeight - 6, {
+      align: "right",
+    });
+  }
+
+  // Trigger direct PDF download
+  doc.save(config.fileName);
+}
+
+const SUMMARY_FILL: [number, number, number] = [241, 245, 249];
+const EMERALD_RGB: [number, number, number] = [4, 120, 87];
+const ROSE_RGB: [number, number, number] = [185, 28, 28];
+const AMBER_RGB: [number, number, number] = [217, 119, 6];
+const DARK_RGB: [number, number, number] = [15, 23, 42];
+const MUTED_RGB: [number, number, number] = [100, 116, 139];
+
+export async function downloadFilteredInvoicesPdf(
+  invoices: SaleItem[],
+  meta: ReportCompanyMeta
+): Promise<void> {
+  if (!invoices || invoices.length === 0) {
+    throw new Error("No sales records available to download PDF");
+  }
+
+  const themeRgb = argbToRgbTuple(resolveThemeArgb());
+  let sumSub = 0;
+  let sumDisc = 0;
+  let sumVat = 0;
+  let sumGt = 0;
+  let sumPaid = 0;
+  let sumDue = 0;
+  let sumItems = 0;
+
+  const dataRows: RowInput[] = invoices.map((t: any, idx: number) => {
+    const gt = Number(t.grandTotal ?? t.grand_total ?? t.totalAmount ?? 0);
+    const paid = Number(t.paidAmount ?? t.paid_amount ?? 0);
+    const due = Number(t.dueAmount ?? t.due_amount ?? Math.max(0, gt - paid));
+    const sub = Number(t.totalAmount ?? t.total_amount ?? gt);
+    const disc = Number(t.discount ?? 0);
+    const vat = Number(t.vat ?? 0);
+    const pType = String(t.paymentType || t.payment_type || "CASH").toUpperCase();
+    const details = t.salesDetails || t.saleDetails || t.details || t.items || [];
+    const itemsCount =
+      Array.isArray(details) && details.length > 0
+        ? details.length
+        : Number(t.itemsCount || 1);
+    const status =
+      due <= 0 && gt > 0 ? "PAID" : due > 0 && paid > 0 ? "PARTIAL" : "DUE";
+    const dateStr =
+      t.salesDate || t.date
+        ? moment(t.salesDate || t.date).format("DD-MMM-YYYY").toUpperCase()
+        : "-";
+
+    sumSub += sub;
+    sumDisc += disc;
+    sumVat += vat;
+    sumGt += gt;
+    sumPaid += paid;
+    sumDue += due;
+    sumItems += itemsCount;
+
+    const statusColor =
+      status === "PAID"
+        ? EMERALD_RGB
+        : status === "PARTIAL"
+        ? AMBER_RGB
+        : ROSE_RGB;
+
+    return [
+      idx + 1,
+      {
+        content: t.orderNo || t.invoiceNo || `ORD-${t.id || idx + 1}`,
+        styles: { fontStyle: "bold" },
+      },
+      dateStr,
+      t.customerName || t.customer_name || "Walk-in Customer",
+      t.customerPhone || t.customer_phone || "-",
+      itemsCount,
+      formatMoney(sub),
+      disc > 0 ? formatMoney(disc) : "-",
+      vat > 0 ? formatMoney(vat) : "-",
+      { content: formatMoney(gt), styles: { fontStyle: "bold" } },
+      {
+        content: formatMoney(paid),
+        styles: { fontStyle: "bold", textColor: EMERALD_RGB },
+      },
+      {
+        content: due > 0 ? formatMoney(due) : "-",
+        styles: {
+          fontStyle: "bold",
+          textColor: due > 0 ? ROSE_RGB : MUTED_RGB,
+        },
+      },
+      pType,
+      {
+        content: status,
+        styles: { fontStyle: "bold", textColor: statusColor },
+      },
+    ];
+  });
+
+  const summaryRow: RowInput = [
+    {
+      content: `TOTAL SUMMARY (${invoices.length} Invoices)`,
+      colSpan: 5,
+      styles: {
+        halign: "center",
+        fontStyle: "bold",
+        fillColor: SUMMARY_FILL,
+        textColor: DARK_RGB,
+      },
+    },
+    {
+      content: sumItems,
+      styles: { halign: "center", fontStyle: "bold", fillColor: SUMMARY_FILL },
+    },
+    {
+      content: formatMoney(sumSub),
+      styles: { halign: "right", fontStyle: "bold", fillColor: SUMMARY_FILL },
+    },
+    {
+      content: sumDisc > 0 ? formatMoney(sumDisc) : "-",
+      styles: { halign: "right", fontStyle: "bold", fillColor: SUMMARY_FILL },
+    },
+    {
+      content: sumVat > 0 ? formatMoney(sumVat) : "-",
+      styles: { halign: "right", fontStyle: "bold", fillColor: SUMMARY_FILL },
+    },
+    {
+      content: formatMoney(sumGt),
+      styles: {
+        halign: "right",
+        fontStyle: "bold",
+        fillColor: SUMMARY_FILL,
+        textColor: themeRgb,
+      },
+    },
+    {
+      content: formatMoney(sumPaid),
+      styles: {
+        halign: "right",
+        fontStyle: "bold",
+        fillColor: SUMMARY_FILL,
+        textColor: EMERALD_RGB,
+      },
+    },
+    {
+      content: sumDue > 0 ? formatMoney(sumDue) : "-",
+      styles: {
+        halign: "right",
+        fontStyle: "bold",
+        fillColor: SUMMARY_FILL,
+        textColor: sumDue > 0 ? ROSE_RGB : MUTED_RGB,
+      },
+    },
+    {
+      content: "",
+      colSpan: 2,
+      styles: { fillColor: SUMMARY_FILL },
+    },
+  ];
+
+  await generateAndDownloadCorporatePdf({
+    fileName: `Sales_Report_${moment().format("YYYY-MM-DD")}.pdf`,
+    reportTitle: "Sales Report",
+    metaRightLabel: `Total Invoices: ${invoices.length}`,
+    headers: [
+      "SL",
+      "Order ID",
+      "Date",
+      "Customer Name",
+      "Phone",
+      "Items",
+      "Subtotal (BDT)",
+      "Discount (BDT)",
+      "VAT (BDT)",
+      "Grand Total (BDT)",
+      "Paid (BDT)",
+      "Due (BDT)",
+      "Method",
+      "Status",
+    ],
+    bodyRows: [...dataRows, summaryRow],
+    columnStyles: {
+      "0": { halign: "center", cellWidth: 10 },
+      "1": { halign: "left" },
+      "2": { halign: "center" },
+      "3": { halign: "left" },
+      "4": { halign: "center" },
+      "5": { halign: "center", cellWidth: 12 },
+      "6": { halign: "right" },
+      "7": { halign: "right" },
+      "8": { halign: "right" },
+      "9": { halign: "right" },
+      "10": { halign: "right" },
+      "11": { halign: "right" },
+      "12": { halign: "center" },
+      "13": { halign: "center" },
+    },
+    meta,
+  });
+}
+
+export async function downloadFilteredProductsPdf(
+  products: ProductSummary[],
+  meta: ReportCompanyMeta
+): Promise<void> {
+  if (!products || products.length === 0) {
+    throw new Error("No product sales records available to download PDF");
+  }
+
+  const themeRgb = argbToRgbTuple(resolveThemeArgb());
+  const grandRev = products.reduce((s, p) => s + p.totalRevenue, 0);
+  const totalQty = products.reduce((s, p) => s + p.totalQuantity, 0);
+  const totalDisc = products.reduce((s, p) => s + p.totalDiscount, 0);
+
+  const dataRows: RowInput[] = products.map((p, idx) => {
+    const avgRate = p.totalQuantity > 0 ? p.totalRevenue / p.totalQuantity : 0;
+    const share =
+      grandRev > 0 ? ((p.totalRevenue / grandRev) * 100).toFixed(1) : "0.0";
+
+    return [
+      idx + 1,
+      { content: p.productCode, styles: { fontStyle: "bold" } },
+      p.productName,
+      p.unit,
+      p.invoicesCount,
+      { content: p.totalQuantity, styles: { fontStyle: "bold" } },
+      formatMoney(avgRate),
+      p.totalDiscount > 0 ? formatMoney(p.totalDiscount) : "-",
+      { content: formatMoney(p.totalRevenue), styles: { fontStyle: "bold" } },
+      `${share}%`,
+    ];
+  });
+
+  const summaryRow: RowInput = [
+    {
+      content: `TOTAL SUMMARY (${products.length} Products)`,
+      colSpan: 5,
+      styles: {
+        halign: "center",
+        fontStyle: "bold",
+        fillColor: SUMMARY_FILL,
+        textColor: DARK_RGB,
+      },
+    },
+    {
+      content: totalQty,
+      styles: { halign: "right", fontStyle: "bold", fillColor: SUMMARY_FILL },
+    },
+    { content: "", styles: { fillColor: SUMMARY_FILL } },
+    {
+      content: totalDisc > 0 ? formatMoney(totalDisc) : "-",
+      styles: { halign: "right", fontStyle: "bold", fillColor: SUMMARY_FILL },
+    },
+    {
+      content: formatMoney(grandRev),
+      styles: {
+        halign: "right",
+        fontStyle: "bold",
+        fillColor: SUMMARY_FILL,
+        textColor: themeRgb,
+      },
+    },
+    {
+      content: "100.0%",
+      styles: { halign: "right", fontStyle: "bold", fillColor: SUMMARY_FILL },
+    },
+  ];
+
+  await generateAndDownloadCorporatePdf({
+    fileName: `Product_Sales_Report_${moment().format("YYYY-MM-DD")}.pdf`,
+    reportTitle: "Product-Wise Sales Report",
+    metaRightLabel: `Total Products: ${products.length}`,
+    headers: [
+      "SL",
+      "Product Code",
+      "Product Description",
+      "Unit",
+      "Orders",
+      "Qty Sold",
+      "Avg Rate (BDT)",
+      "Discounts (BDT)",
+      "Net Revenue (BDT)",
+      "Share (%)",
+    ],
+    bodyRows: [...dataRows, summaryRow],
+    columnStyles: {
+      "0": { halign: "center", cellWidth: 10 },
+      "1": { halign: "left" },
+      "2": { halign: "left" },
+      "3": { halign: "center" },
+      "4": { halign: "center" },
+      "5": { halign: "right" },
+      "6": { halign: "right" },
+      "7": { halign: "right" },
+      "8": { halign: "right" },
+      "9": { halign: "right" },
+    },
+    meta,
+  });
+}
+
+export async function downloadFilteredCustomersPdf(
+  customers: CustomerSummary[],
+  meta: ReportCompanyMeta
+): Promise<void> {
+  if (!customers || customers.length === 0) {
+    throw new Error("No customer sales records available to download PDF");
+  }
+
+  const themeRgb = argbToRgbTuple(resolveThemeArgb());
+  const totalOrders = customers.reduce((s, c) => s + c.invoicesCount, 0);
+  const totalBilled = customers.reduce((s, c) => s + c.totalBilled, 0);
+  const totalPaid = customers.reduce((s, c) => s + c.totalPaid, 0);
+  const totalDue = customers.reduce((s, c) => s + c.totalDue, 0);
+
+  const dataRows: RowInput[] = customers.map((c, idx) => {
+    const hasDue = c.totalDue > 0;
+    const status = hasDue ? "Has Due" : "Settled";
+    const lastStr = c.lastDate
+      ? moment(c.lastDate).format("DD-MMM-YYYY").toUpperCase()
+      : "-";
+
+    return [
+      idx + 1,
+      { content: c.customerName, styles: { fontStyle: "bold" } },
+      c.customerPhone || "-",
+      c.customerAddress || "-",
+      c.invoicesCount,
+      { content: formatMoney(c.totalBilled), styles: { fontStyle: "bold" } },
+      {
+        content: formatMoney(c.totalPaid),
+        styles: { fontStyle: "bold", textColor: EMERALD_RGB },
+      },
+      {
+        content: hasDue ? formatMoney(c.totalDue) : "-",
+        styles: {
+          fontStyle: "bold",
+          textColor: hasDue ? ROSE_RGB : MUTED_RGB,
+        },
+      },
+      lastStr,
+      {
+        content: status,
+        styles: {
+          fontStyle: "bold",
+          textColor: hasDue ? ROSE_RGB : EMERALD_RGB,
+        },
+      },
+    ];
+  });
+
+  const summaryRow: RowInput = [
+    {
+      content: `TOTAL SUMMARY (${customers.length} Customers)`,
+      colSpan: 4,
+      styles: {
+        halign: "center",
+        fontStyle: "bold",
+        fillColor: SUMMARY_FILL,
+        textColor: DARK_RGB,
+      },
+    },
+    {
+      content: totalOrders,
+      styles: { halign: "center", fontStyle: "bold", fillColor: SUMMARY_FILL },
+    },
+    {
+      content: formatMoney(totalBilled),
+      styles: {
+        halign: "right",
+        fontStyle: "bold",
+        fillColor: SUMMARY_FILL,
+        textColor: themeRgb,
+      },
+    },
+    {
+      content: formatMoney(totalPaid),
+      styles: {
+        halign: "right",
+        fontStyle: "bold",
+        fillColor: SUMMARY_FILL,
+        textColor: EMERALD_RGB,
+      },
+    },
+    {
+      content: totalDue > 0 ? formatMoney(totalDue) : "-",
+      styles: {
+        halign: "right",
+        fontStyle: "bold",
+        fillColor: SUMMARY_FILL,
+        textColor: totalDue > 0 ? ROSE_RGB : MUTED_RGB,
+      },
+    },
+    {
+      content: "",
+      colSpan: 2,
+      styles: { fillColor: SUMMARY_FILL },
+    },
+  ];
+
+  await generateAndDownloadCorporatePdf({
+    fileName: `Customer_Sales_Report_${moment().format("YYYY-MM-DD")}.pdf`,
+    reportTitle: "Customer-Wise Sales Report",
+    metaRightLabel: `Total Customers: ${customers.length}`,
+    headers: [
+      "SL",
+      "Customer Name",
+      "Phone",
+      "Address",
+      "Orders",
+      "Gross Billed (BDT)",
+      "Total Paid (BDT)",
+      "Outstanding Due (BDT)",
+      "Last Order",
+      "Status",
+    ],
+    bodyRows: [...dataRows, summaryRow],
+    columnStyles: {
+      "0": { halign: "center", cellWidth: 10 },
+      "1": { halign: "left" },
+      "2": { halign: "center" },
+      "3": { halign: "left" },
+      "4": { halign: "center" },
+      "5": { halign: "right" },
+      "6": { halign: "right" },
+      "7": { halign: "right" },
+      "8": { halign: "center" },
+      "9": { halign: "center" },
+    },
+    meta,
+  });
 }

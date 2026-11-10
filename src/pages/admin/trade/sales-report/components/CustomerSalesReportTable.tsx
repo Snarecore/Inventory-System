@@ -14,20 +14,32 @@ import {
   EmptyState,
 } from "@/components/common";
 import { formatMoney } from "@/utils/formatters";
+import { showSuccessToast, showErrorToast } from "@/utils/toast-utils";
 import moment from "moment";
 import type { SaleItem } from "@/types";
 import { useDebounce } from "@/hooks/useDebounce";
-import { aggregateCustomerSales } from "../utils/sales-report-helpers";
+import ReportExportButtons from "./ReportExportButtons";
+import {
+  aggregateCustomerSales,
+  useReportCompanyMeta,
+  exportFilteredCustomersExcel,
+  downloadFilteredCustomersPdf,
+} from "../utils/sales-report-helpers";
 
 interface CustomerSalesReportTableProps {
   transactions: SaleItem[];
   isLoading?: boolean;
+  startDate?: string;
+  endDate?: string;
 }
 
 export const CustomerSalesReportTable: React.FC<CustomerSalesReportTableProps> = ({
   transactions,
   isLoading,
+  startDate,
+  endDate,
 }) => {
+  const companyMeta = useReportCompanyMeta(startDate, endDate);
   const [searchQuery, setSearchQuery] = useState("");
   const debouncedSearch = useDebounce(searchQuery, 250);
   const [statusFilter, setStatusFilter] = useState<string>("all");
@@ -66,6 +78,24 @@ export const CustomerSalesReportTable: React.FC<CustomerSalesReportTableProps> =
     currentPage * pageSize
   );
 
+  const handleExportExcel = async () => {
+    try {
+      const count = await exportFilteredCustomersExcel(filtered, companyMeta);
+      showSuccessToast(`Exported ${count} customers to Excel!`);
+    } catch (e: any) {
+      showErrorToast(e?.message || "Excel export failed");
+    }
+  };
+
+  const handleDownloadPdf = async () => {
+    try {
+      await downloadFilteredCustomersPdf(filtered, companyMeta);
+      showSuccessToast("Customer sales report PDF downloaded!");
+    } catch (e: any) {
+      showErrorToast(e?.message || "PDF download failed");
+    }
+  };
+
   return (
     <TableContainer>
       {/* Top Filter Bar */}
@@ -82,7 +112,7 @@ export const CustomerSalesReportTable: React.FC<CustomerSalesReportTableProps> =
           />
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center justify-end gap-2">
           {/* Status filter */}
           <div className="relative w-36 shrink-0">
             <select
@@ -123,6 +153,11 @@ export const CustomerSalesReportTable: React.FC<CustomerSalesReportTableProps> =
               size={13}
             />
           </div>
+
+          <ReportExportButtons
+            onExportExcel={handleExportExcel}
+            onDownloadPdf={handleDownloadPdf}
+          />
         </div>
       </TableToolbar>
 
