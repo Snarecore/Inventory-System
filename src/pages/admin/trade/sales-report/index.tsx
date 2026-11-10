@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import moment from "moment";
 import {
@@ -19,16 +19,16 @@ import { salesTransactionReportQueryKey } from "@/config/query-key";
 import { buildAccessUser } from "@/utils/access-user";
 import { postData } from "@/services/api-service";
 import { fetchSalesList, normalizeSaleRecord } from "@/pages/admin/trade/sales/hooks/useSalesQueries";
-import type { ReportTab } from "./utils/sales-report-helpers";
+import { extractSaleReportMetrics, type ReportTab } from "./utils/sales-report-helpers";
 import type { SaleItem } from "@/types";
 
 const SalesReportPage: React.FC = () => {
-  // Date range filters
+  // Date range filters (managed by DateRangePicker presets & custom selection)
   const [dateRange, setDateRange] = useState<string>("this_month");
-  const [customStartDate, setCustomStartDate] = useState<string>(() =>
+  const [startDate, setStartDate] = useState<string>(() =>
     moment().startOf("month").format("YYYY-MM-DD")
   );
-  const [customEndDate, setCustomEndDate] = useState<string>(() =>
+  const [endDate, setEndDate] = useState<string>(() =>
     moment().endOf("month").format("YYYY-MM-DD")
   );
 
@@ -39,43 +39,6 @@ const SalesReportPage: React.FC = () => {
   const [selectedInvoice, setSelectedInvoice] = useState<SaleItem | null>(null);
   const [isInvoiceModalOpen, setIsInvoiceModalOpen] = useState<boolean>(false);
   const [isAutoPrint, setIsAutoPrint] = useState<boolean>(false);
-
-  // Compute startDate and endDate formatted as YYYY-MM-DD
-  const { startDate, endDate } = useMemo(() => {
-    let start = moment().startOf("month").format("YYYY-MM-DD");
-    let end = moment().endOf("month").format("YYYY-MM-DD");
-
-    if (dateRange === "today") {
-      start = moment().format("YYYY-MM-DD");
-      end = moment().format("YYYY-MM-DD");
-    } else if (dateRange === "yesterday") {
-      start = moment().subtract(1, "day").format("YYYY-MM-DD");
-      end = moment().subtract(1, "day").format("YYYY-MM-DD");
-    } else if (dateRange === "this_week" || dateRange === "last7days") {
-      start = moment().startOf("week").format("YYYY-MM-DD");
-      end = moment().endOf("week").format("YYYY-MM-DD");
-    } else if (dateRange === "this_month" || dateRange === "thisMonth") {
-      start = moment().startOf("month").format("YYYY-MM-DD");
-      end = moment().endOf("month").format("YYYY-MM-DD");
-    } else if (dateRange === "last_month" || dateRange === "lastMonth") {
-      start = moment().subtract(1, "month").startOf("month").format("YYYY-MM-DD");
-      end = moment().subtract(1, "month").endOf("month").format("YYYY-MM-DD");
-    } else if (dateRange === "30_days") {
-      start = moment().subtract(30, "days").format("YYYY-MM-DD");
-      end = moment().format("YYYY-MM-DD");
-    } else if (dateRange === "this_year") {
-      start = moment().startOf("year").format("YYYY-MM-DD");
-      end = moment().endOf("year").format("YYYY-MM-DD");
-    } else if (dateRange === "all") {
-      start = "";
-      end = "";
-    } else if (dateRange === "custom" && customStartDate && customEndDate) {
-      start = customStartDate;
-      end = customEndDate;
-    }
-
-    return { startDate: start, endDate: end };
-  }, [dateRange, customStartDate, customEndDate]);
 
   // Fetch Sales Report transactions from live API
   const {
@@ -122,108 +85,45 @@ const SalesReportPage: React.FC = () => {
         rawList = allSales;
       }
 
-      // Normalize and filter by date range
+      // Normalize, filter by date range, and assign fallback orderNo
       const normalized = (Array.isArray(rawList) ? rawList : []).map(normalizeSaleRecord);
 
-      if (!startDate || !endDate) {
-        return normalized.map((item, idx) => ({
-          ...item,
-          orderNo:
-            item.orderNo ||
-            (item.invoiceNo ? item.invoiceNo.replace("INV-", "SO-") : `SO-${1000 + (item.id || idx)}`),
-        }));
-      }
-
-      const start = moment(startDate).startOf("day");
-      const end = moment(endDate).endOf("day");
-
-      return normalized
-        .filter((item: any) => {
+      let dateFiltered = normalized;
+      if (startDate && endDate) {
+        const start = moment(startDate).startOf("day");
+        const end = moment(endDate).endOf("day");
+        dateFiltered = normalized.filter((item: any) => {
           const dStr = item.salesDate || item.saleDate || item.date || item.createdAt;
           if (!dStr) return true;
-          const d = moment(dStr);
-          return d.isBetween(start, end, undefined, "[]");
-        })
-        .map((item, idx) => ({
-          ...item,
-          orderNo:
-            item.orderNo ||
-            (item.invoiceNo ? item.invoiceNo.replace("INV-", "SO-") : `SO-${1000 + (item.id || idx)}`),
-        }));
+          return moment(dStr).isBetween(start, end, undefined, "[]");
+        });
+      }
+
+      return dateFiltered.map((item, idx) => ({
+        ...item,
+        orderNo:
+          item.orderNo ||
+          (item.invoiceNo ? item.invoiceNo.replace("INV-", "SO-") : `SO-${1000 + (item.id || idx)}`),
+      }));
     },
     staleTime: 0,
   });
 
   // Effective transactions data (pure live API)
-  const transactions: SaleItem[] = useMemo(() => {
-    return Array.isArray(liveReportData) ? liveReportData : [];
-  }, [liveReportData]);
-
+  const transactions: SaleItem[] = Array.isArray(liveReportData) ? liveReportData : [];
   const isLoading = isLiveLoading || isFetching;
 
-  // Calculate Financial Aggregates
-  const stats = useMemo(() => {
-    let totalSalesVolume = 0;
-    let totalCollected = 0;
-    let totalDue = 0;
-    let cashCollected = 0;
-    let mfsCollected = 0;
-    let bankCollected = 0;
-    let totalDiscount = 0;
-    let totalQuantitySold = 0;
-    let unpaidCount = 0;
+  // Calculate Financial Aggregates for KPI Cards
+  let totalSalesVolume = 0;
+  let totalCollected = 0;
+  let totalDue = 0;
 
-    transactions.forEach((t: any) => {
-      const gt = Number(t.grandTotal ?? t.grand_total ?? t.totalAmount ?? 0);
-      const paid = Number(t.paidAmount ?? t.paid_amount ?? 0);
-      const due = Number(t.dueAmount ?? t.due_amount ?? Math.max(0, gt - paid));
-      const disc = Number(t.discount ?? 0);
-
-      totalSalesVolume += gt;
-      totalCollected += paid;
-      totalDue += due;
-      totalDiscount += disc;
-
-      if (due > 0) {
-        unpaidCount += 1;
-      }
-
-      const pType = String(t.paymentType || t.payment_type || "CASH").toUpperCase();
-      if (pType === "CASH") {
-        cashCollected += paid;
-      } else if (pType === "MFS" || pType === "BKASH" || pType === "NAGAD") {
-        mfsCollected += paid;
-      } else if (pType === "BANK" || pType === "CARD") {
-        bankCollected += paid;
-      }
-
-      const details =
-        t.salesDetails ||
-        t.saleDetails ||
-        t.details ||
-        t.items ||
-        t.productsList ||
-        [];
-      if (Array.isArray(details)) {
-        details.forEach((item: any) => {
-          totalQuantitySold += Number(item.quantity ?? item.qty ?? 1);
-        });
-      }
-    });
-
-    return {
-      totalSalesVolume,
-      totalCollected,
-      totalDue,
-      totalInvoices: transactions.length,
-      cashCollected,
-      mfsCollected,
-      bankCollected,
-      totalDiscount,
-      totalQuantitySold,
-      unpaidCount,
-    };
-  }, [transactions]);
+  transactions.forEach((t) => {
+    const metrics = extractSaleReportMetrics(t);
+    totalSalesVolume += metrics.grandTotal;
+    totalCollected += metrics.paid;
+    totalDue += metrics.due;
+  });
 
   const handleView = (item: SaleItem) => {
     setSelectedInvoice(item);
@@ -250,13 +150,27 @@ const SalesReportPage: React.FC = () => {
           {/* Date Range Picker */}
           <div className="w-36 sm:w-40 shrink-0">
             <DateRangePicker
-              startDate={customStartDate}
-              endDate={customEndDate}
+              startDate={startDate}
+              endDate={endDate}
               selectedPreset={dateRange}
               onPresetChange={(r) => setDateRange(r)}
               onChange={({ startDate: s, endDate: e, label }) => {
-                if (s) setCustomStartDate(s);
-                if (e) setCustomEndDate(e);
+                if (label === "all") {
+                  setStartDate("");
+                  setEndDate("");
+                  setDateRange("all");
+                  return;
+                }
+                if (label === "custom") {
+                  if (s && e) {
+                    setStartDate(s);
+                    setEndDate(e);
+                  }
+                  setDateRange("custom");
+                  return;
+                }
+                setStartDate(s);
+                setEndDate(e);
                 if (label) setDateRange(label);
               }}
               align="right"
@@ -275,10 +189,10 @@ const SalesReportPage: React.FC = () => {
       {/* ── KPI Cards (Authentic Cash-Boi TradeInvoiceStats) ── */}
       <TradeInvoiceStats
         type="sale"
-        totalCount={stats.totalInvoices}
-        totalAmount={stats.totalSalesVolume}
-        totalPaid={stats.totalCollected}
-        totalDue={stats.totalDue}
+        totalCount={transactions.length}
+        totalAmount={totalSalesVolume}
+        totalPaid={totalCollected}
+        totalDue={totalDue}
       />
 
       {/* ── Unified Tab Switcher (Matches Sales & Purchases Page Design) ── */}

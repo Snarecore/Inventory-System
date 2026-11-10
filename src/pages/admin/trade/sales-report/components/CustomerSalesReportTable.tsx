@@ -14,7 +14,6 @@ import {
   EmptyState,
 } from "@/components/common";
 import { formatMoney } from "@/utils/formatters";
-import { showSuccessToast, showErrorToast } from "@/utils/toast-utils";
 import moment from "moment";
 import type { SaleItem } from "@/types";
 import { useDebounce } from "@/hooks/useDebounce";
@@ -78,24 +77,6 @@ export const CustomerSalesReportTable: React.FC<CustomerSalesReportTableProps> =
     currentPage * pageSize
   );
 
-  const handleExportExcel = async () => {
-    try {
-      const count = await exportFilteredCustomersExcel(filtered, companyMeta);
-      showSuccessToast(`Exported ${count} customers to Excel!`);
-    } catch (e: any) {
-      showErrorToast(e?.message || "Excel export failed");
-    }
-  };
-
-  const handleDownloadPdf = async () => {
-    try {
-      await downloadFilteredCustomersPdf(filtered, companyMeta);
-      showSuccessToast("Customer sales report PDF downloaded!");
-    } catch (e: any) {
-      showErrorToast(e?.message || "PDF download failed");
-    }
-  };
-
   return (
     <TableContainer>
       {/* Top Filter Bar */}
@@ -155,8 +136,14 @@ export const CustomerSalesReportTable: React.FC<CustomerSalesReportTableProps> =
           </div>
 
           <ReportExportButtons
-            onExportExcel={handleExportExcel}
-            onDownloadPdf={handleDownloadPdf}
+            onExportExcel={async () => {
+              const count = await exportFilteredCustomersExcel(filtered, companyMeta);
+              return `Exported ${count} customers to Excel!`;
+            }}
+            onDownloadPdf={async () => {
+              await downloadFilteredCustomersPdf(filtered, companyMeta);
+              return "Customer sales report PDF downloaded!";
+            }}
           />
         </div>
       </TableToolbar>

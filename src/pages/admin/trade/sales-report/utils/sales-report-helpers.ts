@@ -47,6 +47,147 @@ export interface ReportCompanyMeta {
   endDate?: string;
 }
 
+export interface SaleReportMetrics {
+  orderNo: string;
+  customerName: string;
+  customerPhone: string;
+  customerAddress: string;
+  saleDate: string;
+  grandTotal: number;
+  paid: number;
+  due: number;
+  subtotal: number;
+  discount: number;
+  vat: number;
+  paymentType: string;
+  details: any[];
+  itemsCount: number;
+  isFullyPaid: boolean;
+  isPartial: boolean;
+  status: "PAID" | "PARTIAL" | "DUE";
+}
+
+/**
+ * Extracts transaction line items across all supported backend property names
+ */
+export function extractSaleLineItems(item: any): any[] {
+  if (!item) return [];
+  const candidates = [
+    item.salesDetails,
+    item.saleDetails,
+    item.details,
+    item.items,
+    item.productsList,
+  ];
+  for (const list of candidates) {
+    if (Array.isArray(list) && list.length > 0) {
+      return list;
+    }
+  }
+  return [];
+}
+
+/**
+ * Single source of truth for normalizing sale transaction numbers, fields, and payment status
+ */
+export function extractSaleReportMetrics(
+  item: any,
+  fallbackIndex = 0
+): SaleReportMetrics {
+  const grandTotal = Number(
+    item?.grandTotal ?? item?.grand_total ?? item?.totalAmount ?? 0
+  );
+  const paid = Number(item?.paidAmount ?? item?.paid_amount ?? 0);
+  const due = Number(
+    item?.dueAmount ?? item?.due_amount ?? Math.max(0, grandTotal - paid)
+  );
+  const subtotal = Number(
+    item?.totalAmount ?? item?.total_amount ?? grandTotal
+  );
+  const discount = Number(item?.discount ?? 0);
+  const vat = Number(item?.vat ?? 0);
+  const paymentType = String(
+    item?.paymentType || item?.payment_type || "CASH"
+  ).toUpperCase();
+
+  const details = extractSaleLineItems(item);
+  const itemsCount =
+    details.length > 0 ? details.length : Number(item?.itemsCount || 1);
+
+  const isFullyPaid = due <= 0 && grandTotal > 0;
+  const isPartial = due > 0 && paid > 0;
+  const status = isFullyPaid ? "PAID" : isPartial ? "PARTIAL" : "DUE";
+
+  return {
+    orderNo:
+      item?.orderNo ||
+      item?.invoiceNo ||
+      `ORD-${item?.id || fallbackIndex + 1}`,
+    customerName:
+      item?.customerName ||
+      item?.customer_name ||
+      item?.partyName ||
+      "Walk-in Customer",
+    customerPhone:
+      item?.customerPhone ||
+      item?.customer_phone ||
+      item?.partyPhone ||
+      "",
+    customerAddress:
+      item?.customerAddress ||
+      item?.customer_address ||
+      item?.partyAddress ||
+      "",
+    saleDate: item?.salesDate || item?.saleDate || item?.date || "",
+    grandTotal,
+    paid,
+    due,
+    subtotal,
+    discount,
+    vat,
+    paymentType,
+    details,
+    itemsCount,
+    isFullyPaid,
+    isPartial,
+    status,
+  };
+}
+
+export function calculateProductTotals(products: ProductSummary[]) {
+  return products.reduce(
+    (acc, p) => {
+      acc.totalQuantity += p.totalQuantity;
+      acc.totalRevenue += p.totalRevenue;
+      acc.totalDiscount += p.totalDiscount;
+      return acc;
+    },
+    { totalQuantity: 0, totalRevenue: 0, totalDiscount: 0 }
+  );
+}
+
+export function calculateRevenueSharePct(
+  revenue: number,
+  totalRevenue: number
+): string {
+  return totalRevenue > 0
+    ? ((revenue / totalRevenue) * 100).toFixed(1)
+    : "0.0";
+}
+
+export function calculateCustomerTotals(customers: CustomerSummary[]) {
+  return customers.reduce(
+    (acc, c) => {
+      acc.totalOrders += c.invoicesCount;
+      acc.totalBilled += c.totalBilled;
+      acc.totalPaid += c.totalPaid;
+      acc.totalDue += c.totalDue;
+      return acc;
+    },
+    { totalOrders: 0, totalBilled: 0, totalPaid: 0, totalDue: 0 }
+  );
+}
+
 /**
  * Shared hook to resolve business name, address, and logo URL consistently across report tables
  */
@@ -83,61 +224,53 @@ export function aggregateProductSales(
   const map: Record<string, ProductSummary> = {};
 
   transactions.forEach((tx: any) => {
-    const details =
-      tx.salesDetails ||
-      tx.saleDetails ||
-      tx.details ||
-      tx.items ||
-      tx.productsList ||
-      [];
+    const details = extractSaleLineItems(tx);
 
-    if (Array.isArray(details)) {
-      details.forEach((line: any) => {
-        const pId = String(
-          line.productId || line.product_id || line.id || line.pcode || "unknown"
-        );
-        const pCode =
-          line.productCode ||
-          line.product_code ||
-          line.pcode ||
-          line.code ||
-          "-";
-        const pName =
-          line.productName ||
-          line.product_name ||
-          line.name ||
-          line.title ||
-          "Unnamed Product";
-        const unit = line.unit || "pcs";
-        const qty = Number(line.quantity ?? line.qty ?? 1);
-        const price = Number(
-          line.sellPrice ?? line.sell_price ?? line.price ?? line.rate ?? 0
-        );
-        const lineTotal =
-          Number(line.total ?? line.total_price ?? 0) || qty * price;
-        const disc = Number(line.discount ?? 0);
+    details.forEach((line: any) => {
+      const pId = String(
+        line.productId || line.product_id || line.id || line.pcode || "unknown"
+      );
+      const pCode =
+        line.productCode ||
+        line.product_code ||
+        line.pcode ||
+        line.code ||
+        "-";
+      const pName =
+        line.productName ||
+        line.product_name ||
+        line.name ||
+        line.title ||
+        "Unnamed Product";
+      const unit = line.unit || "pcs";
+      const qty = Number(line.quantity ?? line.qty ?? 1);
+      const price = Number(
+        line.sellPrice ?? line.sell_price ?? line.price ?? line.rate ?? 0
+      );
+      const lineTotal =
+        Number(line.total ?? line.total_price ?? 0) || qty * price;
+      const disc = Number(line.discount ?? 0);
 
-        const key = pCode !== "-" ? pCode : pName;
+      const key = pCode !== "-" ? pCode : pName;
 
-        if (!map[key]) {
-          map[key] = {
-            productId: pId,
-            productCode: pCode,
-            productName: pName,
-            unit,
-            totalQuantity: 0,
-            totalRevenue: 0,
-            totalDiscount: 0,
-            invoicesCount: 0,
-          };
-        }
+      if (!map[key]) {
+        map[key] = {
+          productId: pId,
+          productCode: pCode,
+          productName: pName,
+          unit,
+          totalQuantity: 0,
+          totalRevenue: 0,
+          totalDiscount: 0,
+          invoicesCount: 0,
+        };
+      }
 
-        map[key].totalQuantity += qty;
-        map[key].totalRevenue += lineTotal;
-        map[key].totalDiscount += disc;
-        map[key].invoicesCount += 1;
-      });
-    }
+      map[key].totalQuantity += qty;
+      map[key].totalRevenue += lineTotal;
+      map[key].totalDiscount += disc;
+      map[key].invoicesCount += 1;
+    });
   });
 
   return Object.values(map);
@@ -155,22 +288,15 @@ export function aggregateCustomerSales(
     const cId = String(
       tx.customerId || tx.customer_id || tx.partyId || "walkin"
     );
-    const cName =
-      tx.customerName ||
-      tx.customer_name ||
-      tx.partyName ||
-      "Walk-in Customer";
-    const cPhone =
-      tx.customerPhone || tx.customer_phone || tx.partyPhone || "";
-    const cAddr =
-      tx.customerAddress || tx.customer_address || tx.partyAddress || "";
-    const date = tx.salesDate || tx.saleDate || tx.date || "";
-
-    const gt = Number(tx.grandTotal ?? tx.grand_total ?? tx.totalAmount ?? 0);
-    const paid = Number(tx.paidAmount ?? tx.paid_amount ?? 0);
-    const due = Number(
-      tx.dueAmount ?? tx.due_amount ?? Math.max(0, gt - paid)
-    );
+    const {
+      customerName: cName,
+      customerPhone: cPhone,
+      customerAddress: cAddr,
+      saleDate: date,
+      grandTotal: gt,
+      paid,
+      due,
+    } = extractSaleReportMetrics(tx);
 
     const key = cPhone ? `${cName}_${cPhone}` : cName;
 
@@ -212,14 +338,10 @@ export async function exportFilteredInvoicesExcel(
     throw new Error("No sales records available to export");
   }
   await exportSalesToExcel(invoices, {
+    ...meta,
     fileName: `Sales_Report_${moment().format("YYYY-MM-DD")}.xlsx`,
     sheetName: "Sales Report",
     reportTitle: "Sales Report",
-    businessName: meta.businessName,
-    businessAddress: meta.businessAddress,
-    businessLogoUrl: meta.businessLogoUrl,
-    startDate: meta.startDate,
-    endDate: meta.endDate,
   });
   return invoices.length;
 }
@@ -232,7 +354,8 @@ export async function exportFilteredProductsExcel(
     throw new Error("No product sales records available to export");
   }
 
-  const grandRevenue = products.reduce((acc, p) => acc + p.totalRevenue, 0);
+  const { totalQuantity, totalRevenue, totalDiscount } =
+    calculateProductTotals(products);
   const data = products.map((p, idx) => ({
     SL: idx + 1,
     "Product Code": p.productCode,
@@ -242,46 +365,26 @@ export async function exportFilteredProductsExcel(
     "Invoices Sold": p.invoicesCount,
     "Total Revenue (BDT)": p.totalRevenue,
     "Discount (BDT)": p.totalDiscount,
-    "Share of Sales":
-      grandRevenue > 0
-        ? `${((p.totalRevenue / grandRevenue) * 100).toFixed(1)}%`
-        : "0.0%",
+    "Share of Sales": `${calculateRevenueSharePct(p.totalRevenue, totalRevenue)}%`,
   }));
-
-  const totalQty = data.reduce(
-    (s, r) => s + (Number(r["Quantity Sold"]) || 0),
-    0
-  );
-  const totalRev = data.reduce(
-    (s, r) => s + (Number(r["Total Revenue (BDT)"]) || 0),
-    0
-  );
-  const totalDisc = data.reduce(
-    (s, r) => s + (Number(r["Discount (BDT)"]) || 0),
-    0
-  );
 
   const totalRow = {
     SL: `TOTAL SUMMARY (${data.length} Products)`,
     "Product Code": "",
     "Product Name": "",
     Unit: "",
-    "Quantity Sold": totalQty,
+    "Quantity Sold": totalQuantity,
     "Invoices Sold": "",
-    "Total Revenue (BDT)": Number(totalRev.toFixed(2)),
-    "Discount (BDT)": Number(totalDisc.toFixed(2)),
+    "Total Revenue (BDT)": Number(totalRevenue.toFixed(2)),
+    "Discount (BDT)": Number(totalDiscount.toFixed(2)),
     "Share of Sales": "100.0%",
   };
 
   await buildAndDownloadExcel(data, totalRow, {
+    ...meta,
     fileName: `Product_Sales_Report_${moment().format("YYYY-MM-DD")}.xlsx`,
     sheetName: "Product Sales",
     reportTitle: "Product-Wise Sales Report",
-    businessName: meta.businessName,
-    businessAddress: meta.businessAddress,
-    businessLogoUrl: meta.businessLogoUrl,
-    startDate: meta.startDate,
-    endDate: meta.endDate,
     totalLabel: "Total Products",
     totalSummarySpan: 4,
     includeSignatures: true,
@@ -313,18 +416,8 @@ export async function exportFilteredCustomersExcel(
     Status: c.totalDue > 0 ? "Has Due" : "Settled",
   }));
 
-  const totalBilled = data.reduce(
-    (s, r) => s + (Number(r["Total Billed (BDT)"]) || 0),
-    0
-  );
-  const totalPaid = data.reduce(
-    (s, r) => s + (Number(r["Total Paid (BDT)"]) || 0),
-    0
-  );
-  const totalDue = data.reduce(
-    (s, r) => s + (Number(r["Outstanding Due (BDT)"]) || 0),
-    0
-  );
+  const { totalBilled, totalPaid, totalDue } =
+    calculateCustomerTotals(customers);
 
   const totalRow = {
     SL: `TOTAL SUMMARY (${data.length} Customers)`,
@@ -340,14 +433,10 @@ export async function exportFilteredCustomersExcel(
   };
 
   await buildAndDownloadExcel(data, totalRow, {
+    ...meta,
     fileName: `Customer_Sales_Report_${moment().format("YYYY-MM-DD")}.xlsx`,
     sheetName: "Customer Sales",
     reportTitle: "Customer-Wise Sales Report",
-    businessName: meta.businessName,
-    businessAddress: meta.businessAddress,
-    businessLogoUrl: meta.businessLogoUrl,
-    startDate: meta.startDate,
-    endDate: meta.endDate,
     totalLabel: "Total Customers",
     totalSummarySpan: 4,
     includeSignatures: true,
@@ -589,68 +678,54 @@ export async function downloadFilteredInvoicesPdf(
   let sumItems = 0;
 
   const dataRows: RowInput[] = invoices.map((t: any, idx: number) => {
-    const gt = Number(t.grandTotal ?? t.grand_total ?? t.totalAmount ?? 0);
-    const paid = Number(t.paidAmount ?? t.paid_amount ?? 0);
-    const due = Number(t.dueAmount ?? t.due_amount ?? Math.max(0, gt - paid));
-    const sub = Number(t.totalAmount ?? t.total_amount ?? gt);
-    const disc = Number(t.discount ?? 0);
-    const vat = Number(t.vat ?? 0);
-    const pType = String(t.paymentType || t.payment_type || "CASH").toUpperCase();
-    const details = t.salesDetails || t.saleDetails || t.details || t.items || [];
-    const itemsCount =
-      Array.isArray(details) && details.length > 0
-        ? details.length
-        : Number(t.itemsCount || 1);
-    const status =
-      due <= 0 && gt > 0 ? "PAID" : due > 0 && paid > 0 ? "PARTIAL" : "DUE";
-    const dateStr =
-      t.salesDate || t.date
-        ? moment(t.salesDate || t.date).format("DD-MMM-YYYY").toUpperCase()
-        : "-";
+    const m = extractSaleReportMetrics(t, idx);
+    const dateStr = m.saleDate
+      ? moment(m.saleDate).format("DD-MMM-YYYY").toUpperCase()
+      : "-";
 
-    sumSub += sub;
-    sumDisc += disc;
-    sumVat += vat;
-    sumGt += gt;
-    sumPaid += paid;
-    sumDue += due;
-    sumItems += itemsCount;
+    sumSub += m.subtotal;
+    sumDisc += m.discount;
+    sumVat += m.vat;
+    sumGt += m.grandTotal;
+    sumPaid += m.paid;
+    sumDue += m.due;
+    sumItems += m.itemsCount;
 
     const statusColor =
-      status === "PAID"
+      m.status === "PAID"
         ? EMERALD_RGB
-        : status === "PARTIAL"
+        : m.status === "PARTIAL"
         ? AMBER_RGB
         : ROSE_RGB;
 
     return [
       idx + 1,
       {
-        content: t.orderNo || t.invoiceNo || `ORD-${t.id || idx + 1}`,
+        content: m.orderNo,
         styles: { fontStyle: "bold" },
       },
       dateStr,
-      t.customerName || t.customer_name || "Walk-in Customer",
-      t.customerPhone || t.customer_phone || "-",
-      itemsCount,
-      formatMoney(sub),
-      disc > 0 ? formatMoney(disc) : "-",
-      vat > 0 ? formatMoney(vat) : "-",
-      { content: formatMoney(gt), styles: { fontStyle: "bold" } },
+      m.customerName,
+      m.customerPhone || "-",
+      m.itemsCount,
+      formatMoney(m.subtotal),
+      m.discount > 0 ? formatMoney(m.discount) : "-",
+      m.vat > 0 ? formatMoney(m.vat) : "-",
+      { content: formatMoney(m.grandTotal), styles: { fontStyle: "bold" } },
       {
-        content: formatMoney(paid),
+        content: formatMoney(m.paid),
         styles: { fontStyle: "bold", textColor: EMERALD_RGB },
       },
       {
-        content: due > 0 ? formatMoney(due) : "-",
+        content: m.due > 0 ? formatMoney(m.due) : "-",
         styles: {
           fontStyle: "bold",
-          textColor: due > 0 ? ROSE_RGB : MUTED_RGB,
+          textColor: m.due > 0 ? ROSE_RGB : MUTED_RGB,
         },
       },
-      pType,
+      m.paymentType,
       {
-        content: status,
+        content: m.status,
         styles: { fontStyle: "bold", textColor: statusColor },
       },
     ];
@@ -767,14 +842,12 @@ export async function downloadFilteredProductsPdf(
   }
 
   const themeRgb = argbToRgbTuple(resolveThemeArgb());
-  const grandRev = products.reduce((s, p) => s + p.totalRevenue, 0);
-  const totalQty = products.reduce((s, p) => s + p.totalQuantity, 0);
-  const totalDisc = products.reduce((s, p) => s + p.totalDiscount, 0);
+  const { totalQuantity, totalRevenue, totalDiscount } =
+    calculateProductTotals(products);
 
   const dataRows: RowInput[] = products.map((p, idx) => {
     const avgRate = p.totalQuantity > 0 ? p.totalRevenue / p.totalQuantity : 0;
-    const share =
-      grandRev > 0 ? ((p.totalRevenue / grandRev) * 100).toFixed(1) : "0.0";
+    const share = calculateRevenueSharePct(p.totalRevenue, totalRevenue);
 
     return [
       idx + 1,
@@ -802,16 +875,16 @@ export async function downloadFilteredProductsPdf(
       },
     },
     {
-      content: totalQty,
+      content: totalQuantity,
       styles: { halign: "right", fontStyle: "bold", fillColor: SUMMARY_FILL },
     },
     { content: "", styles: { fillColor: SUMMARY_FILL } },
     {
-      content: totalDisc > 0 ? formatMoney(totalDisc) : "-",
+      content: totalDiscount > 0 ? formatMoney(totalDiscount) : "-",
       styles: { halign: "right", fontStyle: "bold", fillColor: SUMMARY_FILL },
     },
     {
-      content: formatMoney(grandRev),
+      content: formatMoney(totalRevenue),
       styles: {
         halign: "right",
         fontStyle: "bold",
@@ -867,10 +940,8 @@ export async function downloadFilteredCustomersPdf(
   }
 
   const themeRgb = argbToRgbTuple(resolveThemeArgb());
-  const totalOrders = customers.reduce((s, c) => s + c.invoicesCount, 0);
-  const totalBilled = customers.reduce((s, c) => s + c.totalBilled, 0);
-  const totalPaid = customers.reduce((s, c) => s + c.totalPaid, 0);
-  const totalDue = customers.reduce((s, c) => s + c.totalDue, 0);
+  const { totalOrders, totalBilled, totalPaid, totalDue } =
+    calculateCustomerTotals(customers);
 
   const dataRows: RowInput[] = customers.map((c, idx) => {
     const hasDue = c.totalDue > 0;

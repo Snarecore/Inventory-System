@@ -1,9 +1,10 @@
 import React, { useState } from "react";
 import { FaFileExcel, FaFilePdf } from "react-icons/fa";
+import { showSuccessToast, showErrorToast } from "@/utils/toast-utils";
 
 interface ReportExportButtonsProps {
-  onExportExcel: () => Promise<void>;
-  onDownloadPdf: () => Promise<void>;
+  onExportExcel: () => Promise<string | void>;
+  onDownloadPdf: () => Promise<string | void>;
 }
 
 export const ReportExportButtons: React.FC<ReportExportButtonsProps> = ({
@@ -12,21 +13,20 @@ export const ReportExportButtons: React.FC<ReportExportButtonsProps> = ({
 }) => {
   const [busyType, setBusyType] = useState<"excel" | "pdf" | null>(null);
 
-  const handleExcel = async () => {
+  const runExport = async (
+    type: "excel" | "pdf",
+    action: () => Promise<string | void>,
+    fallbackError: string
+  ) => {
     if (busyType) return;
-    setBusyType("excel");
+    setBusyType(type);
     try {
-      await onExportExcel();
-    } finally {
-      setBusyType(null);
-    }
-  };
-
-  const handlePdf = async () => {
-    if (busyType) return;
-    setBusyType("pdf");
-    try {
-      await onDownloadPdf();
+      const successMsg = await action();
+      if (successMsg) {
+        showSuccessToast(successMsg);
+      }
+    } catch (e: any) {
+      showErrorToast(e?.message || fallbackError);
     } finally {
       setBusyType(null);
     }
@@ -36,7 +36,7 @@ export const ReportExportButtons: React.FC<ReportExportButtonsProps> = ({
     <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
       <button
         type="button"
-        onClick={handleExcel}
+        onClick={() => runExport("excel", onExportExcel, "Excel export failed")}
         disabled={busyType !== null}
         title="Download Excel Report"
         className="flex items-center justify-center gap-1.5 px-3 h-8 text-[11px] sm:text-xs font-semibold text-[var(--ui-success-dark)] bg-[var(--ui-success-light)] hover:bg-[var(--ui-success-border)] border border-[var(--ui-success-border)] rounded-lg transition-all shadow-xs cursor-pointer active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed whitespace-nowrap"
@@ -47,7 +47,7 @@ export const ReportExportButtons: React.FC<ReportExportButtonsProps> = ({
 
       <button
         type="button"
-        onClick={handlePdf}
+        onClick={() => runExport("pdf", onDownloadPdf, "PDF download failed")}
         disabled={busyType !== null}
         title="Download PDF Report"
         className="flex items-center justify-center gap-1.5 px-3 h-8 text-[11px] sm:text-xs font-semibold text-white bg-[var(--primary-color)] hover:bg-[var(--primary-color-hover)] rounded-lg transition-all shadow-xs cursor-pointer active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed whitespace-nowrap"

@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useMemo } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import moment from "moment";
 import { FiChevronDown, FiCopy, FiCheck, FiRotateCcw } from "react-icons/fi";
 import { FaSearch } from "react-icons/fa";
@@ -18,11 +18,12 @@ import {
 } from "@/components/common";
 import ColumnVisibilityDropdown, { type ColumnItem } from "@/components/table-components/ColumnVisibilityDropdown";
 import { formatMoney } from "@/utils/formatters";
-import { showSuccessToast, showErrorToast } from "@/utils/toast-utils";
+import { showSuccessToast } from "@/utils/toast-utils";
 import type { SaleItem } from "@/types";
 import { useDebounce } from "@/hooks/useDebounce";
 import ReportExportButtons from "./ReportExportButtons";
 import {
+  extractSaleReportMetrics,
   useReportCompanyMeta,
   exportFilteredInvoicesExcel,
   downloadFilteredInvoicesPdf,
@@ -84,26 +85,24 @@ export const SalesReportTable: React.FC<SalesReportTableProps> = ({
   }, []);
 
   // Distinct customer list from transactions for dropdown
-  const customersList = useMemo(() => {
-    const map = new Map<string, { id: string; name: string; phone: string }>();
-    transactions.forEach((t: any) => {
-      const name = t.customerName || t.customer_name || t.partyName || "Walk-in Customer";
-      const phone = t.customerPhone || t.customer_phone || "";
-      const id = String(t.customerId || t.customer_id || name);
-      if (!map.has(name)) {
-        map.set(name, { id, name, phone });
-      }
-    });
-    return Array.from(map.values());
-  }, [transactions]);
+  const customerMap = new Map<string, { id: string; name: string; phone: string }>();
+  transactions.forEach((t: any) => {
+    const { customerName: name, customerPhone: phone } = extractSaleReportMetrics(t);
+    const id = String(t.customerId || t.customer_id || name);
+    if (!customerMap.has(name)) {
+      customerMap.set(name, { id, name, phone });
+    }
+  });
+  const customersList = Array.from(customerMap.values());
 
-  const filteredCustomerOptions = useMemo(() => {
-    if (!customerSearchQuery.trim()) return customersList;
-    const q = customerSearchQuery.toLowerCase().trim();
-    return customersList.filter(
-      (c) => c.name.toLowerCase().includes(q) || c.phone.toLowerCase().includes(q)
-    );
-  }, [customersList, customerSearchQuery]);
+  const trimmedCustomerQuery = customerSearchQuery.toLowerCase().trim();
+  const filteredCustomerOptions = trimmedCustomerQuery
+    ? customersList.filter(
+        (c) =>
+          c.name.toLowerCase().includes(trimmedCustomerQuery) ||
+          c.phone.toLowerCase().includes(trimmedCustomerQuery)
+      )
+    : customersList;
 
   const currentCustomerLabel = customerFilter === "all"
     ? "All Customers"
@@ -184,61 +183,66 @@ export const SalesReportTable: React.FC<SalesReportTableProps> = ({
   };
 
   // Filter & Sort
-  const filtered = useMemo(() => {
-    let list = transactions.filter((t: any) => {
-      if (debouncedSearch.trim()) {
-        const q = debouncedSearch.toLowerCase().trim();
-        const orderNo = String(t.orderNo || "").toLowerCase();
-        const inv = String(t.invoiceNo || t.invoice_no || "").toLowerCase();
-        const name = String(t.customerName || t.customer_name || "").toLowerCase();
-        const phone = String(t.customerPhone || t.customer_phone || "").toLowerCase();
-        if (!orderNo.includes(q) && !inv.includes(q) && !name.includes(q) && !phone.includes(q)) {
-          return false;
-        }
+  const filtered = transactions.filter((t: any) => {
+    const m = extractSaleReportMetrics(t);
+
+    if (debouncedSearch.trim()) {
+      const q = debouncedSearch.toLowerCase().trim();
+      const orderNo = String(t.orderNo || "").toLowerCase();
+      const inv = String(t.invoiceNo || t.invoice_no || "").toLowerCase();
+      const name = m.customerName.toLowerCase();
+      const phone = m.customerPhone.toLowerCase();
+      if (!orderNo.includes(q) && !inv.includes(q) && !name.includes(q) && !phone.includes(q)) {
+        return false;
       }
-
-      if (customerFilter !== "all") {
-        const cName = String(t.customerName || t.customer_name || t.partyName || "Walk-in Customer");
-        if (cName.toLowerCase() !== customerFilter.toLowerCase()) return false;
-      }
-
-      if (paymentFilter !== "all") {
-        const p = String(t.paymentType || t.payment_type || "CASH").toUpperCase();
-        if (paymentFilter === "MFS") {
-          if (p !== "MFS" && p !== "BKASH" && p !== "NAGAD") return false;
-        } else if (paymentFilter === "BANK") {
-          if (p !== "BANK" && p !== "CARD") return false;
-        } else if (p !== paymentFilter) {
-          return false;
-        }
-      }
-
-      if (statusFilter !== "all") {
-        const gt = Number(t.grandTotal ?? t.grand_total ?? t.totalAmount ?? 0);
-        const paid = Number(t.paidAmount ?? t.paid_amount ?? 0);
-        const due = Number(t.dueAmount ?? t.due_amount ?? Math.max(0, gt - paid));
-
-        if (statusFilter === "PAID" && (due > 0 || paid === 0)) return false;
-        if (statusFilter === "PARTIAL" && (due === 0 || paid === 0)) return false;
-        if (statusFilter === "DUE" && due === 0) return false;
-      }
-
-      return true;
-    });
-
-    const sorted = [...list];
-    if (sortBy === "amount_high_to_low") {
-      sorted.sort((a: any, b: any) => Number(b.grandTotal ?? 0) - Number(a.grandTotal ?? 0));
-    } else if (sortBy === "amount_low_to_high") {
-      sorted.sort((a: any, b: any) => Number(a.grandTotal ?? 0) - Number(b.grandTotal ?? 0));
-    } else if (sortBy === "customer_a_to_z") {
-      sorted.sort((a: any, b: any) => String(a.customerName || "").localeCompare(String(b.customerName || "")));
-    } else if (sortBy === "customer_z_to_a") {
-      sorted.sort((a: any, b: any) => String(b.customerName || "").localeCompare(String(a.customerName || "")));
     }
 
-    return sorted;
-  }, [transactions, debouncedSearch, customerFilter, paymentFilter, statusFilter, sortBy]);
+    if (customerFilter !== "all" && m.customerName.toLowerCase() !== customerFilter.toLowerCase()) {
+      return false;
+    }
+
+    if (paymentFilter !== "all") {
+      if (paymentFilter === "MFS") {
+        if (m.paymentType !== "MFS" && m.paymentType !== "BKASH" && m.paymentType !== "NAGAD") {
+          return false;
+        }
+      } else if (paymentFilter === "BANK") {
+        if (m.paymentType !== "BANK" && m.paymentType !== "CARD") return false;
+      } else if (m.paymentType !== paymentFilter) {
+        return false;
+      }
+    }
+
+    if (statusFilter !== "all" && m.status !== statusFilter) {
+      return false;
+    }
+
+    return true;
+  });
+
+  if (sortBy === "amount_high_to_low") {
+    filtered.sort(
+      (a: any, b: any) =>
+        extractSaleReportMetrics(b).grandTotal - extractSaleReportMetrics(a).grandTotal
+    );
+  } else if (sortBy === "amount_low_to_high") {
+    filtered.sort(
+      (a: any, b: any) =>
+        extractSaleReportMetrics(a).grandTotal - extractSaleReportMetrics(b).grandTotal
+    );
+  } else if (sortBy === "customer_a_to_z") {
+    filtered.sort((a: any, b: any) =>
+      extractSaleReportMetrics(a).customerName.localeCompare(
+        extractSaleReportMetrics(b).customerName
+      )
+    );
+  } else if (sortBy === "customer_z_to_a") {
+    filtered.sort((a: any, b: any) =>
+      extractSaleReportMetrics(b).customerName.localeCompare(
+        extractSaleReportMetrics(a).customerName
+      )
+    );
+  }
 
   const totalCount = filtered.length;
   const pageCount = Math.ceil(totalCount / pageSize) || 1;
@@ -246,24 +250,6 @@ export const SalesReportTable: React.FC<SalesReportTableProps> = ({
     (currentPage - 1) * pageSize,
     currentPage * pageSize
   );
-
-  const handleExportExcel = async () => {
-    try {
-      const count = await exportFilteredInvoicesExcel(filtered, companyMeta);
-      showSuccessToast(`Successfully exported ${count} sales to Excel!`);
-    } catch (e: any) {
-      showErrorToast(e?.message || "Excel export failed");
-    }
-  };
-
-  const handleDownloadPdf = async () => {
-    try {
-      await downloadFilteredInvoicesPdf(filtered, companyMeta);
-      showSuccessToast("Sales report PDF downloaded!");
-    } catch (e: any) {
-      showErrorToast(e?.message || "PDF download failed");
-    }
-  };
 
   const renderSortHeader = (label: string, activeKey: "customer" | "amount") => {
     const isAsc =
@@ -456,8 +442,14 @@ export const SalesReportTable: React.FC<SalesReportTableProps> = ({
 
           {/* Excel & Download PDF */}
           <ReportExportButtons
-            onExportExcel={handleExportExcel}
-            onDownloadPdf={handleDownloadPdf}
+            onExportExcel={async () => {
+              const count = await exportFilteredInvoicesExcel(filtered, companyMeta);
+              return `Successfully exported ${count} sales to Excel!`;
+            }}
+            onDownloadPdf={async () => {
+              await downloadFilteredInvoicesPdf(filtered, companyMeta);
+              return "Sales report PDF downloaded!";
+            }}
           />
         </div>
       </TableToolbar>
@@ -505,27 +497,22 @@ export const SalesReportTable: React.FC<SalesReportTableProps> = ({
             <TableBody>
               {paginated.map((item: any, idx: number) => {
                 const sl = (currentPage - 1) * pageSize + idx + 1;
-                const grandTotal = Number(item.grandTotal ?? item.grand_total ?? item.totalAmount ?? 0);
-                const paid = Number(item.paidAmount ?? item.paid_amount ?? 0);
-                const due = Number(item.dueAmount ?? item.due_amount ?? Math.max(0, grandTotal - paid));
-                const sub = Number(item.totalAmount ?? item.total_amount ?? grandTotal);
-                const disc = Number(item.discount ?? 0);
-                const vat = Number(item.vat ?? 0);
-                const pType = (item.paymentType || item.payment_type || "CASH").toUpperCase();
-
-                const details =
-                  item.salesDetails ||
-                  item.saleDetails ||
-                  item.details ||
-                  item.items ||
-                  item.productsList ||
-                  [];
-                const itemsCount = Array.isArray(details) && details.length > 0 ? details.length : Number(item.itemsCount || 1);
-
-                const isFullyPaid = due <= 0 && grandTotal > 0;
-                const isPartial = due > 0 && paid > 0;
-
-                const orderDisplay = item.orderNo || item.invoiceNo || `ORD-${item.id}`;
+                const {
+                  orderNo: orderDisplay,
+                  customerName,
+                  customerPhone,
+                  saleDate,
+                  grandTotal,
+                  paid,
+                  due,
+                  subtotal: sub,
+                  discount: disc,
+                  vat,
+                  paymentType: pType,
+                  itemsCount,
+                  isFullyPaid,
+                  isPartial,
+                } = extractSaleReportMetrics(item, idx);
 
                 return (
                   <tr
@@ -572,7 +559,7 @@ export const SalesReportTable: React.FC<SalesReportTableProps> = ({
                     {isColVisible("customer") && (
                       <td className="py-2.5 px-3 text-[var(--ui-text)] text-xs font-normal whitespace-nowrap">
                         <span className="font-medium text-[var(--ui-text)]">
-                          {item.customerName || item.customer_name || "Walk-in Customer"}
+                          {customerName}
                         </span>
                       </td>
                     )}
@@ -580,7 +567,7 @@ export const SalesReportTable: React.FC<SalesReportTableProps> = ({
                     {/* Phone */}
                     {isColVisible("phone") && (
                       <td className="py-2.5 px-3 text-[var(--ui-text)] text-xs font-normal whitespace-nowrap">
-                        {item.customerPhone || item.customer_phone || (
+                        {customerPhone || (
                           <span className="text-[var(--ui-text-subtle)] font-normal">N/A</span>
                         )}
                       </td>
@@ -589,8 +576,8 @@ export const SalesReportTable: React.FC<SalesReportTableProps> = ({
                     {/* Date */}
                     {isColVisible("date") && (
                       <td className="py-2.5 px-3 text-[var(--ui-text)] text-xs font-normal whitespace-nowrap">
-                        {item.salesDate || item.saleDate || item.date ? (
-                          moment(item.salesDate || item.saleDate || item.date).format("DD MMM YYYY")
+                        {saleDate ? (
+                          moment(saleDate).format("DD MMM YYYY")
                         ) : (
                           <span className="text-[var(--ui-text-subtle)] font-normal">N/A</span>
                         )}

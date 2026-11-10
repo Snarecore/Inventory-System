@@ -14,12 +14,13 @@ import {
   EmptyState,
 } from "@/components/common";
 import { formatMoney } from "@/utils/formatters";
-import { showSuccessToast, showErrorToast } from "@/utils/toast-utils";
 import type { SaleItem } from "@/types";
 import { useDebounce } from "@/hooks/useDebounce";
 import ReportExportButtons from "./ReportExportButtons";
 import {
   aggregateProductSales,
+  calculateProductTotals,
+  calculateRevenueSharePct,
   useReportCompanyMeta,
   exportFilteredProductsExcel,
   downloadFilteredProductsPdf,
@@ -46,10 +47,8 @@ export const ProductSalesReportTable: React.FC<ProductSalesReportTableProps> = (
   const [pageSize, setPageSize] = useState(10);
 
   const productSummaries = aggregateProductSales(transactions);
-  const grandProductRevenue = productSummaries.reduce(
-    (acc, p) => acc + p.totalRevenue,
-    0
-  );
+  const { totalRevenue: grandProductRevenue } =
+    calculateProductTotals(productSummaries);
 
   const filtered = productSummaries
     .filter((p) => {
@@ -74,24 +73,6 @@ export const ProductSalesReportTable: React.FC<ProductSalesReportTableProps> = (
     (currentPage - 1) * pageSize,
     currentPage * pageSize
   );
-
-  const handleExportExcel = async () => {
-    try {
-      const count = await exportFilteredProductsExcel(filtered, companyMeta);
-      showSuccessToast(`Exported ${count} products to Excel!`);
-    } catch (e: any) {
-      showErrorToast(e?.message || "Excel export failed");
-    }
-  };
-
-  const handleDownloadPdf = async () => {
-    try {
-      await downloadFilteredProductsPdf(filtered, companyMeta);
-      showSuccessToast("Product sales report PDF downloaded!");
-    } catch (e: any) {
-      showErrorToast(e?.message || "PDF download failed");
-    }
-  };
 
   return (
     <TableContainer>
@@ -135,8 +116,14 @@ export const ProductSalesReportTable: React.FC<ProductSalesReportTableProps> = (
           </div>
 
           <ReportExportButtons
-            onExportExcel={handleExportExcel}
-            onDownloadPdf={handleDownloadPdf}
+            onExportExcel={async () => {
+              const count = await exportFilteredProductsExcel(filtered, companyMeta);
+              return `Exported ${count} products to Excel!`;
+            }}
+            onDownloadPdf={async () => {
+              await downloadFilteredProductsPdf(filtered, companyMeta);
+              return "Product sales report PDF downloaded!";
+            }}
           />
         </div>
       </TableToolbar>
@@ -166,10 +153,10 @@ export const ProductSalesReportTable: React.FC<ProductSalesReportTableProps> = (
             </TableHead>
             <TableBody>
               {paginated.map((item, idx) => {
-                const sharePct =
-                  grandProductRevenue > 0
-                    ? ((item.totalRevenue / grandProductRevenue) * 100).toFixed(1)
-                    : "0.0";
+                const sharePct = calculateRevenueSharePct(
+                  item.totalRevenue,
+                  grandProductRevenue
+                );
                 const avgPrice =
                   item.totalQuantity > 0
                     ? Math.round(item.totalRevenue / item.totalQuantity)
