@@ -48,7 +48,6 @@ export const PrintableSalesReportModal: React.FC<PrintableSalesReportModalProps>
     userInfo?.businessName ||
     "Cash Boi Trade Ltd";
   const businessAddress = businessProfile?.address || "";
-  const businessPhone = businessProfile?.businessPhone1 || "";
   const logoKey = businessProfile?.businessLogo || businessProfile?.businessLogoRefNo || "";
   const businessLogoUrl =
     businessProfile?.businessLogoUrl || (logoKey ? getFileViewUrl(logoKey) : "");
@@ -78,7 +77,6 @@ export const PrintableSalesReportModal: React.FC<PrintableSalesReportModalProps>
         sheetName: "Sales Report",
         businessName,
         businessAddress,
-        businessPhone,
         businessLogoUrl,
         startDate,
         endDate,
@@ -251,7 +249,6 @@ export const PrintableSalesReportModal: React.FC<PrintableSalesReportModalProps>
               <div>
                 <div class="company-name">${businessName}</div>
                 ${businessAddress ? `<div class="company-sub">${businessAddress}</div>` : ""}
-                ${businessPhone ? `<div class="company-sub">Phone: ${businessPhone}</div>` : ""}
               </div>
             </div>
             <div class="print-date">
@@ -447,11 +444,6 @@ export const PrintableSalesReportModal: React.FC<PrintableSalesReportModalProps>
                 {businessAddress && (
                   <p className="text-[10px] text-gray-600 font-medium leading-tight mt-0.5">
                     {businessAddress}
-                  </p>
-                )}
-                {businessPhone && (
-                  <p className="text-[10px] text-gray-500 font-medium leading-tight">
-                    Phone: {businessPhone}
                   </p>
                 )}
               </div>

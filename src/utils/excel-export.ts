@@ -231,7 +231,7 @@ export async function buildAndDownloadExcel<T extends Record<string, any>>(
     const startTextCol = logoData && colCount >= 4 ? 3 : 1;
     const rightSplitCol = Math.max(startTextCol + 1, colCount - 2);
 
-    // Embed Logo image (spans approx A1:B3)
+    // Embed Logo image (spans approx A1:B2)
     if (logoData) {
       try {
         const imageId = workbook.addImage({
@@ -240,7 +240,7 @@ export async function buildAndDownloadExcel<T extends Record<string, any>>(
         });
         worksheet.addImage(imageId, {
           tl: { col: 0.15, row: 0.15 },
-          ext: { width: 95, height: 44 },
+          ext: { width: 85, height: 34 },
           editAs: "oneCell",
         });
       } catch (err) {
@@ -278,7 +278,7 @@ export async function buildAndDownloadExcel<T extends Record<string, any>>(
 
     // Row 2: Company Address
     const row2 = worksheet.getRow(2);
-    row2.height = 15;
+    row2.height = 16;
     if (options?.businessAddress) {
       worksheet.mergeCells(`${colToLetter(startTextCol)}2:${lastColLetter}2`);
       const addrCell = worksheet.getCell(`${colToLetter(startTextCol)}2`);
@@ -291,26 +291,11 @@ export async function buildAndDownloadExcel<T extends Record<string, any>>(
       addrCell.alignment = { vertical: "middle", horizontal: "left" };
     }
 
-    // Row 3: Company Phone
+    // Row 3: Centered Report Title
     const row3 = worksheet.getRow(3);
-    row3.height = 15;
-    if (options?.businessPhone) {
-      worksheet.mergeCells(`${colToLetter(startTextCol)}3:${lastColLetter}3`);
-      const phoneCell = worksheet.getCell(`${colToLetter(startTextCol)}3`);
-      phoneCell.value = `Phone: ${options.businessPhone}`;
-      phoneCell.font = {
-        name: "Calibri",
-        size: 9.5,
-        color: { argb: "FF475569" },
-      };
-      phoneCell.alignment = { vertical: "middle", horizontal: "left" };
-    }
-
-    // Row 4: Centered Report Title
-    const row4 = worksheet.getRow(4);
-    row4.height = 22;
-    worksheet.mergeCells(`A4:${lastColLetter}4`);
-    const titleCell = worksheet.getCell("A4");
+    row3.height = 20;
+    worksheet.mergeCells(`A3:${lastColLetter}3`);
+    const titleCell = worksheet.getCell("A3");
     titleCell.value = (options?.reportTitle || "SALES REPORT").toUpperCase();
     titleCell.font = {
       name: "Calibri",
@@ -320,9 +305,9 @@ export async function buildAndDownloadExcel<T extends Record<string, any>>(
     };
     titleCell.alignment = { vertical: "middle", horizontal: "center" };
 
-    // Row 5: Date Period & Total Records Meta
-    const row5 = worksheet.getRow(5);
-    row5.height = 18;
+    // Row 4: Date Period & Total Records Meta
+    const row4 = worksheet.getRow(4);
+    row4.height = 18;
     const metaSplit = Math.max(2, Math.floor(colCount * 0.65));
 
     const fromStr = options?.startDate
@@ -332,8 +317,8 @@ export async function buildAndDownloadExcel<T extends Record<string, any>>(
       ? formatReportDate(options.endDate)
       : formatReportDate(new Date().toISOString());
 
-    worksheet.mergeCells(`A5:${colToLetter(metaSplit)}5`);
-    const metaLeft = worksheet.getCell("A5");
+    worksheet.mergeCells(`A4:${colToLetter(metaSplit)}4`);
+    const metaLeft = worksheet.getCell("A4");
     metaLeft.value = `From Date: ${fromStr}   To Date: ${toStr}`;
     metaLeft.font = {
       name: "Calibri",
@@ -343,8 +328,8 @@ export async function buildAndDownloadExcel<T extends Record<string, any>>(
     };
     metaLeft.alignment = { vertical: "middle", horizontal: "left" };
 
-    worksheet.mergeCells(`${colToLetter(metaSplit + 1)}5:${lastColLetter}5`);
-    const metaRight = worksheet.getCell(`${colToLetter(metaSplit + 1)}5`);
+    worksheet.mergeCells(`${colToLetter(metaSplit + 1)}4:${lastColLetter}4`);
+    const metaRight = worksheet.getCell(`${colToLetter(metaSplit + 1)}4`);
     metaRight.value = `${options?.totalLabel || "Total Invoices"}: ${rows.length}`;
     metaRight.font = {
       name: "Calibri",
@@ -356,17 +341,17 @@ export async function buildAndDownloadExcel<T extends Record<string, any>>(
 
     // Bottom border for meta row
     for (let c = 1; c <= colCount; c++) {
-      const cell = worksheet.getCell(5, c);
+      const cell = worksheet.getCell(4, c);
       cell.border = {
         bottom: { style: "thin", color: { argb: "FFCBD5E1" } },
       };
     }
 
-    // Row 6: Blank compact spacer
-    const row6 = worksheet.getRow(6);
-    row6.height = 6;
+    // Row 5: Blank compact spacer
+    const row5 = worksheet.getRow(5);
+    row5.height = 6;
 
-    currentExcelRow = 7;
+    currentExcelRow = 6;
   }
 
   // ── Column Alignment Classifier ──
