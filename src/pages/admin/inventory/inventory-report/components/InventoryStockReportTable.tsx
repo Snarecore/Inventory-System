@@ -46,6 +46,7 @@ const AVAILABLE_COLUMNS: ColumnItem[] = [
   { key: "category", label: "Category" },
   { key: "primaryUnit", label: "Primary Unit" },
   { key: "secondaryUnit", label: "Secondary Unit" },
+  { key: "conversion", label: "Conversion" },
   { key: "stock", label: "Stock" },
   { key: "buyPrice", label: "Buy Price" },
   { key: "sellPrice", label: "Sell Price" },
@@ -337,7 +338,7 @@ export const InventoryStockReportTable: React.FC<
             description="There are no inventory products matching the current search or filter criteria."
           />
         ) : (
-          <Table minWidth={1180}>
+          <Table minWidth={1260}>
             <TableHead>
               {isColVisible("sl") && (
                 <TableTh align="center" width={42}>
@@ -370,6 +371,9 @@ export const InventoryStockReportTable: React.FC<
               )}
               {isColVisible("secondaryUnit") && (
                 <TableTh align="center">Secondary Unit</TableTh>
+              )}
+              {isColVisible("conversion") && (
+                <TableTh align="center">Conversion</TableTh>
               )}
               {isColVisible("stock") && (
                 <TableTh align="right">
@@ -481,23 +485,15 @@ export const InventoryStockReportTable: React.FC<
                         className="py-2.5 px-3 text-center text-xs whitespace-nowrap"
                         title={
                           m.hasSecondaryUnit
-                            ? `${m.primaryStockDisplay} (${m.packingLevels})`
+                            ? m.conversionDisplay
+                              ? `${m.primaryStockDisplay} (${m.conversionDisplay})`
+                              : m.primaryStockDisplay
                             : undefined
                         }
                       >
-                        <div className="inline-flex flex-col items-center">
-                          <span className="inline-flex items-center px-1.5 py-0.5 rounded-md text-[10.5px] font-medium bg-[var(--ui-surface-sunken)] text-[var(--ui-text)] border border-[var(--ui-border)]">
-                            {m.primaryUnit}
-                          </span>
-                          {m.hasSecondaryUnit &&
-                            m.packingLevels &&
-                            m.packingLevels.toLowerCase() !==
-                              m.primaryUnit.toLowerCase() && (
-                              <span className="mt-0.5 text-[10px] text-[var(--ui-text-subtle)]">
-                                {m.packingLevels}
-                              </span>
-                            )}
-                        </div>
+                        <span className="inline-flex items-center px-1.5 py-0.5 rounded-md text-[10.5px] font-medium bg-[var(--ui-surface-sunken)] text-[var(--ui-text)] border border-[var(--ui-border)]">
+                          {m.primaryUnit}
+                        </span>
                       </td>
                     )}
 
@@ -513,12 +509,26 @@ export const InventoryStockReportTable: React.FC<
                       </td>
                     )}
 
+                    {isColVisible("conversion") && (
+                      <td className="py-2.5 px-3 text-center text-xs whitespace-nowrap">
+                        {m.conversionDisplay ? (
+                          <span className="text-[11px] font-medium text-[var(--ui-text-muted)]">
+                            {m.conversionDisplay}
+                          </span>
+                        ) : (
+                          <span className="text-[var(--ui-text-subtle)]">—</span>
+                        )}
+                      </td>
+                    )}
+
                     {isColVisible("stock") && (
                       <td
                         className="py-2.5 px-3 text-right text-xs whitespace-nowrap tabular-nums"
                         title={
                           m.hasSecondaryUnit
-                            ? `${m.primaryStockDisplay} (${m.packingLevels})`
+                            ? m.conversionDisplay
+                              ? `${m.primaryStockDisplay} (${m.conversionDisplay})`
+                              : m.primaryStockDisplay
                             : undefined
                         }
                       >

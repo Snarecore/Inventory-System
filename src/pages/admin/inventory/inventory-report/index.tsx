@@ -129,8 +129,8 @@ const InventoryReportPage: React.FC = () => {
       {/* ── Top Header & Refresh ── */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2.5">
         <PageHeader
-          headerTitle="Inventory & Product Report"
-          headerDescription="Stock valuation, retail profit margin, category breakdown, and low-stock reorder alerts"
+          headerTitle="Product Report"
+          headerDescription="Stock valuation,  category breakdown and low-stock reorder alerts"
         />
 
         <div className="flex items-center flex-wrap sm:flex-nowrap gap-2 self-start md:self-auto shrink-0">

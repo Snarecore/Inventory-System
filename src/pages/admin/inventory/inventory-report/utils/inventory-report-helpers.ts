@@ -33,6 +33,7 @@ export interface NormalizedProductMetrics {
   primaryStockText: string;
   hasSecondaryUnit: boolean;
   packingLevels: string;
+  conversionDisplay: string;
   quantity: number;
   lowThreshold: number;
   buyPrice: number;
@@ -151,6 +152,35 @@ export function extractInventoryProductMetrics(
     raw.packing_levels || raw.packingLevels || ""
   ).trim();
 
+  const isPackingSameAsUnit =
+    packingLevels.toLowerCase() === primaryUnit.toLowerCase() ||
+    Boolean(
+      secondaryUnit &&
+        packingLevels.toLowerCase() === secondaryUnit.toLowerCase()
+    );
+  const isInvalidPacking =
+    !packingLevels ||
+    isPackingSameAsUnit ||
+    packingLevels === "-" ||
+    packingLevels.toUpperCase() === "N/A" ||
+    packingLevels === "0";
+
+  let conversionDisplay = "";
+  if (stockDisplay.hasSecondaryUnit) {
+    if (!isInvalidPacking) {
+      conversionDisplay = /^\d+(\.\d+)?$/.test(packingLevels)
+        ? `${packingLevels} ${secondaryUnit}/${primaryUnit}`
+        : packingLevels;
+    } else if (
+      stockDisplay.conversionFactor &&
+      stockDisplay.conversionFactor > 0
+    ) {
+      conversionDisplay = `${stockDisplay.conversionFactor} ${secondaryUnit}/${primaryUnit}`;
+    }
+  } else if (!isInvalidPacking) {
+    conversionDisplay = packingLevels;
+  }
+
   const quantity = Number(raw.quantity ?? raw.stock ?? 0);
   const formattedQty = quantity.toLocaleString("en-IN", {
     maximumFractionDigits: 2,
@@ -215,6 +245,7 @@ export function extractInventoryProductMetrics(
     primaryStockText: stockDisplay.primaryStockText,
     hasSecondaryUnit: stockDisplay.hasSecondaryUnit,
     packingLevels,
+    conversionDisplay,
     quantity,
     lowThreshold,
     buyPrice,
@@ -365,6 +396,7 @@ export async function exportInventoryStockExcel(
       Category: m.category,
       "Primary Unit": m.primaryUnit,
       "Secondary Unit": m.hasSecondaryUnit ? m.secondaryUnit : "-",
+      Conversion: m.conversionDisplay || "-",
       Stock: m.quantity,
       "Buy Price (BDT)": m.buyPrice,
       "Sell Price (BDT)": m.sellPrice,
@@ -389,6 +421,7 @@ export async function exportInventoryStockExcel(
     Category: "",
     "Primary Unit": "",
     "Secondary Unit": "",
+    Conversion: "",
     Stock: sumQty,
     "Buy Price (BDT)": "-",
     "Sell Price (BDT)": "-",
@@ -411,7 +444,7 @@ export async function exportInventoryStockExcel(
     startDate: meta.startDate,
     endDate: meta.endDate,
     metaRightLabel: `Total Items: ${products.length}`,
-    totalSummarySpan: 6,
+    totalSummarySpan: 7,
     includeSignatures: true,
   });
 
@@ -456,6 +489,7 @@ export async function downloadInventoryStockPdf(
       m.category,
       m.primaryUnit,
       m.hasSecondaryUnit ? m.secondaryUnit : "-",
+      m.conversionDisplay || "-",
       m.quantity.toLocaleString("en-IN", { maximumFractionDigits: 2 }),
       formatMoney(m.buyPrice),
       formatMoney(m.sellPrice),
@@ -481,7 +515,7 @@ export async function downloadInventoryStockPdf(
   bodyRows.push([
     {
       content: "TOTAL INVENTORY VALUATION",
-      colSpan: 6,
+      colSpan: 7,
       styles: {
         halign: "center",
         fontStyle: "bold",
@@ -555,6 +589,7 @@ export async function downloadInventoryStockPdf(
       "Category",
       "Primary Unit",
       "Secondary Unit",
+      "Conversion",
       "Stock",
       "Buy Price",
       "Sell Price",
@@ -566,24 +601,25 @@ export async function downloadInventoryStockPdf(
     bodyRows,
     meta,
     columnStyles: {
-      0: { halign: "center", cellWidth: 9 },
-      1: { halign: "left", cellWidth: 22 },
+      0: { halign: "center", cellWidth: 8 },
+      1: { halign: "left", cellWidth: 20 },
       2: { halign: "left", fontStyle: "bold" },
-      3: { halign: "left", cellWidth: 22 },
-      4: { halign: "center", cellWidth: 20 },
-      5: { halign: "center", cellWidth: 20 },
-      6: { halign: "right", cellWidth: 16, fontStyle: "bold" },
-      7: { halign: "right", cellWidth: 19 },
-      8: { halign: "right", cellWidth: 19 },
-      9: { halign: "right", cellWidth: 23, fontStyle: "bold" },
-      10: {
+      3: { halign: "left", cellWidth: 20 },
+      4: { halign: "center", cellWidth: 17 },
+      5: { halign: "center", cellWidth: 17 },
+      6: { halign: "center", cellWidth: 22 },
+      7: { halign: "right", cellWidth: 15, fontStyle: "bold" },
+      8: { halign: "right", cellWidth: 18 },
+      9: { halign: "right", cellWidth: 18 },
+      10: { halign: "right", cellWidth: 22, fontStyle: "bold" },
+      11: {
         halign: "right",
-        cellWidth: 23,
+        cellWidth: 22,
         fontStyle: "bold",
         textColor: REPORT_RGB.emerald,
       },
-      11: { halign: "center", cellWidth: 21 },
-      12: { halign: "center", cellWidth: 17 },
+      12: { halign: "center", cellWidth: 20 },
+      13: { halign: "center", cellWidth: 16 },
     },
   });
 }
