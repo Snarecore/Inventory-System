@@ -2,6 +2,7 @@ import { getData, postData, deleteData } from "./api-service";
 import apiConfig from "@/config/api.json";
 import { buildAccessUser } from "@/utils/access-user";
 import { getUserInfo, getStoredUser } from "@/utils/auth-storage";
+import { getFileViewUrl } from "./file-upload-service";
 import type {
   EmployeeItem,
   EmployeeInsertPayload,
@@ -123,6 +124,10 @@ export async function getEmployeeList(organizationId?: number): Promise<Employee
       active = localStatusMap[empId];
     }
 
+    const rawPhoto = emp.profilePhotoUrl || emp.photo || (emp as any).photoUrl || (emp as any).avatarUrl || (emp as any).image || "";
+    const cleanPhotoRef = typeof rawPhoto === "string" ? rawPhoto.replace(/.*\/files\/file\//, "").trim() : "";
+    const resolvedPhotoUrl = cleanPhotoRef ? getFileViewUrl(cleanPhotoRef) : "";
+
     return {
       ...emp,
       id: empId || emp.id,
@@ -130,6 +135,7 @@ export async function getEmployeeList(organizationId?: number): Promise<Employee
       status: active ? "ACTIVE" : "INACTIVE",
       isActive: active,
       is_active: active ? 1 : 0,
+      profilePhotoUrl: resolvedPhotoUrl || (emp.profilePhotoUrl ? String(emp.profilePhotoUrl) : null),
     };
   });
 
@@ -191,7 +197,11 @@ export async function insertEmployee(
     hasAppAccess: Boolean(payload.hasAppAccess),
     appUsername: payload.hasAppAccess ? String(payload.appUsername || payload.phoneNumber || "").trim() : undefined,
     appPassword: payload.hasAppAccess ? String(payload.appPassword || "").trim() : undefined,
-    profilePhotoUrl: payload.profilePhotoUrl ?? null,
+    profilePhotoUrl: (() => {
+      const raw = payload.profilePhotoUrl || (payload as any).photo || "";
+      const clean = typeof raw === "string" ? raw.replace(/.*\/files\/file\//, "").trim() : "";
+      return clean ? getFileViewUrl(clean) : (payload.profilePhotoUrl ?? null);
+    })(),
     notes: payload.notes ? String(payload.notes).trim() : undefined,
     adminUserId: adminUserId ? Number(adminUserId) : undefined,
     accessUser,
@@ -236,8 +246,18 @@ export async function updateEmployee(
     saveLocalEmployeeStatus(empId, activeVal);
   }
 
+  let photoUpdate = {};
+  if (payload.profilePhotoUrl !== undefined) {
+    const rawPhoto = payload.profilePhotoUrl || "";
+    const cleanPhoto = typeof rawPhoto === "string" ? rawPhoto.replace(/.*\/files\/file\//, "").trim() : "";
+    photoUpdate = {
+      profilePhotoUrl: cleanPhoto ? getFileViewUrl(cleanPhoto) : null,
+    };
+  }
+
   const body = {
     ...payload,
+    ...photoUpdate,
     ...(activeVal !== undefined
       ? {
           active: activeVal,

@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Modal, Button } from "@/components/common";
 import type { EmployeeItem } from "@/types/employee.types";
 import { isEmployeeActive } from "@/services/employee-service";
+import { getFileViewUrl } from "@/services/file-upload-service";
 import {
   FaUserTie,
   FaPhoneAlt,
@@ -60,9 +61,21 @@ export const EmployeeDetailsModal: React.FC<EmployeeDetailsModalProps> = ({
       size="lg"
       title={
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-[var(--primary-color-light,#e0f2fe)] text-[var(--primary-color,#009fe3)] flex items-center justify-center text-lg font-bold">
-            {initial}
-          </div>
+          {employee.profilePhotoUrl ? (
+            <img
+              src={getFileViewUrl(employee.profilePhotoUrl)}
+              alt={employee.fullName || "Employee"}
+              className="w-10 h-10 rounded-xl object-cover border border-gray-200 dark:border-gray-700 shadow-2xs flex-shrink-0"
+              onError={(e) => {
+                (e.target as HTMLElement).style.display = "none";
+              }}
+            />
+          ) : null}
+          {(!employee.profilePhotoUrl) && (
+            <div className="w-10 h-10 rounded-xl bg-[var(--primary-color-light,#e0f2fe)] text-[var(--primary-color,#009fe3)] flex items-center justify-center text-lg font-bold flex-shrink-0">
+              {initial}
+            </div>
+          )}
           <div>
             <div className="flex items-center gap-2">
               <h3 className="text-base font-bold text-gray-900 dark:text-gray-100 leading-tight">

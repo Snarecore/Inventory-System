@@ -19,6 +19,7 @@ import {
   TableCell,
   TablePaginationFooter,
   ConfirmModal,
+  ExcelExportButton,
 } from "@/components/common";
 import { useEmployeeListQuery, useUpdateEmployeeMutation } from "@/hooks/useEmployeeQueries";
 import type { EmployeeItem } from "@/types/employee.types";
@@ -27,6 +28,7 @@ import { showSuccessToast, showErrorToast } from "@/utils/toast-utils";
 import { getUserInfo } from "@/utils/auth-storage";
 import EmployeeDetailsModal from "./components/EmployeeDetailsModal";
 import { isEmployeeActive } from "@/services/employee-service";
+import { getFileViewUrl } from "@/services/file-upload-service";
 import { usePermission } from "@/hooks/usePermission";
 import {
   FaUserTie,
@@ -37,7 +39,6 @@ import {
   FaShieldAlt,
   FaEdit,
   FaEye,
-  FaFileExcel,
   FaPowerOff,
 } from "react-icons/fa";
 import { FiAlertCircle, FiCheckCircle } from "react-icons/fi";
@@ -308,13 +309,6 @@ export const EmployeeList: React.FC = () => {
         />
         <div className="flex items-center gap-2">
           <RefreshButton onClick={() => refetch()} isLoading={isLoading || isRefetching} />
-          <Button
-            label="Export Excel"
-            onClick={handleExportExcel}
-            variant="secondary"
-            icon={<FaFileExcel className="text-emerald-600 text-xs" />}
-            buttonClass="!text-xs !py-1.5 !w-auto justify-center font-medium cursor-pointer"
-          />
           {canCreate("employee") && (
             <Button
               label="Add Employee"
@@ -348,42 +342,51 @@ export const EmployeeList: React.FC = () => {
               />
             </div>
 
-            {/* Filter Tabs matching BranchList */}
-            <div className="flex items-center gap-1.5 self-start sm:self-auto overflow-x-auto">
-              {[
-                { key: "all", label: "All Employees", count: employees.length },
-                { key: "active", label: "Active", count: activeCount },
-                { key: "inactive", label: "Inactive", count: inactiveCount },
-                { key: "app", label: "App Access", count: appAccessCount },
-              ].map((tab) => {
-                const on = filter === tab.key;
-                return (
-                  <button
-                    key={tab.key}
-                    type="button"
-                    onClick={() => {
-                      setFilter(tab.key as any);
-                      setCurrentPage(1);
-                    }}
-                    className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold transition-all cursor-pointer ${
-                      on
-                        ? "bg-blue-50 dark:bg-blue-950/60 text-[var(--primary-color,#009fe3)] border border-blue-200 dark:border-blue-800 shadow-2xs"
-                        : "bg-gray-100 dark:bg-gray-700/50 text-gray-600 dark:text-gray-400 border border-transparent hover:bg-gray-200 dark:hover:bg-gray-700"
-                    }`}
-                  >
-                    <span>{tab.label}</span>
-                    <span
-                      className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
+            {/* Filter Tabs & Excel Button */}
+            <div className="flex items-center gap-2 self-start sm:self-auto flex-wrap">
+              <div className="flex items-center gap-1.5 overflow-x-auto">
+                {[
+                  { key: "all", label: "All Employees", count: employees.length },
+                  { key: "active", label: "Active", count: activeCount },
+                  { key: "inactive", label: "Inactive", count: inactiveCount },
+                  { key: "app", label: "App Access", count: appAccessCount },
+                ].map((tab) => {
+                  const on = filter === tab.key;
+                  return (
+                    <button
+                      key={tab.key}
+                      type="button"
+                      onClick={() => {
+                        setFilter(tab.key as any);
+                        setCurrentPage(1);
+                      }}
+                      className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold transition-all cursor-pointer ${
                         on
-                          ? "bg-blue-200/60 dark:bg-blue-900 text-blue-700 dark:text-blue-300"
-                          : "bg-gray-200 dark:bg-gray-600 text-gray-600 dark:text-gray-300"
+                          ? "bg-blue-50 dark:bg-blue-950/60 text-[var(--primary-color,#009fe3)] border border-blue-200 dark:border-blue-800 shadow-2xs"
+                          : "bg-gray-100 dark:bg-gray-700/50 text-gray-600 dark:text-gray-400 border border-transparent hover:bg-gray-200 dark:hover:bg-gray-700"
                       }`}
                     >
-                      {tab.count}
-                    </span>
-                  </button>
-                );
-              })}
+                      <span>{tab.label}</span>
+                      <span
+                        className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
+                          on
+                            ? "bg-blue-200/60 dark:bg-blue-900 text-blue-700 dark:text-blue-300"
+                            : "bg-gray-200 dark:bg-gray-600 text-gray-600 dark:text-gray-300"
+                        }`}
+                      >
+                        {tab.count}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Reusable Excel Export Button */}
+              <ExcelExportButton
+                onClick={handleExportExcel}
+                disabled={employees.length === 0}
+                title="Download Employees Excel Report"
+              />
             </div>
           </div>
         </TableToolbar>
@@ -428,9 +431,21 @@ export const EmployeeList: React.FC = () => {
                         {/* Employee Name */}
                         <TableCell>
                           <div className="flex items-center gap-2">
-                            <div className="w-6 h-6 rounded-full bg-[var(--primary-color-light,#e0f2fe)] text-[var(--primary-color,#009fe3)] flex items-center justify-center text-[10px] font-bold flex-shrink-0">
-                              {(item.fullName || "E").charAt(0).toUpperCase()}
-                            </div>
+                            {item.profilePhotoUrl ? (
+                              <img
+                                src={getFileViewUrl(item.profilePhotoUrl)}
+                                alt={item.fullName || "Employee"}
+                                className="w-6 h-6 rounded-full object-cover border border-[var(--ui-border)] flex-shrink-0"
+                                onError={(e) => {
+                                  (e.target as HTMLElement).style.display = "none";
+                                }}
+                              />
+                            ) : null}
+                            {(!item.profilePhotoUrl) && (
+                              <div className="w-6 h-6 rounded-full bg-[var(--primary-color-light,#e0f2fe)] text-[var(--primary-color,#009fe3)] flex items-center justify-center text-[10px] font-bold flex-shrink-0">
+                                {(item.fullName || "E").charAt(0).toUpperCase()}
+                              </div>
+                            )}
                             <div className="flex items-center gap-1.5 truncate">
                               <span className="font-bold text-xs text-gray-900 dark:text-gray-100 truncate block">
                                 {item.fullName || `Employee #${empId}`}

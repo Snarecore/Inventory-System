@@ -3,7 +3,7 @@ import moment from "moment";
 import Modal from "@/components/modal/Modal";
 import Button from "@/components/button/Button";
 import DatePicker from "@/components/common/DatePicker";
-import { useSupplierInvoicesDueQuery } from "@/hooks/useSupplierInvoicesDue";
+import { usePurchasesInvoicesDueQuery as useSupplierInvoicesDueQuery } from "@/hooks/usePurchasesInvoicesDue";
 import { useFinancialAccounts } from "@/hooks/useFinancialAccounts";
 import { usePaymentMutation } from "@/hooks/usePaymentMutation";
 import { sortInvoicesFIFO } from "@/services/collection-service";

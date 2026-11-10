@@ -565,13 +565,30 @@ export const CreateSaleForm: React.FC = () => {
       };
 
       const editId =
+        effectiveEditData?.id ||
+        (effectiveEditData as any)?.saleId ||
         stateEditData?.id ||
         (stateEditData as any)?.saleId ||
         routeId;
 
-      if (isEditMode && editId) {
-        payload.id = editId;
-        payload.saleId = editId;
+      const editOrderNo =
+        effectiveEditData?.orderNo ||
+        (stateEditData as any)?.orderNo ||
+        (effectiveEditData as any)?.order_no;
+
+      if (isEditMode) {
+        if (editId) {
+          payload.id = editId;
+          payload.saleId = editId;
+        }
+        if (editOrderNo) {
+          payload.orderNo = editOrderNo;
+          payload.order_no = editOrderNo;
+        }
+        payload.orgId = accessUser.orgId;
+        payload.branchId = accessUser.branchId;
+        payload.invoice_no = invoiceNo.trim();
+        payload.salesInvoiceNo = invoiceNo.trim();
       }
 
       const result = await handleApiMutation({

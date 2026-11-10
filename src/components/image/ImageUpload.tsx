@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useId } from "react";
 import { IoCloseSharp, IoCloudUploadOutline, IoDocumentTextOutline } from "react-icons/io5";
+import { getFileViewUrl } from "@/services/file-upload-service";
 
 interface ImageUploadProps {
 	value: string | File | null;
@@ -20,15 +21,7 @@ const ImageUpload: React.FC<ImageUploadProps> = ({ value, onChange, size = "sm",
 		if (trimmed.startsWith("blob:") || trimmed.startsWith("data:") || trimmed.startsWith("http://") || trimmed.startsWith("https://")) {
 			return trimmed;
 		}
-		// Support UUID / fileGUID format from file upload API
-		if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(trimmed)) {
-			const apiBase = (import.meta.env.VITE_API_BASE_URL as string)?.replace(/\/+$/, "") || "";
-			return apiBase ? `${apiBase}/files/file/${trimmed}` : trimmed;
-		}
-		const rawBaseUrl = import.meta.env.VITE_API_BASE_URL;
-		const serverHost = rawBaseUrl.replace(/\/api\/?$/, "");
-		const cleanUrl = trimmed.startsWith("/") ? trimmed.slice(1) : trimmed;
-		return `${serverHost}/${cleanUrl}`;
+		return getFileViewUrl(trimmed);
 	};
 
 	useEffect(() => {

@@ -5,6 +5,8 @@ import Button from "@/components/button/Button";
 import InputField from "@/components/form/TextInput";
 import DatePicker from "@/components/common/DatePicker";
 import PageHeader from "@/components/page-header/PageHeader";
+import ImageUpload from "@/components/image/ImageUpload";
+import { uploadEmployeePhoto, getFileViewUrl } from "@/services/file-upload-service";
 import { showErrorToast, showSuccessToast } from "@/utils/toast-utils";
 import { useInsertEmployeeMutation, useUpdateEmployeeMutation } from "@/hooks/useEmployeeQueries";
 import { usePermission } from "@/hooks/usePermission";
@@ -42,6 +44,7 @@ type EmployeeFormValues = {
   hasAppAccess: boolean;
   appUsername: string;
   appPassword: string;
+  profilePhotoUrl?: string | null;
   notes: string;
 };
 
@@ -77,6 +80,7 @@ const initialValues: EmployeeFormValues = {
   hasAppAccess: false,
   appUsername: "",
   appPassword: "",
+  profilePhotoUrl: null,
   notes: "",
 };
 
@@ -130,6 +134,7 @@ export default function EmployeeEntryPage() {
     hasAppAccess: Boolean(emp.hasAppAccess),
     appUsername: emp.appUsername || emp.phoneNumber || "",
     appPassword: emp.appPassword || "",
+    profilePhotoUrl: emp.profilePhotoUrl ? getFileViewUrl(emp.profilePhotoUrl) : null,
     notes: emp.notes || "",
   });
 
@@ -140,11 +145,14 @@ export default function EmployeeEntryPage() {
     return initialValues;
   });
 
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [isUploadingPhoto, setIsUploadingPhoto] = useState<boolean>(false);
   const [errors, setErrors] = useState<EmployeeErrors>({});
 
   useEffect(() => {
     if (editEmployee) {
       setValues(getFormValuesFromEmployee(editEmployee));
+      setPhotoFile(null);
     }
   }, [editEmployee]);
 
@@ -161,6 +169,13 @@ export default function EmployeeEntryPage() {
       navigate("/admin/employees");
     },
   });
+
+  const handlePhotoChange = (file: File | null) => {
+    setPhotoFile(file);
+    if (!file) {
+      setValues((prev) => ({ ...prev, profilePhotoUrl: null }));
+    }
+  };
 
   const updateField =
     (field: keyof EmployeeFormValues) =>
@@ -195,7 +210,7 @@ export default function EmployeeEntryPage() {
     }));
   };
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!hasPermission) {
       showErrorToast(`You do not have permission to ${isEditMode ? "update" : "create"} employees.`);
@@ -235,6 +250,20 @@ export default function EmployeeEntryPage() {
     if (Object.keys(nextErrors).length > 0) {
       showErrorToast("Please check the highlighted fields.");
       return;
+    }
+
+    let finalPhotoUrl = values.profilePhotoUrl ? getFileViewUrl(values.profilePhotoUrl) : null;
+    if (photoFile) {
+      try {
+        setIsUploadingPhoto(true);
+        const uploadedGuid = await uploadEmployeePhoto(photoFile, values.phoneNumber);
+        finalPhotoUrl = getFileViewUrl(uploadedGuid);
+        setIsUploadingPhoto(false);
+      } catch (uploadErr: any) {
+        setIsUploadingPhoto(false);
+        showErrorToast(uploadErr?.message || "Failed to upload employee photo");
+        return;
+      }
     }
 
     // Split fullName into firstName and lastName
@@ -278,7 +307,7 @@ export default function EmployeeEntryPage() {
       hasAppAccess: Boolean(values.hasAppAccess),
       appUsername: values.hasAppAccess ? values.appUsername.trim() || values.phoneNumber.trim() : undefined,
       appPassword: values.hasAppAccess ? values.appPassword.trim() : undefined,
-      profilePhotoUrl: null,
+      profilePhotoUrl: finalPhotoUrl,
       notes: values.notes.trim() || undefined,
     };
 
@@ -295,10 +324,11 @@ export default function EmployeeEntryPage() {
     } else {
       setValues(initialValues);
     }
+    setPhotoFile(null);
     setErrors({});
   };
 
-  const isPending = insertMutation.isPending || updateMutation.isPending;
+  const isPending = insertMutation.isPending || updateMutation.isPending || isUploadingPhoto;
 
   return (
     <div className="flex flex-col gap-2.5 px-2.5 py-2 sm:px-4 sm:py-2.5 max-w-[1600px] mx-auto w-full text-[var(--ui-text)]">
@@ -330,10 +360,12 @@ export default function EmployeeEntryPage() {
             <section className="overflow-hidden rounded-xl border border-[var(--ui-border)] bg-[var(--ui-surface)] shadow-xs">
               <div className="h-20 bg-[var(--primary-color)]" />
               <div className="px-4 pb-4">
-                <div className="-mt-8 flex h-16 w-16 items-center justify-center rounded-xl border-2 border-[var(--ui-surface)] bg-[var(--primary-color-light)] text-2xl font-bold text-[var(--primary-color)] shadow-xs">
-                  {values.fullName.trim().charAt(0).toUpperCase() || (
-                    <FaIdBadge aria-hidden="true" className="text-lg" />
-                  )}
+                <div className="-mt-10">
+                  <ImageUpload
+                    value={photoFile || (values.profilePhotoUrl ? getFileViewUrl(values.profilePhotoUrl) : null)}
+                    onChange={handlePhotoChange}
+                    size="sm"
+                  />
                 </div>
                 <p className="mt-3 text-base font-bold text-[var(--ui-text)] truncate">
                   {values.fullName.trim() || "New employee"}
@@ -782,7 +814,9 @@ export default function EmployeeEntryPage() {
               />
               <Button
                 label={
-                  isEditMode
+                  isUploadingPhoto
+                    ? "Uploading photo..."
+                    : isEditMode
                     ? updateMutation.isPending
                       ? "Updating employee..."
                       : "Update Employee"
