@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState } from "react";
 import { FiChevronDown } from "react-icons/fi";
 import Search from "@/components/table-components/Search";
 import {
@@ -17,10 +17,7 @@ import { formatMoney } from "@/utils/formatters";
 import moment from "moment";
 import type { SaleItem } from "@/types";
 import { useDebounce } from "@/hooks/useDebounce";
-import {
-  aggregateCustomerSales,
-  type CustomerSummary,
-} from "../utils/sales-report-helpers";
+import { aggregateCustomerSales } from "../utils/sales-report-helpers";
 
 interface CustomerSalesReportTableProps {
   transactions: SaleItem[];
@@ -38,45 +35,29 @@ export const CustomerSalesReportTable: React.FC<CustomerSalesReportTableProps> =
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
 
-  // Group transactions by customer using shared aggregator
-  const customerSummaries: CustomerSummary[] = useMemo(
-    () => aggregateCustomerSales(transactions),
-    [transactions]
-  );
+  const customerSummaries = aggregateCustomerSales(transactions);
 
-  // Filter & Sort
-  const filtered = useMemo(() => {
-    let list = customerSummaries;
-
-    if (statusFilter === "due_only") {
-      list = list.filter((c) => c.totalDue > 0);
-    } else if (statusFilter === "cleared_only") {
-      list = list.filter((c) => c.totalDue <= 0);
-    }
-
-    if (debouncedSearch.trim()) {
-      const q = debouncedSearch.toLowerCase().trim();
-      list = list.filter(
-        (c) =>
+  const filtered = customerSummaries
+    .filter((c) => {
+      if (statusFilter === "due_only" && c.totalDue <= 0) return false;
+      if (statusFilter === "cleared_only" && c.totalDue > 0) return false;
+      if (debouncedSearch.trim()) {
+        const q = debouncedSearch.toLowerCase().trim();
+        return (
           c.customerName.toLowerCase().includes(q) ||
           c.customerPhone.toLowerCase().includes(q) ||
           c.customerAddress.toLowerCase().includes(q)
-      );
-    }
-
-    const sorted = [...list];
-    if (sortBy === "billed_desc") {
-      sorted.sort((a, b) => b.totalBilled - a.totalBilled);
-    } else if (sortBy === "due_desc") {
-      sorted.sort((a, b) => b.totalDue - a.totalDue);
-    } else if (sortBy === "orders_desc") {
-      sorted.sort((a, b) => b.invoicesCount - a.invoicesCount);
-    } else if (sortBy === "name_asc") {
-      sorted.sort((a, b) => a.customerName.localeCompare(b.customerName));
-    }
-
-    return sorted;
-  }, [customerSummaries, debouncedSearch, statusFilter, sortBy]);
+        );
+      }
+      return true;
+    })
+    .sort((a, b) => {
+      if (sortBy === "billed_desc") return b.totalBilled - a.totalBilled;
+      if (sortBy === "due_desc") return b.totalDue - a.totalDue;
+      if (sortBy === "orders_desc") return b.invoicesCount - a.invoicesCount;
+      if (sortBy === "name_asc") return a.customerName.localeCompare(b.customerName);
+      return 0;
+    });
 
   const totalCount = filtered.length;
   const pageCount = Math.ceil(totalCount / pageSize) || 1;

@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState } from "react";
 import { FiChevronDown } from "react-icons/fi";
 import Search from "@/components/table-components/Search";
 import {
@@ -16,10 +16,7 @@ import {
 import { formatMoney } from "@/utils/formatters";
 import type { SaleItem } from "@/types";
 import { useDebounce } from "@/hooks/useDebounce";
-import {
-  aggregateProductSales,
-  type ProductSummary,
-} from "../utils/sales-report-helpers";
+import { aggregateProductSales } from "../utils/sales-report-helpers";
 
 interface ProductSalesReportTableProps {
   transactions: SaleItem[];
@@ -36,43 +33,28 @@ export const ProductSalesReportTable: React.FC<ProductSalesReportTableProps> = (
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
 
-  // Group line items by product using shared aggregator
-  const productSummaries: ProductSummary[] = useMemo(
-    () => aggregateProductSales(transactions),
-    [transactions]
+  const productSummaries = aggregateProductSales(transactions);
+  const grandProductRevenue = productSummaries.reduce(
+    (acc, p) => acc + p.totalRevenue,
+    0
   );
 
-  // Overall total revenue from products
-  const grandProductRevenue = useMemo(
-    () => productSummaries.reduce((acc, p) => acc + p.totalRevenue, 0),
-    [productSummaries]
-  );
-
-  // Filter & Sort
-  const filtered = useMemo(() => {
-    let list = productSummaries;
-    if (debouncedSearch.trim()) {
+  const filtered = productSummaries
+    .filter((p) => {
+      if (!debouncedSearch.trim()) return true;
       const q = debouncedSearch.toLowerCase().trim();
-      list = list.filter(
-        (p) =>
-          p.productName.toLowerCase().includes(q) ||
-          p.productCode.toLowerCase().includes(q)
+      return (
+        p.productName.toLowerCase().includes(q) ||
+        p.productCode.toLowerCase().includes(q)
       );
-    }
-
-    const sorted = [...list];
-    if (sortBy === "revenue_desc") {
-      sorted.sort((a, b) => b.totalRevenue - a.totalRevenue);
-    } else if (sortBy === "revenue_asc") {
-      sorted.sort((a, b) => a.totalRevenue - b.totalRevenue);
-    } else if (sortBy === "qty_desc") {
-      sorted.sort((a, b) => b.totalQuantity - a.totalQuantity);
-    } else if (sortBy === "name_asc") {
-      sorted.sort((a, b) => a.productName.localeCompare(b.productName));
-    }
-
-    return sorted;
-  }, [productSummaries, debouncedSearch, sortBy]);
+    })
+    .sort((a, b) => {
+      if (sortBy === "revenue_desc") return b.totalRevenue - a.totalRevenue;
+      if (sortBy === "revenue_asc") return a.totalRevenue - b.totalRevenue;
+      if (sortBy === "qty_desc") return b.totalQuantity - a.totalQuantity;
+      if (sortBy === "name_asc") return a.productName.localeCompare(b.productName);
+      return 0;
+    });
 
   const totalCount = filtered.length;
   const pageCount = Math.ceil(totalCount / pageSize) || 1;
@@ -106,7 +88,10 @@ export const ProductSalesReportTable: React.FC<ProductSalesReportTableProps> = (
                 setSortBy(e.target.value);
                 setCurrentPage(1);
               }}
-              className="w-full h-8 pl-2.5 pr-6 text-xs border border-[var(--ui-border)] rounded-lg bg-[var(--ui-surface-muted)]/50 hover:bg-[var(--ui-surface)] text-[var(--ui-text)] font-medium focus:outline-none focus:border-[var(--primary-color)] cursor-pointer appearance-none"
+              className="w-full h-8 pl-2.5 pr-6 text-xs border border-[var(--ui-border)] 
+              rounded-lg bg-[var(--ui-surface-muted)]/50 hover:bg-[var(--ui-surface)] 
+              text-[var(--ui-text)] font-medium focus:outline-none focus:border-[var(--primary-color)] 
+              cursor-pointer appearance-none"
             >
               <option value="revenue_desc">Highest Revenue</option>
               <option value="revenue_asc">Lowest Revenue</option>
