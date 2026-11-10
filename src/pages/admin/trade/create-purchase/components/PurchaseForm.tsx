@@ -15,6 +15,7 @@ import { FormKeyboardNav } from "@/components/common/FormKeyboardNav";
 import apiConfig from "@/config/api.json";
 import {
   purchaseListQueryKey,
+  purchaseAndReturnQueryKey,
   productListQueryKey,
   partyListQueryKey,
   purchaseChallanSettingsQueryKey,
@@ -567,9 +568,11 @@ const CreatePurchaseForm: React.FC = () => {
         const p = Number(item.buyPrice) || 0;
         const q = Number(item.quantity) || 1;
         const v = Number(item.vat) || 0;
-        const lineVat = Math.round((p * q * v) / 100 * 100) / 100;
+        const lineVat = Math.round(((p * q * v) / 100) * 100) / 100;
+        const detailId = item.id || (item as any).purchaseDetailId;
 
         return {
+          ...(detailId ? { id: detailId, purchaseDetailId: detailId } : {}),
           productId: String(item.productId || ""),
           productCode: String(item.productCode || ""),
           productName: item.productName || "",
@@ -580,6 +583,7 @@ const CreatePurchaseForm: React.FC = () => {
           total: Number(item.total),
           vat: lineVat,
           delivery_charge: 0,
+          deliveryCharge: 0,
           status: "PENDING",
           advenType: "PURCHASE",
         };
@@ -619,6 +623,10 @@ const CreatePurchaseForm: React.FC = () => {
         driverName: driverName.trim() || null,
         driverPhone: driverPhone.trim() || null,
         attachments: attachment || null,
+        // Always provide purchaseDetails across all variants so Spring PurchaseUpdateRequest receives the list
+        purchaseDetails: purchaseDetailsPayload,
+        purchasesDetails: purchaseDetailsPayload,
+        details: purchaseDetailsPayload,
       };
 
       const editId =
@@ -628,15 +636,30 @@ const CreatePurchaseForm: React.FC = () => {
         stateEditData?.purchaseId ??
         routeId;
 
+      const editOrderNo =
+        effectiveEditData?.orderNo ||
+        (effectiveEditData as any)?.order_no ||
+        stateEditData?.orderNo ||
+        (stateEditData as any)?.order_no ||
+        effectiveEditData?.invoiceNo ||
+        stateEditData?.invoiceNo ||
+        invoiceNo.trim();
+
       if (isEditMode) {
         if (editId) {
           purchasePayload.id = editId;
           purchasePayload.purchaseId = editId;
         }
+        if (editOrderNo) {
+          purchasePayload.orderNo = editOrderNo;
+          purchasePayload.order_no = editOrderNo;
+        }
+        purchasePayload.orgId = accessUser.orgId;
+        purchasePayload.branchId = accessUser.branchId;
+        purchasePayload.invoice_no = invoiceNo.trim();
+        purchasePayload.purchaseInvoiceNo = invoiceNo.trim();
         purchasePayload.deliveryCharge = calculatedTransport;
-        purchasePayload.details = purchaseDetailsPayload;
-      } else {
-        purchasePayload.purchaseDetails = purchaseDetailsPayload;
+        purchasePayload.delivery_charge = calculatedTransport;
       }
 
       // Both insert and update operations in backend use JSON HTTP POST
@@ -646,7 +669,7 @@ const CreatePurchaseForm: React.FC = () => {
         mutation,
         url: targetUrl,
         body: purchasePayload,
-        invalidateQueryKey: [purchaseListQueryKey, productListQueryKey],
+        invalidateQueryKey: [purchaseListQueryKey, productListQueryKey, purchaseAndReturnQueryKey],
         showSuccessMessage: true,
         showErrorMessage: true,
       });
