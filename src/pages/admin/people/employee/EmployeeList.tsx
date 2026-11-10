@@ -4,7 +4,6 @@ import PageHeader from "@/components/page-header/PageHeader";
 import {
   Button,
   RefreshButton,
-  StatsCards,
   Search,
   EmptyState,
   TableSkeleton,
@@ -31,9 +30,6 @@ import { isEmployeeActive } from "@/services/employee-service";
 import { getFileViewUrl } from "@/services/file-upload-service";
 import { usePermission } from "@/hooks/usePermission";
 import {
-  FaUserTie,
-  FaCheckCircle,
-  FaTimesCircle,
   FaMobileAlt,
   FaPlus,
   FaShieldAlt,
@@ -263,42 +259,6 @@ export const EmployeeList: React.FC = () => {
     }
   };
 
-  // Stats cards matching BranchList design
-  const statCards = [
-    {
-      title: "Total Employees",
-      value: employees.length,
-      icon: FaUserTie,
-      color: "text-blue-600 dark:text-blue-400",
-      bg: "bg-blue-50/60 dark:bg-blue-950/20 border-blue-200 dark:border-blue-900",
-      iconBg: "bg-blue-100 dark:bg-blue-900/50 text-blue-600 dark:text-blue-400",
-    },
-    {
-      title: "Active Staff",
-      value: activeCount,
-      icon: FaCheckCircle,
-      color: "text-emerald-600 dark:text-emerald-400",
-      bg: "bg-emerald-50/60 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-900",
-      iconBg: "bg-emerald-100 dark:bg-emerald-900/50 text-emerald-600 dark:text-emerald-400",
-    },
-    {
-      title: "Inactive Staff",
-      value: inactiveCount,
-      icon: FaTimesCircle,
-      color: "text-rose-600 dark:text-rose-400",
-      bg: "bg-rose-50/60 dark:bg-rose-950/20 border-rose-200 dark:border-rose-900",
-      iconBg: "bg-rose-100 dark:bg-rose-900/50 text-rose-600 dark:text-rose-400",
-    },
-    {
-      title: "App Access Users",
-      value: appAccessCount,
-      icon: FaMobileAlt,
-      color: "text-purple-600 dark:text-purple-400",
-      bg: "bg-purple-50/60 dark:bg-purple-950/20 border-purple-300 dark:border-purple-900",
-      iconBg: "bg-purple-100 dark:bg-purple-900/50 text-purple-600 dark:text-purple-400",
-    },
-  ];
-
   return (
     <div className="flex flex-col gap-2.5 px-2.5 py-2 sm:px-4 sm:py-2.5 max-w-[1600px] mx-auto w-full font-sans">
       {/* Header */}
@@ -321,9 +281,6 @@ export const EmployeeList: React.FC = () => {
           )}
         </div>
       </div>
-
-      {/* Stats Cards */}
-      <StatsCards cards={statCards} />
 
       {/* Table Container */}
       <TableContainer className="w-full">
