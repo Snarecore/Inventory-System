@@ -309,33 +309,33 @@ export const ProductSalesReportTable: React.FC<ProductSalesReportTableProps> = (
                     <td className="py-2.5 px-3 text-center text-[var(--ui-text)] font-semibold text-xs">
                       {(currentPage - 1) * pageSize + idx + 1}
                     </td>
-                    <td className="py-2.5 px-3 font-bold font-mono text-xs text-[var(--ui-text)]">
+                    <td className="py-2.5 px-3 font-semibold text-xs text-[var(--ui-text)]">
                       {item.productCode}
                     </td>
-                    <td className="py-2.5 px-3 font-semibold text-[var(--ui-text)]">
+                    <td className="py-2.5 px-3 font-semibold text-xs text-[var(--ui-text)]">
                       {item.productName}
                     </td>
                     <td className="py-2.5 px-3 text-center text-[var(--ui-text-muted)] text-xs">
                       {item.unit}
                     </td>
-                    <td className="py-2.5 px-3 text-center font-mono text-xs text-[var(--ui-text)]">
+                    <td className="py-2.5 px-3 text-center text-xs text-[var(--ui-text)]">
                       {item.invoicesCount}
                     </td>
-                    <td className="py-2.5 px-3 text-right font-bold font-mono text-xs text-[var(--ui-text)]">
+                    <td className="py-2.5 px-3 text-right font-bold text-xs text-[var(--ui-text)]">
                       {item.totalQuantity}
                     </td>
-                    <td className="py-2.5 px-3 text-right font-mono text-xs text-[var(--ui-text)]">
+                    <td className="py-2.5 px-3 text-right text-xs text-[var(--ui-text)]">
                       ৳ {formatMoney(avgPrice)}
                     </td>
-                    <td className="py-2.5 px-3 text-right font-mono text-xs text-[var(--ui-text-muted)]">
+                    <td className="py-2.5 px-3 text-right text-xs text-[var(--ui-text-muted)]">
                       {item.totalDiscount > 0
                         ? `৳ ${formatMoney(item.totalDiscount)}`
                         : "N/A"}
                     </td>
-                    <td className="py-2.5 px-3 text-right font-bold font-mono text-xs text-[var(--ui-text)] whitespace-nowrap">
+                    <td className="py-2.5 px-3 text-right font-bold text-xs text-[var(--ui-text)] whitespace-nowrap">
                       ৳ {formatMoney(item.totalRevenue)}
                     </td>
-                    <td className="py-2.5 px-3 text-right font-mono text-xs font-semibold text-[var(--ui-text)]">
+                    <td className="py-2.5 px-3 text-right text-xs font-semibold text-[var(--ui-text)]">
                       {sharePct}%
                     </td>
                   </tr>

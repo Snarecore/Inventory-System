@@ -324,7 +324,7 @@ export const CustomerSalesReportTable: React.FC<CustomerSalesReportTableProps> =
                       </div>
                       <div className="text-[11px] text-[var(--ui-text-muted)] mt-0.5 flex flex-wrap items-center gap-2">
                         {c.customerPhone && (
-                          <span className="font-mono text-[var(--ui-text-muted)]">
+                          <span className="text-[var(--ui-text-muted)]">
                             {c.customerPhone}
                           </span>
                         )}
@@ -335,16 +335,16 @@ export const CustomerSalesReportTable: React.FC<CustomerSalesReportTableProps> =
                         )}
                       </div>
                     </td>
-                    <td className="py-2.5 px-3 text-center font-mono text-xs text-[var(--ui-text)]">
+                    <td className="py-2.5 px-3 text-center text-xs text-[var(--ui-text)]">
                       {c.invoicesCount}
                     </td>
-                    <td className="py-2.5 px-3 text-right font-bold font-mono text-xs text-[var(--ui-text)] whitespace-nowrap">
+                    <td className="py-2.5 px-3 text-right font-bold text-xs text-[var(--ui-text)] whitespace-nowrap">
                       ৳ {formatMoney(c.totalBilled)}
                     </td>
-                    <td className="py-2.5 px-3 text-right font-semibold font-mono text-xs text-[var(--ui-success-dark)] whitespace-nowrap">
+                    <td className="py-2.5 px-3 text-right font-semibold text-xs text-[var(--ui-success-dark)] whitespace-nowrap">
                       ৳ {formatMoney(c.totalPaid)}
                     </td>
-                    <td className="py-2.5 px-3 text-right font-mono text-xs whitespace-nowrap">
+                    <td className="py-2.5 px-3 text-right text-xs whitespace-nowrap">
                       {hasDue ? (
                         <span className="text-[var(--ui-danger)] font-bold">
                           ৳ {formatMoney(c.totalDue)}
