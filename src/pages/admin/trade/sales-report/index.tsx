@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import moment from "moment";
 import {
   FaShoppingCart,
   FaBoxes,
@@ -19,18 +18,17 @@ import { salesTransactionReportQueryKey } from "@/config/query-key";
 import { buildAccessUser } from "@/utils/access-user";
 import { postData } from "@/services/api-service";
 import { fetchSalesList, normalizeSaleRecord } from "@/pages/admin/trade/sales/hooks/useSalesQueries";
-import { extractSaleReportMetrics, type ReportTab } from "./utils/sales-report-helpers";
+import {
+  useReportDateRange,
+  computeTradeKpiTotals,
+  filterAndNormalizeReportTransactions,
+} from "@/utils/trade-report-helpers";
+import type { ReportTab } from "./utils/sales-report-helpers";
 import type { SaleItem } from "@/types";
 
 const SalesReportPage: React.FC = () => {
-  // Date range filters (managed by DateRangePicker presets & custom selection)
-  const [dateRange, setDateRange] = useState<string>("this_month");
-  const [startDate, setStartDate] = useState<string>(() =>
-    moment().startOf("month").format("YYYY-MM-DD")
-  );
-  const [endDate, setEndDate] = useState<string>(() =>
-    moment().endOf("month").format("YYYY-MM-DD")
-  );
+  const { dateRange, setDateRange, startDate, endDate, handleDateChange } =
+    useReportDateRange();
 
   // Active report tab
   const [activeTab, setActiveTab] = useState<ReportTab>("invoices");
@@ -85,26 +83,14 @@ const SalesReportPage: React.FC = () => {
         rawList = allSales;
       }
 
-      // Normalize, filter by date range, and assign fallback orderNo
       const normalized = (Array.isArray(rawList) ? rawList : []).map(normalizeSaleRecord);
 
-      let dateFiltered = normalized;
-      if (startDate && endDate) {
-        const start = moment(startDate).startOf("day");
-        const end = moment(endDate).endOf("day");
-        dateFiltered = normalized.filter((item: any) => {
-          const dStr = item.salesDate || item.saleDate || item.date || item.createdAt;
-          if (!dStr) return true;
-          return moment(dStr).isBetween(start, end, undefined, "[]");
-        });
-      }
-
-      return dateFiltered.map((item, idx) => ({
-        ...item,
-        orderNo:
-          item.orderNo ||
-          (item.invoiceNo ? item.invoiceNo.replace("INV-", "SO-") : `SO-${1000 + (item.id || idx)}`),
-      }));
+      return filterAndNormalizeReportTransactions(normalized, {
+        startDate,
+        endDate,
+        domain: "sale",
+        orderPrefix: "SO",
+      });
     },
     staleTime: 0,
   });
@@ -113,17 +99,11 @@ const SalesReportPage: React.FC = () => {
   const transactions: SaleItem[] = Array.isArray(liveReportData) ? liveReportData : [];
   const isLoading = isLiveLoading || isFetching;
 
-  // Calculate Financial Aggregates for KPI Cards
-  let totalSalesVolume = 0;
-  let totalCollected = 0;
-  let totalDue = 0;
-
-  transactions.forEach((t) => {
-    const metrics = extractSaleReportMetrics(t);
-    totalSalesVolume += metrics.grandTotal;
-    totalCollected += metrics.paid;
-    totalDue += metrics.due;
-  });
+  const {
+    totalAmount: totalSalesVolume,
+    totalPaid: totalCollected,
+    totalDue,
+  } = computeTradeKpiTotals(transactions, "sale");
 
   const handleView = (item: SaleItem) => {
     setSelectedInvoice(item);
@@ -154,25 +134,7 @@ const SalesReportPage: React.FC = () => {
               endDate={endDate}
               selectedPreset={dateRange}
               onPresetChange={(r) => setDateRange(r)}
-              onChange={({ startDate: s, endDate: e, label }) => {
-                if (label === "all") {
-                  setStartDate("");
-                  setEndDate("");
-                  setDateRange("all");
-                  return;
-                }
-                if (label === "custom") {
-                  if (s && e) {
-                    setStartDate(s);
-                    setEndDate(e);
-                  }
-                  setDateRange("custom");
-                  return;
-                }
-                setStartDate(s);
-                setEndDate(e);
-                if (label) setDateRange(label);
-              }}
+              onChange={handleDateChange}
               align="right"
               size="sm"
             />

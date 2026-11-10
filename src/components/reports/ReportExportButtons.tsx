@@ -7,6 +7,9 @@ interface ReportExportButtonsProps {
   onDownloadPdf: () => Promise<string | void>;
 }
 
+/**
+ * Shared Excel & Direct PDF Export toolbar action buttons with unified busy guard & toasts
+ */
 export const ReportExportButtons: React.FC<ReportExportButtonsProps> = ({
   onExportExcel,
   onDownloadPdf,

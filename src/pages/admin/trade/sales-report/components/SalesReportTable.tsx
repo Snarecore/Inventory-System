@@ -1,7 +1,6 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState } from "react";
 import moment from "moment";
 import { FiChevronDown, FiCopy, FiCheck, FiRotateCcw } from "react-icons/fi";
-import { FaSearch } from "react-icons/fa";
 import Search from "@/components/table-components/Search";
 import {
   TableContainer,
@@ -17,14 +16,15 @@ import {
   EmptyState,
 } from "@/components/common";
 import ColumnVisibilityDropdown, { type ColumnItem } from "@/components/table-components/ColumnVisibilityDropdown";
+import ReportExportButtons from "@/components/reports/ReportExportButtons";
+import ReportPartyFilterDropdown, { type ReportPartyOption } from "@/components/reports/ReportPartyFilterDropdown";
 import { formatMoney } from "@/utils/formatters";
 import { showSuccessToast } from "@/utils/toast-utils";
 import type { SaleItem } from "@/types";
 import { useDebounce } from "@/hooks/useDebounce";
-import ReportExportButtons from "./ReportExportButtons";
+import { useReportCompanyMeta } from "@/utils/trade-report-helpers";
 import {
   extractSaleReportMetrics,
-  useReportCompanyMeta,
   exportFilteredInvoicesExcel,
   downloadFilteredInvoicesPdf,
 } from "../utils/sales-report-helpers";
@@ -57,11 +57,6 @@ export const SalesReportTable: React.FC<SalesReportTableProps> = ({
   const [pageSize, setPageSize] = useState<number>(10);
   const [copiedId, setCopiedId] = useState<string | number | null>(null);
 
-  // Searchable customer dropdown state
-  const [isCustomerDropdownOpen, setIsCustomerDropdownOpen] = useState<boolean>(false);
-  const [customerSearchQuery, setCustomerSearchQuery] = useState<string>("");
-  const customerRef = useRef<HTMLDivElement>(null);
-
   // Copy Order ID to clipboard
   const handleCopyOrderId = (text?: string, id?: string | number) => {
     if (!text) return;
@@ -73,40 +68,15 @@ export const SalesReportTable: React.FC<SalesReportTableProps> = ({
     }, 2000);
   };
 
-  // Close customer dropdown on click outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (customerRef.current && !customerRef.current.contains(event.target as Node)) {
-        setIsCustomerDropdownOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
-
   // Distinct customer list from transactions for dropdown
-  const customerMap = new Map<string, { id: string; name: string; phone: string }>();
+  const customerMap = new Map<string, ReportPartyOption>();
   transactions.forEach((t: any) => {
-    const { customerName: name, customerPhone: phone } = extractSaleReportMetrics(t);
-    const id = String(t.customerId || t.customer_id || name);
-    if (!customerMap.has(name)) {
-      customerMap.set(name, { id, name, phone });
+    const { partyId, partyName, partyPhone } = extractSaleReportMetrics(t);
+    if (!customerMap.has(partyName)) {
+      customerMap.set(partyName, { id: partyId, name: partyName, phone: partyPhone });
     }
   });
   const customersList = Array.from(customerMap.values());
-
-  const trimmedCustomerQuery = customerSearchQuery.toLowerCase().trim();
-  const filteredCustomerOptions = trimmedCustomerQuery
-    ? customersList.filter(
-        (c) =>
-          c.name.toLowerCase().includes(trimmedCustomerQuery) ||
-          c.phone.toLowerCase().includes(trimmedCustomerQuery)
-      )
-    : customersList;
-
-  const currentCustomerLabel = customerFilter === "all"
-    ? "All Customers"
-    : customerFilter;
 
   // Available Columns Configuration
   const availableColumns: ColumnItem[] = [
@@ -190,14 +160,14 @@ export const SalesReportTable: React.FC<SalesReportTableProps> = ({
       const q = debouncedSearch.toLowerCase().trim();
       const orderNo = String(t.orderNo || "").toLowerCase();
       const inv = String(t.invoiceNo || t.invoice_no || "").toLowerCase();
-      const name = m.customerName.toLowerCase();
-      const phone = m.customerPhone.toLowerCase();
+      const name = m.partyName.toLowerCase();
+      const phone = m.partyPhone.toLowerCase();
       if (!orderNo.includes(q) && !inv.includes(q) && !name.includes(q) && !phone.includes(q)) {
         return false;
       }
     }
 
-    if (customerFilter !== "all" && m.customerName.toLowerCase() !== customerFilter.toLowerCase()) {
+    if (customerFilter !== "all" && m.partyName.toLowerCase() !== customerFilter.toLowerCase()) {
       return false;
     }
 
@@ -232,14 +202,14 @@ export const SalesReportTable: React.FC<SalesReportTableProps> = ({
     );
   } else if (sortBy === "customer_a_to_z") {
     filtered.sort((a: any, b: any) =>
-      extractSaleReportMetrics(a).customerName.localeCompare(
-        extractSaleReportMetrics(b).customerName
+      extractSaleReportMetrics(a).partyName.localeCompare(
+        extractSaleReportMetrics(b).partyName
       )
     );
   } else if (sortBy === "customer_z_to_a") {
     filtered.sort((a: any, b: any) =>
-      extractSaleReportMetrics(b).customerName.localeCompare(
-        extractSaleReportMetrics(a).customerName
+      extractSaleReportMetrics(b).partyName.localeCompare(
+        extractSaleReportMetrics(a).partyName
       )
     );
   }
@@ -302,83 +272,17 @@ export const SalesReportTable: React.FC<SalesReportTableProps> = ({
           </div>
 
           {/* Searchable Customer Filter */}
-          {customersList.length > 0 && (
-            <div className="relative w-[calc(50%-4px)] sm:w-36 shrink-0 z-50" ref={customerRef}>
-              <button
-                type="button"
-                onClick={() => setIsCustomerDropdownOpen(!isCustomerDropdownOpen)}
-                className="w-full h-8 px-2 flex items-center justify-between text-xs border border-[var(--ui-border)] rounded-lg bg-[var(--ui-surface-muted)]/50 hover:bg-[var(--ui-surface)] text-[var(--ui-text)] font-medium focus:outline-none focus:border-[var(--color-primary)] cursor-pointer"
-              >
-                <span className="truncate flex-1 text-left">{currentCustomerLabel}</span>
-                <FiChevronDown className="text-[var(--ui-text-muted)] shrink-0 ml-1 text-xs" size={13} />
-              </button>
-
-              {isCustomerDropdownOpen && (
-                <div className="absolute left-0 top-full mt-1 w-64 max-w-[calc(100vw-2rem)] bg-[var(--ui-surface)] rounded-lg shadow-2xl border border-[var(--ui-border)] p-2 z-[99999]">
-                  <div className="relative mb-2">
-                    <FaSearch className="absolute left-2.5 top-2.5 text-[var(--ui-text-subtle)] text-xs" />
-                    <input
-                      type="text"
-                      placeholder="Search customer name, phone..."
-                      value={customerSearchQuery}
-                      onChange={(e) => setCustomerSearchQuery(e.target.value)}
-                      className="w-full pl-7 pr-2 py-1.5 text-xs border border-[var(--color-primary)] rounded-md focus:outline-none focus:border-[var(--color-primary)] text-[var(--ui-text)]"
-                      autoFocus
-                    />
-                  </div>
-
-                  <div className="max-h-48 overflow-y-auto divide-y divide-[var(--ui-border)]">
-                    <div
-                      onClick={() => {
-                        setCustomerFilter("all");
-                        setIsCustomerDropdownOpen(false);
-                        setCustomerSearchQuery("");
-                        setCurrentPage(1);
-                      }}
-                      className={`p-2 hover:bg-[var(--primary-color-light)] cursor-pointer rounded-md transition-colors text-xs font-medium ${
-                        customerFilter === "all"
-                          ? "bg-[var(--primary-color-light)] text-[var(--color-primary)] font-semibold"
-                          : "text-[var(--ui-text)]"
-                      }`}
-                    >
-                      All Customers
-                    </div>
-
-                    {filteredCustomerOptions.length > 0 ? (
-                      filteredCustomerOptions.map((c) => {
-                        const isSelected = customerFilter.toLowerCase() === c.name.toLowerCase();
-                        return (
-                          <div
-                            key={c.id + c.name}
-                            onClick={() => {
-                              setCustomerFilter(c.name);
-                              setIsCustomerDropdownOpen(false);
-                              setCustomerSearchQuery("");
-                              setCurrentPage(1);
-                            }}
-                            className={`p-2 hover:bg-[var(--primary-color-light)] cursor-pointer rounded-md transition-colors text-xs flex justify-between items-center ${
-                              isSelected
-                                ? "bg-[var(--primary-color-light)] text-[var(--color-primary)] font-semibold"
-                                : "text-[var(--ui-text)]"
-                            }`}
-                          >
-                            <span className="truncate">{c.name}</span>
-                            {c.phone && (
-                              <span className="text-[10px] text-[var(--ui-text-muted)] shrink-0 ml-1">
-                                ({c.phone})
-                              </span>
-                            )}
-                          </div>
-                        );
-                      })
-                    ) : (
-                      <div className="p-3 text-center text-[var(--ui-text-subtle)] text-xs">No customer found</div>
-                    )}
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
+          <ReportPartyFilterDropdown
+            parties={customersList}
+            selectedParty={customerFilter}
+            onSelect={(val) => {
+              setCustomerFilter(val);
+              setCurrentPage(1);
+            }}
+            allLabel="All Customers"
+            searchPlaceholder="Search customer name, phone..."
+            emptyLabel="No customer found"
+          />
 
           {/* Status Filter */}
           <div className="relative w-[calc(50%-4px)] sm:w-28 shrink-0">
@@ -499,9 +403,9 @@ export const SalesReportTable: React.FC<SalesReportTableProps> = ({
                 const sl = (currentPage - 1) * pageSize + idx + 1;
                 const {
                   orderNo: orderDisplay,
-                  customerName,
-                  customerPhone,
-                  saleDate,
+                  partyName: customerName,
+                  partyPhone: customerPhone,
+                  tradeDate: saleDate,
                   grandTotal,
                   paid,
                   due,

@@ -253,7 +253,7 @@ export const menu = [
 				permissionKey: "reports.view",
 				subItems: [
 					{ id: 96, name: "Sales Reports", path: "/admin/reports/sales", permissionKey: "reports.sales.view" },
-					{ id: 97, name: "Purchase Reports", path: "/reports/purchase", permissionKey: "reports.purchase.view" },
+					{ id: 97, name: "Purchase Reports", path: "/admin/reports/purchase", permissionKey: "reports.purchase.view" },
 					{ id: 98, name: "Inventory Reports", path: "/reports/inventory", permissionKey: "reports.inventory.view" },
 					{ id: 99, name: "Customer Reports", path: "/reports/customer", permissionKey: "reports.customer.view" },
 					{ id: 100, name: "Supplier Reports", path: "/reports/supplier", permissionKey: "reports.supplier.view" },

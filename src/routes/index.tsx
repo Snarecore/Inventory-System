@@ -39,6 +39,7 @@ const CreatePurchase = React.lazy(() => import('@/pages/admin/trade/create-purch
 const Sales = React.lazy(() => import('@/pages/admin/trade/sales'))
 const CreateSale = React.lazy(() => import('@/pages/admin/trade/create-sale'))
 const SalesReport = React.lazy(() => import('@/pages/admin/trade/sales-report'))
+const PurchaseReport = React.lazy(() => import('@/pages/admin/trade/purchase-report'))
 const CreateSalesReturn = React.lazy(() => import('@/pages/admin/trade/create-sales-return'))
 const CreatePurchaseReturn = React.lazy(() => import('@/pages/admin/trade/purchase-return/CreatePurchaseReturnPage'))
 const CustomerCollection = React.lazy(() => import('@/pages/admin/trade/customer-collection'))
@@ -213,6 +214,18 @@ export const router = createBrowserRouter([
   {
     path: '/sales/reports',
     element: <Navigate to="/admin/reports/sales" replace />,
+  },
+  {
+    path: '/reports/purchase',
+    element: <Navigate to="/admin/reports/purchase" replace />,
+  },
+  {
+    path: '/purchase/reports',
+    element: <Navigate to="/admin/reports/purchase" replace />,
+  },
+  {
+    path: '/purchases/reports',
+    element: <Navigate to="/admin/reports/purchase" replace />,
   },
   {
     path: '/sales/collection',
@@ -515,6 +528,14 @@ export const router = createBrowserRouter([
       {
         path: 'reports/sales',
         element: withPermission(SalesReport, 'reports'),
+      },
+      {
+        path: 'purchase-report',
+        element: withPermission(PurchaseReport, 'reports'),
+      },
+      {
+        path: 'reports/purchase',
+        element: withPermission(PurchaseReport, 'reports'),
       },
       {
         path: 'sales-return',

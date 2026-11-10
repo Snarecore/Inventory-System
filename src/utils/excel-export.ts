@@ -481,7 +481,8 @@ export async function buildAndDownloadExcel<T extends Record<string, any>>(
       if (
         h === "Order ID" ||
         h.includes("Grand Total") ||
-        h === "Customer Name"
+        h === "Customer Name" ||
+        h === "Supplier Name"
       ) {
         isBold = true;
       }
