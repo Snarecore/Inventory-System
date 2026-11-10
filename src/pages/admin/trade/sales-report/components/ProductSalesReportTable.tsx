@@ -1,5 +1,4 @@
 import React, { useState, useMemo } from "react";
-import { FaFileExcel } from "react-icons/fa";
 import { FiChevronDown } from "react-icons/fi";
 import Search from "@/components/table-components/Search";
 import {
@@ -15,107 +14,33 @@ import {
   EmptyState,
 } from "@/components/common";
 import { formatMoney } from "@/utils/formatters";
-import { buildAndDownloadExcel } from "@/utils/excel-export";
-import { showSuccessToast, showErrorToast } from "@/utils/toast-utils";
-import { useBusinessProfileQuery } from "@/hooks/useBusinessProfile";
-import { getFileViewUrl } from "@/services/file-upload-service";
-import { getUserInfo } from "@/utils/auth-storage";
-import moment from "moment";
 import type { SaleItem } from "@/types";
 import { useDebounce } from "@/hooks/useDebounce";
+import {
+  aggregateProductSales,
+  type ProductSummary,
+} from "../utils/sales-report-helpers";
 
 interface ProductSalesReportTableProps {
   transactions: SaleItem[];
   isLoading?: boolean;
-  startDate?: string;
-  endDate?: string;
-}
-
-interface ProductSummary {
-  productId: string;
-  productCode: string;
-  productName: string;
-  unit: string;
-  totalQuantity: number;
-  totalRevenue: number;
-  totalDiscount: number;
-  invoicesCount: number;
 }
 
 export const ProductSalesReportTable: React.FC<ProductSalesReportTableProps> = ({
   transactions,
   isLoading,
-  startDate,
-  endDate,
 }) => {
-  const { data: businessProfile } = useBusinessProfileQuery();
-  const userInfo = getUserInfo();
   const [searchQuery, setSearchQuery] = useState("");
   const debouncedSearch = useDebounce(searchQuery, 250);
   const [sortBy, setSortBy] = useState<string>("revenue_desc");
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
 
-  // Group line items by product
-  const productSummaries: ProductSummary[] = useMemo(() => {
-    const map: Record<string, ProductSummary> = {};
-
-    transactions.forEach((tx: any) => {
-      const details =
-        tx.salesDetails ||
-        tx.saleDetails ||
-        tx.details ||
-        tx.items ||
-        tx.productsList ||
-        [];
-
-      if (Array.isArray(details)) {
-        details.forEach((line: any) => {
-          const pId = String(
-            line.productId || line.product_id || line.id || line.pcode || "unknown"
-          );
-          const pCode =
-            line.productCode || line.product_code || line.pcode || line.code || "-";
-          const pName =
-            line.productName ||
-            line.product_name ||
-            line.name ||
-            line.title ||
-            "Unnamed Product";
-          const unit = line.unit || "pcs";
-          const qty = Number(line.quantity ?? line.qty ?? 1);
-          const price = Number(
-            line.sellPrice ?? line.sell_price ?? line.price ?? line.rate ?? 0
-          );
-          const lineTotal =
-            Number(line.total ?? line.total_price ?? 0) || qty * price;
-          const disc = Number(line.discount ?? 0);
-
-          const key = pCode !== "-" ? pCode : pName;
-
-          if (!map[key]) {
-            map[key] = {
-              productId: pId,
-              productCode: pCode,
-              productName: pName,
-              unit,
-              totalQuantity: 0,
-              totalRevenue: 0,
-              totalDiscount: 0,
-              invoicesCount: 0,
-            };
-          }
-
-          map[key].totalQuantity += qty;
-          map[key].totalRevenue += lineTotal;
-          map[key].totalDiscount += disc;
-          map[key].invoicesCount += 1;
-        });
-      }
-    });
-
-    return Object.values(map);
-  }, [transactions]);
+  // Group line items by product using shared aggregator
+  const productSummaries: ProductSummary[] = useMemo(
+    () => aggregateProductSales(transactions),
+    [transactions]
+  );
 
   // Overall total revenue from products
   const grandProductRevenue = useMemo(
@@ -156,68 +81,6 @@ export const ProductSalesReportTable: React.FC<ProductSalesReportTableProps> = (
     currentPage * pageSize
   );
 
-  const handleExport = async () => {
-    if (productSummaries.length === 0) {
-      showErrorToast("No product data to export");
-      return;
-    }
-
-    try {
-      const data = filtered.map((p, idx) => ({
-        "SL": idx + 1,
-        "Product Code": p.productCode,
-        "Product Name": p.productName,
-        "Unit": p.unit,
-        "Quantity Sold": p.totalQuantity,
-        "Invoices Sold": p.invoicesCount,
-        "Total Revenue (BDT)": p.totalRevenue,
-        "Discount (BDT)": p.totalDiscount,
-        "Share of Sales":
-          grandProductRevenue > 0
-            ? `${((p.totalRevenue / grandProductRevenue) * 100).toFixed(1)}%`
-            : "0.0%",
-      }));
-
-      const totalQty = data.reduce((s, r) => s + (Number(r["Quantity Sold"]) || 0), 0);
-      const totalRev = data.reduce((s, r) => s + (Number(r["Total Revenue (BDT)"]) || 0), 0);
-      const totalDisc = data.reduce((s, r) => s + (Number(r["Discount (BDT)"]) || 0), 0);
-
-      const logoKey = businessProfile?.businessLogo || businessProfile?.businessLogoRefNo || "";
-      const businessLogoUrl =
-        businessProfile?.businessLogoUrl || (logoKey ? getFileViewUrl(logoKey) : "");
-
-      const totalRow = {
-        SL: `TOTAL SUMMARY (${data.length} Products)`,
-        "Product Code": "",
-        "Product Name": "",
-        Unit: "",
-        "Quantity Sold": totalQty,
-        "Invoices Sold": "",
-        "Total Revenue (BDT)": totalRev,
-        "Discount (BDT)": totalDisc,
-        "Share of Sales": "100.0%",
-      };
-
-      await buildAndDownloadExcel(data, totalRow, {
-        fileName: `Product_Sales_Report_${moment().format("YYYY-MM-DD")}.xlsx`,
-        sheetName: "Product Sales",
-        reportTitle: "Product-Wise Sales Report",
-        businessName: businessProfile?.businessName || userInfo?.orgName || "Cash Boi Trade Ltd",
-        businessAddress: businessProfile?.address || "",
-        businessPhone: businessProfile?.businessPhone1 || "",
-        businessLogoUrl,
-        startDate,
-        endDate,
-        totalLabel: "Total Products",
-        totalSummarySpan: 4,
-        includeSignatures: true,
-      });
-      showSuccessToast("Product sales report exported successfully");
-    } catch (e: any) {
-      showErrorToast(e?.message || "Export failed");
-    }
-  };
-
   return (
     <TableContainer>
       {/* Top Filter Bar */}
@@ -255,22 +118,13 @@ export const ProductSalesReportTable: React.FC<ProductSalesReportTableProps> = (
               size={13}
             />
           </div>
-
-          <button
-            type="button"
-            onClick={handleExport}
-            className="flex items-center gap-1.5 px-3 h-8 text-xs font-semibold text-[var(--ui-success-dark)] bg-[var(--ui-success-light)] hover:bg-[var(--ui-success-border)] border border-[var(--ui-success-border)] rounded-lg transition-all shadow-2xs cursor-pointer shrink-0"
-          >
-            <FaFileExcel className="text-[var(--ui-success)]" size={12} />
-            <span>Export Excel</span>
-          </button>
         </div>
       </TableToolbar>
 
       {/* Table */}
       <TableScroll>
         {isLoading ? (
-          <TableSkeleton columnCount={8} rowCount={8} />
+          <TableSkeleton columnCount={10} rowCount={8} />
         ) : paginated.length === 0 ? (
           <EmptyState
             title="No Product Sales Found"

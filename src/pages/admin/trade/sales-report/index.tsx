@@ -2,7 +2,7 @@ import React, { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import moment from "moment";
 import {
-  FaPrint,
+  FaFilePdf,
   FaFileExcel,
   FaShoppingCart,
   FaBoxes,
@@ -16,7 +16,6 @@ import TradeInvoiceStats from "@/components/trade/TradeInvoiceStats";
 import SalesReportTable from "./components/SalesReportTable";
 import ProductSalesReportTable from "./components/ProductSalesReportTable";
 import CustomerSalesReportTable from "./components/CustomerSalesReportTable";
-import PrintableSalesReportModal from "./components/PrintableSalesReportModal";
 import SaleInvoiceModal from "@/pages/admin/trade/sales/components/SaleInvoiceModal";
 import apiConfig from "@/config/api.json";
 import { salesTransactionReportQueryKey } from "@/config/query-key";
@@ -25,12 +24,14 @@ import { postData } from "@/services/api-service";
 import { fetchSalesList, normalizeSaleRecord } from "@/pages/admin/trade/sales/hooks/useSalesQueries";
 import { useBusinessProfileQuery } from "@/hooks/useBusinessProfile";
 import { getFileViewUrl } from "@/services/file-upload-service";
-import { exportSalesToExcel } from "@/utils/excel-export";
 import { showSuccessToast, showErrorToast } from "@/utils/toast-utils";
 import { getUserInfo } from "@/utils/auth-storage";
+import {
+  exportTabReportToExcel,
+  downloadTabReportPdf,
+  type ReportTab,
+} from "./utils/sales-report-helpers";
 import type { SaleItem } from "@/types";
-
-type ReportTab = "invoices" | "products" | "customers";
 
 const SalesReportPage: React.FC = () => {
   // Date range filters
@@ -45,11 +46,10 @@ const SalesReportPage: React.FC = () => {
   // Active report tab
   const [activeTab, setActiveTab] = useState<ReportTab>("invoices");
 
-  // Modals state
+  // Single invoice modal state
   const [selectedInvoice, setSelectedInvoice] = useState<SaleItem | null>(null);
   const [isInvoiceModalOpen, setIsInvoiceModalOpen] = useState<boolean>(false);
   const [isAutoPrint, setIsAutoPrint] = useState<boolean>(false);
-  const [isPrintSummaryOpen, setIsPrintSummaryOpen] = useState<boolean>(false);
 
   // Business Profile & User info for reports
   const { data: businessProfile } = useBusinessProfileQuery();
@@ -252,32 +252,41 @@ const SalesReportPage: React.FC = () => {
     setIsInvoiceModalOpen(true);
   };
 
-  // Direct Designed Excel Export
-  const handleExportAllSalesExcel = async () => {
+  const getCompanyMeta = () => {
+    const logoKey = businessProfile?.businessLogo || businessProfile?.businessLogoRefNo || "";
+    const businessLogoUrl =
+      businessProfile?.businessLogoUrl || (logoKey ? getFileViewUrl(logoKey) : "");
+
+    return {
+      businessName: businessProfile?.businessName || userInfo?.orgName || "Cash Boi Trade Ltd",
+      businessAddress: businessProfile?.address || "",
+      businessLogoUrl,
+      startDate,
+      endDate,
+    };
+  };
+
+  // Direct Designed Excel Export for active tab
+  const handleExportExcel = async () => {
     if (!transactions || transactions.length === 0) {
       showErrorToast("No sales records available to export");
       return;
     }
     try {
-      const logoKey = businessProfile?.businessLogo || businessProfile?.businessLogoRefNo || "";
-      const businessLogoUrl =
-        businessProfile?.businessLogoUrl || (logoKey ? getFileViewUrl(logoKey) : "");
-
-      await exportSalesToExcel(transactions, {
-        fileName: `Sales_Report_${moment().format("YYYY-MM-DD")}.xlsx`,
-        sheetName: "Sales Report",
-        reportTitle: "Sales Report",
-        businessName: businessProfile?.businessName || userInfo?.orgName || "Cash Boi Trade Ltd",
-        businessAddress: businessProfile?.address || "",
-        businessPhone: businessProfile?.businessPhone1 || "",
-        businessLogoUrl,
-        startDate,
-        endDate,
-      });
-      showSuccessToast(`Successfully exported ${transactions.length} sales to Excel!`);
+      const count = await exportTabReportToExcel(activeTab, transactions, getCompanyMeta());
+      showSuccessToast(`Successfully exported ${count} records to Excel!`);
     } catch (e: any) {
       showErrorToast(e?.message || "Export failed");
     }
+  };
+
+  // Direct Landscape PDF / Save as PDF Print for active tab
+  const handleDownloadPdf = () => {
+    if (!transactions || transactions.length === 0) {
+      showErrorToast("No sales records available to download PDF");
+      return;
+    }
+    downloadTabReportPdf(activeTab, transactions, stats, getCompanyMeta());
   };
 
   return (
@@ -306,32 +315,32 @@ const SalesReportPage: React.FC = () => {
             />
           </div>
 
-          {/* Refresh */}
-          <RefreshButton
-            onClick={() => refetch()}
-            isLoading={isLoading}
-          />
-
           {/* Export Designed Excel */}
           <button
             type="button"
-            onClick={handleExportAllSalesExcel}
+            onClick={handleExportExcel}
             className="h-8 rounded-md text-xs font-semibold px-3 whitespace-nowrap shrink-0 flex items-center gap-1.5 text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 border border-emerald-200 dark:border-emerald-800 transition-colors shadow-2xs cursor-pointer"
-            title="Download Designed Sales Report Excel"
+            title="Download Designed Excel Report"
           >
             <FaFileExcel className="text-emerald-600 dark:text-emerald-400 text-xs" />
             <span>Export Excel</span>
           </button>
 
-          {/* Print / PDF Summary Report */}
+          {/* Download PDF Report */}
           <Button
-            label="Print / PDF Report"
+            label="Download PDF"
             size="sm"
-            onClick={() => setIsPrintSummaryOpen(true)}
+            onClick={handleDownloadPdf}
             color="var(--primary-color)"
             hoverColor="var(--primary-color-hover)"
             className="h-8 rounded-md text-xs font-medium px-3 whitespace-nowrap shrink-0 flex items-center gap-1.5 shadow-2xs cursor-pointer !text-white"
-            icon={<FaPrint className="text-white text-xs" />}
+            icon={<FaFilePdf className="text-white text-xs" />}
+          />
+
+          {/* Refresh (Far Right) */}
+          <RefreshButton
+            onClick={() => refetch()}
+            isLoading={isLoading}
           />
         </div>
       </div>
@@ -393,8 +402,6 @@ const SalesReportPage: React.FC = () => {
           <SalesReportTable
             transactions={transactions}
             isLoading={isLoading}
-            startDate={startDate}
-            endDate={endDate}
             onView={handleView}
             onPrint={handlePrint}
           />
@@ -404,8 +411,6 @@ const SalesReportPage: React.FC = () => {
           <ProductSalesReportTable
             transactions={transactions}
             isLoading={isLoading}
-            startDate={startDate}
-            endDate={endDate}
           />
         )}
 
@@ -413,8 +418,6 @@ const SalesReportPage: React.FC = () => {
           <CustomerSalesReportTable
             transactions={transactions}
             isLoading={isLoading}
-            startDate={startDate}
-            endDate={endDate}
           />
         )}
       </div>
@@ -429,16 +432,6 @@ const SalesReportPage: React.FC = () => {
         }}
         sale={selectedInvoice}
         autoPrint={isAutoPrint}
-      />
-
-      {/* ── Printable A4 Sales Report Sheet Modal ── */}
-      <PrintableSalesReportModal
-        isOpen={isPrintSummaryOpen}
-        onClose={() => setIsPrintSummaryOpen(false)}
-        startDate={startDate}
-        endDate={endDate}
-        transactions={transactions}
-        stats={stats}
       />
     </div>
   );

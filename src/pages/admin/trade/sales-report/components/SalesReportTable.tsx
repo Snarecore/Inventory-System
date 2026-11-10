@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect, useMemo } from "react";
 import moment from "moment";
-import { FiEye, FiPrinter, FiChevronDown, FiCopy, FiCheck, FiRotateCcw } from "react-icons/fi";
-import { FaFileExcel, FaSearch } from "react-icons/fa";
+import { FiChevronDown, FiCopy, FiCheck, FiRotateCcw } from "react-icons/fi";
+import { FaSearch } from "react-icons/fa";
 import Search from "@/components/table-components/Search";
 import {
   TableContainer,
@@ -18,19 +18,13 @@ import {
 } from "@/components/common";
 import ColumnVisibilityDropdown, { type ColumnItem } from "@/components/table-components/ColumnVisibilityDropdown";
 import { formatMoney } from "@/utils/formatters";
-import { exportSalesToExcel } from "@/utils/excel-export";
-import { showSuccessToast, showErrorToast } from "@/utils/toast-utils";
-import { useBusinessProfileQuery } from "@/hooks/useBusinessProfile";
-import { getFileViewUrl } from "@/services/file-upload-service";
-import { getUserInfo } from "@/utils/auth-storage";
+import { showSuccessToast } from "@/utils/toast-utils";
 import type { SaleItem } from "@/types";
 import { useDebounce } from "@/hooks/useDebounce";
 
 interface SalesReportTableProps {
   transactions: SaleItem[];
   isLoading?: boolean;
-  startDate?: string;
-  endDate?: string;
   onView: (item: SaleItem) => void;
   onPrint: (item: SaleItem) => void;
 }
@@ -38,8 +32,6 @@ interface SalesReportTableProps {
 export const SalesReportTable: React.FC<SalesReportTableProps> = ({
   transactions,
   isLoading,
-  startDate,
-  endDate,
   onView,
   onPrint,
 }) => {
@@ -52,9 +44,6 @@ export const SalesReportTable: React.FC<SalesReportTableProps> = ({
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [pageSize, setPageSize] = useState<number>(10);
   const [copiedId, setCopiedId] = useState<string | number | null>(null);
-
-  const { data: businessProfile } = useBusinessProfileQuery();
-  const userInfo = getUserInfo();
 
   // Searchable customer dropdown state
   const [isCustomerDropdownOpen, setIsCustomerDropdownOpen] = useState<boolean>(false);
@@ -247,33 +236,6 @@ export const SalesReportTable: React.FC<SalesReportTableProps> = ({
     currentPage * pageSize
   );
 
-  const handleExport = async () => {
-    if (!filtered || filtered.length === 0) {
-      showErrorToast("No sales records available to export");
-      return;
-    }
-    try {
-      const logoKey = businessProfile?.businessLogo || businessProfile?.businessLogoRefNo || "";
-      const businessLogoUrl =
-        businessProfile?.businessLogoUrl || (logoKey ? getFileViewUrl(logoKey) : "");
-
-      await exportSalesToExcel(filtered, {
-        fileName: `Sales_Report_${moment().format("YYYY-MM-DD")}.xlsx`,
-        sheetName: "Sales Report",
-        reportTitle: "Sales Report",
-        businessName: businessProfile?.businessName || userInfo?.orgName || "Cash Boi Trade Ltd",
-        businessAddress: businessProfile?.address || "",
-        businessPhone: businessProfile?.businessPhone1 || "",
-        businessLogoUrl,
-        startDate,
-        endDate,
-      });
-      showSuccessToast(`Successfully exported ${filtered.length} sales to Excel!`);
-    } catch (e: any) {
-      showErrorToast(e?.message || "Export failed");
-    }
-  };
-
   const renderSortHeader = (label: string, activeKey: "customer" | "amount") => {
     const isAsc =
       sortBy === (activeKey === "customer" ? "customer_a_to_z" : "amount_low_to_high");
@@ -462,17 +424,6 @@ export const SalesReportTable: React.FC<SalesReportTableProps> = ({
             onToggle={handleToggleColumn}
             onReset={handleResetColumns}
           />
-
-          {/* Excel Export Button */}
-          <button
-            type="button"
-            onClick={handleExport}
-            title="Download Sales Report Excel"
-            className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3 h-8 text-[11px] sm:text-xs font-semibold text-[var(--ui-success-dark)] bg-[var(--ui-success-light)] hover:bg-[var(--ui-success-border)] border border-[var(--ui-success-border)] rounded-lg transition-all shadow-xs cursor-pointer active:scale-95"
-          >
-            <FaFileExcel className="text-[var(--ui-success)] shrink-0" size={12} />
-            <span>Excel</span>
-          </button>
         </div>
       </TableToolbar>
 

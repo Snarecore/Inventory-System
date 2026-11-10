@@ -1,5 +1,4 @@
 import React, { useState, useMemo } from "react";
-import { FaFileExcel } from "react-icons/fa";
 import { FiChevronDown } from "react-icons/fi";
 import Search from "@/components/table-components/Search";
 import {
@@ -15,42 +14,23 @@ import {
   EmptyState,
 } from "@/components/common";
 import { formatMoney } from "@/utils/formatters";
-import { buildAndDownloadExcel } from "@/utils/excel-export";
-import { showSuccessToast, showErrorToast } from "@/utils/toast-utils";
-import { useBusinessProfileQuery } from "@/hooks/useBusinessProfile";
-import { getFileViewUrl } from "@/services/file-upload-service";
-import { getUserInfo } from "@/utils/auth-storage";
 import moment from "moment";
 import type { SaleItem } from "@/types";
 import { useDebounce } from "@/hooks/useDebounce";
+import {
+  aggregateCustomerSales,
+  type CustomerSummary,
+} from "../utils/sales-report-helpers";
 
 interface CustomerSalesReportTableProps {
   transactions: SaleItem[];
   isLoading?: boolean;
-  startDate?: string;
-  endDate?: string;
-}
-
-interface CustomerSummary {
-  customerId: string;
-  customerName: string;
-  customerPhone: string;
-  customerAddress: string;
-  invoicesCount: number;
-  totalBilled: number;
-  totalPaid: number;
-  totalDue: number;
-  lastDate: string;
 }
 
 export const CustomerSalesReportTable: React.FC<CustomerSalesReportTableProps> = ({
   transactions,
   isLoading,
-  startDate,
-  endDate,
 }) => {
-  const { data: businessProfile } = useBusinessProfileQuery();
-  const userInfo = getUserInfo();
   const [searchQuery, setSearchQuery] = useState("");
   const debouncedSearch = useDebounce(searchQuery, 250);
   const [statusFilter, setStatusFilter] = useState<string>("all");
@@ -58,59 +38,11 @@ export const CustomerSalesReportTable: React.FC<CustomerSalesReportTableProps> =
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
 
-  // Group transactions by customer
-  const customerSummaries: CustomerSummary[] = useMemo(() => {
-    const map: Record<string, CustomerSummary> = {};
-
-    transactions.forEach((tx: any) => {
-      const cId = String(
-        tx.customerId || tx.customer_id || tx.partyId || "walkin"
-      );
-      const cName =
-        tx.customerName ||
-        tx.customer_name ||
-        tx.partyName ||
-        "Walk-in Customer";
-      const cPhone = tx.customerPhone || tx.customer_phone || tx.partyPhone || "";
-      const cAddr =
-        tx.customerAddress || tx.customer_address || tx.partyAddress || "";
-      const date = tx.salesDate || tx.saleDate || tx.date || "";
-
-      const gt = Number(tx.grandTotal ?? tx.grand_total ?? tx.totalAmount ?? 0);
-      const paid = Number(tx.paidAmount ?? tx.paid_amount ?? 0);
-      const due = Number(tx.dueAmount ?? tx.due_amount ?? Math.max(0, gt - paid));
-
-      const key = cPhone ? `${cName}_${cPhone}` : cName;
-
-      if (!map[key]) {
-        map[key] = {
-          customerId: cId,
-          customerName: cName,
-          customerPhone: cPhone,
-          customerAddress: cAddr,
-          invoicesCount: 0,
-          totalBilled: 0,
-          totalPaid: 0,
-          totalDue: 0,
-          lastDate: date,
-        };
-      }
-
-      map[key].invoicesCount += 1;
-      map[key].totalBilled += gt;
-      map[key].totalPaid += paid;
-      map[key].totalDue += due;
-
-      if (
-        date &&
-        (!map[key].lastDate || moment(date).isAfter(moment(map[key].lastDate)))
-      ) {
-        map[key].lastDate = date;
-      }
-    });
-
-    return Object.values(map);
-  }, [transactions]);
+  // Group transactions by customer using shared aggregator
+  const customerSummaries: CustomerSummary[] = useMemo(
+    () => aggregateCustomerSales(transactions),
+    [transactions]
+  );
 
   // Filter & Sort
   const filtered = useMemo(() => {
@@ -152,69 +84,6 @@ export const CustomerSalesReportTable: React.FC<CustomerSalesReportTableProps> =
     (currentPage - 1) * pageSize,
     currentPage * pageSize
   );
-
-  const handleExport = async () => {
-    if (customerSummaries.length === 0) {
-      showErrorToast("No customer data to export");
-      return;
-    }
-
-    try {
-      const data = filtered.map((c, idx) => ({
-        "SL": idx + 1,
-        "Customer Name": c.customerName,
-        "Phone": c.customerPhone,
-        "Address": c.customerAddress,
-        "Total Orders": c.invoicesCount,
-        "Total Billed (BDT)": c.totalBilled,
-        "Total Paid (BDT)": c.totalPaid,
-        "Outstanding Due (BDT)": c.totalDue,
-        "Last Order Date": c.lastDate
-          ? moment(c.lastDate).format("DD MMM YYYY")
-          : "-",
-        "Status": c.totalDue > 0 ? "Has Due" : "Settled",
-      }));
-
-      const totalBilled = data.reduce((s, r) => s + (Number(r["Total Billed (BDT)"]) || 0), 0);
-      const totalPaid = data.reduce((s, r) => s + (Number(r["Total Paid (BDT)"]) || 0), 0);
-      const totalDue = data.reduce((s, r) => s + (Number(r["Outstanding Due (BDT)"]) || 0), 0);
-
-      const logoKey = businessProfile?.businessLogo || businessProfile?.businessLogoRefNo || "";
-      const businessLogoUrl =
-        businessProfile?.businessLogoUrl || (logoKey ? getFileViewUrl(logoKey) : "");
-
-      const totalRow = {
-        SL: `TOTAL SUMMARY (${data.length} Customers)`,
-        "Customer Name": "",
-        Phone: "",
-        Address: "",
-        "Total Orders": "",
-        "Total Billed (BDT)": totalBilled,
-        "Total Paid (BDT)": totalPaid,
-        "Outstanding Due (BDT)": totalDue,
-        "Last Order Date": "",
-        Status: "",
-      };
-
-      await buildAndDownloadExcel(data, totalRow, {
-        fileName: `Customer_Sales_Report_${moment().format("YYYY-MM-DD")}.xlsx`,
-        sheetName: "Customer Sales",
-        reportTitle: "Customer-Wise Sales Report",
-        businessName: businessProfile?.businessName || userInfo?.orgName || "Cash Boi Trade Ltd",
-        businessAddress: businessProfile?.address || "",
-        businessPhone: businessProfile?.businessPhone1 || "",
-        businessLogoUrl,
-        startDate,
-        endDate,
-        totalLabel: "Total Customers",
-        totalSummarySpan: 4,
-        includeSignatures: true,
-      });
-      showSuccessToast("Customer sales report exported successfully");
-    } catch (e: any) {
-      showErrorToast(e?.message || "Export failed");
-    }
-  };
 
   return (
     <TableContainer>
@@ -273,15 +142,6 @@ export const CustomerSalesReportTable: React.FC<CustomerSalesReportTableProps> =
               size={13}
             />
           </div>
-
-          <button
-            type="button"
-            onClick={handleExport}
-            className="flex items-center gap-1.5 px-3 h-8 text-xs font-semibold text-[var(--ui-success-dark)] bg-[var(--ui-success-light)] hover:bg-[var(--ui-success-border)] border border-[var(--ui-success-border)] rounded-lg transition-all shadow-2xs cursor-pointer shrink-0"
-          >
-            <FaFileExcel className="text-[var(--ui-success)]" size={12} />
-            <span>Export Excel</span>
-          </button>
         </div>
       </TableToolbar>
 
