@@ -186,6 +186,7 @@ export const CustomerSalesReportTable: React.FC<CustomerSalesReportTableProps> =
       await buildAndDownloadExcel(data, totalRow, {
         fileName: `Customer_Sales_Report_${moment().format("YYYY-MM-DD")}.xlsx`,
         sheetName: "Customer Sales",
+        reportTitle: "Customer Sales Report",
       });
       showSuccessToast("Customer sales report exported successfully");
     } catch (e: any) {

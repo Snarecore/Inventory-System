@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import moment from "moment";
 import {
   FaPrint,
+  FaFileExcel,
   FaShoppingCart,
   FaBoxes,
   FaUserFriends,
@@ -22,6 +23,10 @@ import { salesTransactionReportQueryKey } from "@/config/query-key";
 import { buildAccessUser } from "@/utils/access-user";
 import { postData } from "@/services/api-service";
 import { fetchSalesList, normalizeSaleRecord } from "@/pages/admin/trade/sales/hooks/useSalesQueries";
+import { useBusinessProfileQuery } from "@/hooks/useBusinessProfile";
+import { exportSalesToExcel } from "@/utils/excel-export";
+import { showSuccessToast, showErrorToast } from "@/utils/toast-utils";
+import { getUserInfo } from "@/utils/auth-storage";
 import type { SaleItem } from "@/types";
 
 type ReportTab = "invoices" | "products" | "customers";
@@ -44,6 +49,10 @@ const SalesReportPage: React.FC = () => {
   const [isInvoiceModalOpen, setIsInvoiceModalOpen] = useState<boolean>(false);
   const [isAutoPrint, setIsAutoPrint] = useState<boolean>(false);
   const [isPrintSummaryOpen, setIsPrintSummaryOpen] = useState<boolean>(false);
+
+  // Business Profile & User info for reports
+  const { data: businessProfile } = useBusinessProfileQuery();
+  const userInfo = getUserInfo();
 
   // Compute startDate and endDate formatted as YYYY-MM-DD
   const { startDate, endDate } = useMemo(() => {
@@ -242,6 +251,29 @@ const SalesReportPage: React.FC = () => {
     setIsInvoiceModalOpen(true);
   };
 
+  // Direct Designed Excel Export
+  const handleExportAllSalesExcel = () => {
+    if (!transactions || transactions.length === 0) {
+      showErrorToast("No sales records available to export");
+      return;
+    }
+    try {
+      exportSalesToExcel(transactions, {
+        fileName: `Sales_Report_${moment().format("YYYY-MM-DD")}.xlsx`,
+        sheetName: "Sales Report",
+        reportTitle: "Sales Report",
+        businessName: businessProfile?.businessName || userInfo?.orgName || "Cash Boi Trade Ltd",
+        businessAddress: businessProfile?.address || "",
+        businessPhone: businessProfile?.businessPhone1 || "",
+        startDate,
+        endDate,
+      });
+      showSuccessToast(`Successfully exported ${transactions.length} sales to Excel!`);
+    } catch (e: any) {
+      showErrorToast(e?.message || "Export failed");
+    }
+  };
+
   return (
     <div className="flex flex-col gap-2 sm:gap-2.5 px-3 py-1.5 sm:px-4 sm:py-2 max-w-[1600px] mx-auto w-full">
       {/* ── Top Header & Global Actions ── */}
@@ -274,14 +306,25 @@ const SalesReportPage: React.FC = () => {
             isLoading={isLoading}
           />
 
-          {/* Print Summary Report */}
+          {/* Export Designed Excel */}
+          <button
+            type="button"
+            onClick={handleExportAllSalesExcel}
+            className="h-8 rounded-md text-xs font-semibold px-3 whitespace-nowrap shrink-0 flex items-center gap-1.5 text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 border border-emerald-200 dark:border-emerald-800 transition-colors shadow-2xs cursor-pointer"
+            title="Download Designed Sales Report Excel"
+          >
+            <FaFileExcel className="text-emerald-600 dark:text-emerald-400 text-xs" />
+            <span>Export Excel</span>
+          </button>
+
+          {/* Print / PDF Summary Report */}
           <Button
-            label="Print Report"
+            label="Print / PDF Report"
             size="sm"
             onClick={() => setIsPrintSummaryOpen(true)}
             color="var(--primary-color)"
             hoverColor="var(--primary-color-hover)"
-            className="h-8 rounded-md text-xs font-medium px-3 whitespace-nowrap shrink-0 flex items-center gap-1.5"
+            className="h-8 rounded-md text-xs font-medium px-3 whitespace-nowrap shrink-0 flex items-center gap-1.5 shadow-2xs cursor-pointer !text-white"
             icon={<FaPrint className="text-white text-xs" />}
           />
         </div>

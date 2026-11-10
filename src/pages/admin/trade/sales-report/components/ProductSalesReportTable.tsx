@@ -188,6 +188,7 @@ export const ProductSalesReportTable: React.FC<ProductSalesReportTableProps> = (
       await buildAndDownloadExcel(data, totalRow, {
         fileName: `Product_Sales_Report_${moment().format("YYYY-MM-DD")}.xlsx`,
         sheetName: "Product Sales",
+        reportTitle: "Product Sales Report",
       });
       showSuccessToast("Product sales report exported successfully");
     } catch (e: any) {

@@ -20,6 +20,8 @@ import ColumnVisibilityDropdown, { type ColumnItem } from "@/components/table-co
 import { formatMoney } from "@/utils/formatters";
 import { exportSalesToExcel } from "@/utils/excel-export";
 import { showSuccessToast, showErrorToast } from "@/utils/toast-utils";
+import { useBusinessProfileQuery } from "@/hooks/useBusinessProfile";
+import { getUserInfo } from "@/utils/auth-storage";
 import type { SaleItem } from "@/types";
 import { useDebounce } from "@/hooks/useDebounce";
 
@@ -45,6 +47,9 @@ export const SalesReportTable: React.FC<SalesReportTableProps> = ({
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [pageSize, setPageSize] = useState<number>(10);
   const [copiedId, setCopiedId] = useState<string | number | null>(null);
+
+  const { data: businessProfile } = useBusinessProfileQuery();
+  const userInfo = getUserInfo();
 
   // Searchable customer dropdown state
   const [isCustomerDropdownOpen, setIsCustomerDropdownOpen] = useState<boolean>(false);
@@ -245,7 +250,11 @@ export const SalesReportTable: React.FC<SalesReportTableProps> = ({
     try {
       exportSalesToExcel(filtered, {
         fileName: `Sales_Report_${moment().format("YYYY-MM-DD")}.xlsx`,
-        sheetName: "Sales",
+        sheetName: "Sales Report",
+        reportTitle: "Sales Report",
+        businessName: businessProfile?.businessName || userInfo?.orgName || "Cash Boi Trade Ltd",
+        businessAddress: businessProfile?.address || "",
+        businessPhone: businessProfile?.businessPhone1 || "",
       });
       showSuccessToast(`Successfully exported ${filtered.length} sales to Excel!`);
     } catch (e: any) {

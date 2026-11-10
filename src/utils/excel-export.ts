@@ -5,6 +5,11 @@ export interface GenericExcelExportOptions {
   fileName?: string;
   sheetName?: string;
   businessName?: string;
+  businessAddress?: string;
+  businessPhone?: string;
+  reportTitle?: string;
+  startDate?: string;
+  endDate?: string;
 }
 
 export type ExportPurchasesOptions = GenericExcelExportOptions;
@@ -36,6 +41,7 @@ const getItemsCount = (p: any): number => {
 /**
  * Senior Developer Standard: Dynamic Async Excel Builder & File Generator.
  * SheetJS (281 KB) is lazy loaded on-demand so it doesn't burden initial page load.
+ * Formats a designed corporate header (Company Name, Address, Report Title, Period) when provided.
  */
 export async function buildAndDownloadExcel<T extends Record<string, any>>(
   rows: T[],
@@ -47,10 +53,77 @@ export async function buildAndDownloadExcel<T extends Record<string, any>>(
   }
 
   const XLSX = await import("xlsx");
-
   const fullData = totalRow && Object.keys(totalRow).length > 0 ? [...rows, totalRow] : rows;
   const headers = Object.keys(rows[0]);
-  const worksheet = XLSX.utils.json_to_sheet(fullData, { header: headers });
+
+  let worksheet: any;
+
+  if (options?.reportTitle || options?.businessName) {
+    const aoa: any[][] = [];
+
+    // Row 1: Company Name
+    if (options.businessName) {
+      aoa.push([options.businessName]);
+    }
+    // Row 2: Address & Phone
+    const contactLine = [
+      options.businessAddress,
+      options.businessPhone ? `Phone: ${options.businessPhone}` : "",
+    ]
+      .filter(Boolean)
+      .join(" | ");
+    if (contactLine) {
+      aoa.push([contactLine]);
+    }
+    // Row 3: Report Title
+    if (options.reportTitle) {
+      aoa.push([options.reportTitle.toUpperCase()]);
+    }
+    // Row 4: Period & Print Date
+    const metaParts: string[] = [];
+    if (options.startDate || options.endDate) {
+      metaParts.push(
+        `From Date: ${options.startDate || "ALL"}   To Date: ${options.endDate || "ALL"}`
+      );
+    }
+    metaParts.push(`Print Date: ${new Date().toISOString().substring(0, 10)}`);
+    aoa.push([metaParts.join("   |   ")]);
+
+    // Row 5: Blank spacer row
+    aoa.push([]);
+
+    // Row 6: Column Headers
+    aoa.push(headers);
+
+    // Rows 7+: Data Rows
+    rows.forEach((r) => {
+      aoa.push(headers.map((h) => r[h] ?? ""));
+    });
+
+    // Final Row: Total Summary Row
+    if (totalRow && Object.keys(totalRow).length > 0) {
+      aoa.push(headers.map((h) => totalRow[h] ?? ""));
+    }
+
+    worksheet = XLSX.utils.aoa_to_sheet(aoa);
+
+    // Merge header rows across columns for clean presentation
+    const maxCols = Math.max(headers.length - 1, 6);
+    const merges = [{ s: { r: 0, c: 0 }, e: { r: 0, c: maxCols } }];
+    let curR = 1;
+    if (contactLine) {
+      merges.push({ s: { r: curR, c: 0 }, e: { r: curR, c: maxCols } });
+      curR++;
+    }
+    if (options.reportTitle) {
+      merges.push({ s: { r: curR, c: 0 }, e: { r: curR, c: maxCols } });
+      curR++;
+    }
+    merges.push({ s: { r: curR, c: 0 }, e: { r: curR, c: maxCols } });
+    worksheet["!merges"] = merges;
+  } else {
+    worksheet = XLSX.utils.json_to_sheet(fullData, { header: headers });
+  }
 
   // Auto-calculate column widths based on maximum content length
   worksheet["!cols"] = headers.map((key) => {
@@ -66,7 +139,7 @@ export async function buildAndDownloadExcel<T extends Record<string, any>>(
   });
 
   const workbook = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(workbook, worksheet, options?.sheetName || "Sheet1");
+  XLSX.utils.book_append_sheet(workbook, worksheet, options?.sheetName || "Report");
   XLSX.writeFile(workbook, options?.fileName || "export.xlsx");
 }
 
@@ -243,7 +316,16 @@ export function exportSalesToExcel(
     Notes: "",
   };
 
-  buildAndDownloadExcel(rows, totalRow, { fileName, sheetName });
+  buildAndDownloadExcel(rows, totalRow, {
+    fileName,
+    sheetName,
+    reportTitle: options?.reportTitle || "Sales Report",
+    businessName: options?.businessName,
+    businessAddress: options?.businessAddress,
+    businessPhone: options?.businessPhone,
+    startDate: options?.startDate,
+    endDate: options?.endDate,
+  });
 }
 
 /**
