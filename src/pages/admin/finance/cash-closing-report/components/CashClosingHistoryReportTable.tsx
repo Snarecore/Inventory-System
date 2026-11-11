@@ -336,7 +336,7 @@ export const CashClosingHistoryReportTable: React.FC<
                 </TableTh>
               )}
               {isColVisible("date") && (
-                <TableTh className="whitespace-nowrap">
+                <TableTh className="w-px whitespace-nowrap">
                   {renderSortHeader("Closing Date", "date")}
                 </TableTh>
               )}

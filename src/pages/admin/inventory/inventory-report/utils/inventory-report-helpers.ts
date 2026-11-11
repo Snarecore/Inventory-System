@@ -385,15 +385,23 @@ function buildInventoryStockColumns(
       key: "sl",
       excelHeader: "SL",
       isLeadingLabel: true,
-      pdfStyle: { halign: "center", cellWidth: 8 },
+      pdfStyle: { halign: "center", cellWidth: 9 },
       excelValue: (_, idx) => idx + 1,
       pdfCell: (_, idx) => idx + 1,
+    },
+    {
+      key: "category",
+      excelHeader: "Category",
+      isLeadingLabel: true,
+      pdfStyle: { halign: "left" },
+      excelValue: (m) => m.category,
+      pdfCell: (m) => m.category,
     },
     {
       key: "code",
       excelHeader: "Code",
       isLeadingLabel: true,
-      pdfStyle: { halign: "left", cellWidth: 20 },
+      pdfStyle: { halign: "left" },
       excelValue: (m) => m.code,
       pdfCell: (m) => m.code,
     },
@@ -406,18 +414,10 @@ function buildInventoryStockColumns(
       pdfCell: (m) => m.name,
     },
     {
-      key: "category",
-      excelHeader: "Category",
-      isLeadingLabel: true,
-      pdfStyle: { halign: "left", cellWidth: 20 },
-      excelValue: (m) => m.category,
-      pdfCell: (m) => m.category,
-    },
-    {
       key: "primaryUnit",
       excelHeader: "Primary Unit",
       isLeadingLabel: true,
-      pdfStyle: { halign: "center", cellWidth: 16 },
+      pdfStyle: { halign: "center" },
       excelValue: (m) => m.primaryUnit,
       pdfCell: (m) => m.primaryUnit,
     },
@@ -425,7 +425,7 @@ function buildInventoryStockColumns(
       key: "secondaryUnit",
       excelHeader: "Secondary Unit",
       isLeadingLabel: true,
-      pdfStyle: { halign: "center", cellWidth: 16 },
+      pdfStyle: { halign: "center" },
       excelValue: (m) => (m.hasSecondaryUnit ? m.secondaryUnit : "-"),
       pdfCell: (m) => (m.hasSecondaryUnit ? m.secondaryUnit : "-"),
     },
@@ -433,14 +433,14 @@ function buildInventoryStockColumns(
       key: "conversion",
       excelHeader: "Conversion",
       isLeadingLabel: true,
-      pdfStyle: { halign: "center", cellWidth: 20 },
+      pdfStyle: { halign: "center" },
       excelValue: (m) => m.conversionDisplay || "-",
       pdfCell: (m) => m.conversionDisplay || "-",
     },
     {
       key: "stock",
       excelHeader: "Stock",
-      pdfStyle: { halign: "right", cellWidth: 15, fontStyle: "bold" },
+      pdfStyle: { halign: "right", fontStyle: "bold" },
       excelValue: (m) => m.quantity,
       excelTotalValue: (t) => t.sumQty,
       pdfCell: (m) =>
@@ -454,7 +454,7 @@ function buildInventoryStockColumns(
       key: "buyPrice",
       excelHeader: "Buy Price (BDT)",
       pdfHeader: "Buy Price",
-      pdfStyle: { halign: "right", cellWidth: 18 },
+      pdfStyle: { halign: "right" },
       excelValue: (m) => m.buyPrice,
       excelTotalValue: () => "-",
       pdfCell: (m) => formatMoney(m.buyPrice),
@@ -467,7 +467,7 @@ function buildInventoryStockColumns(
       key: "sellPrice",
       excelHeader: "Sell Price (BDT)",
       pdfHeader: "Sell Price",
-      pdfStyle: { halign: "right", cellWidth: 18 },
+      pdfStyle: { halign: "right" },
       excelValue: (m) => m.sellPrice,
       excelTotalValue: () => "-",
       pdfCell: (m) => formatMoney(m.sellPrice),
@@ -480,7 +480,7 @@ function buildInventoryStockColumns(
       key: "margin",
       excelHeader: "Margin (%)",
       pdfHeader: "Margin %",
-      pdfStyle: { halign: "right", cellWidth: 15 },
+      pdfStyle: { halign: "right" },
       excelValue: (m) => `${m.marginPct.toFixed(1)}%`,
       excelTotalValue: (t) =>
         t.sumRetail > 0
@@ -499,7 +499,7 @@ function buildInventoryStockColumns(
       key: "costValue",
       excelHeader: "Cost Value (BDT)",
       pdfHeader: "Cost Value",
-      pdfStyle: { halign: "right", cellWidth: 21, fontStyle: "bold" },
+      pdfStyle: { halign: "right", fontStyle: "bold" },
       excelValue: (m) => m.costValue,
       excelTotalValue: (t) => t.sumCost,
       pdfCell: (m) => formatMoney(m.costValue),
@@ -514,7 +514,6 @@ function buildInventoryStockColumns(
       pdfHeader: "Retail Value",
       pdfStyle: {
         halign: "right",
-        cellWidth: 21,
         fontStyle: "bold",
         textColor: REPORT_RGB.emerald,
       },
@@ -529,7 +528,7 @@ function buildInventoryStockColumns(
     {
       key: "status",
       excelHeader: "Status",
-      pdfStyle: { halign: "center", cellWidth: 16 },
+      pdfStyle: { halign: "center" },
       excelValue: (m) => (m.isActive ? "Active" : "Inactive"),
       excelTotalValue: () => "-",
       pdfCell: (m) => ({
@@ -629,10 +628,7 @@ export async function downloadInventoryStockPdf(
     columns,
     { sumQty, sumCost, sumRetail, sumProfit },
     "TOTAL INVENTORY VALUATION",
-    {
-      visibleColumns,
-      preserveFixedWidthsFromCount: 11,
-    }
+    { visibleColumns }
   );
 
   await generateAndDownloadCorporatePdf({
@@ -665,7 +661,7 @@ function buildCategoryInventoryColumns(
       key: "sl",
       excelHeader: "SL",
       isLeadingLabel: true,
-      pdfStyle: { halign: "center", cellWidth: 12 },
+      pdfStyle: { halign: "center", cellWidth: 10 },
       excelValue: (_, idx) => idx + 1,
       pdfCell: (_, idx) => idx + 1,
     },
@@ -681,7 +677,7 @@ function buildCategoryInventoryColumns(
       key: "products",
       excelHeader: "Products Count",
       pdfHeader: "Products",
-      pdfStyle: { halign: "right", cellWidth: 22 },
+      pdfStyle: { halign: "right" },
       excelValue: (c) => c.productCount,
       excelTotalValue: (t) => t.sumProducts,
       pdfCell: (c) => c.productCount,
@@ -696,7 +692,6 @@ function buildCategoryInventoryColumns(
       pdfHeader: "Active",
       pdfStyle: {
         halign: "right",
-        cellWidth: 20,
         textColor: REPORT_RGB.emerald,
       },
       excelValue: (c) => c.activeCount,
@@ -711,7 +706,7 @@ function buildCategoryInventoryColumns(
       key: "lowStock",
       excelHeader: "Low Stock Count",
       pdfHeader: "Low Stock",
-      pdfStyle: { halign: "right", cellWidth: 22 },
+      pdfStyle: { halign: "right" },
       excelValue: (c) => c.lowStockCount,
       excelTotalValue: (t) => t.sumLow,
       pdfCell: (c) => ({
@@ -729,7 +724,7 @@ function buildCategoryInventoryColumns(
     {
       key: "stockUnits",
       excelHeader: "Stock Qty",
-      pdfStyle: { halign: "right", cellWidth: 26 },
+      pdfStyle: { halign: "right" },
       excelValue: (c) => c.totalUnits,
       excelTotalValue: (t) => t.sumUnits,
       pdfCell: (c) => c.totalUnits,
@@ -742,7 +737,7 @@ function buildCategoryInventoryColumns(
       key: "costValue",
       excelHeader: "Cost Value (BDT)",
       pdfHeader: "Cost Value",
-      pdfStyle: { halign: "right", cellWidth: 30, fontStyle: "bold" },
+      pdfStyle: { halign: "right", fontStyle: "bold" },
       excelValue: (c) => c.totalCostValue,
       excelTotalValue: (t) => t.sumCost,
       pdfCell: (c) => formatMoney(c.totalCostValue),
@@ -757,7 +752,6 @@ function buildCategoryInventoryColumns(
       pdfHeader: "Retail Value",
       pdfStyle: {
         halign: "right",
-        cellWidth: 30,
         fontStyle: "bold",
         textColor: REPORT_RGB.emerald,
       },
@@ -775,7 +769,6 @@ function buildCategoryInventoryColumns(
       pdfHeader: "Est. Profit",
       pdfStyle: {
         halign: "right",
-        cellWidth: 28,
         fontStyle: "bold",
         textColor: REPORT_RGB.emerald,
       },
@@ -791,7 +784,7 @@ function buildCategoryInventoryColumns(
       key: "valueShare",
       excelHeader: "Value Share",
       pdfHeader: "Share %",
-      pdfStyle: { halign: "right", cellWidth: 20 },
+      pdfStyle: { halign: "right" },
       excelValue: (c) =>
         `${calculateRevenueSharePct(c.totalCostValue, grandTotalCost)}%`,
       excelTotalValue: () => "100.0%",
@@ -899,10 +892,7 @@ export async function downloadCategoryInventoryPdf(
     columns,
     { sumProducts, sumActive, sumLow, sumUnits, sumCost, sumRetail, sumProfit },
     "TOTAL",
-    {
-      visibleColumns,
-      preserveFixedWidthsFromCount: 8,
-    }
+    { visibleColumns }
   );
 
   await generateAndDownloadCorporatePdf({
@@ -937,10 +927,18 @@ function buildLowStockColumns(): ExportColumnDef<
       pdfCell: (_, idx) => idx + 1,
     },
     {
+      key: "category",
+      excelHeader: "Category",
+      isLeadingLabel: true,
+      pdfStyle: { halign: "left" },
+      excelValue: (m) => m.category,
+      pdfCell: (m) => m.category,
+    },
+    {
       key: "code",
       excelHeader: "Code",
       isLeadingLabel: true,
-      pdfStyle: { halign: "left", cellWidth: 26 },
+      pdfStyle: { halign: "left" },
       excelValue: (m) => m.code,
       pdfCell: (m) => m.code,
     },
@@ -953,18 +951,10 @@ function buildLowStockColumns(): ExportColumnDef<
       pdfCell: (m) => m.name,
     },
     {
-      key: "category",
-      excelHeader: "Category",
-      isLeadingLabel: true,
-      pdfStyle: { halign: "left", cellWidth: 28 },
-      excelValue: (m) => m.category,
-      pdfCell: (m) => m.category,
-    },
-    {
       key: "currentStock",
       excelHeader: "Current Qty",
       pdfHeader: "Current Stock",
-      pdfStyle: { halign: "right", cellWidth: 28 },
+      pdfStyle: { halign: "right" },
       excelValue: (m) => m.quantity,
       excelTotalValue: (t) => t.sumCurrent,
       pdfCell: (m) => m.displayStock,
@@ -977,7 +967,7 @@ function buildLowStockColumns(): ExportColumnDef<
       key: "minThreshold",
       excelHeader: "Min Threshold",
       pdfHeader: "Threshold",
-      pdfStyle: { halign: "right", cellWidth: 22 },
+      pdfStyle: { halign: "right" },
       excelValue: (m) => m.lowThreshold,
       excelTotalValue: () => "-",
       pdfCell: (m) => m.lowThreshold,
@@ -992,7 +982,6 @@ function buildLowStockColumns(): ExportColumnDef<
       pdfHeader: "Shortfall",
       pdfStyle: {
         halign: "right",
-        cellWidth: 22,
         fontStyle: "bold",
         textColor: REPORT_RGB.rose,
       },
@@ -1008,7 +997,7 @@ function buildLowStockColumns(): ExportColumnDef<
       key: "buyPrice",
       excelHeader: "Buy Price (BDT)",
       pdfHeader: "Buy Price",
-      pdfStyle: { halign: "right", cellWidth: 24 },
+      pdfStyle: { halign: "right" },
       excelValue: (m) => m.buyPrice,
       excelTotalValue: () => "-",
       pdfCell: (m) => formatMoney(m.buyPrice),
@@ -1023,7 +1012,6 @@ function buildLowStockColumns(): ExportColumnDef<
       pdfHeader: "Restock Cost",
       pdfStyle: {
         halign: "right",
-        cellWidth: 28,
         fontStyle: "bold",
         textColor: REPORT_RGB.rose,
       },
@@ -1039,7 +1027,7 @@ function buildLowStockColumns(): ExportColumnDef<
       key: "alertLevel",
       excelHeader: "Alert Level",
       pdfHeader: "Alert",
-      pdfStyle: { halign: "center", cellWidth: 26 },
+      pdfStyle: { halign: "center" },
       excelValue: (m) =>
         m.stockState === "OUT" ? "Out of Stock" : "Low Stock",
       excelTotalValue: (t) => `${t.itemCount} Alerts`,
@@ -1138,10 +1126,7 @@ export async function downloadLowStockReportPdf(
     columns,
     { sumCurrent, sumShortfall, sumRestockCost, itemCount: products.length },
     "TOTAL RESTOCK ESTIMATE",
-    {
-      visibleColumns,
-      preserveFixedWidthsFromCount: 8,
-    }
+    { visibleColumns }
   );
 
   await generateAndDownloadCorporatePdf({

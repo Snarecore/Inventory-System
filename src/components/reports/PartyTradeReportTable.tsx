@@ -258,16 +258,16 @@ export const PartyTradeReportTable: React.FC<PartyTradeReportTableProps> = ({
         ) : (
           <Table>
             <TableHead>
-              {isColVisible("sl") && <TableTh align="center" width={40}>SL</TableTh>}
-              {isColVisible("partyName") && <TableTh>{labels.partyCol}</TableTh>}
-              {isColVisible("phone") && <TableTh width={130}>Phone</TableTh>}
-              {isColVisible("address") && <TableTh width={180}>Address</TableTh>}
-              {isColVisible("orders") && <TableTh align="center" width={90}>Orders</TableTh>}
-              {isColVisible("totalBilled") && <TableTh align="right" width={130}>Gross Billed (৳)</TableTh>}
-              {isColVisible("totalPaid") && <TableTh align="right" width={130}>Total Paid (৳)</TableTh>}
-              {isColVisible("totalDue") && <TableTh align="right" width={130}>Outstanding Due (৳)</TableTh>}
-              {isColVisible("lastDate") && <TableTh align="center" width={120}>Last Order</TableTh>}
-              {isColVisible("status") && <TableTh align="center" width={100}>Status</TableTh>}
+              {isColVisible("sl") && <TableTh align="center" width={40} className="whitespace-nowrap">SL</TableTh>}
+              {isColVisible("partyName") && <TableTh className="whitespace-nowrap">{labels.partyCol}</TableTh>}
+              {isColVisible("phone") && <TableTh className="whitespace-nowrap">Phone</TableTh>}
+              {isColVisible("address") && <TableTh className="whitespace-nowrap">Address</TableTh>}
+              {isColVisible("orders") && <TableTh align="center" className="whitespace-nowrap">Orders</TableTh>}
+              {isColVisible("totalBilled") && <TableTh align="right" className="whitespace-nowrap">Gross Billed (৳)</TableTh>}
+              {isColVisible("totalPaid") && <TableTh align="right" className="whitespace-nowrap">Total Paid (৳)</TableTh>}
+              {isColVisible("totalDue") && <TableTh align="right" className="whitespace-nowrap">Outstanding Due (৳)</TableTh>}
+              {isColVisible("lastDate") && <TableTh align="center" className="whitespace-nowrap">Last Order</TableTh>}
+              {isColVisible("status") && <TableTh align="center" className="whitespace-nowrap">Status</TableTh>}
             </TableHead>
             <TableBody>
               {paginated.map((p, idx) => {

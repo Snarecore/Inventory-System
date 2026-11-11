@@ -42,9 +42,9 @@ interface LowStockReportTableProps extends ReportDateFilterProps {
 
 const AVAILABLE_COLUMNS: ColumnItem[] = [
   { key: "sl", label: "SL" },
+  { key: "category", label: "Category" },
   { key: "code", label: "Code" },
   { key: "name", label: "Product Name" },
-  { key: "category", label: "Category" },
   { key: "currentStock", label: "Current Stock" },
   { key: "minThreshold", label: "Min Threshold" },
   { key: "shortfall", label: "Shortfall" },
@@ -247,36 +247,54 @@ export const LowStockReportTable: React.FC<LowStockReportTableProps> = ({
             description="No products are currently at or below their minimum stock threshold."
           />
         ) : (
-          <Table minWidth={920}>
+          <Table>
             <TableHead>
               {isColVisible("sl") && (
-                <TableTh align="center" width={42}>
+                <TableTh align="center" width={42} className="whitespace-nowrap">
                   SL
                 </TableTh>
               )}
-              {isColVisible("code") && <TableTh>Code</TableTh>}
-              {isColVisible("name") && <TableTh>Product Name</TableTh>}
-              {isColVisible("category") && <TableTh>Category</TableTh>}
+              {isColVisible("category") && (
+                <TableTh className="w-px whitespace-nowrap">Category</TableTh>
+              )}
+              {isColVisible("code") && (
+                <TableTh className="w-px whitespace-nowrap">Code</TableTh>
+              )}
+              {isColVisible("name") && (
+                <TableTh className="whitespace-nowrap">Product Name</TableTh>
+              )}
               {isColVisible("currentStock") && (
-                <TableTh align="right">Current Stock</TableTh>
+                <TableTh align="right" className="whitespace-nowrap">
+                  Current Stock
+                </TableTh>
               )}
               {isColVisible("minThreshold") && (
-                <TableTh align="right">Min Threshold</TableTh>
+                <TableTh align="right" className="whitespace-nowrap">
+                  Min Threshold
+                </TableTh>
               )}
               {isColVisible("shortfall") && (
-                <TableTh align="right">Shortfall</TableTh>
+                <TableTh align="right" className="whitespace-nowrap">
+                  Shortfall
+                </TableTh>
               )}
               {isColVisible("buyPrice") && (
-                <TableTh align="right">Buy Price</TableTh>
+                <TableTh align="right" className="whitespace-nowrap">
+                  Buy Price
+                </TableTh>
               )}
               {isColVisible("restockCost") && (
-                <TableTh align="right">Est. Restock Cost</TableTh>
+                <TableTh align="right" className="whitespace-nowrap">
+                  Est. Restock Cost
+                </TableTh>
               )}
               {isColVisible("alertLevel") && (
-                <TableTh align="center">Alert Level</TableTh>
+                <TableTh align="center" className="whitespace-nowrap">
+                  Alert Level
+                </TableTh>
               )}
               {isColVisible("actions") && (
-                <TableTh align="center" width={64}>
+                <TableTh align="center" width={64} className="whitespace-nowrap">
                   Actions
                 </TableTh>
               )}
@@ -298,6 +316,14 @@ export const LowStockReportTable: React.FC<LowStockReportTableProps> = ({
                       </td>
                     )}
 
+                    {isColVisible("category") && (
+                      <td className="py-2.5 px-3 text-xs whitespace-nowrap">
+                        <span className="inline-flex items-center px-1.5 py-0.5 rounded-md text-[10.5px] font-medium bg-[var(--ui-surface-sunken)] text-[var(--ui-text)] border border-[var(--ui-border)]">
+                          {m.category}
+                        </span>
+                      </td>
+                    )}
+
                     {isColVisible("code") && (
                       <td className="py-2.5 px-3 text-xs text-[var(--ui-text-muted)] whitespace-nowrap">
                         <span className="bg-[var(--ui-surface-sunken)] px-1.5 py-0.5 rounded border border-[var(--ui-border)] text-[11px] font-medium">
@@ -314,14 +340,6 @@ export const LowStockReportTable: React.FC<LowStockReportTableProps> = ({
                           title={m.name}
                         >
                           {m.name}
-                        </span>
-                      </td>
-                    )}
-
-                    {isColVisible("category") && (
-                      <td className="py-2.5 px-3 text-xs whitespace-nowrap">
-                        <span className="inline-flex items-center px-1.5 py-0.5 rounded-md text-[10.5px] font-medium bg-[var(--ui-surface-sunken)] text-[var(--ui-text)] border border-[var(--ui-border)]">
-                          {m.category}
                         </span>
                       </td>
                     )}

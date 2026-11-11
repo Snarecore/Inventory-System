@@ -610,14 +610,15 @@ export async function generateAndDownloadCorporatePdf(
   ]);
   const autoTable = autoTableMod.default || autoTableMod.autoTable;
 
+  const isPortrait = config.headers.length <= 6;
   const doc = new jsPDF({
-    orientation: "landscape",
+    orientation: isPortrait ? "portrait" : "landscape",
     unit: "mm",
     format: "a4",
   });
 
-  const pageWidth = doc.internal.pageSize.getWidth(); // 297mm
-  const pageHeight = doc.internal.pageSize.getHeight(); // 210mm
+  const pageWidth = doc.internal.pageSize.getWidth(); // 210mm (portrait) or 297mm (landscape)
+  const pageHeight = doc.internal.pageSize.getHeight(); // 297mm (portrait) or 210mm (landscape)
   const marginX = 10;
   const rightEdge = pageWidth - marginX;
   const themeRgb = argbToRgbTuple(resolveThemeArgb());
@@ -682,7 +683,8 @@ export async function generateAndDownloadCorporatePdf(
   doc.setLineWidth(0.25);
   doc.line(marginX, 29, rightEdge, 29);
 
-  const tableFontSize = config.fontSize ?? 7.5;
+  const tableFontSize =
+    config.fontSize ?? (config.headers.length >= 13 ? 7 : 7.5);
 
   // ── Data Table (Global Theme Color Header + Last-Page Summary Row) ──
   autoTable(doc, {
@@ -737,10 +739,28 @@ export async function generateAndDownloadCorporatePdf(
   doc.setFontSize(8.5);
   doc.setTextColor(71, 85, 105);
 
+  const usableWidth = pageWidth - 2 * marginX;
+  const sigWidth = Math.min(48, usableWidth * 0.22);
+  const sigSidePad = isPortrait ? 4 : 10;
   const sigBlocks = [
-    { x1: 20, x2: 68, cx: 44, label: "Prepared By" },
-    { x1: 124.5, x2: 172.5, cx: 148.5, label: "Checked By" },
-    { x1: 229, x2: 277, cx: 253, label: "Authorized Signatory" },
+    {
+      x1: marginX + sigSidePad,
+      x2: marginX + sigSidePad + sigWidth,
+      cx: marginX + sigSidePad + sigWidth / 2,
+      label: "Prepared By",
+    },
+    {
+      x1: pageWidth / 2 - sigWidth / 2,
+      x2: pageWidth / 2 + sigWidth / 2,
+      cx: pageWidth / 2,
+      label: "Checked By",
+    },
+    {
+      x1: rightEdge - sigSidePad - sigWidth,
+      x2: rightEdge - sigSidePad,
+      cx: rightEdge - sigSidePad - sigWidth / 2,
+      label: "Authorized Signatory",
+    },
   ];
   sigBlocks.forEach((b) => {
     doc.line(b.x1, sigY, b.x2, sigY);

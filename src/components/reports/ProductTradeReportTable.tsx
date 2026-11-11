@@ -244,16 +244,16 @@ export const ProductTradeReportTable: React.FC<ProductTradeReportTableProps> = (
         ) : (
           <Table>
             <TableHead>
-              {isColVisible("sl") && <TableTh align="center" width={40}>SL</TableTh>}
-              {isColVisible("productCode") && <TableTh width={130}>Product Code</TableTh>}
-              {isColVisible("productName") && <TableTh>Product Description</TableTh>}
-              {isColVisible("unit") && <TableTh align="center" width={70}>Unit</TableTh>}
-              {isColVisible("orders") && <TableTh align="center" width={80}>Orders</TableTh>}
-              {isColVisible("quantity") && <TableTh align="right" width={110}>{labels.qtyCol}</TableTh>}
-              {isColVisible("avgRate") && <TableTh align="right" width={110}>Avg Rate (৳)</TableTh>}
-              {isColVisible("discount") && <TableTh align="right" width={110}>Discounts (৳)</TableTh>}
-              {isColVisible("amount") && <TableTh align="right" width={130}>{labels.amountCol}</TableTh>}
-              {isColVisible("share") && <TableTh align="right" width={110}>Contribution</TableTh>}
+              {isColVisible("sl") && <TableTh align="center" width={40} className="whitespace-nowrap">SL</TableTh>}
+              {isColVisible("productCode") && <TableTh className="w-px whitespace-nowrap">Product Code</TableTh>}
+              {isColVisible("productName") && <TableTh className="whitespace-nowrap">Product Description</TableTh>}
+              {isColVisible("unit") && <TableTh align="center" className="whitespace-nowrap">Unit</TableTh>}
+              {isColVisible("orders") && <TableTh align="center" className="whitespace-nowrap">Orders</TableTh>}
+              {isColVisible("quantity") && <TableTh align="right" className="whitespace-nowrap">{labels.qtyCol}</TableTh>}
+              {isColVisible("avgRate") && <TableTh align="right" className="whitespace-nowrap">Avg Rate (৳)</TableTh>}
+              {isColVisible("discount") && <TableTh align="right" className="whitespace-nowrap">Discounts (৳)</TableTh>}
+              {isColVisible("amount") && <TableTh align="right" className="whitespace-nowrap">{labels.amountCol}</TableTh>}
+              {isColVisible("share") && <TableTh align="right" className="whitespace-nowrap">Contribution</TableTh>}
             </TableHead>
             <TableBody>
               {paginated.map((item, idx) => {
@@ -277,7 +277,7 @@ export const ProductTradeReportTable: React.FC<ProductTradeReportTableProps> = (
                       </td>
                     )}
                     {isColVisible("productCode") && (
-                      <td className="py-2.5 px-3 font-semibold text-xs text-[var(--ui-text)]">
+                      <td className="py-2.5 px-3 font-semibold text-xs text-[var(--ui-text)] whitespace-nowrap">
                         {item.productCode}
                       </td>
                     )}

@@ -410,7 +410,7 @@ export const PurchaseReportTable: React.FC<PurchaseReportTableProps> = ({
                 </TableTh>
               )}
               {isColVisible("orderId") && (
-                <TableTh className="whitespace-nowrap">Order ID</TableTh>
+                <TableTh className="w-px whitespace-nowrap">Order ID</TableTh>
               )}
               {isColVisible("supplier") && (
                 <TableTh className="min-w-[120px]">

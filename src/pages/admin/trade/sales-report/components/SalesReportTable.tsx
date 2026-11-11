@@ -366,7 +366,7 @@ export const SalesReportTable: React.FC<SalesReportTableProps> = ({
           <Table>
             <TableHead>
               {isColVisible("sl") && <TableTh align="center" width={40}>SL</TableTh>}
-              {isColVisible("orderId") && <TableTh className="whitespace-nowrap">Order ID</TableTh>}
+              {isColVisible("orderId") && <TableTh className="w-px whitespace-nowrap">Order ID</TableTh>}
               {isColVisible("customer") && (
                 <TableTh className="min-w-[120px]">
                   {renderSortHeader("Customer", "customer")}

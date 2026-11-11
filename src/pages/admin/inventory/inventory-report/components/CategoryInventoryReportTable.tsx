@@ -196,37 +196,53 @@ export const CategoryInventoryReportTable: React.FC<
             description="No product categories match the current search or date filter."
           />
         ) : (
-          <Table minWidth={920}>
+          <Table>
             <TableHead>
               {isColVisible("sl") && (
-                <TableTh align="center" width={42}>
+                <TableTh align="center" width={42} className="whitespace-nowrap">
                   SL
                 </TableTh>
               )}
-              {isColVisible("category") && <TableTh>Category Name</TableTh>}
+              {isColVisible("category") && (
+                <TableTh className="whitespace-nowrap">Category Name</TableTh>
+              )}
               {isColVisible("products") && (
-                <TableTh align="center">Products</TableTh>
+                <TableTh align="center" className="whitespace-nowrap">
+                  Products
+                </TableTh>
               )}
               {isColVisible("active") && (
-                <TableTh align="center">Active</TableTh>
+                <TableTh align="center" className="whitespace-nowrap">
+                  Active
+                </TableTh>
               )}
               {isColVisible("lowStock") && (
-                <TableTh align="center">Low / Out</TableTh>
+                <TableTh align="center" className="whitespace-nowrap">
+                  Low / Out
+                </TableTh>
               )}
               {isColVisible("stockUnits") && (
-                <TableTh align="right">Stock Units</TableTh>
+                <TableTh align="right" className="whitespace-nowrap">
+                  Stock Units
+                </TableTh>
               )}
               {isColVisible("costValue") && (
-                <TableTh align="right">Cost Value (৳)</TableTh>
+                <TableTh align="right" className="whitespace-nowrap">
+                  Cost Value (৳)
+                </TableTh>
               )}
               {isColVisible("retailValue") && (
-                <TableTh align="right">Retail Value (৳)</TableTh>
+                <TableTh align="right" className="whitespace-nowrap">
+                  Retail Value (৳)
+                </TableTh>
               )}
               {isColVisible("estProfit") && (
-                <TableTh align="right">Est. Profit (৳)</TableTh>
+                <TableTh align="right" className="whitespace-nowrap">
+                  Est. Profit (৳)
+                </TableTh>
               )}
               {isColVisible("valueShare") && (
-                <TableTh align="right" width={130}>
+                <TableTh align="right" width={130} className="whitespace-nowrap">
                   Value Share
                 </TableTh>
               )}

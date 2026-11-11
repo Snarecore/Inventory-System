@@ -42,9 +42,9 @@ interface InventoryStockReportTableProps extends ReportDateFilterProps {
 
 const AVAILABLE_COLUMNS: ColumnItem[] = [
   { key: "sl", label: "SL" },
+  { key: "category", label: "Category" },
   { key: "code", label: "Code" },
   { key: "name", label: "Product Name" },
-  { key: "category", label: "Category" },
   { key: "primaryUnit", label: "Primary Unit" },
   { key: "secondaryUnit", label: "Secondary Unit" },
   { key: "conversion", label: "Conversion" },
@@ -304,16 +304,21 @@ export const InventoryStockReportTable: React.FC<
             description="There are no inventory products matching the current search or filter criteria."
           />
         ) : (
-          <Table minWidth={1260}>
+          <Table>
             <TableHead>
               {isColVisible("sl") && (
-                <TableTh align="center" width={42}>
+                <TableTh align="center" width={42} className="whitespace-nowrap">
                   SL
                 </TableTh>
               )}
-              {isColVisible("code") && <TableTh>Code</TableTh>}
+              {isColVisible("category") && (
+                <TableTh className="w-px whitespace-nowrap">Category</TableTh>
+              )}
+              {isColVisible("code") && (
+                <TableTh className="w-px whitespace-nowrap">Code</TableTh>
+              )}
               {isColVisible("name") && (
-                <TableTh>
+                <TableTh className="whitespace-nowrap">
                   <span
                     onClick={() => {
                       setSortBy(sortBy === "name_asc" ? "latest" : "name_asc");
@@ -331,18 +336,23 @@ export const InventoryStockReportTable: React.FC<
                   </span>
                 </TableTh>
               )}
-              {isColVisible("category") && <TableTh>Category</TableTh>}
               {isColVisible("primaryUnit") && (
-                <TableTh align="center">Primary Unit</TableTh>
+                <TableTh align="center" className="whitespace-nowrap">
+                  Primary Unit
+                </TableTh>
               )}
               {isColVisible("secondaryUnit") && (
-                <TableTh align="center">Secondary Unit</TableTh>
+                <TableTh align="center" className="whitespace-nowrap">
+                  Secondary Unit
+                </TableTh>
               )}
               {isColVisible("conversion") && (
-                <TableTh align="center">Conversion</TableTh>
+                <TableTh align="center" className="whitespace-nowrap">
+                  Conversion
+                </TableTh>
               )}
               {isColVisible("stock") && (
-                <TableTh align="right">
+                <TableTh align="right" className="whitespace-nowrap">
                   <span
                     onClick={() => toggleHeaderSort("qty_asc", "qty_desc")}
                     className="inline-flex items-center gap-1 cursor-pointer select-none"
@@ -358,16 +368,22 @@ export const InventoryStockReportTable: React.FC<
                 </TableTh>
               )}
               {isColVisible("buyPrice") && (
-                <TableTh align="right">Buy Price</TableTh>
+                <TableTh align="right" className="whitespace-nowrap">
+                  Buy Price
+                </TableTh>
               )}
               {isColVisible("sellPrice") && (
-                <TableTh align="right">Sell Price</TableTh>
+                <TableTh align="right" className="whitespace-nowrap">
+                  Sell Price
+                </TableTh>
               )}
               {isColVisible("margin") && (
-                <TableTh align="right">Margin</TableTh>
+                <TableTh align="right" className="whitespace-nowrap">
+                  Margin
+                </TableTh>
               )}
               {isColVisible("costValue") && (
-                <TableTh align="right">
+                <TableTh align="right" className="whitespace-nowrap">
                   <span
                     onClick={() => {
                       setSortBy(sortBy === "cost_desc" ? "latest" : "cost_desc");
@@ -381,13 +397,17 @@ export const InventoryStockReportTable: React.FC<
                 </TableTh>
               )}
               {isColVisible("retailValue") && (
-                <TableTh align="right">Retail Value</TableTh>
+                <TableTh align="right" className="whitespace-nowrap">
+                  Retail Value
+                </TableTh>
               )}
               {isColVisible("status") && (
-                <TableTh align="center">Status</TableTh>
+                <TableTh align="center" className="whitespace-nowrap">
+                  Status
+                </TableTh>
               )}
               {isColVisible("actions") && (
-                <TableTh align="center" width={64}>
+                <TableTh align="center" width={64} className="whitespace-nowrap">
                   Actions
                 </TableTh>
               )}
@@ -418,6 +438,14 @@ export const InventoryStockReportTable: React.FC<
                       </td>
                     )}
 
+                    {isColVisible("category") && (
+                      <td className="py-2.5 px-3 text-xs whitespace-nowrap">
+                        <span className="inline-flex items-center px-1.5 py-0.5 rounded-md text-[10.5px] font-medium bg-[var(--ui-surface-sunken)] text-[var(--ui-text)] border border-[var(--ui-border)]">
+                          {m.category}
+                        </span>
+                      </td>
+                    )}
+
                     {isColVisible("code") && (
                       <td className="py-2.5 px-3 text-xs text-[var(--ui-text-muted)] whitespace-nowrap">
                         <span className="bg-[var(--ui-surface-sunken)] px-1.5 py-0.5 rounded border border-[var(--ui-border)] text-[11px] font-medium">
@@ -434,14 +462,6 @@ export const InventoryStockReportTable: React.FC<
                           title={m.name}
                         >
                           {m.name}
-                        </span>
-                      </td>
-                    )}
-
-                    {isColVisible("category") && (
-                      <td className="py-2.5 px-3 text-xs whitespace-nowrap">
-                        <span className="inline-flex items-center px-1.5 py-0.5 rounded-md text-[10.5px] font-medium bg-[var(--ui-surface-sunken)] text-[var(--ui-text)] border border-[var(--ui-border)]">
-                          {m.category}
                         </span>
                       </td>
                     )}

@@ -241,19 +241,21 @@ export const CashClosingAuditTable: React.FC<CashClosingAuditTableProps> = ({
             <Table>
               <TableHead>
                 {isColVisible("sl") && (
-                  <TableTh align="center" width={40}>
+                  <TableTh align="center" width={40} className="whitespace-nowrap">
                     SL
                   </TableTh>
                 )}
                 {isColVisible("date") && (
-                  <TableTh className="whitespace-nowrap">Closing Date</TableTh>
+                  <TableTh className="w-px whitespace-nowrap">Closing Date</TableTh>
                 )}
                 {isColVisible("type") && (
                   <TableTh align="center" className="whitespace-nowrap">
                     Type
                   </TableTh>
                 )}
-                {isColVisible("reason") && <TableTh>Reason</TableTh>}
+                {isColVisible("reason") && (
+                  <TableTh className="whitespace-nowrap">Reason</TableTh>
+                )}
                 {isColVisible("expected") && (
                   <TableTh align="right" className="whitespace-nowrap">
                     Expected (৳)
@@ -272,9 +274,11 @@ export const CashClosingAuditTable: React.FC<CashClosingAuditTableProps> = ({
                 {isColVisible("closedBy") && (
                   <TableTh className="whitespace-nowrap">Closed By</TableTh>
                 )}
-                {isColVisible("remarks") && <TableTh>Remarks</TableTh>}
+                {isColVisible("remarks") && (
+                  <TableTh className="whitespace-nowrap">Remarks</TableTh>
+                )}
                 {isColVisible("actions") && (
-                  <TableTh align="center" width={70}>
+                  <TableTh align="center" width={70} className="whitespace-nowrap">
                     Actions
                   </TableTh>
                 )}
