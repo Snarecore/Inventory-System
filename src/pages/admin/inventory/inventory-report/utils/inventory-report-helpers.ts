@@ -374,7 +374,6 @@ type StockTotals = {
   sumQty: number;
   sumCost: number;
   sumRetail: number;
-  sumProfit: number;
 };
 
 function buildInventoryStockColumns(
@@ -477,25 +476,6 @@ function buildInventoryStockColumns(
       }),
     },
     {
-      key: "margin",
-      excelHeader: "Margin (%)",
-      pdfHeader: "Margin %",
-      pdfStyle: { halign: "right" },
-      excelValue: (m) => `${m.marginPct.toFixed(1)}%`,
-      excelTotalValue: (t) =>
-        t.sumRetail > 0
-          ? `${((t.sumProfit / t.sumRetail) * 100).toFixed(1)}%`
-          : "0.0%",
-      pdfCell: (m) => `${m.marginPct.toFixed(1)}%`,
-      pdfSummaryCell: (t) => ({
-        content:
-          t.sumRetail > 0
-            ? `${((t.sumProfit / t.sumRetail) * 100).toFixed(1)}%`
-            : "0.0%",
-        styles: { textColor: REPORT_RGB.dark },
-      }),
-    },
-    {
       key: "costValue",
       excelHeader: "Cost Value (BDT)",
       pdfHeader: "Cost Value",
@@ -557,14 +537,12 @@ export async function exportInventoryStockExcel(
   let sumQty = 0;
   let sumCost = 0;
   let sumRetail = 0;
-  let sumProfit = 0;
 
   const metrics = products.map((p, idx) => {
     const m = extractInventoryProductMetrics(p, idx);
     sumQty += m.quantity;
     sumCost += m.costValue;
     sumRetail += m.retailValue;
-    sumProfit += m.potentialProfit;
     return m;
   });
 
@@ -573,7 +551,7 @@ export async function exportInventoryStockExcel(
   const { rows, totalRow, totalSummarySpan } = buildDynamicExcelPayload(
     metrics,
     columns,
-    { sumQty, sumCost, sumRetail, sumProfit },
+    { sumQty, sumCost, sumRetail },
     "TOTAL INVENTORY VALUATION",
     visibleColumns
   );
@@ -611,14 +589,12 @@ export async function downloadInventoryStockPdf(
   let sumQty = 0;
   let sumCost = 0;
   let sumRetail = 0;
-  let sumProfit = 0;
 
   const metrics = products.map((p, idx) => {
     const m = extractInventoryProductMetrics(p, idx);
     sumQty += m.quantity;
     sumCost += m.costValue;
     sumRetail += m.retailValue;
-    sumProfit += m.potentialProfit;
     return m;
   });
 
@@ -626,7 +602,7 @@ export async function downloadInventoryStockPdf(
   const { headers, bodyRows, columnStyles } = buildDynamicPdfPayload(
     metrics,
     columns,
-    { sumQty, sumCost, sumRetail, sumProfit },
+    { sumQty, sumCost, sumRetail },
     "TOTAL INVENTORY VALUATION",
     { visibleColumns }
   );

@@ -51,7 +51,6 @@ const AVAILABLE_COLUMNS: ColumnItem[] = [
   { key: "stock", label: "Stock" },
   { key: "buyPrice", label: "Buy Price" },
   { key: "sellPrice", label: "Sell Price" },
-  { key: "margin", label: "Margin %" },
   { key: "costValue", label: "Cost Value" },
   { key: "retailValue", label: "Retail Value" },
   { key: "status", label: "Status" },
@@ -377,11 +376,6 @@ export const InventoryStockReportTable: React.FC<
                   Sell Price
                 </TableTh>
               )}
-              {isColVisible("margin") && (
-                <TableTh align="right" className="whitespace-nowrap">
-                  Margin
-                </TableTh>
-              )}
               {isColVisible("costValue") && (
                 <TableTh align="right" className="whitespace-nowrap">
                   <span
@@ -538,20 +532,6 @@ export const InventoryStockReportTable: React.FC<
                     {isColVisible("sellPrice") && (
                       <td className="py-2.5 px-3 text-right text-xs text-[var(--ui-text)] whitespace-nowrap tabular-nums">
                         ৳ {formatMoney(m.sellPrice)}
-                      </td>
-                    )}
-
-                    {isColVisible("margin") && (
-                      <td className="py-2.5 px-3 text-right text-xs whitespace-nowrap tabular-nums">
-                        <span
-                          className={`font-semibold ${
-                            m.marginPct >= 0
-                              ? "text-[var(--ui-success)]"
-                              : "text-[var(--ui-danger)]"
-                          }`}
-                        >
-                          {m.marginPct.toFixed(1)}%
-                        </span>
                       </td>
                     )}
 
