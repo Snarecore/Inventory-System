@@ -6,6 +6,11 @@ import {
   argbToRgbTuple,
 } from "@/utils/excel-export";
 import {
+  buildDynamicExcelPayload,
+  buildDynamicPdfPayload,
+  type ExportColumnDef,
+} from "@/utils/report-export-columns";
+import {
   DIFFERENCE_REASONS,
   type CashClosingData,
   type CashClosingReportSummary,
@@ -15,7 +20,6 @@ import {
   REPORT_RGB,
   generateAndDownloadCorporatePdf,
 } from "@/utils/trade-report-helpers";
-import type { RowInput } from "jspdf-autotable";
 
 export type CashClosingReportTab = "history" | "audit";
 
@@ -251,13 +255,186 @@ function getCashClosingExportSuffix(options?: {
   return moment().format("YYYY-MM-DD");
 }
 
+function formatVarianceStr(amount: number): string {
+  if (amount > 0) return `+${formatMoney(amount)}`;
+  if (amount < 0) return `-${formatMoney(Math.abs(amount))}`;
+  return "0";
+}
+
+function buildCashClosingHistoryColumns(includeRemarksFallback: boolean): ExportColumnDef<
+  NormalizedCashClosingMetrics,
+  { sumDeposit: number; sumExpense: number; sumDiff: number }
+>[] {
+  return [
+    {
+      key: "sl",
+      excelHeader: "SL",
+      isLeadingLabel: true,
+      pdfStyle: { halign: "center", cellWidth: 10 },
+      excelValue: (_, idx) => idx + 1,
+      pdfCell: (_, idx) => idx + 1,
+    },
+    {
+      key: "date",
+      excelHeader: "Closing Date",
+      isLeadingLabel: true,
+      pdfStyle: { halign: "center" },
+      excelValue: (m) =>
+        m.closingDate
+          ? moment(m.closingDate).format("DD-MMM-YYYY").toUpperCase()
+          : "-",
+      pdfCell: (m) => ({
+        content: m.closingDate
+          ? moment(m.closingDate).format("DD-MMM-YYYY").toUpperCase()
+          : "-",
+        styles: { fontStyle: "bold" },
+      }),
+    },
+    {
+      key: "openingCash",
+      excelHeader: "Opening Cash (৳)",
+      pdfHeader: "Opening (BDT)",
+      pdfStyle: { halign: "right" },
+      excelValue: (m) => m.openingCash,
+      pdfCell: (m) => formatMoney(m.openingCash),
+    },
+    {
+      key: "deposit",
+      excelHeader: "Deposit (৳)",
+      pdfHeader: "Deposit (BDT)",
+      pdfStyle: { halign: "right" },
+      excelValue: (m) => m.todayDeposit,
+      excelTotalValue: (t) => Number(t.sumDeposit.toFixed(2)),
+      pdfCell: (m) => ({
+        content: formatMoney(m.todayDeposit),
+        styles: { fontStyle: "bold", textColor: REPORT_RGB.emerald },
+      }),
+      pdfSummaryCell: (t) => ({
+        content: formatMoney(t.sumDeposit),
+        styles: { textColor: REPORT_RGB.emerald },
+      }),
+    },
+    {
+      key: "expense",
+      excelHeader: "Expense (৳)",
+      pdfHeader: "Expense (BDT)",
+      pdfStyle: { halign: "right" },
+      excelValue: (m) => m.todayExpense,
+      excelTotalValue: (t) => Number(t.sumExpense.toFixed(2)),
+      pdfCell: (m) => ({
+        content: formatMoney(m.todayExpense),
+        styles: { fontStyle: "bold", textColor: REPORT_RGB.rose },
+      }),
+      pdfSummaryCell: (t) => ({
+        content: formatMoney(t.sumExpense),
+        styles: { textColor: REPORT_RGB.rose },
+      }),
+    },
+    {
+      key: "expected",
+      excelHeader: "Expected Cash (৳)",
+      pdfHeader: "Expected (BDT)",
+      pdfStyle: { halign: "right" },
+      excelValue: (m) => m.expectedCash,
+      pdfCell: (m) => ({
+        content: formatMoney(m.expectedCash),
+        styles: { fontStyle: "bold" },
+      }),
+    },
+    {
+      key: "counted",
+      excelHeader: "Counted Cash (৳)",
+      pdfHeader: "Counted (BDT)",
+      pdfStyle: { halign: "right" },
+      excelValue: (m) => m.countedCash,
+      pdfCell: (m) => ({
+        content: formatMoney(m.countedCash),
+        styles: { fontStyle: "bold" },
+      }),
+    },
+    {
+      key: "variance",
+      excelHeader: "Variance (৳)",
+      pdfHeader: "Variance (BDT)",
+      pdfStyle: { halign: "right" },
+      excelValue: (m) => m.differenceAmount,
+      excelTotalValue: (t) => Number(t.sumDiff.toFixed(2)),
+      pdfCell: (m) => {
+        const varColor = m.isMatched
+          ? REPORT_RGB.emerald
+          : m.differenceAmount < 0
+          ? REPORT_RGB.rose
+          : REPORT_RGB.amber;
+        return {
+          content: formatVarianceStr(m.differenceAmount),
+          styles: { fontStyle: "bold", textColor: varColor },
+        };
+      },
+      pdfSummaryCell: (t) => {
+        const summaryDiffColor =
+          t.sumDiff === 0
+            ? REPORT_RGB.emerald
+            : t.sumDiff < 0
+            ? REPORT_RGB.rose
+            : REPORT_RGB.amber;
+        return {
+          content: formatVarianceStr(t.sumDiff),
+          styles: { textColor: summaryDiffColor },
+        };
+      },
+    },
+    {
+      key: "reason",
+      excelHeader: "Reason",
+      pdfStyle: { halign: "left" },
+      excelValue: (m) => m.reasonLabel,
+      pdfCell: (m) => m.reasonLabel,
+    },
+    {
+      key: "closedBy",
+      excelHeader: "Closed By",
+      pdfStyle: { halign: "left" },
+      excelValue: (m) => m.closedBy || "-",
+      pdfCell: (m) => m.closedBy || "-",
+    },
+    {
+      key: "status",
+      excelHeader: "Status",
+      pdfStyle: { halign: "center" },
+      excelValue: (m) => m.status.toUpperCase(),
+      pdfCell: (m) => ({
+        content: m.status.toUpperCase(),
+        styles: {
+          fontStyle: "bold",
+          textColor: m.isClosed ? REPORT_RGB.emerald : REPORT_RGB.amber,
+        },
+      }),
+    },
+    ...(includeRemarksFallback
+      ? [
+          {
+            key: "remarks",
+            excelHeader: "Remarks",
+            pdfStyle: { halign: "left" as const },
+            excelValue: (m: NormalizedCashClosingMetrics) => m.remarks || "-",
+            pdfCell: (m: NormalizedCashClosingMetrics) => m.remarks || "-",
+          },
+        ]
+      : []),
+  ];
+}
+
 /**
  * Corporate Excel export for Daily Cash Closing History / Reconciliation Report
  */
 export async function exportCashClosingReportExcel(
   records: CashClosingData[],
   meta: ReportCompanyMeta,
-  options?: { selectedMonth?: string; selectedYear?: string }
+  options?: {
+    selectedMonth?: string;
+    selectedYear?: string;
+    visibleColumns?: Record<string, boolean>;
+  }
 ): Promise<number> {
   if (!records || records.length === 0) {
     throw new Error("No cash closing history records available to export");
@@ -267,42 +444,22 @@ export async function exportCashClosingReportExcel(
   let sumExpense = 0;
   let sumDiff = 0;
 
-  const rows = records.map((item, idx) => {
+  const metrics = records.map((item) => {
     const m = extractCashClosingMetrics(item);
     sumDeposit += m.todayDeposit;
     sumExpense += m.todayExpense;
     sumDiff += m.differenceAmount;
-
-    return {
-      SL: idx + 1,
-      "Closing Date": m.closingDate
-        ? moment(m.closingDate).format("DD-MMM-YYYY").toUpperCase()
-        : "-",
-      "Opening Cash (৳)": m.openingCash,
-      "Deposit (৳)": m.todayDeposit,
-      "Expense (৳)": m.todayExpense,
-      "Expected Cash (৳)": m.expectedCash,
-      "Counted Cash (৳)": m.countedCash,
-      "Variance (৳)": m.differenceAmount,
-      Reason: m.reasonLabel,
-      Status: m.status.toUpperCase(),
-      Remarks: m.remarks || "-",
-    };
+    return m;
   });
 
-  const totalRow = {
-    SL: `TOTAL SUMMARY (${records.length} Days)`,
-    "Closing Date": "",
-    "Opening Cash (৳)": "",
-    "Deposit (৳)": Number(sumDeposit.toFixed(2)),
-    "Expense (৳)": Number(sumExpense.toFixed(2)),
-    "Expected Cash (৳)": "",
-    "Counted Cash (৳)": "",
-    "Variance (৳)": Number(sumDiff.toFixed(2)),
-    Reason: "",
-    Status: "",
-    Remarks: "",
-  };
+  const columns = buildCashClosingHistoryColumns(!options?.visibleColumns);
+  const { rows, totalRow, totalSummarySpan } = buildDynamicExcelPayload(
+    metrics,
+    columns,
+    { sumDeposit, sumExpense, sumDiff },
+    `TOTAL SUMMARY (${records.length} Days)`,
+    options?.visibleColumns
+  );
 
   await buildAndDownloadExcel(rows, totalRow, {
     ...meta,
@@ -310,7 +467,7 @@ export async function exportCashClosingReportExcel(
     sheetName: "Cash Closing Report",
     reportTitle: "Cash Closing Report",
     totalLabel: "Total Closings",
-    totalSummarySpan: 2,
+    totalSummarySpan,
     includeSignatures: true,
   });
 
@@ -323,7 +480,11 @@ export async function exportCashClosingReportExcel(
 export async function downloadCashClosingReportPdf(
   records: CashClosingData[],
   meta: ReportCompanyMeta,
-  options?: { selectedMonth?: string; selectedYear?: string }
+  options?: {
+    selectedMonth?: string;
+    selectedYear?: string;
+    visibleColumns?: Record<string, boolean>;
+  }
 ): Promise<void> {
   if (!records || records.length === 0) {
     throw new Error("No cash closing records available to download PDF");
@@ -336,170 +497,155 @@ export async function downloadCashClosingReportPdf(
   let matched = 0;
   let mismatched = 0;
 
-  const dataRows: RowInput[] = records.map((item, idx) => {
+  const metrics = records.map((item) => {
     const m = extractCashClosingMetrics(item);
     sumDeposit += m.todayDeposit;
     sumExpense += m.todayExpense;
     sumDiff += m.differenceAmount;
     if (m.isMatched) matched += 1;
     else mismatched += 1;
-
-    const varColor = m.isMatched
-      ? REPORT_RGB.emerald
-      : m.differenceAmount < 0
-      ? REPORT_RGB.rose
-      : REPORT_RGB.amber;
-
-    const varianceStr =
-      m.differenceAmount > 0
-        ? `+${formatMoney(m.differenceAmount)}`
-        : m.differenceAmount < 0
-        ? `-${formatMoney(Math.abs(m.differenceAmount))}`
-        : "0";
-
-    return [
-      idx + 1,
-      {
-        content: m.closingDate
-          ? moment(m.closingDate).format("DD-MMM-YYYY").toUpperCase()
-          : "-",
-        styles: { fontStyle: "bold" },
-      },
-      formatMoney(m.openingCash),
-      {
-        content: formatMoney(m.todayDeposit),
-        styles: { fontStyle: "bold", textColor: REPORT_RGB.emerald },
-      },
-      {
-        content: formatMoney(m.todayExpense),
-        styles: { fontStyle: "bold", textColor: REPORT_RGB.rose },
-      },
-      {
-        content: formatMoney(m.expectedCash),
-        styles: { fontStyle: "bold" },
-      },
-      {
-        content: formatMoney(m.countedCash),
-        styles: { fontStyle: "bold" },
-      },
-      {
-        content: varianceStr,
-        styles: { fontStyle: "bold", textColor: varColor },
-      },
-      m.reasonLabel,
-      {
-        content: m.status.toUpperCase(),
-        styles: {
-          fontStyle: "bold",
-          textColor: m.isClosed ? REPORT_RGB.emerald : REPORT_RGB.amber,
-        },
-      },
-      m.remarks || "-",
-    ];
+    return m;
   });
 
-  const summaryDiffColor =
-    sumDiff === 0
-      ? REPORT_RGB.emerald
-      : sumDiff < 0
-      ? REPORT_RGB.rose
-      : REPORT_RGB.amber;
-
-  const sumDiffStr =
-    sumDiff > 0
-      ? `+${formatMoney(sumDiff)}`
-      : sumDiff < 0
-      ? `-${formatMoney(Math.abs(sumDiff))}`
-      : "0";
-
-  const summaryRow: RowInput = [
+  const columns = buildCashClosingHistoryColumns(!options?.visibleColumns);
+  const { headers, bodyRows, columnStyles } = buildDynamicPdfPayload(
+    metrics,
+    columns,
+    { sumDeposit, sumExpense, sumDiff },
+    `TOTAL SUMMARY (${records.length} Closings)`,
     {
-      content: `TOTAL SUMMARY (${records.length} Closings)`,
-      colSpan: 3,
-      styles: {
-        halign: "center",
-        fontStyle: "bold",
-        fillColor: REPORT_RGB.summaryFill,
-        textColor: REPORT_RGB.dark,
-      },
-    },
-    {
-      content: formatMoney(sumDeposit),
-      styles: {
-        halign: "right",
-        fontStyle: "bold",
-        fillColor: REPORT_RGB.summaryFill,
-        textColor: REPORT_RGB.emerald,
-      },
-    },
-    {
-      content: formatMoney(sumExpense),
-      styles: {
-        halign: "right",
-        fontStyle: "bold",
-        fillColor: REPORT_RGB.summaryFill,
-        textColor: REPORT_RGB.rose,
-      },
-    },
-    {
-      content: "",
-      colSpan: 2,
-      styles: { fillColor: REPORT_RGB.summaryFill },
-    },
-    {
-      content: sumDiffStr,
-      styles: {
-        halign: "right",
-        fontStyle: "bold",
-        fillColor: REPORT_RGB.summaryFill,
-        textColor: summaryDiffColor,
-      },
-    },
-    {
-      content: `Matched: ${matched} | Mismatch: ${mismatched}`,
-      colSpan: 3,
-      styles: {
-        halign: "center",
-        fontStyle: "bold",
-        fillColor: REPORT_RGB.summaryFill,
-        textColor: themeRgb,
-      },
-    },
-  ];
+      visibleColumns: options?.visibleColumns,
+      trailingSummaryLabel: `Matched: ${matched} | Mismatch: ${mismatched}`,
+      trailingSummaryColor: themeRgb,
+    }
+  );
 
   await generateAndDownloadCorporatePdf({
     fileName: `Cash_Closing_Report_${getCashClosingExportSuffix(options)}.pdf`,
     reportTitle: "Cash Closing Report",
     metaRightLabel: `Closings: ${records.length} (Matched: ${matched})`,
-    headers: [
-      "SL",
-      "Closing Date",
-      "Opening (BDT)",
-      "Deposit (BDT)",
-      "Expense (BDT)",
-      "Expected (BDT)",
-      "Counted (BDT)",
-      "Variance (BDT)",
-      "Reason",
-      "Status",
-      "Remarks",
-    ],
-    bodyRows: [...dataRows, summaryRow],
-    columnStyles: {
-      "0": { halign: "center", cellWidth: 10 },
-      "1": { halign: "center" },
-      "2": { halign: "right" },
-      "3": { halign: "right" },
-      "4": { halign: "right" },
-      "5": { halign: "right" },
-      "6": { halign: "right" },
-      "7": { halign: "right" },
-      "8": { halign: "left" },
-      "9": { halign: "center" },
-      "10": { halign: "left" },
-    },
+    headers,
+    bodyRows,
+    columnStyles,
     meta,
   });
+}
+
+function buildCashClosingAuditColumns(includeStatusFallback: boolean): ExportColumnDef<
+  NormalizedCashClosingMetrics,
+  { sumDiff: number }
+>[] {
+  return [
+    {
+      key: "sl",
+      excelHeader: "SL",
+      isLeadingLabel: true,
+      pdfStyle: { halign: "center", cellWidth: 10 },
+      excelValue: (_, idx) => idx + 1,
+      pdfCell: (_, idx) => idx + 1,
+    },
+    {
+      key: "date",
+      excelHeader: "Closing Date",
+      isLeadingLabel: true,
+      pdfStyle: { halign: "center" },
+      excelValue: (m) =>
+        m.closingDate
+          ? moment(m.closingDate).format("DD-MMM-YYYY").toUpperCase()
+          : "-",
+      pdfCell: (m) => ({
+        content: m.closingDate
+          ? moment(m.closingDate).format("DD-MMM-YYYY").toUpperCase()
+          : "-",
+        styles: { fontStyle: "bold" },
+      }),
+    },
+    {
+      key: "type",
+      excelHeader: "Variance Type",
+      pdfHeader: "Type",
+      isLeadingLabel: true,
+      pdfStyle: { halign: "center" },
+      excelValue: (m) => m.varianceType,
+      pdfCell: (m) => {
+        const varColor =
+          m.differenceAmount < 0 ? REPORT_RGB.rose : REPORT_RGB.amber;
+        return {
+          content: m.varianceType,
+          styles: { fontStyle: "bold", textColor: varColor },
+        };
+      },
+    },
+    {
+      key: "reason",
+      excelHeader: "Reason",
+      isLeadingLabel: true,
+      pdfStyle: { halign: "left" },
+      excelValue: (m) => m.reasonLabel,
+      pdfCell: (m) => m.reasonLabel,
+    },
+    {
+      key: "expected",
+      excelHeader: "Expected Cash (৳)",
+      pdfHeader: "Expected (BDT)",
+      pdfStyle: { halign: "right" },
+      excelValue: (m) => m.expectedCash,
+      pdfCell: (m) => formatMoney(m.expectedCash),
+    },
+    {
+      key: "counted",
+      excelHeader: "Counted Cash (৳)",
+      pdfHeader: "Counted (BDT)",
+      pdfStyle: { halign: "right" },
+      excelValue: (m) => m.countedCash,
+      pdfCell: (m) => formatMoney(m.countedCash),
+    },
+    {
+      key: "variance",
+      excelHeader: "Variance (৳)",
+      pdfHeader: "Variance (BDT)",
+      pdfStyle: { halign: "right" },
+      excelValue: (m) => m.differenceAmount,
+      excelTotalValue: (t) => Number(t.sumDiff.toFixed(2)),
+      pdfCell: (m) => {
+        const varColor =
+          m.differenceAmount < 0 ? REPORT_RGB.rose : REPORT_RGB.amber;
+        return {
+          content: formatVarianceStr(m.differenceAmount),
+          styles: { fontStyle: "bold", textColor: varColor },
+        };
+      },
+      pdfSummaryCell: (t) => ({
+        content: formatVarianceStr(t.sumDiff),
+        styles: { textColor: t.sumDiff < 0 ? REPORT_RGB.rose : REPORT_RGB.amber },
+      }),
+    },
+    {
+      key: "closedBy",
+      excelHeader: "Closed By",
+      pdfStyle: { halign: "left" },
+      excelValue: (m) => m.closedBy || "-",
+      pdfCell: (m) => m.closedBy || "-",
+    },
+    ...(includeStatusFallback
+      ? [
+          {
+            key: "status",
+            excelHeader: "Status",
+            pdfStyle: { halign: "center" as const },
+            excelValue: (m: NormalizedCashClosingMetrics) => m.status.toUpperCase(),
+            pdfCell: (m: NormalizedCashClosingMetrics) => m.status.toUpperCase(),
+          },
+        ]
+      : []),
+    {
+      key: "remarks",
+      excelHeader: "Remarks",
+      pdfStyle: { halign: "left" },
+      excelValue: (m) => m.remarks || "-",
+      pdfCell: (m) => m.remarks || "-",
+    },
+  ];
 }
 
 /**
@@ -508,46 +654,31 @@ export async function downloadCashClosingReportPdf(
 export async function exportCashClosingAuditExcel(
   records: CashClosingData[],
   meta: ReportCompanyMeta,
-  options?: { selectedMonth?: string; selectedYear?: string }
+  options?: {
+    selectedMonth?: string;
+    selectedYear?: string;
+    visibleColumns?: Record<string, boolean>;
+  }
 ): Promise<number> {
   if (!records || records.length === 0) {
     throw new Error("No variance records available to export");
   }
 
   let sumDiff = 0;
-
-  const rows = records.map((item, idx) => {
+  const metrics = records.map((item) => {
     const m = extractCashClosingMetrics(item);
     sumDiff += m.differenceAmount;
-
-    return {
-      SL: idx + 1,
-      "Closing Date": m.closingDate
-        ? moment(m.closingDate).format("DD-MMM-YYYY").toUpperCase()
-        : "-",
-      "Variance Type": m.varianceType,
-      "Reason": m.reasonLabel,
-      "Expected Cash (৳)": m.expectedCash,
-      "Counted Cash (৳)": m.countedCash,
-      "Variance (৳)": m.differenceAmount,
-      "Closed By": m.closedBy || "-",
-      Status: m.status.toUpperCase(),
-      Remarks: m.remarks || "-",
-    };
+    return m;
   });
 
-  const totalRow = {
-    SL: `TOTAL AUDIT (${records.length} Discrepancies)`,
-    "Closing Date": "",
-    "Variance Type": "",
-    Reason: "",
-    "Expected Cash (৳)": "",
-    "Counted Cash (৳)": "",
-    "Variance (৳)": Number(sumDiff.toFixed(2)),
-    "Closed By": "",
-    Status: "",
-    Remarks: "",
-  };
+  const columns = buildCashClosingAuditColumns(!options?.visibleColumns);
+  const { rows, totalRow, totalSummarySpan } = buildDynamicExcelPayload(
+    metrics,
+    columns,
+    { sumDiff },
+    `TOTAL AUDIT (${records.length} Discrepancies)`,
+    options?.visibleColumns
+  );
 
   await buildAndDownloadExcel(rows, totalRow, {
     ...meta,
@@ -555,7 +686,7 @@ export async function exportCashClosingAuditExcel(
     sheetName: "Variance Audit",
     reportTitle: "Cash Closing Variance Audit Report",
     totalLabel: "Total Discrepancies",
-    totalSummarySpan: 4,
+    totalSummarySpan,
     includeSignatures: true,
   });
 
@@ -568,7 +699,11 @@ export async function exportCashClosingAuditExcel(
 export async function downloadCashClosingAuditPdf(
   records: CashClosingData[],
   meta: ReportCompanyMeta,
-  options?: { selectedMonth?: string; selectedYear?: string }
+  options?: {
+    selectedMonth?: string;
+    selectedYear?: string;
+    visibleColumns?: Record<string, boolean>;
+  }
 ): Promise<void> {
   if (!records || records.length === 0) {
     throw new Error("No variance records available to download PDF");
@@ -578,112 +713,34 @@ export async function downloadCashClosingAuditPdf(
   let shortageCount = 0;
   let surplusCount = 0;
 
-  const dataRows: RowInput[] = records.map((item, idx) => {
+  const metrics = records.map((item) => {
     const m = extractCashClosingMetrics(item);
     sumDiff += m.differenceAmount;
     if (m.differenceAmount < 0) shortageCount += 1;
     else surplusCount += 1;
-
-    const varColor =
-      m.differenceAmount < 0 ? REPORT_RGB.rose : REPORT_RGB.amber;
-    const varStr =
-      m.differenceAmount > 0
-        ? `+${formatMoney(m.differenceAmount)}`
-        : `-${formatMoney(Math.abs(m.differenceAmount))}`;
-
-    return [
-      idx + 1,
-      {
-        content: m.closingDate
-          ? moment(m.closingDate).format("DD-MMM-YYYY").toUpperCase()
-          : "-",
-        styles: { fontStyle: "bold" },
-      },
-      {
-        content: m.varianceType,
-        styles: { fontStyle: "bold", textColor: varColor },
-      },
-      m.reasonLabel,
-      formatMoney(m.expectedCash),
-      formatMoney(m.countedCash),
-      {
-        content: varStr,
-        styles: { fontStyle: "bold", textColor: varColor },
-      },
-      m.closedBy || "-",
-      m.status.toUpperCase(),
-      m.remarks || "-",
-    ];
+    return m;
   });
 
-  const sumStr =
-    sumDiff > 0
-      ? `+${formatMoney(sumDiff)}`
-      : sumDiff < 0
-      ? `-${formatMoney(Math.abs(sumDiff))}`
-      : "0";
-
-  const summaryRow: RowInput = [
+  const columns = buildCashClosingAuditColumns(!options?.visibleColumns);
+  const { headers, bodyRows, columnStyles } = buildDynamicPdfPayload(
+    metrics,
+    columns,
+    { sumDiff },
+    `TOTAL AUDIT (${records.length} Discrepancies)`,
     {
-      content: `TOTAL AUDIT (${records.length} Discrepancies)`,
-      colSpan: 6,
-      styles: {
-        halign: "center",
-        fontStyle: "bold",
-        fillColor: REPORT_RGB.summaryFill,
-        textColor: REPORT_RGB.dark,
-      },
-    },
-    {
-      content: sumStr,
-      styles: {
-        halign: "right",
-        fontStyle: "bold",
-        fillColor: REPORT_RGB.summaryFill,
-        textColor: sumDiff < 0 ? REPORT_RGB.rose : REPORT_RGB.amber,
-      },
-    },
-    {
-      content: `Shortage: ${shortageCount} | Surplus: ${surplusCount}`,
-      colSpan: 3,
-      styles: {
-        halign: "center",
-        fontStyle: "bold",
-        fillColor: REPORT_RGB.summaryFill,
-        textColor: REPORT_RGB.dark,
-      },
-    },
-  ];
+      visibleColumns: options?.visibleColumns,
+      trailingSummaryLabel: `Shortage: ${shortageCount} | Surplus: ${surplusCount}`,
+      trailingSummaryColor: REPORT_RGB.dark,
+    }
+  );
 
   await generateAndDownloadCorporatePdf({
     fileName: `Cash_Variance_Audit_${getCashClosingExportSuffix(options)}.pdf`,
     reportTitle: "Cash Closing Variance Audit Report",
     metaRightLabel: `Total Discrepancies: ${records.length}`,
-    headers: [
-      "SL",
-      "Closing Date",
-      "Type",
-      "Reason",
-      "Expected (BDT)",
-      "Counted (BDT)",
-      "Variance (BDT)",
-      "Closed By",
-      "Status",
-      "Remarks",
-    ],
-    bodyRows: [...dataRows, summaryRow],
-    columnStyles: {
-      "0": { halign: "center", cellWidth: 10 },
-      "1": { halign: "center" },
-      "2": { halign: "center" },
-      "3": { halign: "left" },
-      "4": { halign: "right" },
-      "5": { halign: "right" },
-      "6": { halign: "right" },
-      "7": { halign: "left" },
-      "8": { halign: "center" },
-      "9": { halign: "left" },
-    },
+    headers,
+    bodyRows,
+    columnStyles,
     meta,
   });
 }

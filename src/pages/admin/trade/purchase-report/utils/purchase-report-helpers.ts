@@ -2,6 +2,10 @@ import moment from "moment";
 import { buildAndDownloadExcel, formatReportDate } from "@/utils/excel-export";
 import type { PurchaseItem } from "@/types";
 import {
+  buildDynamicExcelPayload,
+  type ExportColumnDef,
+} from "@/utils/report-export-columns";
+import {
   type ReportCompanyMeta,
   type ProductTradeSummary,
   type PartyTradeSummary,
@@ -62,7 +66,8 @@ const SUPPLIER_EXPORT_LABELS: PartyExportLabels = {
  */
 export async function exportFilteredPurchasesExcel(
   purchases: PurchaseItem[],
-  meta: ReportCompanyMeta
+  meta: ReportCompanyMeta,
+  visibleColumns?: Record<string, boolean>
 ): Promise<number> {
   if (!purchases || purchases.length === 0) {
     throw new Error("No purchase records available to export");
@@ -77,7 +82,7 @@ export async function exportFilteredPurchasesExcel(
   let sumDue = 0;
   let sumItems = 0;
 
-  const rows = purchases.map((item: any, idx: number) => {
+  const normalizedRows = purchases.map((item: any, idx: number) => {
     const m = extractPurchaseReportMetrics(item, idx);
     sumSubtotal += m.subtotal;
     sumDiscount += m.discount;
@@ -87,43 +92,46 @@ export async function exportFilteredPurchasesExcel(
     sumPaid += m.paid;
     sumDue += m.due;
     sumItems += m.itemsCount;
-
-    return {
-      SL: idx + 1,
-      "Order ID": m.orderNo,
-      Date: m.tradeDate ? formatReportDate(m.tradeDate) : "-",
-      "Supplier Name": m.partyName,
-      Phone: m.partyPhone || "-",
-      Items: m.itemsCount,
-      "Subtotal (৳)": m.subtotal,
-      "Discount (৳)": m.discount,
-      "VAT (৳)": m.vat,
-      "Transport (৳)": m.transportCost,
-      "Grand Total (৳)": m.grandTotal,
-      "Paid (৳)": m.paid,
-      "Due (৳)": m.due,
-      Method: m.paymentType,
-      Status: m.status,
-    };
+    return m;
   });
 
-  const totalRow = {
-    SL: `TOTAL SUMMARY (${purchases.length} Invoices)`,
-    "Order ID": "",
-    Date: "",
-    "Supplier Name": "",
-    Phone: "",
-    Items: sumItems,
-    "Subtotal (৳)": Number(sumSubtotal.toFixed(2)),
-    "Discount (৳)": Number(sumDiscount.toFixed(2)),
-    "VAT (৳)": Number(sumVat.toFixed(2)),
-    "Transport (৳)": Number(sumTransport.toFixed(2)),
-    "Grand Total (৳)": Number(sumGrandTotal.toFixed(2)),
-    "Paid (৳)": Number(sumPaid.toFixed(2)),
-    "Due (৳)": Number(sumDue.toFixed(2)),
-    Method: "",
-    Status: "",
+  const totals = {
+    sumItems,
+    sumSubtotal: Number(sumSubtotal.toFixed(2)),
+    sumDiscount: Number(sumDiscount.toFixed(2)),
+    sumVat: Number(sumVat.toFixed(2)),
+    sumTransport: Number(sumTransport.toFixed(2)),
+    sumGrandTotal: Number(sumGrandTotal.toFixed(2)),
+    sumPaid: Number(sumPaid.toFixed(2)),
+    sumDue: Number(sumDue.toFixed(2)),
   };
+
+  type PurchaseRow = (typeof normalizedRows)[number];
+  const columns: ExportColumnDef<PurchaseRow, typeof totals>[] = [
+    { key: "sl", excelHeader: "SL", isLeadingLabel: true, excelValue: (_, idx) => idx + 1 },
+    { key: "orderId", excelHeader: "Order ID", isLeadingLabel: true, excelValue: (m) => m.orderNo },
+    { key: "date", excelHeader: "Date", isLeadingLabel: true, excelValue: (m) => (m.tradeDate ? formatReportDate(m.tradeDate) : "-") },
+    { key: "supplier", excelHeader: "Supplier Name", isLeadingLabel: true, excelValue: (m) => m.partyName },
+    { key: "phone", excelHeader: "Phone", isLeadingLabel: true, excelValue: (m) => m.partyPhone || "-" },
+    { key: "items", excelHeader: "Items", excelValue: (m) => m.itemsCount, excelTotalValue: (t) => t.sumItems },
+    { key: "subtotal", excelHeader: "Subtotal (৳)", excelValue: (m) => m.subtotal, excelTotalValue: (t) => t.sumSubtotal },
+    { key: "discount", excelHeader: "Discount (৳)", excelValue: (m) => m.discount, excelTotalValue: (t) => t.sumDiscount },
+    { key: "vat", excelHeader: "VAT (৳)", excelValue: (m) => m.vat, excelTotalValue: (t) => t.sumVat },
+    { key: "transport", excelHeader: "Transport (৳)", excelValue: (m) => m.transportCost, excelTotalValue: (t) => t.sumTransport },
+    { key: "total", excelHeader: "Grand Total (৳)", excelValue: (m) => m.grandTotal, excelTotalValue: (t) => t.sumGrandTotal },
+    { key: "paid", excelHeader: "Paid (৳)", excelValue: (m) => m.paid, excelTotalValue: (t) => t.sumPaid },
+    { key: "due", excelHeader: "Due (৳)", excelValue: (m) => m.due, excelTotalValue: (t) => t.sumDue },
+    { key: "method", excelHeader: "Method", excelValue: (m) => m.paymentType },
+    { key: "status", excelHeader: "Status", excelValue: (m) => m.status },
+  ];
+
+  const { rows, totalRow, totalSummarySpan } = buildDynamicExcelPayload(
+    normalizedRows,
+    columns,
+    totals,
+    `TOTAL SUMMARY (${purchases.length} Invoices)`,
+    visibleColumns
+  );
 
   await buildAndDownloadExcel(rows, totalRow, {
     ...meta,
@@ -131,7 +139,7 @@ export async function exportFilteredPurchasesExcel(
     sheetName: "Purchase Report",
     reportTitle: "Purchase Report",
     totalLabel: "Total Invoices",
-    totalSummarySpan: 5,
+    totalSummarySpan,
     includeSignatures: true,
   });
 
@@ -140,7 +148,8 @@ export async function exportFilteredPurchasesExcel(
 
 export async function downloadFilteredPurchasesPdf(
   purchases: PurchaseItem[],
-  meta: ReportCompanyMeta
+  meta: ReportCompanyMeta,
+  visibleColumns?: Record<string, boolean>
 ): Promise<void> {
   await downloadTradeInvoicesPdf(purchases, meta, {
     domain: "purchase",
@@ -149,25 +158,54 @@ export async function downloadFilteredPurchasesPdf(
     partyColumnHeader: "Supplier Name",
     includeTransport: true,
     emptyErrorMessage: "No purchase records available to download PDF",
+    visibleColumns,
   });
 }
 
 export const exportFilteredPurchaseProductsExcel = (
   products: ProductTradeSummary[],
-  meta: ReportCompanyMeta
-) => exportProductTradeExcel(products, meta, PRODUCT_PURCHASE_EXPORT_LABELS);
+  meta: ReportCompanyMeta,
+  visibleColumns?: Record<string, boolean>
+) =>
+  exportProductTradeExcel(
+    products,
+    meta,
+    PRODUCT_PURCHASE_EXPORT_LABELS,
+    visibleColumns
+  );
 
 export const downloadFilteredPurchaseProductsPdf = (
   products: ProductTradeSummary[],
-  meta: ReportCompanyMeta
-) => downloadProductTradePdf(products, meta, PRODUCT_PURCHASE_EXPORT_LABELS);
+  meta: ReportCompanyMeta,
+  visibleColumns?: Record<string, boolean>
+) =>
+  downloadProductTradePdf(
+    products,
+    meta,
+    PRODUCT_PURCHASE_EXPORT_LABELS,
+    visibleColumns
+  );
 
 export const exportFilteredSuppliersExcel = (
   suppliers: PartyTradeSummary[],
-  meta: ReportCompanyMeta
-) => exportPartyTradeExcel(suppliers, meta, SUPPLIER_EXPORT_LABELS);
+  meta: ReportCompanyMeta,
+  visibleColumns?: Record<string, boolean>
+) =>
+  exportPartyTradeExcel(
+    suppliers,
+    meta,
+    SUPPLIER_EXPORT_LABELS,
+    visibleColumns
+  );
 
 export const downloadFilteredSuppliersPdf = (
   suppliers: PartyTradeSummary[],
-  meta: ReportCompanyMeta
-) => downloadPartyTradePdf(suppliers, meta, SUPPLIER_EXPORT_LABELS);
+  meta: ReportCompanyMeta,
+  visibleColumns?: Record<string, boolean>
+) =>
+  downloadPartyTradePdf(
+    suppliers,
+    meta,
+    SUPPLIER_EXPORT_LABELS,
+    visibleColumns
+  );

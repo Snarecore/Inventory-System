@@ -15,6 +15,10 @@ import {
 } from "@/components/common";
 import { formatMoney } from "@/utils/formatters";
 import { useDebounce } from "@/hooks/useDebounce";
+import { useColumnVisibility } from "@/hooks/useColumnVisibility";
+import ColumnVisibilityDropdown, {
+  type ColumnItem,
+} from "@/components/table-components/ColumnVisibilityDropdown";
 import ReportExportButtons from "./ReportExportButtons";
 import ReportDateRangeControl from "./ReportDateRangeControl";
 import {
@@ -34,11 +38,13 @@ interface ProductTradeReportTableProps extends ReportDateFilterProps {
   isLoading?: boolean;
   onExportExcel: (
     products: ProductTradeSummary[],
-    meta: ReportCompanyMeta
+    meta: ReportCompanyMeta,
+    visibleColumns?: Record<string, boolean>
   ) => Promise<number>;
   onDownloadPdf: (
     products: ProductTradeSummary[],
-    meta: ReportCompanyMeta
+    meta: ReportCompanyMeta,
+    visibleColumns?: Record<string, boolean>
   ) => Promise<void>;
   excelSuccessText: (count: number) => string;
   pdfSuccessText: string;
@@ -100,6 +106,27 @@ export const ProductTradeReportTable: React.FC<ProductTradeReportTableProps> = (
   const [sortBy, setSortBy] = useState<string>("revenue_desc");
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
+
+  const availableColumns: ColumnItem[] = [
+    { key: "sl", label: "SL" },
+    { key: "productCode", label: "Product Code" },
+    { key: "productName", label: "Product Description" },
+    { key: "unit", label: "Unit" },
+    { key: "orders", label: "Orders" },
+    { key: "quantity", label: labels.qtyCol },
+    { key: "avgRate", label: "Avg Rate (৳)" },
+    { key: "discount", label: "Discounts (৳)" },
+    { key: "amount", label: labels.amountCol },
+    { key: "share", label: "Contribution" },
+  ];
+
+  const {
+    visibleColumns,
+    isColVisible,
+    handleToggleColumn,
+    handleResetColumns,
+    activeVisibleColumnCount,
+  } = useColumnVisibility(availableColumns, `product_${domain}_report_columns`);
 
   const productSummaries = aggregateTradeProducts(transactions, domain);
   const { totalAmount: grandTotalAmount } =
@@ -181,13 +208,24 @@ export const ProductTradeReportTable: React.FC<ProductTradeReportTableProps> = (
             />
           </div>
 
+          <ColumnVisibilityDropdown
+            columns={availableColumns}
+            visibleColumns={visibleColumns}
+            onToggle={handleToggleColumn}
+            onReset={handleResetColumns}
+          />
+
           <ReportExportButtons
             onExportExcel={async () => {
-              const count = await onExportExcel(filtered, companyMeta);
+              const count = await onExportExcel(
+                filtered,
+                companyMeta,
+                visibleColumns
+              );
               return excelSuccessText(count);
             }}
             onDownloadPdf={async () => {
-              await onDownloadPdf(filtered, companyMeta);
+              await onDownloadPdf(filtered, companyMeta, visibleColumns);
               return pdfSuccessText;
             }}
           />
@@ -197,7 +235,7 @@ export const ProductTradeReportTable: React.FC<ProductTradeReportTableProps> = (
       {/* Table */}
       <TableScroll>
         {isLoading ? (
-          <TableSkeleton columnCount={10} rowCount={8} />
+          <TableSkeleton columnCount={activeVisibleColumnCount} rowCount={8} />
         ) : paginated.length === 0 ? (
           <EmptyState
             title={labels.emptyTitle}
@@ -206,16 +244,16 @@ export const ProductTradeReportTable: React.FC<ProductTradeReportTableProps> = (
         ) : (
           <Table>
             <TableHead>
-              <TableTh align="center" width={40}>SL</TableTh>
-              <TableTh width={130}>Product Code</TableTh>
-              <TableTh>Product Description</TableTh>
-              <TableTh align="center" width={70}>Unit</TableTh>
-              <TableTh align="center" width={80}>Orders</TableTh>
-              <TableTh align="right" width={110}>{labels.qtyCol}</TableTh>
-              <TableTh align="right" width={110}>Avg Rate (৳)</TableTh>
-              <TableTh align="right" width={110}>Discounts (৳)</TableTh>
-              <TableTh align="right" width={130}>{labels.amountCol}</TableTh>
-              <TableTh align="right" width={110}>Contribution</TableTh>
+              {isColVisible("sl") && <TableTh align="center" width={40}>SL</TableTh>}
+              {isColVisible("productCode") && <TableTh width={130}>Product Code</TableTh>}
+              {isColVisible("productName") && <TableTh>Product Description</TableTh>}
+              {isColVisible("unit") && <TableTh align="center" width={70}>Unit</TableTh>}
+              {isColVisible("orders") && <TableTh align="center" width={80}>Orders</TableTh>}
+              {isColVisible("quantity") && <TableTh align="right" width={110}>{labels.qtyCol}</TableTh>}
+              {isColVisible("avgRate") && <TableTh align="right" width={110}>Avg Rate (৳)</TableTh>}
+              {isColVisible("discount") && <TableTh align="right" width={110}>Discounts (৳)</TableTh>}
+              {isColVisible("amount") && <TableTh align="right" width={130}>{labels.amountCol}</TableTh>}
+              {isColVisible("share") && <TableTh align="right" width={110}>Contribution</TableTh>}
             </TableHead>
             <TableBody>
               {paginated.map((item, idx) => {
@@ -233,38 +271,58 @@ export const ProductTradeReportTable: React.FC<ProductTradeReportTableProps> = (
                     key={item.productCode + idx}
                     className="hover:bg-[var(--primary-color-light)]/40 transition-colors"
                   >
-                    <td className="py-2.5 px-3 text-center text-[var(--ui-text)] font-semibold text-xs">
-                      {(currentPage - 1) * pageSize + idx + 1}
-                    </td>
-                    <td className="py-2.5 px-3 font-semibold text-xs text-[var(--ui-text)]">
-                      {item.productCode}
-                    </td>
-                    <td className="py-2.5 px-3 font-semibold text-xs text-[var(--ui-text)]">
-                      {item.productName}
-                    </td>
-                    <td className="py-2.5 px-3 text-center text-[var(--ui-text-muted)] text-xs">
-                      {item.unit}
-                    </td>
-                    <td className="py-2.5 px-3 text-center text-xs text-[var(--ui-text)]">
-                      {item.invoicesCount}
-                    </td>
-                    <td className="py-2.5 px-3 text-right font-bold text-xs text-[var(--ui-text)]">
-                      {item.totalQuantity}
-                    </td>
-                    <td className="py-2.5 px-3 text-right text-xs text-[var(--ui-text)]">
-                      ৳ {formatMoney(avgPrice)}
-                    </td>
-                    <td className="py-2.5 px-3 text-right text-xs text-[var(--ui-text-muted)]">
-                      {item.totalDiscount > 0
-                        ? `৳ ${formatMoney(item.totalDiscount)}`
-                        : "N/A"}
-                    </td>
-                    <td className="py-2.5 px-3 text-right font-bold text-xs text-[var(--ui-text)] whitespace-nowrap">
-                      ৳ {formatMoney(item.totalAmount)}
-                    </td>
-                    <td className="py-2.5 px-3 text-right text-xs font-semibold text-[var(--ui-text)]">
-                      {sharePct}%
-                    </td>
+                    {isColVisible("sl") && (
+                      <td className="py-2.5 px-3 text-center text-[var(--ui-text)] font-semibold text-xs">
+                        {(currentPage - 1) * pageSize + idx + 1}
+                      </td>
+                    )}
+                    {isColVisible("productCode") && (
+                      <td className="py-2.5 px-3 font-semibold text-xs text-[var(--ui-text)]">
+                        {item.productCode}
+                      </td>
+                    )}
+                    {isColVisible("productName") && (
+                      <td className="py-2.5 px-3 font-semibold text-xs text-[var(--ui-text)]">
+                        {item.productName}
+                      </td>
+                    )}
+                    {isColVisible("unit") && (
+                      <td className="py-2.5 px-3 text-center text-[var(--ui-text-muted)] text-xs">
+                        {item.unit}
+                      </td>
+                    )}
+                    {isColVisible("orders") && (
+                      <td className="py-2.5 px-3 text-center text-xs text-[var(--ui-text)]">
+                        {item.invoicesCount}
+                      </td>
+                    )}
+                    {isColVisible("quantity") && (
+                      <td className="py-2.5 px-3 text-right font-bold text-xs text-[var(--ui-text)]">
+                        {item.totalQuantity}
+                      </td>
+                    )}
+                    {isColVisible("avgRate") && (
+                      <td className="py-2.5 px-3 text-right text-xs text-[var(--ui-text)]">
+                        ৳ {formatMoney(avgPrice)}
+                      </td>
+                    )}
+                    {isColVisible("discount") && (
+                      <td className="py-2.5 px-3 text-right text-xs text-[var(--ui-text-muted)]">
+                        {item.totalDiscount > 0
+                          ? `৳ ${formatMoney(item.totalDiscount)}`
+                          : "N/A"}
+                      </td>
+                    )}
+                    {isColVisible("amount") && (
+                      <td className="py-2.5 px-3 text-right font-bold text-xs text-[var(--ui-text)] whitespace-nowrap">
+                        ৳ {formatMoney(item.totalAmount)}
+                      </td>
+                    )}
+                    {isColVisible("share") && (
+                      <td className="py-2.5 px-3 text-right text-xs font-semibold text-[var(--ui-text)]">
+                        {sharePct}%
+                      </td>
+                    )}
                   </tr>
                 );
               })}

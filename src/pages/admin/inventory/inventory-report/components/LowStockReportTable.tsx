@@ -18,6 +18,10 @@ import {
 } from "@/components/common";
 import { formatMoney } from "@/utils/formatters";
 import { useDebounce } from "@/hooks/useDebounce";
+import { useColumnVisibility } from "@/hooks/useColumnVisibility";
+import ColumnVisibilityDropdown, {
+  type ColumnItem,
+} from "@/components/table-components/ColumnVisibilityDropdown";
 import {
   useReportCompanyMeta,
   type ReportDateFilterProps,
@@ -35,6 +39,20 @@ interface LowStockReportTableProps extends ReportDateFilterProps {
   isLoading?: boolean;
   onViewProduct: (product: ProductItem) => void;
 }
+
+const AVAILABLE_COLUMNS: ColumnItem[] = [
+  { key: "sl", label: "SL" },
+  { key: "code", label: "Code" },
+  { key: "name", label: "Product Name" },
+  { key: "category", label: "Category" },
+  { key: "currentStock", label: "Current Stock" },
+  { key: "minThreshold", label: "Min Threshold" },
+  { key: "shortfall", label: "Shortfall" },
+  { key: "buyPrice", label: "Buy Price" },
+  { key: "restockCost", label: "Est. Restock Cost" },
+  { key: "alertLevel", label: "Alert Level" },
+  { key: "actions", label: "Actions" },
+];
 
 export const LowStockReportTable: React.FC<LowStockReportTableProps> = ({
   products,
@@ -54,6 +72,14 @@ export const LowStockReportTable: React.FC<LowStockReportTableProps> = ({
   const [severityFilter, setSeverityFilter] = useState<string>("all");
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
+
+  const {
+    visibleColumns,
+    isColVisible,
+    handleToggleColumn,
+    handleResetColumns,
+    activeVisibleColumnCount,
+  } = useColumnVisibility(AVAILABLE_COLUMNS, "low_stock_report_columns");
 
   const isAnyFilterActive =
     searchQuery.trim() !== "" ||
@@ -184,16 +210,28 @@ export const LowStockReportTable: React.FC<LowStockReportTableProps> = ({
             </button>
           )}
 
+          <ColumnVisibilityDropdown
+            columns={AVAILABLE_COLUMNS}
+            visibleColumns={visibleColumns}
+            onToggle={handleToggleColumn}
+            onReset={handleResetColumns}
+          />
+
           <ReportExportButtons
             onExportExcel={async () => {
               const count = await exportLowStockReportExcel(
                 filteredProducts,
-                companyMeta
+                companyMeta,
+                visibleColumns
               );
               return `Exported ${count} low-stock alerts to Excel!`;
             }}
             onDownloadPdf={async () => {
-              await downloadLowStockReportPdf(filteredProducts, companyMeta);
+              await downloadLowStockReportPdf(
+                filteredProducts,
+                companyMeta,
+                visibleColumns
+              );
               return "Low-stock alert report PDF downloaded!";
             }}
           />
@@ -202,7 +240,7 @@ export const LowStockReportTable: React.FC<LowStockReportTableProps> = ({
 
       <TableScroll>
         {isLoading && products.length === 0 ? (
-          <TableSkeleton columnCount={10} rowCount={6} />
+          <TableSkeleton columnCount={activeVisibleColumnCount} rowCount={6} />
         ) : paginated.length === 0 ? (
           <EmptyState
             title="All Products Healthy"
@@ -211,21 +249,37 @@ export const LowStockReportTable: React.FC<LowStockReportTableProps> = ({
         ) : (
           <Table minWidth={920}>
             <TableHead>
-              <TableTh align="center" width={42}>
-                SL
-              </TableTh>
-              <TableTh>Code</TableTh>
-              <TableTh>Product Name</TableTh>
-              <TableTh>Category</TableTh>
-              <TableTh align="right">Current Stock</TableTh>
-              <TableTh align="right">Min Threshold</TableTh>
-              <TableTh align="right">Shortfall</TableTh>
-              <TableTh align="right">Buy Price</TableTh>
-              <TableTh align="right">Est. Restock Cost</TableTh>
-              <TableTh align="center">Alert Level</TableTh>
-              <TableTh align="center" width={64}>
-                Actions
-              </TableTh>
+              {isColVisible("sl") && (
+                <TableTh align="center" width={42}>
+                  SL
+                </TableTh>
+              )}
+              {isColVisible("code") && <TableTh>Code</TableTh>}
+              {isColVisible("name") && <TableTh>Product Name</TableTh>}
+              {isColVisible("category") && <TableTh>Category</TableTh>}
+              {isColVisible("currentStock") && (
+                <TableTh align="right">Current Stock</TableTh>
+              )}
+              {isColVisible("minThreshold") && (
+                <TableTh align="right">Min Threshold</TableTh>
+              )}
+              {isColVisible("shortfall") && (
+                <TableTh align="right">Shortfall</TableTh>
+              )}
+              {isColVisible("buyPrice") && (
+                <TableTh align="right">Buy Price</TableTh>
+              )}
+              {isColVisible("restockCost") && (
+                <TableTh align="right">Est. Restock Cost</TableTh>
+              )}
+              {isColVisible("alertLevel") && (
+                <TableTh align="center">Alert Level</TableTh>
+              )}
+              {isColVisible("actions") && (
+                <TableTh align="center" width={64}>
+                  Actions
+                </TableTh>
+              )}
             </TableHead>
 
             <TableBody>
@@ -238,70 +292,92 @@ export const LowStockReportTable: React.FC<LowStockReportTableProps> = ({
                     key={m.id}
                     className="hover:bg-[var(--primary-color-light)]/40 transition-colors"
                   >
-                    <td className="py-2.5 px-3 text-center text-xs text-[var(--ui-text)] tabular-nums">
-                      {sl}
-                    </td>
+                    {isColVisible("sl") && (
+                      <td className="py-2.5 px-3 text-center text-xs text-[var(--ui-text)] tabular-nums">
+                        {sl}
+                      </td>
+                    )}
 
-                    <td className="py-2.5 px-3 text-xs text-[var(--ui-text-muted)] whitespace-nowrap">
-                      <span className="bg-[var(--ui-surface-sunken)] px-1.5 py-0.5 rounded border border-[var(--ui-border)] text-[11px] font-medium">
-                        {m.code}
-                      </span>
-                    </td>
+                    {isColVisible("code") && (
+                      <td className="py-2.5 px-3 text-xs text-[var(--ui-text-muted)] whitespace-nowrap">
+                        <span className="bg-[var(--ui-surface-sunken)] px-1.5 py-0.5 rounded border border-[var(--ui-border)] text-[11px] font-medium">
+                          {m.code}
+                        </span>
+                      </td>
+                    )}
 
-                    <td className="py-2.5 px-3 text-xs font-semibold text-[var(--ui-text)] max-w-[210px] truncate">
-                      <span
-                        onClick={() => onViewProduct(product)}
-                        className="cursor-pointer hover:text-[var(--primary-color)] transition-colors"
-                        title={m.name}
-                      >
-                        {m.name}
-                      </span>
-                    </td>
+                    {isColVisible("name") && (
+                      <td className="py-2.5 px-3 text-xs font-semibold text-[var(--ui-text)] max-w-[210px] truncate">
+                        <span
+                          onClick={() => onViewProduct(product)}
+                          className="cursor-pointer hover:text-[var(--primary-color)] transition-colors"
+                          title={m.name}
+                        >
+                          {m.name}
+                        </span>
+                      </td>
+                    )}
 
-                    <td className="py-2.5 px-3 text-xs whitespace-nowrap">
-                      <span className="inline-flex items-center px-1.5 py-0.5 rounded-md text-[10.5px] font-medium bg-[var(--ui-surface-sunken)] text-[var(--ui-text)] border border-[var(--ui-border)]">
-                        {m.category}
-                      </span>
-                    </td>
+                    {isColVisible("category") && (
+                      <td className="py-2.5 px-3 text-xs whitespace-nowrap">
+                        <span className="inline-flex items-center px-1.5 py-0.5 rounded-md text-[10.5px] font-medium bg-[var(--ui-surface-sunken)] text-[var(--ui-text)] border border-[var(--ui-border)]">
+                          {m.category}
+                        </span>
+                      </td>
+                    )}
 
-                    <td className="py-2.5 px-3 text-right text-xs font-bold text-[var(--ui-text)] whitespace-nowrap tabular-nums">
-                      {m.displayStock}
-                    </td>
+                    {isColVisible("currentStock") && (
+                      <td className="py-2.5 px-3 text-right text-xs font-bold text-[var(--ui-text)] whitespace-nowrap tabular-nums">
+                        {m.displayStock}
+                      </td>
+                    )}
 
-                    <td className="py-2.5 px-3 text-right text-xs text-[var(--ui-text-muted)] whitespace-nowrap tabular-nums">
-                      {m.lowThreshold} {m.unit}
-                    </td>
+                    {isColVisible("minThreshold") && (
+                      <td className="py-2.5 px-3 text-right text-xs text-[var(--ui-text-muted)] whitespace-nowrap tabular-nums">
+                        {m.lowThreshold} {m.unit}
+                      </td>
+                    )}
 
-                    <td className="py-2.5 px-3 text-right text-xs font-bold text-[var(--ui-danger)] whitespace-nowrap tabular-nums">
-                      {m.shortfallQty} {m.unit}
-                    </td>
+                    {isColVisible("shortfall") && (
+                      <td className="py-2.5 px-3 text-right text-xs font-bold text-[var(--ui-danger)] whitespace-nowrap tabular-nums">
+                        {m.shortfallQty} {m.unit}
+                      </td>
+                    )}
 
-                    <td className="py-2.5 px-3 text-right text-xs text-[var(--ui-text-muted)] whitespace-nowrap tabular-nums">
-                      ৳ {formatMoney(m.buyPrice)}
-                    </td>
+                    {isColVisible("buyPrice") && (
+                      <td className="py-2.5 px-3 text-right text-xs text-[var(--ui-text-muted)] whitespace-nowrap tabular-nums">
+                        ৳ {formatMoney(m.buyPrice)}
+                      </td>
+                    )}
 
-                    <td className="py-2.5 px-3 text-right text-xs font-bold text-[var(--ui-danger)] whitespace-nowrap tabular-nums">
-                      ৳ {formatMoney(m.restockCost)}
-                    </td>
+                    {isColVisible("restockCost") && (
+                      <td className="py-2.5 px-3 text-right text-xs font-bold text-[var(--ui-danger)] whitespace-nowrap tabular-nums">
+                        ৳ {formatMoney(m.restockCost)}
+                      </td>
+                    )}
 
-                    <td className="py-2.5 px-3 text-center whitespace-nowrap">
-                      <span
-                        className={`inline-block px-1.5 py-0.5 text-[10px] font-semibold border rounded-md ${
-                          isOut
-                            ? "bg-[var(--ui-danger-border)] text-[var(--ui-danger-dark)] border-[var(--ui-danger-border)]"
-                            : "bg-[var(--ui-warning-border)] text-[var(--ui-warning-dark)] border-[var(--ui-warning-border)]"
-                        }`}
-                      >
-                        {isOut ? "Out of Stock" : "Low Stock"}
-                      </span>
-                    </td>
+                    {isColVisible("alertLevel") && (
+                      <td className="py-2.5 px-3 text-center whitespace-nowrap">
+                        <span
+                          className={`inline-block px-1.5 py-0.5 text-[10px] font-semibold border rounded-md ${
+                            isOut
+                              ? "bg-[var(--ui-danger-border)] text-[var(--ui-danger-dark)] border-[var(--ui-danger-border)]"
+                              : "bg-[var(--ui-warning-border)] text-[var(--ui-warning-dark)] border-[var(--ui-warning-border)]"
+                          }`}
+                        >
+                          {isOut ? "Out of Stock" : "Low Stock"}
+                        </span>
+                      </td>
+                    )}
 
-                    <td className="py-2 px-3 text-center whitespace-nowrap">
-                      <TableActionButtons
-                        onView={() => onViewProduct(product)}
-                        viewTitle="View Product Valuation Snapshot"
-                      />
-                    </td>
+                    {isColVisible("actions") && (
+                      <td className="py-2 px-3 text-center whitespace-nowrap">
+                        <TableActionButtons
+                          onView={() => onViewProduct(product)}
+                          viewTitle="View Product Valuation Snapshot"
+                        />
+                      </td>
+                    )}
                   </tr>
                 );
               })}

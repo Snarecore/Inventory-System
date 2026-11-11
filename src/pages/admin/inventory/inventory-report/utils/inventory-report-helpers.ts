@@ -1,5 +1,4 @@
 import moment from "moment";
-import type { RowInput } from "jspdf-autotable";
 import type { ProductItem } from "@/types";
 import { formatMoney } from "@/utils/formatters";
 import {
@@ -7,6 +6,11 @@ import {
   resolveThemeArgb,
   argbToRgbTuple,
 } from "@/utils/excel-export";
+import {
+  buildDynamicExcelPayload,
+  buildDynamicPdfPayload,
+  type ExportColumnDef,
+} from "@/utils/report-export-columns";
 import { getProductStockDisplay } from "@/utils/product-unit";
 import {
   type ReportCompanyMeta,
@@ -366,12 +370,186 @@ function getPdfStockColor(state: "OUT" | "LOW" | "IN"): [number, number, number]
   return REPORT_RGB.emerald;
 }
 
+type StockTotals = {
+  sumQty: number;
+  sumCost: number;
+  sumRetail: number;
+  sumProfit: number;
+};
+
+function buildInventoryStockColumns(
+  themeRgb: [number, number, number]
+): ExportColumnDef<NormalizedProductMetrics, StockTotals>[] {
+  return [
+    {
+      key: "sl",
+      excelHeader: "SL",
+      isLeadingLabel: true,
+      pdfStyle: { halign: "center", cellWidth: 8 },
+      excelValue: (_, idx) => idx + 1,
+      pdfCell: (_, idx) => idx + 1,
+    },
+    {
+      key: "code",
+      excelHeader: "Code",
+      isLeadingLabel: true,
+      pdfStyle: { halign: "left", cellWidth: 20 },
+      excelValue: (m) => m.code,
+      pdfCell: (m) => m.code,
+    },
+    {
+      key: "name",
+      excelHeader: "Product Name",
+      isLeadingLabel: true,
+      pdfStyle: { halign: "left", fontStyle: "bold" },
+      excelValue: (m) => m.name,
+      pdfCell: (m) => m.name,
+    },
+    {
+      key: "category",
+      excelHeader: "Category",
+      isLeadingLabel: true,
+      pdfStyle: { halign: "left", cellWidth: 20 },
+      excelValue: (m) => m.category,
+      pdfCell: (m) => m.category,
+    },
+    {
+      key: "primaryUnit",
+      excelHeader: "Primary Unit",
+      isLeadingLabel: true,
+      pdfStyle: { halign: "center", cellWidth: 16 },
+      excelValue: (m) => m.primaryUnit,
+      pdfCell: (m) => m.primaryUnit,
+    },
+    {
+      key: "secondaryUnit",
+      excelHeader: "Secondary Unit",
+      isLeadingLabel: true,
+      pdfStyle: { halign: "center", cellWidth: 16 },
+      excelValue: (m) => (m.hasSecondaryUnit ? m.secondaryUnit : "-"),
+      pdfCell: (m) => (m.hasSecondaryUnit ? m.secondaryUnit : "-"),
+    },
+    {
+      key: "conversion",
+      excelHeader: "Conversion",
+      isLeadingLabel: true,
+      pdfStyle: { halign: "center", cellWidth: 20 },
+      excelValue: (m) => m.conversionDisplay || "-",
+      pdfCell: (m) => m.conversionDisplay || "-",
+    },
+    {
+      key: "stock",
+      excelHeader: "Stock",
+      pdfStyle: { halign: "right", cellWidth: 15, fontStyle: "bold" },
+      excelValue: (m) => m.quantity,
+      excelTotalValue: (t) => t.sumQty,
+      pdfCell: (m) =>
+        m.quantity.toLocaleString("en-IN", { maximumFractionDigits: 2 }),
+      pdfSummaryCell: (t) => ({
+        content: t.sumQty.toLocaleString("en-IN", { maximumFractionDigits: 2 }),
+        styles: { textColor: REPORT_RGB.dark },
+      }),
+    },
+    {
+      key: "buyPrice",
+      excelHeader: "Buy Price (BDT)",
+      pdfHeader: "Buy Price",
+      pdfStyle: { halign: "right", cellWidth: 18 },
+      excelValue: (m) => m.buyPrice,
+      excelTotalValue: () => "-",
+      pdfCell: (m) => formatMoney(m.buyPrice),
+      pdfSummaryCell: () => ({
+        content: "-",
+        styles: { textColor: REPORT_RGB.muted, fontStyle: "normal" },
+      }),
+    },
+    {
+      key: "sellPrice",
+      excelHeader: "Sell Price (BDT)",
+      pdfHeader: "Sell Price",
+      pdfStyle: { halign: "right", cellWidth: 18 },
+      excelValue: (m) => m.sellPrice,
+      excelTotalValue: () => "-",
+      pdfCell: (m) => formatMoney(m.sellPrice),
+      pdfSummaryCell: () => ({
+        content: "-",
+        styles: { textColor: REPORT_RGB.muted, fontStyle: "normal" },
+      }),
+    },
+    {
+      key: "margin",
+      excelHeader: "Margin (%)",
+      pdfHeader: "Margin %",
+      pdfStyle: { halign: "right", cellWidth: 15 },
+      excelValue: (m) => `${m.marginPct.toFixed(1)}%`,
+      excelTotalValue: (t) =>
+        t.sumRetail > 0
+          ? `${((t.sumProfit / t.sumRetail) * 100).toFixed(1)}%`
+          : "0.0%",
+      pdfCell: (m) => `${m.marginPct.toFixed(1)}%`,
+      pdfSummaryCell: (t) => ({
+        content:
+          t.sumRetail > 0
+            ? `${((t.sumProfit / t.sumRetail) * 100).toFixed(1)}%`
+            : "0.0%",
+        styles: { textColor: REPORT_RGB.dark },
+      }),
+    },
+    {
+      key: "costValue",
+      excelHeader: "Cost Value (BDT)",
+      pdfHeader: "Cost Value",
+      pdfStyle: { halign: "right", cellWidth: 21, fontStyle: "bold" },
+      excelValue: (m) => m.costValue,
+      excelTotalValue: (t) => t.sumCost,
+      pdfCell: (m) => formatMoney(m.costValue),
+      pdfSummaryCell: (t) => ({
+        content: formatMoney(t.sumCost),
+        styles: { textColor: themeRgb },
+      }),
+    },
+    {
+      key: "retailValue",
+      excelHeader: "Retail Value (BDT)",
+      pdfHeader: "Retail Value",
+      pdfStyle: {
+        halign: "right",
+        cellWidth: 21,
+        fontStyle: "bold",
+        textColor: REPORT_RGB.emerald,
+      },
+      excelValue: (m) => m.retailValue,
+      excelTotalValue: (t) => t.sumRetail,
+      pdfCell: (m) => formatMoney(m.retailValue),
+      pdfSummaryCell: (t) => ({
+        content: formatMoney(t.sumRetail),
+        styles: { textColor: REPORT_RGB.emerald },
+      }),
+    },
+    {
+      key: "status",
+      excelHeader: "Status",
+      pdfStyle: { halign: "center", cellWidth: 16 },
+      excelValue: (m) => (m.isActive ? "Active" : "Inactive"),
+      excelTotalValue: () => "-",
+      pdfCell: (m) => ({
+        content: m.isActive ? "ACTIVE" : "INACTIVE",
+        styles: {
+          textColor: m.isActive ? REPORT_RGB.emerald : REPORT_RGB.rose,
+          fontStyle: "bold",
+        },
+      }),
+    },
+  ];
+}
+
 /**
  * Tab 1 Export: Product Stock & Valuation Excel Report
  */
 export async function exportInventoryStockExcel(
   products: ProductItem[],
-  meta: ReportCompanyMeta
+  meta: ReportCompanyMeta,
+  visibleColumns?: Record<string, boolean>
 ): Promise<number> {
   if (!products || products.length === 0) {
     throw new Error("No product records available to export");
@@ -382,57 +560,24 @@ export async function exportInventoryStockExcel(
   let sumRetail = 0;
   let sumProfit = 0;
 
-  const rows = products.map((p, idx) => {
+  const metrics = products.map((p, idx) => {
     const m = extractInventoryProductMetrics(p, idx);
     sumQty += m.quantity;
     sumCost += m.costValue;
     sumRetail += m.retailValue;
     sumProfit += m.potentialProfit;
-
-    return {
-      SL: idx + 1,
-      Code: m.code,
-      "Product Name": m.name,
-      Category: m.category,
-      "Primary Unit": m.primaryUnit,
-      "Secondary Unit": m.hasSecondaryUnit ? m.secondaryUnit : "-",
-      Conversion: m.conversionDisplay || "-",
-      Stock: m.quantity,
-      "Buy Price (BDT)": m.buyPrice,
-      "Sell Price (BDT)": m.sellPrice,
-      "Margin (%)": `${m.marginPct.toFixed(1)}%`,
-      "Cost Value (BDT)": m.costValue,
-      "Retail Value (BDT)": m.retailValue,
-      "Est. Profit (BDT)": m.potentialProfit,
-      "Stock Status":
-        m.stockState === "OUT"
-          ? "Out of Stock"
-          : m.stockState === "LOW"
-          ? "Low Stock"
-          : "In Stock",
-      Status: m.isActive ? "Active" : "Inactive",
-    };
+    return m;
   });
 
-  const totalRow = {
-    SL: "TOTAL INVENTORY VALUATION",
-    Code: "",
-    "Product Name": "",
-    Category: "",
-    "Primary Unit": "",
-    "Secondary Unit": "",
-    Conversion: "",
-    Stock: sumQty,
-    "Buy Price (BDT)": "-",
-    "Sell Price (BDT)": "-",
-    "Margin (%)":
-      sumRetail > 0 ? `${((sumProfit / sumRetail) * 100).toFixed(1)}%` : "0.0%",
-    "Cost Value (BDT)": sumCost,
-    "Retail Value (BDT)": sumRetail,
-    "Est. Profit (BDT)": sumProfit,
-    "Stock Status": "-",
-    Status: "-",
-  };
+  const themeRgb = argbToRgbTuple(resolveThemeArgb());
+  const columns = buildInventoryStockColumns(themeRgb);
+  const { rows, totalRow, totalSummarySpan } = buildDynamicExcelPayload(
+    metrics,
+    columns,
+    { sumQty, sumCost, sumRetail, sumProfit },
+    "TOTAL INVENTORY VALUATION",
+    visibleColumns
+  );
 
   await buildAndDownloadExcel(rows, totalRow, {
     fileName: `Inventory_Stock_Report_${getExportFileDateSuffix(meta)}.xlsx`,
@@ -443,8 +588,8 @@ export async function exportInventoryStockExcel(
     businessLogoUrl: meta.businessLogoUrl,
     startDate: meta.startDate,
     endDate: meta.endDate,
-    metaRightLabel: `Total Items: ${products.length}`,
-    totalSummarySpan: 7,
+    totalLabel: "Total Items",
+    totalSummarySpan,
     includeSignatures: true,
   });
 
@@ -456,7 +601,8 @@ export async function exportInventoryStockExcel(
  */
 export async function downloadInventoryStockPdf(
   products: ProductItem[],
-  meta: ReportCompanyMeta
+  meta: ReportCompanyMeta,
+  visibleColumns?: Record<string, boolean>
 ): Promise<void> {
   if (!products || products.length === 0) {
     throw new Error("No product records available to download PDF");
@@ -468,160 +614,195 @@ export async function downloadInventoryStockPdf(
   let sumRetail = 0;
   let sumProfit = 0;
 
-  const bodyRows: RowInput[] = products.map((p, idx) => {
+  const metrics = products.map((p, idx) => {
     const m = extractInventoryProductMetrics(p, idx);
     sumQty += m.quantity;
     sumCost += m.costValue;
     sumRetail += m.retailValue;
     sumProfit += m.potentialProfit;
-
-    const stockLabel =
-      m.stockState === "OUT"
-        ? "OUT OF STOCK"
-        : m.stockState === "LOW"
-        ? "LOW STOCK"
-        : "IN STOCK";
-
-    return [
-      idx + 1,
-      m.code,
-      m.name,
-      m.category,
-      m.primaryUnit,
-      m.hasSecondaryUnit ? m.secondaryUnit : "-",
-      m.conversionDisplay || "-",
-      m.quantity.toLocaleString("en-IN", { maximumFractionDigits: 2 }),
-      formatMoney(m.buyPrice),
-      formatMoney(m.sellPrice),
-      formatMoney(m.costValue),
-      formatMoney(m.retailValue),
-      {
-        content: stockLabel,
-        styles: {
-          textColor: getPdfStockColor(m.stockState),
-          fontStyle: "bold",
-        },
-      },
-      {
-        content: m.isActive ? "ACTIVE" : "INACTIVE",
-        styles: {
-          textColor: m.isActive ? REPORT_RGB.emerald : REPORT_RGB.rose,
-          fontStyle: "bold",
-        },
-      },
-    ];
+    return m;
   });
 
-  bodyRows.push([
+  const columns = buildInventoryStockColumns(themeRgb);
+  const { headers, bodyRows, columnStyles } = buildDynamicPdfPayload(
+    metrics,
+    columns,
+    { sumQty, sumCost, sumRetail, sumProfit },
+    "TOTAL INVENTORY VALUATION",
     {
-      content: "TOTAL INVENTORY VALUATION",
-      colSpan: 7,
-      styles: {
-        halign: "center",
-        fontStyle: "bold",
-        fillColor: [241, 245, 249],
-        textColor: REPORT_RGB.dark,
-      },
-    },
-    {
-      content: sumQty.toLocaleString("en-IN", { maximumFractionDigits: 2 }),
-      styles: {
-        halign: "right",
-        fontStyle: "bold",
-        fillColor: [241, 245, 249],
-        textColor: REPORT_RGB.dark,
-      },
-    },
-    {
-      content: "-",
-      styles: {
-        halign: "right",
-        fillColor: [241, 245, 249],
-        textColor: REPORT_RGB.muted,
-      },
-    },
-    {
-      content: "-",
-      styles: {
-        halign: "right",
-        fillColor: [241, 245, 249],
-        textColor: REPORT_RGB.muted,
-      },
-    },
-    {
-      content: formatMoney(sumCost),
-      styles: {
-        halign: "right",
-        fontStyle: "bold",
-        fillColor: [241, 245, 249],
-        textColor: themeRgb,
-      },
-    },
-    {
-      content: formatMoney(sumRetail),
-      styles: {
-        halign: "right",
-        fontStyle: "bold",
-        fillColor: [241, 245, 249],
-        textColor: REPORT_RGB.emerald,
-      },
-    },
-    {
-      content: `Profit: ${formatMoney(sumProfit)}`,
-      colSpan: 2,
-      styles: {
-        halign: "center",
-        fontStyle: "bold",
-        fillColor: [241, 245, 249],
-        textColor: sumProfit >= 0 ? REPORT_RGB.emerald : REPORT_RGB.rose,
-      },
-    },
-  ]);
+      visibleColumns,
+      preserveFixedWidthsFromCount: 11,
+    }
+  );
 
   await generateAndDownloadCorporatePdf({
     fileName: `Inventory_Stock_Report_${getExportFileDateSuffix(meta)}.pdf`,
     reportTitle: "Inventory Stock & Valuation Report",
     metaRightLabel: `Total Items: ${products.length}`,
-    headers: [
-      "SL",
-      "Code",
-      "Product Name",
-      "Category",
-      "Primary Unit",
-      "Secondary Unit",
-      "Conversion",
-      "Stock",
-      "Buy Price",
-      "Sell Price",
-      "Cost Value",
-      "Retail Value",
-      "Stock Alert",
-      "Status",
-    ],
+    headers,
     bodyRows,
     meta,
-    columnStyles: {
-      0: { halign: "center", cellWidth: 8 },
-      1: { halign: "left", cellWidth: 20 },
-      2: { halign: "left", fontStyle: "bold" },
-      3: { halign: "left", cellWidth: 20 },
-      4: { halign: "center", cellWidth: 17 },
-      5: { halign: "center", cellWidth: 17 },
-      6: { halign: "center", cellWidth: 22 },
-      7: { halign: "right", cellWidth: 15, fontStyle: "bold" },
-      8: { halign: "right", cellWidth: 18 },
-      9: { halign: "right", cellWidth: 18 },
-      10: { halign: "right", cellWidth: 22, fontStyle: "bold" },
-      11: {
+    columnStyles,
+  });
+}
+
+type CategoryTotals = {
+  sumProducts: number;
+  sumActive: number;
+  sumLow: number;
+  sumUnits: number;
+  sumCost: number;
+  sumRetail: number;
+  sumProfit: number;
+};
+
+function buildCategoryInventoryColumns(
+  grandTotalCost: number,
+  themeRgb: [number, number, number]
+): ExportColumnDef<CategoryInventorySummary, CategoryTotals>[] {
+  return [
+    {
+      key: "sl",
+      excelHeader: "SL",
+      isLeadingLabel: true,
+      pdfStyle: { halign: "center", cellWidth: 12 },
+      excelValue: (_, idx) => idx + 1,
+      pdfCell: (_, idx) => idx + 1,
+    },
+    {
+      key: "category",
+      excelHeader: "Category Name",
+      isLeadingLabel: true,
+      pdfStyle: { halign: "left", fontStyle: "bold" },
+      excelValue: (c) => c.category,
+      pdfCell: (c) => c.category,
+    },
+    {
+      key: "products",
+      excelHeader: "Products Count",
+      pdfHeader: "Products",
+      pdfStyle: { halign: "right", cellWidth: 22 },
+      excelValue: (c) => c.productCount,
+      excelTotalValue: (t) => t.sumProducts,
+      pdfCell: (c) => c.productCount,
+      pdfSummaryCell: (t) => ({
+        content: t.sumProducts,
+        styles: { textColor: REPORT_RGB.dark },
+      }),
+    },
+    {
+      key: "active",
+      excelHeader: "Active Count",
+      pdfHeader: "Active",
+      pdfStyle: {
         halign: "right",
-        cellWidth: 22,
+        cellWidth: 20,
+        textColor: REPORT_RGB.emerald,
+      },
+      excelValue: (c) => c.activeCount,
+      excelTotalValue: (t) => t.sumActive,
+      pdfCell: (c) => c.activeCount,
+      pdfSummaryCell: (t) => ({
+        content: t.sumActive,
+        styles: { textColor: REPORT_RGB.emerald },
+      }),
+    },
+    {
+      key: "lowStock",
+      excelHeader: "Low Stock Count",
+      pdfHeader: "Low Stock",
+      pdfStyle: { halign: "right", cellWidth: 22 },
+      excelValue: (c) => c.lowStockCount,
+      excelTotalValue: (t) => t.sumLow,
+      pdfCell: (c) => ({
+        content: c.lowStockCount,
+        styles: {
+          textColor: c.lowStockCount > 0 ? REPORT_RGB.amber : REPORT_RGB.muted,
+          fontStyle: c.lowStockCount > 0 ? "bold" : "normal",
+        },
+      }),
+      pdfSummaryCell: (t) => ({
+        content: t.sumLow,
+        styles: { textColor: REPORT_RGB.amber },
+      }),
+    },
+    {
+      key: "stockUnits",
+      excelHeader: "Stock Qty",
+      pdfStyle: { halign: "right", cellWidth: 26 },
+      excelValue: (c) => c.totalUnits,
+      excelTotalValue: (t) => t.sumUnits,
+      pdfCell: (c) => c.totalUnits,
+      pdfSummaryCell: (t) => ({
+        content: t.sumUnits,
+        styles: { textColor: REPORT_RGB.dark },
+      }),
+    },
+    {
+      key: "costValue",
+      excelHeader: "Cost Value (BDT)",
+      pdfHeader: "Cost Value",
+      pdfStyle: { halign: "right", cellWidth: 30, fontStyle: "bold" },
+      excelValue: (c) => c.totalCostValue,
+      excelTotalValue: (t) => t.sumCost,
+      pdfCell: (c) => formatMoney(c.totalCostValue),
+      pdfSummaryCell: (t) => ({
+        content: formatMoney(t.sumCost),
+        styles: { textColor: themeRgb },
+      }),
+    },
+    {
+      key: "retailValue",
+      excelHeader: "Retail Value (BDT)",
+      pdfHeader: "Retail Value",
+      pdfStyle: {
+        halign: "right",
+        cellWidth: 30,
         fontStyle: "bold",
         textColor: REPORT_RGB.emerald,
       },
-      12: { halign: "center", cellWidth: 20 },
-      13: { halign: "center", cellWidth: 16 },
+      excelValue: (c) => c.totalRetailValue,
+      excelTotalValue: (t) => t.sumRetail,
+      pdfCell: (c) => formatMoney(c.totalRetailValue),
+      pdfSummaryCell: (t) => ({
+        content: formatMoney(t.sumRetail),
+        styles: { textColor: REPORT_RGB.emerald },
+      }),
     },
-  });
+    {
+      key: "estProfit",
+      excelHeader: "Est. Profit (BDT)",
+      pdfHeader: "Est. Profit",
+      pdfStyle: {
+        halign: "right",
+        cellWidth: 28,
+        fontStyle: "bold",
+        textColor: REPORT_RGB.emerald,
+      },
+      excelValue: (c) => c.estimatedProfit,
+      excelTotalValue: (t) => t.sumProfit,
+      pdfCell: (c) => formatMoney(c.estimatedProfit),
+      pdfSummaryCell: (t) => ({
+        content: formatMoney(t.sumProfit),
+        styles: { textColor: REPORT_RGB.emerald },
+      }),
+    },
+    {
+      key: "valueShare",
+      excelHeader: "Value Share",
+      pdfHeader: "Share %",
+      pdfStyle: { halign: "right", cellWidth: 20 },
+      excelValue: (c) =>
+        `${calculateRevenueSharePct(c.totalCostValue, grandTotalCost)}%`,
+      excelTotalValue: () => "100.0%",
+      pdfCell: (c) =>
+        `${calculateRevenueSharePct(c.totalCostValue, grandTotalCost)}%`,
+      pdfSummaryCell: () => ({
+        content: "100.0%",
+        styles: { textColor: REPORT_RGB.dark },
+      }),
+    },
+  ];
 }
 
 /**
@@ -629,7 +810,8 @@ export async function downloadInventoryStockPdf(
  */
 export async function exportCategoryInventoryExcel(
   categories: CategoryInventorySummary[],
-  meta: ReportCompanyMeta
+  meta: ReportCompanyMeta,
+  visibleColumns?: Record<string, boolean>
 ): Promise<number> {
   if (!categories || categories.length === 0) {
     throw new Error("No category inventory records available to export");
@@ -643,9 +825,7 @@ export async function exportCategoryInventoryExcel(
   let sumRetail = 0;
   let sumProfit = 0;
 
-  const grandTotalCost = categories.reduce((s, c) => s + c.totalCostValue, 0);
-
-  const rows = categories.map((c, idx) => {
+  categories.forEach((c) => {
     sumProducts += c.productCount;
     sumActive += c.activeCount;
     sumLow += c.lowStockCount;
@@ -653,33 +833,17 @@ export async function exportCategoryInventoryExcel(
     sumCost += c.totalCostValue;
     sumRetail += c.totalRetailValue;
     sumProfit += c.estimatedProfit;
-
-    return {
-      SL: idx + 1,
-      "Category Name": c.category,
-      "Products Count": c.productCount,
-      "Active Count": c.activeCount,
-      "Low Stock Count": c.lowStockCount,
-      "Stock Qty": c.totalUnits,
-      "Cost Value (BDT)": c.totalCostValue,
-      "Retail Value (BDT)": c.totalRetailValue,
-      "Est. Profit (BDT)": c.estimatedProfit,
-      "Value Share": `${calculateRevenueSharePct(c.totalCostValue, grandTotalCost)}%`,
-    };
   });
 
-  const totalRow = {
-    SL: "TOTAL BY CATEGORY",
-    "Category Name": "",
-    "Products Count": sumProducts,
-    "Active Count": sumActive,
-    "Low Stock Count": sumLow,
-    "Stock Qty": sumUnits,
-    "Cost Value (BDT)": sumCost,
-    "Retail Value (BDT)": sumRetail,
-    "Est. Profit (BDT)": sumProfit,
-    "Value Share": "100.0%",
-  };
+  const themeRgb = argbToRgbTuple(resolveThemeArgb());
+  const columns = buildCategoryInventoryColumns(sumCost, themeRgb);
+  const { rows, totalRow, totalSummarySpan } = buildDynamicExcelPayload(
+    categories,
+    columns,
+    { sumProducts, sumActive, sumLow, sumUnits, sumCost, sumRetail, sumProfit },
+    "TOTAL BY CATEGORY",
+    visibleColumns
+  );
 
   await buildAndDownloadExcel(rows, totalRow, {
     fileName: `Category_Inventory_Report_${getExportFileDateSuffix(meta)}.xlsx`,
@@ -690,8 +854,8 @@ export async function exportCategoryInventoryExcel(
     businessLogoUrl: meta.businessLogoUrl,
     startDate: meta.startDate,
     endDate: meta.endDate,
-    metaRightLabel: `Total Categories: ${categories.length}`,
-    totalSummarySpan: 2,
+    totalLabel: "Total Categories",
+    totalSummarySpan,
     includeSignatures: true,
   });
 
@@ -703,15 +867,14 @@ export async function exportCategoryInventoryExcel(
  */
 export async function downloadCategoryInventoryPdf(
   categories: CategoryInventorySummary[],
-  meta: ReportCompanyMeta
+  meta: ReportCompanyMeta,
+  visibleColumns?: Record<string, boolean>
 ): Promise<void> {
   if (!categories || categories.length === 0) {
     throw new Error("No category inventory records available to download PDF");
   }
 
   const themeRgb = argbToRgbTuple(resolveThemeArgb());
-  const grandTotalCost = categories.reduce((s, c) => s + c.totalCostValue, 0);
-
   let sumProducts = 0;
   let sumActive = 0;
   let sumLow = 0;
@@ -720,7 +883,7 @@ export async function downloadCategoryInventoryPdf(
   let sumRetail = 0;
   let sumProfit = 0;
 
-  const bodyRows: RowInput[] = categories.map((c, idx) => {
+  categories.forEach((c) => {
     sumProducts += c.productCount;
     sumActive += c.activeCount;
     sumLow += c.lowStockCount;
@@ -728,153 +891,171 @@ export async function downloadCategoryInventoryPdf(
     sumCost += c.totalCostValue;
     sumRetail += c.totalRetailValue;
     sumProfit += c.estimatedProfit;
-
-    return [
-      idx + 1,
-      c.category,
-      c.productCount,
-      c.activeCount,
-      {
-        content: c.lowStockCount,
-        styles: {
-          textColor: c.lowStockCount > 0 ? REPORT_RGB.amber : REPORT_RGB.muted,
-          fontStyle: c.lowStockCount > 0 ? "bold" : "normal",
-        },
-      },
-      c.totalUnits,
-      formatMoney(c.totalCostValue),
-      formatMoney(c.totalRetailValue),
-      formatMoney(c.estimatedProfit),
-      `${calculateRevenueSharePct(c.totalCostValue, grandTotalCost)}%`,
-    ];
   });
 
-  bodyRows.push([
+  const columns = buildCategoryInventoryColumns(sumCost, themeRgb);
+  const { headers, bodyRows, columnStyles } = buildDynamicPdfPayload(
+    categories,
+    columns,
+    { sumProducts, sumActive, sumLow, sumUnits, sumCost, sumRetail, sumProfit },
+    "TOTAL",
     {
-      content: "TOTAL",
-      colSpan: 2,
-      styles: {
-        halign: "center",
-        fontStyle: "bold",
-        fillColor: [241, 245, 249],
-        textColor: REPORT_RGB.dark,
-      },
-    },
-    {
-      content: sumProducts,
-      styles: {
-        halign: "right",
-        fontStyle: "bold",
-        fillColor: [241, 245, 249],
-        textColor: REPORT_RGB.dark,
-      },
-    },
-    {
-      content: sumActive,
-      styles: {
-        halign: "right",
-        fontStyle: "bold",
-        fillColor: [241, 245, 249],
-        textColor: REPORT_RGB.emerald,
-      },
-    },
-    {
-      content: sumLow,
-      styles: {
-        halign: "right",
-        fontStyle: "bold",
-        fillColor: [241, 245, 249],
-        textColor: REPORT_RGB.amber,
-      },
-    },
-    {
-      content: sumUnits,
-      styles: {
-        halign: "right",
-        fontStyle: "bold",
-        fillColor: [241, 245, 249],
-        textColor: REPORT_RGB.dark,
-      },
-    },
-    {
-      content: formatMoney(sumCost),
-      styles: {
-        halign: "right",
-        fontStyle: "bold",
-        fillColor: [241, 245, 249],
-        textColor: themeRgb,
-      },
-    },
-    {
-      content: formatMoney(sumRetail),
-      styles: {
-        halign: "right",
-        fontStyle: "bold",
-        fillColor: [241, 245, 249],
-        textColor: REPORT_RGB.emerald,
-      },
-    },
-    {
-      content: formatMoney(sumProfit),
-      styles: {
-        halign: "right",
-        fontStyle: "bold",
-        fillColor: [241, 245, 249],
-        textColor: REPORT_RGB.emerald,
-      },
-    },
-    {
-      content: "100.0%",
-      styles: {
-        halign: "right",
-        fontStyle: "bold",
-        fillColor: [241, 245, 249],
-        textColor: REPORT_RGB.dark,
-      },
-    },
-  ]);
+      visibleColumns,
+      preserveFixedWidthsFromCount: 8,
+    }
+  );
 
   await generateAndDownloadCorporatePdf({
     fileName: `Category_Inventory_Report_${getExportFileDateSuffix(meta)}.pdf`,
     reportTitle: "Category-Wise Inventory Valuation Report",
     metaRightLabel: `Total Categories: ${categories.length}`,
-    headers: [
-      "SL",
-      "Category Name",
-      "Products",
-      "Active",
-      "Low Stock",
-      "Stock Qty",
-      "Cost Value",
-      "Retail Value",
-      "Est. Profit",
-      "Share %",
-    ],
+    headers,
     bodyRows,
     meta,
-    columnStyles: {
-      0: { halign: "center", cellWidth: 12 },
-      1: { halign: "left", fontStyle: "bold" },
-      2: { halign: "right", cellWidth: 22 },
-      3: { halign: "right", cellWidth: 20, textColor: REPORT_RGB.emerald },
-      4: { halign: "right", cellWidth: 22 },
-      5: { halign: "right", cellWidth: 26 },
-      6: { halign: "right", cellWidth: 30, fontStyle: "bold" },
-      7: {
+    columnStyles,
+  });
+}
+
+type LowStockTotals = {
+  sumCurrent: number;
+  sumShortfall: number;
+  sumRestockCost: number;
+  itemCount: number;
+};
+
+function buildLowStockColumns(): ExportColumnDef<
+  NormalizedProductMetrics,
+  LowStockTotals
+>[] {
+  return [
+    {
+      key: "sl",
+      excelHeader: "SL",
+      isLeadingLabel: true,
+      pdfStyle: { halign: "center", cellWidth: 10 },
+      excelValue: (_, idx) => idx + 1,
+      pdfCell: (_, idx) => idx + 1,
+    },
+    {
+      key: "code",
+      excelHeader: "Code",
+      isLeadingLabel: true,
+      pdfStyle: { halign: "left", cellWidth: 26 },
+      excelValue: (m) => m.code,
+      pdfCell: (m) => m.code,
+    },
+    {
+      key: "name",
+      excelHeader: "Product Name",
+      isLeadingLabel: true,
+      pdfStyle: { halign: "left", fontStyle: "bold" },
+      excelValue: (m) => m.name,
+      pdfCell: (m) => m.name,
+    },
+    {
+      key: "category",
+      excelHeader: "Category",
+      isLeadingLabel: true,
+      pdfStyle: { halign: "left", cellWidth: 28 },
+      excelValue: (m) => m.category,
+      pdfCell: (m) => m.category,
+    },
+    {
+      key: "currentStock",
+      excelHeader: "Current Qty",
+      pdfHeader: "Current Stock",
+      pdfStyle: { halign: "right", cellWidth: 28 },
+      excelValue: (m) => m.quantity,
+      excelTotalValue: (t) => t.sumCurrent,
+      pdfCell: (m) => m.displayStock,
+      pdfSummaryCell: (t) => ({
+        content: t.sumCurrent,
+        styles: { textColor: REPORT_RGB.dark },
+      }),
+    },
+    {
+      key: "minThreshold",
+      excelHeader: "Min Threshold",
+      pdfHeader: "Threshold",
+      pdfStyle: { halign: "right", cellWidth: 22 },
+      excelValue: (m) => m.lowThreshold,
+      excelTotalValue: () => "-",
+      pdfCell: (m) => m.lowThreshold,
+      pdfSummaryCell: () => ({
+        content: "-",
+        styles: { textColor: REPORT_RGB.muted, fontStyle: "normal" },
+      }),
+    },
+    {
+      key: "shortfall",
+      excelHeader: "Shortfall Qty",
+      pdfHeader: "Shortfall",
+      pdfStyle: {
         halign: "right",
-        cellWidth: 30,
+        cellWidth: 22,
         fontStyle: "bold",
-        textColor: REPORT_RGB.emerald,
+        textColor: REPORT_RGB.rose,
       },
-      8: {
+      excelValue: (m) => m.shortfallQty,
+      excelTotalValue: (t) => t.sumShortfall,
+      pdfCell: (m) => m.shortfallQty,
+      pdfSummaryCell: (t) => ({
+        content: t.sumShortfall,
+        styles: { textColor: REPORT_RGB.rose },
+      }),
+    },
+    {
+      key: "buyPrice",
+      excelHeader: "Buy Price (BDT)",
+      pdfHeader: "Buy Price",
+      pdfStyle: { halign: "right", cellWidth: 24 },
+      excelValue: (m) => m.buyPrice,
+      excelTotalValue: () => "-",
+      pdfCell: (m) => formatMoney(m.buyPrice),
+      pdfSummaryCell: () => ({
+        content: "-",
+        styles: { textColor: REPORT_RGB.muted, fontStyle: "normal" },
+      }),
+    },
+    {
+      key: "restockCost",
+      excelHeader: "Est. Restock Cost (BDT)",
+      pdfHeader: "Restock Cost",
+      pdfStyle: {
         halign: "right",
         cellWidth: 28,
         fontStyle: "bold",
-        textColor: REPORT_RGB.emerald,
+        textColor: REPORT_RGB.rose,
       },
-      9: { halign: "right", cellWidth: 20 },
+      excelValue: (m) => m.restockCost,
+      excelTotalValue: (t) => t.sumRestockCost,
+      pdfCell: (m) => formatMoney(m.restockCost),
+      pdfSummaryCell: (t) => ({
+        content: formatMoney(t.sumRestockCost),
+        styles: { textColor: REPORT_RGB.rose },
+      }),
     },
-  });
+    {
+      key: "alertLevel",
+      excelHeader: "Alert Level",
+      pdfHeader: "Alert",
+      pdfStyle: { halign: "center", cellWidth: 26 },
+      excelValue: (m) =>
+        m.stockState === "OUT" ? "Out of Stock" : "Low Stock",
+      excelTotalValue: (t) => `${t.itemCount} Alerts`,
+      pdfCell: (m) => ({
+        content: m.stockState === "OUT" ? "OUT OF STOCK" : "LOW STOCK",
+        styles: {
+          textColor: getPdfStockColor(m.stockState),
+          fontStyle: "bold",
+        },
+      }),
+      pdfSummaryCell: (t) => ({
+        content: `${t.itemCount} Items`,
+        styles: { halign: "center", textColor: REPORT_RGB.amber },
+      }),
+    },
+  ];
 }
 
 /**
@@ -882,7 +1063,8 @@ export async function downloadCategoryInventoryPdf(
  */
 export async function exportLowStockReportExcel(
   products: ProductItem[],
-  meta: ReportCompanyMeta
+  meta: ReportCompanyMeta,
+  visibleColumns?: Record<string, boolean>
 ): Promise<number> {
   if (!products || products.length === 0) {
     throw new Error("No low-stock product alerts available to export");
@@ -892,40 +1074,22 @@ export async function exportLowStockReportExcel(
   let sumShortfall = 0;
   let sumRestockCost = 0;
 
-  const rows = products.map((p, idx) => {
+  const metrics = products.map((p, idx) => {
     const m = extractInventoryProductMetrics(p, idx);
     sumCurrent += m.quantity;
     sumShortfall += m.shortfallQty;
     sumRestockCost += m.restockCost;
-
-    return {
-      SL: idx + 1,
-      Code: m.code,
-      "Product Name": m.name,
-      Category: m.category,
-      "Current Qty": m.quantity,
-      "Min Threshold": m.lowThreshold,
-      "Shortfall Qty": m.shortfallQty,
-      Unit: m.unit,
-      "Buy Price (BDT)": m.buyPrice,
-      "Est. Restock Cost (BDT)": m.restockCost,
-      "Alert Level": m.stockState === "OUT" ? "Out of Stock" : "Low Stock",
-    };
+    return m;
   });
 
-  const totalRow = {
-    SL: "TOTAL RESTOCK SUMMARY",
-    Code: "",
-    "Product Name": "",
-    Category: "",
-    "Current Qty": sumCurrent,
-    "Min Threshold": "-",
-    "Shortfall Qty": sumShortfall,
-    Unit: "",
-    "Buy Price (BDT)": "-",
-    "Est. Restock Cost (BDT)": sumRestockCost,
-    "Alert Level": `${products.length} Alerts`,
-  };
+  const columns = buildLowStockColumns();
+  const { rows, totalRow, totalSummarySpan } = buildDynamicExcelPayload(
+    metrics,
+    columns,
+    { sumCurrent, sumShortfall, sumRestockCost, itemCount: products.length },
+    "TOTAL RESTOCK SUMMARY",
+    visibleColumns
+  );
 
   await buildAndDownloadExcel(rows, totalRow, {
     fileName: `Low_Stock_Alert_Report_${getExportFileDateSuffix(meta)}.xlsx`,
@@ -936,8 +1100,8 @@ export async function exportLowStockReportExcel(
     businessLogoUrl: meta.businessLogoUrl,
     startDate: meta.startDate,
     endDate: meta.endDate,
-    metaRightLabel: `Total Alerts: ${products.length}`,
-    totalSummarySpan: 4,
+    totalLabel: "Total Alerts",
+    totalSummarySpan,
     includeSignatures: true,
   });
 
@@ -949,7 +1113,8 @@ export async function exportLowStockReportExcel(
  */
 export async function downloadLowStockReportPdf(
   products: ProductItem[],
-  meta: ReportCompanyMeta
+  meta: ReportCompanyMeta,
+  visibleColumns?: Record<string, boolean>
 ): Promise<void> {
   if (!products || products.length === 0) {
     throw new Error("No low-stock product alerts available to download PDF");
@@ -959,136 +1124,33 @@ export async function downloadLowStockReportPdf(
   let sumShortfall = 0;
   let sumRestockCost = 0;
 
-  const bodyRows: RowInput[] = products.map((p, idx) => {
+  const metrics = products.map((p, idx) => {
     const m = extractInventoryProductMetrics(p, idx);
     sumCurrent += m.quantity;
     sumShortfall += m.shortfallQty;
     sumRestockCost += m.restockCost;
-
-    return [
-      idx + 1,
-      m.code,
-      m.name,
-      m.category,
-      m.displayStock,
-      m.lowThreshold,
-      m.shortfallQty,
-      formatMoney(m.buyPrice),
-      formatMoney(m.restockCost),
-      {
-        content: m.stockState === "OUT" ? "OUT OF STOCK" : "LOW STOCK",
-        styles: {
-          textColor: getPdfStockColor(m.stockState),
-          fontStyle: "bold",
-        },
-      },
-    ];
+    return m;
   });
 
-  bodyRows.push([
+  const columns = buildLowStockColumns();
+  const { headers, bodyRows, columnStyles } = buildDynamicPdfPayload(
+    metrics,
+    columns,
+    { sumCurrent, sumShortfall, sumRestockCost, itemCount: products.length },
+    "TOTAL RESTOCK ESTIMATE",
     {
-      content: "TOTAL RESTOCK ESTIMATE",
-      colSpan: 4,
-      styles: {
-        halign: "center",
-        fontStyle: "bold",
-        fillColor: [241, 245, 249],
-        textColor: REPORT_RGB.dark,
-      },
-    },
-    {
-      content: sumCurrent,
-      styles: {
-        halign: "right",
-        fontStyle: "bold",
-        fillColor: [241, 245, 249],
-        textColor: REPORT_RGB.dark,
-      },
-    },
-    {
-      content: "-",
-      styles: {
-        halign: "right",
-        fillColor: [241, 245, 249],
-        textColor: REPORT_RGB.muted,
-      },
-    },
-    {
-      content: sumShortfall,
-      styles: {
-        halign: "right",
-        fontStyle: "bold",
-        fillColor: [241, 245, 249],
-        textColor: REPORT_RGB.rose,
-      },
-    },
-    {
-      content: "-",
-      styles: {
-        halign: "right",
-        fillColor: [241, 245, 249],
-        textColor: REPORT_RGB.muted,
-      },
-    },
-    {
-      content: formatMoney(sumRestockCost),
-      styles: {
-        halign: "right",
-        fontStyle: "bold",
-        fillColor: [241, 245, 249],
-        textColor: REPORT_RGB.rose,
-      },
-    },
-    {
-      content: `${products.length} Items`,
-      styles: {
-        halign: "center",
-        fontStyle: "bold",
-        fillColor: [241, 245, 249],
-        textColor: REPORT_RGB.amber,
-      },
-    },
-  ]);
+      visibleColumns,
+      preserveFixedWidthsFromCount: 8,
+    }
+  );
 
   await generateAndDownloadCorporatePdf({
     fileName: `Low_Stock_Alert_Report_${getExportFileDateSuffix(meta)}.pdf`,
     reportTitle: "Low & Out of Stock Reorder Alert Report",
     metaRightLabel: `Total Alerts: ${products.length}`,
-    headers: [
-      "SL",
-      "Code",
-      "Product Name",
-      "Category",
-      "Current Stock",
-      "Threshold",
-      "Shortfall",
-      "Buy Price",
-      "Restock Cost",
-      "Alert",
-    ],
+    headers,
     bodyRows,
     meta,
-    columnStyles: {
-      0: { halign: "center", cellWidth: 10 },
-      1: { halign: "left", cellWidth: 26 },
-      2: { halign: "left", fontStyle: "bold" },
-      3: { halign: "left", cellWidth: 28 },
-      4: { halign: "right", cellWidth: 28 },
-      5: { halign: "right", cellWidth: 22 },
-      6: {
-        halign: "right",
-        cellWidth: 22,
-        fontStyle: "bold",
-        textColor: REPORT_RGB.rose,
-      },
-      7: { halign: "right", cellWidth: 24 },
-      8: {
-        halign: "right",
-        cellWidth: 28,
-        fontStyle: "bold",
-        textColor: REPORT_RGB.rose,
-      },
-      9: { halign: "center", cellWidth: 26 },
-    },
+    columnStyles,
   });
 }

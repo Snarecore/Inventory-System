@@ -16,6 +16,10 @@ import {
 } from "@/components/common";
 import { formatMoney } from "@/utils/formatters";
 import { useDebounce } from "@/hooks/useDebounce";
+import { useColumnVisibility } from "@/hooks/useColumnVisibility";
+import ColumnVisibilityDropdown, {
+  type ColumnItem,
+} from "@/components/table-components/ColumnVisibilityDropdown";
 import ReportExportButtons from "./ReportExportButtons";
 import ReportDateRangeControl from "./ReportDateRangeControl";
 import {
@@ -33,11 +37,13 @@ interface PartyTradeReportTableProps extends ReportDateFilterProps {
   isLoading?: boolean;
   onExportExcel: (
     parties: PartyTradeSummary[],
-    meta: ReportCompanyMeta
+    meta: ReportCompanyMeta,
+    visibleColumns?: Record<string, boolean>
   ) => Promise<number>;
   onDownloadPdf: (
     parties: PartyTradeSummary[],
-    meta: ReportCompanyMeta
+    meta: ReportCompanyMeta,
+    visibleColumns?: Record<string, boolean>
   ) => Promise<void>;
   excelSuccessText: (count: number) => string;
   pdfSuccessText: string;
@@ -97,6 +103,27 @@ export const PartyTradeReportTable: React.FC<PartyTradeReportTableProps> = ({
   const [sortBy, setSortBy] = useState<string>("billed_desc");
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
+
+  const availableColumns: ColumnItem[] = [
+    { key: "sl", label: "SL" },
+    { key: "partyName", label: labels.partyCol },
+    { key: "phone", label: "Phone" },
+    { key: "address", label: "Address" },
+    { key: "orders", label: "Orders" },
+    { key: "totalBilled", label: "Gross Billed (৳)" },
+    { key: "totalPaid", label: "Total Paid (৳)" },
+    { key: "totalDue", label: "Outstanding Due (৳)" },
+    { key: "lastDate", label: "Last Order" },
+    { key: "status", label: "Status" },
+  ];
+
+  const {
+    visibleColumns,
+    isColVisible,
+    handleToggleColumn,
+    handleResetColumns,
+    activeVisibleColumnCount,
+  } = useColumnVisibility(availableColumns, `party_${domain}_report_columns`);
 
   const partySummaries = aggregateTradeParties(transactions, domain);
 
@@ -198,13 +225,24 @@ export const PartyTradeReportTable: React.FC<PartyTradeReportTableProps> = ({
             />
           </div>
 
+          <ColumnVisibilityDropdown
+            columns={availableColumns}
+            visibleColumns={visibleColumns}
+            onToggle={handleToggleColumn}
+            onReset={handleResetColumns}
+          />
+
           <ReportExportButtons
             onExportExcel={async () => {
-              const count = await onExportExcel(filtered, companyMeta);
+              const count = await onExportExcel(
+                filtered,
+                companyMeta,
+                visibleColumns
+              );
               return excelSuccessText(count);
             }}
             onDownloadPdf={async () => {
-              await onDownloadPdf(filtered, companyMeta);
+              await onDownloadPdf(filtered, companyMeta, visibleColumns);
               return pdfSuccessText;
             }}
           />
@@ -214,22 +252,22 @@ export const PartyTradeReportTable: React.FC<PartyTradeReportTableProps> = ({
       {/* Table */}
       <TableScroll>
         {isLoading ? (
-          <TableSkeleton columnCount={10} rowCount={8} />
+          <TableSkeleton columnCount={activeVisibleColumnCount} rowCount={8} />
         ) : paginated.length === 0 ? (
           <EmptyState title={labels.emptyTitle} description={labels.emptyDesc} />
         ) : (
           <Table>
             <TableHead>
-              <TableTh align="center" width={40}>SL</TableTh>
-              <TableTh>{labels.partyCol}</TableTh>
-              <TableTh width={130}>Phone</TableTh>
-              <TableTh width={180}>Address</TableTh>
-              <TableTh align="center" width={90}>Orders</TableTh>
-              <TableTh align="right" width={130}>Gross Billed (৳)</TableTh>
-              <TableTh align="right" width={130}>Total Paid (৳)</TableTh>
-              <TableTh align="right" width={130}>Outstanding Due (৳)</TableTh>
-              <TableTh align="center" width={120}>Last Order</TableTh>
-              <TableTh align="center" width={100}>Status</TableTh>
+              {isColVisible("sl") && <TableTh align="center" width={40}>SL</TableTh>}
+              {isColVisible("partyName") && <TableTh>{labels.partyCol}</TableTh>}
+              {isColVisible("phone") && <TableTh width={130}>Phone</TableTh>}
+              {isColVisible("address") && <TableTh width={180}>Address</TableTh>}
+              {isColVisible("orders") && <TableTh align="center" width={90}>Orders</TableTh>}
+              {isColVisible("totalBilled") && <TableTh align="right" width={130}>Gross Billed (৳)</TableTh>}
+              {isColVisible("totalPaid") && <TableTh align="right" width={130}>Total Paid (৳)</TableTh>}
+              {isColVisible("totalDue") && <TableTh align="right" width={130}>Outstanding Due (৳)</TableTh>}
+              {isColVisible("lastDate") && <TableTh align="center" width={120}>Last Order</TableTh>}
+              {isColVisible("status") && <TableTh align="center" width={100}>Status</TableTh>}
             </TableHead>
             <TableBody>
               {paginated.map((p, idx) => {
@@ -240,62 +278,82 @@ export const PartyTradeReportTable: React.FC<PartyTradeReportTableProps> = ({
                     key={p.partyName + idx}
                     className="hover:bg-[var(--primary-color-light)]/40 transition-colors"
                   >
-                    <td className="py-2.5 px-3 text-center text-[var(--ui-text)] font-semibold text-xs">
-                      {(currentPage - 1) * pageSize + idx + 1}
-                    </td>
-                    <td className="py-2.5 px-3 font-medium text-[var(--ui-text)] text-xs whitespace-nowrap">
-                      {p.partyName}
-                    </td>
-                    <td className="py-2.5 px-3 text-xs text-[var(--ui-text)] whitespace-nowrap">
-                      {p.partyPhone || (
-                        <span className="text-[var(--ui-text-subtle)] font-normal">
-                          N/A
+                    {isColVisible("sl") && (
+                      <td className="py-2.5 px-3 text-center text-[var(--ui-text)] font-semibold text-xs">
+                        {(currentPage - 1) * pageSize + idx + 1}
+                      </td>
+                    )}
+                    {isColVisible("partyName") && (
+                      <td className="py-2.5 px-3 font-medium text-[var(--ui-text)] text-xs whitespace-nowrap">
+                        {p.partyName}
+                      </td>
+                    )}
+                    {isColVisible("phone") && (
+                      <td className="py-2.5 px-3 text-xs text-[var(--ui-text)] whitespace-nowrap">
+                        {p.partyPhone || (
+                          <span className="text-[var(--ui-text-subtle)] font-normal">
+                            N/A
+                          </span>
+                        )}
+                      </td>
+                    )}
+                    {isColVisible("address") && (
+                      <td className="py-2.5 px-3 text-xs text-[var(--ui-text-muted)] max-w-[200px] truncate">
+                        {p.partyAddress || (
+                          <span className="text-[var(--ui-text-subtle)] font-normal">
+                            N/A
+                          </span>
+                        )}
+                      </td>
+                    )}
+                    {isColVisible("orders") && (
+                      <td className="py-2.5 px-3 text-center text-xs text-[var(--ui-text)]">
+                        {p.invoicesCount}
+                      </td>
+                    )}
+                    {isColVisible("totalBilled") && (
+                      <td className="py-2.5 px-3 text-right font-bold text-xs text-[var(--ui-text)] whitespace-nowrap">
+                        ৳ {formatMoney(p.totalBilled)}
+                      </td>
+                    )}
+                    {isColVisible("totalPaid") && (
+                      <td className="py-2.5 px-3 text-right font-semibold text-xs text-[var(--ui-success-dark)] whitespace-nowrap">
+                        ৳ {formatMoney(p.totalPaid)}
+                      </td>
+                    )}
+                    {isColVisible("totalDue") && (
+                      <td className="py-2.5 px-3 text-right text-xs whitespace-nowrap">
+                        {hasDue ? (
+                          <span className="text-[var(--ui-danger)] font-bold">
+                            ৳ {formatMoney(p.totalDue)}
+                          </span>
+                        ) : (
+                          <span className="text-[var(--ui-text-subtle)] font-normal">
+                            ৳ 0
+                          </span>
+                        )}
+                      </td>
+                    )}
+                    {isColVisible("lastDate") && (
+                      <td className="py-2.5 px-3 text-center text-[var(--ui-text-muted)] whitespace-nowrap text-xs">
+                        {p.lastDate
+                          ? moment(p.lastDate).format("DD MMM, YYYY")
+                          : "N/A"}
+                      </td>
+                    )}
+                    {isColVisible("status") && (
+                      <td className="py-2.5 px-3 text-center">
+                        <span
+                          className={`inline-block px-2 py-0.5 rounded-md text-[10px] font-semibold border ${
+                            hasDue
+                              ? "bg-[var(--ui-danger-light)] text-[var(--ui-danger-dark)] border-[var(--ui-danger-border)]"
+                              : "bg-[var(--ui-success-light)] text-[var(--ui-success-dark)] border-[var(--ui-success-border)]"
+                          }`}
+                        >
+                          {hasDue ? "Has Due" : "Settled"}
                         </span>
-                      )}
-                    </td>
-                    <td className="py-2.5 px-3 text-xs text-[var(--ui-text-muted)] max-w-[200px] truncate">
-                      {p.partyAddress || (
-                        <span className="text-[var(--ui-text-subtle)] font-normal">
-                          N/A
-                        </span>
-                      )}
-                    </td>
-                    <td className="py-2.5 px-3 text-center text-xs text-[var(--ui-text)]">
-                      {p.invoicesCount}
-                    </td>
-                    <td className="py-2.5 px-3 text-right font-bold text-xs text-[var(--ui-text)] whitespace-nowrap">
-                      ৳ {formatMoney(p.totalBilled)}
-                    </td>
-                    <td className="py-2.5 px-3 text-right font-semibold text-xs text-[var(--ui-success-dark)] whitespace-nowrap">
-                      ৳ {formatMoney(p.totalPaid)}
-                    </td>
-                    <td className="py-2.5 px-3 text-right text-xs whitespace-nowrap">
-                      {hasDue ? (
-                        <span className="text-[var(--ui-danger)] font-bold">
-                          ৳ {formatMoney(p.totalDue)}
-                        </span>
-                      ) : (
-                        <span className="text-[var(--ui-text-subtle)] font-normal">
-                          ৳ 0
-                        </span>
-                      )}
-                    </td>
-                    <td className="py-2.5 px-3 text-center text-[var(--ui-text-muted)] whitespace-nowrap text-xs">
-                      {p.lastDate
-                        ? moment(p.lastDate).format("DD MMM, YYYY")
-                        : "N/A"}
-                    </td>
-                    <td className="py-2.5 px-3 text-center">
-                      <span
-                        className={`inline-block px-2 py-0.5 rounded-md text-[10px] font-semibold border ${
-                          hasDue
-                            ? "bg-[var(--ui-danger-light)] text-[var(--ui-danger-dark)] border-[var(--ui-danger-border)]"
-                            : "bg-[var(--ui-success-light)] text-[var(--ui-success-dark)] border-[var(--ui-success-border)]"
-                        }`}
-                      >
-                        {hasDue ? "Has Due" : "Settled"}
-                      </span>
-                    </td>
+                      </td>
+                    )}
                   </tr>
                 );
               })}

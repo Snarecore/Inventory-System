@@ -13,6 +13,11 @@ import { getFileViewUrl } from "@/services/file-upload-service";
 import { getUserInfo } from "@/utils/auth-storage";
 import { getPurchaseDateString } from "@/pages/admin/trade/purchases/hooks/usePurchaseTableFilter";
 import type { RowInput, Styles } from "jspdf-autotable";
+import {
+  buildDynamicExcelPayload,
+  buildDynamicPdfPayload,
+  type ExportColumnDef,
+} from "@/utils/report-export-columns";
 
 export type TradeDomain = "sale" | "purchase";
 export type TradeReportTab = "invoices" | "products" | "parties";
@@ -770,6 +775,7 @@ export async function downloadTradeInvoicesPdf(
     partyColumnHeader: string;
     includeTransport?: boolean;
     emptyErrorMessage: string;
+    visibleColumns?: Record<string, boolean>;
   }
 ): Promise<void> {
   if (!records || records.length === 0) {
@@ -786,7 +792,7 @@ export async function downloadTradeInvoicesPdf(
   let sumDue = 0;
   let sumItems = 0;
 
-  const dataRows: RowInput[] = records.map((t: any, idx: number) => {
+  const normalizedRows = records.map((t: any, idx: number) => {
     const m = extractTradeRecordMetrics(t, config.domain, idx);
     const dateStr = m.tradeDate
       ? moment(m.tradeDate).format("DD-MMM-YYYY").toUpperCase()
@@ -801,202 +807,203 @@ export async function downloadTradeInvoicesPdf(
     sumDue += m.due;
     sumItems += m.itemsCount;
 
-    const statusColor =
-      m.status === "PAID"
-        ? REPORT_RGB.emerald
-        : m.status === "PARTIAL"
-        ? REPORT_RGB.amber
-        : REPORT_RGB.rose;
-
-    const row: RowInput = [
-      idx + 1,
-      { content: m.orderNo, styles: { fontStyle: "bold" } },
-      dateStr,
-      m.partyName,
-      m.partyPhone || "-",
-      m.itemsCount,
-      formatMoney(m.subtotal),
-      m.discount > 0 ? formatMoney(m.discount) : "-",
-      m.vat > 0 ? formatMoney(m.vat) : "-",
-    ];
-
-    if (config.includeTransport) {
-      row.push(m.transportCost > 0 ? formatMoney(m.transportCost) : "-");
-    }
-
-    row.push(
-      { content: formatMoney(m.grandTotal), styles: { fontStyle: "bold" } },
-      {
-        content: formatMoney(m.paid),
-        styles: { fontStyle: "bold", textColor: REPORT_RGB.emerald },
-      },
-      {
-        content: m.due > 0 ? formatMoney(m.due) : "-",
-        styles: {
-          fontStyle: "bold",
-          textColor: m.due > 0 ? REPORT_RGB.rose : REPORT_RGB.muted,
-        },
-      },
-      m.paymentType,
-      {
-        content: m.status,
-        styles: { fontStyle: "bold", textColor: statusColor },
-      }
-    );
-
-    return row;
+    return { m, dateStr };
   });
 
-  const summaryRow: RowInput = [
+  const totals = {
+    sumItems,
+    sumSub,
+    sumDisc,
+    sumVat,
+    sumTransport,
+    sumGt,
+    sumPaid,
+    sumDue,
+  };
+
+  type InvoiceRow = (typeof normalizedRows)[number];
+  const partyKey = config.domain === "purchase" ? "supplier" : "customer";
+
+  const columns: ExportColumnDef<InvoiceRow, typeof totals>[] = [
     {
-      content: `TOTAL SUMMARY (${records.length} Invoices)`,
-      colSpan: 5,
-      styles: {
-        halign: "center",
-        fontStyle: "bold",
-        fillColor: REPORT_RGB.summaryFill,
-        textColor: REPORT_RGB.dark,
-      },
+      key: "sl",
+      excelHeader: "SL",
+      isLeadingLabel: true,
+      pdfStyle: { halign: "center", cellWidth: config.includeTransport ? 9 : 10 },
+      excelValue: (_, idx) => idx + 1,
+      pdfCell: (_, idx) => idx + 1,
     },
     {
-      content: sumItems,
-      styles: {
-        halign: "center",
-        fontStyle: "bold",
-        fillColor: REPORT_RGB.summaryFill,
-      },
+      key: "orderId",
+      excelHeader: "Order ID",
+      isLeadingLabel: true,
+      pdfStyle: { halign: "left" },
+      excelValue: (r) => r.m.orderNo,
+      pdfCell: (r) => ({ content: r.m.orderNo, styles: { fontStyle: "bold" } }),
     },
     {
-      content: formatMoney(sumSub),
-      styles: {
-        halign: "right",
-        fontStyle: "bold",
-        fillColor: REPORT_RGB.summaryFill,
-      },
+      key: "date",
+      excelHeader: "Date",
+      isLeadingLabel: true,
+      pdfStyle: { halign: "center" },
+      excelValue: (r) => r.dateStr,
+      pdfCell: (r) => r.dateStr,
     },
     {
-      content: sumDisc > 0 ? formatMoney(sumDisc) : "-",
-      styles: {
-        halign: "right",
-        fontStyle: "bold",
-        fillColor: REPORT_RGB.summaryFill,
-      },
+      key: partyKey,
+      excelHeader: config.partyColumnHeader,
+      isLeadingLabel: true,
+      pdfStyle: { halign: "left" },
+      excelValue: (r) => r.m.partyName,
+      pdfCell: (r) => r.m.partyName,
     },
     {
-      content: sumVat > 0 ? formatMoney(sumVat) : "-",
-      styles: {
-        halign: "right",
-        fontStyle: "bold",
-        fillColor: REPORT_RGB.summaryFill,
+      key: "phone",
+      excelHeader: "Phone",
+      isLeadingLabel: true,
+      pdfStyle: { halign: "center" },
+      excelValue: (r) => r.m.partyPhone || "-",
+      pdfCell: (r) => r.m.partyPhone || "-",
+    },
+    {
+      key: "items",
+      excelHeader: "Items",
+      pdfStyle: { halign: "center", cellWidth: config.includeTransport ? 11 : 12 },
+      excelValue: (r) => r.m.itemsCount,
+      pdfCell: (r) => r.m.itemsCount,
+      pdfSummaryCell: (t) => ({ content: t.sumItems, styles: { halign: "center" } }),
+    },
+    {
+      key: "subtotal",
+      excelHeader: "Subtotal (BDT)",
+      pdfStyle: { halign: "right" },
+      excelValue: (r) => r.m.subtotal,
+      pdfCell: (r) => formatMoney(r.m.subtotal),
+      pdfSummaryCell: (t) => ({ content: formatMoney(t.sumSub) }),
+    },
+    {
+      key: "discount",
+      excelHeader: "Discount (BDT)",
+      pdfStyle: { halign: "right" },
+      excelValue: (r) => r.m.discount,
+      pdfCell: (r) => (r.m.discount > 0 ? formatMoney(r.m.discount) : "-"),
+      pdfSummaryCell: (t) => ({
+        content: t.sumDisc > 0 ? formatMoney(t.sumDisc) : "-",
+      }),
+    },
+    {
+      key: "vat",
+      excelHeader: "VAT (BDT)",
+      pdfStyle: { halign: "right" },
+      excelValue: (r) => r.m.vat,
+      pdfCell: (r) => (r.m.vat > 0 ? formatMoney(r.m.vat) : "-"),
+      pdfSummaryCell: (t) => ({
+        content: t.sumVat > 0 ? formatMoney(t.sumVat) : "-",
+      }),
+    },
+    ...(config.includeTransport
+      ? [
+          {
+            key: "transport",
+            excelHeader: "Transport (BDT)",
+            pdfStyle: { halign: "right" as const },
+            excelValue: (r: InvoiceRow) => r.m.transportCost,
+            pdfCell: (r: InvoiceRow) =>
+              r.m.transportCost > 0 ? formatMoney(r.m.transportCost) : "-",
+            pdfSummaryCell: (t: typeof totals) => ({
+              content: t.sumTransport > 0 ? formatMoney(t.sumTransport) : "-",
+            }),
+          },
+        ]
+      : []),
+    {
+      key: "total",
+      excelHeader: "Grand Total (BDT)",
+      pdfStyle: { halign: "right" },
+      excelValue: (r) => r.m.grandTotal,
+      pdfCell: (r) => ({
+        content: formatMoney(r.m.grandTotal),
+        styles: { fontStyle: "bold" },
+      }),
+      pdfSummaryCell: (t) => ({
+        content: formatMoney(t.sumGt),
+        styles: { textColor: themeRgb },
+      }),
+    },
+    {
+      key: "paid",
+      excelHeader: "Paid (BDT)",
+      pdfStyle: { halign: "right" },
+      excelValue: (r) => r.m.paid,
+      pdfCell: (r) => ({
+        content: formatMoney(r.m.paid),
+        styles: { fontStyle: "bold", textColor: REPORT_RGB.emerald },
+      }),
+      pdfSummaryCell: (t) => ({
+        content: formatMoney(t.sumPaid),
+        styles: { textColor: REPORT_RGB.emerald },
+      }),
+    },
+    {
+      key: "due",
+      excelHeader: "Due (BDT)",
+      pdfStyle: { halign: "right" },
+      excelValue: (r) => r.m.due,
+      pdfCell: (r) => ({
+        content: r.m.due > 0 ? formatMoney(r.m.due) : "-",
+        styles: {
+          fontStyle: "bold",
+          textColor: r.m.due > 0 ? REPORT_RGB.rose : REPORT_RGB.muted,
+        },
+      }),
+      pdfSummaryCell: (t) => ({
+        content: t.sumDue > 0 ? formatMoney(t.sumDue) : "-",
+        styles: {
+          textColor: t.sumDue > 0 ? REPORT_RGB.rose : REPORT_RGB.muted,
+        },
+      }),
+    },
+    {
+      key: "method",
+      excelHeader: "Method",
+      pdfStyle: { halign: "center" },
+      excelValue: (r) => r.m.paymentType,
+      pdfCell: (r) => r.m.paymentType,
+    },
+    {
+      key: "status",
+      excelHeader: "Status",
+      pdfStyle: { halign: "center" },
+      excelValue: (r) => r.m.status,
+      pdfCell: (r) => {
+        const statusColor =
+          r.m.status === "PAID"
+            ? REPORT_RGB.emerald
+            : r.m.status === "PARTIAL"
+            ? REPORT_RGB.amber
+            : REPORT_RGB.rose;
+        return {
+          content: r.m.status,
+          styles: { fontStyle: "bold", textColor: statusColor },
+        };
       },
     },
   ];
 
-  if (config.includeTransport) {
-    summaryRow.push({
-      content: sumTransport > 0 ? formatMoney(sumTransport) : "-",
-      styles: {
-        halign: "right",
-        fontStyle: "bold",
-        fillColor: REPORT_RGB.summaryFill,
-      },
-    });
-  }
-
-  summaryRow.push(
-    {
-      content: formatMoney(sumGt),
-      styles: {
-        halign: "right",
-        fontStyle: "bold",
-        fillColor: REPORT_RGB.summaryFill,
-        textColor: themeRgb,
-      },
-    },
-    {
-      content: formatMoney(sumPaid),
-      styles: {
-        halign: "right",
-        fontStyle: "bold",
-        fillColor: REPORT_RGB.summaryFill,
-        textColor: REPORT_RGB.emerald,
-      },
-    },
-    {
-      content: sumDue > 0 ? formatMoney(sumDue) : "-",
-      styles: {
-        halign: "right",
-        fontStyle: "bold",
-        fillColor: REPORT_RGB.summaryFill,
-        textColor: sumDue > 0 ? REPORT_RGB.rose : REPORT_RGB.muted,
-      },
-    },
-    {
-      content: "",
-      colSpan: 2,
-      styles: { fillColor: REPORT_RGB.summaryFill },
-    }
+  const { headers, bodyRows, columnStyles } = buildDynamicPdfPayload(
+    normalizedRows,
+    columns,
+    totals,
+    `TOTAL SUMMARY (${records.length} Invoices)`,
+    { visibleColumns: config.visibleColumns }
   );
-
-  const headers = [
-    "SL",
-    "Order ID",
-    "Date",
-    config.partyColumnHeader,
-    "Phone",
-    "Items",
-    "Subtotal (BDT)",
-    "Discount (BDT)",
-    "VAT (BDT)",
-    ...(config.includeTransport ? ["Transport (BDT)"] : []),
-    "Grand Total (BDT)",
-    "Paid (BDT)",
-    "Due (BDT)",
-    "Method",
-    "Status",
-  ];
-
-  const columnStyles: { [key: string]: Partial<Styles> } = config.includeTransport
-    ? {
-        "0": { halign: "center", cellWidth: 9 },
-        "1": { halign: "left" },
-        "2": { halign: "center" },
-        "3": { halign: "left" },
-        "4": { halign: "center" },
-        "5": { halign: "center", cellWidth: 11 },
-        "6": { halign: "right" },
-        "7": { halign: "right" },
-        "8": { halign: "right" },
-        "9": { halign: "right" },
-        "10": { halign: "right" },
-        "11": { halign: "right" },
-        "12": { halign: "right" },
-        "13": { halign: "center" },
-        "14": { halign: "center" },
-      }
-    : {
-        "0": { halign: "center", cellWidth: 10 },
-        "1": { halign: "left" },
-        "2": { halign: "center" },
-        "3": { halign: "left" },
-        "4": { halign: "center" },
-        "5": { halign: "center", cellWidth: 12 },
-        "6": { halign: "right" },
-        "7": { halign: "right" },
-        "8": { halign: "right" },
-        "9": { halign: "right" },
-        "10": { halign: "right" },
-        "11": { halign: "right" },
-        "12": { halign: "center" },
-        "13": { halign: "center" },
-      };
 
   await generateAndDownloadCorporatePdf({
     fileName: `${config.filePrefix}_${moment().format("YYYY-MM-DD")}.pdf`,
     reportTitle: config.reportTitle,
     metaRightLabel: `Total Invoices: ${records.length}`,
     headers,
-    bodyRows: [...dataRows, summaryRow],
+    bodyRows,
     columnStyles,
     meta,
     fontSize: config.includeTransport ? 7 : 7.5,
@@ -1017,59 +1024,153 @@ export interface ProductExportLabels {
   emptyPdfError: string;
 }
 
+function buildProductTradeColumns(
+  labels: ProductExportLabels,
+  grandTotalAmount: number,
+  themeRgb: [number, number, number]
+): ExportColumnDef<ProductTradeSummary, { totalQuantity: number; totalAmount: number; totalDiscount: number }>[] {
+  return [
+    {
+      key: "sl",
+      excelHeader: "SL",
+      isLeadingLabel: true,
+      pdfStyle: { halign: "center", cellWidth: 10 },
+      excelValue: (_, idx) => idx + 1,
+      pdfCell: (_, idx) => idx + 1,
+    },
+    {
+      key: "productCode",
+      excelHeader: "Product Code",
+      isLeadingLabel: true,
+      pdfStyle: { halign: "left" },
+      excelValue: (p) => p.productCode,
+      pdfCell: (p) => ({ content: p.productCode, styles: { fontStyle: "bold" } }),
+    },
+    {
+      key: "productName",
+      excelHeader: "Product Name",
+      pdfHeader: "Product Description",
+      isLeadingLabel: true,
+      pdfStyle: { halign: "left" },
+      excelValue: (p) => p.productName,
+      pdfCell: (p) => p.productName,
+    },
+    {
+      key: "unit",
+      excelHeader: "Unit",
+      isLeadingLabel: true,
+      pdfStyle: { halign: "center" },
+      excelValue: (p) => p.unit,
+      pdfCell: (p) => p.unit,
+    },
+    {
+      key: "orders",
+      excelHeader: labels.excelInvoicesHeader,
+      pdfHeader: "Orders",
+      pdfStyle: { halign: "center" },
+      excelValue: (p) => p.invoicesCount,
+      pdfCell: (p) => p.invoicesCount,
+    },
+    {
+      key: "quantity",
+      excelHeader: labels.excelQtyHeader,
+      pdfHeader: labels.pdfQtyHeader,
+      pdfStyle: { halign: "right" },
+      excelValue: (p) => p.totalQuantity,
+      excelTotalValue: (t) => t.totalQuantity,
+      pdfCell: (p) => ({ content: p.totalQuantity, styles: { fontStyle: "bold" } }),
+      pdfSummaryCell: (t) => ({ content: t.totalQuantity }),
+    },
+    {
+      key: "avgRate",
+      excelHeader: "Avg Rate (BDT)",
+      pdfStyle: { halign: "right" },
+      excelValue: (p) =>
+        p.totalQuantity > 0
+          ? Number((p.totalAmount / p.totalQuantity).toFixed(2))
+          : 0,
+      pdfCell: (p) =>
+        formatMoney(p.totalQuantity > 0 ? p.totalAmount / p.totalQuantity : 0),
+    },
+    {
+      key: "discount",
+      excelHeader: "Discount (BDT)",
+      pdfHeader: "Discounts (BDT)",
+      pdfStyle: { halign: "right" },
+      excelValue: (p) => p.totalDiscount,
+      excelTotalValue: (t) => Number(t.totalDiscount.toFixed(2)),
+      pdfCell: (p) => (p.totalDiscount > 0 ? formatMoney(p.totalDiscount) : "-"),
+      pdfSummaryCell: (t) => ({
+        content: t.totalDiscount > 0 ? formatMoney(t.totalDiscount) : "-",
+      }),
+    },
+    {
+      key: "amount",
+      excelHeader: labels.excelAmountHeader,
+      pdfHeader: labels.pdfAmountHeader,
+      pdfStyle: { halign: "right" },
+      excelValue: (p) => p.totalAmount,
+      excelTotalValue: (t) => Number(t.totalAmount.toFixed(2)),
+      pdfCell: (p) => ({
+        content: formatMoney(p.totalAmount),
+        styles: { fontStyle: "bold" },
+      }),
+      pdfSummaryCell: (t) => ({
+        content: formatMoney(t.totalAmount),
+        styles: { textColor: themeRgb },
+      }),
+    },
+    {
+      key: "share",
+      excelHeader: labels.excelShareHeader,
+      pdfHeader: "Share (%)",
+      pdfStyle: { halign: "right" },
+      excelValue: (p) =>
+        `${calculateRevenueSharePct(p.totalAmount, grandTotalAmount)}%`,
+      excelTotalValue: () => "100.0%",
+      pdfCell: (p) =>
+        `${calculateRevenueSharePct(p.totalAmount, grandTotalAmount)}%`,
+      pdfSummaryCell: () => ({ content: "100.0%" }),
+    },
+  ];
+}
+
 /**
  * Shared Product-Wise Excel export helper for Sales & Purchases
  */
 export async function exportProductTradeExcel(
   products: ProductTradeSummary[],
   meta: ReportCompanyMeta,
-  labels: ProductExportLabels
+  labels: ProductExportLabels,
+  visibleColumns?: Record<string, boolean>
 ): Promise<number> {
   if (!products || products.length === 0) {
     throw new Error(labels.emptyExcelError);
   }
 
-  const { totalQuantity, totalAmount, totalDiscount } =
-    calculateProductTotals(products);
+  const totals = calculateProductTotals(products);
+  const themeRgb = argbToRgbTuple(resolveThemeArgb());
+  const columns = buildProductTradeColumns(labels, totals.totalAmount, themeRgb);
 
-  const data = products.map((p, idx) => ({
-    SL: idx + 1,
-    "Product Code": p.productCode,
-    "Product Name": p.productName,
-    Unit: p.unit,
-    [labels.excelQtyHeader]: p.totalQuantity,
-    [labels.excelInvoicesHeader]: p.invoicesCount,
-    [labels.excelAmountHeader]: p.totalAmount,
-    "Discount (BDT)": p.totalDiscount,
-    [labels.excelShareHeader]: `${calculateRevenueSharePct(
-      p.totalAmount,
-      totalAmount
-    )}%`,
-  }));
+  const { rows, totalRow, totalSummarySpan } = buildDynamicExcelPayload(
+    products,
+    columns,
+    totals,
+    `TOTAL SUMMARY (${products.length} Products)`,
+    visibleColumns
+  );
 
-  const totalRow = {
-    SL: `TOTAL SUMMARY (${data.length} Products)`,
-    "Product Code": "",
-    "Product Name": "",
-    Unit: "",
-    [labels.excelQtyHeader]: totalQuantity,
-    [labels.excelInvoicesHeader]: "",
-    [labels.excelAmountHeader]: Number(totalAmount.toFixed(2)),
-    "Discount (BDT)": Number(totalDiscount.toFixed(2)),
-    [labels.excelShareHeader]: "100.0%",
-  };
-
-  await buildAndDownloadExcel(data, totalRow, {
+  await buildAndDownloadExcel(rows, totalRow, {
     ...meta,
     fileName: `${labels.filePrefix}_${moment().format("YYYY-MM-DD")}.xlsx`,
     sheetName: labels.sheetName,
     reportTitle: labels.reportTitle,
     totalLabel: "Total Products",
-    totalSummarySpan: 4,
+    totalSummarySpan,
     includeSignatures: true,
   });
 
-  return data.length;
+  return rows.length;
 }
 
 /**
@@ -1078,110 +1179,32 @@ export async function exportProductTradeExcel(
 export async function downloadProductTradePdf(
   products: ProductTradeSummary[],
   meta: ReportCompanyMeta,
-  labels: ProductExportLabels
+  labels: ProductExportLabels,
+  visibleColumns?: Record<string, boolean>
 ): Promise<void> {
   if (!products || products.length === 0) {
     throw new Error(labels.emptyPdfError);
   }
 
   const themeRgb = argbToRgbTuple(resolveThemeArgb());
-  const { totalQuantity, totalAmount, totalDiscount } =
-    calculateProductTotals(products);
+  const totals = calculateProductTotals(products);
+  const columns = buildProductTradeColumns(labels, totals.totalAmount, themeRgb);
 
-  const dataRows: RowInput[] = products.map((p, idx) => {
-    const avgRate = p.totalQuantity > 0 ? p.totalAmount / p.totalQuantity : 0;
-    const share = calculateRevenueSharePct(p.totalAmount, totalAmount);
-
-    return [
-      idx + 1,
-      { content: p.productCode, styles: { fontStyle: "bold" } },
-      p.productName,
-      p.unit,
-      p.invoicesCount,
-      { content: p.totalQuantity, styles: { fontStyle: "bold" } },
-      formatMoney(avgRate),
-      p.totalDiscount > 0 ? formatMoney(p.totalDiscount) : "-",
-      { content: formatMoney(p.totalAmount), styles: { fontStyle: "bold" } },
-      `${share}%`,
-    ];
-  });
-
-  const summaryRow: RowInput = [
-    {
-      content: `TOTAL SUMMARY (${products.length} Products)`,
-      colSpan: 5,
-      styles: {
-        halign: "center",
-        fontStyle: "bold",
-        fillColor: REPORT_RGB.summaryFill,
-        textColor: REPORT_RGB.dark,
-      },
-    },
-    {
-      content: totalQuantity,
-      styles: {
-        halign: "right",
-        fontStyle: "bold",
-        fillColor: REPORT_RGB.summaryFill,
-      },
-    },
-    { content: "", styles: { fillColor: REPORT_RGB.summaryFill } },
-    {
-      content: totalDiscount > 0 ? formatMoney(totalDiscount) : "-",
-      styles: {
-        halign: "right",
-        fontStyle: "bold",
-        fillColor: REPORT_RGB.summaryFill,
-      },
-    },
-    {
-      content: formatMoney(totalAmount),
-      styles: {
-        halign: "right",
-        fontStyle: "bold",
-        fillColor: REPORT_RGB.summaryFill,
-        textColor: themeRgb,
-      },
-    },
-    {
-      content: "100.0%",
-      styles: {
-        halign: "right",
-        fontStyle: "bold",
-        fillColor: REPORT_RGB.summaryFill,
-      },
-    },
-  ];
+  const { headers, bodyRows, columnStyles } = buildDynamicPdfPayload(
+    products,
+    columns,
+    totals,
+    `TOTAL SUMMARY (${products.length} Products)`,
+    { visibleColumns }
+  );
 
   await generateAndDownloadCorporatePdf({
     fileName: `${labels.filePrefix}_${moment().format("YYYY-MM-DD")}.pdf`,
     reportTitle: labels.reportTitle,
     metaRightLabel: `Total Products: ${products.length}`,
-    headers: [
-      "SL",
-      "Product Code",
-      "Product Description",
-      "Unit",
-      "Orders",
-      labels.pdfQtyHeader,
-      "Avg Rate (BDT)",
-      "Discounts (BDT)",
-      labels.pdfAmountHeader,
-      "Share (%)",
-    ],
-    bodyRows: [...dataRows, summaryRow],
-    columnStyles: {
-      "0": { halign: "center", cellWidth: 10 },
-      "1": { halign: "left" },
-      "2": { halign: "left" },
-      "3": { halign: "center" },
-      "4": { halign: "center" },
-      "5": { halign: "right" },
-      "6": { halign: "right" },
-      "7": { halign: "right" },
-      "8": { halign: "right" },
-      "9": { halign: "right" },
-    },
+    headers,
+    bodyRows,
+    columnStyles,
     meta,
   });
 }
@@ -1197,59 +1220,174 @@ export interface PartyExportLabels {
   emptyPdfError: string;
 }
 
+function buildPartyTradeColumns(
+  labels: PartyExportLabels,
+  themeRgb: [number, number, number]
+): ExportColumnDef<
+  PartyTradeSummary,
+  { totalOrders: number; totalBilled: number; totalPaid: number; totalDue: number }
+>[] {
+  return [
+    {
+      key: "sl",
+      excelHeader: "SL",
+      isLeadingLabel: true,
+      pdfStyle: { halign: "center", cellWidth: 10 },
+      excelValue: (_, idx) => idx + 1,
+      pdfCell: (_, idx) => idx + 1,
+    },
+    {
+      key: "partyName",
+      excelHeader: labels.partyColumnHeader,
+      isLeadingLabel: true,
+      pdfStyle: { halign: "left" },
+      excelValue: (p) => p.partyName,
+      pdfCell: (p) => ({ content: p.partyName, styles: { fontStyle: "bold" } }),
+    },
+    {
+      key: "phone",
+      excelHeader: "Phone",
+      isLeadingLabel: true,
+      pdfStyle: { halign: "center" },
+      excelValue: (p) => p.partyPhone || "-",
+      pdfCell: (p) => p.partyPhone || "-",
+    },
+    {
+      key: "address",
+      excelHeader: "Address",
+      isLeadingLabel: true,
+      pdfStyle: { halign: "left" },
+      excelValue: (p) => p.partyAddress || "-",
+      pdfCell: (p) => p.partyAddress || "-",
+    },
+    {
+      key: "orders",
+      excelHeader: "Total Orders",
+      pdfHeader: "Orders",
+      pdfStyle: { halign: "center" },
+      excelValue: (p) => p.invoicesCount,
+      pdfCell: (p) => p.invoicesCount,
+      pdfSummaryCell: (t) => ({ content: t.totalOrders, styles: { halign: "center" } }),
+    },
+    {
+      key: "totalBilled",
+      excelHeader: "Total Billed (BDT)",
+      pdfHeader: "Gross Billed (BDT)",
+      pdfStyle: { halign: "right" },
+      excelValue: (p) => p.totalBilled,
+      excelTotalValue: (t) => Number(t.totalBilled.toFixed(2)),
+      pdfCell: (p) => ({
+        content: formatMoney(p.totalBilled),
+        styles: { fontStyle: "bold" },
+      }),
+      pdfSummaryCell: (t) => ({
+        content: formatMoney(t.totalBilled),
+        styles: { textColor: themeRgb },
+      }),
+    },
+    {
+      key: "totalPaid",
+      excelHeader: "Total Paid (BDT)",
+      pdfStyle: { halign: "right" },
+      excelValue: (p) => p.totalPaid,
+      excelTotalValue: (t) => Number(t.totalPaid.toFixed(2)),
+      pdfCell: (p) => ({
+        content: formatMoney(p.totalPaid),
+        styles: { fontStyle: "bold", textColor: REPORT_RGB.emerald },
+      }),
+      pdfSummaryCell: (t) => ({
+        content: formatMoney(t.totalPaid),
+        styles: { textColor: REPORT_RGB.emerald },
+      }),
+    },
+    {
+      key: "totalDue",
+      excelHeader: "Outstanding Due (BDT)",
+      pdfStyle: { halign: "right" },
+      excelValue: (p) => p.totalDue,
+      excelTotalValue: (t) => Number(t.totalDue.toFixed(2)),
+      pdfCell: (p) => {
+        const hasDue = p.totalDue > 0;
+        return {
+          content: hasDue ? formatMoney(p.totalDue) : "-",
+          styles: {
+            fontStyle: "bold",
+            textColor: hasDue ? REPORT_RGB.rose : REPORT_RGB.muted,
+          },
+        };
+      },
+      pdfSummaryCell: (t) => ({
+        content: t.totalDue > 0 ? formatMoney(t.totalDue) : "-",
+        styles: {
+          textColor: t.totalDue > 0 ? REPORT_RGB.rose : REPORT_RGB.muted,
+        },
+      }),
+    },
+    {
+      key: "lastDate",
+      excelHeader: "Last Order Date",
+      pdfHeader: "Last Order",
+      pdfStyle: { halign: "center" },
+      excelValue: (p) =>
+        p.lastDate ? moment(p.lastDate).format("DD MMM YYYY") : "-",
+      pdfCell: (p) =>
+        p.lastDate ? moment(p.lastDate).format("DD-MMM-YYYY").toUpperCase() : "-",
+    },
+    {
+      key: "status",
+      excelHeader: "Status",
+      pdfStyle: { halign: "center" },
+      excelValue: (p) => (p.totalDue > 0 ? "Has Due" : "Settled"),
+      pdfCell: (p) => {
+        const hasDue = p.totalDue > 0;
+        return {
+          content: hasDue ? "Has Due" : "Settled",
+          styles: {
+            fontStyle: "bold",
+            textColor: hasDue ? REPORT_RGB.rose : REPORT_RGB.emerald,
+          },
+        };
+      },
+    },
+  ];
+}
+
 /**
  * Shared Party-Wise (Customer / Supplier) Excel export helper
  */
 export async function exportPartyTradeExcel(
   parties: PartyTradeSummary[],
   meta: ReportCompanyMeta,
-  labels: PartyExportLabels
+  labels: PartyExportLabels,
+  visibleColumns?: Record<string, boolean>
 ): Promise<number> {
   if (!parties || parties.length === 0) {
     throw new Error(labels.emptyExcelError);
   }
 
-  const data = parties.map((p, idx) => ({
-    SL: idx + 1,
-    [labels.partyColumnHeader]: p.partyName,
-    Phone: p.partyPhone || "-",
-    Address: p.partyAddress || "-",
-    "Total Orders": p.invoicesCount,
-    "Total Billed (BDT)": p.totalBilled,
-    "Total Paid (BDT)": p.totalPaid,
-    "Outstanding Due (BDT)": p.totalDue,
-    "Last Order Date": p.lastDate
-      ? moment(p.lastDate).format("DD MMM YYYY")
-      : "-",
-    Status: p.totalDue > 0 ? "Has Due" : "Settled",
-  }));
+  const totals = calculatePartyTotals(parties);
+  const themeRgb = argbToRgbTuple(resolveThemeArgb());
+  const columns = buildPartyTradeColumns(labels, themeRgb);
 
-  const { totalBilled, totalPaid, totalDue } = calculatePartyTotals(parties);
+  const { rows, totalRow, totalSummarySpan } = buildDynamicExcelPayload(
+    parties,
+    columns,
+    totals,
+    `TOTAL SUMMARY (${parties.length} ${labels.summaryEntityPlural})`,
+    visibleColumns
+  );
 
-  const totalRow = {
-    SL: `TOTAL SUMMARY (${data.length} ${labels.summaryEntityPlural})`,
-    [labels.partyColumnHeader]: "",
-    Phone: "",
-    Address: "",
-    "Total Orders": "",
-    "Total Billed (BDT)": Number(totalBilled.toFixed(2)),
-    "Total Paid (BDT)": Number(totalPaid.toFixed(2)),
-    "Outstanding Due (BDT)": Number(totalDue.toFixed(2)),
-    "Last Order Date": "",
-    Status: "",
-  };
-
-  await buildAndDownloadExcel(data, totalRow, {
+  await buildAndDownloadExcel(rows, totalRow, {
     ...meta,
     fileName: `${labels.filePrefix}_${moment().format("YYYY-MM-DD")}.xlsx`,
     sheetName: labels.sheetName,
     reportTitle: labels.reportTitle,
     totalLabel: labels.totalLabel,
-    totalSummarySpan: 4,
+    totalSummarySpan,
     includeSignatures: true,
   });
 
-  return data.length;
+  return rows.length;
 }
 
 /**
@@ -1258,134 +1396,32 @@ export async function exportPartyTradeExcel(
 export async function downloadPartyTradePdf(
   parties: PartyTradeSummary[],
   meta: ReportCompanyMeta,
-  labels: PartyExportLabels
+  labels: PartyExportLabels,
+  visibleColumns?: Record<string, boolean>
 ): Promise<void> {
   if (!parties || parties.length === 0) {
     throw new Error(labels.emptyPdfError);
   }
 
   const themeRgb = argbToRgbTuple(resolveThemeArgb());
-  const { totalOrders, totalBilled, totalPaid, totalDue } =
-    calculatePartyTotals(parties);
+  const totals = calculatePartyTotals(parties);
+  const columns = buildPartyTradeColumns(labels, themeRgb);
 
-  const dataRows: RowInput[] = parties.map((p, idx) => {
-    const hasDue = p.totalDue > 0;
-    const status = hasDue ? "Has Due" : "Settled";
-    const lastStr = p.lastDate
-      ? moment(p.lastDate).format("DD-MMM-YYYY").toUpperCase()
-      : "-";
-
-    return [
-      idx + 1,
-      { content: p.partyName, styles: { fontStyle: "bold" } },
-      p.partyPhone || "-",
-      p.partyAddress || "-",
-      p.invoicesCount,
-      { content: formatMoney(p.totalBilled), styles: { fontStyle: "bold" } },
-      {
-        content: formatMoney(p.totalPaid),
-        styles: { fontStyle: "bold", textColor: REPORT_RGB.emerald },
-      },
-      {
-        content: hasDue ? formatMoney(p.totalDue) : "-",
-        styles: {
-          fontStyle: "bold",
-          textColor: hasDue ? REPORT_RGB.rose : REPORT_RGB.muted,
-        },
-      },
-      lastStr,
-      {
-        content: status,
-        styles: {
-          fontStyle: "bold",
-          textColor: hasDue ? REPORT_RGB.rose : REPORT_RGB.emerald,
-        },
-      },
-    ];
-  });
-
-  const summaryRow: RowInput = [
-    {
-      content: `TOTAL SUMMARY (${parties.length} ${labels.summaryEntityPlural})`,
-      colSpan: 4,
-      styles: {
-        halign: "center",
-        fontStyle: "bold",
-        fillColor: REPORT_RGB.summaryFill,
-        textColor: REPORT_RGB.dark,
-      },
-    },
-    {
-      content: totalOrders,
-      styles: {
-        halign: "center",
-        fontStyle: "bold",
-        fillColor: REPORT_RGB.summaryFill,
-      },
-    },
-    {
-      content: formatMoney(totalBilled),
-      styles: {
-        halign: "right",
-        fontStyle: "bold",
-        fillColor: REPORT_RGB.summaryFill,
-        textColor: themeRgb,
-      },
-    },
-    {
-      content: formatMoney(totalPaid),
-      styles: {
-        halign: "right",
-        fontStyle: "bold",
-        fillColor: REPORT_RGB.summaryFill,
-        textColor: REPORT_RGB.emerald,
-      },
-    },
-    {
-      content: totalDue > 0 ? formatMoney(totalDue) : "-",
-      styles: {
-        halign: "right",
-        fontStyle: "bold",
-        fillColor: REPORT_RGB.summaryFill,
-        textColor: totalDue > 0 ? REPORT_RGB.rose : REPORT_RGB.muted,
-      },
-    },
-    {
-      content: "",
-      colSpan: 2,
-      styles: { fillColor: REPORT_RGB.summaryFill },
-    },
-  ];
+  const { headers, bodyRows, columnStyles } = buildDynamicPdfPayload(
+    parties,
+    columns,
+    totals,
+    `TOTAL SUMMARY (${parties.length} ${labels.summaryEntityPlural})`,
+    { visibleColumns }
+  );
 
   await generateAndDownloadCorporatePdf({
     fileName: `${labels.filePrefix}_${moment().format("YYYY-MM-DD")}.pdf`,
     reportTitle: labels.reportTitle,
     metaRightLabel: `${labels.totalLabel}: ${parties.length}`,
-    headers: [
-      "SL",
-      labels.partyColumnHeader,
-      "Phone",
-      "Address",
-      "Orders",
-      "Gross Billed (BDT)",
-      "Total Paid (BDT)",
-      "Outstanding Due (BDT)",
-      "Last Order",
-      "Status",
-    ],
-    bodyRows: [...dataRows, summaryRow],
-    columnStyles: {
-      "0": { halign: "center", cellWidth: 10 },
-      "1": { halign: "left" },
-      "2": { halign: "center" },
-      "3": { halign: "left" },
-      "4": { halign: "center" },
-      "5": { halign: "right" },
-      "6": { halign: "right" },
-      "7": { halign: "right" },
-      "8": { halign: "center" },
-      "9": { halign: "center" },
-    },
+    headers,
+    bodyRows,
+    columnStyles,
     meta,
   });
 }

@@ -51,7 +51,8 @@ const CUSTOMER_EXPORT_LABELS: PartyExportLabels = {
 
 export async function exportFilteredInvoicesExcel(
   invoices: SaleItem[],
-  meta: ReportCompanyMeta
+  meta: ReportCompanyMeta,
+  visibleColumns?: Record<string, boolean>
 ): Promise<number> {
   if (!invoices || invoices.length === 0) {
     throw new Error("No sales records available to export");
@@ -61,13 +62,15 @@ export async function exportFilteredInvoicesExcel(
     fileName: `Sales_Report_${moment().format("YYYY-MM-DD")}.xlsx`,
     sheetName: "Sales Report",
     reportTitle: "Sales Report",
+    visibleColumns,
   });
   return invoices.length;
 }
 
 export async function downloadFilteredInvoicesPdf(
   invoices: SaleItem[],
-  meta: ReportCompanyMeta
+  meta: ReportCompanyMeta,
+  visibleColumns?: Record<string, boolean>
 ): Promise<void> {
   await downloadTradeInvoicesPdf(invoices, meta, {
     domain: "sale",
@@ -76,25 +79,54 @@ export async function downloadFilteredInvoicesPdf(
     partyColumnHeader: "Customer Name",
     includeTransport: false,
     emptyErrorMessage: "No sales records available to download PDF",
+    visibleColumns,
   });
 }
 
 export const exportFilteredProductsExcel = (
   products: ProductTradeSummary[],
-  meta: ReportCompanyMeta
-) => exportProductTradeExcel(products, meta, PRODUCT_SALES_EXPORT_LABELS);
+  meta: ReportCompanyMeta,
+  visibleColumns?: Record<string, boolean>
+) =>
+  exportProductTradeExcel(
+    products,
+    meta,
+    PRODUCT_SALES_EXPORT_LABELS,
+    visibleColumns
+  );
 
 export const downloadFilteredProductsPdf = (
   products: ProductTradeSummary[],
-  meta: ReportCompanyMeta
-) => downloadProductTradePdf(products, meta, PRODUCT_SALES_EXPORT_LABELS);
+  meta: ReportCompanyMeta,
+  visibleColumns?: Record<string, boolean>
+) =>
+  downloadProductTradePdf(
+    products,
+    meta,
+    PRODUCT_SALES_EXPORT_LABELS,
+    visibleColumns
+  );
 
 export const exportFilteredCustomersExcel = (
   customers: PartyTradeSummary[],
-  meta: ReportCompanyMeta
-) => exportPartyTradeExcel(customers, meta, CUSTOMER_EXPORT_LABELS);
+  meta: ReportCompanyMeta,
+  visibleColumns?: Record<string, boolean>
+) =>
+  exportPartyTradeExcel(
+    customers,
+    meta,
+    CUSTOMER_EXPORT_LABELS,
+    visibleColumns
+  );
 
 export const downloadFilteredCustomersPdf = (
   customers: PartyTradeSummary[],
-  meta: ReportCompanyMeta
-) => downloadPartyTradePdf(customers, meta, CUSTOMER_EXPORT_LABELS);
+  meta: ReportCompanyMeta,
+  visibleColumns?: Record<string, boolean>
+) =>
+  downloadPartyTradePdf(
+    customers,
+    meta,
+    CUSTOMER_EXPORT_LABELS,
+    visibleColumns
+  );

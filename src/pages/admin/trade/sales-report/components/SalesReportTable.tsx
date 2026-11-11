@@ -23,6 +23,7 @@ import { formatMoney } from "@/utils/formatters";
 import { showSuccessToast } from "@/utils/toast-utils";
 import type { SaleItem } from "@/types";
 import { useDebounce } from "@/hooks/useDebounce";
+import { useColumnVisibility } from "@/hooks/useColumnVisibility";
 import {
   useReportCompanyMeta,
   type ReportDateFilterProps,
@@ -32,6 +33,24 @@ import {
   exportFilteredInvoicesExcel,
   downloadFilteredInvoicesPdf,
 } from "../utils/sales-report-helpers";
+
+const AVAILABLE_COLUMNS: ColumnItem[] = [
+  { key: "sl", label: "SL" },
+  { key: "orderId", label: "Order ID" },
+  { key: "customer", label: "Customer" },
+  { key: "phone", label: "Phone" },
+  { key: "date", label: "Date" },
+  { key: "items", label: "Items" },
+  { key: "subtotal", label: "Subtotal" },
+  { key: "discount", label: "Discount" },
+  { key: "vat", label: "VAT" },
+  { key: "total", label: "Grand Total" },
+  { key: "paid", label: "Paid" },
+  { key: "due", label: "Due" },
+  { key: "method", label: "Method" },
+  { key: "status", label: "Status" },
+  { key: "actions", label: "Actions" },
+];
 
 interface SalesReportTableProps extends ReportDateFilterProps {
   transactions: SaleItem[];
@@ -83,63 +102,14 @@ export const SalesReportTable: React.FC<SalesReportTableProps> = ({
   });
   const customersList = Array.from(customerMap.values());
 
-  // Available Columns Configuration
-  const availableColumns: ColumnItem[] = [
-    { key: "sl", label: "SL" },
-    { key: "orderId", label: "Order ID" },
-    { key: "customer", label: "Customer" },
-    { key: "phone", label: "Phone" },
-    { key: "date", label: "Date" },
-    { key: "items", label: "Items" },
-    { key: "subtotal", label: "Subtotal" },
-    { key: "discount", label: "Discount" },
-    { key: "vat", label: "VAT" },
-    { key: "total", label: "Grand Total" },
-    { key: "paid", label: "Paid" },
-    { key: "due", label: "Due" },
-    { key: "method", label: "Method" },
-    { key: "status", label: "Status" },
-    { key: "actions", label: "Actions" },
-  ];
-
-  const [visibleColumns, setVisibleColumns] = useState<Record<string, boolean>>(() => {
-    try {
-      const saved = localStorage.getItem("sales_report_table_columns");
-      if (saved) return JSON.parse(saved);
-    } catch {}
-    return {};
-  });
-
-  const isColVisible = (key: string) => visibleColumns[key] !== false;
-
-  const handleToggleColumn = (key: string) => {
-    setVisibleColumns((prev) => {
-      const currentlyVisible = prev[key] !== false;
-      const willBeVisible = !currentlyVisible;
-      const countAfter = availableColumns.filter((c) =>
-        c.key === key ? willBeVisible : prev[c.key] !== false
-      ).length;
-      if (countAfter === 0) return prev;
-      const next = { ...prev, [key]: willBeVisible };
-      try {
-        localStorage.setItem("sales_report_table_columns", JSON.stringify(next));
-      } catch {}
-      return next;
-    });
-  };
-
-  const handleResetColumns = () => {
-    const resetState: Record<string, boolean> = {};
-    availableColumns.forEach((c) => {
-      resetState[c.key] = true;
-    });
-    setVisibleColumns(resetState);
-    try {
-      localStorage.removeItem("sales_report_table_columns");
-    } catch {}
-  };
-
-  const activeVisibleColumnCount = availableColumns.filter((c) => isColVisible(c.key)).length;
+  const availableColumns = AVAILABLE_COLUMNS;
+  const {
+    visibleColumns,
+    isColVisible,
+    handleToggleColumn,
+    handleResetColumns,
+    activeVisibleColumnCount,
+  } = useColumnVisibility(availableColumns, "sales_report_table_columns");
 
   const isAnyFilterActive =
     searchQuery.trim() !== "" ||
@@ -362,11 +332,19 @@ export const SalesReportTable: React.FC<SalesReportTableProps> = ({
           {/* Excel & Download PDF */}
           <ReportExportButtons
             onExportExcel={async () => {
-              const count = await exportFilteredInvoicesExcel(filtered, companyMeta);
+              const count = await exportFilteredInvoicesExcel(
+                filtered,
+                companyMeta,
+                visibleColumns
+              );
               return `Successfully exported ${count} sales to Excel!`;
             }}
             onDownloadPdf={async () => {
-              await downloadFilteredInvoicesPdf(filtered, companyMeta);
+              await downloadFilteredInvoicesPdf(
+                filtered,
+                companyMeta,
+                visibleColumns
+              );
               return "Sales report PDF downloaded!";
             }}
           />

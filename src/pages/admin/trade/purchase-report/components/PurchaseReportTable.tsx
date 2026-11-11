@@ -27,6 +27,7 @@ import { formatMoney } from "@/utils/formatters";
 import { showSuccessToast } from "@/utils/toast-utils";
 import type { PurchaseItem } from "@/types";
 import { useDebounce } from "@/hooks/useDebounce";
+import { useColumnVisibility } from "@/hooks/useColumnVisibility";
 import {
   useReportCompanyMeta,
   type ReportDateFilterProps,
@@ -85,57 +86,13 @@ export const PurchaseReportTable: React.FC<PurchaseReportTableProps> = ({
   const [pageSize, setPageSize] = useState<number>(10);
   const [copiedId, setCopiedId] = useState<string | number | null>(null);
 
-  const [visibleColumns, setVisibleColumns] = useState<Record<string, boolean>>(
-    () => {
-      try {
-        const saved = localStorage.getItem("purchase_report_table_columns");
-        if (saved) return JSON.parse(saved);
-      } catch {
-        // fallback to default visible columns
-      }
-      return {};
-    }
-  );
-
-  const isColVisible = (key: string) => visibleColumns[key] !== false;
-
-  const handleToggleColumn = (key: string) => {
-    setVisibleColumns((prev) => {
-      const currentlyVisible = prev[key] !== false;
-      const willBeVisible = !currentlyVisible;
-      const countAfter = AVAILABLE_COLUMNS.filter((c) =>
-        c.key === key ? willBeVisible : prev[c.key] !== false
-      ).length;
-      if (countAfter === 0) return prev;
-      const next = { ...prev, [key]: willBeVisible };
-      try {
-        localStorage.setItem(
-          "purchase_report_table_columns",
-          JSON.stringify(next)
-        );
-      } catch {
-        // ignore storage errors
-      }
-      return next;
-    });
-  };
-
-  const handleResetColumns = () => {
-    const resetState: Record<string, boolean> = {};
-    AVAILABLE_COLUMNS.forEach((c) => {
-      resetState[c.key] = true;
-    });
-    setVisibleColumns(resetState);
-    try {
-      localStorage.removeItem("purchase_report_table_columns");
-    } catch {
-      // ignore storage errors
-    }
-  };
-
-  const activeVisibleColumnCount = AVAILABLE_COLUMNS.filter((c) =>
-    isColVisible(c.key)
-  ).length;
+  const {
+    visibleColumns,
+    isColVisible,
+    handleToggleColumn,
+    handleResetColumns,
+    activeVisibleColumnCount,
+  } = useColumnVisibility(AVAILABLE_COLUMNS, "purchase_report_table_columns");
 
   const handleCopyOrderId = (text?: string, id?: string | number) => {
     if (!text) return;
@@ -416,12 +373,17 @@ export const PurchaseReportTable: React.FC<PurchaseReportTableProps> = ({
             onExportExcel={async () => {
               const count = await exportFilteredPurchasesExcel(
                 filtered,
-                companyMeta
+                companyMeta,
+                visibleColumns
               );
               return `Successfully exported ${count} purchases to Excel!`;
             }}
             onDownloadPdf={async () => {
-              await downloadFilteredPurchasesPdf(filtered, companyMeta);
+              await downloadFilteredPurchasesPdf(
+                filtered,
+                companyMeta,
+                visibleColumns
+              );
               return "Purchase report PDF downloaded!";
             }}
           />

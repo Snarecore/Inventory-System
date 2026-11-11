@@ -17,6 +17,10 @@ import {
 } from "@/components/common";
 import { formatMoney } from "@/utils/formatters";
 import { useDebounce } from "@/hooks/useDebounce";
+import { useColumnVisibility } from "@/hooks/useColumnVisibility";
+import ColumnVisibilityDropdown, {
+  type ColumnItem,
+} from "@/components/table-components/ColumnVisibilityDropdown";
 import {
   useReportCompanyMeta,
   calculateRevenueSharePct,
@@ -33,6 +37,19 @@ interface CategoryInventoryReportTableProps extends ReportDateFilterProps {
   products: ProductItem[];
   isLoading?: boolean;
 }
+
+const AVAILABLE_COLUMNS: ColumnItem[] = [
+  { key: "sl", label: "SL" },
+  { key: "category", label: "Category Name" },
+  { key: "products", label: "Products" },
+  { key: "active", label: "Active" },
+  { key: "lowStock", label: "Low / Out" },
+  { key: "stockUnits", label: "Stock Units" },
+  { key: "costValue", label: "Cost Value (৳)" },
+  { key: "retailValue", label: "Retail Value (৳)" },
+  { key: "estProfit", label: "Est. Profit (৳)" },
+  { key: "valueShare", label: "Value Share" },
+];
 
 export const CategoryInventoryReportTable: React.FC<
   CategoryInventoryReportTableProps
@@ -51,6 +68,17 @@ export const CategoryInventoryReportTable: React.FC<
   const [sortBy, setSortBy] = useState<string>("cost_desc");
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
+
+  const {
+    visibleColumns,
+    isColVisible,
+    handleToggleColumn,
+    handleResetColumns,
+    activeVisibleColumnCount,
+  } = useColumnVisibility(
+    AVAILABLE_COLUMNS,
+    "category_inventory_report_columns"
+  );
 
   const categorySummaries = aggregateCategoryInventory(products);
   const grandTotalCost = categorySummaries.reduce(
@@ -131,16 +159,28 @@ export const CategoryInventoryReportTable: React.FC<
             />
           </div>
 
+          <ColumnVisibilityDropdown
+            columns={AVAILABLE_COLUMNS}
+            visibleColumns={visibleColumns}
+            onToggle={handleToggleColumn}
+            onReset={handleResetColumns}
+          />
+
           <ReportExportButtons
             onExportExcel={async () => {
               const count = await exportCategoryInventoryExcel(
                 filtered,
-                companyMeta
+                companyMeta,
+                visibleColumns
               );
               return `Exported ${count} categories to Excel!`;
             }}
             onDownloadPdf={async () => {
-              await downloadCategoryInventoryPdf(filtered, companyMeta);
+              await downloadCategoryInventoryPdf(
+                filtered,
+                companyMeta,
+                visibleColumns
+              );
               return "Category inventory report PDF downloaded!";
             }}
           />
@@ -149,7 +189,7 @@ export const CategoryInventoryReportTable: React.FC<
 
       <TableScroll>
         {isLoading && products.length === 0 ? (
-          <TableSkeleton columnCount={10} rowCount={6} />
+          <TableSkeleton columnCount={activeVisibleColumnCount} rowCount={6} />
         ) : paginated.length === 0 ? (
           <EmptyState
             title="No Category Data Found"
@@ -158,20 +198,38 @@ export const CategoryInventoryReportTable: React.FC<
         ) : (
           <Table minWidth={920}>
             <TableHead>
-              <TableTh align="center" width={42}>
-                SL
-              </TableTh>
-              <TableTh>Category Name</TableTh>
-              <TableTh align="center">Products</TableTh>
-              <TableTh align="center">Active</TableTh>
-              <TableTh align="center">Low / Out</TableTh>
-              <TableTh align="right">Stock Units</TableTh>
-              <TableTh align="right">Cost Value (৳)</TableTh>
-              <TableTh align="right">Retail Value (৳)</TableTh>
-              <TableTh align="right">Est. Profit (৳)</TableTh>
-              <TableTh align="right" width={130}>
-                Value Share
-              </TableTh>
+              {isColVisible("sl") && (
+                <TableTh align="center" width={42}>
+                  SL
+                </TableTh>
+              )}
+              {isColVisible("category") && <TableTh>Category Name</TableTh>}
+              {isColVisible("products") && (
+                <TableTh align="center">Products</TableTh>
+              )}
+              {isColVisible("active") && (
+                <TableTh align="center">Active</TableTh>
+              )}
+              {isColVisible("lowStock") && (
+                <TableTh align="center">Low / Out</TableTh>
+              )}
+              {isColVisible("stockUnits") && (
+                <TableTh align="right">Stock Units</TableTh>
+              )}
+              {isColVisible("costValue") && (
+                <TableTh align="right">Cost Value (৳)</TableTh>
+              )}
+              {isColVisible("retailValue") && (
+                <TableTh align="right">Retail Value (৳)</TableTh>
+              )}
+              {isColVisible("estProfit") && (
+                <TableTh align="right">Est. Profit (৳)</TableTh>
+              )}
+              {isColVisible("valueShare") && (
+                <TableTh align="right" width={130}>
+                  Value Share
+                </TableTh>
+              )}
             </TableHead>
 
             <TableBody>
@@ -187,71 +245,91 @@ export const CategoryInventoryReportTable: React.FC<
                     key={c.category}
                     className="hover:bg-[var(--primary-color-light)]/40 transition-colors"
                   >
-                    <td className="py-2.5 px-3 text-center text-xs text-[var(--ui-text)] tabular-nums">
-                      {sl}
-                    </td>
+                    {isColVisible("sl") && (
+                      <td className="py-2.5 px-3 text-center text-xs text-[var(--ui-text)] tabular-nums">
+                        {sl}
+                      </td>
+                    )}
 
-                    <td className="py-2.5 px-3 text-xs font-semibold text-[var(--ui-text)]">
-                      {c.category}
-                    </td>
+                    {isColVisible("category") && (
+                      <td className="py-2.5 px-3 text-xs font-semibold text-[var(--ui-text)]">
+                        {c.category}
+                      </td>
+                    )}
 
-                    <td className="py-2.5 px-3 text-center text-xs tabular-nums">
-                      <span className="inline-block px-2 py-0.5 rounded bg-[var(--ui-surface-sunken)] font-semibold text-[var(--ui-text)]">
-                        {c.productCount}
-                      </span>
-                    </td>
-
-                    <td className="py-2.5 px-3 text-center text-xs font-semibold text-[var(--ui-success)] tabular-nums">
-                      {c.activeCount}
-                    </td>
-
-                    <td className="py-2.5 px-3 text-center text-xs tabular-nums">
-                      {c.lowStockCount > 0 ? (
-                        <span className="inline-block px-1.5 py-0.5 rounded text-[10.5px] font-semibold bg-[var(--ui-warning-border)] text-[var(--ui-warning-dark)]">
-                          {c.lowStockCount}
+                    {isColVisible("products") && (
+                      <td className="py-2.5 px-3 text-center text-xs tabular-nums">
+                        <span className="inline-block px-2 py-0.5 rounded bg-[var(--ui-surface-sunken)] font-semibold text-[var(--ui-text)]">
+                          {c.productCount}
                         </span>
-                      ) : (
-                        <span className="text-[var(--ui-text-subtle)]">0</span>
-                      )}
-                    </td>
+                      </td>
+                    )}
 
-                    <td className="py-2.5 px-3 text-right text-xs font-semibold text-[var(--ui-text)] tabular-nums">
-                      {c.totalUnits.toLocaleString("en-IN")}
-                    </td>
+                    {isColVisible("active") && (
+                      <td className="py-2.5 px-3 text-center text-xs font-semibold text-[var(--ui-success)] tabular-nums">
+                        {c.activeCount}
+                      </td>
+                    )}
 
-                    <td className="py-2.5 px-3 text-right text-xs font-bold text-[var(--primary-color)] whitespace-nowrap tabular-nums">
-                      ৳ {formatMoney(c.totalCostValue)}
-                    </td>
+                    {isColVisible("lowStock") && (
+                      <td className="py-2.5 px-3 text-center text-xs tabular-nums">
+                        {c.lowStockCount > 0 ? (
+                          <span className="inline-block px-1.5 py-0.5 rounded text-[10.5px] font-semibold bg-[var(--ui-warning-border)] text-[var(--ui-warning-dark)]">
+                            {c.lowStockCount}
+                          </span>
+                        ) : (
+                          <span className="text-[var(--ui-text-subtle)]">0</span>
+                        )}
+                      </td>
+                    )}
 
-                    <td className="py-2.5 px-3 text-right text-xs font-semibold text-[var(--ui-success)] whitespace-nowrap tabular-nums">
-                      ৳ {formatMoney(c.totalRetailValue)}
-                    </td>
+                    {isColVisible("stockUnits") && (
+                      <td className="py-2.5 px-3 text-right text-xs font-semibold text-[var(--ui-text)] tabular-nums">
+                        {c.totalUnits.toLocaleString("en-IN")}
+                      </td>
+                    )}
 
-                    <td className="py-2.5 px-3 text-right text-xs font-semibold whitespace-nowrap tabular-nums">
-                      <span
-                        className={
-                          c.estimatedProfit >= 0
-                            ? "text-[var(--ui-success)]"
-                            : "text-[var(--ui-danger)]"
-                        }
-                      >
-                        ৳ {formatMoney(c.estimatedProfit)}
-                      </span>
-                    </td>
+                    {isColVisible("costValue") && (
+                      <td className="py-2.5 px-3 text-right text-xs font-bold text-[var(--primary-color)] whitespace-nowrap tabular-nums">
+                        ৳ {formatMoney(c.totalCostValue)}
+                      </td>
+                    )}
 
-                    <td className="py-2.5 px-3 text-right text-xs">
-                      <div className="flex items-center justify-end gap-2">
-                        <div className="w-16 h-1.5 rounded-full bg-[var(--ui-border)] overflow-hidden">
-                          <div
-                            className="h-full rounded-full bg-[var(--primary-color)]"
-                            style={{ width: `${Math.min(100, Number(sharePct))}%` }}
-                          />
+                    {isColVisible("retailValue") && (
+                      <td className="py-2.5 px-3 text-right text-xs font-semibold text-[var(--ui-success)] whitespace-nowrap tabular-nums">
+                        ৳ {formatMoney(c.totalRetailValue)}
+                      </td>
+                    )}
+
+                    {isColVisible("estProfit") && (
+                      <td className="py-2.5 px-3 text-right text-xs font-semibold whitespace-nowrap tabular-nums">
+                        <span
+                          className={
+                            c.estimatedProfit >= 0
+                              ? "text-[var(--ui-success)]"
+                              : "text-[var(--ui-danger)]"
+                          }
+                        >
+                          ৳ {formatMoney(c.estimatedProfit)}
+                        </span>
+                      </td>
+                    )}
+
+                    {isColVisible("valueShare") && (
+                      <td className="py-2.5 px-3 text-right text-xs">
+                        <div className="flex items-center justify-end gap-2">
+                          <div className="w-16 h-1.5 rounded-full bg-[var(--ui-border)] overflow-hidden">
+                            <div
+                              className="h-full rounded-full bg-[var(--primary-color)]"
+                              style={{ width: `${Math.min(100, Number(sharePct))}%` }}
+                            />
+                          </div>
+                          <span className="font-semibold text-[var(--ui-text)] w-11 text-right tabular-nums">
+                            {sharePct}%
+                          </span>
                         </div>
-                        <span className="font-semibold text-[var(--ui-text)] w-11 text-right tabular-nums">
-                          {sharePct}%
-                        </span>
-                      </div>
-                    </td>
+                      </td>
+                    )}
                   </tr>
                 );
               })}

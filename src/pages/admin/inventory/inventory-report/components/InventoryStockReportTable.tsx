@@ -21,6 +21,7 @@ import {
 } from "@/components/common";
 import { formatMoney } from "@/utils/formatters";
 import { useDebounce } from "@/hooks/useDebounce";
+import { useColumnVisibility } from "@/hooks/useColumnVisibility";
 import {
   useReportCompanyMeta,
   type ReportDateFilterProps,
@@ -79,53 +80,13 @@ export const InventoryStockReportTable: React.FC<
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
 
-  const [visibleColumns, setVisibleColumns] = useState<Record<string, boolean>>(
-    () => {
-      try {
-        const saved = localStorage.getItem("inventory_stock_report_columns");
-        if (saved) return JSON.parse(saved);
-      } catch {
-        // ignore storage error
-      }
-      return {};
-    }
-  );
-
-  const isColVisible = (key: string) => visibleColumns[key] !== false;
-
-  const handleToggleColumn = (key: string) => {
-    setVisibleColumns((prev) => {
-      const currentlyVisible = prev[key] !== false;
-      const willBeVisible = !currentlyVisible;
-      const countAfter = AVAILABLE_COLUMNS.filter((c) =>
-        c.key === key ? willBeVisible : prev[c.key] !== false
-      ).length;
-      if (countAfter === 0) return prev;
-      const next = { ...prev, [key]: willBeVisible };
-      try {
-        localStorage.setItem(
-          "inventory_stock_report_columns",
-          JSON.stringify(next)
-        );
-      } catch {
-        // ignore storage error
-      }
-      return next;
-    });
-  };
-
-  const handleResetColumns = () => {
-    const resetState: Record<string, boolean> = {};
-    AVAILABLE_COLUMNS.forEach((c) => {
-      resetState[c.key] = true;
-    });
-    setVisibleColumns(resetState);
-    try {
-      localStorage.removeItem("inventory_stock_report_columns");
-    } catch {
-      // ignore storage error
-    }
-  };
+  const {
+    visibleColumns,
+    isColVisible,
+    handleToggleColumn,
+    handleResetColumns,
+    activeVisibleColumnCount,
+  } = useColumnVisibility(AVAILABLE_COLUMNS, "inventory_stock_report_columns");
 
   const isAnyFilterActive =
     searchQuery.trim() !== "" ||
@@ -317,12 +278,17 @@ export const InventoryStockReportTable: React.FC<
             onExportExcel={async () => {
               const count = await exportInventoryStockExcel(
                 filteredProducts,
-                companyMeta
+                companyMeta,
+                visibleColumns
               );
               return `Exported ${count} inventory products to Excel!`;
             }}
             onDownloadPdf={async () => {
-              await downloadInventoryStockPdf(filteredProducts, companyMeta);
+              await downloadInventoryStockPdf(
+                filteredProducts,
+                companyMeta,
+                visibleColumns
+              );
               return "Inventory stock report PDF downloaded!";
             }}
           />
@@ -331,7 +297,7 @@ export const InventoryStockReportTable: React.FC<
 
       <TableScroll>
         {isLoading && products.length === 0 ? (
-          <TableSkeleton columnCount={10} rowCount={8} />
+          <TableSkeleton columnCount={activeVisibleColumnCount} rowCount={8} />
         ) : paginated.length === 0 ? (
           <EmptyState
             title="No Products Found"

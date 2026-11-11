@@ -1,5 +1,6 @@
 import type { PurchaseItem, PurchaseReturnItem, CategoryItem, ProductCategoryItem, BankAccountItem, MfsUserItem, EmployeeItem } from "@/types";
 import { isCategoryAdmin, normalizeCategoryType } from "@/services/category-service";
+import { buildDynamicExcelPayload, type ExportColumnDef } from "@/utils/report-export-columns";
 
 export interface GenericExcelExportOptions {
   fileName?: string;
@@ -15,6 +16,7 @@ export interface GenericExcelExportOptions {
   includeSignatures?: boolean;
   totalLabel?: string;
   totalSummarySpan?: number;
+  visibleColumns?: Record<string, boolean>;
 }
 
 export type ExportPurchasesOptions = GenericExcelExportOptions;
@@ -243,9 +245,10 @@ export async function buildAndDownloadExcel<T extends Record<string, any>>(
 
   // ── Corporate Header Block ──
   if (isCorporateReport) {
-    const logoData = await fetchLogoBase64(options?.businessLogoUrl);
-    const startTextCol = logoData && colCount >= 4 ? 3 : 1;
-    const rightSplitCol = Math.max(startTextCol + 1, colCount - 2);
+    const logoData =
+      colCount >= 4 ? await fetchLogoBase64(options?.businessLogoUrl) : null;
+    const startTextCol = logoData ? 3 : 1;
+    const printDateStr = formatReportDate(new Date().toISOString());
 
     // Embed Logo image (spans approx A1:B2)
     if (logoData) {
@@ -268,35 +271,85 @@ export async function buildAndDownloadExcel<T extends Record<string, any>>(
     const row1 = worksheet.getRow(1);
     row1.height = 20;
 
-    worksheet.mergeCells(
-      `${colToLetter(startTextCol)}1:${colToLetter(rightSplitCol - 1)}1`
-    );
-    const nameCell = worksheet.getCell(`${colToLetter(startTextCol)}1`);
-    nameCell.value = options?.businessName || "Cash Boi Trade Ltd";
-    nameCell.font = {
-      name: "Calibri",
-      size: 14,
-      bold: true,
-      color: { argb: "FF0F172A" },
-    };
-    nameCell.alignment = { vertical: "middle", horizontal: "left" };
+    if (colCount === 1) {
+      const nameCell = worksheet.getCell("A1");
+      nameCell.value = options?.businessName || "Cash Boi Trade Ltd";
+      nameCell.font = {
+        name: "Calibri",
+        size: 14,
+        bold: true,
+        color: { argb: "FF0F172A" },
+      };
+      nameCell.alignment = { vertical: "middle", horizontal: "left" };
+    } else if (colCount === 2) {
+      const nameCell = worksheet.getCell("A1");
+      nameCell.value = options?.businessName || "Cash Boi Trade Ltd";
+      nameCell.font = {
+        name: "Calibri",
+        size: 14,
+        bold: true,
+        color: { argb: "FF0F172A" },
+      };
+      nameCell.alignment = { vertical: "middle", horizontal: "left" };
 
-    worksheet.mergeCells(`${colToLetter(rightSplitCol)}1:${lastColLetter}1`);
-    const dateCell = worksheet.getCell(`${colToLetter(rightSplitCol)}1`);
-    dateCell.value = `Print Date: ${formatReportDate(new Date().toISOString())}`;
-    dateCell.font = {
-      name: "Calibri",
-      size: 10,
-      bold: true,
-      color: { argb: "FF0F172A" },
-    };
-    dateCell.alignment = { vertical: "middle", horizontal: "right" };
+      const dateCell = worksheet.getCell("B1");
+      dateCell.value = `Print Date: ${printDateStr}`;
+      dateCell.font = {
+        name: "Calibri",
+        size: 10,
+        bold: true,
+        color: { argb: "FF0F172A" },
+      };
+      dateCell.alignment = { vertical: "middle", horizontal: "right" };
+    } else {
+      const rightSplitCol = Math.max(startTextCol + 1, colCount - 2);
+      if (startTextCol < rightSplitCol - 1) {
+        worksheet.mergeCells(
+          `${colToLetter(startTextCol)}1:${colToLetter(rightSplitCol - 1)}1`
+        );
+      }
+      const nameCell = worksheet.getCell(`${colToLetter(startTextCol)}1`);
+      nameCell.value = options?.businessName || "Cash Boi Trade Ltd";
+      nameCell.font = {
+        name: "Calibri",
+        size: 14,
+        bold: true,
+        color: { argb: "FF0F172A" },
+      };
+      nameCell.alignment = { vertical: "middle", horizontal: "left" };
+
+      if (rightSplitCol < colCount) {
+        worksheet.mergeCells(`${colToLetter(rightSplitCol)}1:${lastColLetter}1`);
+      }
+      const dateCell = worksheet.getCell(`${colToLetter(rightSplitCol)}1`);
+      dateCell.value = `Print Date: ${printDateStr}`;
+      dateCell.font = {
+        name: "Calibri",
+        size: 10,
+        bold: true,
+        color: { argb: "FF0F172A" },
+      };
+      dateCell.alignment = { vertical: "middle", horizontal: "right" };
+    }
 
     // Row 2: Company Address
     const row2 = worksheet.getRow(2);
     row2.height = 16;
-    if (options?.businessAddress) {
-      worksheet.mergeCells(`${colToLetter(startTextCol)}2:${lastColLetter}2`);
+    if (colCount === 1) {
+      const addrCell = worksheet.getCell("A2");
+      addrCell.value = options?.businessAddress
+        ? `${options.businessAddress}  |  Print Date: ${printDateStr}`
+        : `Print Date: ${printDateStr}`;
+      addrCell.font = {
+        name: "Calibri",
+        size: 9.5,
+        color: { argb: "FF475569" },
+      };
+      addrCell.alignment = { vertical: "middle", horizontal: "left" };
+    } else if (options?.businessAddress) {
+      if (startTextCol < colCount) {
+        worksheet.mergeCells(`${colToLetter(startTextCol)}2:${lastColLetter}2`);
+      }
       const addrCell = worksheet.getCell(`${colToLetter(startTextCol)}2`);
       addrCell.value = options.businessAddress;
       addrCell.font = {
@@ -310,7 +363,9 @@ export async function buildAndDownloadExcel<T extends Record<string, any>>(
     // Row 3: Centered Report Title
     const row3 = worksheet.getRow(3);
     row3.height = 20;
-    worksheet.mergeCells(`A3:${lastColLetter}3`);
+    if (colCount > 1) {
+      worksheet.mergeCells(`A3:${lastColLetter}3`);
+    }
     const titleCell = worksheet.getCell("A3");
     titleCell.value = (options?.reportTitle || "SALES REPORT").toUpperCase();
     titleCell.font = {
@@ -324,36 +379,58 @@ export async function buildAndDownloadExcel<T extends Record<string, any>>(
     // Row 4: Date Period & Total Records Meta
     const row4 = worksheet.getRow(4);
     row4.height = 18;
-    const metaSplit = Math.max(2, Math.floor(colCount * 0.65));
 
     const fromStr = options?.startDate
       ? formatReportDate(options.startDate)
       : "ALL";
     const toStr = options?.endDate
       ? formatReportDate(options.endDate)
-      : formatReportDate(new Date().toISOString());
+      : printDateStr;
 
-    worksheet.mergeCells(`A4:${colToLetter(metaSplit)}4`);
-    const metaLeft = worksheet.getCell("A4");
-    metaLeft.value = `From Date: ${fromStr}   To Date: ${toStr}`;
-    metaLeft.font = {
-      name: "Calibri",
-      size: 9.5,
-      bold: true,
-      color: { argb: "FF334155" },
-    };
-    metaLeft.alignment = { vertical: "middle", horizontal: "left" };
+    if (colCount === 1) {
+      const metaCell = worksheet.getCell("A4");
+      metaCell.value = `From: ${fromStr}  To: ${toStr}  |  ${
+        options?.totalLabel || "Total Invoices"
+      }: ${rows.length}`;
+      metaCell.font = {
+        name: "Calibri",
+        size: 9.5,
+        bold: true,
+        color: { argb: "FF334155" },
+      };
+      metaCell.alignment = { vertical: "middle", horizontal: "left" };
+    } else {
+      const metaSplit = Math.max(
+        1,
+        Math.min(colCount - 1, Math.floor(colCount * 0.65))
+      );
 
-    worksheet.mergeCells(`${colToLetter(metaSplit + 1)}4:${lastColLetter}4`);
-    const metaRight = worksheet.getCell(`${colToLetter(metaSplit + 1)}4`);
-    metaRight.value = `${options?.totalLabel || "Total Invoices"}: ${rows.length}`;
-    metaRight.font = {
-      name: "Calibri",
-      size: 9.5,
-      bold: true,
-      color: { argb: "FF334155" },
-    };
-    metaRight.alignment = { vertical: "middle", horizontal: "right" };
+      if (1 < metaSplit) {
+        worksheet.mergeCells(`A4:${colToLetter(metaSplit)}4`);
+      }
+      const metaLeft = worksheet.getCell("A4");
+      metaLeft.value = `From Date: ${fromStr}   To Date: ${toStr}`;
+      metaLeft.font = {
+        name: "Calibri",
+        size: 9.5,
+        bold: true,
+        color: { argb: "FF334155" },
+      };
+      metaLeft.alignment = { vertical: "middle", horizontal: "left" };
+
+      if (metaSplit + 1 < colCount) {
+        worksheet.mergeCells(`${colToLetter(metaSplit + 1)}4:${lastColLetter}4`);
+      }
+      const metaRight = worksheet.getCell(`${colToLetter(metaSplit + 1)}4`);
+      metaRight.value = `${options?.totalLabel || "Total Invoices"}: ${rows.length}`;
+      metaRight.font = {
+        name: "Calibri",
+        size: 9.5,
+        bold: true,
+        color: { argb: "FF334155" },
+      };
+      metaRight.alignment = { vertical: "middle", horizontal: "right" };
+    }
 
     // Bottom border for meta row
     for (let c = 1; c <= colCount; c++) {
@@ -766,10 +843,12 @@ export async function buildAndDownloadExcel<T extends Record<string, any>>(
     else if (key.includes("Customer") || key.includes("Name")) minW = 22;
     else if (key.includes("Phone")) minW = 15;
     else if (isMoney) minW = 15;
+    if (colCount === 1) minW = Math.max(minW, 42);
+    else if (colCount === 2) minW = Math.max(minW, 24);
 
     worksheet.getColumn(idx + 1).width = Math.min(
       Math.max(maxLen + (isMoney ? 4 : 3), minW),
-      38
+      48
     );
   });
 
@@ -924,7 +1003,7 @@ export async function exportSalesToExcel(
   let sumVat = 0;
   let sumItems = 0;
 
-  const rows = sales.map((item: any, index: number) => {
+  const normalizedRows = sales.map((item: any, index: number) => {
     const gt = Number(item.grandTotal ?? item.grand_total ?? item.totalAmount ?? 0);
     const paid = Number(item.paidAmount ?? item.paid_amount ?? 0);
     const due = Number(item.dueAmount ?? item.due_amount ?? Math.max(0, gt - paid));
@@ -957,39 +1036,57 @@ export async function exportSalesToExcel(
     sumItems += itemsCount;
 
     return {
-      SL: index + 1,
-      "Order ID": item.orderNo || item.invoiceNo || `ORD-${item.id || index + 1}`,
-      Date: dateStr,
-      "Customer Name": item.customerName || item.customer_name || "Walk-in Customer",
-      Phone: item.customerPhone || item.customer_phone || "-",
-      Items: itemsCount,
-      "Subtotal (৳)": sub,
-      "Discount (৳)": disc,
-      "VAT (৳)": vat,
-      "Grand Total (৳)": gt,
-      "Paid (৳)": paid,
-      "Due (৳)": due,
-      Method: pType,
-      Status: status,
+      orderId: item.orderNo || item.invoiceNo || `ORD-${item.id || index + 1}`,
+      dateStr,
+      customerName: item.customerName || item.customer_name || "Walk-in Customer",
+      phone: item.customerPhone || item.customer_phone || "-",
+      itemsCount,
+      sub,
+      disc,
+      vat,
+      gt,
+      paid,
+      due,
+      pType,
+      status,
     };
   });
 
-  const totalRow = {
-    SL: `TOTAL SUMMARY (${sales.length} Invoices)`,
-    "Order ID": "",
-    Date: "",
-    "Customer Name": "",
-    Phone: "",
-    Items: sumItems,
-    "Subtotal (৳)": Number(sumSubtotal.toFixed(2)),
-    "Discount (৳)": Number(sumDiscount.toFixed(2)),
-    "VAT (৳)": Number(sumVat.toFixed(2)),
-    "Grand Total (৳)": Number(sumGrandTotal.toFixed(2)),
-    "Paid (৳)": Number(sumPaid.toFixed(2)),
-    "Due (৳)": Number(sumDue.toFixed(2)),
-    Method: "",
-    Status: "",
+  const totals = {
+    sumItems,
+    sumSubtotal: Number(sumSubtotal.toFixed(2)),
+    sumDiscount: Number(sumDiscount.toFixed(2)),
+    sumVat: Number(sumVat.toFixed(2)),
+    sumGrandTotal: Number(sumGrandTotal.toFixed(2)),
+    sumPaid: Number(sumPaid.toFixed(2)),
+    sumDue: Number(sumDue.toFixed(2)),
   };
+
+  type SaleExcelRow = (typeof normalizedRows)[number];
+  const columns: ExportColumnDef<SaleExcelRow, typeof totals>[] = [
+    { key: "sl", excelHeader: "SL", isLeadingLabel: true, excelValue: (_, i) => i + 1 },
+    { key: "orderId", excelHeader: "Order ID", isLeadingLabel: true, excelValue: (r) => r.orderId },
+    { key: "date", excelHeader: "Date", isLeadingLabel: true, excelValue: (r) => r.dateStr },
+    { key: "customer", excelHeader: "Customer Name", isLeadingLabel: true, excelValue: (r) => r.customerName },
+    { key: "phone", excelHeader: "Phone", isLeadingLabel: true, excelValue: (r) => r.phone },
+    { key: "items", excelHeader: "Items", excelValue: (r) => r.itemsCount, excelTotalValue: (t) => t.sumItems },
+    { key: "subtotal", excelHeader: "Subtotal (৳)", excelValue: (r) => r.sub, excelTotalValue: (t) => t.sumSubtotal },
+    { key: "discount", excelHeader: "Discount (৳)", excelValue: (r) => r.disc, excelTotalValue: (t) => t.sumDiscount },
+    { key: "vat", excelHeader: "VAT (৳)", excelValue: (r) => r.vat, excelTotalValue: (t) => t.sumVat },
+    { key: "total", excelHeader: "Grand Total (৳)", excelValue: (r) => r.gt, excelTotalValue: (t) => t.sumGrandTotal },
+    { key: "paid", excelHeader: "Paid (৳)", excelValue: (r) => r.paid, excelTotalValue: (t) => t.sumPaid },
+    { key: "due", excelHeader: "Due (৳)", excelValue: (r) => r.due, excelTotalValue: (t) => t.sumDue },
+    { key: "method", excelHeader: "Method", excelValue: (r) => r.pType },
+    { key: "status", excelHeader: "Status", excelValue: (r) => r.status },
+  ];
+
+  const { rows, totalRow, totalSummarySpan } = buildDynamicExcelPayload(
+    normalizedRows,
+    columns,
+    totals,
+    `TOTAL SUMMARY (${sales.length} Invoices)`,
+    options?.visibleColumns
+  );
 
   await buildAndDownloadExcel(rows, totalRow, {
     fileName,
@@ -1002,7 +1099,7 @@ export async function exportSalesToExcel(
     startDate: options?.startDate,
     endDate: options?.endDate,
     totalLabel: "Total Invoices",
-    totalSummarySpan: 5, // Merges SL through Phone (5 columns)
+    totalSummarySpan,
     includeSignatures: true,
   });
 }

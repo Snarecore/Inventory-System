@@ -19,6 +19,10 @@ import ReportExportButtons from "@/components/reports/ReportExportButtons";
 import ReportDateRangeControl from "@/components/reports/ReportDateRangeControl";
 import { formatMoney } from "@/utils/formatters";
 import { useDebounce } from "@/hooks/useDebounce";
+import { useColumnVisibility } from "@/hooks/useColumnVisibility";
+import ColumnVisibilityDropdown, {
+  type ColumnItem,
+} from "@/components/table-components/ColumnVisibilityDropdown";
 import {
   useReportCompanyMeta,
   type ReportDateFilterProps,
@@ -37,6 +41,19 @@ interface CashClosingAuditTableProps extends ReportDateFilterProps {
   onViewDenominations: (record: CashClosingData) => void;
 }
 
+const AVAILABLE_COLUMNS: ColumnItem[] = [
+  { key: "sl", label: "SL" },
+  { key: "date", label: "Closing Date" },
+  { key: "type", label: "Type" },
+  { key: "reason", label: "Reason" },
+  { key: "expected", label: "Expected (৳)" },
+  { key: "counted", label: "Counted (৳)" },
+  { key: "variance", label: "Variance (৳)" },
+  { key: "closedBy", label: "Closed By" },
+  { key: "remarks", label: "Remarks" },
+  { key: "actions", label: "Actions" },
+];
+
 export const CashClosingAuditTable: React.FC<CashClosingAuditTableProps> = ({
   records,
   isLoading,
@@ -53,6 +70,14 @@ export const CashClosingAuditTable: React.FC<CashClosingAuditTableProps> = ({
   const [typeFilter, setTypeFilter] = useState<string>("all");
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
+
+  const {
+    visibleColumns,
+    isColVisible,
+    handleToggleColumn,
+    handleResetColumns,
+    activeVisibleColumnCount,
+  } = useColumnVisibility(AVAILABLE_COLUMNS, "cash_closing_audit_report_columns");
 
   // Only discrepancy records (variance != 0)
   const mismatched = records.filter(
@@ -178,16 +203,26 @@ export const CashClosingAuditTable: React.FC<CashClosingAuditTableProps> = ({
               />
             </div>
 
+            <ColumnVisibilityDropdown
+              columns={AVAILABLE_COLUMNS}
+              visibleColumns={visibleColumns}
+              onToggle={handleToggleColumn}
+              onReset={handleResetColumns}
+            />
+
             <ReportExportButtons
               onExportExcel={async () => {
                 const count = await exportCashClosingAuditExcel(
                   filtered,
-                  companyMeta
+                  companyMeta,
+                  { visibleColumns }
                 );
                 return `Exported ${count} variance records to Excel!`;
               }}
               onDownloadPdf={async () => {
-                await downloadCashClosingAuditPdf(filtered, companyMeta);
+                await downloadCashClosingAuditPdf(filtered, companyMeta, {
+                  visibleColumns,
+                });
                 return "Cash variance audit PDF downloaded!";
               }}
             />
@@ -196,7 +231,7 @@ export const CashClosingAuditTable: React.FC<CashClosingAuditTableProps> = ({
 
         <TableScroll>
           {isLoading && records.length === 0 ? (
-            <TableSkeleton columnCount={9} rowCount={6} />
+            <TableSkeleton columnCount={activeVisibleColumnCount} rowCount={6} />
           ) : paginated.length === 0 ? (
             <EmptyState
               title="No Discrepancies Found"
@@ -205,28 +240,44 @@ export const CashClosingAuditTable: React.FC<CashClosingAuditTableProps> = ({
           ) : (
             <Table>
               <TableHead>
-                <TableTh align="center" width={40}>
-                  SL
-                </TableTh>
-                <TableTh className="whitespace-nowrap">Closing Date</TableTh>
-                <TableTh align="center" className="whitespace-nowrap">
-                  Type
-                </TableTh>
-                <TableTh>Reason</TableTh>
-                <TableTh align="right" className="whitespace-nowrap">
-                  Expected (৳)
-                </TableTh>
-                <TableTh align="right" className="whitespace-nowrap">
-                  Counted (৳)
-                </TableTh>
-                <TableTh align="right" className="whitespace-nowrap">
-                  Variance (৳)
-                </TableTh>
-                <TableTh className="whitespace-nowrap">Closed By</TableTh>
-                <TableTh>Remarks</TableTh>
-                <TableTh align="center" width={70}>
-                  Actions
-                </TableTh>
+                {isColVisible("sl") && (
+                  <TableTh align="center" width={40}>
+                    SL
+                  </TableTh>
+                )}
+                {isColVisible("date") && (
+                  <TableTh className="whitespace-nowrap">Closing Date</TableTh>
+                )}
+                {isColVisible("type") && (
+                  <TableTh align="center" className="whitespace-nowrap">
+                    Type
+                  </TableTh>
+                )}
+                {isColVisible("reason") && <TableTh>Reason</TableTh>}
+                {isColVisible("expected") && (
+                  <TableTh align="right" className="whitespace-nowrap">
+                    Expected (৳)
+                  </TableTh>
+                )}
+                {isColVisible("counted") && (
+                  <TableTh align="right" className="whitespace-nowrap">
+                    Counted (৳)
+                  </TableTh>
+                )}
+                {isColVisible("variance") && (
+                  <TableTh align="right" className="whitespace-nowrap">
+                    Variance (৳)
+                  </TableTh>
+                )}
+                {isColVisible("closedBy") && (
+                  <TableTh className="whitespace-nowrap">Closed By</TableTh>
+                )}
+                {isColVisible("remarks") && <TableTh>Remarks</TableTh>}
+                {isColVisible("actions") && (
+                  <TableTh align="center" width={70}>
+                    Actions
+                  </TableTh>
+                )}
               </TableHead>
               <TableBody>
                 {paginated.map((item, idx) => {
@@ -239,66 +290,86 @@ export const CashClosingAuditTable: React.FC<CashClosingAuditTableProps> = ({
                       key={item.id || m.closingDate || idx}
                       className="hover:bg-[var(--primary-color-light)]/40 transition-colors"
                     >
-                      <td className="py-2.5 px-3 text-center text-[var(--ui-text)] text-xs font-normal">
-                        {sl}
-                      </td>
-                      <td className="py-2.5 px-3 font-medium text-[var(--ui-text)] text-xs whitespace-nowrap">
-                        {m.closingDate
-                          ? moment(m.closingDate).format("DD MMM, YYYY")
-                          : "N/A"}
-                      </td>
-                      <td className="py-2.5 px-3 text-center whitespace-nowrap">
-                        <span
-                          className={`inline-block px-2 py-0.5 text-[10px] border rounded-md font-semibold ${
-                            isShortage
-                              ? "bg-[var(--ui-danger-border)] text-[var(--ui-danger-dark)] border-[var(--ui-danger-border)]"
-                              : "bg-[var(--ui-warning-border)] text-[var(--ui-warning-dark)] border-[var(--ui-warning-border)]"
-                          }`}
-                        >
-                          {isShortage ? "Shortage" : "Surplus"}
-                        </span>
-                      </td>
-                      <td className="py-2.5 px-3 text-xs font-medium text-[var(--ui-text)] whitespace-nowrap">
-                        {m.reasonLabel}
-                      </td>
-                      <td className="py-2.5 px-3 text-right text-xs text-[var(--ui-text)] whitespace-nowrap">
-                        ৳ {formatMoney(m.expectedCash)}
-                      </td>
-                      <td className="py-2.5 px-3 text-right font-bold text-xs text-[var(--ui-text)] whitespace-nowrap">
-                        ৳ {formatMoney(m.countedCash)}
-                      </td>
-                      <td className="py-2.5 px-3 text-right font-bold text-xs whitespace-nowrap">
-                        <span
-                          className={
-                            isShortage
-                              ? "text-[var(--ui-danger)]"
-                              : "text-amber-600"
-                          }
-                        >
-                          {m.differenceAmount > 0 ? "+" : ""}৳{" "}
-                          {formatMoney(m.differenceAmount)}
-                        </span>
-                      </td>
-                      <td className="py-2.5 px-3 text-xs text-[var(--ui-text-muted)] whitespace-nowrap">
-                        {m.closedBy || (
-                          <span className="text-[var(--ui-text-subtle)]">
-                            N/A
+                      {isColVisible("sl") && (
+                        <td className="py-2.5 px-3 text-center text-[var(--ui-text)] text-xs font-normal">
+                          {sl}
+                        </td>
+                      )}
+                      {isColVisible("date") && (
+                        <td className="py-2.5 px-3 font-medium text-[var(--ui-text)] text-xs whitespace-nowrap">
+                          {m.closingDate
+                            ? moment(m.closingDate).format("DD MMM, YYYY")
+                            : "N/A"}
+                        </td>
+                      )}
+                      {isColVisible("type") && (
+                        <td className="py-2.5 px-3 text-center whitespace-nowrap">
+                          <span
+                            className={`inline-block px-2 py-0.5 text-[10px] border rounded-md font-semibold ${
+                              isShortage
+                                ? "bg-[var(--ui-danger-border)] text-[var(--ui-danger-dark)] border-[var(--ui-danger-border)]"
+                                : "bg-[var(--ui-warning-border)] text-[var(--ui-warning-dark)] border-[var(--ui-warning-border)]"
+                            }`}
+                          >
+                            {isShortage ? "Shortage" : "Surplus"}
                           </span>
-                        )}
-                      </td>
-                      <td className="py-2.5 px-3 text-xs text-[var(--ui-text-muted)] max-w-[200px] truncate">
-                        {m.remarks || (
-                          <span className="text-[var(--ui-text-subtle)]">
-                            N/A
+                        </td>
+                      )}
+                      {isColVisible("reason") && (
+                        <td className="py-2.5 px-3 text-xs font-medium text-[var(--ui-text)] whitespace-nowrap">
+                          {m.reasonLabel}
+                        </td>
+                      )}
+                      {isColVisible("expected") && (
+                        <td className="py-2.5 px-3 text-right text-xs text-[var(--ui-text)] whitespace-nowrap">
+                          ৳ {formatMoney(m.expectedCash)}
+                        </td>
+                      )}
+                      {isColVisible("counted") && (
+                        <td className="py-2.5 px-3 text-right font-bold text-xs text-[var(--ui-text)] whitespace-nowrap">
+                          ৳ {formatMoney(m.countedCash)}
+                        </td>
+                      )}
+                      {isColVisible("variance") && (
+                        <td className="py-2.5 px-3 text-right font-bold text-xs whitespace-nowrap">
+                          <span
+                            className={
+                              isShortage
+                                ? "text-[var(--ui-danger)]"
+                                : "text-amber-600"
+                            }
+                          >
+                            {m.differenceAmount > 0 ? "+" : ""}৳{" "}
+                            {formatMoney(m.differenceAmount)}
                           </span>
-                        )}
-                      </td>
-                      <td className="py-2 px-3 text-center whitespace-nowrap">
-                        <TableActionButtons
-                          onView={() => onViewDenominations(item)}
-                          viewTitle="View Denomination Notes Breakdown"
-                        />
-                      </td>
+                        </td>
+                      )}
+                      {isColVisible("closedBy") && (
+                        <td className="py-2.5 px-3 text-xs text-[var(--ui-text-muted)] whitespace-nowrap">
+                          {m.closedBy || (
+                            <span className="text-[var(--ui-text-subtle)]">
+                              N/A
+                            </span>
+                          )}
+                        </td>
+                      )}
+                      {isColVisible("remarks") && (
+                        <td className="py-2.5 px-3 text-xs text-[var(--ui-text-muted)] max-w-[200px] truncate">
+                          {m.remarks || (
+                            <span className="text-[var(--ui-text-subtle)]">
+                              N/A
+                            </span>
+                          )}
+                        </td>
+                      )}
+                      {isColVisible("actions") && (
+                        <td className="py-2 px-3 text-center whitespace-nowrap">
+                          <TableActionButtons
+                            onView={() => onViewDenominations(item)}
+                            viewTitle="View Denomination Notes Breakdown"
+                          />
+                        </td>
+                      )}
                     </tr>
                   );
                 })}
