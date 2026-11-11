@@ -365,7 +365,7 @@ export const TradeReturnForm: React.FC<TradeReturnFormProps> = ({ mode }) => {
         rawDetails = [{
           productId: order.productId || order.id || "1",
           productCode: order.orderNo || "ITEM-1",
-          productName: `Order #${order.orderNo || order.invoiceNo || order.id || "Item"}`,
+          productName: `Order ${order.orderNo || order.invoiceNo || order.id || "Item"}`,
           unit: "pcs",
           quantity: 1,
           sellPrice: Number(order.grandTotal || order.totalAmount || 0),
