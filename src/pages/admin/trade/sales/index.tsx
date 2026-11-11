@@ -166,42 +166,56 @@ const Sales: React.FC = () => {
   // Final sales array: merges authoritative salesData with enriched combinedSales and rawReturns
   // Guaranteed: Every sale—returned or not—remains in this list and NEVER disappears!
   const rawSales = useMemo(() => {
-    const saleMap = new Map<string, SaleItem>();
+    const saleList: SaleItem[] = [];
+    const aliasToIdx = new Map<string, number>();
 
     const registerSale = (record: SaleItem) => {
-      const invKey = String(record.invoiceNo || record.salesInvoiceNo || "").trim().toLowerCase();
-      const ordKey = String(record.orderNo || "").trim().toLowerCase();
-      const idKey = String(record.id || (record as any).saleId || "").trim().toLowerCase();
+      const cleanOrd = getCleanOrderNo(record.orderNo, record.invoiceNo || record.salesInvoiceNo);
+      const aliases = [
+        cleanOrd ? `ord_${cleanOrd.toLowerCase()}` : null,
+        record.orderNo ? `ord_${String(record.orderNo).trim().toLowerCase()}` : null,
+        record.invoiceNo ? `inv_${String(record.invoiceNo).trim().toLowerCase()}` : null,
+        record.salesInvoiceNo ? `inv_${String(record.salesInvoiceNo).trim().toLowerCase()}` : null,
+        record.id ? `id_${String(record.id).trim().toLowerCase()}` : null,
+        (record as any).saleId ? `id_${String((record as any).saleId).trim().toLowerCase()}` : null,
+      ].filter(Boolean) as string[];
 
-      const existing =
-        (invKey && saleMap.get(invKey)) ||
-        (ordKey && saleMap.get(ordKey)) ||
-        (idKey && saleMap.get(idKey));
+      let existingIdx = -1;
+      for (const a of aliases) {
+        if (aliasToIdx.has(a)) {
+          existingIdx = aliasToIdx.get(a)!;
+          break;
+        }
+      }
 
-      const merged: SaleItem = existing
-        ? {
-            ...existing,
-            ...record,
-            orderNo:
-              !record.orderNo || record.orderNo.includes("-")
-                ? existing.orderNo || record.orderNo
-                : record.orderNo,
-            hasReturn: Boolean(record.hasReturn || existing.hasReturn),
-            returnNo: record.returnNo || (existing as any).returnNo,
-            returnGrandTotal: record.returnGrandTotal ?? (existing as any).returnGrandTotal,
-            returnRefundAmount: record.returnRefundAmount ?? (existing as any).returnRefundAmount,
-            salesDetails:
-              record.salesDetails && record.salesDetails.length > 0
-                ? record.salesDetails
-                : existing.salesDetails,
-            details:
-              record.details && record.details.length > 0 ? record.details : existing.details,
-          }
-        : record;
+      if (existingIdx === -1) {
+        const newIdx = saleList.length;
+        saleList.push(record);
+        aliases.forEach((a) => aliasToIdx.set(a, newIdx));
+      } else {
+        const existing = saleList[existingIdx];
+        const existingDetails = Array.isArray(existing.salesDetails) && existing.salesDetails.length > 0
+          ? existing.salesDetails
+          : existing.details || [];
+        const newDetails = Array.isArray(record.salesDetails) && record.salesDetails.length > 0
+          ? record.salesDetails
+          : record.details || [];
 
-      if (invKey) saleMap.set(invKey, merged);
-      if (ordKey) saleMap.set(ordKey, merged);
-      if (idKey) saleMap.set(idKey, merged);
+        const bestDetails = existingDetails.length >= newDetails.length ? existingDetails : newDetails;
+
+        saleList[existingIdx] = {
+          ...existing,
+          ...record,
+          orderNo: cleanOrd || existing.orderNo || record.orderNo,
+          hasReturn: Boolean(existing.hasReturn || record.hasReturn),
+          returnNo: record.returnNo || (existing as any).returnNo,
+          returnGrandTotal: record.returnGrandTotal ?? (existing as any).returnGrandTotal,
+          returnRefundAmount: record.returnRefundAmount ?? (existing as any).returnRefundAmount,
+          salesDetails: bestDetails,
+          details: bestDetails,
+        };
+        aliases.forEach((a) => aliasToIdx.set(a, existingIdx));
+      }
     };
 
     // 1. Load authoritative sales from /get-sale-list
@@ -224,7 +238,7 @@ const Sales: React.FC = () => {
       });
     }
 
-    // 3. Fallback from rawReturns: if any returned order isn't in saleMap yet, reconstruct it so it NEVER disappears
+    // 3. Fallback from rawReturns: if any returned order isn't in saleList yet, reconstruct it so it NEVER disappears
     if (Array.isArray(rawReturns)) {
       rawReturns.forEach((r, idx) => {
         if (
@@ -241,43 +255,55 @@ const Sales: React.FC = () => {
           return;
         }
 
-        const invKey = String(r.salesInvoiceNo || r.invoiceNo || "").trim().toLowerCase();
-        const ordKey = String(r.orderNo || "").trim().toLowerCase();
-        const existing = (invKey && saleMap.get(invKey)) || (ordKey && saleMap.get(ordKey));
+        const cleanOrd = getCleanOrderNo(r.orderNo, r.salesInvoiceNo || r.invoiceNo);
+        const aliases = [
+          cleanOrd ? `ord_${cleanOrd.toLowerCase()}` : null,
+          r.orderNo ? `ord_${String(r.orderNo).trim().toLowerCase()}` : null,
+          r.salesInvoiceNo ? `inv_${String(r.salesInvoiceNo).trim().toLowerCase()}` : null,
+          r.invoiceNo ? `inv_${String(r.invoiceNo).trim().toLowerCase()}` : null,
+        ].filter(Boolean) as string[];
 
-        if (existing) {
-          existing.hasReturn = true;
-          if (!existing.orderNo || existing.orderNo.includes("-")) {
-            existing.orderNo = r.orderNo || existing.orderNo;
+        const exists = aliases.some((a) => aliasToIdx.has(a));
+        if (exists) {
+          for (const a of aliases) {
+            if (aliasToIdx.has(a)) {
+              const eIdx = aliasToIdx.get(a)!;
+              saleList[eIdx].hasReturn = true;
+              if (cleanOrd && (!saleList[eIdx].orderNo || saleList[eIdx].orderNo.includes("-"))) {
+                saleList[eIdx].orderNo = cleanOrd;
+              }
+              break;
+            }
           }
         } else {
-          const syntheticSale = normalizeSaleRecord({
-            id: r.id || r.orderNo || `sale_ret_${idx}`,
-            orderNo: r.orderNo || "",
-            invoiceNo: r.salesInvoiceNo || r.invoiceNo || r.orderNo || "",
-            salesInvoiceNo: r.salesInvoiceNo || r.invoiceNo || "",
-            salesDate: r.returnDate || r.createdAt || moment().format("YYYY-MM-DD"),
-            createdAt: r.createdAt || r.returnDate,
-            customerId: r.customerId,
-            customerName: r.customerName || "Customer",
-            customerPhone: r.customerPhone || "",
-            customerAddress: r.customerAddress || "",
-            grandTotal: Number(r.grandTotal ?? r.totalAmount ?? r.refundAmount ?? 0),
-            paidAmount: Number(r.refundAmount ?? r.grandTotal ?? 0),
-            dueAmount: 0,
-            paymentType: r.paymentType || "CASH",
-            status: "Paid",
-            hasReturn: true,
-            salesDetails: r.returnDetails || [],
-            details: r.returnDetails || [],
-          });
-          registerSale(syntheticSale);
+          registerSale(
+            normalizeSaleRecord({
+              id: r.id || r.orderNo || `sale_ret_${idx}`,
+              orderNo: cleanOrd || r.orderNo || "",
+              invoiceNo: r.salesInvoiceNo || r.invoiceNo || r.orderNo || "",
+              salesInvoiceNo: r.salesInvoiceNo || r.invoiceNo || "",
+              salesDate: r.returnDate || r.createdAt || moment().format("YYYY-MM-DD"),
+              createdAt: r.createdAt || r.returnDate,
+              customerId: r.customerId,
+              customerName: r.customerName || "Customer",
+              customerPhone: r.customerPhone || "",
+              customerAddress: r.customerAddress || "",
+              grandTotal: Number(r.grandTotal ?? r.totalAmount ?? r.refundAmount ?? 0),
+              paidAmount: Number(r.refundAmount ?? r.grandTotal ?? 0),
+              dueAmount: 0,
+              paymentType: r.paymentType || "CASH",
+              status: "Paid",
+              hasReturn: true,
+              salesDetails: r.returnDetails || [],
+              details: r.returnDetails || [],
+            })
+          );
         }
       });
     }
 
     // 4. Ensure hasReturn is true for every sale matching returnedInvoiceSet
-    return Array.from(new Set(saleMap.values())).map((sale) => {
+    return saleList.map((sale) => {
       const orderKey = String(sale.orderNo || "").trim().toLowerCase();
       const invoiceKey = String(sale.invoiceNo || sale.salesInvoiceNo || "").trim().toLowerCase();
       const idKey = String(sale.id || "").trim().toLowerCase();

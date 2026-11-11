@@ -26,6 +26,7 @@ import { exportPurchasesToExcel } from "@/utils/excel-export";
 import { showSuccessToast, showErrorToast } from "@/utils/toast-utils";
 import { formatMoney } from "@/utils/formatters";
 import { usePermission } from "@/hooks/usePermission";
+import { getCleanOrderNo } from "@/pages/admin/trade/sales/hooks/useSalesQueries";
 
 interface PurchaseTableProps {
   purchases: PurchaseItem[];
@@ -484,6 +485,7 @@ export const PurchaseTable: React.FC<PurchaseTableProps> = ({
                   const paidAmount = Number(purchase.paidAmount ?? 0);
                   const dueAmount = Number(purchase.dueAmount ?? 0);
                   const paymentType = (purchase.paymentType || "CASH").toUpperCase();
+                  const displayOrderId = getCleanOrderNo(purchase.orderNo, purchase.invoiceNo || (purchase as any).purchaseInvoiceNo);
 
                   let statusBadge = "Paid";
                   let statusBg = "bg-[var(--ui-success-border)] text-[var(--ui-success-dark)] border-[var(--ui-success-border)] font-semibold";
@@ -527,12 +529,12 @@ export const PurchaseTable: React.FC<PurchaseTableProps> = ({
                               title="Click to view invoice"
                               className="cursor-pointer hover:text-[var(--primary-color)] font-medium transition-colors"
                             >
-                              {purchase.orderNo}
+                              {displayOrderId}
                             </span>
-                            {purchase.orderNo && (
+                            {displayOrderId && (
                               <button
                                 type="button"
-                                onClick={() => handleCopyOrderId(purchase.orderNo, purchase.id)}
+                                onClick={() => handleCopyOrderId(displayOrderId, purchase.id)}
                                 title="Copy Order ID"
                                 className="p-1 text-[var(--ui-text-subtle)] hover:text-[var(--primary-color)] transition-colors opacity-0 group-hover/ord:opacity-100 cursor-pointer"
                               >

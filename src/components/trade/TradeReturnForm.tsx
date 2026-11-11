@@ -46,7 +46,7 @@ import TradeRefundSection from "@/components/trade/TradeRefundSection";
 import TradeInvoiceModal from "@/components/invoice/TradeInvoiceModal";
 import { normalizeSalesReturnInvoice, normalizePurchaseReturnInvoice } from "@/components/invoice/trade-invoice-adapters";
 import { usePermission } from "@/hooks/usePermission";
-import { savePersistedTradeReturn } from "@/utils/trade-return-storage";
+import { savePersistedTradeReturn, savePersistedPurchaseReturn } from "@/utils/trade-return-storage";
 
 export interface TradeReturnLineItem {
   id: string | number;
@@ -771,6 +771,8 @@ export const TradeReturnForm: React.FC<TradeReturnFormProps> = ({ mode }) => {
 
       if (isSale && selectedOrder) {
         savePersistedTradeReturn(selectedOrder, createdItem);
+      } else if (!isSale && selectedOrder) {
+        savePersistedPurchaseReturn(selectedOrder, createdItem);
       }
 
       setHasJustSubmitted(true);

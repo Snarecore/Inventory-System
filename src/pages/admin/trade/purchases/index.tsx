@@ -21,6 +21,7 @@ import {
   normalizePurchaseRecord,
   isPurchaseReturnRecord,
 } from "./hooks/usePurchaseQueries";
+import { getCleanOrderNo } from "@/pages/admin/trade/sales/hooks/useSalesQueries";
 import { useDebounce } from "@/hooks/useDebounce";
 import { usePermission } from "@/hooks/usePermission";
 
@@ -66,13 +67,13 @@ const Purchases: React.FC = () => {
   const [autoPrintReturnModal, setAutoPrintReturnModal] = useState<boolean>(false);
 
 
-  // 1. Authoritative Purchases Query: disabled by default since usePurchaseAndReturnsQuery already fetches unified purchases
+  // 1. Authoritative Purchases Query
   const {
     data: purchasesData,
     isLoading: isPurchasesLoadingQuery,
     isFetching: isPurchasesFetching,
     refetch: refetchPurchases,
-  } = usePurchasesQuery({ enabled: false });
+  } = usePurchasesQuery();
 
   // 2. Returns & Return Indicators Query
   const {
@@ -152,12 +153,106 @@ const Purchases: React.FC = () => {
     return { combinedPurchases: pList, rawReturns: rList };
   }, [combinedData]);
 
-  // Final purchases array: uses authoritative purchasesData, or combined purchases as fallback
+  // Unified single-array deduplication for Purchases guaranteeing zero duplicates
   const rawPurchases = useMemo(() => {
-    if (Array.isArray(purchasesData) && purchasesData.length > 0) return purchasesData;
-    if (combinedPurchases.length > 0) return combinedPurchases;
-    return [];
-  }, [purchasesData, combinedPurchases]);
+    const purchaseList: PurchaseItem[] = [];
+    const aliasToIdx = new Map<string, number>();
+
+    const registerPurchase = (p: PurchaseItem) => {
+      if (!p) return;
+      const cleanOrd = getCleanOrderNo(p.orderNo, p.invoiceNo || (p as any).purchaseInvoiceNo);
+      const aliases = [
+        cleanOrd ? `ord_${cleanOrd.toLowerCase()}` : null,
+        p.orderNo ? `ord_${String(p.orderNo).trim().toLowerCase()}` : null,
+        p.invoiceNo ? `inv_${String(p.invoiceNo).trim().toLowerCase()}` : null,
+        (p as any).purchaseInvoiceNo ? `inv_${String((p as any).purchaseInvoiceNo).trim().toLowerCase()}` : null,
+        p.challanNo ? `chn_${String(p.challanNo).trim().toLowerCase()}` : null,
+        p.id ? `id_${String(p.id).trim().toLowerCase()}` : null,
+      ].filter(Boolean) as string[];
+
+      let existingIdx = -1;
+      for (const a of aliases) {
+        if (aliasToIdx.has(a)) {
+          existingIdx = aliasToIdx.get(a)!;
+          break;
+        }
+      }
+
+      if (existingIdx === -1) {
+        const newIdx = purchaseList.length;
+        purchaseList.push(p);
+        aliases.forEach((a) => aliasToIdx.set(a, newIdx));
+      } else {
+        const existing = purchaseList[existingIdx];
+        const existingDetails = Array.isArray(existing.purchaseDetails) && existing.purchaseDetails.length > 0
+          ? existing.purchaseDetails
+          : existing.details || [];
+        const newDetails = Array.isArray(p.purchaseDetails) && p.purchaseDetails.length > 0
+          ? p.purchaseDetails
+          : p.details || [];
+
+        const bestDetails = existingDetails.length >= newDetails.length ? existingDetails : newDetails;
+
+        purchaseList[existingIdx] = {
+          ...existing,
+          ...p,
+          orderNo: cleanOrd || existing.orderNo || p.orderNo,
+          hasReturn: Boolean(existing.hasReturn || p.hasReturn),
+          grandTotal: existing.grandTotal || p.grandTotal,
+          paidAmount: existing.paidAmount || p.paidAmount,
+          purchaseDetails: bestDetails,
+          details: bestDetails,
+        };
+        aliases.forEach((a) => aliasToIdx.set(a, existingIdx));
+      }
+    };
+
+    if (Array.isArray(purchasesData)) purchasesData.forEach(registerPurchase);
+    if (Array.isArray(combinedPurchases)) combinedPurchases.forEach(registerPurchase);
+
+    // If any purchase was returned but somehow dropped from both queries, reconstruct from rawReturns
+    if (Array.isArray(rawReturns)) {
+      rawReturns.forEach((r) => {
+        const cleanOrd = getCleanOrderNo(r.orderNo, r.purchaseInvoiceNo || r.invoiceNo);
+        const aliases = [
+          cleanOrd ? `ord_${cleanOrd.toLowerCase()}` : null,
+          r.orderNo ? `ord_${String(r.orderNo).trim().toLowerCase()}` : null,
+          r.purchaseInvoiceNo ? `inv_${String(r.purchaseInvoiceNo).trim().toLowerCase()}` : null,
+          r.invoiceNo ? `inv_${String(r.invoiceNo).trim().toLowerCase()}` : null,
+          r.challanNo ? `chn_${String(r.challanNo).trim().toLowerCase()}` : null,
+        ].filter(Boolean) as string[];
+
+        const exists = aliases.some((a) => aliasToIdx.has(a));
+        if (!exists && (cleanOrd || r.purchaseInvoiceNo || r.invoiceNo)) {
+          registerPurchase(
+            normalizePurchaseRecord({
+              id: r.id || `pur_${r.returnNo || cleanOrd}`,
+              orderNo: cleanOrd,
+              invoiceNo: r.purchaseInvoiceNo || r.invoiceNo || cleanOrd,
+              purchaseInvoiceNo: r.purchaseInvoiceNo || r.invoiceNo || cleanOrd,
+              challanNo: r.challanNo || "",
+              supplierId: r.supplierId,
+              supplierName: r.supplierName || "Direct Supplier",
+              supplierPhone: r.supplierPhone || "",
+              supplierAddress: r.supplierAddress || "",
+              purchaseDate: r.returnDate || moment().format("YYYY-MM-DD"),
+              createdAt: r.createdAt || r.returnDate,
+              grandTotal: Number(r.grandTotal ?? r.refundAmount ?? 0),
+              paidAmount: Number(r.grandTotal ?? r.refundAmount ?? 0),
+              dueAmount: 0,
+              status: "Returned",
+              paymentType: r.paymentType || "CASH",
+              hasReturn: true,
+              purchaseDetails: r.returnDetails || [],
+              details: r.returnDetails || [],
+            })
+          );
+        }
+      });
+    }
+
+    return purchaseList;
+  }, [purchasesData, combinedPurchases, rawReturns]);
 
   // Zero-network suppliers list derived directly from active purchases and returns
   const suppliersList: PartyItem[] = useMemo(() => {
