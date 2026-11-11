@@ -1445,3 +1445,60 @@ export async function downloadPartyTradePdf(
     meta,
   });
 }
+
+const REPORT_DATE_INPUT_FORMATS = [
+  moment.ISO_8601,
+  "YYYY-MM-DD",
+  "YYYY-MM-DD HH:mm:ss",
+  "DD-MM-YYYY",
+  "DD/MM/YYYY",
+  "DD MMM, YYYY",
+  "DD MMM YYYY",
+];
+
+/**
+ * Parses backend/UI report dates across ISO, YYYY-MM-DD, and DD-MM-YYYY formats.
+ */
+export function parseFlexibleReportDate(raw?: string | null): moment.Moment | null {
+  const clean = String(raw || "").trim();
+  if (!clean) return null;
+
+  const parsed = moment(clean, REPORT_DATE_INPUT_FORMATS, true);
+  if (parsed.isValid()) return parsed;
+
+  const dateOnly = clean.replace("T", " ").split(" ")[0];
+  const fallback = moment(dateOnly, REPORT_DATE_INPUT_FORMATS, false);
+  if (fallback.isValid()) return fallback;
+
+  const loose = moment(clean);
+  return loose.isValid() ? loose : null;
+}
+
+/**
+ * Checks whether a report record date falls inclusively within [startDate, endDate].
+ */
+export function isDateInReportRange(
+  dateStr?: string | null,
+  startDate?: string,
+  endDate?: string
+): boolean {
+  if (!startDate || !endDate) return true;
+  const parsed = parseFlexibleReportDate(dateStr);
+  if (!parsed) return true;
+
+  const start = moment(startDate, "YYYY-MM-DD").startOf("day");
+  const end = moment(endDate, "YYYY-MM-DD").endOf("day");
+  return parsed.isBetween(start, end, undefined, "[]");
+}
+
+/**
+ * Formats an arbitrary report date into concise DD MMM, YYYY display text.
+ */
+export function formatShortReportDate(
+  dateStr?: string | null,
+  fallback = "-"
+): string {
+  const parsed = parseFlexibleReportDate(dateStr);
+  return parsed ? parsed.format("DD MMM, YYYY") : fallback;
+}
+

@@ -87,13 +87,21 @@ export const normalizeSaleRecord = (item: any): SaleItem => {
  */
 export const isReturnRecord = (item: any): boolean => {
   if (!item) return false;
+  const hasSalesLines =
+    Array.isArray(item.salesDetails) && item.salesDetails.length > 0;
+  const hasReturnLines =
+    (Array.isArray(item.returnDetails) && item.returnDetails.length > 0) ||
+    (Array.isArray(item.salesReturnDetails) && item.salesReturnDetails.length > 0);
+
   return (
     Boolean(item.isReturnRecord) ||
     Boolean(item.returnNo) ||
+    Boolean(item.return_no) ||
     (typeof item.refNo === "string" && item.refNo.startsWith("SR-")) ||
     String(item.returnType || "").toUpperCase() === "RETURN" ||
     (String(item.status || "").toUpperCase() === "RETURN" && !item.invoiceNo) ||
-    (Array.isArray(item.returnDetails) && item.returnDetails.length > 0 && !item.salesDetails?.length)
+    (Boolean(item.returnGrandTotal) && !hasSalesLines) ||
+    (hasReturnLines && !hasSalesLines)
   );
 };
 
@@ -148,6 +156,12 @@ export const fetchSalesAndReturnList = async (): Promise<UnifiedTradeRecord[]> =
       ? res.sales
       : Array.isArray(res?.salesList)
       ? res.salesList
+      : Array.isArray(res?.data?.sales)
+      ? res.data.sales
+      : Array.isArray(res?.data?.saleList)
+      ? res.data.saleList
+      : Array.isArray(res?.data?.salesList)
+      ? res.data.salesList
       : [];
 
     const returns = Array.isArray(res?.returns)
@@ -158,20 +172,39 @@ export const fetchSalesAndReturnList = async (): Promise<UnifiedTradeRecord[]> =
       ? res.salesReturnList
       : Array.isArray(res?.salesReturns)
       ? res.salesReturns
+      : Array.isArray(res?.saleReturnList)
+      ? res.saleReturnList
+      : Array.isArray(res?.saleReturns)
+      ? res.saleReturns
+      : Array.isArray(res?.sales_returns)
+      ? res.sales_returns
+      : Array.isArray(res?.data?.returns)
+      ? res.data.returns
+      : Array.isArray(res?.data?.returnList)
+      ? res.data.returnList
+      : Array.isArray(res?.data?.salesReturnList)
+      ? res.data.salesReturnList
+      : Array.isArray(res?.data?.salesReturns)
+      ? res.data.salesReturns
       : [];
 
-    const directList = Array.isArray(res) ? res : [];
+    const combinedList = Array.isArray(res?.salesAndReturnList)
+      ? res.salesAndReturnList
+      : Array.isArray(res)
+      ? res
+      : [];
 
-    // Deduplicate into unified records array with deterministic composite keys
     const seen = new Set<string>();
+    const returnedInvoices = new Set<string>();
     const unifiedList: UnifiedTradeRecord[] = [];
 
     const addItem = (item: any, index: number, forceIsReturn?: boolean) => {
       if (!item) return;
-      const isRet = forceIsReturn !== undefined ? forceIsReturn : isReturnRecord(item);
+      const isRet = forceIsReturn === true ? true : isReturnRecord(item);
       const prefix = isRet ? "ret" : "sale";
       const idKey =
         item.returnNo ||
+        item.return_no ||
         item.salesInvoiceNo ||
         item.invoiceNo ||
         item.orderNo ||
@@ -184,12 +217,90 @@ export const fetchSalesAndReturnList = async (): Promise<UnifiedTradeRecord[]> =
         const normalized = normalizeSaleRecord(item) as UnifiedTradeRecord;
         normalized.isReturnRecord = isRet;
         unifiedList.push(normalized);
+
+        if (isRet) {
+          const invRef = String(
+            item.salesInvoiceNo || item.invoiceNo || item.orderNo || ""
+          )
+            .trim()
+            .toLowerCase();
+          if (invRef) returnedInvoices.add(invRef);
+        }
       }
     };
 
-    sales.forEach((s, idx) => addItem(s, idx, false));
-    returns.forEach((r, idx) => addItem(r, idx, true));
-    directList.forEach((d, idx) => addItem(d, idx));
+    const appendNestedReturns = (parent: any, fallbackIdx: number) => {
+      if (!parent || typeof parent !== "object") return;
+      const parentInv = String(
+        parent.salesInvoiceNo || parent.invoiceNo || parent.orderNo || ""
+      ).trim();
+
+      const nested = [
+        ...(Array.isArray(parent.returns) ? parent.returns : []),
+        ...(Array.isArray(parent.salesReturns) ? parent.salesReturns : []),
+      ];
+
+      nested.forEach((r: any, rIdx: number) => {
+        if (!r || typeof r !== "object") return;
+        addItem(
+          {
+            customerId: parent.customerId,
+            customerName: parent.customerName,
+            customerPhone: parent.customerPhone,
+            customerAddress: parent.customerAddress,
+            salesInvoiceNo: parentInv,
+            orderNo: r.orderNo || parent.orderNo,
+            ...r,
+          },
+          fallbackIdx * 100 + rIdx,
+          true
+        );
+      });
+
+      const embeddedDetails = Array.isArray(parent.returnDetails)
+        ? parent.returnDetails
+        : Array.isArray(parent.salesReturnDetails)
+        ? parent.salesReturnDetails
+        : [];
+      const invKey = parentInv.toLowerCase();
+      if (
+        nested.length === 0 &&
+        embeddedDetails.length > 0 &&
+        (!invKey || !returnedInvoices.has(invKey))
+      ) {
+        addItem(
+          {
+            ...parent,
+            salesInvoiceNo: parentInv,
+            returnNo:
+              parent.returnNo ||
+              parent.return_no ||
+              (parentInv ? `SR-${parentInv}` : `SR-${parent.id || fallbackIdx + 1}`),
+            returnDate:
+              parent.returnDate ||
+              parent.return_date ||
+              parent.updatedAt ||
+              parent.salesDate ||
+              parent.createdAt,
+            returnDetails: embeddedDetails,
+            salesDetails: [],
+            isReturnRecord: true,
+          },
+          fallbackIdx,
+          true
+        );
+      }
+    };
+
+    returns.forEach((r: any, idx: number) => addItem(r, idx, true));
+    sales.forEach((s: any, idx: number) => {
+      addItem(s, idx);
+      appendNestedReturns(s, idx);
+    });
+    combinedList.forEach((d: any, idx: number) => {
+      addItem(d, idx);
+      appendNestedReturns(d, idx);
+    });
 
     return unifiedList;
   } catch (error) {

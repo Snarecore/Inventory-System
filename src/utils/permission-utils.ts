@@ -843,6 +843,11 @@ export function getSidebarItemModule(item: {
     return { module: "category_finance", action: "read" };
   }
 
+  // Reports (must run before trade/collection keyword checks for paths like /admin/reports/sales-return)
+  if (path.startsWith("/admin/reports") || key.startsWith("reports.")) {
+    return { module: "reports", action: "read" };
+  }
+
   // Trade - Sales
   if (path.includes("create-sales-return") || (name === "create return" && path.includes("sales"))) {
     return { module: "sales_return", action: "create" };

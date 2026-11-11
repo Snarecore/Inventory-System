@@ -40,6 +40,8 @@ const Sales = React.lazy(() => import('@/pages/admin/trade/sales'))
 const CreateSale = React.lazy(() => import('@/pages/admin/trade/create-sale'))
 const SalesReport = React.lazy(() => import('@/pages/admin/trade/sales-report'))
 const PurchaseReport = React.lazy(() => import('@/pages/admin/trade/purchase-report'))
+const SalesReturnReport = React.lazy(() => import('@/pages/admin/trade/sales-return-report'))
+const CustomerCollectionReport = React.lazy(() => import('@/pages/admin/trade/customer-collection-report'))
 const CreateSalesReturn = React.lazy(() => import('@/pages/admin/trade/create-sales-return'))
 const CreatePurchaseReturn = React.lazy(() => import('@/pages/admin/trade/purchase-return/CreatePurchaseReturnPage'))
 const CustomerCollection = React.lazy(() => import('@/pages/admin/trade/customer-collection'))
@@ -252,6 +254,26 @@ export const router = createBrowserRouter([
   {
     path: '/product-report',
     element: <Navigate to="/admin/reports/inventory" replace />,
+  },
+  {
+    path: '/reports/sales-return',
+    element: <Navigate to="/admin/reports/sales-return" replace />,
+  },
+  {
+    path: '/sales-return-report',
+    element: <Navigate to="/admin/reports/sales-return" replace />,
+  },
+  {
+    path: '/reports/customer-collection',
+    element: <Navigate to="/admin/reports/customer-collection" replace />,
+  },
+  {
+    path: '/customer-collection-report',
+    element: <Navigate to="/admin/reports/customer-collection" replace />,
+  },
+  {
+    path: '/reports/collection',
+    element: <Navigate to="/admin/reports/customer-collection" replace />,
   },
   {
     path: '/sales/collection',
@@ -582,6 +604,22 @@ export const router = createBrowserRouter([
       {
         path: 'reports/inventory',
         element: withPermission(InventoryReport, 'reports'),
+      },
+      {
+        path: 'sales-return-report',
+        element: withPermission(SalesReturnReport, 'reports'),
+      },
+      {
+        path: 'reports/sales-return',
+        element: withPermission(SalesReturnReport, 'reports'),
+      },
+      {
+        path: 'customer-collection-report',
+        element: withPermission(CustomerCollectionReport, 'reports'),
+      },
+      {
+        path: 'reports/customer-collection',
+        element: withPermission(CustomerCollectionReport, 'reports'),
       },
       {
         path: 'sales-return',
