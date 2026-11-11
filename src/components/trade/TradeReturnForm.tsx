@@ -35,7 +35,7 @@ import {
 import { useFinancialAccounts } from "@/hooks/useFinancialAccounts";
 import { useFinancialLedger } from "@/hooks/useFinancialLedger";
 import { cashLeg, bankLeg, mfsLeg, type TradeTender } from "@/services/financial-ledger-service";
-import { buildAccessUser } from "@/utils/access-user";
+import { buildAccessUser, withBranchScope } from "@/utils/access-user";
 import { postData } from "@/services/api-service";
 import { formatMoney } from "@/utils/formatters";
 import { showSuccessToast, showErrorToast } from "@/utils/toast-utils";
@@ -46,6 +46,7 @@ import TradeRefundSection from "@/components/trade/TradeRefundSection";
 import TradeInvoiceModal from "@/components/invoice/TradeInvoiceModal";
 import { normalizeSalesReturnInvoice, normalizePurchaseReturnInvoice } from "@/components/invoice/trade-invoice-adapters";
 import { usePermission } from "@/hooks/usePermission";
+import { savePersistedTradeReturn } from "@/utils/trade-return-storage";
 
 export interface TradeReturnLineItem {
   id: string | number;
@@ -105,6 +106,7 @@ export const TradeReturnForm: React.FC<TradeReturnFormProps> = ({ mode }) => {
   // Line items
   const [lines, setLines] = useState<TradeReturnLineItem[]>([]);
   const [hasJustSubmitted, setHasJustSubmitted] = useState(false);
+  const hasInitializedStateOrderRef = useRef(false);
 
   // Modals
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
@@ -122,12 +124,12 @@ export const TradeReturnForm: React.FC<TradeReturnFormProps> = ({ mode }) => {
   const fetchOrdersAndReturnList = useCallback(async () => {
     try {
       const endpoint = isSale
-        ? (apiConfig.salesReturn as any).getSalesAndReturnListUrl || (apiConfig.sale as any).getSalesAndReturnListUrl
-        : (apiConfig.purchaseReturn as any).getPurchaseAndReturnListUrl || (apiConfig.purchase as any).getPurchaseAndReturnListUrl;
+        ? apiConfig.salesReturn?.getSalesAndReturnUrl || apiConfig.sales?.salesAndReturnUrl || "get-sales-and-return"
+        : apiConfig.purchaseReturn?.getPurchaseAndReturnListUrl || "get-purchase-and-return-list";
 
       const fallbackEndpoint = isSale
-        ? apiConfig.sale.getSaleListUrl
-        : apiConfig.purchase.getPurchaseListUrl;
+        ? apiConfig.sales?.salesListUrl || "get-sale-list"
+        : apiConfig.purchase?.purchaseListUrl || "get-purchase-list";
 
       const body = { accessUser: buildAccessUser() };
       let res: any = await postData({ url: endpoint, body });
@@ -234,11 +236,11 @@ export const TradeReturnForm: React.FC<TradeReturnFormProps> = ({ mode }) => {
 
         const retInv = cleanKey(isSale ? (item.salesInvoiceNo || item.invoiceNo) : (item.purchaseInvoiceNo || item.invoiceNo));
         const retRef = cleanKey(isSale ? item.orderNo : item.challanNo);
-        const retId = cleanKey(item.id || (isSale ? item.saleId : item.purchaseId));
+        const retSaleId = cleanKey(isSale ? (item.saleId || item.sale_id) : (item.purchaseId || item.purchase_id));
 
         if (targetInv && retInv && targetInv === retInv) return true;
         if (targetRef && retRef && targetRef === retRef) return true;
-        if (targetId && retId && targetId === retId) return true;
+        if (targetId && retSaleId && targetId === retSaleId) return true;
         return false;
       });
     },
@@ -261,7 +263,7 @@ export const TradeReturnForm: React.FC<TradeReturnFormProps> = ({ mode }) => {
           const pId = String(d.productId || d.id || "").trim();
           const pCode = cleanKey(d.productCode || d.pcode);
           const pName = String(d.productName || d.name || "").trim().toLowerCase();
-          const qty = Number(d.quantity || d.returnedQuantity || 0);
+          const qty = Number(d.quantity || d.returnedQuantity || d.returnQuantity || 0);
 
           if (qty > 0) {
             if (pId) returnedQtyMap[`id_${pId}`] = (returnedQtyMap[`id_${pId}`] || 0) + qty;
@@ -302,12 +304,12 @@ export const TradeReturnForm: React.FC<TradeReturnFormProps> = ({ mode }) => {
       setSelectedOrder(order);
 
       const inv = isSale
-        ? String(order.salesInvoiceNo || order.invoiceNo || "").trim()
-        : String(order.purchaseInvoiceNo || order.invoiceNo || "").trim();
+        ? String(order.salesInvoiceNo || order.invoiceNo || order.orderNo || "").trim()
+        : String(order.purchaseInvoiceNo || order.invoiceNo || order.challanNo || "").trim();
 
       const ref = isSale
-        ? String(order.orderNo || "").trim()
-        : String(order.challanNo || "").trim();
+        ? String(order.orderNo || order.invoiceNo || "").trim()
+        : String(order.challanNo || order.invoiceNo || "").trim();
 
       setInvoiceNo(inv);
       setRefOrderOrChallan(ref);
@@ -327,12 +329,50 @@ export const TradeReturnForm: React.FC<TradeReturnFormProps> = ({ mode }) => {
 
       const returnedQtyMap = getReturnedQuantitiesForOrder(order);
 
-      const rawDetails =
+      let rawDetails =
         (Array.isArray(order.salesDetails) && order.salesDetails.length > 0 && order.salesDetails) ||
         (Array.isArray(order.purchaseDetails) && order.purchaseDetails.length > 0 && order.purchaseDetails) ||
         (Array.isArray(order.saleDetails) && order.saleDetails.length > 0 && order.saleDetails) ||
+        (Array.isArray(order.saleDetailsList) && order.saleDetailsList.length > 0 && order.saleDetailsList) ||
         (Array.isArray(order.details) && order.details.length > 0 && order.details) ||
+        (Array.isArray(order.items) && order.items.length > 0 && order.items) ||
+        (Array.isArray(order.products) && order.products.length > 0 && order.products) ||
         [];
+
+      // If line items were not present on router state order, look up in candidate orders
+      if (rawDetails.length === 0 && Array.isArray(apiOrdersAndReturnData) && apiOrdersAndReturnData.length > 0) {
+        const fullMatched = apiOrdersAndReturnData.find((cand: any) => {
+          const matchInv = inv && String(cand.salesInvoiceNo || cand.invoiceNo || "").trim().toLowerCase() === inv.toLowerCase();
+          const matchRef = ref && String(cand.orderNo || cand.challanNo || "").trim().toLowerCase() === ref.toLowerCase();
+          const matchId = String(cand.id || cand.saleId || "").trim() === String(order.id || order.saleId || "").trim();
+          return matchInv || matchRef || matchId;
+        });
+        if (fullMatched) {
+          rawDetails =
+            (Array.isArray(fullMatched.salesDetails) && fullMatched.salesDetails.length > 0 && fullMatched.salesDetails) ||
+            (Array.isArray(fullMatched.purchaseDetails) && fullMatched.purchaseDetails.length > 0 && fullMatched.purchaseDetails) ||
+            (Array.isArray(fullMatched.saleDetails) && fullMatched.saleDetails.length > 0 && fullMatched.saleDetails) ||
+            (Array.isArray(fullMatched.saleDetailsList) && fullMatched.saleDetailsList.length > 0 && fullMatched.saleDetailsList) ||
+            (Array.isArray(fullMatched.details) && fullMatched.details.length > 0 && fullMatched.details) ||
+            (Array.isArray(fullMatched.items) && fullMatched.items.length > 0 && fullMatched.items) ||
+            (Array.isArray(fullMatched.products) && fullMatched.products.length > 0 && fullMatched.products) ||
+            [];
+        }
+      }
+
+      // Single item fallback if order total exists but backend provided no line array
+      if (rawDetails.length === 0 && Number(order.grandTotal || order.totalAmount || 0) > 0) {
+        rawDetails = [{
+          productId: order.productId || order.id || "1",
+          productCode: order.orderNo || "ITEM-1",
+          productName: `Order #${order.orderNo || order.invoiceNo || order.id || "Item"}`,
+          unit: "pcs",
+          quantity: 1,
+          sellPrice: Number(order.grandTotal || order.totalAmount || 0),
+          buyPrice: Number(order.grandTotal || order.totalAmount || 0),
+          total: Number(order.grandTotal || order.totalAmount || 0),
+        }];
+      }
 
       const cleanKey = (val: any) => String(val || "").replace(/[^a-zA-Z0-9]/g, "").toUpperCase();
 
@@ -375,13 +415,14 @@ export const TradeReturnForm: React.FC<TradeReturnFormProps> = ({ mode }) => {
 
       setLines(newLines);
     },
-    [getReturnedQuantitiesForOrder, isSale, reasonsList]
+    [getReturnedQuantitiesForOrder, isSale, reasonsList, apiOrdersAndReturnData]
   );
 
-  // Check router location state on mount
+  // Check router location state on mount - initialized once to protect user input
   useEffect(() => {
     const stateOrder = isSale ? location.state?.sale : location.state?.purchase;
-    if (stateOrder && !hasJustSubmitted) {
+    if (stateOrder && !hasJustSubmitted && !hasInitializedStateOrderRef.current) {
+      hasInitializedStateOrderRef.current = true;
       if (isOrderAlreadyReturned(stateOrder)) {
         showErrorToast(`Order #${stateOrder.orderNo || stateOrder.invoiceNo || stateOrder.challanNo} has already been returned.`);
         navigate(isSale ? "/admin/sales" : "/admin/purchases");
@@ -578,6 +619,7 @@ export const TradeReturnForm: React.FC<TradeReturnFormProps> = ({ mode }) => {
         productName: l.productName,
         unit: l.unit,
         quantity: l.quantity,
+        returnQuantity: l.quantity,
         sellPrice: l.sellPrice,
         discount: l.discount || 0,
         vat: l.vat || 0,
@@ -605,7 +647,7 @@ export const TradeReturnForm: React.FC<TradeReturnFormProps> = ({ mode }) => {
       const matchedBank = registeredBankAccounts.find((b) => String(b.id) === String(selectedRefundBankId));
       const matchedMfs = registeredMfsAccounts.find((m) => String(m.id) === String(selectedRefundMfsId));
 
-      const payload: Record<string, any> = {
+      const payload: Record<string, any> = withBranchScope({
         accessUser: buildAccessUser(),
         returnDate,
         totalAmount: Number(totals.subtotal.toFixed(2)),
@@ -613,6 +655,8 @@ export const TradeReturnForm: React.FC<TradeReturnFormProps> = ({ mode }) => {
         vat: Number(totals.vat.toFixed(2)),
         deliveryCharge: 0,
         grandTotal: Number(totals.grandTotal.toFixed(2)),
+        returnGrandTotal: Number(totals.grandTotal.toFixed(2)),
+        returnTotalAmount: Number(totals.grandTotal.toFixed(2)),
         refundAmount: Number(totals.refundAmount.toFixed(2)),
         paymentType: effectivePaymentType,
         status: status || "Return",
@@ -630,18 +674,22 @@ export const TradeReturnForm: React.FC<TradeReturnFormProps> = ({ mode }) => {
         mfsName: numRefundMfs > 0 ? matchedMfs?.mfsName || null : null,
         mfsPhone: numRefundMfs > 0 ? matchedMfs?.mfsPhone || null : null,
         returnDetails: returnDetailsPayload,
-      };
+      });
 
       if (isSale) {
-        payload.salesInvoiceNo = invoiceNo;
-        payload.orderNo = selectedOrder?.orderNo || null;
+        payload.invoiceNo = invoiceNo || selectedOrder?.orderNo || "";
+        payload.salesInvoiceNo = invoiceNo || selectedOrder?.orderNo || "";
+        payload.orderNo = selectedOrder?.orderNo || invoiceNo || "";
+        payload.saleId = selectedOrder?.id || selectedOrder?.saleId || null;
         payload.customerId = partyId;
         payload.customerName = partyName;
         payload.customerPhone = partyPhone;
         payload.customerAddress = partyAddress;
       } else {
-        payload.purchaseInvoiceNo = invoiceNo;
-        payload.challanNo = selectedOrder?.challanNo || "";
+        payload.invoiceNo = invoiceNo || selectedOrder?.challanNo || "";
+        payload.purchaseInvoiceNo = invoiceNo || selectedOrder?.challanNo || "";
+        payload.challanNo = selectedOrder?.challanNo || invoiceNo || "";
+        payload.purchaseId = selectedOrder?.id || selectedOrder?.purchaseId || null;
         payload.supplierId = partyId;
         payload.supplierName = partyName;
         payload.supplierPhone = partyPhone;
@@ -719,6 +767,10 @@ export const TradeReturnForm: React.FC<TradeReturnFormProps> = ({ mode }) => {
         createdItem.supplierName = partyName;
         createdItem.supplierPhone = partyPhone;
         createdItem.supplierAddress = partyAddress;
+      }
+
+      if (isSale && selectedOrder) {
+        savePersistedTradeReturn(selectedOrder, createdItem);
       }
 
       setHasJustSubmitted(true);
@@ -1098,7 +1150,7 @@ export const TradeReturnForm: React.FC<TradeReturnFormProps> = ({ mode }) => {
               <TextInput
                 label="Notes / Remarks"
                 value={note}
-                placeholder="Reason for return or remarks..."
+                placeholder="Reason for return..."
                 onChange={setNote}
               />
             </div>

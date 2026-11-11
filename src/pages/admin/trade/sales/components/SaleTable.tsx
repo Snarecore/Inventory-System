@@ -24,6 +24,7 @@ import { exportSalesToExcel } from "@/utils/excel-export";
 import { showSuccessToast, showErrorToast } from "@/utils/toast-utils";
 import { formatMoney } from "@/utils/formatters";
 import { usePermission } from "@/hooks/usePermission";
+import { getCleanOrderNo } from "../hooks/useSalesQueries";
 
 interface SaleTableProps {
   sales: SaleItem[];
@@ -482,6 +483,7 @@ export const SaleTable: React.FC<SaleTableProps> = ({
                 const paidAmount = Number(sale.paidAmount ?? 0);
                 const dueAmount = Number(sale.dueAmount ?? 0);
                 const paymentType = (sale.paymentType || "CASH").toUpperCase();
+                const displayOrderId = getCleanOrderNo(sale.orderNo, sale.invoiceNo || (sale as any).salesInvoiceNo);
 
                 let statusBadge = "Paid";
                 let statusBg = "bg-[var(--ui-success-border)] text-[var(--ui-success-dark)] border-[var(--ui-success-border)] font-semibold";
@@ -527,12 +529,12 @@ export const SaleTable: React.FC<SaleTableProps> = ({
                             title="Click to view invoice"
                             className="cursor-pointer hover:text-[var(--primary-color)] font-medium transition-colors"
                           >
-                            {sale.orderNo}
+                            {displayOrderId}
                           </span>
-                          {sale.orderNo && (
+                          {displayOrderId && (
                             <button
                               type="button"
-                              onClick={() => handleCopyOrderId(sale.orderNo, sale.id)}
+                              onClick={() => handleCopyOrderId(displayOrderId, sale.id)}
                               title="Copy Order ID"
                               className="p-1 text-[var(--ui-text-subtle)] hover:text-[var(--primary-color)] transition-colors opacity-0 group-hover/ord:opacity-100 cursor-pointer"
                             >
