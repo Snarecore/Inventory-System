@@ -253,7 +253,7 @@ export const menu = [
 				permissionKey: "reports.view",
 				subItems: [
 					{ id: 96, name: "Sales Reports", path: "/admin/reports/sales", permissionKey: "reports.sales.view" },
-					{ id: 97, name: "Purchase Reports", path: "/admin/reports/purchase", permissionKey: "reports.purchase.view" },
+					{ id: 97, name: "Purchase Register", path: "/admin/reports/purchase", permissionKey: "reports.purchase.view" },
 					{ id: 129, name: "Sales Return Report", path: "/admin/reports/sales-return", permissionKey: "reports.sales_return.view" },
 					{ id: 130, name: "Customer Collection Report", path: "/admin/reports/customer-collection", permissionKey: "reports.customer_collection.view" },
 					{ id: 128, name: "Cash Closing Report", path: "/admin/reports/cash-closing", permissionKey: "reports.cash_closing.view" },

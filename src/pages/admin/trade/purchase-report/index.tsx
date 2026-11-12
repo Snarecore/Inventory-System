@@ -98,7 +98,7 @@ const PurchaseReportPage: React.FC = () => {
       {/* ── Top Header & Global Actions ── */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2.5">
         <PageHeader
-          headerTitle="Purchase Report"
+          headerTitle="Purchase Register"
           headerDescription="Purchase transactions, supplier payments, and procurement summary"
         />
 

@@ -82,7 +82,7 @@ export const useUpdateBranchMutation = (callbacks?: BranchMutationCallbacks) => 
   return useMutation<any, Error, Partial<BranchItem> & { id: number; orgId?: number }>({
     mutationFn: (form) => updateBranch(form),
     onSuccess: (data, variables, context) => {
-      showSuccessToast("Branch updated successfully!");
+      showSuccessToast("Branch updated successfully!")
       queryClient.invalidateQueries({ queryKey: [branchListQueryKey] });
       callbacks?.onSuccess?.(data, variables, context);
     },

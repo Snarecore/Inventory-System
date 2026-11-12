@@ -345,7 +345,7 @@ export const SalesReportTable: React.FC<SalesReportTableProps> = ({
                 companyMeta,
                 visibleColumns
               );
-              return "Sales report PDF downloaded!";
+              return "Sales register PDF downloaded!";
             }}
           />
         </div>

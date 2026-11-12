@@ -1,20 +1,15 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import moment from "moment";
 import {
   FaUndoAlt,
   FaSearch,
   FaTimes,
-  FaFileInvoice,
-  FaCalendarAlt,
-  FaUser,
-  FaTruck,
   FaBoxOpen,
-  FaCheckCircle,
   FaPrint,
-  FaExclamationTriangle,
   FaArrowLeft,
+  FaCalendarAlt,
 } from "react-icons/fa";
 import Button from "@/components/button/Button";
 import ConfirmModal from "@/components/modal/ConfirmModal";
@@ -31,6 +26,9 @@ import {
   dashboardQueryKey,
   customersDueQueryKey,
   customerInvoicesDueQueryKey,
+  purchasesDueQueryKey,
+  purchasesInvoicesDueQueryKey,
+  tradeReturnCandidatesQueryKey,
 } from "@/config/query-key";
 import { useFinancialAccounts } from "@/hooks/useFinancialAccounts";
 import { useFinancialLedger } from "@/hooks/useFinancialLedger";
@@ -46,7 +44,15 @@ import TradeRefundSection from "@/components/trade/TradeRefundSection";
 import TradeInvoiceModal from "@/components/invoice/TradeInvoiceModal";
 import { normalizeSalesReturnInvoice, normalizePurchaseReturnInvoice } from "@/components/invoice/trade-invoice-adapters";
 import { usePermission } from "@/hooks/usePermission";
-import { savePersistedTradeReturn, savePersistedPurchaseReturn } from "@/utils/trade-return-storage";
+import {
+  savePersistedTradeReturn,
+  savePersistedPurchaseReturn,
+  getPersistedTradeReturns,
+  getPersistedPurchaseReturns,
+} from "@/utils/trade-return-storage";
+import { fetchSalesAndReturnList } from "@/pages/admin/trade/sales/hooks/useSalesQueries";
+import { fetchPurchaseAndReturnList } from "@/pages/admin/trade/purchases/hooks/usePurchaseQueries";
+import { useTradeProducts } from "@/hooks/useTradeProducts";
 
 export interface TradeReturnLineItem {
   id: string | number;
@@ -64,6 +70,8 @@ export interface TradeReturnLineItem {
   lineTotal: number;
   returnReason: string;
   isSelected: boolean;
+  purchaseDetailId?: string | number;
+  detailId?: string | number;
 }
 
 export interface TradeReturnFormProps {
@@ -75,6 +83,20 @@ export const TradeReturnForm: React.FC<TradeReturnFormProps> = ({ mode }) => {
   const location = useLocation();
   const queryClient = useQueryClient();
   const { recordTradeLedger } = useFinancialLedger();
+  const { allProducts = [] } = useTradeProducts();
+
+  const productLookup = useMemo(() => {
+    const codeMap = new Map<string, number | string>();
+    const nameMap = new Map<string, number | string>();
+    (allProducts || []).forEach((p: any) => {
+      const id = p.id;
+      const code = String(p.pcode || p.productCode || "").trim().toLowerCase();
+      const name = String(p.name || "").trim().toLowerCase();
+      if (code && id) codeMap.set(code, id);
+      if (name && id) nameMap.set(name, id);
+    });
+    return { codeMap, nameMap };
+  }, [allProducts]);
 
   const isSale = mode === "sale";
   const { canCreate } = usePermission();
@@ -119,46 +141,136 @@ export const TradeReturnForm: React.FC<TradeReturnFormProps> = ({ mode }) => {
   const { registeredBankAccounts, registeredMfsAccounts } = useFinancialAccounts();
 
   // Load candidate orders list
-  const [apiOrdersAndReturnData, setApiOrdersAndReturnData] = useState<any[]>([]);
+  const accessUser = buildAccessUser();
 
   const fetchOrdersAndReturnList = useCallback(async () => {
-    try {
-      const endpoint = isSale
-        ? apiConfig.salesReturn?.getSalesAndReturnUrl || apiConfig.sales?.salesAndReturnUrl || "get-sales-and-return"
-        : apiConfig.purchaseReturn?.getPurchaseAndReturnListUrl || "get-purchase-and-return-list";
+    return isSale ? await fetchSalesAndReturnList() : await fetchPurchaseAndReturnList();
+  }, [isSale]);
 
-      const fallbackEndpoint = isSale
-        ? apiConfig.sales?.salesListUrl || "get-sale-list"
-        : apiConfig.purchase?.purchaseListUrl || "get-purchase-list";
+  const {
+    data: apiOrdersAndReturnData = [],
+    isLoading: isLoadingOrders,
+    isError: isOrdersError,
+    error: ordersError,
+    refetch: refetchOrders,
+  } = useQuery({
+    queryKey: [
+      tradeReturnCandidatesQueryKey,
+      mode,
+      accessUser.businessCode,
+      accessUser.phone,
+      accessUser.orgId,
+      accessUser.branchId,
+    ],
+    queryFn: fetchOrdersAndReturnList,
+    staleTime: 30 * 1000,
+    refetchOnWindowFocus: false,
+  });
 
-      const body = { accessUser: buildAccessUser() };
-      let res: any = await postData({ url: endpoint, body });
+  // Check if an order has already been returned (sales er moto ek bar er beshi return kora jabe na)
+  const isOrderAlreadyReturned = useCallback(
+    (order: any): boolean => {
+      if (!order || typeof order !== "object") return false;
+      if (order.hasReturn === true) return true;
+      if (order.returnNo || order.return_no) return true;
+      if (Array.isArray(order.returns) && order.returns.length > 0) return true;
+      if (Array.isArray(order.purchaseReturns) && order.purchaseReturns.length > 0) return true;
+      if (Array.isArray(order.salesReturns) && order.salesReturns.length > 0) return true;
 
-      let list: any[] = [];
-      if (Array.isArray(res)) list = res;
-      else if (res && typeof res === "object") {
-        list = res.salesAndReturnList || res.purchaseAndReturnList || res.purchaseList || res.salesList || res.data || [];
-      }
+      const cleanKey = (val: any) => String(val || "").replace(/[^a-zA-Z0-9]/g, "").toUpperCase();
 
-      if (list.length === 0 && fallbackEndpoint) {
-        const fallbackRes: any = await postData({ url: fallbackEndpoint, body });
-        if (Array.isArray(fallbackRes)) list = fallbackRes;
-        else if (fallbackRes && typeof fallbackRes === "object") {
-          list = fallbackRes.salesList || fallbackRes.purchaseList || fallbackRes.data || [];
+      const targetKeys = [
+        isSale ? order.salesInvoiceNo : (order.purchaseInvoiceNo || order.purchase_invoice_no),
+        order.invoiceNo || order.invoice_no,
+        order.challanNo || order.challan_no,
+        order.orderNo || order.order_no,
+        order.id,
+        isSale ? (order.saleId || order.sale_id) : (order.purchaseId || order.purchase_id),
+      ]
+        .map(cleanKey)
+        .filter(Boolean);
+
+      if (targetKeys.length === 0) return false;
+
+      // 1. Check in apiOrdersAndReturnData
+      const hasApiReturn = (apiOrdersAndReturnData || []).some((item: any) => {
+        if (!item || typeof item !== "object") return false;
+        const isReturn =
+          Boolean(item.isReturnRecord) ||
+          Boolean(item.returnNo || item.return_no) ||
+          Boolean(item.returnGrandTotal) ||
+          (Array.isArray(item.returnDetails) && item.returnDetails.length > 0) ||
+          (Array.isArray(item.purchaseReturnDetails) && item.purchaseReturnDetails.length > 0) ||
+          (Array.isArray(item.salesReturnDetails) && item.salesReturnDetails.length > 0);
+
+        if (!isReturn) return false;
+
+        const retKeys = [
+          isSale ? (item.salesInvoiceNo || item.sales_invoice_no) : (item.purchaseInvoiceNo || item.purchase_invoice_no),
+          item.invoiceNo || item.invoice_no,
+          item.challanNo || item.challan_no,
+          item.orderNo || item.order_no,
+          item.refNo || item.ref_no,
+          isSale ? (item.saleId || item.sale_id) : (item.purchaseId || item.purchase_id),
+        ]
+          .map(cleanKey)
+          .filter(Boolean);
+
+        const matchFound = targetKeys.some((tk) => retKeys.includes(tk));
+        if (matchFound) return true;
+
+        // Check if invoice key is embedded in return notes/remarks
+        if (typeof item.notes === "string" || typeof item.remarks === "string") {
+          const notesStr = cleanKey(String(item.notes || "") + " " + String(item.remarks || ""));
+          if (targetKeys.some((tk) => tk.length >= 5 && notesStr.includes(tk))) {
+            return true;
+          }
         }
-      }
 
-      setApiOrdersAndReturnData(list);
-    } catch (err) {
-      console.error(`Failed to load ${mode} and returns list:`, err);
-    }
-  }, [isSale, mode]);
+        return false;
+      });
 
-  useEffect(() => {
-    fetchOrdersAndReturnList();
-  }, [fetchOrdersAndReturnList]);
+      if (hasApiReturn) return true;
 
-  // Indexing candidates
+      // 2. Check in local persisted returns
+      const persistedReturnVouchers = isSale
+        ? getPersistedTradeReturns().returnVouchers
+        : getPersistedPurchaseReturns().returnVouchers;
+
+      const hasPersistedReturn = (persistedReturnVouchers || []).some((pv: any) => {
+        if (!pv) return false;
+        const pvKeys = [
+          isSale ? (pv.salesInvoiceNo || pv.sales_invoice_no) : (pv.purchaseInvoiceNo || pv.purchase_invoice_no),
+          pv.invoiceNo || pv.invoice_no,
+          pv.challanNo || pv.challan_no,
+          pv.orderNo || pv.order_no,
+          pv.refNo || pv.ref_no,
+          isSale ? (pv.saleId || pv.sale_id) : (pv.purchaseId || pv.purchase_id),
+        ]
+          .map(cleanKey)
+          .filter(Boolean);
+
+        const matchFound = targetKeys.some((tk) => pvKeys.includes(tk));
+        if (matchFound) return true;
+
+        if (typeof pv.notes === "string" || typeof pv.remarks === "string") {
+          const notesStr = cleanKey(String(pv.notes || "") + " " + String(pv.remarks || ""));
+          if (targetKeys.some((tk) => tk.length >= 5 && notesStr.includes(tk))) {
+            return true;
+          }
+        }
+
+        return false;
+      });
+
+      if (hasPersistedReturn) return true;
+
+      return false;
+    },
+    [apiOrdersAndReturnData, isSale]
+  );
+
+  // Indexing candidates (already returned orders are excluded: cannot be returned more than once)
   const { candidateOrders } = useMemo(() => {
     const candidateMap = new Map<string, any>();
     const idx = new Map<string, any>();
@@ -175,14 +287,17 @@ export const TradeReturnForm: React.FC<TradeReturnFormProps> = ({ mode }) => {
 
     const addCandidate = (item: any) => {
       if (!item || typeof item !== "object") return;
-      const isReturnRecord =
-        Boolean(item.hasReturn) ||
-        Boolean(item.returnNo) ||
-        Boolean(item.returnGrandTotal) ||
-        (Array.isArray(item.returnDetails) && item.returnDetails.length > 0) ||
-        (Array.isArray(item.purchaseReturnDetails) && item.purchaseReturnDetails.length > 0);
 
-      if (isReturnRecord) return;
+      // Exclude pure return vouchers so only authentic orders/invoices appear as candidates
+      const isReturnVoucher =
+        item.isReturnRecord === true ||
+        (typeof item.refNo === "string" && (item.refNo.startsWith("PR-") || item.refNo.startsWith("SR-")) && !item.invoiceNo) ||
+        (Boolean(item.returnNo) && !item.invoiceNo && !item.purchaseInvoiceNo && !item.salesInvoiceNo && !item.orderNo && !item.challanNo);
+
+      if (isReturnVoucher) return;
+
+      // Sales er moto purchase return-o ek bar er beshi kora jabe na: exclude already returned orders
+      if (isOrderAlreadyReturned(item)) return;
 
       const itemInv = isSale
         ? String(item.salesInvoiceNo || item.invoiceNo || "").trim()
@@ -212,42 +327,9 @@ export const TradeReturnForm: React.FC<TradeReturnFormProps> = ({ mode }) => {
       candidateOrders: Array.from(candidateMap.values()),
       orderIndex: idx,
     };
-  }, [apiOrdersAndReturnData, isSale]);
+  }, [apiOrdersAndReturnData, isSale, isOrderAlreadyReturned]);
 
-  // Check if an order is already returned
-  const isOrderAlreadyReturned = useCallback(
-    (order: any): boolean => {
-      if (!order) return false;
-      const cleanKey = (val: any) => String(val || "").replace(/[^a-zA-Z0-9]/g, "").toUpperCase();
-
-      const targetInv = cleanKey(isSale ? (order.salesInvoiceNo || order.invoiceNo) : (order.purchaseInvoiceNo || order.invoiceNo));
-      const targetRef = cleanKey(isSale ? order.orderNo : order.challanNo);
-      const targetId = cleanKey(order.id || (isSale ? order.saleId : order.purchaseId));
-
-      return (apiOrdersAndReturnData || []).some((item: any) => {
-        const isReturn =
-          Boolean(item.hasReturn) ||
-          Boolean(item.returnNo) ||
-          Boolean(item.returnGrandTotal) ||
-          (Array.isArray(item.returnDetails) && item.returnDetails.length > 0) ||
-          (Array.isArray(item.purchaseReturnDetails) && item.purchaseReturnDetails.length > 0);
-
-        if (!isReturn) return false;
-
-        const retInv = cleanKey(isSale ? (item.salesInvoiceNo || item.invoiceNo) : (item.purchaseInvoiceNo || item.invoiceNo));
-        const retRef = cleanKey(isSale ? item.orderNo : item.challanNo);
-        const retSaleId = cleanKey(isSale ? (item.saleId || item.sale_id) : (item.purchaseId || item.purchase_id));
-
-        if (targetInv && retInv && targetInv === retInv) return true;
-        if (targetRef && retRef && targetRef === retRef) return true;
-        if (targetId && retSaleId && targetId === retSaleId) return true;
-        return false;
-      });
-    },
-    [apiOrdersAndReturnData, isSale]
-  );
-
-  // Returned quantities map
+  // Returned quantities map across API returns, nested returns, and local persisted vouchers
   const getReturnedQuantitiesForOrder = useCallback(
     (order: any) => {
       const returnedQtyMap: Record<string, number> = {};
@@ -256,6 +338,9 @@ export const TradeReturnForm: React.FC<TradeReturnFormProps> = ({ mode }) => {
       const cleanKey = (val: any) => String(val || "").replace(/[^a-zA-Z0-9]/g, "").toUpperCase();
       const targetInv = cleanKey(isSale ? (order.salesInvoiceNo || order.invoiceNo) : (order.purchaseInvoiceNo || order.invoiceNo));
       const targetRef = cleanKey(isSale ? order.orderNo : order.challanNo);
+      const targetId = cleanKey(order.id || (isSale ? order.saleId || order.sale_id : order.purchaseId || order.purchase_id));
+
+      const seenReturnKeys = new Set<string>();
 
       const processDetailsList = (details: any[]) => {
         if (!Array.isArray(details)) return;
@@ -263,7 +348,7 @@ export const TradeReturnForm: React.FC<TradeReturnFormProps> = ({ mode }) => {
           const pId = String(d.productId || d.id || "").trim();
           const pCode = cleanKey(d.productCode || d.pcode);
           const pName = String(d.productName || d.name || "").trim().toLowerCase();
-          const qty = Number(d.quantity || d.returnedQuantity || d.returnQuantity || 0);
+          const qty = Number(d.returnQuantity ?? d.returnedQuantity ?? d.quantity ?? d.qty ?? 0);
 
           if (qty > 0) {
             if (pId) returnedQtyMap[`id_${pId}`] = (returnedQtyMap[`id_${pId}`] || 0) + qty;
@@ -273,22 +358,99 @@ export const TradeReturnForm: React.FC<TradeReturnFormProps> = ({ mode }) => {
         });
       };
 
+      // 1. Process return items from apiOrdersAndReturnData
       (apiOrdersAndReturnData || []).forEach((item: any) => {
+        if (!item || typeof item !== "object") return;
+
         const isReturn =
-          Boolean(item.hasReturn) ||
+          Boolean(item.isReturnRecord) ||
           Boolean(item.returnNo) ||
           Boolean(item.returnGrandTotal) ||
           (Array.isArray(item.returnDetails) && item.returnDetails.length > 0) ||
           (Array.isArray(item.purchaseReturnDetails) && item.purchaseReturnDetails.length > 0);
 
-        if (!isReturn) return false;
-
         const retInv = cleanKey(isSale ? (item.salesInvoiceNo || item.invoiceNo) : (item.purchaseInvoiceNo || item.invoiceNo));
         const retRef = cleanKey(isSale ? item.orderNo : item.challanNo);
+        const retId = cleanKey(isSale ? (item.saleId || item.sale_id) : (item.purchaseId || item.purchase_id));
 
-        const matches = (targetInv && retInv && targetInv === retInv) || (targetRef && retRef && targetRef === retRef);
+        const matches =
+          (targetInv && retInv && targetInv === retInv) ||
+          (targetRef && retRef && targetRef === retRef) ||
+          (targetId && retId && targetId === retId);
+
         if (matches) {
-          processDetailsList(item.returnDetails || item.purchaseReturnDetails || item.details);
+          if (isReturn || item.isReturnRecord) {
+            const retKey = cleanKey(item.returnNo || item.id || item.refNo);
+            if (!retKey || !seenReturnKeys.has(retKey)) {
+              if (retKey) seenReturnKeys.add(retKey);
+              const returnDetails = [
+                item.returnDetails,
+                item.purchaseReturnDetails,
+                item.details,
+              ].find((details) => Array.isArray(details) && details.length > 0);
+              processDetailsList(returnDetails || []);
+            }
+          }
+
+          // Check nested returns on purchase/order records
+          const nestedReturns = [
+            ...(Array.isArray(item.returns) ? item.returns : []),
+            ...(Array.isArray(item.purchaseReturns) ? item.purchaseReturns : []),
+          ];
+          nestedReturns.forEach((nr: any) => {
+            const nrKey = cleanKey(nr.returnNo || nr.id || nr.refNo);
+            if (!nrKey || !seenReturnKeys.has(nrKey)) {
+              if (nrKey) seenReturnKeys.add(nrKey);
+              const nrDetails = [nr.returnDetails, nr.purchaseReturnDetails, nr.details].find(
+                (details) => Array.isArray(details) && details.length > 0
+              );
+              processDetailsList(nrDetails || []);
+            }
+          });
+        }
+      });
+
+      // 2. Process nested returns on the passed order object itself
+      const orderNestedReturns = [
+        ...(Array.isArray(order.returns) ? order.returns : []),
+        ...(Array.isArray(order.purchaseReturns) ? order.purchaseReturns : []),
+      ];
+      orderNestedReturns.forEach((nr: any) => {
+        const nrKey = cleanKey(nr.returnNo || nr.id || nr.refNo);
+        if (!nrKey || !seenReturnKeys.has(nrKey)) {
+          if (nrKey) seenReturnKeys.add(nrKey);
+          const nrDetails = [nr.returnDetails, nr.purchaseReturnDetails, nr.details].find(
+            (details) => Array.isArray(details) && details.length > 0
+          );
+          processDetailsList(nrDetails || []);
+        }
+      });
+
+      // 3. Process local persisted return vouchers
+      const persistedReturnVouchers = isSale
+        ? getPersistedTradeReturns().returnVouchers
+        : getPersistedPurchaseReturns().returnVouchers;
+
+      persistedReturnVouchers.forEach((pv: any) => {
+        if (!pv) return;
+        const pvInv = cleanKey(isSale ? (pv.salesInvoiceNo || pv.invoiceNo) : (pv.purchaseInvoiceNo || pv.invoiceNo));
+        const pvRef = cleanKey(isSale ? pv.orderNo : pv.challanNo);
+        const pvId = cleanKey(isSale ? pv.saleId : pv.purchaseId);
+
+        const matches =
+          (targetInv && pvInv && targetInv === pvInv) ||
+          (targetRef && pvRef && targetRef === pvRef) ||
+          (targetId && pvId && targetId === pvId);
+
+        if (matches) {
+          const pvKey = cleanKey(pv.returnNo || pv.id || pv.refNo);
+          if (!pvKey || !seenReturnKeys.has(pvKey)) {
+            if (pvKey) seenReturnKeys.add(pvKey);
+            const pvDetails = [pv.returnDetails, pv.purchaseReturnDetails, pv.details].find(
+              (details) => Array.isArray(details) && details.length > 0
+            );
+            processDetailsList(pvDetails || []);
+          }
         }
       });
 
@@ -297,10 +459,24 @@ export const TradeReturnForm: React.FC<TradeReturnFormProps> = ({ mode }) => {
     [apiOrdersAndReturnData, isSale]
   );
 
-  // Load order into form
+  // Load order into form with product line deduplication & return tracking
   const loadOrder = useCallback(
     (order: any) => {
       if (!order) return;
+
+      // Sales er moto purchase return-o ek bar er beshi kora jabe na!
+      if (isOrderAlreadyReturned(order)) {
+        const invRef = isSale
+          ? (order.salesInvoiceNo || order.invoiceNo || order.orderNo)
+          : (order.purchaseInvoiceNo || order.invoiceNo || order.challanNo);
+        showErrorToast(`${isSale ? "Sales order" : "Purchase invoice"} #${invRef || "N/A"} has already been returned and cannot be returned again.`);
+        setSelectedOrder(null);
+        setLines([]);
+        setInvoiceNo("");
+        setInvoiceQuery("");
+        return;
+      }
+
       setSelectedOrder(order);
 
       const inv = isSale
@@ -329,34 +505,43 @@ export const TradeReturnForm: React.FC<TradeReturnFormProps> = ({ mode }) => {
 
       const returnedQtyMap = getReturnedQuantitiesForOrder(order);
 
-      let rawDetails =
-        (Array.isArray(order.salesDetails) && order.salesDetails.length > 0 && order.salesDetails) ||
-        (Array.isArray(order.purchaseDetails) && order.purchaseDetails.length > 0 && order.purchaseDetails) ||
-        (Array.isArray(order.saleDetails) && order.saleDetails.length > 0 && order.saleDetails) ||
-        (Array.isArray(order.saleDetailsList) && order.saleDetailsList.length > 0 && order.saleDetailsList) ||
-        (Array.isArray(order.details) && order.details.length > 0 && order.details) ||
-        (Array.isArray(order.items) && order.items.length > 0 && order.items) ||
-        (Array.isArray(order.products) && order.products.length > 0 && order.products) ||
-        [];
+      const getOrderDetails = (record: any) => {
+        const candidates = isSale
+          ? [record.salesDetails, record.saleDetails, record.saleDetailsList, record.details, record.items, record.products]
+          : [record.purchaseDetails, record.purchasesDetails, record.details, record.items, record.products];
+        return candidates.find((details) => Array.isArray(details) && details.length > 0) || [];
+      };
 
-      // If line items were not present on router state order, look up in candidate orders
-      if (rawDetails.length === 0 && Array.isArray(apiOrdersAndReturnData) && apiOrdersAndReturnData.length > 0) {
-        const fullMatched = apiOrdersAndReturnData.find((cand: any) => {
-          const matchInv = inv && String(cand.salesInvoiceNo || cand.invoiceNo || "").trim().toLowerCase() === inv.toLowerCase();
-          const matchRef = ref && String(cand.orderNo || cand.challanNo || "").trim().toLowerCase() === ref.toLowerCase();
-          const matchId = String(cand.id || cand.saleId || "").trim() === String(order.id || order.saleId || "").trim();
+      let rawDetails = getOrderDetails(order);
+
+      // Look up fullMatched in apiOrdersAndReturnData to get richer details and authentic numeric productIds
+      let fullMatched: any = null;
+      if (Array.isArray(apiOrdersAndReturnData) && apiOrdersAndReturnData.length > 0) {
+        fullMatched = apiOrdersAndReturnData.find((cand: any) => {
+          const candidateInv = isSale
+            ? cand.salesInvoiceNo || cand.invoiceNo
+            : cand.purchaseInvoiceNo || cand.invoiceNo;
+          const candidateRef = isSale ? cand.orderNo : cand.challanNo;
+          const candidateId = isSale
+            ? cand.saleId || cand.sale_id || cand.id
+            : cand.purchaseId || cand.purchase_id || cand.id;
+          const orderId = order.id || (isSale ? order.saleId || order.sale_id : order.purchaseId || order.purchase_id);
+          const matchInv = inv && String(candidateInv || "").trim().toLowerCase() === inv.toLowerCase();
+          const matchRef = ref && String(candidateRef || "").trim().toLowerCase() === ref.toLowerCase();
+          const matchId = String(candidateId || "").trim() === String(orderId || "").trim();
           return matchInv || matchRef || matchId;
         });
-        if (fullMatched) {
-          rawDetails =
-            (Array.isArray(fullMatched.salesDetails) && fullMatched.salesDetails.length > 0 && fullMatched.salesDetails) ||
-            (Array.isArray(fullMatched.purchaseDetails) && fullMatched.purchaseDetails.length > 0 && fullMatched.purchaseDetails) ||
-            (Array.isArray(fullMatched.saleDetails) && fullMatched.saleDetails.length > 0 && fullMatched.saleDetails) ||
-            (Array.isArray(fullMatched.saleDetailsList) && fullMatched.saleDetailsList.length > 0 && fullMatched.saleDetailsList) ||
-            (Array.isArray(fullMatched.details) && fullMatched.details.length > 0 && fullMatched.details) ||
-            (Array.isArray(fullMatched.items) && fullMatched.items.length > 0 && fullMatched.items) ||
-            (Array.isArray(fullMatched.products) && fullMatched.products.length > 0 && fullMatched.products) ||
-            [];
+      }
+
+      if (fullMatched) {
+        const fullDetails = getOrderDetails(fullMatched);
+        if (fullDetails.length > 0) {
+          const hasBetterProductIds = fullDetails.some(
+            (d: any) => (d.productId || d.product_id) && !isNaN(Number(d.productId || d.product_id))
+          );
+          if (rawDetails.length === 0 || hasBetterProductIds) {
+            rawDetails = fullDetails;
+          }
         }
       }
 
@@ -376,15 +561,126 @@ export const TradeReturnForm: React.FC<TradeReturnFormProps> = ({ mode }) => {
 
       const cleanKey = (val: any) => String(val || "").replace(/[^a-zA-Z0-9]/g, "").toUpperCase();
 
-      const newLines: TradeReturnLineItem[] = rawDetails.map((item: any, idx: number) => {
-        const pId = String(item.productId || item.id || `p_${idx}`).trim();
+      // 1. Filter out return or inactive line items embedded in details
+      const isReturnOrInactiveLine = (item: any) => {
+        if (!item || typeof item !== "object") return true;
+        if (item.isReturn === true || item.is_return === 1) return true;
+        const statusStr = String(item.status || "").trim().toUpperCase();
+        if (statusStr === "RETURN" || statusStr === "RETURNED" || statusStr === "INACTIVE") return true;
+        const typeStr = String(item.type || item.advenType || "").trim().toUpperCase();
+        if (typeStr === "RETURN" || typeStr === "RETURNED") return true;
+        if (item.isDeleted === "Y" || item.isDeleted === true || item.is_deleted === 1) return true;
+        if (item.deleted_at || item.deletedAt) return true;
+        return false;
+      };
+
+      const activeRawDetails = rawDetails.filter((d: any) => !isReturnOrInactiveLine(d));
+
+      // 2. Group by product key to detect and deduplicate duplicate product lines
+      const getProductKey = (item: any, idx: number) => {
+        const pId = String(item.productId || item.product_id || item.id || "").trim();
+        const pCode = cleanKey(item.productCode || item.pcode);
+        const pName = String(item.productName || item.name || "").trim().toLowerCase();
+        return pId ? `id_${pId}` : pCode ? `code_${pCode}` : pName ? `name_${pName}` : `row_${idx}`;
+      };
+
+      const groupedLines = new Map<string, any[]>();
+      activeRawDetails.forEach((item: any, idx: number) => {
+        const key = getProductKey(item, idx);
+        if (!groupedLines.has(key)) {
+          groupedLines.set(key, []);
+        }
+        groupedLines.get(key)!.push(item);
+      });
+
+      const orderGrandTotal = Number(order.grandTotal ?? order.totalAmount ?? 0);
+      const consolidatedItems: any[] = [];
+
+      groupedLines.forEach((groupItems) => {
+        if (groupItems.length === 1) {
+          consolidatedItems.push(groupItems[0]);
+          return;
+        }
+
+        // Multiple entries for the same product in this invoice
+        const parsedItems = groupItems.map((item) => {
+          const price = Number(isSale ? (item.sellPrice || item.rate || 0) : (item.buyPrice || item.purchasePrice || item.rate || 0));
+          const qty = Math.max(0, Number(item.quantity ?? item.qty ?? 0));
+          const lineTotal = Number(item.total ?? (price * qty));
+          return { item, price, qty, lineTotal };
+        });
+
+        const totalGroupSum = parsedItems.reduce((acc, it) => acc + it.lineTotal, 0);
+
+        // If the sum of all lines is within orderGrandTotal, they are legitimate separate batches: consolidate
+        if (orderGrandTotal > 0 && totalGroupSum <= orderGrandTotal + 1.0) {
+          const base = groupItems[0];
+          const totalQty = parsedItems.reduce((acc, it) => acc + it.qty, 0);
+          const totalDiscount = groupItems.reduce((acc, it) => acc + Number(it.discount || 0), 0);
+          const totalVat = groupItems.reduce((acc, it) => acc + Number(it.vat || 0), 0);
+          const avgPrice = totalQty > 0 ? totalGroupSum / totalQty : parsedItems[0].price;
+
+          consolidatedItems.push({
+            ...base,
+            quantity: totalQty,
+            ...(isSale ? { sellPrice: avgPrice } : { buyPrice: avgPrice }),
+            discount: totalDiscount,
+            vat: totalVat,
+            total: totalGroupSum,
+          });
+          return;
+        }
+
+        // Otherwise, duplicate/orphaned records exist (e.g. 50 pcs and 25 pcs on a 250 taka invoice).
+        // Check for an exact line total match against orderGrandTotal
+        const exactMatch = parsedItems.find(
+          (it) => orderGrandTotal > 0 && Math.abs(it.lineTotal - orderGrandTotal) <= 0.05
+        );
+        if (exactMatch) {
+          consolidatedItems.push(exactMatch.item);
+          return;
+        }
+
+        // Filter out lines that alone exceed orderGrandTotal (cannot belong to this invoice)
+        const reasonableItems = orderGrandTotal > 0
+          ? parsedItems.filter((it) => it.lineTotal <= orderGrandTotal + 1.0)
+          : parsedItems;
+
+        if (reasonableItems.length > 0) {
+          // Select the latest updated item
+          consolidatedItems.push(reasonableItems[reasonableItems.length - 1].item);
+        } else {
+          // Fallback: pick the last item in group
+          consolidatedItems.push(groupItems[groupItems.length - 1]);
+        }
+      });
+
+      const newLines: TradeReturnLineItem[] = consolidatedItems.map((item: any, idx: number) => {
         const pCode = String(item.productCode || item.pcode || "").trim();
         const pName = String(item.productName || item.name || "Product").trim();
+
+        // Resolve authentic numeric productId
+        let resolvedProductId = item.productId ?? item.product_id;
+        if (!resolvedProductId || isNaN(Number(resolvedProductId))) {
+          const matchedId =
+            (pCode && productLookup.codeMap.get(pCode.toLowerCase())) ||
+            (pName && productLookup.nameMap.get(pName.toLowerCase()));
+
+          if (matchedId && !isNaN(Number(matchedId))) {
+            resolvedProductId = Number(matchedId);
+          } else if (item.id && !isNaN(Number(item.id)) && Number(item.id) > 0) {
+            resolvedProductId = Number(item.id);
+          }
+        }
+
+        const pId = String(resolvedProductId || pCode || `p_${idx}`).trim();
         const unit = String(item.unit || item.secondary_unit || item.secondaryUnit || "pcs");
         const price = Number(isSale ? (item.sellPrice || item.rate || 0) : (item.buyPrice || item.purchasePrice || item.rate || 0));
-        const originalQty = Number(item.quantity || item.qty || 1);
+        const quantityValue = Number(item.quantity ?? item.qty ?? 0);
+        const originalQty = Number.isFinite(quantityValue) ? Math.max(0, quantityValue) : 0;
 
-        const directReturned = Number(item.returnedQuantity || item.returnQuantity || 0);
+        const returnedValue = Number(item.returnedQuantity ?? item.returnQuantity ?? 0);
+        const directReturned = Number.isFinite(returnedValue) ? Math.max(0, returnedValue) : 0;
         const mapReturned =
           (pId && returnedQtyMap[`id_${pId}`]) ||
           (pCode && returnedQtyMap[`code_${cleanKey(pCode)}`]) ||
@@ -395,8 +691,10 @@ export const TradeReturnForm: React.FC<TradeReturnFormProps> = ({ mode }) => {
         const availableQty = Math.max(0, originalQty - alreadyReturned);
 
         return {
-          id: pId,
-          productId: pId,
+          id: pId || `line_${idx}`,
+          productId: resolvedProductId || pId,
+          purchaseDetailId: item.purchaseDetailId || item.detailId || (item.productId || item.product_id ? item.id : undefined),
+          detailId: item.purchaseDetailId || item.detailId || item.id,
           productCode: pCode,
           productName: pName,
           unit,
@@ -408,14 +706,14 @@ export const TradeReturnForm: React.FC<TradeReturnFormProps> = ({ mode }) => {
           discount: Number(item.discount || 0),
           vat: Number(item.vat || 0),
           lineTotal: Number((availableQty * price).toFixed(2)),
-          returnReason: reasonsList[0]?.value || "wrong_order",
+          returnReason: reasonsList[0]?.value || (isSale ? "wrong_order" : "damaged_product"),
           isSelected: availableQty > 0,
         };
       });
 
       setLines(newLines);
     },
-    [getReturnedQuantitiesForOrder, isSale, reasonsList, apiOrdersAndReturnData]
+    [getReturnedQuantitiesForOrder, isSale, reasonsList, apiOrdersAndReturnData, isOrderAlreadyReturned, productLookup]
   );
 
   // Check router location state on mount - initialized once to protect user input
@@ -587,6 +885,11 @@ export const TradeReturnForm: React.FC<TradeReturnFormProps> = ({ mode }) => {
       return;
     }
 
+    if (isOrderAlreadyReturned(selectedOrder)) {
+      showErrorToast(`This ${isSale ? "sale" : "purchase"} has already been returned and cannot be returned again.`);
+      return;
+    }
+
     const activeLines = lines.filter((l) => l.isSelected && l.quantity > 0);
     if (activeLines.length === 0) {
       showErrorToast("Please select at least one item with a valid return quantity.");
@@ -613,19 +916,30 @@ export const TradeReturnForm: React.FC<TradeReturnFormProps> = ({ mode }) => {
       const activeLines = lines.filter((l) => l.isSelected && l.quantity > 0);
       const finalNote = note.trim() || (invoiceNo ? `Return from ${invoiceNo}` : "");
 
-      const returnDetailsPayload = activeLines.map((l) => ({
-        productId: l.productId,
-        productCode: l.productCode,
-        productName: l.productName,
-        unit: l.unit,
-        quantity: l.quantity,
-        returnQuantity: l.quantity,
-        sellPrice: l.sellPrice,
-        discount: l.discount || 0,
-        vat: l.vat || 0,
-        total: Number((l.quantity * l.sellPrice).toFixed(2)),
-        returnReason: l.returnReason || reasonsList[0]?.value || "wrong_order",
-      }));
+      const returnDetailsPayload = activeLines.map((l: any) => {
+        let finalProdId = l.productId;
+        if (!finalProdId || isNaN(Number(finalProdId)) || String(finalProdId).startsWith("PC")) {
+          const matchedId =
+            (l.productCode && productLookup.codeMap.get(String(l.productCode).trim().toLowerCase())) ||
+            (l.productName && productLookup.nameMap.get(String(l.productName).trim().toLowerCase()));
+          if (matchedId && !isNaN(Number(matchedId))) {
+            finalProdId = Number(matchedId);
+          }
+        }
+
+        return {
+          productId: !isNaN(Number(finalProdId)) ? Number(finalProdId) : finalProdId,
+          productCode: l.productCode,
+          productName: l.productName,
+          unit: l.unit || "pcs",
+          quantity: l.quantity,
+          ...(isSale ? { sellPrice: l.sellPrice } : { buyPrice: l.sellPrice }),
+          discount: l.discount || 0,
+          vat: l.vat || 0,
+          total: Number((l.quantity * l.sellPrice).toFixed(2)),
+          returnReason: l.returnReason || reasonsList[0]?.value || (isSale ? "wrong_order" : "damaged_product"),
+        };
+      });
 
       const refundMethodsUsed =
         (numRefundCash > 0 ? 1 : 0) +
@@ -686,14 +1000,19 @@ export const TradeReturnForm: React.FC<TradeReturnFormProps> = ({ mode }) => {
         payload.customerPhone = partyPhone;
         payload.customerAddress = partyAddress;
       } else {
-        payload.invoiceNo = invoiceNo || selectedOrder?.challanNo || "";
-        payload.purchaseInvoiceNo = invoiceNo || selectedOrder?.challanNo || "";
+        payload.invoiceNo = invoiceNo || selectedOrder?.purchaseInvoiceNo || selectedOrder?.challanNo || "";
+        payload.purchaseInvoiceNo = invoiceNo || selectedOrder?.purchaseInvoiceNo || selectedOrder?.challanNo || "";
         payload.challanNo = selectedOrder?.challanNo || invoiceNo || "";
-        payload.purchaseId = selectedOrder?.id || selectedOrder?.purchaseId || null;
-        payload.supplierId = partyId;
-        payload.supplierName = partyName;
-        payload.supplierPhone = partyPhone;
-        payload.supplierAddress = partyAddress;
+        payload.supplierId = partyId ?? selectedOrder?.supplierId ?? selectedOrder?.partyId ?? 0;
+        payload.supplierName = partyName || selectedOrder?.supplierName || selectedOrder?.partyName || "Supplier";
+        payload.supplierPhone = partyPhone || selectedOrder?.supplierPhone || selectedOrder?.partyPhone || "";
+        payload.supplierAddress = partyAddress || selectedOrder?.supplierAddress || selectedOrder?.partyAddress || "";
+
+        // If authentic numeric purchaseId exists, supply it; never send fabricated order strings as purchaseId or orderNo
+        const rawPurId = selectedOrder?.purchaseId || selectedOrder?.purchase_id || selectedOrder?.id;
+        if (typeof rawPurId === "number" || (typeof rawPurId === "string" && /^\d+$/.test(rawPurId.trim()))) {
+          payload.purchaseId = Number(rawPurId);
+        }
       }
 
       const endpoint = isSale
@@ -763,6 +1082,8 @@ export const TradeReturnForm: React.FC<TradeReturnFormProps> = ({ mode }) => {
       } else {
         createdItem.purchaseInvoiceNo = invoiceNo;
         createdItem.challanNo = selectedOrder?.challanNo;
+        createdItem.orderNo = selectedOrder?.orderNo;
+        createdItem.purchaseId = selectedOrder?.id || selectedOrder?.purchaseId || null;
         createdItem.supplierId = partyId;
         createdItem.supplierName = partyName;
         createdItem.supplierPhone = partyPhone;
@@ -778,6 +1099,7 @@ export const TradeReturnForm: React.FC<TradeReturnFormProps> = ({ mode }) => {
       setHasJustSubmitted(true);
 
       // Invalidate relevant queries
+      queryClient.invalidateQueries({ queryKey: [tradeReturnCandidatesQueryKey] });
       if (isSale) {
         queryClient.invalidateQueries({ queryKey: [salesAndReturnQueryKey] });
         queryClient.invalidateQueries({ queryKey: [salesListQueryKey] });
@@ -786,6 +1108,8 @@ export const TradeReturnForm: React.FC<TradeReturnFormProps> = ({ mode }) => {
       } else {
         queryClient.invalidateQueries({ queryKey: [purchaseAndReturnQueryKey] });
         queryClient.invalidateQueries({ queryKey: [purchaseListQueryKey] });
+        queryClient.invalidateQueries({ queryKey: [purchasesDueQueryKey] });
+        queryClient.invalidateQueries({ queryKey: [purchasesInvoicesDueQueryKey] });
       }
       queryClient.invalidateQueries({ queryKey: [productListQueryKey], refetchType: "none" });
       queryClient.invalidateQueries({ queryKey: [productQueryKey], refetchType: "none" });
@@ -906,6 +1230,14 @@ export const TradeReturnForm: React.FC<TradeReturnFormProps> = ({ mode }) => {
                 onFocus={() => setIsInvoiceDropdownOpen(true)}
                 icon={<FaSearch className="text-[var(--ui-text-subtle)]" />}
               />
+              {isOrdersError && (
+                <p role="alert" className="mt-1 text-xs text-red-500">
+                  {ordersError instanceof Error ? ordersError.message : `Failed to load ${isSale ? "sales" : "purchase"} invoices.`}{" "}
+                  <button type="button" onClick={() => refetchOrders()} className="underline">
+                    Retry
+                  </button>
+                </p>
+              )}
               {invoiceQuery && (
                 <button
                   type="button"
@@ -924,7 +1256,11 @@ export const TradeReturnForm: React.FC<TradeReturnFormProps> = ({ mode }) => {
             {/* Dropdown Results */}
             {isInvoiceDropdownOpen && (
               <div className="absolute top-full left-0 right-0 mt-1 max-h-72 overflow-y-auto bg-[var(--ui-surface)] border border-[var(--ui-border-strong)] rounded-lg shadow-lg z-50 divide-y divide-[var(--ui-border)]">
-                {filteredCandidates.length > 0 ? (
+                {isLoadingOrders ? (
+                  <div className="p-4 text-center text-xs text-[var(--ui-text-muted)]">
+                    Loading invoices...
+                  </div>
+                ) : filteredCandidates.length > 0 ? (
                   filteredCandidates.map((c: any, idx: number) => {
                     const cInv = isSale ? (c.salesInvoiceNo || c.invoiceNo) : (c.purchaseInvoiceNo || c.invoiceNo);
                     const cRef = isSale ? c.orderNo : c.challanNo;
@@ -1034,7 +1370,9 @@ export const TradeReturnForm: React.FC<TradeReturnFormProps> = ({ mode }) => {
                     <th className="py-2 px-2 w-8 text-center">✓</th>
                     <th className="py-2 px-2">Product</th>
                     <th className="py-2 px-2 text-right">Price</th>
-                    <th className="py-2 px-2 text-center">Avail.</th>
+                    <th className="py-2 px-2 text-center">{isSale ? "Sold Qty" : "Purchased Qty"}</th>
+                    <th className="py-2 px-2 text-center">Returned</th>
+                    <th className="py-2 px-2 text-center">Available</th>
                     <th className="py-2 px-2 text-center w-28">Return Qty</th>
                     <th className="py-2 px-2">Reason</th>
                     <th className="py-2 px-2 text-right">Total</th>
@@ -1066,6 +1404,12 @@ export const TradeReturnForm: React.FC<TradeReturnFormProps> = ({ mode }) => {
                         </td>
                         <td className="py-2 px-2 text-right tabular-nums">
                           ৳ {formatMoney(item.sellPrice)}
+                        </td>
+                        <td className="py-2 px-2 text-center tabular-nums">
+                          {item.originalQuantity}
+                        </td>
+                        <td className="py-2 px-2 text-center tabular-nums">
+                          {item.alreadyReturnedQuantity}
                         </td>
                         <td className="py-2 px-2 text-center tabular-nums font-medium">
                           {item.availableQuantity}

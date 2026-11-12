@@ -153,6 +153,11 @@ const Purchases: React.FC = () => {
     return { combinedPurchases: pList, rawReturns: rList };
   }, [combinedData]);
 
+  // Set of returned invoice keys for the return icon indicators
+  const returnedInvoiceSet = useMemo(() => {
+    return extractReturnedPurchaseKeysSet(combinedData || []);
+  }, [combinedData]);
+
   // Unified single-array deduplication for Purchases guaranteeing zero duplicates
   const rawPurchases = useMemo(() => {
     const purchaseList: PurchaseItem[] = [];
@@ -251,8 +256,26 @@ const Purchases: React.FC = () => {
       });
     }
 
-    return purchaseList;
-  }, [purchasesData, combinedPurchases, rawReturns]);
+    // Ensure hasReturn is true for every purchase matching returnedInvoiceSet (sales er moto ek bar er beshi return kora jabe na)
+    return purchaseList.map((p) => {
+      const orderKey = String(p.orderNo || "").trim().toLowerCase();
+      const invoiceKey = String(p.invoiceNo || (p as any).purchaseInvoiceNo || "").trim().toLowerCase();
+      const challanKey = String(p.challanNo || "").trim().toLowerCase();
+      const idKey = String(p.id || (p as any).purchaseId || "").trim().toLowerCase();
+
+      const isMarkedReturned =
+        Boolean(p.hasReturn) ||
+        Boolean(orderKey && returnedInvoiceSet.has(orderKey)) ||
+        Boolean(invoiceKey && returnedInvoiceSet.has(invoiceKey)) ||
+        Boolean(challanKey && returnedInvoiceSet.has(challanKey)) ||
+        Boolean(idKey && returnedInvoiceSet.has(idKey));
+
+      if (isMarkedReturned && !p.hasReturn) {
+        return { ...p, hasReturn: true };
+      }
+      return p;
+    });
+  }, [purchasesData, combinedPurchases, rawReturns, returnedInvoiceSet]);
 
   // Zero-network suppliers list derived directly from active purchases and returns
   const suppliersList: PartyItem[] = useMemo(() => {
@@ -298,11 +321,6 @@ const Purchases: React.FC = () => {
   const isPurchasesLoading = isPurchasesLoadingQuery && rawPurchases.length === 0;
   const isReturnsLoading = isCombinedLoading;
   const isReturnsFetching = isCombinedFetching;
-
-  // Set of returned invoice keys for the return icon indicators
-  const returnedInvoiceSet = useMemo(() => {
-    return extractReturnedPurchaseKeysSet(combinedData || []);
-  }, [combinedData]);
 
   // ----------------- PURCHASES FILTERING & SORTING -----------------
   const filteredPurchases = useMemo(() => {

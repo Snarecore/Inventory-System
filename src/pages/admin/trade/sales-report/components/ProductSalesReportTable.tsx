@@ -25,7 +25,7 @@ export const ProductSalesReportTable: React.FC<ProductSalesReportTableProps> = (
     onExportExcel={exportFilteredProductsExcel}
     onDownloadPdf={downloadFilteredProductsPdf}
     excelSuccessText={(count) => `Exported ${count} products to Excel!`}
-    pdfSuccessText="Product sales report PDF downloaded!"
+    pdfSuccessText="Product sales register PDF downloaded!"
   />
 );
 

@@ -7,10 +7,6 @@ import { buildAccessUser } from "@/utils/access-user";
 import { getPersistedTradeReturns } from "@/utils/trade-return-storage";
 import type { SaleItem } from "@/types";
 
-/**
- * Unified Trade Record interface representing both Sales and Returns
- * in the Trade domain with strict typing.
- */
 export interface UnifiedTradeRecord extends SaleItem {
   isReturnRecord?: boolean;
   salesInvoiceNo?: string;
@@ -22,9 +18,6 @@ export interface UnifiedTradeRecord extends SaleItem {
   returnDetails?: any[];
 }
 
-/**
- * Extracts line items array from arbitrary backend property names.
- */
 export const extractLineItems = (item: any): any[] => {
   if (Array.isArray(item?.salesDetails) && item.salesDetails.length > 0) return item.salesDetails;
   if (Array.isArray(item?.saleDetails) && item.saleDetails.length > 0) return item.saleDetails;
@@ -51,10 +44,6 @@ export const KNOWN_ORDER_NO_MAP: Record<string, string> = {
   "28488-20261024104243407": "000168",
 };
 
-/**
- * Ensures human-readable, standard sequential Order ID (e.g. 000335)
- * instead of raw backend timestamp references.
- */
 export const getCleanOrderNo = (orderNo?: string | null, invoiceNo?: string | null): string => {
   if (orderNo && !orderNo.includes("-") && /^\d{3,8}$/.test(orderNo.trim())) {
     return orderNo.trim();
@@ -71,7 +60,7 @@ export const getCleanOrderNo = (orderNo?: string | null, invoiceNo?: string | nu
     const suffix = parts[parts.length - 1];
     return `ORD-${suffix.slice(-6)}`;
   }
-  return orderNo || inv || "ORD-000";
+  return orderNo || inv;
 };
 
 /**
@@ -131,10 +120,6 @@ export const normalizeSaleRecord = (item: any): SaleItem => {
   };
 };
 
-/**
- * Determines if an arbitrary item represents a return record.
- * A sale record with line items and invoice/order must NEVER be classified as a return voucher.
- */
 export const isReturnRecord = (item: any): boolean => {
   if (!item) return false;
   if (item.isReturnRecord === true) return true;
@@ -160,10 +145,6 @@ export const isReturnRecord = (item: any): boolean => {
   );
 };
 
-/**
- * Standardized fetcher for all sales records.
- * Single source of truth for sales query across the entire app.
- */
 export const fetchSalesList = async (): Promise<SaleItem[]> => {
   try {
     const accessUser = buildAccessUser();
@@ -185,7 +166,6 @@ export const fetchSalesList = async (): Promise<SaleItem[]> => {
 
     const normalizedList = (Array.isArray(list) ? list : []).map(normalizeSaleRecord);
 
-    // Merge persisted returned sales so they are never lost from sales listings
     const { returnedSales } = getPersistedTradeReturns();
     if (returnedSales && returnedSales.length > 0) {
       const existingKeys = new Set(
@@ -420,9 +400,28 @@ export const fetchSalesAndReturnList = async (): Promise<UnifiedTradeRecord[]> =
       const key = `ret_${rNo}`;
       if (!seen.has(key)) {
         seen.add(key);
+        const explicitReturnDetails = [
+          item.returnDetails,
+          item.salesReturnDetails,
+          item.return_details,
+          item.sales_return_details,
+          item.returnedItems,
+          item.returned_items,
+        ].find((lines) => Array.isArray(lines) && lines.length > 0);
+        const hasSeparateSaleLines = [
+          item.salesDetails,
+          item.saleDetails,
+          item.saleDetailsList,
+        ].some((lines) => Array.isArray(lines) && lines.length > 0);
+        const returnDetails =
+          explicitReturnDetails ||
+          (!hasSeparateSaleLines ? extractLineItems(item) : []);
         const normalized = normalizeSaleRecord(item) as UnifiedTradeRecord;
         normalized.isReturnRecord = true;
         normalized.hasReturn = true;
+        normalized.returnDetails = returnDetails;
+        normalized.details = returnDetails;
+        normalized.salesDetails = [];
         unifiedList.push(normalized);
 
         const invRef = String(item.salesInvoiceNo || item.invoiceNo || item.orderNo || "").trim().toLowerCase();
@@ -438,7 +437,12 @@ export const fetchSalesAndReturnList = async (): Promise<UnifiedTradeRecord[]> =
         const saleKey = `sale_${saleIdentifier}`;
         if (!seen.has(saleKey)) {
           seen.add(saleKey);
-          const saleLineItems = extractLineItems(item);
+          const saleLineItems =
+            [
+              item.salesDetails,
+              item.saleDetails,
+              item.saleDetailsList,
+            ].find((lines) => Array.isArray(lines) && lines.length > 0) || [];
           const saleNorm = normalizeSaleRecord({
             ...item,
             id: item.saleId || item.sale_id || item.id || saleIdentifier,

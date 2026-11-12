@@ -255,6 +255,10 @@ export const normalizePurchaseReturnInvoice = (returnData: any): TradeInvoiceDat
   const r = returnData || {};
   const details: any[] = Array.isArray(r.returnDetails)
     ? r.returnDetails
+    : Array.isArray(r.purchaseReturnDetails)
+    ? r.purchaseReturnDetails
+    : Array.isArray(r.details)
+    ? r.details
     : [];
 
   const discount = Number(r.discount ?? 0);

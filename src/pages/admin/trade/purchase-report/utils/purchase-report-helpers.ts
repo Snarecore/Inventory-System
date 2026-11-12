@@ -39,7 +39,7 @@ export const aggregateSupplierPurchases = (
 const PRODUCT_PURCHASE_EXPORT_LABELS: ProductExportLabels = {
   filePrefix: "Product_Purchase_Report",
   sheetName: "Product Purchases",
-  reportTitle: "Product-Wise Purchase Report",
+  reportTitle: "Product-Wise Purchase Register",
   excelQtyHeader: "Quantity Purchased",
   excelInvoicesHeader: "Invoices Count",
   excelAmountHeader: "Total Cost (BDT)",
@@ -53,7 +53,7 @@ const PRODUCT_PURCHASE_EXPORT_LABELS: ProductExportLabels = {
 const SUPPLIER_EXPORT_LABELS: PartyExportLabels = {
   filePrefix: "Supplier_Purchase_Report",
   sheetName: "Supplier Purchases",
-  reportTitle: "Supplier-Wise Purchase Report",
+  reportTitle: "Supplier-Wise Purchase Register",
   partyColumnHeader: "Supplier Name",
   totalLabel: "Total Suppliers",
   summaryEntityPlural: "Suppliers",
@@ -136,8 +136,8 @@ export async function exportFilteredPurchasesExcel(
   await buildAndDownloadExcel(rows, totalRow, {
     ...meta,
     fileName: `Purchase_Report_${moment().format("YYYY-MM-DD")}.xlsx`,
-    sheetName: "Purchase Report",
-    reportTitle: "Purchase Report",
+    sheetName: "Purchase Register",
+    reportTitle: "Purchase Register",
     totalLabel: "Total Invoices",
     totalSummarySpan,
     includeSignatures: true,
@@ -153,8 +153,8 @@ export async function downloadFilteredPurchasesPdf(
 ): Promise<void> {
   await downloadTradeInvoicesPdf(purchases, meta, {
     domain: "purchase",
-    filePrefix: "Purchase_Report",
-    reportTitle: "Purchase Report",
+    filePrefix: "Purchase_Register",
+    reportTitle: "Purchase Register",
     partyColumnHeader: "Supplier Name",
     includeTransport: true,
     emptyErrorMessage: "No purchase records available to download PDF",

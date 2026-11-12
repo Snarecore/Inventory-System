@@ -28,10 +28,17 @@ export interface UnifiedPurchaseRecord extends PurchaseItem {
  * Extracts line items array from arbitrary backend property names.
  */
 export const extractPurchaseLineItems = (item: any): any[] => {
-  if (Array.isArray(item?.purchaseDetails) && item.purchaseDetails.length > 0) return item.purchaseDetails;
-  if (Array.isArray(item?.purchasesDetails) && item.purchasesDetails.length > 0) return item.purchasesDetails;
-  if (Array.isArray(item?.details) && item.details.length > 0) return item.details;
-  return [];
+  const raw =
+    (Array.isArray(item?.purchaseDetails) && item.purchaseDetails.length > 0 ? item.purchaseDetails : null) ||
+    (Array.isArray(item?.purchasesDetails) && item.purchasesDetails.length > 0 ? item.purchasesDetails : null) ||
+    (Array.isArray(item?.details) && item.details.length > 0 ? item.details : null) ||
+    [];
+  return raw.map((d: any) => ({
+    ...d,
+    productId: d.productId ?? d.product_id ?? d.id,
+    productCode: d.productCode ?? d.pcode ?? "",
+    productName: d.productName ?? d.name ?? "",
+  }));
 };
 
 /**
@@ -272,16 +279,20 @@ export const fetchPurchaseAndReturnList = async (): Promise<UnifiedPurchaseRecor
 
     const getPurchaseAliases = (item: any): string[] => {
       if (!item) return [];
-      const cleanOrd = getCleanOrderNo(item.orderNo, item.invoiceNo || item.purchaseInvoiceNo);
+      const invNo = item.purchaseInvoiceNo || item.purchase_invoice_no || item.invoiceNo || item.invoice_no;
+      const chnNo = item.challanNo || item.challan_no;
+      const ordNo = item.orderNo || item.order_no;
+      const pId = item.purchaseId || item.purchase_id || item.id;
+      const cleanOrd = getCleanOrderNo(ordNo, invNo);
+
       return [
         cleanOrd ? `pur_ord_${cleanOrd.toLowerCase()}` : null,
-        item.orderNo ? `pur_ord_${String(item.orderNo).trim().toLowerCase()}` : null,
+        ordNo ? `pur_ord_${String(ordNo).trim().toLowerCase()}` : null,
+        invNo ? `pur_inv_${String(invNo).trim().toLowerCase()}` : null,
         item.invoiceNo ? `pur_inv_${String(item.invoiceNo).trim().toLowerCase()}` : null,
         item.purchaseInvoiceNo ? `pur_inv_${String(item.purchaseInvoiceNo).trim().toLowerCase()}` : null,
-        item.challanNo ? `pur_chn_${String(item.challanNo).trim().toLowerCase()}` : null,
-        item.id ? `pur_id_${String(item.id).trim().toLowerCase()}` : null,
-        item.purchaseId ? `pur_id_${String(item.purchaseId).trim().toLowerCase()}` : null,
-        item.purchase_id ? `pur_id_${String(item.purchase_id).trim().toLowerCase()}` : null,
+        chnNo ? `pur_chn_${String(chnNo).trim().toLowerCase()}` : null,
+        pId ? `pur_id_${String(pId).trim().toLowerCase()}` : null,
       ].filter(Boolean) as string[];
     };
 
@@ -578,6 +589,16 @@ export const fetchPurchaseAndReturnList = async (): Promise<UnifiedPurchaseRecor
       }
     });
 
+    // 6. Ensure hasReturn is set on any purchase record whose aliases match returnedInvoices
+    unifiedList.forEach((rec) => {
+      if (!rec.isReturnRecord) {
+        const aliases = getPurchaseAliases(rec);
+        if (aliases.some((a) => returnedInvoices.has(a))) {
+          rec.hasReturn = true;
+        }
+      }
+    });
+
     return unifiedList;
   } catch (error) {
     console.error("Failed to fetch purchase and return list:", error);
@@ -624,28 +645,60 @@ export const extractReturnedPurchaseKeysSet = (records: any[]): Set<string> => {
   if (!Array.isArray(records)) return set;
 
   records.forEach((item: any) => {
-    if (isPurchaseReturnRecord(item)) {
-      if (item.purchaseInvoiceNo && item.purchaseInvoiceNo !== "-") {
-        set.add(String(item.purchaseInvoiceNo).trim().toLowerCase());
+    if (!item || typeof item !== "object") return;
+
+    const isRet =
+      isPurchaseReturnRecord(item) ||
+      Boolean(item.hasReturn) ||
+      Boolean(item.returnNo || item.return_no) ||
+      Boolean(item.returnGrandTotal) ||
+      (Array.isArray(item.returnDetails) && item.returnDetails.length > 0) ||
+      (Array.isArray(item.purchaseReturnDetails) && item.purchaseReturnDetails.length > 0) ||
+      (Array.isArray(item.returns) && item.returns.length > 0) ||
+      (Array.isArray(item.purchaseReturns) && item.purchaseReturns.length > 0);
+
+    if (isRet) {
+      const inv = item.purchaseInvoiceNo || item.purchase_invoice_no || item.invoiceNo || item.invoice_no;
+      if (inv && inv !== "-") {
+        set.add(String(inv).trim().toLowerCase());
       }
-      if (item.invoiceNo && item.invoiceNo !== "-") {
-        set.add(String(item.invoiceNo).trim().toLowerCase());
+      const ord = item.orderNo || item.order_no;
+      if (ord) {
+        set.add(String(ord).trim().toLowerCase());
+        const cleanOrd = getCleanOrderNo(ord, inv);
+        if (cleanOrd) set.add(cleanOrd.toLowerCase());
       }
-      if (item.orderNo) {
-        set.add(String(item.orderNo).trim().toLowerCase());
+      const chn = item.challanNo || item.challan_no;
+      if (chn) {
+        set.add(String(chn).trim().toLowerCase());
       }
-      if (item.challanNo) {
-        set.add(String(item.challanNo).trim().toLowerCase());
-      }
-      // NOTE: Do NOT add item.id because item.id is the return record ID, which would incorrectly collide with purchase.id
-      if (item.purchaseId) {
-        set.add(String(item.purchaseId).trim().toLowerCase());
-      }
-      if (item.purchase_id) {
-        set.add(String(item.purchase_id).trim().toLowerCase());
+      const pId = item.purchaseId || item.purchase_id;
+      if (pId) {
+        set.add(String(pId).trim().toLowerCase());
       }
     }
   });
+
+  // Also merge persisted purchase returns from local storage
+  try {
+    const { returnVouchers, returnedPurchases } = getPersistedPurchaseReturns();
+    returnVouchers.forEach((pv: any) => {
+      const inv = pv.purchaseInvoiceNo || pv.purchase_invoice_no || pv.invoiceNo || pv.invoice_no;
+      if (inv && inv !== "-") set.add(String(inv).trim().toLowerCase());
+      if (pv.orderNo) set.add(String(pv.orderNo).trim().toLowerCase());
+      if (pv.challanNo) set.add(String(pv.challanNo).trim().toLowerCase());
+      if (pv.purchaseId) set.add(String(pv.purchaseId).trim().toLowerCase());
+    });
+    returnedPurchases.forEach((pp: any) => {
+      const inv = pp.purchaseInvoiceNo || pp.purchase_invoice_no || pp.invoiceNo || pp.invoice_no;
+      if (inv && inv !== "-") set.add(String(inv).trim().toLowerCase());
+      if (pp.orderNo) set.add(String(pp.orderNo).trim().toLowerCase());
+      if (pp.challanNo) set.add(String(pp.challanNo).trim().toLowerCase());
+      if (pp.purchaseId || pp.id) set.add(String(pp.purchaseId || pp.id).trim().toLowerCase());
+    });
+  } catch {
+    // Ignore browser storage read errors in SSR/test
+  }
 
   return set;
 };

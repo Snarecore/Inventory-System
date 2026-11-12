@@ -312,7 +312,11 @@ export const SalesReturnVouchersTable: React.FC<
               {paginated.map((r, idx) => {
                 const sl = (safePage - 1) * pageSize + idx + 1;
                 const statusUpper = r.status.toUpperCase();
-                const statusClass = statusUpper.includes("PENDING")
+                const statusClass = statusUpper.includes("UNKNOWN")
+                  ? "bg-[var(--ui-surface-sunken)] text-[var(--ui-text-muted)] border-[var(--ui-border)]"
+                  : statusUpper.includes("PARTIAL")
+                  ? "bg-[var(--ui-warning-border)] text-[var(--ui-warning-dark)] border-[var(--ui-warning-border)]"
+                  : statusUpper.includes("PENDING")
                   ? "bg-[var(--ui-warning-border)] text-[var(--ui-warning-dark)] border-[var(--ui-warning-border)]"
                   : statusUpper.includes("CANCEL") ||
                     statusUpper.includes("REJECT")

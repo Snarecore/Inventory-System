@@ -384,7 +384,7 @@ export const PurchaseReportTable: React.FC<PurchaseReportTableProps> = ({
                 companyMeta,
                 visibleColumns
               );
-              return "Purchase report PDF downloaded!";
+              return "Purchase register PDF downloaded!";
             }}
           />
         </div>

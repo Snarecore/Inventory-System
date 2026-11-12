@@ -120,7 +120,7 @@ const SalesReportPage: React.FC = () => {
       {/* ── Top Header & Global Actions ── */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2.5">
         <PageHeader
-          headerTitle="Sales Report"
+          headerTitle="Sales Register"
           headerDescription="Sales transactions, collections, and financial summary"
         />
 

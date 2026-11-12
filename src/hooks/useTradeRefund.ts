@@ -92,8 +92,11 @@ export const useTradeRefund = ({
       return;
     }
 
-    // Full Return (or return amount matches full original total)
-    if (returnMode === "FULL" || Math.abs(refundAmount - origGrandTotal) < 0.01) {
+    // Reuse the original tender split only when the refund covers the full invoice total.
+    if (
+      returnMode === "FULL" &&
+      Math.abs(refundAmount - origGrandTotal) < 0.01
+    ) {
       setRefundCashAmount(origCashPaid > 0 ? String(origCashPaid) : "");
       setRefundBankAmount(origBankPaid > 0 ? String(origBankPaid) : "");
       setRefundMfsAmount(origMfsPaid > 0 ? String(origMfsPaid) : "");

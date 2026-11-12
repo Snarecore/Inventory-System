@@ -91,16 +91,188 @@ function extractRawReturnLines(item: any): any[] {
   const candidates = [
     item?.returnDetails,
     item?.salesReturnDetails,
-    item?.details,
-    item?.items,
-    item?.products,
-    item?.saleDetails,
-    item?.salesDetails,
+    item?.return_details,
+    item?.sales_return_details,
+    item?.returnedItems,
+    item?.returned_items,
   ];
   for (const list of candidates) {
     if (Array.isArray(list) && list.length > 0) return list;
   }
   return [];
+}
+
+const normalizeTradeReference = (value: unknown): string => {
+  const reference = String(value ?? "").trim().toLowerCase();
+  return reference && reference !== "-" ? reference : "";
+};
+
+const getTradeReferences = (record: any): string[] =>
+  Array.from(
+    new Set(
+      [
+        record?.salesInvoiceNo,
+        record?.invoiceNo,
+        record?.orderNo,
+        record?.saleId,
+        record?.sale_id,
+        record?.id,
+      ]
+        .map(normalizeTradeReference)
+        .filter(Boolean)
+    )
+  );
+
+const getRawSaleLines = (record: any): any[] => {
+  const candidates = [
+    record?.salesDetails,
+    record?.saleDetails,
+    record?.saleDetailsList,
+    record?.details,
+    record?.items,
+    record?.products,
+  ];
+  return candidates.find((list) => Array.isArray(list) && list.length > 0) || [];
+};
+
+const getProductKey = (line: any): string => {
+  const productId = normalizeTradeReference(line?.productId ?? line?.product_id);
+  if (productId) return `id:${productId}`;
+
+  const productCode = normalizeTradeReference(
+    line?.productCode ?? line?.product_code ?? line?.pcode ?? line?.sku
+  );
+  if (productCode) return `code:${productCode}`;
+
+  const productName = normalizeTradeReference(line?.productName ?? line?.product_name ?? line?.name);
+  return productName ? `name:${productName}` : "";
+};
+
+const getLineQuantity = (line: any, isReturnLine: boolean): number => {
+  const rawQuantity = isReturnLine
+    ? line?.returnQuantity ?? line?.quantity ?? line?.qty
+    : line?.quantity ?? line?.qty ?? line?.soldQuantity;
+  const quantity = Number(rawQuantity);
+  return Number.isFinite(quantity) && quantity > 0 ? quantity : 0;
+};
+
+const buildQuantityMap = (
+  lines: any[],
+  isReturnLine: boolean
+): Map<string, number> | null => {
+  if (lines.length === 0) return null;
+
+  const quantities = new Map<string, number>();
+  for (const line of lines) {
+    const productKey = getProductKey(line);
+    const quantity = getLineQuantity(line, isReturnLine);
+    if (!productKey || quantity <= 0) return null;
+    quantities.set(productKey, (quantities.get(productKey) || 0) + quantity);
+  }
+  return quantities;
+};
+
+function deriveReturnStatuses(records: UnifiedTradeRecord[]): Map<any, string> {
+  const salesByReference = new Map<
+    string,
+    { key: string; quantities: Map<string, number> | null }
+  >();
+
+  records.forEach((record: any) => {
+    if (!record || Boolean(record.isReturnRecord) || isReturnRecord(record)) return;
+
+    const references = getTradeReferences(record);
+    if (references.length === 0) return;
+
+    const context = {
+      key: references[0],
+      quantities: buildQuantityMap(getRawSaleLines(record), false),
+    };
+    references.forEach((reference) => {
+      const current = salesByReference.get(reference);
+      if (!current || (!current.quantities && context.quantities)) {
+        salesByReference.set(reference, context);
+      }
+    });
+  });
+
+  const returnEntries = records
+    .map((record, index) => ({ record, index }))
+    .filter(({ record }) => Boolean(record?.isReturnRecord) || isReturnRecord(record))
+    .sort((a, b) => {
+      const dateValue = (record: any) =>
+        parseFlexibleReportDate(
+          record.returnDate || record.return_date || record.createdAt || record.created_at || record.date
+        )?.valueOf() ?? 0;
+      const dateDifference = dateValue(a.record) - dateValue(b.record);
+      if (dateDifference !== 0) return dateDifference;
+
+      const createdAt = (record: any) => {
+        const value = Date.parse(String(record.createdAt || record.created_at || ""));
+        return Number.isFinite(value) ? value : 0;
+      };
+      return createdAt(a.record) - createdAt(b.record) || a.index - b.index;
+    });
+
+  const statuses = new Map<any, string>();
+  const invoiceStates = new Map<
+    string,
+    { returned: Map<string, number>; historyComplete: boolean }
+  >();
+
+  returnEntries.forEach(({ record }) => {
+    const references = getTradeReferences(record);
+    const saleContext = references
+      .map((reference) => salesByReference.get(reference))
+      .find(Boolean);
+    if (!saleContext) {
+      statuses.set(record, "Unknown");
+      return;
+    }
+
+    let invoiceState = invoiceStates.get(saleContext.key);
+    if (!invoiceState) {
+      invoiceState = { returned: new Map(), historyComplete: true };
+      invoiceStates.set(saleContext.key, invoiceState);
+    }
+
+    const returnQuantities = buildQuantityMap(extractRawReturnLines(record), true);
+    if (!saleContext.quantities?.size || !returnQuantities) {
+      invoiceState.historyComplete = false;
+      statuses.set(record, "Unknown");
+      return;
+    }
+
+    if (!invoiceState.historyComplete) {
+      statuses.set(record, "Unknown");
+      return;
+    }
+
+    for (const [productKey, quantity] of returnQuantities) {
+      const soldQuantity = saleContext.quantities.get(productKey);
+      const returnedQuantity = (invoiceState.returned.get(productKey) || 0) + quantity;
+      if (soldQuantity === undefined || returnedQuantity > soldQuantity + 0.0001) {
+        invoiceState.historyComplete = false;
+        statuses.set(record, "Unknown");
+        return;
+      }
+    }
+
+    returnQuantities.forEach((quantity, productKey) => {
+      invoiceState!.returned.set(
+        productKey,
+        (invoiceState!.returned.get(productKey) || 0) + quantity
+      );
+    });
+
+    const isFullyReturned = Array.from(saleContext.quantities).every(
+      ([productKey, soldQuantity]) =>
+        (invoiceState!.returned.get(productKey) || 0) >= soldQuantity - 0.0001
+    );
+    statuses.set(record, isFullyReturned ? "Full Return" : "Partial Return");
+  });
+
+  return statuses;
 }
 
 /**
@@ -127,6 +299,7 @@ export function extractNormalizedSalesReturns(
   });
 
   const result: NormalizedSalesReturnRecord[] = [];
+  const returnStatuses = deriveReturnStatuses(records);
 
   records.forEach((item: any, idx: number) => {
     if (!(Boolean(item?.isReturnRecord) || isReturnRecord(item))) return;
@@ -189,61 +362,43 @@ export function extractNormalizedSalesReturns(
       paymentType.includes("DUE") ||
       paymentType.includes("ADJUST");
 
-    const rawLines = extractRawReturnLines(item);
-    const details: NormalizedSalesReturnLine[] =
-      rawLines.length > 0
-        ? rawLines.map((line: any, lineIdx: number) => {
-            const qty = Number(
-              line.returnQuantity ?? line.quantity ?? line.qty ?? 1
-            );
-            const price = Number(
-              line.unitPrice ?? line.price ?? line.sellPrice ?? 0
-            );
-            const lineTotal = Number(
-              line.total ?? line.totalAmount ?? qty * price
-            );
-            const lineReason =
-              getReturnReasonLabel(
-                line.returnReason || line.return_reason || line.reason || line.note
-              ) || reasonSummary;
+    const rawLines = extractRawReturnLines(item).filter(
+      (line) => getLineQuantity(line, true) > 0
+    );
+    const details: NormalizedSalesReturnLine[] = rawLines.map(
+      (line: any) => {
+        const qty = getLineQuantity(line, true);
+        const price = Number(
+          line.unitPrice ?? line.price ?? line.sellPrice ?? 0
+        );
+        const lineTotal = Number(
+          line.total ?? line.totalAmount ?? qty * price
+        );
+        const lineReason =
+          getReturnReasonLabel(
+            line.returnReason || line.return_reason || line.reason || line.note
+          ) || reasonSummary;
 
-            return {
-              productId: String(
-                line.productId ||
-                  line.product_id ||
-                  line.id ||
-                  line.pcode ||
-                  `line-${lineIdx}`
-              ),
-              productCode: String(
-                line.productCode ||
-                  line.product_code ||
-                  line.pcode ||
-                  line.sku ||
-                  "-"
-              ),
-              productName: String(
-                line.productName || line.product_name || line.name || "Returned Item"
-              ),
-              unit: String(line.unit || line.unitName || "pcs"),
-              quantity: qty,
-              unitPrice: price,
-              total: lineTotal,
-              reason: lineReason,
-            };
-          })
-        : [
-            {
-              productId: String(item.id || returnNo),
-              productCode: returnNo,
-              productName: `Return #${returnNo}`,
-              unit: "pcs",
-              quantity: Number(item.itemsCount || 1),
-              unitPrice: refundAmount,
-              total: refundAmount,
-              reason: reasonSummary,
-            },
-          ];
+        return {
+          productId: String(line.productId || line.product_id || "unknown"),
+          productCode: String(
+            line.productCode ||
+              line.product_code ||
+              line.pcode ||
+              line.sku ||
+              "-"
+          ),
+          productName: String(
+            line.productName || line.product_name || line.name || "Returned Item"
+          ),
+          unit: String(line.unit || line.unitName || "pcs"),
+          quantity: qty,
+          unitPrice: price,
+          total: lineTotal,
+          reason: lineReason,
+        };
+      }
+    );
 
     const rawItem: SalesReturnItem = {
       id:
@@ -269,10 +424,10 @@ export function extractNormalizedSalesReturns(
       grandTotal,
       refundAmount,
       paymentType,
-      status: String(item.status || "Completed").trim(),
+      status: returnStatuses.get(item) || "Unknown",
       note: reasonSummary === "N/A" ? "" : reasonSummary,
       remarks: reasonSummary === "N/A" ? "" : reasonSummary,
-      returnDetails: rawLines.length > 0 ? rawLines : details,
+      returnDetails: rawLines,
       itemsCount: details.length,
     };
 

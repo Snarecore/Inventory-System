@@ -34,6 +34,7 @@ export const bankInfoListQueryKey = "get-bank-info-list";
 export const bankNameListQueryKey = "get-bank-name-list";
 export const mfsUserListQueryKey = "mfs-user-list";
 export const salesAndReturnQueryKey = "get-sales-and-return";
+export const tradeReturnCandidatesQueryKey = "trade-return-candidates";
 export const insertSalesReturnQueryKey = "insert-sales-return";
 export const salesListQueryKey = "get-sale-list";
 export const insertSalesQueryKey = "insert-sales";
