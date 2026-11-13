@@ -13,9 +13,7 @@ import type {
   BusinessTypeItem,
 } from "@/types/business.types";
 
-/**
- * Hook to fetch the current business profile.
- */
+
 export function useBusinessProfileQuery(
   orgIdParam?: number | string,
   branchIdParam?: number | string
