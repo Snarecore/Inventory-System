@@ -135,7 +135,7 @@ export const CustomerStatementTable: React.FC<CustomerStatementTableProps> = ({
                         className="text-xs text-[var(--ui-text-muted)] truncate"
                         title={item.note}
                       >
-                        • {item.note}
+                        {item.note}
                       </span>
                     )}
                   </div>
@@ -204,7 +204,7 @@ export const CustomerStatementTable: React.FC<CustomerStatementTableProps> = ({
             <tr className="border-t-2 border-[var(--ui-border)] bg-[var(--ui-surface-muted)]/60 text-xs font-semibold text-[var(--ui-text)]">
               <td colSpan={3} className="py-2.5 px-3 text-right whitespace-nowrap">
                 <span className="text-xs text-[var(--ui-text-muted)] mr-2">
-                  Total Summary ({stats.entryCount} entries) • Closing Balance:
+                  Total Summary ({stats.entryCount} entries) - Closing Balance:
                 </span>
               </td>
               <td className="py-2.5 px-3 text-right tabular-nums whitespace-nowrap font-bold text-[var(--ui-text)] min-w-[110px]">

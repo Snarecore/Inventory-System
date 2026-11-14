@@ -1153,7 +1153,7 @@ export function parseDateAndTime(dateStr?: string | null): {
     hasTime: hasRealTime,
     fullDateTimeStr: isValid
       ? hasRealTime
-        ? m.format("DD MMM, YYYY • hh:mm A")
+        ? m.format("DD MMM, YYYY hh:mm A")
         : m.format("DD MMM, YYYY")
       : raw,
   };
@@ -1347,7 +1347,7 @@ export function buildCustomerStatementEntries(
     } else {
       const paidNote =
         paidAmount > 0
-          ? `Paid: ৳${formatMoney(paidAmount)}${cleanNote ? ` • ${cleanNote}` : ""}`
+          ? `Paid: ৳${formatMoney(paidAmount)}${cleanNote ? ` (${cleanNote})` : ""}`
           : cleanNote;
 
       rawEntries.push({
@@ -1387,7 +1387,7 @@ export function buildCustomerStatementEntries(
     let cleanNote = "";
     if (bills) cleanNote = `Settled: #${bills}`;
     if (remark && !remark.toLowerCase().includes("sales collection for invoice")) {
-      cleanNote = cleanNote ? `${cleanNote} • ${remark}` : remark;
+      cleanNote = cleanNote ? `${cleanNote} (${remark})` : remark;
     }
 
     const tenderMode =
@@ -1564,9 +1564,7 @@ export async function exportCustomerStatementExcel(
     "Type": e.typeLabel,
     "Reference #": e.refNo && e.refNo !== "-" ? `#${e.refNo}` : "-",
     "Payment Mode": e.paymentMode || "-",
-    "Description / Settled Bills": e.note
-      ? `${e.description} • ${e.note}`
-      : e.description,
+    "Description / Settled Bills": e.note || e.description,
     "Sales / Billed (BDT)": e.salesAmount > 0 ? e.salesAmount : "-",
     "Collection (BDT)": e.collectionAmount > 0 ? e.collectionAmount : "-",
     "Balance (BDT)": e.runningBalance,
@@ -1578,7 +1576,7 @@ export async function exportCustomerStatementExcel(
     "Type": "-",
     "Reference #": "-",
     "Payment Mode": "-",
-    "Description / Settled Bills": `Customer: ${customer.customerName} (${customer.customerPhone}) • Closing Due: BDT ${finalBalance}`,
+    "Description / Settled Bills": `Customer: ${customer.customerName} (${customer.customerPhone}) - Closing Due: BDT ${finalBalance}`,
     "Sales / Billed (BDT)": totals.sales,
     "Collection (BDT)": totals.collected,
     "Balance (BDT)": finalBalance,
@@ -1634,7 +1632,7 @@ export async function downloadCustomerStatementPdf(
         ? `${e.typeLabel} #${e.refNo}`
         : e.typeLabel;
 
-    const desc = e.note ? `${e.description} • ${e.note}` : e.description;
+    const desc = e.note || e.description;
 
     return [
       idx + 1,
@@ -1933,7 +1931,7 @@ export async function exportCustomerWiseDetailedExcel(
         e.typeLabel,
         e.refNo && e.refNo !== "-" ? `#${e.refNo}` : "-",
         e.paymentMode || "-",
-        e.note ? `${e.description} • ${e.note}` : e.description,
+        e.note || e.description,
         e.salesAmount > 0 ? e.salesAmount : "-",
         e.collectionAmount > 0 ? e.collectionAmount : "-",
         e.runningBalance,
@@ -2085,7 +2083,7 @@ export async function downloadCustomerWiseDetailedPdf(
           ? `${e.typeLabel} #${e.refNo}`
           : e.typeLabel;
 
-      const desc = e.note ? `${e.description} • ${e.note}` : e.description;
+      const desc = e.note || e.description;
 
       bodyRows.push([
         sl++,

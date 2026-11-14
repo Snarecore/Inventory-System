@@ -534,28 +534,28 @@ export const CustomerCollectionSummaryTable: React.FC<
                                       {c.customerName}
                                     </span>
                                     <span className="text-[11px] text-[var(--ui-text-muted)]">
-                                      • Statement History
+                                      (Statement History)
                                     </span>
                                   </div>
                                   <div className="text-[11px] text-[var(--ui-text-muted)] flex items-center gap-2 mt-0.5 flex-wrap">
                                     <span>Phone: {c.customerPhone}</span>
-                                    <span>•</span>
+                                    <span className="inline-block w-px h-2.5 bg-[var(--ui-border)]" />
                                     <span>Vouchers: {c.voucherCount}</span>
-                                    <span>•</span>
+                                    <span className="inline-block w-px h-2.5 bg-[var(--ui-border)]" />
                                     <span>
                                       Total Sales:{" "}
                                       <strong className="text-[var(--ui-text)] font-semibold">
                                         ৳ {formatMoney(expandedStatementData.stats.totalSales)}
                                       </strong>
                                     </span>
-                                    <span>•</span>
+                                    <span className="inline-block w-px h-2.5 bg-[var(--ui-border)]" />
                                     <span>
                                       Total Collected:{" "}
                                       <strong className="text-[var(--ui-success)] font-semibold">
                                         ৳ {formatMoney(expandedStatementData.stats.totalCollected)}
                                       </strong>
                                     </span>
-                                    <span>•</span>
+                                    <span className="inline-block w-px h-2.5 bg-[var(--ui-border)]" />
                                     <span
                                       className={
                                         c.currentDue > 0
