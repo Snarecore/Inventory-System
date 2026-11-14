@@ -88,7 +88,9 @@
         "insertSalesUrl": "insert-sales",
         "updateSalesUrl": "update-sales",
         "salesTransactionReportUrl": "get-sale-transaction-report",
-        "salesAndReturnUrl": "get-sales-and-return"
+        "salesAndReturnUrl": "get-sales-and-return",
+        "checkSalesDeleteUrl": "check-sales-delete",
+        "deleteSalesOrderUrl": "delete-sales-order"
     },
     "finance": {
         "insertFinancialTransactionUrl": "insert-financial-transaction",

@@ -2,6 +2,7 @@ export interface ApiRequestProps {
     url: string;
     token?: string | null;
     baseUrl?: string;
+    headers?: Record<string, string>;
 }
 
 export interface GetDataProps extends ApiRequestProps { }

@@ -8,6 +8,7 @@ import RefreshButton from "@/components/table-components/RefreshButton";
 import SaleStats from "./components/SaleStats";
 import SaleTable from "./components/SaleTable";
 import SaleInvoiceModal from "./components/SaleInvoiceModal";
+import DeleteModal from "@/components/modal/DeleteModal";
 import TradeReturnStats from "@/components/trade/TradeReturnStats";
 import SalesReturnTable from "@/pages/admin/trade/sales-return/components/SalesReturnTable";
 import SalesReturnInvoiceModal from "@/pages/admin/trade/sales-return/components/SalesReturnInvoiceModal";
@@ -20,7 +21,11 @@ import {
   normalizeSaleRecord,
   isReturnRecord,
   getCleanOrderNo,
+  checkSalesDelete,
+  validateCheckSalesDeleteResult,
+  useDeleteSalesOrderMutation,
 } from "./hooks/useSalesQueries";
+import { showSuccessToast, showErrorToast } from "@/utils/toast-utils";
 import { useDebounce } from "@/hooks/useDebounce";
 import { usePermission } from "@/hooks/usePermission";
 
@@ -59,6 +64,10 @@ const Sales: React.FC = () => {
   const [isSaleInvoiceModalOpen, setIsSaleInvoiceModalOpen] = useState<boolean>(false);
   const [selectedSaleForInvoice, setSelectedSaleForInvoice] = useState<SaleItem | null>(null);
   const [autoPrintSaleModal, setAutoPrintSaleModal] = useState<boolean>(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState<boolean>(false);
+  const [selectedSaleForDelete, setSelectedSaleForDelete] = useState<SaleItem | null>(null);
+  const [deleteReason, setDeleteReason] = useState<string>("");
+  const deleteMutation = useDeleteSalesOrderMutation();
 
   // Modals - Returns
   const [isReturnInvoiceModalOpen, setIsReturnInvoiceModalOpen] = useState<boolean>(false);
@@ -680,6 +689,77 @@ const Sales: React.FC = () => {
     });
   };
 
+  // Step 1: Check if sales order can be deleted using /check-sales-delete
+  const handleDeleteSale = async (sale: SaleItem) => {
+    const invNo = String(
+      sale.invoiceNo ||
+      sale.salesInvoiceNo ||
+      (sale as any).invoice_no ||
+      sale.orderNo ||
+      (sale as any).order_no ||
+      sale.id ||
+      ""
+    ).trim();
+
+    if (!invNo) {
+      showErrorToast("Invoice number is missing for this sales order.");
+      return;
+    }
+
+    try {
+      const res = await checkSalesDelete({ invoiceNo: invNo });
+      const validation = validateCheckSalesDeleteResult(res);
+
+      if (!validation.canDelete) {
+        showErrorToast(validation.message || "Sales order cannot be deleted or was not found.");
+        return;
+      }
+
+      // If found in step 1, open standard DeleteModal
+      setSelectedSaleForDelete(sale);
+      setDeleteReason("");
+      setIsDeleteModalOpen(true);
+    } catch (err: any) {
+      showErrorToast(err?.message || "Failed to verify sales order for deletion.");
+    }
+  };
+
+  // Step 2: Delete sales order using /delete-sales-order
+  const handleConfirmDelete = async () => {
+    if (!selectedSaleForDelete) return;
+
+    const invNo = String(
+      selectedSaleForDelete.invoiceNo ||
+      selectedSaleForDelete.salesInvoiceNo ||
+      (selectedSaleForDelete as any).invoice_no ||
+      selectedSaleForDelete.orderNo ||
+      (selectedSaleForDelete as any).order_no ||
+      selectedSaleForDelete.id ||
+      ""
+    ).trim();
+
+    if (!invNo) {
+      showErrorToast("Invoice number is missing.");
+      return;
+    }
+
+    try {
+      const res = await deleteMutation.mutateAsync({
+        invoiceNo: invNo,
+        reason: deleteReason.trim() || "Deleted by user",
+      });
+
+      showSuccessToast(res?.msg || res?.message || "Sales order deleted successfully!");
+      setIsDeleteModalOpen(false);
+      setSelectedSaleForDelete(null);
+      setDeleteReason("");
+      refetchSales();
+      refetchSalesAndReturns();
+    } catch (err: any) {
+      showErrorToast(err?.message || "Failed to delete sales order.");
+    }
+  };
+
   // Actions - Returns
   const handleViewReturn = (item: SalesReturnItem) => {
     setSelectedReturnForInvoice(item);
@@ -827,6 +907,7 @@ const Sales: React.FC = () => {
           onEdit={handleEditSale}
           onView={handleViewSale}
           onPrint={handlePrintSale}
+          onDelete={handleDeleteSale}
         />
       ) : (
         <SalesReturnTable
@@ -885,6 +966,33 @@ const Sales: React.FC = () => {
         returnData={selectedReturnForInvoice}
         autoPrint={autoPrintReturnModal}
       />
+
+      {/* Delete Confirmation Modal using shared DeleteModal */}
+      <DeleteModal
+        isOpen={isDeleteModalOpen}
+        title="Delete Sales Order"
+        message={`Are you sure you want to delete sales order "${getCleanOrderNo(selectedSaleForDelete?.orderNo, selectedSaleForDelete?.invoiceNo || selectedSaleForDelete?.salesInvoiceNo) || selectedSaleForDelete?.invoiceNo}"?`}
+        onClose={() => {
+          setIsDeleteModalOpen(false);
+          setSelectedSaleForDelete(null);
+          setDeleteReason("");
+        }}
+        onDelete={handleConfirmDelete}
+        isLoading={deleteMutation.isPending}
+      >
+        <div className="mt-2 text-left w-full">
+          <label className="block text-xs font-medium text-[var(--ui-text-muted)] mb-1">
+            Reason for deletion (ডিলিট করার কারণ)
+          </label>
+          <input
+            type="text"
+            value={deleteReason}
+            onChange={(e) => setDeleteReason(e.target.value)}
+            placeholder="e.g. Order cancelled, wrong entry..."
+            className="w-full text-xs px-3 py-2 rounded-md border border-[var(--ui-border-strong)] bg-[var(--ui-surface)] text-[var(--ui-text)] focus:outline-none focus:border-[var(--primary-color)]"
+          />
+        </div>
+      </DeleteModal>
     </div>
   );
 };

@@ -1,5 +1,9 @@
 import type { PartyItem } from "@/types";
 
+/**
+ * Standardized enterprise helper to check if a party (customer or supplier) is active.
+ * Excludes deleted, inactive, disabled, and false status records.
+ */
 export const isPartyActive = (p: any): boolean => {
   if (!p || typeof p !== "object") return false;
 

@@ -1,5 +1,12 @@
 import React, { useMemo, useState } from "react";
-import { FiChevronDown, FiRotateCcw } from "react-icons/fi";
+import {
+  FiChevronDown,
+  FiChevronRight,
+  FiRotateCcw,
+  FiFileText,
+  FiMaximize2,
+} from "react-icons/fi";
+import { FaStore } from "react-icons/fa";
 import Search from "@/components/table-components/Search";
 import ReportExportButtons from "@/components/reports/ReportExportButtons";
 import ColumnVisibilityDropdown, {
@@ -22,18 +29,31 @@ import { useDebounce } from "@/hooks/useDebounce";
 import { useColumnVisibility } from "@/hooks/useColumnVisibility";
 import {
   useReportCompanyMeta,
-  calculateRevenueSharePct,
   formatShortReportDate,
 } from "@/utils/trade-report-helpers";
+import type { CollectionReceiptData } from "@/pages/admin/trade/customer-collection/components/CollectionReceiptModal";
 import {
   type NormalizedCustomerDueRow,
+  type CustomerCollectionSummary,
+  type NormalizedCollectionRecord,
+  buildCustomerStatementEntries,
   exportCustomerDueReportExcel,
   downloadCustomerDueReportPdf,
+  exportCustomerStatementExcel,
+  downloadCustomerStatementPdf,
 } from "../utils/customer-collection-report-helpers";
+import CustomerStatementTable from "./CustomerStatementTable";
+import CustomerStatementDrawer from "./CustomerStatementDrawer";
 
 interface CustomerDueReportTableProps {
   dueRows: NormalizedCustomerDueRow[];
+  collections?: NormalizedCollectionRecord[];
+  salesList?: any[];
+  rawPartyData?: any;
   isLoading?: boolean;
+  onViewReceipt?: (receipt: CollectionReceiptData) => void;
+  startDate?: string;
+  endDate?: string;
 }
 
 const AVAILABLE_COLUMNS: ColumnItem[] = [
@@ -44,12 +64,18 @@ const AVAILABLE_COLUMNS: ColumnItem[] = [
   { key: "invoiceCount", label: "Pending Invoices" },
   { key: "lastSaleDate", label: "Last Sale Date" },
   { key: "totalDue", label: "Outstanding Due (৳)" },
-  { key: "dueShare", label: "Receivable Share" },
+  { key: "actions", label: "History" },
 ];
 
 export const CustomerDueReportTable: React.FC<CustomerDueReportTableProps> = ({
   dueRows,
+  collections = [],
+  salesList = [],
+  rawPartyData,
   isLoading,
+  onViewReceipt,
+  startDate,
+  endDate,
 }) => {
   const companyMeta = useReportCompanyMeta();
   const [searchQuery, setSearchQuery] = useState("");
@@ -57,6 +83,11 @@ export const CustomerDueReportTable: React.FC<CustomerDueReportTableProps> = ({
   const [sortBy, setSortBy] = useState<string>("due_desc");
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
+
+  const [expandedCustomerKey, setExpandedCustomerKey] = useState<string | null>(null);
+  const [selectedCustomerForDrawer, setSelectedCustomerForDrawer] =
+    useState<CustomerCollectionSummary | null>(null);
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 
   const {
     visibleColumns,
@@ -66,13 +97,25 @@ export const CustomerDueReportTable: React.FC<CustomerDueReportTableProps> = ({
     activeVisibleColumnCount,
   } = useColumnVisibility(
     AVAILABLE_COLUMNS,
-    "customer_collection_report_dues_columns"
+    "customer_collection_report_dues_columns_v2"
   );
 
-  const grandTotalDue = useMemo(
-    () => dueRows.reduce((sum, r) => sum + r.totalDue, 0),
-    [dueRows]
-  );
+  const adaptedSummaries: CustomerCollectionSummary[] = useMemo(() => {
+    return dueRows.map((d) => ({
+      customerKey: d.customerKey,
+      customerId: d.customerId,
+      customerName: d.customerName,
+      customerPhone: d.customerPhone,
+      voucherCount: 0,
+      billsSettled: d.invoiceCount,
+      cashPaid: 0,
+      digitalPaid: 0,
+      totalDiscount: 0,
+      totalCollected: 0,
+      currentDue: d.totalDue,
+      lastCollectionDate: d.lastSaleDate || "",
+    }));
+  }, [dueRows]);
 
   const filtered = useMemo(() => {
     const q = debouncedSearch.trim().toLowerCase();
@@ -109,6 +152,30 @@ export const CustomerDueReportTable: React.FC<CustomerDueReportTableProps> = ({
     setSortBy("due_desc");
     setCurrentPage(1);
   };
+
+  // Compute statement data for currently expanded row
+  const expandedStatementData = useMemo(() => {
+    if (!expandedCustomerKey) return null;
+    const target = adaptedSummaries.find(
+      (c) => c.customerKey === expandedCustomerKey
+    );
+    if (!target) return null;
+    return buildCustomerStatementEntries(
+      target,
+      collections,
+      salesList,
+      rawPartyData,
+      { startDate, endDate }
+    );
+  }, [
+    expandedCustomerKey,
+    adaptedSummaries,
+    collections,
+    salesList,
+    rawPartyData,
+    startDate,
+    endDate,
+  ]);
 
   return (
     <TableContainer>
@@ -171,6 +238,34 @@ export const CustomerDueReportTable: React.FC<CustomerDueReportTableProps> = ({
 
           <ReportExportButtons
             onExportExcel={async () => {
+              const targetCustomer =
+                (expandedCustomerKey
+                  ? adaptedSummaries.find(
+                      (c) => c.customerKey === expandedCustomerKey
+                    )
+                  : null) ||
+                (filtered.length === 1
+                  ? adaptedSummaries.find(
+                      (c) => c.customerKey === filtered[0].customerKey
+                    )
+                  : null);
+
+              if (targetCustomer) {
+                const stmt = buildCustomerStatementEntries(
+                  targetCustomer,
+                  collections,
+                  salesList,
+                  rawPartyData,
+                  { startDate, endDate }
+                );
+                const count = await exportCustomerStatementExcel(
+                  targetCustomer,
+                  stmt.entries,
+                  companyMeta
+                );
+                return `Exported ${count} statement entries for ${targetCustomer.customerName} to Excel!`;
+              }
+
               const count = await exportCustomerDueReportExcel(
                 filtered,
                 companyMeta,
@@ -179,6 +274,34 @@ export const CustomerDueReportTable: React.FC<CustomerDueReportTableProps> = ({
               return `Exported ${count} customer due records to Excel!`;
             }}
             onDownloadPdf={async () => {
+              const targetCustomer =
+                (expandedCustomerKey
+                  ? adaptedSummaries.find(
+                      (c) => c.customerKey === expandedCustomerKey
+                    )
+                  : null) ||
+                (filtered.length === 1
+                  ? adaptedSummaries.find(
+                      (c) => c.customerKey === filtered[0].customerKey
+                    )
+                  : null);
+
+              if (targetCustomer) {
+                const stmt = buildCustomerStatementEntries(
+                  targetCustomer,
+                  collections,
+                  salesList,
+                  rawPartyData,
+                  { startDate, endDate }
+                );
+                await downloadCustomerStatementPdf(
+                  targetCustomer,
+                  stmt.entries,
+                  companyMeta
+                );
+                return `Customer statement PDF downloaded for ${targetCustomer.customerName}!`;
+              }
+
               await downloadCustomerDueReportPdf(
                 filtered,
                 companyMeta,
@@ -230,9 +353,9 @@ export const CustomerDueReportTable: React.FC<CustomerDueReportTableProps> = ({
                   Outstanding Due (৳)
                 </TableTh>
               )}
-              {isColVisible("dueShare") && (
-                <TableTh align="right" className="whitespace-nowrap">
-                  Share
+              {isColVisible("actions") && (
+                <TableTh align="center" className="whitespace-nowrap w-24">
+                  History
                 </TableTh>
               )}
             </TableHead>
@@ -240,62 +363,194 @@ export const CustomerDueReportTable: React.FC<CustomerDueReportTableProps> = ({
             <TableBody>
               {paginated.map((d, idx) => {
                 const sl = (safePage - 1) * pageSize + idx + 1;
-                const sharePct = calculateRevenueSharePct(
-                  d.totalDue,
-                  grandTotalDue
-                );
+                const isExpanded = expandedCustomerKey === d.customerKey;
 
                 return (
-                  <tr
-                    key={`${d.customerKey}_${idx}`}
-                    className="hover:bg-[var(--primary-color-light)]/40 transition-colors"
-                  >
-                    {isColVisible("sl") && (
-                      <td className="py-2.5 px-3 text-center text-xs text-[var(--ui-text)] tabular-nums">
-                        {sl}
-                      </td>
+                  <React.Fragment key={`${d.customerKey}_${idx}`}>
+                    <tr
+                      className={`hover:bg-[var(--primary-color-light)]/40 transition-colors ${
+                        isExpanded
+                          ? "bg-[var(--primary-color-light)]/30 font-medium"
+                          : ""
+                      }`}
+                    >
+                      {isColVisible("sl") && (
+                        <td className="py-2.5 px-3 text-center text-xs text-[var(--ui-text)] tabular-nums">
+                          {sl}
+                        </td>
+                      )}
+                      {isColVisible("customerName") && (
+                        <td className="py-2.5 px-3 text-xs font-semibold text-[var(--ui-text)] max-w-[220px]">
+                          <div className="flex items-center gap-1.5">
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setExpandedCustomerKey(
+                                  isExpanded ? null : d.customerKey
+                                );
+                              }}
+                              className="p-1 rounded text-[var(--ui-text-muted)] hover:text-[var(--primary-color)] hover:bg-[var(--primary-color-light)] transition-colors cursor-pointer shrink-0"
+                              title={
+                                isExpanded
+                                  ? "Collapse History"
+                                  : "Expand Statement & Invoices"
+                              }
+                            >
+                              {isExpanded ? (
+                                <FiChevronDown
+                                  size={13}
+                                  className="text-[var(--primary-color)]"
+                                />
+                              ) : (
+                                <FiChevronRight size={13} />
+                              )}
+                            </button>
+                            <span
+                              onClick={() =>
+                                setExpandedCustomerKey(
+                                  isExpanded ? null : d.customerKey
+                                )
+                              }
+                              className="truncate cursor-pointer hover:text-[var(--primary-color)] transition-colors font-semibold"
+                              title="Click to view statement and invoices"
+                            >
+                              {d.customerName}
+                            </span>
+                          </div>
+                        </td>
+                      )}
+                      {isColVisible("phone") && (
+                        <td className="py-2.5 px-3 text-xs text-[var(--ui-text-muted)] whitespace-nowrap">
+                          {d.customerPhone}
+                        </td>
+                      )}
+                      {isColVisible("address") && (
+                        <td
+                          className="py-2.5 px-3 text-xs text-[var(--ui-text-muted)] max-w-[210px] truncate"
+                          title={d.customerAddress}
+                        >
+                          {d.customerAddress}
+                        </td>
+                      )}
+                      {isColVisible("invoiceCount") && (
+                        <td className="py-2.5 px-3 text-center text-xs text-[var(--ui-text)] tabular-nums">
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setExpandedCustomerKey(
+                                isExpanded ? null : d.customerKey
+                              )
+                            }
+                            className="hover:text-[var(--primary-color)] hover:underline cursor-pointer"
+                            title="Click to view invoices"
+                          >
+                            {d.invoiceCount}
+                          </button>
+                        </td>
+                      )}
+                      {isColVisible("lastSaleDate") && (
+                        <td className="py-2.5 px-3 text-center text-xs text-[var(--ui-text-muted)] whitespace-nowrap">
+                          {formatShortReportDate(d.lastSaleDate)}
+                        </td>
+                      )}
+                      {isColVisible("totalDue") && (
+                        <td className="py-2.5 px-3 text-right text-xs font-bold text-[var(--ui-danger)] tabular-nums whitespace-nowrap">
+                          ৳ {formatMoney(d.totalDue)}
+                        </td>
+                      )}
+                      {isColVisible("actions") && (
+                        <td className="py-2.5 px-3 text-center whitespace-nowrap">
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              const found = adaptedSummaries.find(
+                                (c) => c.customerKey === d.customerKey
+                              );
+                              setSelectedCustomerForDrawer(found || null);
+                              setIsDrawerOpen(true);
+                            }}
+                            className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold text-[var(--primary-color)] bg-[var(--primary-color-light)] hover:bg-[var(--primary-color-muted)]/30 rounded-lg transition-colors cursor-pointer"
+                            title="View Detailed Statement & Invoices"
+                          >
+                            <FiFileText size={12} />
+                            <span>Statement</span>
+                          </button>
+                        </td>
+                      )}
+                    </tr>
+
+                    {/* Inline Collapsible Statement / Invoice Details Section */}
+                    {isExpanded && expandedStatementData && (
+                      <tr className="bg-[var(--ui-surface-muted)]/20 border-b border-[var(--ui-border)]">
+                        <td
+                          colSpan={activeVisibleColumnCount}
+                          className="p-2 sm:p-3 text-left"
+                        >
+                          <div className="flex flex-col gap-2.5 p-3 bg-[var(--ui-surface)] border border-[var(--ui-border)] rounded-xl shadow-xs">
+                            {/* Expanded Description Header */}
+                            <div className="flex flex-wrap items-center justify-between gap-2.5 pb-2.5 border-b border-[var(--ui-border)]">
+                              <div className="flex items-center gap-2.5">
+                                <div className="w-8 h-8 rounded-lg bg-[var(--primary-color-light)] text-[var(--primary-color)] flex items-center justify-center font-bold">
+                                  <FaStore size={14} />
+                                </div>
+                                <div>
+                                  <div className="flex items-center gap-1.5 flex-wrap">
+                                    <span className="font-bold text-xs text-[var(--ui-text)]">
+                                      {d.customerName}
+                                    </span>
+                                    <span className="text-[11px] text-[var(--ui-text-muted)]">
+                                      (Outstanding Due & Invoices)
+                                    </span>
+                                  </div>
+                                  <div className="text-[11px] text-[var(--ui-text-muted)] flex items-center gap-2 mt-0.5 flex-wrap">
+                                    <span>Phone: {d.customerPhone}</span>
+                                    {d.customerAddress && d.customerAddress !== "-" && (
+                                      <>
+                                        <span className="inline-block w-px h-2.5 bg-[var(--ui-border)]" />
+                                        <span>Address: {d.customerAddress}</span>
+                                      </>
+                                    )}
+                                    <span className="inline-block w-px h-2.5 bg-[var(--ui-border)]" />
+                                    <span>Pending Invoices: {d.invoiceCount}</span>
+                                    <span className="inline-block w-px h-2.5 bg-[var(--ui-border)]" />
+                                    <span className="text-[var(--ui-danger)] font-semibold">
+                                      Outstanding Due: ৳ {formatMoney(d.totalDue)}
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
+
+                              <div className="flex items-center gap-2">
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    const found = adaptedSummaries.find(
+                                      (c) => c.customerKey === d.customerKey
+                                    );
+                                    setSelectedCustomerForDrawer(found || null);
+                                    setIsDrawerOpen(true);
+                                  }}
+                                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg border border-[var(--ui-border)] bg-[var(--ui-surface)] hover:bg-[var(--primary-color-light)] text-[var(--primary-color)] transition-colors cursor-pointer"
+                                >
+                                  <FiMaximize2 size={12} />
+                                  <span>Full View</span>
+                                </button>
+                              </div>
+                            </div>
+
+                            {/* Embedded Statement Table */}
+                            <CustomerStatementTable
+                              entries={expandedStatementData.entries}
+                              stats={expandedStatementData.stats}
+                              onViewReceipt={onViewReceipt}
+                            />
+                          </div>
+                        </td>
+                      </tr>
                     )}
-                    {isColVisible("customerName") && (
-                      <td className="py-2.5 px-3 text-xs font-semibold text-[var(--ui-text)] max-w-[200px] truncate">
-                        {d.customerName}
-                      </td>
-                    )}
-                    {isColVisible("phone") && (
-                      <td className="py-2.5 px-3 text-xs text-[var(--ui-text-muted)] whitespace-nowrap">
-                        {d.customerPhone}
-                      </td>
-                    )}
-                    {isColVisible("address") && (
-                      <td
-                        className="py-2.5 px-3 text-xs text-[var(--ui-text-muted)] max-w-[210px] truncate"
-                        title={d.customerAddress}
-                      >
-                        {d.customerAddress}
-                      </td>
-                    )}
-                    {isColVisible("invoiceCount") && (
-                      <td className="py-2.5 px-3 text-center text-xs text-[var(--ui-text)] tabular-nums">
-                        <span className="inline-flex px-2 py-0.5 rounded bg-[var(--ui-surface-sunken)] border border-[var(--ui-border)] text-[11px] font-medium">
-                          {d.invoiceCount}
-                        </span>
-                      </td>
-                    )}
-                    {isColVisible("lastSaleDate") && (
-                      <td className="py-2.5 px-3 text-center text-xs text-[var(--ui-text-muted)] whitespace-nowrap">
-                        {formatShortReportDate(d.lastSaleDate)}
-                      </td>
-                    )}
-                    {isColVisible("totalDue") && (
-                      <td className="py-2.5 px-3 text-right text-xs font-bold text-[var(--ui-danger)] tabular-nums whitespace-nowrap">
-                        ৳ {formatMoney(d.totalDue)}
-                      </td>
-                    )}
-                    {isColVisible("dueShare") && (
-                      <td className="py-2.5 px-3 text-right text-xs font-semibold text-[var(--ui-text)] tabular-nums whitespace-nowrap">
-                        {sharePct}%
-                      </td>
-                    )}
-                  </tr>
+                  </React.Fragment>
                 );
               })}
             </TableBody>
@@ -317,6 +572,22 @@ export const CustomerDueReportTable: React.FC<CustomerDueReportTableProps> = ({
           entityLabel="customers"
         />
       )}
+
+      {/* Full Customer Statement Drawer */}
+      <CustomerStatementDrawer
+        isOpen={isDrawerOpen}
+        onClose={() => {
+          setIsDrawerOpen(false);
+          setSelectedCustomerForDrawer(null);
+        }}
+        selectedCustomer={selectedCustomerForDrawer}
+        allCustomers={adaptedSummaries}
+        onSelectCustomer={(c) => setSelectedCustomerForDrawer(c)}
+        collections={collections}
+        salesList={salesList}
+        rawPartyData={rawPartyData}
+        onViewReceipt={onViewReceipt}
+      />
     </TableContainer>
   );
 };

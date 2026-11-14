@@ -220,7 +220,12 @@ const CustomerCollectionReportPage: React.FC = () => {
         {activeTab === "dues" && (
           <CustomerDueReportTable
             dueRows={dueRows}
+            collections={collections}
+            salesList={salesList}
+            rawPartyData={rawPartyData}
             isLoading={isDueLoading || isDueFetching}
+            onViewReceipt={handleViewReceipt}
+            {...datePickerProps}
           />
         )}
       </div>

@@ -421,3 +421,41 @@ export * from './cash-closing.types';
 export * from './package.types';
 export * from './branch.types';
 export * from './employee.types';
+
+export interface CheckSalesDeletePayload {
+  accessUser?: {
+    phone: string;
+    orgId: number | string;
+    branchId: number | string;
+  };
+  invoiceNo: string;
+}
+
+export interface CheckSalesDeleteResponse {
+  error?: boolean;
+  status?: string;
+  msg?: string;
+  message?: string;
+  canDelete?: boolean;
+  data?: any;
+  [key: string]: any;
+}
+
+export interface DeleteSalesOrderPayload {
+  accessUser?: {
+    phone: string;
+    orgId: number | string;
+    branchId: number | string;
+  };
+  invoiceNo: string;
+  reason?: string;
+}
+
+export interface DeleteSalesOrderResponse {
+  error?: boolean;
+  status?: string;
+  msg?: string;
+  message?: string;
+  data?: any;
+  [key: string]: any;
+}

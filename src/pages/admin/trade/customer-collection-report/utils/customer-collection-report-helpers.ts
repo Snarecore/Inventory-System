@@ -222,15 +222,31 @@ export function normalizeCustomerDueRows(
 
   const dueInvoicesById = new Map<string, Set<string>>();
   const dueInvoicesByPhone = new Map<string, Set<string>>();
+  const lastSaleDateById = new Map<string, string>();
+  const lastSaleDateByPhone = new Map<string, string>();
+
   if (Array.isArray(salesList)) {
     salesList.forEach((s: any, idx: number) => {
-      const due = Number(s.dueAmount ?? s.due_amount ?? 0);
-      if (due <= 0) return;
-      const invNo = String(s.invoiceNo || s.orderNo || s.id || `sale-${idx}`);
       const cId = String(s.customerId ?? s.customer_id ?? "").trim();
       const cPhone = String(
         s.customerPhone ?? s.customer_phone ?? s.phone ?? ""
       ).trim();
+      const rawDate = String(
+        s.salesDate || s.saleDate || s.date || s.createdAt || s.createdDate || ""
+      ).trim();
+
+      if (rawDate) {
+        if (cId && (!lastSaleDateById.has(cId) || rawDate > (lastSaleDateById.get(cId) || ""))) {
+          lastSaleDateById.set(cId, rawDate);
+        }
+        if (cPhone && (!lastSaleDateByPhone.has(cPhone) || rawDate > (lastSaleDateByPhone.get(cPhone) || ""))) {
+          lastSaleDateByPhone.set(cPhone, rawDate);
+        }
+      }
+
+      const due = Number(s.dueAmount ?? s.due_amount ?? 0);
+      if (due <= 0) return;
+      const invNo = String(s.invoiceNo || s.orderNo || s.id || `sale-${idx}`);
 
       if (cId) {
         if (!dueInvoicesById.has(cId)) dueInvoicesById.set(cId, new Set());
@@ -268,6 +284,12 @@ export function normalizeCustomerDueRows(
           ? 1
           : 0;
 
+      const lastSaleDate =
+        String(c.lastSaleDate || "") ||
+        lastSaleDateById.get(idStr) ||
+        (phoneStr ? lastSaleDateByPhone.get(phoneStr) : "") ||
+        "";
+
       return {
         customerKey: getCustomerLookupKey(idStr, phoneStr, c.customerName),
         customerId: idStr,
@@ -275,7 +297,7 @@ export function normalizeCustomerDueRows(
         customerPhone: phoneStr || "-",
         customerAddress: resolvedAddr,
         invoiceCount,
-        lastSaleDate: String(c.lastSaleDate || ""),
+        lastSaleDate,
         totalDue,
       };
     })
@@ -894,17 +916,6 @@ function buildCustomerDueReportColumns(
         content: formatMoney(t.totalDue),
         styles: { textColor: REPORT_RGB.rose },
       }),
-    },
-    {
-      key: "dueShare",
-      excelHeader: "Receivable Share (%)",
-      pdfHeader: "Share (%)",
-      pdfStyle: { halign: "right" },
-      excelValue: (d) =>
-        `${calculateRevenueSharePct(d.totalDue, grandTotalDue)}%`,
-      excelTotalValue: () => "100.0%",
-      pdfCell: (d) => `${calculateRevenueSharePct(d.totalDue, grandTotalDue)}%`,
-      pdfSummaryCell: () => ({ content: "100.0%" }),
     },
   ];
 }

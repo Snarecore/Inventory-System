@@ -1,11 +1,30 @@
 import moment from "moment";
-import { useQuery, type UseQueryOptions } from "@tanstack/react-query";
-import { salesAndReturnQueryKey, salesListQueryKey } from "@/config/query-key";
+import { useQuery, useMutation, useQueryClient, type UseQueryOptions } from "@tanstack/react-query";
+import {
+  salesAndReturnQueryKey,
+  salesListQueryKey,
+  productListQueryKey,
+  customersDueQueryKey,
+  customerInvoicesDueQueryKey,
+  cashBalanceQueryKey,
+  dashboardQueryKey,
+} from "@/config/query-key";
 import apiConfig from "@/config/api.json";
 import { postData } from "@/services/api-service";
 import { buildAccessUser } from "@/utils/access-user";
 import { getPersistedTradeReturns } from "@/utils/trade-return-storage";
-import type { SaleItem } from "@/types";
+import {
+  checkSalesDelete,
+  deleteSalesOrder,
+  validateCheckSalesDeleteResult,
+} from "@/services/sales-service";
+import type {
+  SaleItem,
+  CheckSalesDeletePayload,
+  CheckSalesDeleteResponse,
+  DeleteSalesOrderPayload,
+  DeleteSalesOrderResponse,
+} from "@/types";
 
 export interface UnifiedTradeRecord extends SaleItem {
   isReturnRecord?: boolean;
@@ -735,6 +754,49 @@ export const extractReturnedSalesInvoiceKeysSet = (records: any[]): Set<string> 
   });
 
   return set;
+};
+
+/**
+ * Mutation hook to verify if a sales order can be deleted (/check-sales-delete).
+ */
+export const useCheckSalesDeleteMutation = () => {
+  return useMutation({
+    mutationFn: (payload: CheckSalesDeletePayload) => checkSalesDelete(payload),
+  });
+};
+
+/**
+ * Mutation hook to delete a sales order (/delete-sales-order).
+ * Automatically invalidates sales, returns, dues, product inventory, and cash balances on success.
+ */
+export const useDeleteSalesOrderMutation = (options?: {
+  onSuccess?: (data: DeleteSalesOrderResponse) => void;
+  onError?: (error: any) => void;
+}) => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (payload: DeleteSalesOrderPayload) => deleteSalesOrder(payload),
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: [salesListQueryKey] });
+      queryClient.invalidateQueries({ queryKey: [salesAndReturnQueryKey] });
+      queryClient.invalidateQueries({ queryKey: [productListQueryKey] });
+      queryClient.invalidateQueries({ queryKey: [customersDueQueryKey] });
+      queryClient.invalidateQueries({ queryKey: [customerInvoicesDueQueryKey] });
+      queryClient.invalidateQueries({ queryKey: [cashBalanceQueryKey] });
+      queryClient.invalidateQueries({ queryKey: [dashboardQueryKey] });
+      options?.onSuccess?.(data);
+    },
+    onError: (error) => {
+      options?.onError?.(error);
+    },
+  });
+};
+
+export {
+  checkSalesDelete,
+  deleteSalesOrder,
+  validateCheckSalesDeleteResult,
 };
 
 export default useSalesQuery;

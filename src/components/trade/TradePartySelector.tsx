@@ -71,19 +71,27 @@ export const TradePartySelector: React.FC<TradePartySelectorProps> = ({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Filtered List - encapsulated locally so typing in search does NOT re-render parent form!
+  // Filtered List - instantaneous local search over party list
   const filteredParties = useMemo(() => {
-    if (!debouncedSearch.trim()) return partyList.slice(0, 15);
-    const q = debouncedSearch.toLowerCase().trim();
+    const q = searchQuery.toLowerCase().trim();
+    if (!q) return partyList.slice(0, 100);
     return partyList
       .filter((p) => {
-        const name = (p.name || "").toLowerCase();
-        const phone = (p.phone || "").toLowerCase();
-        const address = (p.address || "").toLowerCase();
-        return name.includes(q) || phone.includes(q) || address.includes(q);
+        const name = String(p.name || p.partyName || p.customerName || "").toLowerCase();
+        const phone = String(p.phone || p.partyPhone || p.customerPhone || p.mobile || "").toLowerCase();
+        const address = String(p.address || p.partyAddress || p.customerAddress || "").toLowerCase();
+        const email = String(p.email || "").toLowerCase();
+        const username = String(p.username || "").toLowerCase();
+        return (
+          name.includes(q) ||
+          phone.includes(q) ||
+          email.includes(q) ||
+          username.includes(q) ||
+          address.includes(q)
+        );
       })
-      .slice(0, 25);
-  }, [partyList, debouncedSearch]);
+      .slice(0, 100);
+  }, [partyList, searchQuery]);
 
   const [highlightedIndex, setHighlightedIndex] = useState(0);
 
@@ -333,7 +341,7 @@ export const TradePartySelector: React.FC<TradePartySelectorProps> = ({
             </div>
           )}
 
-          <div className="max-h-48 overflow-y-auto divide-y divide-[var(--ui-border)]">
+          <div className="max-h-64 overflow-y-auto divide-y divide-[var(--ui-border)]">
             {filteredParties.length > 0 ? (
               filteredParties.map((p, idx) => {
                 const partyKey = p.id ?? p.name;
