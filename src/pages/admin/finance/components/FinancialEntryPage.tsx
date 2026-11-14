@@ -96,11 +96,7 @@ export const FinancialEntryPage: React.FC<FinancialEntryPageProps> = ({ mode }) 
     data: cashBalance = 0,
     refetch: refetchCash,
     isRefetching: isRefetchingCash,
-  } = useCashBalanceQuery({
-    staleTime: 0,
-    refetchOnMount: "always",
-    refetchOnWindowFocus: false,
-  });
+  } = useCashBalanceQuery();
 
   const {
     registeredBankAccounts,

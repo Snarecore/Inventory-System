@@ -19,7 +19,8 @@ const AdminDashboard: React.FC = () => {
   } = useCashBalanceQuery({
     staleTime: 0,
     refetchOnMount: "always",
-    refetchOnWindowFocus: false,
+    refetchOnWindowFocus: true,
+    refetchInterval: 10000,
   });
 
   const {
@@ -31,12 +32,14 @@ const AdminDashboard: React.FC = () => {
     bankOptions: {
       staleTime: 0,
       refetchOnMount: "always",
-      refetchOnWindowFocus: false,
+      refetchOnWindowFocus: true,
+      refetchInterval: 10000,
     },
     mfsOptions: {
       staleTime: 0,
       refetchOnMount: "always",
-      refetchOnWindowFocus: false,
+      refetchOnWindowFocus: true,
+      refetchInterval: 10000,
     },
   });
 

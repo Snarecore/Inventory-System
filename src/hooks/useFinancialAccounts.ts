@@ -90,7 +90,8 @@ export const useBankAccountsQuery = (
     queryFn: fetchBankInfoList,
     staleTime: 0,
     refetchOnMount: "always",
-    refetchOnWindowFocus: false,
+    refetchOnWindowFocus: true,
+    refetchInterval: 15000,
     ...options,
   });
 };
@@ -105,7 +106,8 @@ export const useMfsAccountsQuery = (
     queryFn: fetchMfsUserList,
     staleTime: 0,
     refetchOnMount: "always",
-    refetchOnWindowFocus: false,
+    refetchOnWindowFocus: true,
+    refetchInterval: 15000,
     ...options,
   });
 };

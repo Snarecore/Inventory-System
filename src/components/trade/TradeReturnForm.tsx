@@ -1119,21 +1119,17 @@ export const TradeReturnForm: React.FC<TradeReturnFormProps> = ({ mode }) => {
         queryClient.invalidateQueries({ queryKey: [purchasesDueQueryKey] });
         queryClient.invalidateQueries({ queryKey: [purchasesInvoicesDueQueryKey] });
       }
-      queryClient.invalidateQueries({ queryKey: [productListQueryKey], refetchType: "none" });
-      queryClient.invalidateQueries({ queryKey: [productQueryKey], refetchType: "none" });
-      queryClient.invalidateQueries({ queryKey: [dashboardQueryKey], refetchType: "none" });
+      queryClient.invalidateQueries({ queryKey: [productListQueryKey] });
+      queryClient.invalidateQueries({ queryKey: [productQueryKey] });
+      queryClient.invalidateQueries({ queryKey: [dashboardQueryKey] });
 
-      // Invalidate live balance and transaction queries
-      if (numRefundCash > 0) {
-        queryClient.invalidateQueries({ queryKey: [cashBalanceQueryKey] });
-      }
-      if (numRefundBank > 0) {
-        queryClient.invalidateQueries({ queryKey: [bankInfoListQueryKey] });
-      }
-      if (numRefundMfs > 0) {
-        queryClient.invalidateQueries({ queryKey: [mfsUserListQueryKey] });
-      }
-      queryClient.invalidateQueries({ queryKey: [financialTransactionQueryKey] });
+      // Invalidate live balance and transaction queries actively for real-time UI synchronization
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: [cashBalanceQueryKey] }),
+        queryClient.invalidateQueries({ queryKey: [bankInfoListQueryKey] }),
+        queryClient.invalidateQueries({ queryKey: [mfsUserListQueryKey] }),
+        queryClient.invalidateQueries({ queryKey: [financialTransactionQueryKey] }),
+      ]);
 
       showSuccessToast(`${isSale ? "Sales" : "Purchase"} Return #${generatedReturnNo} created successfully!`);
       setCreatedReturnItem(createdItem);

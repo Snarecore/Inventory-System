@@ -19,6 +19,10 @@ import {
   productListQueryKey,
   partyListQueryKey,
   purchaseChallanSettingsQueryKey,
+  cashBalanceQueryKey,
+  bankInfoListQueryKey,
+  mfsUserListQueryKey,
+  dashboardQueryKey,
 } from "@/config/query-key";
 import { buildAccessUser } from "@/utils/access-user";
 import { getBusinessCode } from "@/utils/auth-storage";
@@ -669,7 +673,15 @@ const CreatePurchaseForm: React.FC = () => {
         mutation,
         url: targetUrl,
         body: purchasePayload,
-        invalidateQueryKey: [purchaseListQueryKey, productListQueryKey, purchaseAndReturnQueryKey],
+        invalidateQueryKey: [
+          purchaseListQueryKey,
+          productListQueryKey,
+          purchaseAndReturnQueryKey,
+          cashBalanceQueryKey,
+          bankInfoListQueryKey,
+          mfsUserListQueryKey,
+          dashboardQueryKey,
+        ],
         showSuccessMessage: true,
         showErrorMessage: true,
       });

@@ -209,16 +209,16 @@ export const usePaymentMutation = () => {
       const hasMfs = payMode === "MFS" || Number(variables.mfsAmount || 0) > 0;
 
       if (hasCash || (!hasCash && !hasBank && !hasMfs)) {
-        queryClient.invalidateQueries({ queryKey: [cashBalanceQueryKey], refetchType: "none" });
+        queryClient.invalidateQueries({ queryKey: [cashBalanceQueryKey] });
       }
       if (hasBank) {
-        queryClient.invalidateQueries({ queryKey: [bankInfoListQueryKey], refetchType: "none" });
+        queryClient.invalidateQueries({ queryKey: [bankInfoListQueryKey] });
       }
       if (hasMfs) {
-        queryClient.invalidateQueries({ queryKey: [mfsUserListQueryKey], refetchType: "none" });
+        queryClient.invalidateQueries({ queryKey: [mfsUserListQueryKey] });
       }
-      queryClient.invalidateQueries({ queryKey: [dashboardQueryKey], refetchType: "none" });
-      queryClient.invalidateQueries({ queryKey: [partyListQueryKey], refetchType: "none" });
+      queryClient.invalidateQueries({ queryKey: [dashboardQueryKey] });
+      queryClient.invalidateQueries({ queryKey: [partyListQueryKey] });
 
       const discText =
         totalDiscount > 0 ? ` (Discount: ৳${formatMoney(totalDiscount)})` : "";

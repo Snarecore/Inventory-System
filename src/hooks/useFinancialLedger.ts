@@ -26,7 +26,7 @@ export const useFinancialLedger = () => {
       if (params.tenders && params.tenders.some((t) => Number(t.amount || 0) > 0)) {
         const promises: Promise<any>[] = [
           queryClient.invalidateQueries({ queryKey: [financialTransactionQueryKey] }),
-          queryClient.invalidateQueries({ queryKey: [dashboardQueryKey], refetchType: "none" }),
+          queryClient.invalidateQueries({ queryKey: [dashboardQueryKey] }),
         ];
 
         const hasCash = params.tenders.some(

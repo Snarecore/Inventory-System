@@ -63,11 +63,7 @@ export const FundTransferPage: React.FC = () => {
     data: cashBalance = 0,
     refetch: refetchCash,
     isRefetching: isRefetchingCash,
-  } = useCashBalanceQuery({
-    staleTime: 0,
-    refetchOnMount: "always",
-    refetchOnWindowFocus: false,
-  });
+  } = useCashBalanceQuery();
 
   const {
     registeredBankAccounts,

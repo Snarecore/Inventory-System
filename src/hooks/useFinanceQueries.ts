@@ -77,8 +77,8 @@ export const useInsertFinancialTransactionMutation = (options?: {
         }
 
         queryClient.invalidateQueries({ queryKey: [financialTransactionQueryKey] });
-        queryClient.invalidateQueries({ queryKey: [dashboardQueryKey], refetchType: "none" });
-        queryClient.invalidateQueries({ queryKey: [financeDashboardQueryKey], refetchType: "none" });
+        queryClient.invalidateQueries({ queryKey: [dashboardQueryKey] });
+        queryClient.invalidateQueries({ queryKey: [financeDashboardQueryKey] });
 
         const actionLabel =
           vars.type === "TRANSFER"

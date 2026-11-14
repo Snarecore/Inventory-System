@@ -17,6 +17,10 @@ import {
   customersDueQueryKey,
   customerInvoicesDueQueryKey,
   collectionReportQueryKey,
+  cashBalanceQueryKey,
+  bankInfoListQueryKey,
+  mfsUserListQueryKey,
+  dashboardQueryKey,
 } from "@/config/query-key";
 import { buildAccessUser } from "@/utils/access-user";
 import { getBusinessCode } from "@/utils/auth-storage";
@@ -602,6 +606,10 @@ export const CreateSaleForm: React.FC = () => {
           customersDueQueryKey,
           customerInvoicesDueQueryKey,
           collectionReportQueryKey,
+          cashBalanceQueryKey,
+          bankInfoListQueryKey,
+          mfsUserListQueryKey,
+          dashboardQueryKey,
         ],
         showSuccessMessage: true,
         showErrorMessage: true,
