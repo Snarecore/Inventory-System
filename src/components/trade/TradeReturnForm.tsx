@@ -2,13 +2,7 @@ import React, { useState, useEffect, useMemo, useRef, useCallback } from "react"
 import { useNavigate, useLocation } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import moment from "moment";
-import {
-  FaUndoAlt,
-  FaBoxOpen,
-  FaPrint,
-  FaCalendarAlt,
-  FaSpinner,
-} from "react-icons/fa";
+import { FaUndoAlt, FaBoxOpen, FaPrint, FaCalendarAlt, FaSpinner } from "react-icons/fa";
 import Button from "@/components/button/Button";
 import ConfirmModal from "@/components/modal/ConfirmModal";
 import DatePicker from "@/components/common/DatePicker";
@@ -27,10 +21,12 @@ import {
   purchasesDueQueryKey,
   purchasesInvoicesDueQueryKey,
   tradeReturnCandidatesQueryKey,
+  cashBalanceQueryKey,
+  bankInfoListQueryKey,
+  mfsUserListQueryKey,
+  financialTransactionQueryKey,
 } from "@/config/query-key";
 import { useFinancialAccounts } from "@/hooks/useFinancialAccounts";
-import { useFinancialLedger } from "@/hooks/useFinancialLedger";
-import { cashLeg, bankLeg, mfsLeg, type TradeTender } from "@/services/financial-ledger-service";
 import { buildAccessUser, withBranchScope } from "@/utils/access-user";
 import { postData } from "@/services/api-service";
 import { formatMoney } from "@/utils/formatters";
@@ -82,7 +78,6 @@ export const TradeReturnForm: React.FC<TradeReturnFormProps> = ({ mode }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const queryClient = useQueryClient();
-  const { recordTradeLedger } = useFinancialLedger();
   const { allProducts = [] } = useTradeProducts();
 
   const productLookup = useMemo(() => {
@@ -758,6 +753,7 @@ export const TradeReturnForm: React.FC<TradeReturnFormProps> = ({ mode }) => {
   const tradeRefund = useTradeRefund({
     selectedRecord: selectedOrder,
     refundAmount: totals.refundAmount,
+    returnMode: returnType,
     registeredBankAccounts,
     registeredMfsAccounts,
     autoSyncCash: true,
@@ -800,7 +796,32 @@ export const TradeReturnForm: React.FC<TradeReturnFormProps> = ({ mode }) => {
           };
         })
       );
+    } else {
+      // In Partial mode: initially return qty is 0 and items are not selected
+      setLines((prev) =>
+        prev.map((l) => ({
+          ...l,
+          quantity: 0,
+          isSelected: false,
+          lineTotal: 0,
+        }))
+      );
     }
+  };
+
+  const handleSelectAllInPartial = () => {
+    if (returnType === "FULL") return;
+    setLines((prev) =>
+      prev.map((l) => {
+        const q = l.availableQuantity;
+        return {
+          ...l,
+          quantity: q > 0 ? q : 0,
+          isSelected: q > 0,
+          lineTotal: Number(((q > 0 ? q : 0) * l.sellPrice).toFixed(2)),
+        };
+      })
+    );
   };
 
   const handleClearAllQty = () => {
@@ -821,10 +842,14 @@ export const TradeReturnForm: React.FC<TradeReturnFormProps> = ({ mode }) => {
     setLines((prev) => {
       const copy = [...prev];
       const target = { ...copy[idx] };
-      target.isSelected = !target.isSelected;
-      if (target.isSelected && target.quantity === 0) {
-        target.quantity = target.availableQuantity;
+      const nextSelected = !target.isSelected;
+      target.isSelected = nextSelected;
+      if (nextSelected && target.quantity === 0) {
+        target.quantity = target.availableQuantity > 0 ? target.availableQuantity : 1;
         target.lineTotal = Number((target.quantity * target.sellPrice).toFixed(2));
+      } else if (!nextSelected) {
+        target.quantity = 0;
+        target.lineTotal = 0;
       }
       copy[idx] = target;
       return copy;
@@ -1098,33 +1123,17 @@ export const TradeReturnForm: React.FC<TradeReturnFormProps> = ({ mode }) => {
       queryClient.invalidateQueries({ queryKey: [productQueryKey], refetchType: "none" });
       queryClient.invalidateQueries({ queryKey: [dashboardQueryKey], refetchType: "none" });
 
-      // Financial Ledger entry
-      if (totals.refundAmount > 0) {
-        try {
-          const refundTenders: TradeTender[] = [
-            { amount: numRefundCash, leg: cashLeg() },
-            { amount: numRefundBank, leg: bankLeg(matchedBank) },
-            { amount: numRefundMfs, leg: mfsLeg(matchedMfs) },
-          ].filter((t) => t.amount > 0);
-
-          if (refundTenders.length > 0) {
-            const itemSummary = activeLines.map((l) => l.productName).filter(Boolean).join(", ");
-            await recordTradeLedger({
-              tradeType: isSale ? "EXPENSE" : "INCOME",
-              invoiceNo: invoiceNo || generatedReturnNo,
-              refNo: generatedReturnNo,
-              partyId,
-              head: isSale ? "Customer Sales Return Refund" : "Supplier Purchase Return Refund",
-              itemsSummary: itemSummary,
-              tenders: refundTenders,
-              notes: `Auto ${isSale ? "Sales" : "Purchase"} Return: ${generatedReturnNo} (${itemSummary})`,
-              date: returnDate,
-            });
-          }
-        } catch (ledgerErr) {
-          console.warn("Ledger record warning:", ledgerErr);
-        }
+      // Invalidate live balance and transaction queries
+      if (numRefundCash > 0) {
+        queryClient.invalidateQueries({ queryKey: [cashBalanceQueryKey] });
       }
+      if (numRefundBank > 0) {
+        queryClient.invalidateQueries({ queryKey: [bankInfoListQueryKey] });
+      }
+      if (numRefundMfs > 0) {
+        queryClient.invalidateQueries({ queryKey: [mfsUserListQueryKey] });
+      }
+      queryClient.invalidateQueries({ queryKey: [financialTransactionQueryKey] });
 
       showSuccessToast(`${isSale ? "Sales" : "Purchase"} Return #${generatedReturnNo} created successfully!`);
       setCreatedReturnItem(createdItem);
@@ -1290,7 +1299,7 @@ export const TradeReturnForm: React.FC<TradeReturnFormProps> = ({ mode }) => {
                 <div className="flex items-center gap-1.5">
                   <button
                     type="button"
-                    onClick={() => handleSetReturnMode("FULL")}
+                    onClick={handleSelectAllInPartial}
                     className="px-2 py-1 text-[11px] font-semibold bg-[var(--primary-color-light)] text-[var(--primary-color)] hover:bg-[var(--primary-color-muted)] rounded transition-colors cursor-pointer"
                   >
                     Select All
