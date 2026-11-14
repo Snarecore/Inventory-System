@@ -422,16 +422,18 @@ export * from './package.types';
 export * from './branch.types';
 export * from './employee.types';
 
-export interface CheckSalesDeletePayload {
-  accessUser?: {
-    phone: string;
-    orgId: number | string;
-    branchId: number | string;
-  };
+export interface TradeDeleteAccessUser {
+  phone: string;
+  orgId: number | string;
+  branchId: number | string;
+}
+
+export interface CheckTradeDeletePayload {
+  accessUser?: TradeDeleteAccessUser;
   invoiceNo: string;
 }
 
-export interface CheckSalesDeleteResponse {
+export interface CheckTradeDeleteResponse {
   error?: boolean;
   status?: string;
   msg?: string;
@@ -441,17 +443,13 @@ export interface CheckSalesDeleteResponse {
   [key: string]: any;
 }
 
-export interface DeleteSalesOrderPayload {
-  accessUser?: {
-    phone: string;
-    orgId: number | string;
-    branchId: number | string;
-  };
+export interface DeleteTradeOrderPayload {
+  accessUser?: TradeDeleteAccessUser;
   invoiceNo: string;
   reason?: string;
 }
 
-export interface DeleteSalesOrderResponse {
+export interface DeleteTradeOrderResponse {
   error?: boolean;
   status?: string;
   msg?: string;
@@ -460,40 +458,14 @@ export interface DeleteSalesOrderResponse {
   [key: string]: any;
 }
 
-export interface CheckPurchaseDeletePayload {
-  accessUser?: {
-    phone: string;
-    orgId: number | string;
-    branchId: number | string;
-  };
-  invoiceNo: string;
-}
+// Aliases for Sales deletion
+export type CheckSalesDeletePayload = CheckTradeDeletePayload;
+export type CheckSalesDeleteResponse = CheckTradeDeleteResponse;
+export type DeleteSalesOrderPayload = DeleteTradeOrderPayload;
+export type DeleteSalesOrderResponse = DeleteTradeOrderResponse;
 
-export interface CheckPurchaseDeleteResponse {
-  error?: boolean;
-  status?: string;
-  msg?: string;
-  message?: string;
-  canDelete?: boolean;
-  data?: any;
-  [key: string]: any;
-}
-
-export interface DeletePurchaseOrderPayload {
-  accessUser?: {
-    phone: string;
-    orgId: number | string;
-    branchId: number | string;
-  };
-  invoiceNo: string;
-  reason?: string;
-}
-
-export interface DeletePurchaseOrderResponse {
-  error?: boolean;
-  status?: string;
-  msg?: string;
-  message?: string;
-  data?: any;
-  [key: string]: any;
-}
+// Aliases for Purchase deletion
+export type CheckPurchaseDeletePayload = CheckTradeDeletePayload;
+export type CheckPurchaseDeleteResponse = CheckTradeDeleteResponse;
+export type DeletePurchaseOrderPayload = DeleteTradeOrderPayload;
+export type DeletePurchaseOrderResponse = DeleteTradeOrderResponse;
