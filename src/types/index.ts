@@ -459,3 +459,41 @@ export interface DeleteSalesOrderResponse {
   data?: any;
   [key: string]: any;
 }
+
+export interface CheckPurchaseDeletePayload {
+  accessUser?: {
+    phone: string;
+    orgId: number | string;
+    branchId: number | string;
+  };
+  invoiceNo: string;
+}
+
+export interface CheckPurchaseDeleteResponse {
+  error?: boolean;
+  status?: string;
+  msg?: string;
+  message?: string;
+  canDelete?: boolean;
+  data?: any;
+  [key: string]: any;
+}
+
+export interface DeletePurchaseOrderPayload {
+  accessUser?: {
+    phone: string;
+    orgId: number | string;
+    branchId: number | string;
+  };
+  invoiceNo: string;
+  reason?: string;
+}
+
+export interface DeletePurchaseOrderResponse {
+  error?: boolean;
+  status?: string;
+  msg?: string;
+  message?: string;
+  data?: any;
+  [key: string]: any;
+}

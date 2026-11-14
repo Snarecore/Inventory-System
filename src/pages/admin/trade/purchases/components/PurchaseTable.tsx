@@ -62,6 +62,7 @@ interface PurchaseTableProps {
   onView: (purchase: PurchaseItem) => void;
   onPrint: (purchase: PurchaseItem) => void;
   onReturn?: (purchase: PurchaseItem) => void;
+  onDelete?: (purchase: PurchaseItem) => void;
   onExport?: () => void;
 }
 
@@ -113,10 +114,11 @@ export const PurchaseTable: React.FC<PurchaseTableProps> = ({
   onView,
   onPrint,
   onReturn,
+  onDelete,
   onExport,
 }) => {
   const navigate = useNavigate();
-  const { canUpdate, canCreate } = usePermission();
+  const { canUpdate, canCreate, canDelete } = usePermission();
   const [isSupplierDropdownOpen, setIsSupplierDropdownOpen] = useState<boolean>(false);
   const [supplierSearchQuery, setSupplierSearchQuery] = useState<string>("");
   const [copiedId, setCopiedId] = useState<string | number | null>(null);
@@ -629,6 +631,7 @@ export const PurchaseTable: React.FC<PurchaseTableProps> = ({
                             onView={() => onView(purchase)}
                             onPrint={() => onPrint(purchase)}
                             onEdit={canUpdate("purchase") ? () => onEdit(purchase) : undefined}
+                            onDelete={canDelete("purchase") && onDelete ? () => onDelete(purchase) : undefined}
                             onReturn={
                               (canCreate("purchase_return") || canCreate("purchase"))
                                 ? () => {

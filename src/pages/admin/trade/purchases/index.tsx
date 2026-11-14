@@ -9,6 +9,7 @@ import PurchaseStats from "./components/PurchaseStats";
 import PurchaseTable from "./components/PurchaseTable";
 import PurchaseInvoiceModal from "./components/PurchaseInvoiceModal";
 import ChallanSettingsModal from "./components/ChallanSettingsModal";
+import DeleteModal from "@/components/modal/DeleteModal";
 import TradeReturnStats from "@/components/trade/TradeReturnStats";
 import PurchaseReturnTable from "@/pages/admin/trade/purchase-return/components/PurchaseReturnTable";
 import PurchaseReturnInvoiceModal from "@/pages/admin/trade/purchase-return/components/PurchaseReturnInvoiceModal";
@@ -20,7 +21,11 @@ import {
   extractReturnedPurchaseKeysSet,
   normalizePurchaseRecord,
   isPurchaseReturnRecord,
+  checkPurchaseDelete,
+  validateCheckPurchaseDeleteResult,
+  useDeletePurchaseOrderMutation,
 } from "./hooks/usePurchaseQueries";
+import { showSuccessToast, showErrorToast } from "@/utils/toast-utils";
 import { getCleanOrderNo } from "@/pages/admin/trade/sales/hooks/useSalesQueries";
 import { useDebounce } from "@/hooks/useDebounce";
 import { usePermission } from "@/hooks/usePermission";
@@ -60,6 +65,10 @@ const Purchases: React.FC = () => {
   const [isPurchaseInvoiceModalOpen, setIsPurchaseInvoiceModalOpen] = useState<boolean>(false);
   const [selectedPurchaseForInvoice, setSelectedPurchaseForInvoice] = useState<PurchaseItem | null>(null);
   const [isChallanSettingsOpen, setIsChallanSettingsOpen] = useState<boolean>(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState<boolean>(false);
+  const [selectedPurchaseForDelete, setSelectedPurchaseForDelete] = useState<PurchaseItem | null>(null);
+  const [deleteReason, setDeleteReason] = useState<string>("");
+  const deleteMutation = useDeletePurchaseOrderMutation();
 
   // Modals - Returns
   const [isReturnInvoiceModalOpen, setIsReturnInvoiceModalOpen] = useState<boolean>(false);
@@ -621,6 +630,79 @@ const Purchases: React.FC = () => {
     });
   };
 
+  // Step 1: Check if purchase order can be deleted using /check-purchase-delete
+  const handleDeletePurchase = async (purchase: PurchaseItem) => {
+    const invNo = String(
+      purchase.invoiceNo ||
+      purchase.purchaseInvoiceNo ||
+      (purchase as any).invoice_no ||
+      purchase.orderNo ||
+      (purchase as any).order_no ||
+      purchase.challanNo ||
+      purchase.id ||
+      ""
+    ).trim();
+
+    if (!invNo) {
+      showErrorToast("Invoice number is missing for this purchase order.");
+      return;
+    }
+
+    try {
+      const res = await checkPurchaseDelete({ invoiceNo: invNo });
+      const validation = validateCheckPurchaseDeleteResult(res);
+
+      if (!validation.canDelete) {
+        showErrorToast(validation.message || "Purchase order cannot be deleted or was not found.");
+        return;
+      }
+
+      // If found in step 1, open standard DeleteModal
+      setSelectedPurchaseForDelete(purchase);
+      setDeleteReason("");
+      setIsDeleteModalOpen(true);
+    } catch (err: any) {
+      showErrorToast(err?.message || "Failed to verify purchase order for deletion.");
+    }
+  };
+
+  // Step 2: Delete purchase order using /delete-purchase-order
+  const handleConfirmDelete = async () => {
+    if (!selectedPurchaseForDelete) return;
+
+    const invNo = String(
+      selectedPurchaseForDelete.invoiceNo ||
+      selectedPurchaseForDelete.purchaseInvoiceNo ||
+      (selectedPurchaseForDelete as any).invoice_no ||
+      selectedPurchaseForDelete.orderNo ||
+      (selectedPurchaseForDelete as any).order_no ||
+      selectedPurchaseForDelete.challanNo ||
+      selectedPurchaseForDelete.id ||
+      ""
+    ).trim();
+
+    if (!invNo) {
+      showErrorToast("Invoice number is missing.");
+      return;
+    }
+
+    try {
+      const res = await deleteMutation.mutateAsync({
+        invoiceNo: invNo,
+        reason: deleteReason.trim() || "Deleted by user",
+      });
+
+      showSuccessToast(res?.msg || res?.message || "Purchase order deleted successfully!");
+      setIsDeleteModalOpen(false);
+      setSelectedPurchaseForDelete(null);
+      setDeleteReason("");
+      refetchPurchases();
+      refetchCombined();
+    } catch (err: any) {
+      showErrorToast(err?.message || "Failed to delete purchase order.");
+    }
+  };
+
   // Actions - Returns
   const handleViewReturn = (item: PurchaseReturnItem) => {
     setSelectedReturnForInvoice(item);
@@ -781,6 +863,7 @@ const Purchases: React.FC = () => {
           onEdit={handleEditPurchase}
           onView={handleViewPurchase}
           onPrint={handlePrintPurchase}
+          onDelete={handleDeletePurchase}
         />
       ) : (
         <PurchaseReturnTable
@@ -842,6 +925,33 @@ const Purchases: React.FC = () => {
         isOpen={isChallanSettingsOpen}
         onClose={() => setIsChallanSettingsOpen(false)}
       />
+
+      {/* Delete Confirmation Modal using shared DeleteModal */}
+      <DeleteModal
+        isOpen={isDeleteModalOpen}
+        title="Delete Purchase Order"
+        message={`Are you sure you want to delete purchase order "${getCleanOrderNo(selectedPurchaseForDelete?.orderNo, selectedPurchaseForDelete?.invoiceNo || selectedPurchaseForDelete?.purchaseInvoiceNo) || selectedPurchaseForDelete?.invoiceNo}"?`}
+        onClose={() => {
+          setIsDeleteModalOpen(false);
+          setSelectedPurchaseForDelete(null);
+          setDeleteReason("");
+        }}
+        onDelete={handleConfirmDelete}
+        isLoading={deleteMutation.isPending}
+      >
+        <div className="mt-2 text-left w-full">
+          <label className="block text-xs font-medium text-[var(--ui-text-muted)] mb-1">
+            Reason for deletion (ডিলিট করার কারণ)
+          </label>
+          <input
+            type="text"
+            value={deleteReason}
+            onChange={(e) => setDeleteReason(e.target.value)}
+            placeholder="e.g. Order cancelled, wrong entry, returned items..."
+            className="w-full text-xs px-3 py-2 rounded-md border border-[var(--ui-border-strong)] bg-[var(--ui-surface)] text-[var(--ui-text)] focus:outline-none focus:border-[var(--primary-color)]"
+          />
+        </div>
+      </DeleteModal>
     </div>
   );
 };

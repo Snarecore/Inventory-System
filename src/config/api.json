@@ -58,7 +58,9 @@
         "insertPurchasesUrl": "insert-purchases",
         "updatePurchasesUrl": "update-purchases",
         "purchaseChallanSettingsUrl": "get-purchase-challan-settings",
-        "insertOrUpdatePurchaseChallanSettingsUrl": "insert-or-update-purchase-challan-settings"
+        "insertOrUpdatePurchaseChallanSettingsUrl": "insert-or-update-purchase-challan-settings",
+        "checkPurchaseDeleteUrl": "check-purchase-delete",
+        "deletePurchaseOrderUrl": "delete-purchase-order"
     },
     "purchaseReturn": {
         "getPurchaseAndReturnListUrl": "get-purchase-and-return-list",

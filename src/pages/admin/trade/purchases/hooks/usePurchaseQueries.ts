@@ -1,10 +1,29 @@
-import { useQuery, type UseQueryOptions } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient, type UseQueryOptions } from "@tanstack/react-query";
 import moment from "moment";
-import { purchaseAndReturnQueryKey, purchaseListQueryKey } from "@/config/query-key";
+import {
+  purchaseAndReturnQueryKey,
+  purchaseListQueryKey,
+  productListQueryKey,
+  purchasesDueQueryKey,
+  purchasesInvoicesDueQueryKey,
+  cashBalanceQueryKey,
+  dashboardQueryKey,
+} from "@/config/query-key";
 import apiConfig from "@/config/api.json";
 import { postData } from "@/services/api-service";
 import { buildAccessUser } from "@/utils/access-user";
-import type { PurchaseItem } from "@/types";
+import {
+  checkPurchaseDelete,
+  deletePurchaseOrder,
+  validateCheckPurchaseDeleteResult,
+} from "@/services/purchase-service";
+import type {
+  PurchaseItem,
+  CheckPurchaseDeletePayload,
+  CheckPurchaseDeleteResponse,
+  DeletePurchaseOrderPayload,
+  DeletePurchaseOrderResponse,
+} from "@/types";
 import { getPersistedPurchaseReturns } from "@/utils/trade-return-storage";
 import { getCleanOrderNo } from "@/pages/admin/trade/sales/hooks/useSalesQueries";
 
@@ -708,3 +727,46 @@ export const extractReturnedPurchaseKeysSet = (records: any[]): Set<string> => {
 
 /** Backward compatibility alias */
 export const extractReturnedInvoiceKeysSet = extractReturnedPurchaseKeysSet;
+
+/**
+ * Mutation hook to verify if a purchase order can be deleted (/check-purchase-delete).
+ */
+export const useCheckPurchaseDeleteMutation = () => {
+  return useMutation({
+    mutationFn: (payload: CheckPurchaseDeletePayload) => checkPurchaseDelete(payload),
+  });
+};
+
+/**
+ * Mutation hook to delete a purchase order (/delete-purchase-order).
+ * Automatically invalidates purchases, purchase-returns, dues, inventory, and cash balances on success.
+ */
+export const useDeletePurchaseOrderMutation = (options?: {
+  onSuccess?: (data: DeletePurchaseOrderResponse) => void;
+  onError?: (error: any) => void;
+}) => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (payload: DeletePurchaseOrderPayload) => deletePurchaseOrder(payload),
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: [purchaseListQueryKey] });
+      queryClient.invalidateQueries({ queryKey: [purchaseAndReturnQueryKey] });
+      queryClient.invalidateQueries({ queryKey: [productListQueryKey] });
+      queryClient.invalidateQueries({ queryKey: [purchasesDueQueryKey] });
+      queryClient.invalidateQueries({ queryKey: [purchasesInvoicesDueQueryKey] });
+      queryClient.invalidateQueries({ queryKey: [cashBalanceQueryKey] });
+      queryClient.invalidateQueries({ queryKey: [dashboardQueryKey] });
+      options?.onSuccess?.(data);
+    },
+    onError: (error) => {
+      options?.onError?.(error);
+    },
+  });
+};
+
+export {
+  checkPurchaseDelete,
+  deletePurchaseOrder,
+  validateCheckPurchaseDeleteResult,
+};
