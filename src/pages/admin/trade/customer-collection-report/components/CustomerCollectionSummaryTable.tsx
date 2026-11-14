@@ -1,5 +1,12 @@
 import React, { useMemo, useState } from "react";
-import { FiChevronDown, FiRotateCcw } from "react-icons/fi";
+import {
+  FiChevronDown,
+  FiChevronRight,
+  FiRotateCcw,
+  FiFileText,
+  FiMaximize2,
+} from "react-icons/fi";
+import { FaStore, FaFileExcel, FaFilePdf } from "react-icons/fa";
 import Search from "@/components/table-components/Search";
 import ReportDateRangeControl from "@/components/reports/ReportDateRangeControl";
 import ReportExportButtons from "@/components/reports/ReportExportButtons";
@@ -26,18 +33,30 @@ import {
   formatShortReportDate,
   type ReportDateFilterProps,
 } from "@/utils/trade-report-helpers";
+import type { CollectionReceiptData } from "@/pages/admin/trade/customer-collection/components/CollectionReceiptModal";
 import {
   type NormalizedCollectionRecord,
   type NormalizedCustomerDueRow,
+  type CustomerCollectionSummary,
   aggregateCustomerCollections,
+  buildCustomerStatementEntries,
   exportCustomerCollectionSummaryExcel,
   downloadCustomerCollectionSummaryPdf,
+  exportCustomerStatementExcel,
+  downloadCustomerStatementPdf,
+  exportCustomerWiseDetailedExcel,
+  downloadCustomerWiseDetailedPdf,
 } from "../utils/customer-collection-report-helpers";
+import CustomerStatementTable from "./CustomerStatementTable";
+import CustomerStatementDrawer from "./CustomerStatementDrawer";
 
 interface CustomerCollectionSummaryTableProps extends ReportDateFilterProps {
   collections: NormalizedCollectionRecord[];
   dueRows: NormalizedCustomerDueRow[];
+  salesList?: any[];
+  rawPartyData?: any;
   isLoading?: boolean;
+  onViewReceipt?: (receipt: CollectionReceiptData) => void;
 }
 
 const AVAILABLE_COLUMNS: ColumnItem[] = [
@@ -52,11 +71,20 @@ const AVAILABLE_COLUMNS: ColumnItem[] = [
   { key: "totalCollected", label: "Total Collected (৳)" },
   { key: "currentDue", label: "Remaining Due (৳)" },
   { key: "lastCollectionDate", label: "Last Collection" },
+  { key: "actions", label: "History" },
 ];
 
 export const CustomerCollectionSummaryTable: React.FC<
   CustomerCollectionSummaryTableProps
-> = ({ collections, dueRows, isLoading, ...dateFilterProps }) => {
+> = ({
+  collections,
+  dueRows,
+  salesList = [],
+  rawPartyData,
+  isLoading,
+  onViewReceipt,
+  ...dateFilterProps
+}) => {
   const companyMeta = useReportCompanyMeta(
     dateFilterProps.startDate,
     dateFilterProps.endDate
@@ -67,6 +95,12 @@ export const CustomerCollectionSummaryTable: React.FC<
   const [sortBy, setSortBy] = useState<string>("collected_desc");
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
+
+  // Expandable row & Drawer states
+  const [expandedCustomerKey, setExpandedCustomerKey] = useState<string | null>(null);
+  const [selectedCustomerForDrawer, setSelectedCustomerForDrawer] =
+    useState<CustomerCollectionSummary | null>(null);
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 
   const {
     visibleColumns,
@@ -119,6 +153,31 @@ export const CustomerCollectionSummaryTable: React.FC<
     setSortBy("collected_desc");
     setCurrentPage(1);
   };
+
+  // Compute statement data for currently expanded row
+  const expandedStatementData = useMemo(() => {
+    if (!expandedCustomerKey) return null;
+    const target = summaries.find((c) => c.customerKey === expandedCustomerKey);
+    if (!target) return null;
+    return buildCustomerStatementEntries(
+      target,
+      collections,
+      salesList,
+      rawPartyData,
+      {
+        startDate: dateFilterProps.startDate,
+        endDate: dateFilterProps.endDate,
+      }
+    );
+  }, [
+    expandedCustomerKey,
+    summaries,
+    collections,
+    salesList,
+    rawPartyData,
+    dateFilterProps.startDate,
+    dateFilterProps.endDate,
+  ]);
 
   return (
     <TableContainer>
@@ -186,20 +245,82 @@ export const CustomerCollectionSummaryTable: React.FC<
 
           <ReportExportButtons
             onExportExcel={async () => {
-              const count = await exportCustomerCollectionSummaryExcel(
+              const targetCustomer =
+                (expandedCustomerKey
+                  ? filtered.find((c) => c.customerKey === expandedCustomerKey)
+                  : null) ||
+                (filtered.length === 1 ? filtered[0] : null);
+
+              if (targetCustomer) {
+                const stmt = buildCustomerStatementEntries(
+                  targetCustomer,
+                  collections,
+                  salesList,
+                  rawPartyData,
+                  {
+                    startDate: dateFilterProps.startDate,
+                    endDate: dateFilterProps.endDate,
+                  }
+                );
+                const count = await exportCustomerStatementExcel(
+                  targetCustomer,
+                  stmt.entries,
+                  companyMeta
+                );
+                return `Exported ${count} statement entries for ${targetCustomer.customerName} to Excel!`;
+              }
+
+              const count = await exportCustomerWiseDetailedExcel(
                 filtered,
+                collections,
+                salesList,
+                rawPartyData,
                 companyMeta,
-                visibleColumns
+                {
+                  startDate: dateFilterProps.startDate,
+                  endDate: dateFilterProps.endDate,
+                }
               );
-              return `Exported ${count} customer collection summaries to Excel!`;
+              return `Exported ${count} customer transactions and summary to Excel!`;
             }}
             onDownloadPdf={async () => {
-              await downloadCustomerCollectionSummaryPdf(
+              const targetCustomer =
+                (expandedCustomerKey
+                  ? filtered.find((c) => c.customerKey === expandedCustomerKey)
+                  : null) ||
+                (filtered.length === 1 ? filtered[0] : null);
+
+              if (targetCustomer) {
+                const stmt = buildCustomerStatementEntries(
+                  targetCustomer,
+                  collections,
+                  salesList,
+                  rawPartyData,
+                  {
+                    startDate: dateFilterProps.startDate,
+                    endDate: dateFilterProps.endDate,
+                  }
+                );
+                await downloadCustomerStatementPdf(
+                  targetCustomer,
+                  stmt.entries,
+                  companyMeta
+                );
+                return `Customer statement PDF downloaded for ${targetCustomer.customerName}!`;
+              }
+
+              await downloadCustomerWiseDetailedPdf(
                 filtered,
+                collections,
+                salesList,
+                rawPartyData,
                 companyMeta,
-                visibleColumns
+                {
+                  startDate: dateFilterProps.startDate,
+                  endDate: dateFilterProps.endDate,
+                }
               );
-              return "Customer-wise collection summary PDF downloaded!";
+              return "Customer-wise detailed collection report PDF downloaded!";
             }}
           />
         </div>
@@ -267,83 +388,251 @@ export const CustomerCollectionSummaryTable: React.FC<
                   Last Collection
                 </TableTh>
               )}
+              {isColVisible("actions") && (
+                <TableTh align="center" className="whitespace-nowrap w-24">
+                  History
+                </TableTh>
+              )}
             </TableHead>
 
             <TableBody>
               {paginated.map((c, idx) => {
                 const sl = (safePage - 1) * pageSize + idx + 1;
+                const isExpanded = expandedCustomerKey === c.customerKey;
 
                 return (
-                  <tr
-                    key={`${c.customerKey}_${idx}`}
-                    className="hover:bg-[var(--primary-color-light)]/40 transition-colors"
-                  >
-                    {isColVisible("sl") && (
-                      <td className="py-2.5 px-3 text-center text-xs text-[var(--ui-text)] tabular-nums">
-                        {sl}
-                      </td>
+                  <React.Fragment key={`${c.customerKey}_${idx}`}>
+                    <tr
+                      className={`hover:bg-[var(--primary-color-light)]/40 transition-colors ${
+                        isExpanded ? "bg-[var(--primary-color-light)]/30 font-medium" : ""
+                      }`}
+                    >
+                      {isColVisible("sl") && (
+                        <td className="py-2.5 px-3 text-center text-xs text-[var(--ui-text)] tabular-nums">
+                          {sl}
+                        </td>
+                      )}
+                      {isColVisible("customerName") && (
+                        <td className="py-2.5 px-3 text-xs font-semibold text-[var(--ui-text)] max-w-[220px]">
+                          <div className="flex items-center gap-1.5">
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setExpandedCustomerKey(isExpanded ? null : c.customerKey);
+                              }}
+                              className="p-1 rounded text-[var(--ui-text-muted)] hover:text-[var(--primary-color)] hover:bg-[var(--primary-color-light)] transition-colors cursor-pointer shrink-0"
+                              title={isExpanded ? "Collapse History" : "Expand Statement History"}
+                            >
+                              {isExpanded ? (
+                                <FiChevronDown size={13} className="text-[var(--primary-color)]" />
+                              ) : (
+                                <FiChevronRight size={13} />
+                              )}
+                            </button>
+                            <span
+                              onClick={() => setExpandedCustomerKey(isExpanded ? null : c.customerKey)}
+                              className="truncate cursor-pointer hover:text-[var(--primary-color)] transition-colors"
+                              title="Click to view statement history"
+                            >
+                              {c.customerName}
+                            </span>
+                          </div>
+                        </td>
+                      )}
+                      {isColVisible("phone") && (
+                        <td className="py-2.5 px-3 text-xs text-[var(--ui-text-muted)] whitespace-nowrap">
+                          {c.customerPhone}
+                        </td>
+                      )}
+                      {isColVisible("voucherCount") && (
+                        <td className="py-2.5 px-3 text-center text-xs text-[var(--ui-text)] tabular-nums">
+                          {c.voucherCount}
+                        </td>
+                      )}
+                      {isColVisible("billsSettled") && (
+                        <td className="py-2.5 px-3 text-center text-xs text-[var(--ui-text)] tabular-nums">
+                          {c.billsSettled}
+                        </td>
+                      )}
+                      {isColVisible("cashPaid") && (
+                        <td className="py-2.5 px-3 text-right text-xs text-[var(--ui-text)] tabular-nums whitespace-nowrap">
+                          ৳ {formatMoney(c.cashPaid)}
+                        </td>
+                      )}
+                      {isColVisible("digitalPaid") && (
+                        <td className="py-2.5 px-3 text-right text-xs text-[var(--primary-color)] tabular-nums whitespace-nowrap">
+                          {c.digitalPaid > 0
+                            ? `৳ ${formatMoney(c.digitalPaid)}`
+                            : "-"}
+                        </td>
+                      )}
+                      {isColVisible("totalDiscount") && (
+                        <td className="py-2.5 px-3 text-right text-xs text-amber-600 tabular-nums whitespace-nowrap">
+                          {c.totalDiscount > 0
+                            ? `৳ ${formatMoney(c.totalDiscount)}`
+                            : "-"}
+                        </td>
+                      )}
+                      {isColVisible("totalCollected") && (
+                        <td className="py-2.5 px-3 text-right text-xs font-bold text-[var(--ui-success)] tabular-nums whitespace-nowrap">
+                          ৳ {formatMoney(c.totalCollected)}
+                        </td>
+                      )}
+                      {isColVisible("currentDue") && (
+                        <td className="py-2.5 px-3 text-right text-xs font-semibold tabular-nums whitespace-nowrap">
+                          {c.currentDue > 0 ? (
+                            <span className="text-[var(--ui-danger)]">
+                              ৳ {formatMoney(c.currentDue)}
+                            </span>
+                          ) : (
+                            <span className="text-[var(--ui-text-subtle)]">-</span>
+                          )}
+                        </td>
+                      )}
+                      {isColVisible("lastCollectionDate") && (
+                        <td className="py-2.5 px-3 text-center text-xs text-[var(--ui-text-muted)] whitespace-nowrap">
+                          {formatShortReportDate(c.lastCollectionDate)}
+                        </td>
+                      )}
+                      {isColVisible("actions") && (
+                        <td className="py-2.5 px-3 text-center whitespace-nowrap">
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedCustomerForDrawer(c);
+                              setIsDrawerOpen(true);
+                            }}
+                            className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold text-[var(--primary-color)] bg-[var(--primary-color-light)] hover:bg-[var(--primary-color-muted)]/30 rounded-lg transition-colors cursor-pointer"
+                            title="View Detailed Statement"
+                          >
+                            <FiFileText size={12} />
+                            <span>Statement</span>
+                          </button>
+                        </td>
+                      )}
+                    </tr>
+
+                    {/* Inline Collapsible Description Section */}
+                    {isExpanded && expandedStatementData && (
+                      <tr className="bg-[var(--ui-surface-muted)]/20 border-b border-[var(--ui-border)]">
+                        <td
+                          colSpan={activeVisibleColumnCount}
+                          className="p-2 sm:p-3 text-left"
+                        >
+                          <div className="flex flex-col gap-2.5 p-3 bg-[var(--ui-surface)] border border-[var(--ui-border)] rounded-xl shadow-xs">
+                            {/* Expanded Description Header */}
+                            <div className="flex flex-wrap items-center justify-between gap-2.5 pb-2.5 border-b border-[var(--ui-border)]">
+                              <div className="flex items-center gap-2.5">
+                                <div className="w-8 h-8 rounded-lg bg-[var(--primary-color-light)] text-[var(--primary-color)] flex items-center justify-center font-bold">
+                                  <FaStore size={14} />
+                                </div>
+                                <div>
+                                  <div className="flex items-center gap-1.5 flex-wrap">
+                                    <span className="font-bold text-xs text-[var(--ui-text)]">
+                                      {c.customerName}
+                                    </span>
+                                    <span className="text-[11px] text-[var(--ui-text-muted)]">
+                                      • Statement History
+                                    </span>
+                                  </div>
+                                  <div className="text-[11px] text-[var(--ui-text-muted)] flex items-center gap-2 mt-0.5 flex-wrap">
+                                    <span>Phone: {c.customerPhone}</span>
+                                    <span>•</span>
+                                    <span>Vouchers: {c.voucherCount}</span>
+                                    <span>•</span>
+                                    <span>
+                                      Total Sales:{" "}
+                                      <strong className="text-[var(--ui-text)] font-semibold">
+                                        ৳ {formatMoney(expandedStatementData.stats.totalSales)}
+                                      </strong>
+                                    </span>
+                                    <span>•</span>
+                                    <span>
+                                      Total Collected:{" "}
+                                      <strong className="text-[var(--ui-success)] font-semibold">
+                                        ৳ {formatMoney(expandedStatementData.stats.totalCollected)}
+                                      </strong>
+                                    </span>
+                                    <span>•</span>
+                                    <span
+                                      className={
+                                        c.currentDue > 0
+                                          ? "text-[var(--ui-danger)] font-bold"
+                                          : "text-[var(--ui-success)] font-bold"
+                                      }
+                                    >
+                                      Remaining Due: ৳ {formatMoney(c.currentDue)}
+                                      {c.currentDue === 0 && (
+                                        <span className="ml-1 text-[10px] font-medium text-[var(--ui-text-muted)]">
+                                          (Fully Cleared)
+                                        </span>
+                                      )}
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
+
+                              <div className="flex items-center gap-1.5">
+                                <button
+                                  type="button"
+                                  onClick={async () => {
+                                    await exportCustomerStatementExcel(
+                                      c,
+                                      expandedStatementData.entries,
+                                      companyMeta
+                                    );
+                                  }}
+                                  className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-lg border border-[var(--ui-border)] bg-[var(--ui-surface)] hover:bg-emerald-50 dark:hover:bg-emerald-950/30 text-emerald-600 transition-colors cursor-pointer"
+                                  title="Export This Customer Statement to Excel"
+                                >
+                                  <FaFileExcel size={12} />
+                                  <span>Excel</span>
+                                </button>
+
+                                <button
+                                  type="button"
+                                  onClick={async () => {
+                                    await downloadCustomerStatementPdf(
+                                      c,
+                                      expandedStatementData.entries,
+                                      companyMeta
+                                    );
+                                  }}
+                                  className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-lg border border-[var(--ui-border)] bg-[var(--ui-surface)] hover:bg-rose-50 dark:hover:bg-rose-950/30 text-rose-600 transition-colors cursor-pointer"
+                                  title="Download This Customer Statement PDF"
+                                >
+                                  <FaFilePdf size={12} />
+                                  <span>PDF</span>
+                                </button>
+
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setSelectedCustomerForDrawer(c);
+                                    setIsDrawerOpen(true);
+                                  }}
+                                  className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-lg border border-[var(--ui-border)] bg-[var(--ui-surface)] hover:bg-[var(--primary-color-light)] text-[var(--primary-color)] transition-colors cursor-pointer"
+                                  title="Open Full Statement Drawer"
+                                >
+                                  <FiMaximize2 size={12} />
+                                  <span>Full View</span>
+                                </button>
+                              </div>
+                            </div>
+
+                            {/* Embedded Statement Table */}
+                            <CustomerStatementTable
+                              entries={expandedStatementData.entries}
+                              stats={expandedStatementData.stats}
+                              onViewReceipt={onViewReceipt}
+                            />
+                          </div>
+                        </td>
+                      </tr>
                     )}
-                    {isColVisible("customerName") && (
-                      <td className="py-2.5 px-3 text-xs font-semibold text-[var(--ui-text)] max-w-[200px] truncate">
-                        {c.customerName}
-                      </td>
-                    )}
-                    {isColVisible("phone") && (
-                      <td className="py-2.5 px-3 text-xs text-[var(--ui-text-muted)] whitespace-nowrap">
-                        {c.customerPhone}
-                      </td>
-                    )}
-                    {isColVisible("voucherCount") && (
-                      <td className="py-2.5 px-3 text-center text-xs text-[var(--ui-text)] tabular-nums">
-                        {c.voucherCount}
-                      </td>
-                    )}
-                    {isColVisible("billsSettled") && (
-                      <td className="py-2.5 px-3 text-center text-xs text-[var(--ui-text)] tabular-nums">
-                        {c.billsSettled}
-                      </td>
-                    )}
-                    {isColVisible("cashPaid") && (
-                      <td className="py-2.5 px-3 text-right text-xs text-[var(--ui-text)] tabular-nums whitespace-nowrap">
-                        ৳ {formatMoney(c.cashPaid)}
-                      </td>
-                    )}
-                    {isColVisible("digitalPaid") && (
-                      <td className="py-2.5 px-3 text-right text-xs text-[var(--primary-color)] tabular-nums whitespace-nowrap">
-                        {c.digitalPaid > 0
-                          ? `৳ ${formatMoney(c.digitalPaid)}`
-                          : "-"}
-                      </td>
-                    )}
-                    {isColVisible("totalDiscount") && (
-                      <td className="py-2.5 px-3 text-right text-xs text-amber-600 tabular-nums whitespace-nowrap">
-                        {c.totalDiscount > 0
-                          ? `৳ ${formatMoney(c.totalDiscount)}`
-                          : "-"}
-                      </td>
-                    )}
-                    {isColVisible("totalCollected") && (
-                      <td className="py-2.5 px-3 text-right text-xs font-bold text-[var(--ui-success)] tabular-nums whitespace-nowrap">
-                        ৳ {formatMoney(c.totalCollected)}
-                      </td>
-                    )}
-                    {isColVisible("currentDue") && (
-                      <td className="py-2.5 px-3 text-right text-xs font-semibold tabular-nums whitespace-nowrap">
-                        {c.currentDue > 0 ? (
-                          <span className="text-[var(--ui-danger)]">
-                            ৳ {formatMoney(c.currentDue)}
-                          </span>
-                        ) : (
-                          <span className="text-[var(--ui-text-subtle)]">-</span>
-                        )}
-                      </td>
-                    )}
-                    {isColVisible("lastCollectionDate") && (
-                      <td className="py-2.5 px-3 text-center text-xs text-[var(--ui-text-muted)] whitespace-nowrap">
-                        {formatShortReportDate(c.lastCollectionDate)}
-                      </td>
-                    )}
-                  </tr>
+                  </React.Fragment>
                 );
               })}
             </TableBody>
@@ -365,6 +654,22 @@ export const CustomerCollectionSummaryTable: React.FC<
           entityLabel="customers"
         />
       )}
+
+      {/* Customer Statement Drawer with Dropdown & Export */}
+      <CustomerStatementDrawer
+        isOpen={isDrawerOpen}
+        onClose={() => {
+          setIsDrawerOpen(false);
+          setSelectedCustomerForDrawer(null);
+        }}
+        selectedCustomer={selectedCustomerForDrawer}
+        allCustomers={summaries}
+        onSelectCustomer={(cust) => setSelectedCustomerForDrawer(cust)}
+        collections={collections}
+        salesList={salesList}
+        rawPartyData={rawPartyData}
+        onViewReceipt={onViewReceipt}
+      />
     </TableContainer>
   );
 };

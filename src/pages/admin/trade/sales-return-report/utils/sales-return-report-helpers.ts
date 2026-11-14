@@ -221,6 +221,38 @@ function deriveReturnStatuses(records: UnifiedTradeRecord[]): Map<any, string> {
   >();
 
   returnEntries.forEach(({ record }) => {
+    // 1. Direct Backend field if provided (returnType, return_type, or status)
+    const explicitReturnType = String(
+      record.returnType || record.return_type || record.returnMode || ""
+    ).trim().toUpperCase();
+
+    if (
+      explicitReturnType === "FULL" ||
+      explicitReturnType === "FULL_RETURN" ||
+      explicitReturnType === "FULL RETURN"
+    ) {
+      statuses.set(record, "Full Return");
+      return;
+    }
+    if (
+      explicitReturnType === "PARTIAL" ||
+      explicitReturnType === "PARTIAL_RETURN" ||
+      explicitReturnType === "PARTIAL RETURN"
+    ) {
+      statuses.set(record, "Partial Return");
+      return;
+    }
+
+    const explicitStatus = String(record.status || "").trim();
+    if (
+      explicitStatus &&
+      explicitStatus.toUpperCase() !== "RETURN" &&
+      explicitStatus.toUpperCase() !== "UNKNOWN"
+    ) {
+      statuses.set(record, explicitStatus);
+      return;
+    }
+
     const references = getTradeReferences(record);
     const saleContext = references
       .map((reference) => salesByReference.get(reference))
@@ -400,6 +432,11 @@ export function extractNormalizedSalesReturns(
       }
     );
 
+    const explicitItemReturnType = String(
+      item.returnType || item.return_type || item.returnMode || ""
+    ).trim().toUpperCase();
+    const explicitItemStatus = String(item.status || "").trim();
+
     const rawItem: SalesReturnItem = {
       id:
         item.id ||
@@ -424,7 +461,20 @@ export function extractNormalizedSalesReturns(
       grandTotal,
       refundAmount,
       paymentType,
-      status: returnStatuses.get(item) || "Unknown",
+      status:
+        explicitItemReturnType === "FULL" ||
+        explicitItemReturnType === "FULL_RETURN" ||
+        explicitItemReturnType === "FULL RETURN"
+          ? "Full Return"
+          : explicitItemReturnType === "PARTIAL" ||
+            explicitItemReturnType === "PARTIAL_RETURN" ||
+            explicitItemReturnType === "PARTIAL RETURN"
+          ? "Partial Return"
+          : explicitItemStatus &&
+            explicitItemStatus.toUpperCase() !== "RETURN" &&
+            explicitItemStatus.toUpperCase() !== "UNKNOWN"
+          ? explicitItemStatus
+          : returnStatuses.get(item) || "Unknown",
       note: reasonSummary === "N/A" ? "" : reasonSummary,
       remarks: reasonSummary === "N/A" ? "" : reasonSummary,
       returnDetails: rawLines,

@@ -77,7 +77,10 @@ export const normalizePurchaseRecord = (item: any): PurchaseItem => {
     (Array.isArray(item?.purchaseReturnDetails) && item.purchaseReturnDetails.length > 0)
   );
 
-  const cleanOrderNo = getCleanOrderNo(item?.orderNo, item?.invoiceNo || item?.purchaseInvoiceNo);
+  const cleanOrderNo = getCleanOrderNo(
+    item?.orderNo || item?.order_no || item?.orderId || item?.order_id || item?.purchaseOrderNo,
+    item?.invoiceNo || item?.purchaseInvoiceNo || item?.invoice_no
+  );
 
   return {
     ...item,

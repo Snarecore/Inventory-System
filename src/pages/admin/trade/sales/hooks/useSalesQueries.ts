@@ -28,39 +28,30 @@ export const extractLineItems = (item: any): any[] => {
   return [];
 };
 
-export const KNOWN_ORDER_NO_MAP: Record<string, string> = {
-  "28488-20261111161945980": "000335",
-  "28488-20261111155405691": "000332",
-  "28488-20261111155125811": "000331",
-  "28488-20261111154517508": "000330",
-  "28488-20261111152631227": "000329",
-  "28488-20261111150740326": "000328",
-  "28488-20261111150005700": "000327",
-  "28488-20261111142809844": "000326",
-  "28488-20261111142132918": "000325",
-  "28488-20261111141351413": "000324",
-  "28488-20261111133248474": "000323",
-  "28488-20261102160913854": "000210",
-  "28488-20261024104243407": "000168",
-};
 
 export const getCleanOrderNo = (orderNo?: string | null, invoiceNo?: string | null): string => {
-  if (orderNo && !orderNo.includes("-") && /^\d{3,8}$/.test(orderNo.trim())) {
-    return orderNo.trim();
+  const ord = String(orderNo || "").trim();
+  const inv = String(invoiceNo || "").trim();
+
+  // 1. Direct priority to real database/backend orderNo (e.g., "000335", "ORD-101", "332")
+  if (ord && !/^\d{3,}-\d{10,}$/.test(ord)) {
+    return ord;
   }
-  const inv = String(invoiceNo || orderNo || "").trim();
-  if (KNOWN_ORDER_NO_MAP[inv]) {
-    return KNOWN_ORDER_NO_MAP[inv];
+
+  // 2. Direct priority to clean invoiceNo
+  if (inv && !/^\d{3,}-\d{10,}$/.test(inv)) {
+    return inv;
   }
-  if (orderNo && !orderNo.includes("-") && orderNo.trim().length > 0) {
-    return orderNo.trim();
-  }
-  if (inv.includes("-")) {
-    const parts = inv.split("-");
+
+  // 3. Fallback for raw auto-generated timestamp strings (businessCode-YYYYMMDDHHmmssSSS)
+  const target = ord || inv;
+  if (target.includes("-")) {
+    const parts = target.split("-");
     const suffix = parts[parts.length - 1];
     return `ORD-${suffix.slice(-6)}`;
   }
-  return orderNo || inv;
+
+  return target || "";
 };
 
 /**
@@ -102,7 +93,10 @@ export const normalizeSaleRecord = (item: any): SaleItem => {
     (Array.isArray(item?.salesReturnDetails) && item.salesReturnDetails.length > 0)
   );
 
-  const cleanOrderNo = getCleanOrderNo(item?.orderNo, item?.invoiceNo || item?.salesInvoiceNo);
+  const cleanOrderNo = getCleanOrderNo(
+    item?.orderNo || item?.order_no || item?.orderId || item?.order_id || item?.saleOrderNo,
+    item?.invoiceNo || item?.salesInvoiceNo || item?.invoice_no
+  );
 
   return {
     ...item,

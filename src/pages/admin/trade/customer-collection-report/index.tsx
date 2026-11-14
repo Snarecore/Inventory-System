@@ -209,7 +209,10 @@ const CustomerCollectionReportPage: React.FC = () => {
           <CustomerCollectionSummaryTable
             collections={collections}
             dueRows={dueRows}
+            salesList={salesList}
+            rawPartyData={rawPartyData}
             isLoading={isLoading}
+            onViewReceipt={handleViewReceipt}
             {...datePickerProps}
           />
         )}
