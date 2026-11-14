@@ -16,7 +16,7 @@ export const useTradeProductSearch = ({
   mode = "sale",
   onAddProduct,
   onToggleProduct,
-  maxResults = 10,
+  maxResults,
 }: UseTradeProductSearchOptions) => {
   const [searchQuery, setSearchQuery] = useState<string>("");
   const debouncedSearch = useDebounce(searchQuery, 150);
@@ -37,16 +37,21 @@ export const useTradeProductSearch = ({
 
   // Filtered Products for Search Dropdown (Instant O(N) in-memory filter)
   const filteredProducts = useMemo(() => {
-    if (!debouncedSearch.trim()) return allProducts.slice(0, maxResults);
+    if (!debouncedSearch.trim()) {
+      return typeof maxResults === "number" && maxResults > 0
+        ? allProducts.slice(0, maxResults)
+        : allProducts;
+    }
     const q = debouncedSearch.toLowerCase().trim();
-    return allProducts
-      .filter((p) => {
-        const name = (p.name || "").toLowerCase();
-        const code = (p.productCode || p.pcode || "").toLowerCase();
-        const barcode = (p.barcode || "").toLowerCase();
-        return name.includes(q) || code.includes(q) || barcode.includes(q);
-      })
-      .slice(0, maxResults);
+    const matched = allProducts.filter((p) => {
+      const name = (p.name || "").toLowerCase();
+      const code = (p.productCode || p.pcode || "").toLowerCase();
+      const barcode = (p.barcode || "").toLowerCase();
+      return name.includes(q) || code.includes(q) || barcode.includes(q);
+    });
+    return typeof maxResults === "number" && maxResults > 0
+      ? matched.slice(0, maxResults)
+      : matched;
   }, [allProducts, debouncedSearch, maxResults]);
 
   // Find Product STRICTLY By barcode or pcode

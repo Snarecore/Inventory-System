@@ -104,10 +104,10 @@ export const TradeProductSearch: React.FC<TradeProductSearchProps> = ({
 
       {/* Product Dropdown */}
       {isDropdownOpen && (
-        <div className="absolute left-2.5 right-2.5 mt-1 bg-[var(--ui-surface)] rounded-[var(--ui-radius)] shadow-[var(--ui-shadow-popover)] border border-[var(--ui-border)] max-h-72 overflow-y-auto z-20 divide-y divide-[var(--ui-border)]">
+        <div className="absolute left-2.5 right-2.5 mt-1 bg-[var(--ui-surface)] rounded-[var(--ui-radius)] shadow-[var(--ui-shadow-popover)] border border-[var(--ui-border)] max-h-80 sm:max-h-96 overflow-y-auto z-20 divide-y divide-[var(--ui-border)]">
           {/* Header */}
           <div className="px-3 py-1.5 bg-[var(--ui-surface-muted)] border-b border-[var(--ui-border)] flex items-center justify-between text-[10px] font-semibold text-[var(--ui-text-muted)] uppercase tracking-wider sticky top-0 z-10">
-            <span>Select Product</span>
+            <span>Select Product ({filteredProducts.length})</span>
             <div className="flex items-center gap-6 pr-2">
               <span>Stock</span>
               <span>{mode === "purchase" ? "Buy Rate" : "Sale Rate"}</span>
