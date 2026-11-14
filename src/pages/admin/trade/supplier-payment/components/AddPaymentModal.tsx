@@ -68,21 +68,29 @@ export const AddPaymentModal: React.FC<AddPaymentModalProps> = ({
     if (isOpen && supplier) {
       setAmountInput("");
       setPaymentMode("Cash");
-      setSelectedBankId(
-        registeredBankAccounts.length > 0
-          ? String(registeredBankAccounts[0].id || registeredBankAccounts[0].bankId || "")
-          : ""
-      );
-      setSelectedMfsId(
-        registeredMfsAccounts.length > 0
-          ? String(registeredMfsAccounts[0].id || registeredMfsAccounts[0].mfsId || "")
-          : ""
-      );
       setPaymentDate(moment().format("YYYY-MM-DD"));
       setRemark("");
       setSelectedInvoiceNos(new Set());
     }
-  }, [isOpen, supplier, registeredBankAccounts, registeredMfsAccounts]);
+  }, [isOpen, supplier?.supplierId]);
+
+  // Set default bank if not selected
+  useEffect(() => {
+    if (!selectedBankId && registeredBankAccounts.length > 0) {
+      setSelectedBankId(
+        String(registeredBankAccounts[0].id || registeredBankAccounts[0].bankId || "")
+      );
+    }
+  }, [registeredBankAccounts, selectedBankId]);
+
+  // Set default MFS if not selected
+  useEffect(() => {
+    if (!selectedMfsId && registeredMfsAccounts.length > 0) {
+      setSelectedMfsId(
+        String(registeredMfsAccounts[0].id || registeredMfsAccounts[0].mfsId || "")
+      );
+    }
+  }, [registeredMfsAccounts, selectedMfsId]);
 
   // Derived Account Objects
   const selectedBankObj =

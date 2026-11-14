@@ -88,26 +88,21 @@ export const useBankAccountsQuery = (
   return useQuery({
     queryKey: [bankInfoListQueryKey],
     queryFn: fetchBankInfoList,
-    staleTime: 0,
-    refetchOnMount: "always",
-    refetchOnWindowFocus: true,
-    refetchInterval: 15000,
+    staleTime: 60 * 1000,
+    refetchOnWindowFocus: false,
     ...options,
   });
 };
 
-// Enterprise standard hook for fetching and caching MFS Accounts. Defaults to real-time refetching on mount and window focus.
-
+// Enterprise standard hook for fetching and caching MFS Accounts.
 export const useMfsAccountsQuery = (
   options?: Omit<UseQueryOptions<any>, "queryKey" | "queryFn">
 ) => {
   return useQuery({
     queryKey: [mfsUserListQueryKey],
     queryFn: fetchMfsUserList,
-    staleTime: 0,
-    refetchOnMount: "always",
-    refetchOnWindowFocus: true,
-    refetchInterval: 15000,
+    staleTime: 60 * 1000,
+    refetchOnWindowFocus: false,
     ...options,
   });
 };

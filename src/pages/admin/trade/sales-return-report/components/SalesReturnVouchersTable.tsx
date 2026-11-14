@@ -44,7 +44,6 @@ interface SalesReturnVouchersTableProps extends ReportDateFilterProps {
 
 const AVAILABLE_COLUMNS: ColumnItem[] = [
   { key: "sl", label: "SL" },
-  { key: "returnNo", label: "Return No" },
   { key: "orderId", label: "Order ID" },
   { key: "returnDate", label: "Return Date" },
   { key: "customer", label: "Customer" },
@@ -153,7 +152,7 @@ export const SalesReturnVouchersTable: React.FC<
                 setSearchQuery(val);
                 setCurrentPage(1);
               }}
-              placeholder="Search return, order id, customer..."
+              placeholder="Search order id, customer..."
             />
           </div>
 
@@ -257,9 +256,6 @@ export const SalesReturnVouchersTable: React.FC<
                   SL
                 </TableTh>
               )}
-              {isColVisible("returnNo") && (
-                <TableTh className="w-px whitespace-nowrap">Return No</TableTh>
-              )}
               {isColVisible("orderId") && (
                 <TableTh className="w-px whitespace-nowrap">
                   Order ID
@@ -333,19 +329,15 @@ export const SalesReturnVouchersTable: React.FC<
                         {sl}
                       </td>
                     )}
-                    {isColVisible("returnNo") && (
+                    {isColVisible("orderId") && (
                       <td className="py-2.5 px-3 text-xs font-semibold text-[var(--primary-color)] whitespace-nowrap">
                         <span
                           onClick={() => onView(r.raw)}
                           className="cursor-pointer hover:underline"
+                          title="View Return Voucher"
                         >
-                          {r.returnNo}
+                          {r.orderNo}
                         </span>
-                      </td>
-                    )}
-                    {isColVisible("orderId") && (
-                      <td className="py-2.5 px-3 text-xs text-[var(--ui-text-muted)] whitespace-nowrap">
-                        {r.orderNo}
                       </td>
                     )}
                     {isColVisible("returnDate") && (

@@ -610,14 +610,6 @@ function buildSalesReturnVoucherColumns(
       pdfCell: (_, idx) => idx + 1,
     },
     {
-      key: "returnNo",
-      excelHeader: "Return No",
-      isLeadingLabel: true,
-      pdfStyle: { halign: "left" },
-      excelValue: (r) => r.returnNo,
-      pdfCell: (r) => r.returnNo,
-    },
-    {
       key: "orderId",
       excelHeader: "Order ID",
       isLeadingLabel: true,

@@ -1136,7 +1136,6 @@ export function exportSalesReturnToExcel(
     return {
       SL: index + 1,
       "Order ID": item.orderNo || "",
-      "Return No": item.returnNo || "",
       "Return Date": item.returnDate || todayStr,
       "Original Invoice": item.salesInvoiceNo || item.invoiceNo || "",
       "Customer Name": item.customerName || "Walk-in Customer",
@@ -1153,7 +1152,6 @@ export function exportSalesReturnToExcel(
   const totalRow = {
     SL: "TOTAL",
     "Order ID": `Total Returns: ${returns.length}`,
-    "Return No": "",
     "Return Date": "",
     "Original Invoice": "",
     "Customer Name": "",
