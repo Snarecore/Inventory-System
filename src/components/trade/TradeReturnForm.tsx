@@ -4,12 +4,10 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import moment from "moment";
 import {
   FaUndoAlt,
-  FaSearch,
-  FaTimes,
   FaBoxOpen,
   FaPrint,
-  FaArrowLeft,
   FaCalendarAlt,
+  FaSpinner,
 } from "react-icons/fa";
 import Button from "@/components/button/Button";
 import ConfirmModal from "@/components/modal/ConfirmModal";
@@ -37,7 +35,6 @@ import { buildAccessUser, withBranchScope } from "@/utils/access-user";
 import { postData } from "@/services/api-service";
 import { formatMoney } from "@/utils/formatters";
 import { showSuccessToast, showErrorToast } from "@/utils/toast-utils";
-import { useDebounce } from "@/hooks/useDebounce";
 import { RETURN_REASONS, PURCHASE_RETURN_REASONS } from "@/pages/admin/trade/constants/returnReasons";
 import { useTradeRefund } from "@/hooks/useTradeRefund";
 import TradeRefundSection from "@/components/trade/TradeRefundSection";
@@ -78,6 +75,9 @@ export interface TradeReturnFormProps {
   mode: "sale" | "purchase";
 }
 
+const cleanKey = (val: unknown): string =>
+  String(val || "").replace(/[^a-zA-Z0-9]/g, "").toUpperCase();
+
 export const TradeReturnForm: React.FC<TradeReturnFormProps> = ({ mode }) => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -107,14 +107,11 @@ export const TradeReturnForm: React.FC<TradeReturnFormProps> = ({ mode }) => {
 
   // Selected Order / Invoice
   const [selectedOrder, setSelectedOrder] = useState<any | null>(null);
-  const [invoiceQuery, setInvoiceQuery] = useState("");
-  const debouncedInvoiceQuery = useDebounce(invoiceQuery, 250);
-  const [isInvoiceDropdownOpen, setIsInvoiceDropdownOpen] = useState(false);
-  const invoiceDropdownRef = useRef<HTMLDivElement>(null);
 
   // Return Header Fields
   const [returnDate, setReturnDate] = useState(moment().format("YYYY-MM-DD"));
-  const [status] = useState("Return");
+  const status = "Return";
+  const [returnType, setReturnType] = useState<"FULL" | "PARTIAL">("FULL");
   const [note, setNote] = useState("");
 
   // Customer / Supplier Info
@@ -128,7 +125,7 @@ export const TradeReturnForm: React.FC<TradeReturnFormProps> = ({ mode }) => {
   // Line items
   const [lines, setLines] = useState<TradeReturnLineItem[]>([]);
   const [hasJustSubmitted, setHasJustSubmitted] = useState(false);
-  const hasInitializedStateOrderRef = useRef(false);
+  const lastLoadedOrderKeyRef = useRef<string>("");
 
   // Modals
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
@@ -147,13 +144,7 @@ export const TradeReturnForm: React.FC<TradeReturnFormProps> = ({ mode }) => {
     return isSale ? await fetchSalesAndReturnList() : await fetchPurchaseAndReturnList();
   }, [isSale]);
 
-  const {
-    data: apiOrdersAndReturnData = [],
-    isLoading: isLoadingOrders,
-    isError: isOrdersError,
-    error: ordersError,
-    refetch: refetchOrders,
-  } = useQuery({
+  const { data: apiOrdersAndReturnData = [], isLoading: isLoadingOrders } = useQuery({
     queryKey: [
       tradeReturnCandidatesQueryKey,
       mode,
@@ -163,6 +154,10 @@ export const TradeReturnForm: React.FC<TradeReturnFormProps> = ({ mode }) => {
       accessUser.branchId,
     ],
     queryFn: fetchOrdersAndReturnList,
+    initialData: () => {
+      const existing = queryClient.getQueryData(isSale ? [salesAndReturnQueryKey] : [purchaseAndReturnQueryKey]);
+      return Array.isArray(existing) && existing.length > 0 ? (existing as any[]) : undefined;
+    },
     staleTime: 30 * 1000,
     refetchOnWindowFocus: false,
   });
@@ -176,8 +171,6 @@ export const TradeReturnForm: React.FC<TradeReturnFormProps> = ({ mode }) => {
       if (Array.isArray(order.returns) && order.returns.length > 0) return true;
       if (Array.isArray(order.purchaseReturns) && order.purchaseReturns.length > 0) return true;
       if (Array.isArray(order.salesReturns) && order.salesReturns.length > 0) return true;
-
-      const cleanKey = (val: any) => String(val || "").replace(/[^a-zA-Z0-9]/g, "").toUpperCase();
 
       const targetKeys = [
         isSale ? order.salesInvoiceNo : (order.purchaseInvoiceNo || order.purchase_invoice_no),
@@ -270,72 +263,12 @@ export const TradeReturnForm: React.FC<TradeReturnFormProps> = ({ mode }) => {
     [apiOrdersAndReturnData, isSale]
   );
 
-  // Indexing candidates (already returned orders are excluded: cannot be returned more than once)
-  const { candidateOrders } = useMemo(() => {
-    const candidateMap = new Map<string, any>();
-    const idx = new Map<string, any>();
-
-    const cleanKey = (val: any) => String(val || "").replace(/[^a-zA-Z0-9]/g, "").toUpperCase();
-
-    const addIndex = (prefix: string, keyVal: string, item: any) => {
-      const cleaned = cleanKey(keyVal);
-      if (cleaned) {
-        idx.set(`${prefix}:${cleaned}`, item);
-        idx.set(`EXACT:${cleaned}`, item);
-      }
-    };
-
-    const addCandidate = (item: any) => {
-      if (!item || typeof item !== "object") return;
-
-      // Exclude pure return vouchers so only authentic orders/invoices appear as candidates
-      const isReturnVoucher =
-        item.isReturnRecord === true ||
-        (typeof item.refNo === "string" && (item.refNo.startsWith("PR-") || item.refNo.startsWith("SR-")) && !item.invoiceNo) ||
-        (Boolean(item.returnNo) && !item.invoiceNo && !item.purchaseInvoiceNo && !item.salesInvoiceNo && !item.orderNo && !item.challanNo);
-
-      if (isReturnVoucher) return;
-
-      // Sales er moto purchase return-o ek bar er beshi kora jabe na: exclude already returned orders
-      if (isOrderAlreadyReturned(item)) return;
-
-      const itemInv = isSale
-        ? String(item.salesInvoiceNo || item.invoiceNo || "").trim()
-        : String(item.purchaseInvoiceNo || item.invoiceNo || "").trim();
-
-      const itemRef = isSale
-        ? String(item.orderNo || "").trim()
-        : String(item.challanNo || "").trim();
-
-      const itemId = String(item.id || item.saleId || item.purchaseId || "").trim();
-
-      const uniqueKey = itemInv || itemRef || itemId;
-      if (!uniqueKey || candidateMap.has(uniqueKey)) return;
-
-      candidateMap.set(uniqueKey, item);
-
-      if (itemInv) addIndex("INV", itemInv, item);
-      if (itemRef) addIndex("REF", itemRef, item);
-      if (itemId) addIndex("ID", itemId, item);
-    };
-
-    if (Array.isArray(apiOrdersAndReturnData)) {
-      apiOrdersAndReturnData.forEach((item) => addCandidate(item));
-    }
-
-    return {
-      candidateOrders: Array.from(candidateMap.values()),
-      orderIndex: idx,
-    };
-  }, [apiOrdersAndReturnData, isSale, isOrderAlreadyReturned]);
-
   // Returned quantities map across API returns, nested returns, and local persisted vouchers
   const getReturnedQuantitiesForOrder = useCallback(
     (order: any) => {
       const returnedQtyMap: Record<string, number> = {};
       if (!order) return returnedQtyMap;
 
-      const cleanKey = (val: any) => String(val || "").replace(/[^a-zA-Z0-9]/g, "").toUpperCase();
       const targetInv = cleanKey(isSale ? (order.salesInvoiceNo || order.invoiceNo) : (order.purchaseInvoiceNo || order.invoiceNo));
       const targetRef = cleanKey(isSale ? order.orderNo : order.challanNo);
       const targetId = cleanKey(order.id || (isSale ? order.saleId || order.sale_id : order.purchaseId || order.purchase_id));
@@ -459,6 +392,18 @@ export const TradeReturnForm: React.FC<TradeReturnFormProps> = ({ mode }) => {
     [apiOrdersAndReturnData, isSale]
   );
 
+  // Helper to extract line items from order record
+  const getOrderDetails = useCallback(
+    (record: any): any[] => {
+      if (!record || typeof record !== "object") return [];
+      const candidates = isSale
+        ? [record.salesDetails, record.saleDetails, record.saleDetailsList, record.details, record.items, record.products]
+        : [record.purchaseDetails, record.purchasesDetails, record.details, record.items, record.products];
+      return candidates.find((details) => Array.isArray(details) && details.length > 0) || [];
+    },
+    [isSale]
+  );
+
   // Load order into form with product line deduplication & return tracking
   const loadOrder = useCallback(
     (order: any) => {
@@ -473,11 +418,11 @@ export const TradeReturnForm: React.FC<TradeReturnFormProps> = ({ mode }) => {
         setSelectedOrder(null);
         setLines([]);
         setInvoiceNo("");
-        setInvoiceQuery("");
         return;
       }
 
       setSelectedOrder(order);
+      setReturnType("FULL");
 
       const inv = isSale
         ? String(order.salesInvoiceNo || order.invoiceNo || order.orderNo || "").trim()
@@ -489,7 +434,6 @@ export const TradeReturnForm: React.FC<TradeReturnFormProps> = ({ mode }) => {
 
       setInvoiceNo(inv);
       setRefOrderOrChallan(ref);
-      setInvoiceQuery(inv || ref);
 
       if (isSale) {
         setPartyId(order.customerId || order.customer_id);
@@ -505,30 +449,37 @@ export const TradeReturnForm: React.FC<TradeReturnFormProps> = ({ mode }) => {
 
       const returnedQtyMap = getReturnedQuantitiesForOrder(order);
 
-      const getOrderDetails = (record: any) => {
-        const candidates = isSale
-          ? [record.salesDetails, record.saleDetails, record.saleDetailsList, record.details, record.items, record.products]
-          : [record.purchaseDetails, record.purchasesDetails, record.details, record.items, record.products];
-        return candidates.find((details) => Array.isArray(details) && details.length > 0) || [];
-      };
-
       let rawDetails = getOrderDetails(order);
 
-      // Look up fullMatched in apiOrdersAndReturnData to get richer details and authentic numeric productIds
+      // Look up fullMatched in apiOrdersAndReturnData or queryClient cache to get richer details and authentic numeric productIds
+      const candidatesList: any[] =
+        (Array.isArray(apiOrdersAndReturnData) && apiOrdersAndReturnData.length > 0
+          ? apiOrdersAndReturnData
+          : (queryClient.getQueryData(isSale ? [salesAndReturnQueryKey] : [purchaseAndReturnQueryKey]) as any[]) ||
+            (queryClient.getQueryData(isSale ? [salesListQueryKey] : [purchaseListQueryKey]) as any[])) || [];
+
       let fullMatched: any = null;
-      if (Array.isArray(apiOrdersAndReturnData) && apiOrdersAndReturnData.length > 0) {
-        fullMatched = apiOrdersAndReturnData.find((cand: any) => {
-          const candidateInv = isSale
-            ? cand.salesInvoiceNo || cand.invoiceNo
-            : cand.purchaseInvoiceNo || cand.invoiceNo;
-          const candidateRef = isSale ? cand.orderNo : cand.challanNo;
-          const candidateId = isSale
-            ? cand.saleId || cand.sale_id || cand.id
-            : cand.purchaseId || cand.purchase_id || cand.id;
-          const orderId = order.id || (isSale ? order.saleId || order.sale_id : order.purchaseId || order.purchase_id);
-          const matchInv = inv && String(candidateInv || "").trim().toLowerCase() === inv.toLowerCase();
-          const matchRef = ref && String(candidateRef || "").trim().toLowerCase() === ref.toLowerCase();
-          const matchId = String(candidateId || "").trim() === String(orderId || "").trim();
+      if (Array.isArray(candidatesList) && candidatesList.length > 0) {
+        fullMatched = candidatesList.find((cand: any) => {
+          if (!cand || typeof cand !== "object" || cand.isReturnRecord) return false;
+          const candidateInv = cleanKey(
+            isSale
+              ? cand.salesInvoiceNo || cand.invoiceNo
+              : cand.purchaseInvoiceNo || cand.invoiceNo
+          );
+          const candidateRef = cleanKey(isSale ? cand.orderNo : cand.challanNo);
+          const candidateId = cleanKey(
+            isSale
+              ? cand.saleId || cand.sale_id || cand.id
+              : cand.purchaseId || cand.purchase_id || cand.id
+          );
+          const orderId = cleanKey(order.id || (isSale ? order.saleId || order.sale_id : order.purchaseId || order.purchase_id));
+          const cleanInv = cleanKey(inv);
+          const cleanRef = cleanKey(ref);
+
+          const matchInv = Boolean(cleanInv && candidateInv && candidateInv === cleanInv);
+          const matchRef = Boolean(cleanRef && candidateRef && candidateRef === cleanRef);
+          const matchId = Boolean(candidateId && orderId && candidateId === orderId);
           return matchInv || matchRef || matchId;
         });
       }
@@ -539,7 +490,7 @@ export const TradeReturnForm: React.FC<TradeReturnFormProps> = ({ mode }) => {
           const hasBetterProductIds = fullDetails.some(
             (d: any) => (d.productId || d.product_id) && !isNaN(Number(d.productId || d.product_id))
           );
-          if (rawDetails.length === 0 || hasBetterProductIds) {
+          if (rawDetails.length === 0 || fullDetails.length > rawDetails.length || hasBetterProductIds) {
             rawDetails = fullDetails;
           }
         }
@@ -559,8 +510,6 @@ export const TradeReturnForm: React.FC<TradeReturnFormProps> = ({ mode }) => {
         }];
       }
 
-      const cleanKey = (val: any) => String(val || "").replace(/[^a-zA-Z0-9]/g, "").toUpperCase();
-
       // 1. Filter out return or inactive line items embedded in details
       const isReturnOrInactiveLine = (item: any) => {
         if (!item || typeof item !== "object") return true;
@@ -578,10 +527,20 @@ export const TradeReturnForm: React.FC<TradeReturnFormProps> = ({ mode }) => {
 
       // 2. Group by product key to detect and deduplicate duplicate product lines
       const getProductKey = (item: any, idx: number) => {
-        const pId = String(item.productId || item.product_id || item.id || "").trim();
+        const rawPId = item.productId ?? item.product_id;
+        const pId = rawPId && !isNaN(Number(rawPId)) && Number(rawPId) > 0 ? String(rawPId).trim() : "";
         const pCode = cleanKey(item.productCode || item.pcode);
         const pName = String(item.productName || item.name || "").trim().toLowerCase();
-        return pId ? `id_${pId}` : pCode ? `code_${pCode}` : pName ? `name_${pName}` : `row_${idx}`;
+
+        const lookupId =
+          (pCode && productLookup.codeMap.get(pCode.toLowerCase())) ||
+          (pName && productLookup.nameMap.get(pName.toLowerCase()));
+
+        const effectiveId = pId || (lookupId ? String(lookupId).trim() : "");
+        if (effectiveId) return `id_${effectiveId}`;
+        if (pCode) return `code_${pCode}`;
+        if (pName && pName !== "product" && pName !== "item") return `name_${pName}`;
+        return `row_${idx}`;
       };
 
       const groupedLines = new Map<string, any[]>();
@@ -668,8 +627,6 @@ export const TradeReturnForm: React.FC<TradeReturnFormProps> = ({ mode }) => {
 
           if (matchedId && !isNaN(Number(matchedId))) {
             resolvedProductId = Number(matchedId);
-          } else if (item.id && !isNaN(Number(item.id)) && Number(item.id) > 0) {
-            resolvedProductId = Number(item.id);
           }
         }
 
@@ -713,48 +670,68 @@ export const TradeReturnForm: React.FC<TradeReturnFormProps> = ({ mode }) => {
 
       setLines(newLines);
     },
-    [getReturnedQuantitiesForOrder, isSale, reasonsList, apiOrdersAndReturnData, isOrderAlreadyReturned, productLookup]
+    [getReturnedQuantitiesForOrder, isSale, reasonsList, apiOrdersAndReturnData, isOrderAlreadyReturned, productLookup, getOrderDetails, queryClient]
   );
 
-  // Check router location state on mount - initialized once to protect user input
+  // Check router location state on mount or route transition
   useEffect(() => {
     const stateOrder = isSale ? location.state?.sale : location.state?.purchase;
-    if (stateOrder && !hasJustSubmitted && !hasInitializedStateOrderRef.current) {
-      hasInitializedStateOrderRef.current = true;
-      if (isOrderAlreadyReturned(stateOrder)) {
-        showErrorToast(`Order #${stateOrder.orderNo || stateOrder.invoiceNo || stateOrder.challanNo} has already been returned.`);
-        navigate(isSale ? "/admin/sales" : "/admin/purchases");
-        return;
+    if (stateOrder && !hasJustSubmitted) {
+      const stateKey = String(
+        (isSale ? stateOrder.salesInvoiceNo : stateOrder.purchaseInvoiceNo) ||
+        stateOrder.invoiceNo ||
+        stateOrder.orderNo ||
+        stateOrder.challanNo ||
+        stateOrder.id ||
+        ""
+      ).trim();
+
+      if (stateKey && stateKey !== lastLoadedOrderKeyRef.current) {
+        lastLoadedOrderKeyRef.current = stateKey;
+        if (isOrderAlreadyReturned(stateOrder)) {
+          showErrorToast(`Order #${stateOrder.orderNo || stateOrder.invoiceNo || stateOrder.challanNo} has already been returned.`);
+          navigate(isSale ? "/admin/sales" : "/admin/purchases");
+          return;
+        }
+        loadOrder(stateOrder);
       }
-      loadOrder(stateOrder);
     }
   }, [location.state, isSale, isOrderAlreadyReturned, loadOrder, hasJustSubmitted, navigate]);
 
-  // Click outside dropdown
+  // Synchronize and re-enrich selectedOrder when full candidate orders data becomes available
   useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (invoiceDropdownRef.current && !invoiceDropdownRef.current.contains(e.target as Node)) {
-        setIsInvoiceDropdownOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
+    if (!selectedOrder) return;
 
-  // Filtered dropdown candidates
-  const filteredCandidates = useMemo(() => {
-    if (!debouncedInvoiceQuery.trim()) return candidateOrders.slice(0, 10);
-    const q = debouncedInvoiceQuery.toLowerCase().trim();
-    return candidateOrders
-      .filter((item: any) => {
-        const inv = String(isSale ? (item.salesInvoiceNo || item.invoiceNo || "") : (item.purchaseInvoiceNo || item.invoiceNo || "")).toLowerCase();
-        const ref = String(isSale ? (item.orderNo || "") : (item.challanNo || "")).toLowerCase();
-        const pName = String(isSale ? (item.customerName || "") : (item.supplierName || "")).toLowerCase();
-        const pPhone = String(isSale ? (item.customerPhone || "") : (item.supplierPhone || "")).toLowerCase();
-        return inv.includes(q) || ref.includes(q) || pName.includes(q) || pPhone.includes(q);
-      })
-      .slice(0, 15);
-  }, [candidateOrders, debouncedInvoiceQuery, isSale]);
+    const candidatesList: any[] =
+      (Array.isArray(apiOrdersAndReturnData) && apiOrdersAndReturnData.length > 0
+        ? apiOrdersAndReturnData
+        : (queryClient.getQueryData(isSale ? [salesAndReturnQueryKey] : [purchaseAndReturnQueryKey]) as any[])) || [];
+
+    if (candidatesList.length === 0) return;
+
+    const targetInv = cleanKey(isSale ? (selectedOrder.salesInvoiceNo || selectedOrder.invoiceNo) : (selectedOrder.purchaseInvoiceNo || selectedOrder.invoiceNo));
+    const targetRef = cleanKey(isSale ? selectedOrder.orderNo : selectedOrder.challanNo);
+    const targetId = cleanKey(selectedOrder.id || (isSale ? selectedOrder.saleId || selectedOrder.sale_id : selectedOrder.purchaseId || selectedOrder.purchase_id));
+
+    const matched = candidatesList.find((cand: any) => {
+      if (!cand || typeof cand !== "object" || cand.isReturnRecord) return false;
+      const candInv = cleanKey(isSale ? (cand.salesInvoiceNo || cand.invoiceNo) : (cand.purchaseInvoiceNo || cand.invoiceNo));
+      const candRef = cleanKey(isSale ? cand.orderNo : cand.challanNo);
+      const candId = cleanKey(isSale ? (cand.saleId || cand.sale_id || cand.id) : (cand.purchaseId || cand.purchase_id || cand.id));
+      return (
+        (targetInv && candInv && targetInv === candInv) ||
+        (targetRef && candRef && targetRef === candRef) ||
+        (targetId && candId && targetId === candId)
+      );
+    });
+
+    if (matched) {
+      const fullDetails = getOrderDetails(matched);
+      if (fullDetails.length > lines.length || (lines.length <= 1 && fullDetails.length > 1)) {
+        loadOrder(matched);
+      }
+    }
+  }, [apiOrdersAndReturnData, selectedOrder, lines.length, isSale, loadOrder, getOrderDetails, queryClient]);
 
   // Totals
   const totals = useMemo(() => {
@@ -765,16 +742,13 @@ export const TradeReturnForm: React.FC<TradeReturnFormProps> = ({ mode }) => {
       }
     });
 
-    const disc = 0;
-    const vat = 0;
-    const delivery = 0;
-    const grand = Math.max(0, subtotal - disc + vat + delivery);
+    const grand = Math.max(0, subtotal);
 
     return {
       subtotal: Number(subtotal.toFixed(2)),
-      discount: disc,
-      vat,
-      deliveryCharge: delivery,
+      discount: 0,
+      vat: 0,
+      deliveryCharge: 0,
       grandTotal: Number(grand.toFixed(2)),
       refundAmount: Number(grand.toFixed(2)),
     };
@@ -813,20 +787,24 @@ export const TradeReturnForm: React.FC<TradeReturnFormProps> = ({ mode }) => {
 
   // Toggle mode helpers
   const handleSetReturnMode = (modeType: "FULL" | "PARTIAL") => {
-    setLines((prev) =>
-      prev.map((l) => {
-        const q = modeType === "FULL" ? l.availableQuantity : 0;
-        return {
-          ...l,
-          quantity: q,
-          isSelected: q > 0,
-          lineTotal: Number((q * l.sellPrice).toFixed(2)),
-        };
-      })
-    );
+    setReturnType(modeType);
+    if (modeType === "FULL") {
+      setLines((prev) =>
+        prev.map((l) => {
+          const q = l.availableQuantity;
+          return {
+            ...l,
+            quantity: q > 0 ? q : 0,
+            isSelected: q > 0,
+            lineTotal: Number(((q > 0 ? q : 0) * l.sellPrice).toFixed(2)),
+          };
+        })
+      );
+    }
   };
 
   const handleClearAllQty = () => {
+    if (returnType === "FULL") return;
     setLines((prev) =>
       prev.map((l) => ({
         ...l,
@@ -839,6 +817,7 @@ export const TradeReturnForm: React.FC<TradeReturnFormProps> = ({ mode }) => {
 
   // Line updates
   const handleToggleLine = (idx: number) => {
+    if (returnType === "FULL") return;
     setLines((prev) => {
       const copy = [...prev];
       const target = { ...copy[idx] };
@@ -853,6 +832,7 @@ export const TradeReturnForm: React.FC<TradeReturnFormProps> = ({ mode }) => {
   };
 
   const handleQuantityChange = (idx: number, val: number) => {
+    if (returnType === "FULL") return;
     setLines((prev) => {
       const copy = [...prev];
       const target = { ...copy[idx] };
@@ -866,6 +846,7 @@ export const TradeReturnForm: React.FC<TradeReturnFormProps> = ({ mode }) => {
   };
 
   const handleReasonChange = (idx: number, reason: string) => {
+    if (returnType === "FULL") return;
     setLines((prev) => {
       const copy = [...prev];
       copy[idx] = { ...copy[idx], returnReason: reason };
@@ -964,6 +945,7 @@ export const TradeReturnForm: React.FC<TradeReturnFormProps> = ({ mode }) => {
       const payload: Record<string, any> = withBranchScope({
         accessUser: buildAccessUser(),
         returnDate,
+        returnType,
         totalAmount: Number(totals.subtotal.toFixed(2)),
         discount: Number(totals.discount.toFixed(2)),
         vat: Number(totals.vat.toFixed(2)),
@@ -1043,6 +1025,7 @@ export const TradeReturnForm: React.FC<TradeReturnFormProps> = ({ mode }) => {
       const createdItem: any = {
         id: Date.now(),
         returnNo: generatedReturnNo,
+        returnType,
         invoiceNo,
         returnDate,
         totalAmount: totals.subtotal,
@@ -1127,13 +1110,14 @@ export const TradeReturnForm: React.FC<TradeReturnFormProps> = ({ mode }) => {
           if (refundTenders.length > 0) {
             const itemSummary = activeLines.map((l) => l.productName).filter(Boolean).join(", ");
             await recordTradeLedger({
-              type: isSale ? "EXPENSE" : "INCOME",
-              categoryName: isSale ? "Customer Sales Return Refund" : "Supplier Purchase Return Refund",
-              partyName,
-              partyType: isSale ? "CUSTOMER" : "SUPPLIER",
+              tradeType: isSale ? "EXPENSE" : "INCOME",
+              invoiceNo: invoiceNo || generatedReturnNo,
+              refNo: generatedReturnNo,
+              partyId,
+              head: isSale ? "Customer Sales Return Refund" : "Supplier Purchase Return Refund",
+              itemsSummary: itemSummary,
               tenders: refundTenders,
               notes: `Auto ${isSale ? "Sales" : "Purchase"} Return: ${generatedReturnNo} (${itemSummary})`,
-              refNo: generatedReturnNo,
               date: returnDate,
             });
           }
@@ -1170,21 +1154,15 @@ export const TradeReturnForm: React.FC<TradeReturnFormProps> = ({ mode }) => {
       {/* Top Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 border-b border-[var(--ui-border)] pb-2.5">
         <div className="flex items-center gap-2.5">
-          <button
-            type="button"
-            onClick={() => navigate(isSale ? "/admin/sales" : "/admin/purchases")}
-            className="p-1.5 text-[var(--ui-text-muted)] hover:text-[var(--primary-color)] hover:bg-[var(--primary-color-light)] rounded-md transition-colors cursor-pointer"
-            title="Back to List"
-          >
-            <FaArrowLeft size={14} />
-          </button>
           <div>
             <h1 className="text-base sm:text-lg font-bold text-[var(--ui-text)] flex items-center gap-2">
               <FaUndoAlt className="text-[var(--primary-color)]" size={16} />
               Create {isSale ? "Sales" : "Purchase"} Return
             </h1>
             <p className="text-xs text-[var(--ui-text-muted)]">
-              Select an invoice/order to return items and process refund
+              {isSale
+                ? "Review return items and process refund for sales invoice"
+                : "Review return items and process refund for purchase invoice"}
             </p>
           </div>
         </div>
@@ -1214,122 +1192,83 @@ export const TradeReturnForm: React.FC<TradeReturnFormProps> = ({ mode }) => {
         </div>
       </div>
 
-      {/* Invoice Search Bar */}
-      <div className="bg-[var(--ui-surface)] p-3 rounded-lg border border-[var(--ui-border)] shadow-xs relative" ref={invoiceDropdownRef}>
-        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
-          <div className="flex-1 w-full relative">
-            <div className="relative">
-              <TextInput
-                label={`Search ${invoiceLabel} / Order # / ${partyLabel}`}
-                value={invoiceQuery}
-                placeholder={`Type invoice number, order #, or ${partyLabel.toLowerCase()} name...`}
-                onChange={(val) => {
-                  setInvoiceQuery(val);
-                  setIsInvoiceDropdownOpen(true);
-                }}
-                onFocus={() => setIsInvoiceDropdownOpen(true)}
-                icon={<FaSearch className="text-[var(--ui-text-subtle)]" />}
-              />
-              {isOrdersError && (
-                <p role="alert" className="mt-1 text-xs text-red-500">
-                  {ordersError instanceof Error ? ordersError.message : `Failed to load ${isSale ? "sales" : "purchase"} invoices.`}{" "}
-                  <button type="button" onClick={() => refetchOrders()} className="underline">
-                    Retry
-                  </button>
-                </p>
-              )}
-              {invoiceQuery && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setInvoiceQuery("");
-                    setSelectedOrder(null);
-                    setLines([]);
-                  }}
-                  className="absolute right-2.5 top-8 text-[var(--ui-text-subtle)] hover:text-[var(--ui-text)]"
-                >
-                  <FaTimes size={13} />
-                </button>
-              )}
-            </div>
-
-            {/* Dropdown Results */}
-            {isInvoiceDropdownOpen && (
-              <div className="absolute top-full left-0 right-0 mt-1 max-h-72 overflow-y-auto bg-[var(--ui-surface)] border border-[var(--ui-border-strong)] rounded-lg shadow-lg z-50 divide-y divide-[var(--ui-border)]">
-                {isLoadingOrders ? (
-                  <div className="p-4 text-center text-xs text-[var(--ui-text-muted)]">
-                    Loading invoices...
-                  </div>
-                ) : filteredCandidates.length > 0 ? (
-                  filteredCandidates.map((c: any, idx: number) => {
-                    const cInv = isSale ? (c.salesInvoiceNo || c.invoiceNo) : (c.purchaseInvoiceNo || c.invoiceNo);
-                    const cRef = isSale ? c.orderNo : c.challanNo;
-                    const cParty = isSale ? c.customerName : c.supplierName;
-                    const cPhone = isSale ? c.customerPhone : c.supplierPhone;
-                    const cTotal = c.grandTotal || c.totalAmount || 0;
-                    const cDate = c.salesDate || c.purchaseDate || c.createdAt;
-
-                    return (
-                      <div
-                        key={idx}
-                        onClick={() => {
-                          loadOrder(c);
-                          setIsInvoiceDropdownOpen(false);
-                        }}
-                        className="p-2.5 hover:bg-[var(--primary-color-light)]/40 cursor-pointer flex items-center justify-between transition-colors text-xs"
-                      >
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <span className="font-bold text-[var(--ui-text)]">#{cInv || cRef || "N/A"}</span>
-                            {cRef && <span className="text-[11px] text-[var(--ui-text-muted)]">({cRef})</span>}
-                            <span className="px-1.5 py-0.5 rounded text-[10px] bg-[var(--ui-surface-sunken)] font-medium">
-                              {cDate ? String(cDate).substring(0, 10) : ""}
-                            </span>
-                          </div>
-                          <div className="text-[11px] text-[var(--ui-text-muted)] mt-0.5">
-                            {cParty || "Party"} {cPhone ? `• ${cPhone}` : ""}
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <span className="font-bold text-[var(--primary-color)]">৳ {formatMoney(cTotal)}</span>
-                        </div>
-                      </div>
-                    );
-                  })
-                ) : (
-                  <div className="p-4 text-center text-xs text-[var(--ui-text-muted)]">
-                    No matching {isSale ? "sales" : "purchases"} found.
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Selected Order Summary Card */}
-        {selectedOrder && (
-          <div className="mt-3 pt-3 border-t border-[var(--ui-border)] grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
-            <div>
-              <span className="text-[var(--ui-text-muted)] block text-[11px]">{invoiceLabel}:</span>
+      {/* Selected Order Summary Card & Return Mode in One Line */}
+      {selectedOrder ? (
+        <div className="bg-[var(--ui-surface)] px-3.5 py-2.5 rounded-lg border border-[var(--ui-border)] shadow-xs flex flex-wrap items-center justify-between gap-3 text-xs">
+          <div className="flex flex-wrap items-center gap-x-5 sm:gap-x-7 gap-y-1.5">
+            <div className="flex items-center gap-1.5 whitespace-nowrap">
+              <span className="text-[var(--ui-text-muted)] text-[11px] font-medium">{invoiceLabel}:</span>
               <span className="font-bold text-[var(--ui-text)]">#{invoiceNo || "N/A"}</span>
             </div>
-            <div>
-              <span className="text-[var(--ui-text-muted)] block text-[11px]">{isSale ? "Order #" : "Challan #"}:</span>
-              <span className="font-medium text-[var(--ui-text)]">{refOrderOrChallan || "—"}</span>
+
+            <div className="flex items-center gap-1.5 whitespace-nowrap">
+              <span className="text-[var(--ui-text-muted)] text-[11px] font-medium">{isSale ? "Order #" : "Challan #"}:</span>
+              <span className="font-semibold text-[var(--ui-text)]">{refOrderOrChallan || "—"}</span>
             </div>
-            <div>
-              <span className="text-[var(--ui-text-muted)] block text-[11px]">{partyLabel}:</span>
+
+            <div className="flex items-center gap-1.5 whitespace-nowrap">
+              <span className="text-[var(--ui-text-muted)] text-[11px] font-medium">{partyLabel}:</span>
               <span className="font-bold text-[var(--ui-text)]">{partyName || "Walk-in"}</span>
+              {partyPhone && (
+                <span className="text-[11px] text-[var(--ui-text-muted)]">({partyPhone})</span>
+              )}
             </div>
-            <div>
-              <span className="text-[var(--ui-text-muted)] block text-[11px]">Original Amount:</span>
+
+            <div className="flex items-center gap-1.5 whitespace-nowrap">
+              <span className="text-[var(--ui-text-muted)] text-[11px] font-medium">Original Amount:</span>
               <span className="font-bold text-[var(--primary-color)]">
                 ৳ {formatMoney(selectedOrder.grandTotal || selectedOrder.totalAmount || 0)}
               </span>
             </div>
           </div>
-        )}
-      </div>
+
+          {/* Return Type (Full / Partial) */}
+          <div className="flex items-center gap-2 whitespace-nowrap">
+            <span className="text-[11px] font-semibold text-[var(--ui-text-muted)]">Return Type:</span>
+            <div className="inline-flex p-0.5 bg-[var(--ui-surface-sunken)] rounded-md border border-[var(--ui-border)]">
+              <button
+                type="button"
+                onClick={() => handleSetReturnMode("FULL")}
+                className={`px-3 py-1 text-xs font-semibold rounded transition-all cursor-pointer ${
+                  returnType === "FULL"
+                    ? "bg-[var(--primary-color)] text-white shadow-xs"
+                    : "text-[var(--ui-text-muted)] hover:text-[var(--ui-text)]"
+                }`}
+              >
+                Full
+              </button>
+              <button
+                type="button"
+                onClick={() => handleSetReturnMode("PARTIAL")}
+                className={`px-3 py-1 text-xs font-semibold rounded transition-all cursor-pointer ${
+                  returnType === "PARTIAL"
+                    ? "bg-[var(--primary-color)] text-white shadow-xs"
+                    : "text-[var(--ui-text-muted)] hover:text-[var(--ui-text)]"
+                }`}
+              >
+                Partial
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div className="bg-[var(--ui-surface)] p-4 rounded-lg border border-[var(--ui-border)] shadow-xs flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
+          <div>
+            <p className="font-semibold text-[var(--ui-text)]">
+              No {isSale ? "sales" : "purchase"} invoice selected
+            </p>
+            <p className="text-[var(--ui-text-muted)] text-[11px] mt-0.5">
+              Please go back to the {isSale ? "Sales" : "Purchase"} list and click &quot;Return&quot; on an invoice to start.
+            </p>
+          </div>
+          <Button
+            label={`Back to ${isSale ? "Sales" : "Purchases"}`}
+            variant="outline"
+            size="sm"
+            onClick={() => navigate(isSale ? "/admin/sales" : "/admin/purchases")}
+          />
+        </div>
+      )}
 
       {/* Main Form Content */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 items-start">
@@ -1340,9 +1279,14 @@ export const TradeReturnForm: React.FC<TradeReturnFormProps> = ({ mode }) => {
               <h2 className="text-xs sm:text-sm font-bold text-[var(--ui-text)] flex items-center gap-1.5">
                 <FaBoxOpen className="text-[var(--primary-color)]" />
                 Items to Return ({lines.filter((l) => l.isSelected && l.quantity > 0).length} Selected)
+                {returnType === "FULL" && (
+                  <span className="text-[10px] font-normal px-2 py-0.5 rounded bg-[var(--primary-color-light)] text-[var(--primary-color)] border border-[var(--primary-color)]/20">
+                    Full Return (Locked)
+                  </span>
+                )}
               </h2>
 
-              {selectedOrder && (
+              {selectedOrder && returnType === "PARTIAL" && (
                 <div className="flex items-center gap-1.5">
                   <button
                     type="button"
@@ -1371,8 +1315,6 @@ export const TradeReturnForm: React.FC<TradeReturnFormProps> = ({ mode }) => {
                     <th className="py-2 px-2">Product</th>
                     <th className="py-2 px-2 text-right">Price</th>
                     <th className="py-2 px-2 text-center">{isSale ? "Sold Qty" : "Purchased Qty"}</th>
-                    <th className="py-2 px-2 text-center">Returned</th>
-                    <th className="py-2 px-2 text-center">Available</th>
                     <th className="py-2 px-2 text-center w-28">Return Qty</th>
                     <th className="py-2 px-2">Reason</th>
                     <th className="py-2 px-2 text-right">Total</th>
@@ -1391,16 +1333,15 @@ export const TradeReturnForm: React.FC<TradeReturnFormProps> = ({ mode }) => {
                           <input
                             type="checkbox"
                             checked={item.isSelected}
-                            disabled={item.availableQuantity <= 0}
+                            disabled={returnType === "FULL" || item.availableQuantity <= 0}
                             onChange={() => handleToggleLine(idx)}
-                            className="rounded border-[var(--ui-border-strong)] text-[var(--primary-color)] focus:ring-0 cursor-pointer"
+                            className={`rounded border-[var(--ui-border-strong)] text-[var(--primary-color)] focus:ring-0 ${
+                              returnType === "FULL" ? "cursor-not-allowed opacity-60" : "cursor-pointer"
+                            }`}
                           />
                         </td>
                         <td className="py-2 px-2">
-                          <span className="font-semibold text-[var(--ui-text)] block">{item.productName}</span>
-                          <span className="text-[10px] text-[var(--ui-text-muted)]">
-                            {item.productCode} • {item.unit}
-                          </span>
+                          <span className="font-semibold text-[var(--ui-text)]">{item.productName}</span>
                         </td>
                         <td className="py-2 px-2 text-right tabular-nums">
                           ৳ {formatMoney(item.sellPrice)}
@@ -1408,35 +1349,39 @@ export const TradeReturnForm: React.FC<TradeReturnFormProps> = ({ mode }) => {
                         <td className="py-2 px-2 text-center tabular-nums">
                           {item.originalQuantity}
                         </td>
-                        <td className="py-2 px-2 text-center tabular-nums">
-                          {item.alreadyReturnedQuantity}
-                        </td>
-                        <td className="py-2 px-2 text-center tabular-nums font-medium">
-                          {item.availableQuantity}
-                        </td>
                         <td className="py-2 px-2 text-center">
-                          <div className="inline-flex items-center border border-[var(--ui-border-strong)] rounded overflow-hidden">
+                          <div className={`inline-flex items-center border border-[var(--ui-border-strong)] rounded overflow-hidden ${
+                            returnType === "FULL" ? "opacity-75 bg-[var(--ui-surface-sunken)] cursor-not-allowed" : ""
+                          }`}>
                             <button
                               type="button"
                               onClick={() => handleQuantityChange(idx, item.quantity - 1)}
-                              disabled={item.quantity <= 0}
-                              className="px-2 py-0.5 bg-[var(--ui-surface-sunken)] hover:bg-[var(--ui-border)] disabled:opacity-40"
+                              disabled={returnType === "FULL" || item.quantity <= 0}
+                              className="px-2 py-0.5 bg-[var(--ui-surface-sunken)] hover:bg-[var(--ui-border)] disabled:opacity-40 disabled:cursor-not-allowed"
                             >
                               -
                             </button>
                             <input
-                              type="number"
-                              min="0"
-                              max={item.availableQuantity}
-                              value={item.quantity}
-                              onChange={(e) => handleQuantityChange(idx, Number(e.target.value) || 0)}
-                              className="w-12 text-center font-bold tabular-nums text-xs border-x border-[var(--ui-border-strong)] py-0.5 focus:outline-none"
+                              type="text"
+                              inputMode="numeric"
+                              pattern="[0-9]*"
+                              value={String(Number(item.quantity) || 0)}
+                              disabled={returnType === "FULL"}
+                              readOnly={returnType === "FULL"}
+                              onFocus={(e) => e.target.select()}
+                              onChange={(e) => {
+                                const digits = e.target.value.replace(/\D/g, "");
+                                const withoutLeadingZero = digits.replace(/^0+(?=\d)/, "");
+                                const num = withoutLeadingZero === "" ? 0 : Number(withoutLeadingZero);
+                                handleQuantityChange(idx, num);
+                              }}
+                              className="w-12 text-center font-bold tabular-nums text-xs border-x border-[var(--ui-border-strong)] py-0.5 focus:outline-none disabled:bg-[var(--ui-surface-sunken)] disabled:text-[var(--ui-text)] disabled:cursor-not-allowed"
                             />
                             <button
                               type="button"
                               onClick={() => handleQuantityChange(idx, item.quantity + 1)}
-                              disabled={item.quantity >= item.availableQuantity}
-                              className="px-2 py-0.5 bg-[var(--ui-surface-sunken)] hover:bg-[var(--ui-border)] disabled:opacity-40"
+                              disabled={returnType === "FULL" || item.quantity >= item.availableQuantity}
+                              className="px-2 py-0.5 bg-[var(--ui-surface-sunken)] hover:bg-[var(--ui-border)] disabled:opacity-40 disabled:cursor-not-allowed"
                             >
                               +
                             </button>
@@ -1445,8 +1390,9 @@ export const TradeReturnForm: React.FC<TradeReturnFormProps> = ({ mode }) => {
                         <td className="py-2 px-2">
                           <select
                             value={item.returnReason}
+                            disabled={returnType === "FULL"}
                             onChange={(e) => handleReasonChange(idx, e.target.value)}
-                            className="w-full text-[11px] py-1 px-1.5 border border-[var(--ui-border-strong)] rounded bg-[var(--ui-surface)] text-[var(--ui-text)]"
+                            className="w-full text-[11px] py-1 px-1.5 border border-[var(--ui-border-strong)] rounded bg-[var(--ui-surface)] text-[var(--ui-text)] disabled:opacity-75 disabled:cursor-not-allowed disabled:bg-[var(--ui-surface-sunken)]"
                           >
                             {reasonsList.map((r) => (
                               <option key={r.value} value={r.value}>
@@ -1463,9 +1409,16 @@ export const TradeReturnForm: React.FC<TradeReturnFormProps> = ({ mode }) => {
                   ) : (
                     <tr>
                       <td colSpan={7} className="py-8 text-center text-[var(--ui-text-muted)] text-xs">
-                        {selectedOrder
-                          ? "No line items available in this invoice."
-                          : `Please search and select a ${invoiceLabel} to view items.`}
+                        {isLoadingOrders && lines.length === 0 ? (
+                          <div className="flex items-center justify-center gap-2">
+                            <FaSpinner className="animate-spin text-[var(--primary-color)] text-base" />
+                            <span>Loading items...</span>
+                          </div>
+                        ) : selectedOrder ? (
+                          "No line items available in this invoice."
+                        ) : (
+                          `Please select an invoice from the ${isSale ? "Sales" : "Purchase"} list to view items.`
+                        )}
                       </td>
                     </tr>
                   )}
@@ -1546,20 +1499,24 @@ export const TradeReturnForm: React.FC<TradeReturnFormProps> = ({ mode }) => {
             </div>
           </div>
 
-          {/* Action Buttons */}
-          <div className="flex flex-col gap-2">
+          {/* Action Buttons in One Line */}
+          <div className="grid grid-cols-2 gap-2">
             <Button
-              label={`Confirm & Save ${isSale ? "Sales" : "Purchase"} Return`}
+              label={`Confirm & Save ${isSale ? "Sales" : "Purchase"}`}
               color="var(--primary-color)"
               size="md"
+              className="w-full justify-center !px-2 text-xs font-semibold whitespace-nowrap truncate"
+              title={`Confirm & Save ${isSale ? "Sales" : "Purchase"} Return`}
               onClick={() => handlePreSubmit(false)}
               disabled={!canCreateReturn || !selectedOrder || lines.filter((l) => l.isSelected && l.quantity > 0).length === 0}
             />
             <Button
-              label="Save & Print Receipt"
+              label="Save & Print"
               variant="outline"
               size="md"
-              icon={<FaPrint size={13} />}
+              icon={<FaPrint size={12} />}
+              className="w-full justify-center !px-2 text-xs font-semibold whitespace-nowrap truncate"
+              title="Save & Print Receipt"
               onClick={() => handlePreSubmit(true)}
               disabled={!canCreateReturn || !selectedOrder || lines.filter((l) => l.isSelected && l.quantity > 0).length === 0}
             />
