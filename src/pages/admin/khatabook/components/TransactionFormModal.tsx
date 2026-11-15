@@ -386,14 +386,9 @@ export const TransactionFormModal: React.FC<TransactionFormModalProps> = ({
               <div className="p-1.5 rounded-md bg-[var(--ui-info-light)] text-[var(--ui-info)]">
                 <FaPercent size={10} />
               </div>
-              <div className="flex flex-col">
-                <span className="text-xs font-semibold text-[var(--ui-text)]">
-                  Add Commission
-                </span>
-                <span className="text-[10px] text-[var(--ui-text-muted)]">
-                  Fixed commission amount (no impact on ledger or cash/bank balance)
-                </span>
-              </div>
+              <span className="text-xs font-semibold text-[var(--ui-text)]">
+                Add Commission
+              </span>
             </div>
             <label className="relative inline-flex items-center cursor-pointer shrink-0">
               <input
@@ -412,7 +407,7 @@ export const TransactionFormModal: React.FC<TransactionFormModalProps> = ({
           {hasCommission && (
             <div className="pt-0.5">
               <TextInput
-                label="Commission Amount (৳)"
+                label="Commission (৳)"
                 type="number"
                 placeholder="0.00"
                 value={commission}
@@ -424,9 +419,6 @@ export const TransactionFormModal: React.FC<TransactionFormModalProps> = ({
                 message={errors.commission}
                 icon={<FaMoneyBillWave className="text-[var(--ui-text-subtle)] text-xs" />}
               />
-              <p className="text-[10px] text-[var(--ui-text-muted)] mt-0.5">
-                * Commission is recorded with transaction and does not affect ledger or cash/bank balance.
-              </p>
             </div>
           )}
         </div>
