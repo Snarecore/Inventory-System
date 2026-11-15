@@ -8,6 +8,7 @@ import logoImg from "@/assets/logo.jpeg";
 
 import { usePermission } from "@/hooks/usePermission";
 import { canAccessMenuItem } from "@/utils/permission-utils";
+import { useTranslation } from "react-i18next";
 
 type SidebarProps = {
   sidebarClick: boolean;
@@ -15,6 +16,7 @@ type SidebarProps = {
 };
 
 const Sidebar = ({ sidebarClick }: SidebarProps) => {
+  const { t } = useTranslation();
   const location = useLocation();
   const pathname = location.pathname;
   const navigate = useNavigate();
@@ -134,7 +136,7 @@ const Sidebar = ({ sidebarClick }: SidebarProps) => {
           <div key={section.sectionName} className={sidebarClick ? "mb-1" : "mb-2"}>
             {!sidebarClick && section.sectionName && (
               <p className="text-[11px] text-[#092c4c] font-bold px-2 mb-1">
-                {section.sectionName}
+                {t(section.sectionName)}
               </p>
             )}
 
@@ -170,7 +172,7 @@ const Sidebar = ({ sidebarClick }: SidebarProps) => {
                       }`}
                       aria-expanded={!sidebarClick && isOpen}
                       aria-disabled={sidebarClick}
-                      title={sidebarClick ? item.name : undefined}
+                      title={sidebarClick ? t(item.name) : undefined}
                     >
                       <div className={`flex items-center gap-2 ${sidebarClick ? "justify-center" : ""}`}>
                         <span
@@ -180,7 +182,7 @@ const Sidebar = ({ sidebarClick }: SidebarProps) => {
                               : "text-[#5b6670] group-hover:text-[var(--color-primary)]"
                           }`}
                         >
-                          <Icon title={item.name} size={15} />
+                          <Icon title={t(item.name)} size={15} />
                         </span>
                         {!sidebarClick && (
                           <span
@@ -190,7 +192,7 @@ const Sidebar = ({ sidebarClick }: SidebarProps) => {
                                 : "text-[#212b36] group-hover:text-[var(--color-primary)]"
                             }`}
                           >
-                            {item.name}
+                            {t(item.name)}
                           </span>
                         )}
                       </div>
@@ -217,7 +219,7 @@ const Sidebar = ({ sidebarClick }: SidebarProps) => {
                           ? "bg-[var(--color-primary-light)] text-[var(--color-primary)]"
                           : "hover:bg-gray-100"
                       }`}
-                      title={sidebarClick ? item.name : undefined}
+                      title={sidebarClick ? t(item.name) : undefined}
                     >
                       <span
                         className={`text-base transition-all ${
@@ -226,7 +228,7 @@ const Sidebar = ({ sidebarClick }: SidebarProps) => {
                             : "text-[#5b6670] group-hover:text-[var(--color-primary)]"
                         }`}
                       >
-                        <Icon title={item.name} size={15} />
+                        <Icon title={t(item.name)} size={15} />
                       </span>
                       {!sidebarClick && (
                         <span
@@ -236,7 +238,7 @@ const Sidebar = ({ sidebarClick }: SidebarProps) => {
                               : "text-[#212b36] group-hover:text-[var(--color-primary)]"
                           }`}
                         >
-                          {item.name}
+                          {t(item.name)}
                         </span>
                       )}
                     </Link>
@@ -267,7 +269,7 @@ const Sidebar = ({ sidebarClick }: SidebarProps) => {
                                         : "bg-gray-400 group-hover:bg-[var(--color-primary)]"
                                     }`}
                                   />
-                                  {subItem.name}
+                                  {t(subItem.name)}
                                 </span>
                               </Link>
                             </li>

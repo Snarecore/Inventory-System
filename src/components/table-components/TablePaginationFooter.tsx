@@ -1,4 +1,5 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 import Pagination from "@/components/pagination";
 
 export interface TablePaginationFooterProps {
@@ -26,6 +27,7 @@ export const TablePaginationFooter: React.FC<TablePaginationFooterProps> = ({
   pageSizeOptions = [10, 20, 50, 100],
   className = "",
 }) => {
+  const { t } = useTranslation();
   if (totalCount === 0) return null;
 
   return (
@@ -33,7 +35,7 @@ export const TablePaginationFooter: React.FC<TablePaginationFooterProps> = ({
       className={`p-2.5 sm:p-3 border-t border-[var(--ui-border)] bg-[var(--ui-surface-muted)]/50 flex flex-col sm:flex-row items-center justify-between gap-2.5 ${className}`}
     >
       <div className="flex items-center gap-2 text-xs text-[var(--ui-text-muted)]">
-        <span>Show</span>
+        <span>{t("Show")}</span>
         {setDataLimit && (
           <select
             value={dataLimit}
@@ -51,7 +53,7 @@ export const TablePaginationFooter: React.FC<TablePaginationFooterProps> = ({
           </select>
         )}
         <span>
-          entries per page (Total {totalCount} {entityLabel})
+          {t("entries per page")} ({t("Total")} {totalCount} {t(entityLabel)})
         </span>
       </div>
 

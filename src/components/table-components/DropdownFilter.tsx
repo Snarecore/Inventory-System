@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from "react";
 import { RiArrowDropDownLine } from "react-icons/ri";
+import { useTranslation } from "react-i18next";
 
 interface OptionType { label: string; value: string; }
 
@@ -20,6 +21,7 @@ const DropdownFilter: React.FC<DropdownFilterProps> = ({
 	isOpen,
 	onToggle,
 }) => {
+	const { t } = useTranslation();
 	const dropdownRef = useRef<HTMLDivElement>(null);
 
 	useEffect(() => {
@@ -44,7 +46,7 @@ const DropdownFilter: React.FC<DropdownFilterProps> = ({
 				aria-expanded={isOpen}
 			>
 				<span className="truncate max-w-[16ch]">
-					{selectedOption ? selectedOption.label : title}
+					{t(selectedOption ? selectedOption.label : title)}
 				</span>
 				<RiArrowDropDownLine size={18} />
 			</div>
@@ -71,7 +73,7 @@ const DropdownFilter: React.FC<DropdownFilterProps> = ({
 												? "text-[var(--color-primary)] font-semibold bg-[var(--color-primary-light)]"
 												: "hover:bg-[var(--color-primary-light)]"}`}
 									>
-										{option.label}
+										{t(option.label)}
 									</button>
 								</li>
 							);

@@ -1,4 +1,5 @@
 import React, { ReactNode } from "react";
+import { useTranslation } from "react-i18next";
 
 export const TABLE_CLASSES = {
   container: "bg-[var(--ui-surface)] rounded-xl shadow-xs border border-[var(--ui-border)] flex flex-col relative z-20 overflow-visible",
@@ -145,6 +146,9 @@ export const TableTh: React.FC<TableThProps> = ({
   style,
   ...props
 }) => {
+  const { t } = useTranslation();
+  const renderedContent = typeof children === "string" ? t(children) : children;
+
   let effectiveAlign = align;
   if (!effectiveAlign) {
     if (/\btext-center\b/.test(className)) effectiveAlign = "center";
@@ -171,7 +175,7 @@ export const TableTh: React.FC<TableThProps> = ({
       style={customStyle}
       {...props}
     >
-      {children}
+      {renderedContent}
     </th>
   );
 };

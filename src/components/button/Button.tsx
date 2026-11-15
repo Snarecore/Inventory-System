@@ -1,4 +1,5 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 import { cn } from "@/utils/cn";
 
 export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
@@ -52,6 +53,9 @@ export const Button: React.FC<ButtonProps> = ({
   style,
   ...props
 }) => {
+  const { t } = useTranslation();
+  const translatedLabel = typeof label === "string" && label ? t(label) : label;
+
   const getHoverColor = () => {
     if (hoverColor) return hoverColor;
     if (color === "var(--primary-color)" || color === "#01306B") return "var(--primary-color-hover)";
@@ -135,7 +139,7 @@ export const Button: React.FC<ButtonProps> = ({
       ) : icon ? (
         <span className="inline-flex items-center justify-center shrink-0 leading-none">{icon}</span>
       ) : null}
-      {label}
+      {translatedLabel}
       {children}
     </button>
   );

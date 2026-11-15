@@ -1,4 +1,5 @@
 import React, { useRef, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { FiCheckCircle, FiSave, FiAlertCircle, FiHelpCircle } from "react-icons/fi";
 
 export interface ConfirmModalProps {
@@ -28,6 +29,7 @@ const ConfirmModal: React.FC<ConfirmModalProps> = ({
   confirmButtonColor = "bg-[var(--primary-color)] hover:bg-[var(--primary-color-hover)]",
   isLoading = false,
 }) => {
+  const { t } = useTranslation();
   const isConfirmingRef = useRef(false);
 
   useEffect(() => {
@@ -60,9 +62,9 @@ const ConfirmModal: React.FC<ConfirmModalProps> = ({
             )}
           </div>
           <h2 id="confirm-modal-title" className="text-lg font-bold mt-3 text-[var(--ui-text)]">
-            {title}
+            {t(title)}
           </h2>
-          <p className="text-sm text-[var(--ui-text-muted)] mt-1">{message}</p>
+          <p className="text-sm text-[var(--ui-text-muted)] mt-1">{t(message)}</p>
         </div>
         <div className="flex justify-center gap-3 mt-6">
           <button
@@ -71,7 +73,7 @@ const ConfirmModal: React.FC<ConfirmModalProps> = ({
             disabled={isLoading}
             className="px-5 py-2 text-xs font-semibold text-[var(--ui-text)] bg-[var(--ui-surface)] border border-[var(--ui-border-strong)] rounded-lg cursor-pointer hover:bg-[var(--ui-surface-muted)] transition shadow-2xs disabled:opacity-50 min-w-[90px]"
           >
-            {cancelText}
+            {t(cancelText)}
           </button>
           <button
             type="button"
@@ -87,7 +89,7 @@ const ConfirmModal: React.FC<ConfirmModalProps> = ({
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
               </svg>
             )}
-            <span>{confirmText}</span>
+            <span>{t(confirmText)}</span>
           </button>
         </div>
       </div>

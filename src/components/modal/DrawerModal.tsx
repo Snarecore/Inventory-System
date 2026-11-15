@@ -2,6 +2,7 @@ import React, { useEffect, useRef } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { FaTimesCircle } from "react-icons/fa";
 import { useFormKeyboardNavigation } from "@/hooks/useFormKeyboardNavigation";
+import { useTranslation } from "react-i18next";
 
 export interface DrawerModalProps {
   isOpen: boolean;
@@ -46,6 +47,7 @@ const DrawerModal: React.FC<DrawerModalProps> = ({
   enableArrowKeys = true,
   enableEnterNavigation = true,
 }) => {
+  const { t } = useTranslation();
   const drawerRef = useRef<HTMLDivElement>(null);
 
   useFormKeyboardNavigation(drawerRef, {
@@ -116,14 +118,14 @@ const DrawerModal: React.FC<DrawerModalProps> = ({
                     </div>
                   )}
                   <h2 className="text-sm font-bold text-gray-900 leading-tight">
-                    {title}
+                    {typeof title === "string" ? t(title) : title}
                   </h2>
                 </div>
                 <button
                   type="button"
                   onClick={onClose}
                   className="p-1 rounded-lg text-gray-400 hover:text-red-500 hover:bg-gray-100 transition-colors cursor-pointer"
-                  title="Close"
+                  title={t("Close")}
                 >
                   <FaTimesCircle className="text-xl text-red-500" />
                 </button>

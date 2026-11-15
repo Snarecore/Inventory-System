@@ -87,7 +87,7 @@ const COPY_OPTIONS = [
   {
     key: "mfsCopy" as const,
     label: "Copy MFS Accounts",
-    hint: "Mobile banking wallets (bKash, Nagad, etc.)",
+    hint: "MFS wallets (bKash, Nagad, etc.)",
     icon: FaMobileAlt,
     accent: {
       border: "border-pink-400 dark:border-pink-500",

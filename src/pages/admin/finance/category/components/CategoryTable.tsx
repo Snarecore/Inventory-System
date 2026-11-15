@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   Search,
   EmptyState,
@@ -47,6 +48,7 @@ export const CategoryTable: React.FC<CategoryTableProps> = ({
   onToggleStatus,
   togglingId,
 }) => {
+  const { t } = useTranslation();
   const { canCreate, canUpdate } = usePermission();
   const [searchQuery, setSearchQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState("");
@@ -68,11 +70,11 @@ export const CategoryTable: React.FC<CategoryTableProps> = ({
   let statusAllCount = 0;
 
   for (const c of categories) {
-    const t = normalizeCategoryType(c.type);
-    if (t === "Expense") expenseCount++;
-    else if (t === "Income") incomeCount++;
+    const normT = normalizeCategoryType(c.type);
+    if (normT === "Expense") expenseCount++;
+    else if (normT === "Income") incomeCount++;
 
-    const matchesCurrentType = !typeFilter || t.toLowerCase() === typeFilter.toLowerCase();
+    const matchesCurrentType = !typeFilter || normT.toLowerCase() === typeFilter.toLowerCase();
     if (matchesCurrentType) {
       statusAllCount++;
       const st = (c.status || "").toLowerCase();
@@ -83,16 +85,16 @@ export const CategoryTable: React.FC<CategoryTableProps> = ({
 
   // Type tabs configuration
   const typeTabs = [
-    { label: "All Types", value: "", count: categories.length, icon: FaLayerGroup },
+    { label: t("All Types"), value: "", count: categories.length, icon: FaLayerGroup },
     {
-      label: "Expense",
+      label: t("Expense"),
       value: "Expense",
       count: expenseCount,
       icon: FaArrowDown,
       iconColor: "text-rose-500",
     },
     {
-      label: "Income",
+      label: t("Income"),
       value: "Income",
       count: incomeCount,
       icon: FaArrowUp,
@@ -102,9 +104,9 @@ export const CategoryTable: React.FC<CategoryTableProps> = ({
 
   // Status tabs configuration: All -> Active -> Inactive
   const statusTabs = [
-    { label: "All", value: "", count: statusAllCount },
-    { label: "Active", value: "Active", count: statusActiveCount, icon: FaCheckCircle },
-    { label: "Inactive", value: "Inactive", count: statusInactiveCount, icon: FaTimesCircle },
+    { label: t("All"), value: "", count: statusAllCount },
+    { label: t("Active"), value: "Active", count: statusActiveCount, icon: FaCheckCircle },
+    { label: t("Inactive"), value: "Inactive", count: statusInactiveCount, icon: FaTimesCircle },
   ];
 
   // Filter list
@@ -234,7 +236,7 @@ export const CategoryTable: React.FC<CategoryTableProps> = ({
                   setSearchQuery(val);
                   setCurrentPage(1);
                 }}
-                placeholder="Search by category name..."
+                placeholder={t("Search by category name...")}
               />
             </div>
 
@@ -296,7 +298,7 @@ export const CategoryTable: React.FC<CategoryTableProps> = ({
               {/* Reusable Excel Export Button */}
               <ExcelExportButton
                 onClick={handleExport}
-                title="Download Categories Excel Report"
+                title={t("Download Categories Excel Report")}
               />
             </div>
           </div>
@@ -315,16 +317,16 @@ export const CategoryTable: React.FC<CategoryTableProps> = ({
                   SL
                 </TableTh>
                 <TableTh>
-                  {renderSortHeader("Category Name", "categoryName")}
+                  {renderSortHeader(t("Category Name"), "categoryName")}
                 </TableTh>
                 <TableTh width={140}>
-                  {renderSortHeader("Type", "type")}
+                  {renderSortHeader(t("Type"), "type")}
                 </TableTh>
                 <TableTh width={120} align="center">
-                  {renderSortHeader("Status", "status", "center")}
+                  {renderSortHeader(t("Status"), "status", "center")}
                 </TableTh>
                 <TableTh width={100} align="center">
-                  Action
+                  {t("Action")}
                 </TableTh>
               </TableHead>
 
@@ -353,10 +355,10 @@ export const CategoryTable: React.FC<CategoryTableProps> = ({
                             {isAdmin && (
                               <span
                                 className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded font-semibold bg-amber-100 text-amber-800 border border-amber-300 shrink-0"
-                                title="System default category — locked"
+                                title={t("System default category — locked")}
                               >
                                 <FiLock size={10} />
-                                Default
+                                {t("Default")}
                               </span>
                             )}
                           </div>
@@ -371,7 +373,7 @@ export const CategoryTable: React.FC<CategoryTableProps> = ({
                                 : "bg-sky-100 text-sky-800 border-sky-300"
                             }`}
                           >
-                            {normType}
+                            {t(normType)}
                           </span>
                         </TableCell>
 
@@ -392,13 +394,13 @@ export const CategoryTable: React.FC<CategoryTableProps> = ({
                             }`}
                             title={
                               isAdmin
-                                ? "System default category status cannot be changed"
+                                ? t("System default category status cannot be changed")
                                 : !canUpdate("category_finance")
-                                ? "Permission required to change status"
-                                : "Click to toggle status"
+                                ? t("Permission required to change status")
+                                : t("Click to toggle status")
                             }
                           >
-                            {isToggling ? "Updating..." : isActive ? "Active" : "Inactive"}
+                            {isToggling ? t("Updating...") : isActive ? t("Active") : t("Inactive")}
                           </button>
                         </TableCell>
 
@@ -407,14 +409,14 @@ export const CategoryTable: React.FC<CategoryTableProps> = ({
                           {isAdmin ? (
                             <span
                               className="p-1 rounded text-gray-300 cursor-not-allowed inline-flex items-center justify-center"
-                              title="Default category cannot be edited"
+                              title={t("Default category cannot be edited")}
                             >
                               <FiLock size={14} />
                             </span>
                           ) : (
                             <TableActionButtons
                               onEdit={canUpdate("category_finance") ? () => onEdit(item) : undefined}
-                              editTitle="Edit Category"
+                              editTitle={t("Edit Category")}
                               className="justify-center"
                             />
                           )}
@@ -426,9 +428,9 @@ export const CategoryTable: React.FC<CategoryTableProps> = ({
                   <tr>
                     <td colSpan={5} className="py-12 text-center">
                       <EmptyState
-                        title="No categories found"
-                        description="There are no categories matching your search or filters."
-                        buttonText={canCreate("category_finance") ? "+ Add Category" : undefined}
+                        title={t("No categories found")}
+                        description={t("There are no categories matching your search or filters.")}
+                        buttonText={canCreate("category_finance") ? t("+ Add Category") : undefined}
                         onButtonClick={canCreate("category_finance") ? onAddNew : undefined}
                       />
                     </td>

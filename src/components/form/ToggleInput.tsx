@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 
 export interface ToggleInputProps {
   label?: string;
@@ -19,6 +20,8 @@ const ToggleInput: React.FC<ToggleInputProps> = ({
   className = "",
   size = "md",
 }) => {
+  const { t } = useTranslation();
+  const translatedLabel = label ? t(label) : label;
   const handleSwitchChange = () => {
     if (!disabled) {
       onChange(!checked);
@@ -57,13 +60,13 @@ const ToggleInput: React.FC<ToggleInputProps> = ({
     </label>
   );
 
-  if (!label) {
+  if (!translatedLabel) {
     return <div className={`inline-flex items-center ${className}`}>{toggleSwitch}</div>;
   }
 
   return (
     <div className={`flex justify-between items-center ${className}`}>
-      <span className="ui-label">{label}</span>
+      <span className="ui-label">{translatedLabel}</span>
       {toggleSwitch}
     </div>
   );

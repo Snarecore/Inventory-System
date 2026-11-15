@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { DrawerModal, Button, TextInput as InputField } from "@/components/common";
 import {
   useInsertCategoryMutation,
@@ -44,6 +45,7 @@ export const CategoryFormModal: React.FC<CategoryFormModalProps> = ({
   categoryToEdit,
   existingCategories = [],
 }) => {
+  const { t } = useTranslation();
   const { canCreate, canUpdate } = usePermission();
   const [prevCategoryToEdit, setPrevCategoryToEdit] = useState(categoryToEdit);
   const [categoryName, setCategoryName] = useState(categoryToEdit?.categoryName || "");
@@ -109,8 +111,8 @@ export const CategoryFormModal: React.FC<CategoryFormModalProps> = ({
 
     const trimmedName = categoryName.trim();
     if (!trimmedName) {
-      setNameError("Category name is required");
-      showErrorToast("Please enter a category name");
+      setNameError(t("Category name is required"));
+      showErrorToast(t("Please enter a category name"));
       return;
     }
 
@@ -162,7 +164,7 @@ export const CategoryFormModal: React.FC<CategoryFormModalProps> = ({
     <DrawerModal
       isOpen={isOpen}
       onClose={onClose}
-      title={isEditing ? "Edit Category" : "Add New Category"}
+      title={isEditing ? t("Edit Category") : t("Add New Category")}
       icon={<FaLayerGroup size={14} />}
       maxWidth="max-w-[320px]"
       contentKey={categoryToEdit ? `edit-${categoryToEdit.categoryId}` : "create"}
@@ -170,14 +172,14 @@ export const CategoryFormModal: React.FC<CategoryFormModalProps> = ({
       footerButtons={
         <>
           <Button
-            label="Cancel"
+            label={t("Cancel")}
             onClick={onClose}
             variant="outline"
             disabled={isSaving}
             buttonClass="!bg-white hover:!bg-gray-50 !border-gray-300 !text-gray-700 shadow-2xs font-medium !rounded-md !py-[0.4rem] !px-4 text-xs sm:text-sm"
           />
           <Button
-            label={isEditing ? "Update Category" : "Save Category"}
+            label={isEditing ? t("Update Category") : t("Save Category")}
             type="submit"
             color="var(--color-primary)"
             hoverColor="var(--color-primary-hover)"
@@ -190,8 +192,8 @@ export const CategoryFormModal: React.FC<CategoryFormModalProps> = ({
       {/* Category Name */}
       <div>
         <InputField
-          label="Category Name"
-          placeholder="e.g. Office Rent, Electricity, Tea/Snacks"
+          label={t("Category Name")}
+          placeholder={t("e.g. Office Rent, Electricity, Tea/Snacks")}
           value={categoryName}
           onChange={handleNameChange}
           error={nameError}
@@ -203,7 +205,7 @@ export const CategoryFormModal: React.FC<CategoryFormModalProps> = ({
       {/* Category Type */}
       <div>
         <label className="block text-xs font-semibold text-gray-800 mb-1.5">
-          Category Type <span className="text-red-500">*</span>
+          {t("Category Type")} <span className="text-red-500">*</span>
         </label>
         <div className="grid grid-cols-2 gap-2">
           {TYPE_OPTIONS.map((opt) => {
@@ -221,7 +223,7 @@ export const CategoryFormModal: React.FC<CategoryFormModalProps> = ({
                 }`}
               >
                 <Icon className="text-xs shrink-0" />
-                <span>{opt.label}</span>
+                <span>{t(opt.label)}</span>
               </button>
             );
           })}
@@ -232,7 +234,7 @@ export const CategoryFormModal: React.FC<CategoryFormModalProps> = ({
       {isEditing && (
         <div>
           <label className="block text-xs font-semibold text-gray-800 mb-1.5">
-            Status
+            {t("Status")}
           </label>
           <div className="grid grid-cols-2 gap-2">
             <button
@@ -245,7 +247,7 @@ export const CategoryFormModal: React.FC<CategoryFormModalProps> = ({
               }`}
             >
               <FaCheckCircle className="text-xs shrink-0 text-emerald-600" />
-              <span>Active</span>
+              <span>{t("Active")}</span>
             </button>
 
             <button
@@ -258,7 +260,7 @@ export const CategoryFormModal: React.FC<CategoryFormModalProps> = ({
               }`}
             >
               <FaTimesCircle className="text-xs shrink-0 text-rose-600" />
-              <span>Inactive</span>
+              <span>{t("Inactive")}</span>
             </button>
           </div>
         </div>

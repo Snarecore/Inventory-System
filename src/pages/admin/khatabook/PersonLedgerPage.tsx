@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import RefreshButton from "@/components/table-components/RefreshButton";
 import TableSkeleton from "@/components/skeleton/TableSkeleton";
 import EmptyState from "@/components/empty-state/EmptyState";
@@ -40,6 +41,7 @@ import {
 import { FiArrowLeft } from "react-icons/fi";
 
 export const PersonLedgerPage: React.FC = () => {
+  const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const location = useLocation();
@@ -109,8 +111,8 @@ export const PersonLedgerPage: React.FC = () => {
     let pabo = 0;
     let dibo = 0;
     let opening = 0;
-    for (const t of rawTransactions) {
-      const typeUpper = (t.transactionType || "").toUpperCase();
+    for (const txn of rawTransactions) {
+      const typeUpper = (txn.transactionType || "").toUpperCase();
       if (typeUpper.includes("OPENING")) opening++;
       else if (typeUpper.includes("PABO")) pabo++;
       else if (typeUpper.includes("DIBO")) dibo++;
@@ -135,11 +137,11 @@ export const PersonLedgerPage: React.FC = () => {
 
   const transactionsWithBalance = useMemo(() => {
     let runningBalance = 0;
-    return chronologicalTransactions.map((t) => {
-      const typeUpper = (t.transactionType || "").toUpperCase();
+    return chronologicalTransactions.map((txn) => {
+      const typeUpper = (txn.transactionType || "").toUpperCase();
       const isPabo = typeUpper.includes("PABO");
       const isDibo = typeUpper.includes("DIBO");
-      const amt = Number(t.amount) || 0;
+      const amt = Number(txn.amount) || 0;
 
       if (isPabo) {
         runningBalance += amt;
@@ -148,7 +150,7 @@ export const PersonLedgerPage: React.FC = () => {
       }
 
       return {
-        ...t,
+        ...txn,
         runningBalance,
       };
     });
@@ -157,8 +159,8 @@ export const PersonLedgerPage: React.FC = () => {
   const filteredTransactions = useMemo(() => {
     return [...transactionsWithBalance]
       .reverse() // Reverse chronological: newest first
-      .filter((t) => {
-        const typeUpper = (t.transactionType || "").toUpperCase();
+      .filter((txn) => {
+        const typeUpper = (txn.transactionType || "").toUpperCase();
         if (typeFilter === "PABO") return typeUpper.includes("PABO");
         if (typeFilter === "DIBO") return typeUpper.includes("DIBO");
         if (typeFilter === "OPENING") return typeUpper.includes("OPENING");
@@ -178,12 +180,12 @@ export const PersonLedgerPage: React.FC = () => {
     let pabo = 0;
     let dibo = 0;
     let comm = 0;
-    for (const t of rawTransactions) {
-      const amt = Number(t.amount) || 0;
-      const typeUpper = (t.transactionType || "").toUpperCase();
+    for (const txn of rawTransactions) {
+      const amt = Number(txn.amount) || 0;
+      const typeUpper = (txn.transactionType || "").toUpperCase();
       if (typeUpper.includes("PABO")) pabo += amt;
       else if (typeUpper.includes("DIBO")) dibo += amt;
-      if (t.commission) comm += Number(t.commission);
+      if (txn.commission) comm += Number(txn.commission);
     }
     return {
       totalPabo: pabo,
@@ -196,14 +198,14 @@ export const PersonLedgerPage: React.FC = () => {
   const handleExportExcel = () => {
     if (!person || filteredTransactions.length === 0) return;
 
-    const rows = filteredTransactions.map((t, idx) => {
-      const typeUpper = (t.transactionType || "").toUpperCase();
+    const rows = filteredTransactions.map((txn, idx) => {
+      const typeUpper = (txn.transactionType || "").toUpperCase();
       const isPabo = typeUpper.includes("PABO");
       const isDibo = typeUpper.includes("DIBO");
       const isOpening = typeUpper.includes("OPENING");
-      const amt = Number(t.amount) || 0;
+      const amt = Number(txn.amount) || 0;
 
-      const dateStr = t.createdAt || t.createdDate || t.transactionDate || "";
+      const dateStr = txn.createdAt || txn.createdDate || txn.transactionDate || "";
       let formattedDate = "-";
       if (dateStr) {
         const d = new Date(dateStr);
@@ -218,14 +220,14 @@ export const PersonLedgerPage: React.FC = () => {
       return {
         "SL": idx + 1,
         "Date & Time": formattedDate,
-        "Description": t.note || (isOpening ? "Opening Balance" : "General Transaction"),
-        "Reference": t.refNo || "-",
-        "Tender": (t.paymentMethod || t.tender || "CASH").toUpperCase(),
-        "Transaction Type": t.transactionType || "-",
+        "Description": txn.note || (isOpening ? "Opening Balance" : "General Transaction"),
+        "Reference": txn.refNo || "-",
+        "Tender": (txn.paymentMethod || txn.tender || "CASH").toUpperCase(),
+        "Transaction Type": txn.transactionType || "-",
         "Receivable (BDT)": isPabo ? amt : 0,
         "Payable (BDT)": isDibo ? amt : 0,
-        "Commission (BDT)": t.commission ? Number(t.commission) : 0,
-        "Running Balance (BDT)": t.runningBalance,
+        "Commission (BDT)": txn.commission ? Number(txn.commission) : 0,
+        "Running Balance (BDT)": txn.runningBalance,
       };
     });
 
@@ -276,9 +278,9 @@ export const PersonLedgerPage: React.FC = () => {
     return (
       <div className="flex flex-col gap-3 px-2.5 py-4 max-w-[1600px] mx-auto w-full">
         <div className="p-8 text-center bg-[var(--ui-surface)] border border-[var(--ui-border)] rounded-xl max-w-md mx-auto space-y-4 shadow-xs">
-          <p className="text-base font-bold text-[var(--ui-text)]">Person Not Found</p>
+          <p className="text-base font-bold text-[var(--ui-text)]">{t("Person Not Found")}</p>
           <p className="text-xs text-[var(--ui-text-muted)]">
-            The person with ID #{id} was not found in Khatabook or may have been deleted.
+            {t("The person with ID #{id} was not found in Khatabook or may have been deleted.")}
           </p>
           <button
             type="button"
@@ -286,7 +288,7 @@ export const PersonLedgerPage: React.FC = () => {
             className="inline-flex items-center gap-2 px-4 py-2 bg-[var(--primary-color,#009fe3)] hover:opacity-90 text-white rounded-lg text-xs font-semibold cursor-pointer transition-opacity"
           >
             <FiArrowLeft />
-            <span>Back to Khatabook</span>
+            <span>{t("Back to Khatabook")}</span>
           </button>
         </div>
       </div>
@@ -303,13 +305,13 @@ export const PersonLedgerPage: React.FC = () => {
             type="button"
             onClick={() => navigate("/admin/khatabook")}
             className="h-8 px-2.5 rounded-lg border border-[var(--ui-border)] bg-[var(--ui-surface)] hover:bg-[var(--ui-surface-sunken)] text-[var(--ui-text)] transition-colors cursor-pointer flex items-center gap-1.5 text-xs font-semibold shadow-2xs group"
-            title="Back to Khatabook"
+            title={t("Back to Khatabook")}
           >
             <FiArrowLeft size={13} className="group-hover:-translate-x-0.5 transition-transform" />
-            <span>Back to Khatabook</span>
+            <span>{t("Back to Khatabook")}</span>
           </button>
           <span className="text-[var(--ui-text-subtle)] text-xs">/</span>
-          <span className="text-xs font-medium text-[var(--ui-text-muted)]">Ledger Statement</span>
+          <span className="text-xs font-medium text-[var(--ui-text-muted)]">{t("Ledger Statement")}</span>
         </div>
 
         {/* Right: Actions (Refresh, Receive, Prodan) */}
@@ -334,7 +336,7 @@ export const PersonLedgerPage: React.FC = () => {
                 className="h-8 px-3 rounded-lg text-xs font-semibold bg-[#059669] hover:bg-[#047857] text-white flex items-center gap-1.5 transition-all cursor-pointer shadow-xs active:scale-95"
               >
                 <FaPlus className="text-[10px]" />
-                <span>Receive</span>
+                <span>{t("Receive")}</span>
               </button>
               <button
                 type="button"
@@ -346,7 +348,7 @@ export const PersonLedgerPage: React.FC = () => {
                 className="h-8 px-3 rounded-lg text-xs font-semibold bg-[#dc2626] hover:bg-[#b91c1c] text-white flex items-center gap-1.5 transition-all cursor-pointer shadow-xs active:scale-95"
               >
                 <FaMinus className="text-[10px]" />
-                <span>Prodan</span>
+                <span>{t("Prodan")}</span>
               </button>
             </>
           )}
@@ -394,7 +396,7 @@ export const PersonLedgerPage: React.FC = () => {
             <div className="p-2 sm:px-3 sm:py-2 rounded-lg border bg-[var(--ui-success-light)]/60 border-[var(--ui-success-border)] flex items-center justify-between gap-3 shadow-2xs sm:min-w-[145px]">
               <div className="flex flex-col min-w-0">
                 <span className="text-[11px] font-semibold text-[var(--ui-success-dark)] truncate">
-                  Receivable (Pabo)
+                  {t("Receivable (Pabo)")}
                 </span>
                 <span className="text-sm sm:text-base font-extrabold text-[var(--ui-success)] mt-0.5 truncate">
                   ৳ {formatMoney(totalPabo)}
@@ -409,7 +411,7 @@ export const PersonLedgerPage: React.FC = () => {
             <div className="p-2 sm:px-3 sm:py-2 rounded-lg border bg-[var(--ui-danger-light)]/60 border-[var(--ui-danger-border)] flex items-center justify-between gap-3 shadow-2xs sm:min-w-[145px]">
               <div className="flex flex-col min-w-0">
                 <span className="text-[11px] font-semibold text-[var(--ui-danger-dark)] truncate">
-                  Payable (Dibo)
+                  {t("Payable (Dibo)")}
                 </span>
                 <span className="text-sm sm:text-base font-extrabold text-[var(--ui-danger)] mt-0.5 truncate">
                   ৳ {formatMoney(totalDibo)}
@@ -441,10 +443,10 @@ export const PersonLedgerPage: React.FC = () => {
                   }`}
                 >
                   {netBalance > 0
-                    ? "Net Receivable"
+                    ? t("Net Receivable")
                     : netBalance < 0
-                    ? "Net Payable"
-                    : "Settled (Balance)"}
+                    ? t("Net Payable")
+                    : t("Settled (Balance)")}
                 </span>
                 <span
                   className={`text-sm sm:text-base font-extrabold mt-0.5 truncate ${
@@ -476,7 +478,7 @@ export const PersonLedgerPage: React.FC = () => {
               <div className="p-2 sm:px-3 sm:py-2 rounded-lg border bg-amber-50/70 dark:bg-amber-950/20 border-amber-200/80 dark:border-amber-800/40 flex items-center justify-between gap-3 shadow-2xs sm:min-w-[145px]">
                 <div className="flex flex-col min-w-0">
                   <span className="text-[11px] font-semibold text-amber-800 dark:text-amber-400 truncate">
-                    Commission
+                    {t("Commission")}
                   </span>
                   <span className="text-sm sm:text-base font-extrabold text-amber-600 dark:text-amber-400 mt-0.5 truncate">
                     ৳ {formatMoney(totalCommission)}
@@ -499,10 +501,10 @@ export const PersonLedgerPage: React.FC = () => {
             {/* Left: Filter Tabs with count badges */}
             <div className="inline-flex items-center rounded-lg border border-[var(--ui-border)] p-0.5 bg-[var(--ui-surface-sunken)] h-8 self-start sm:self-auto overflow-x-auto scrollbar-none">
               {[
-                { id: "ALL", label: "All", count: tabCounts.all },
-                { id: "PABO", label: "Receivable", count: tabCounts.pabo },
-                { id: "DIBO", label: "Payable", count: tabCounts.dibo },
-                { id: "OPENING", label: "Opening", count: tabCounts.opening },
+                { id: "ALL", label: t("All"), count: tabCounts.all },
+                { id: "PABO", label: t("Receivable"), count: tabCounts.pabo },
+                { id: "DIBO", label: t("Payable"), count: tabCounts.dibo },
+                { id: "OPENING", label: t("Opening"), count: tabCounts.opening },
               ].map((tab) => {
                 const active = typeFilter === tab.id;
                 return (
@@ -539,7 +541,7 @@ export const PersonLedgerPage: React.FC = () => {
               <ExcelExportButton
                 onClick={handleExportExcel}
                 disabled={filteredTransactions.length === 0}
-                title="Export Ledger to Excel"
+                title={t("Export Ledger to Excel")}
               />
 
               <button
@@ -547,10 +549,10 @@ export const PersonLedgerPage: React.FC = () => {
                 onClick={handlePrint}
                 disabled={filteredTransactions.length === 0}
                 className="h-8 px-2.5 sm:px-3 text-xs font-semibold text-[var(--ui-text)] bg-[var(--ui-surface)] border border-[var(--ui-border)] hover:bg-[var(--ui-surface-sunken)] rounded-lg transition-all flex items-center gap-1.5 cursor-pointer shrink-0 shadow-xs active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed"
-                title="Print Statement"
+                title={t("Print Statement")}
               >
                 <FaPrint className="text-[var(--ui-text-subtle)] text-xs" />
-                <span>Print</span>
+                <span>{t("Print")}</span>
               </button>
 
               {canDelete("khatabook") && rawTransactions.length > 0 && (
@@ -558,10 +560,10 @@ export const PersonLedgerPage: React.FC = () => {
                   type="button"
                   onClick={() => setIsDeleteAllModalOpen(true)}
                   className="h-8 px-2.5 sm:px-3 text-xs font-semibold text-[var(--ui-danger)] bg-[var(--ui-surface)] border border-[var(--ui-danger-border)] hover:bg-[var(--ui-danger-light)] rounded-lg transition-all flex items-center gap-1.5 cursor-pointer shrink-0 shadow-xs active:scale-95"
-                  title="Delete all transactions of this person"
+                  title={t("Delete all transactions of this person")}
                 >
                   <FaTrash className="text-xs" />
-                  <span>Delete All</span>
+                  <span>{t("Delete All")}</span>
                 </button>
               )}
             </div>
@@ -578,14 +580,14 @@ export const PersonLedgerPage: React.FC = () => {
             <Table className="table-fixed min-w-[800px]">
               <TableHead>
                 <TableTh width="4%" align="center">SL</TableTh>
-                <TableTh width="15%">Date & Time</TableTh>
-                <TableTh width="20%">Description & Ref</TableTh>
-                <TableTh width="10%">Method</TableTh>
-                <TableTh width="12%" align="right">Receivable (+)</TableTh>
-                <TableTh width="12%" align="right">Payable (-)</TableTh>
-                <TableTh width="11%" align="right">Commission</TableTh>
-                <TableTh width="11%" align="right">Balance</TableTh>
-                <TableTh width="5%" align="right">Actions</TableTh>
+                <TableTh width="15%">{t("Date & Time")}</TableTh>
+                <TableTh width="20%">{t("Description & Ref")}</TableTh>
+                <TableTh width="10%">{t("Method")}</TableTh>
+                <TableTh width="12%" align="right">{t("Receivable (+)")}</TableTh>
+                <TableTh width="12%" align="right">{t("Payable (-)")}</TableTh>
+                <TableTh width="11%" align="right">{t("Commission")}</TableTh>
+                <TableTh width="11%" align="right">{t("Balance")}</TableTh>
+                <TableTh width="5%" align="right">{t("Actions")}</TableTh>
               </TableHead>
               <TableBody>
                 {paginatedTransactions.length === 0 ? (
@@ -594,26 +596,26 @@ export const PersonLedgerPage: React.FC = () => {
                       <EmptyState
                         title={
                           typeFilter !== "ALL"
-                            ? "No transactions matching filter"
-                            : "No transactions recorded yet"
+                            ? t("No transactions matching filter")
+                            : t("No transactions recorded yet")
                         }
                         description={
                           typeFilter !== "ALL"
-                            ? "Try selecting 'All' tab to see all transactions for this account."
-                            : "Click 'Receive' or 'Prodan' above to record the first transaction."
+                            ? t("Try selecting 'All' tab to see all transactions for this account.")
+                            : t("Click 'Receive' or 'Prodan' above to record the first transaction.")
                         }
                       />
                     </td>
                   </tr>
                 ) : (
-                  paginatedTransactions.map((t, idx) => {
-                    const typeUpper = (t.transactionType || "").toUpperCase();
+                  paginatedTransactions.map((txn, idx) => {
+                    const typeUpper = (txn.transactionType || "").toUpperCase();
                     const isPabo = typeUpper.includes("PABO");
                     const isDibo = typeUpper.includes("DIBO");
                     const isOpening = typeUpper.includes("OPENING");
-                    const amt = Number(t.amount) || 0;
+                    const amt = Number(txn.amount) || 0;
 
-                    const dateStr = t.createdAt || t.createdDate || t.transactionDate || "";
+                    const dateStr = txn.createdAt || txn.createdDate || txn.transactionDate || "";
                     let formattedDate = "-";
                     if (dateStr) {
                       const d = new Date(dateStr);
@@ -627,7 +629,7 @@ export const PersonLedgerPage: React.FC = () => {
 
                     return (
                       <tr
-                        key={t.id}
+                        key={txn.id}
                         className="hover:bg-[var(--primary-color-light)]/40 transition-colors group"
                       >
                         {/* SL */}
@@ -644,12 +646,12 @@ export const PersonLedgerPage: React.FC = () => {
                         <td className="py-2.5 px-3 truncate whitespace-nowrap">
                           <span
                             className="font-semibold text-xs text-[var(--ui-text)] inline-flex items-center gap-1 truncate"
-                            title={`${t.note || (isOpening ? "Opening Balance" : "General Transaction")}${t.refNo ? ` (Ref: ${t.refNo})` : ""}`}
+                            title={`${txn.note || (isOpening ? "Opening Balance" : "General Transaction")}${txn.refNo ? ` (Ref: ${txn.refNo})` : ""}`}
                           >
-                            <span>{t.note || (isOpening ? "Opening Balance" : "General Transaction")}</span>
-                            {t.refNo && (
+                            <span>{txn.note || (isOpening ? t("Opening Balance") : t("General Transaction"))}</span>
+                            {txn.refNo && (
                               <span className="text-[10px] text-[var(--ui-text-subtle)] font-normal">
-                                ({t.refNo})
+                                ({txn.refNo})
                               </span>
                             )}
                           </span>
@@ -658,7 +660,7 @@ export const PersonLedgerPage: React.FC = () => {
                         {/* Tender / Payment Method badge */}
                         <td className="py-2.5 px-3 whitespace-nowrap">
                           {(() => {
-                            const method = (t.paymentMethod || t.tender || "CASH").toUpperCase();
+                            const method = (txn.paymentMethod || txn.tender || "CASH").toUpperCase();
                             const isCash = method === "CASH";
                             const isBank = method === "BANK";
                             const isMfs = method === "MFS";
@@ -693,9 +695,9 @@ export const PersonLedgerPage: React.FC = () => {
 
                         {/* Commission */}
                         <td className="py-2.5 px-3 whitespace-nowrap text-right text-xs">
-                          {t.commission != null && Number(t.commission) > 0 ? (
+                          {txn.commission != null && Number(txn.commission) > 0 ? (
                             <span className="font-bold text-amber-600 dark:text-amber-400">
-                              ৳{Number(t.commission).toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                              ৳{Number(txn.commission).toLocaleString("en-IN", { minimumFractionDigits: 2 })}
                             </span>
                           ) : (
                             <span className="text-[var(--ui-text-muted)]">-</span>
@@ -706,17 +708,14 @@ export const PersonLedgerPage: React.FC = () => {
                         <td className="py-2.5 px-3 whitespace-nowrap text-right text-xs">
                           <span
                             className={`font-extrabold ${
-                              t.runningBalance > 0
+                              txn.runningBalance > 0
                                 ? "text-[var(--ui-success)]"
-                                : t.runningBalance < 0
+                                : txn.runningBalance < 0
                                 ? "text-[var(--ui-danger)]"
                                 : "text-[var(--ui-text)]"
                             }`}
                           >
-                            ৳{Math.abs(t.runningBalance).toLocaleString("en-IN", { minimumFractionDigits: 2 })}
-                          </span>
-                          <span className="text-[10px] text-[var(--ui-text-muted)] ml-1 font-normal">
-                            {t.runningBalance > 0 ? "(Pabo)" : t.runningBalance < 0 ? "(Dibo)" : ""}
+                            ৳{Math.abs(txn.runningBalance).toLocaleString("en-IN", { minimumFractionDigits: 2 })}
                           </span>
                         </td>
 
@@ -724,28 +723,28 @@ export const PersonLedgerPage: React.FC = () => {
                         <td className="py-2.5 px-3 text-right whitespace-nowrap">
                           {isOpening ? (
                             <span className="text-[10px] text-[var(--ui-text-subtle)] italic">
-                              Opening
+                              {t("Opening")}
                             </span>
                           ) : (
                             <TableActionButtons
                               onEdit={
                                 canUpdate("khatabook")
                                   ? () => {
-                                      setTxnToEdit(t);
+                                      setTxnToEdit(txn);
                                       setIsTxnModalOpen(true);
                                     }
                                   : undefined
                               }
-                              editTitle="Edit Transaction"
+                              editTitle={t("Edit Transaction")}
                               onDelete={
                                 canDelete("khatabook")
                                   ? () => {
-                                      setTxnToDelete(t);
+                                      setTxnToDelete(txn);
                                       setIsDeleteTxnModalOpen(true);
                                     }
                                   : undefined
                               }
-                              deleteTitle="Delete Transaction"
+                              deleteTitle={t("Delete Transaction")}
                               className="justify-end flex-nowrap shrink-0 gap-1"
                             />
                           )}

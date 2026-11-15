@@ -6,6 +6,7 @@ export * from "./Input";
 export * from "./Container";
 export * from "./UserAvatar";
 export * from "./DatePicker";
+export * from "./LanguageSwitcher";
 
 // Form Controls
 export { default as TextInput } from "@/components/form/TextInput";

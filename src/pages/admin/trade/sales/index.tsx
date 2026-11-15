@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { useNavigate, useLocation } from "react-router-dom";
 import moment from "moment";
 import { FaPlus, FaShoppingCart, FaUndoAlt } from "react-icons/fa";
@@ -28,6 +29,7 @@ import { useDebounce } from "@/hooks/useDebounce";
 import { usePermission } from "@/hooks/usePermission";
 
 const Sales: React.FC = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
   const { canCreate } = usePermission();
@@ -796,7 +798,7 @@ const Sales: React.FC = () => {
           }`}
         >
           <FaShoppingCart size={11} />
-          <span>Sales List ({rawSales.length})</span>
+          <span>{t("Sales List")} ({rawSales.length})</span>
         </button>
 
         <button
@@ -813,7 +815,7 @@ const Sales: React.FC = () => {
           }`}
         >
           <FaUndoAlt size={11} />
-          <span>Sales Returns List ({rawReturns.length})</span>
+          <span>{t("Sales Returns")} ({rawReturns.length})</span>
         </button>
       </div>
 

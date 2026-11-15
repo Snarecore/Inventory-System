@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import DrawerModal from "@/components/modal/DrawerModal";
 import TextInput from "@/components/form/TextInput";
 import Button from "@/components/button/Button";
@@ -47,6 +48,7 @@ export const TransactionFormModal: React.FC<TransactionFormModalProps> = ({
   onSuccess,
   zIndex = "z-[60]",
 }) => {
+  const { t } = useTranslation();
   const isEdit = Boolean(transactionToEdit?.id);
 
   const [personId, setPersonId] = useState<number | "">("");
@@ -187,20 +189,20 @@ export const TransactionFormModal: React.FC<TransactionFormModalProps> = ({
   const validate = () => {
     const errs: Record<string, string> = {};
     if (!personId) {
-      errs.personId = "Please select a person";
+      errs.personId = t("Please select a person");
     }
     const numAmount = Number(amount);
     if (!amount || isNaN(numAmount) || numAmount <= 0) {
-      errs.amount = "Please enter a valid amount greater than 0";
+      errs.amount = t("Please enter a valid amount greater than 0");
     }
     if (hasCommission && Number(commission) < 0) {
-      errs.commission = "Commission cannot be negative";
+      errs.commission = t("Commission cannot be negative");
     }
     if (paymentType === "BANK" && !bankAccountNo) {
-      errs.bankAccountNo = "Please select a bank account";
+      errs.bankAccountNo = t("Please select a bank account");
     }
     if (paymentType === "MFS" && !mfsUserId) {
-      errs.mfsUserId = "Please select an MFS account";
+      errs.mfsUserId = t("Please select an MFS account");
     }
     setErrors(errs);
     return Object.keys(errs).length === 0;
@@ -297,7 +299,7 @@ export const TransactionFormModal: React.FC<TransactionFormModalProps> = ({
         {/* Transaction Type Segmented Selector */}
         <div>
           <label className="text-xs font-semibold text-[var(--ui-text)] block mb-1">
-            Transaction Type <span className="text-[var(--ui-danger)]">*</span>
+            {t("Transaction Type")} <span className="text-[var(--ui-danger)]">*</span>
           </label>
           <div className="grid grid-cols-2 gap-1 p-0.5 bg-[var(--ui-surface-sunken)] rounded-lg border border-[var(--ui-border)]">
             <button
@@ -311,10 +313,10 @@ export const TransactionFormModal: React.FC<TransactionFormModalProps> = ({
             >
               <span className="flex items-center gap-1.5">
                 <FaArrowDown className={transactionType === "PABO" ? "text-[var(--ui-success)] text-xs" : "text-[var(--ui-text-subtle)] text-xs"} />
-                Receivable (Pabo)
+                {t("Receivable (Pabo)")}
               </span>
               <span className="text-[10px] font-normal text-[var(--ui-text-muted)]">
-                Money Received (+Balance)
+                {t("Money Received (+Balance)")}
               </span>
             </button>
             <button
@@ -328,10 +330,10 @@ export const TransactionFormModal: React.FC<TransactionFormModalProps> = ({
             >
               <span className="flex items-center gap-1.5">
                 <FaArrowUp className={transactionType === "DIBO" ? "text-[var(--ui-danger)] text-xs" : "text-[var(--ui-text-subtle)] text-xs"} />
-                Payable (Dibo)
+                {t("Payable (Dibo)")}
               </span>
               <span className="text-[10px] font-normal text-[var(--ui-text-muted)]">
-                Money Paid (-Balance)
+                {t("Money Paid (-Balance)")}
               </span>
             </button>
           </div>
@@ -342,7 +344,7 @@ export const TransactionFormModal: React.FC<TransactionFormModalProps> = ({
           {/* Person Selector */}
           <div className="ui-field">
             <label className="ui-label">
-              Select Person <span className="text-[var(--ui-danger)]">*</span>
+              {t("Select Person")} <span className="text-[var(--ui-danger)]">*</span>
             </label>
             <select
               value={personId}
@@ -353,7 +355,7 @@ export const TransactionFormModal: React.FC<TransactionFormModalProps> = ({
               disabled={Boolean(defaultPersonId)}
               className="ui-control ui-select w-full bg-[var(--ui-surface)] text-[var(--ui-text)] cursor-pointer disabled:opacity-60 text-xs"
             >
-              <option value="" className="bg-[var(--ui-surface)] text-[var(--ui-text)]">-- Choose Person --</option>
+              <option value="" className="bg-[var(--ui-surface)] text-[var(--ui-text)]">{t("-- Choose Person --")}</option>
               {persons.map((p) => (
                 <option key={p.id} value={p.id} className="bg-[var(--ui-surface)] text-[var(--ui-text)]">
                   {p.name} ({p.phone})
@@ -389,7 +391,7 @@ export const TransactionFormModal: React.FC<TransactionFormModalProps> = ({
                 <FaMoneyBillWave size={10} />
               </div>
               <span className="text-xs font-semibold text-[var(--ui-text)]">
-                Add Commission (Fixed ৳)
+                {t("Add Commission (Fixed ৳)")}
               </span>
             </div>
             <label className="relative inline-flex items-center cursor-pointer shrink-0">
@@ -428,7 +430,7 @@ export const TransactionFormModal: React.FC<TransactionFormModalProps> = ({
         {/* Tender Type Selector */}
         <div>
           <label className="text-xs font-semibold text-[var(--ui-text)] block mb-1">
-            Payment Method
+            {t("Payment Method")}
           </label>
           <div className="grid grid-cols-3 gap-1.5 p-1 bg-[var(--ui-surface-sunken)] rounded-xl border border-[var(--ui-border)]">
             {[
@@ -450,7 +452,7 @@ export const TransactionFormModal: React.FC<TransactionFormModalProps> = ({
                   }`}
                 >
                   <Icon className="text-xs" />
-                  <span>{tender.label}</span>
+                  <span>{t(tender.label)}</span>
                 </button>
               );
             })}
@@ -461,7 +463,7 @@ export const TransactionFormModal: React.FC<TransactionFormModalProps> = ({
         {paymentType === "BANK" && (
           <div className="p-2.5 rounded-xl bg-[var(--ui-surface-sunken)]/60 border border-[var(--ui-border)] flex flex-col gap-1">
             <label className="text-xs font-semibold text-[var(--ui-text)]">
-              Select Bank Account <span className="text-[var(--ui-danger)]">*</span>
+              {t("Select Bank Account")} <span className="text-[var(--ui-danger)]">*</span>
             </label>
             <select
               value={bankAccountNo}
@@ -471,7 +473,7 @@ export const TransactionFormModal: React.FC<TransactionFormModalProps> = ({
               }}
               className="ui-control ui-select w-full bg-[var(--ui-surface)] text-[var(--ui-text)] cursor-pointer text-xs"
             >
-              <option value="">-- Select Bank Account --</option>
+              <option value="">{t("-- Select Bank Account --")}</option>
               {bankAccounts.map((b: any) => (
                 <option key={b.bankId || b.id} value={b.accountNo}>
                   {b.bankName} - {b.bankAccountName || b.accountName || b.name || "Account"} ({b.accountNo})
@@ -488,7 +490,7 @@ export const TransactionFormModal: React.FC<TransactionFormModalProps> = ({
         {paymentType === "MFS" && (
           <div className="p-2.5 rounded-xl bg-[var(--ui-surface-sunken)]/60 border border-[var(--ui-border)] flex flex-col gap-1">
             <label className="text-xs font-semibold text-[var(--ui-text)]">
-              Select MFS Provider Account <span className="text-[var(--ui-danger)]">*</span>
+              {t("Select MFS Provider Account")} <span className="text-[var(--ui-danger)]">*</span>
             </label>
             <select
               value={mfsUserId}
@@ -498,7 +500,7 @@ export const TransactionFormModal: React.FC<TransactionFormModalProps> = ({
               }}
               className="ui-control ui-select w-full bg-[var(--ui-surface)] text-[var(--ui-text)] cursor-pointer text-xs"
             >
-              <option value="">-- Select MFS Account --</option>
+              <option value="">{t("-- Select MFS Account --")}</option>
               {mfsAccounts.map((m: any) => (
                 <option key={m.id || m.userId} value={m.id || m.userId}>
                   {m.method || m.name || "MFS"} - {m.phoneNumber || m.accountNumber || ""} ({m.name || "Account"})
@@ -516,7 +518,7 @@ export const TransactionFormModal: React.FC<TransactionFormModalProps> = ({
           {/* Date */}
           <div>
             <label className="text-xs font-semibold text-[var(--ui-text)] block mb-1">
-              Date
+              {t("Date")}
             </label>
             <input
               type="date"
@@ -541,13 +543,13 @@ export const TransactionFormModal: React.FC<TransactionFormModalProps> = ({
         {/* Note / Description */}
         <div>
           <label className="text-xs font-semibold text-[var(--ui-text)] block mb-1">
-            Note / Description
+            {t("Note / Description")}
           </label>
           <textarea
             rows={2}
             value={note}
             onChange={(e) => setNote(e.target.value)}
-            placeholder="Add any notes about this transaction..."
+            placeholder={t("Add any notes about this transaction...")}
             className="w-full px-2.5 py-1.5 text-xs bg-[var(--ui-surface)] text-[var(--ui-text)] border border-[var(--ui-border)] rounded-lg focus:outline-none focus:ring-1 focus:ring-[var(--primary-color,#009fe3)] resize-none"
           />
         </div>
@@ -559,7 +561,7 @@ export const TransactionFormModal: React.FC<TransactionFormModalProps> = ({
               <FaPaperPlane size={10} />
             </div>
             <span className="text-xs font-semibold text-[var(--ui-text)]">
-              Send SMS Notification
+              {t("Send SMS Notification")}
             </span>
           </div>
           <label className="relative inline-flex items-center cursor-pointer shrink-0">

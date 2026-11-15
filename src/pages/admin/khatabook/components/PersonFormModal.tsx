@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import DrawerModal from "@/components/modal/DrawerModal";
 import TextInput from "@/components/form/TextInput";
 import Button from "@/components/button/Button";
@@ -32,6 +33,7 @@ export const PersonFormModal: React.FC<PersonFormModalProps> = ({
   personToEdit,
   onSuccess,
 }) => {
+  const { t } = useTranslation();
   const isEdit = Boolean(personToEdit?.id);
 
   const [name, setName] = useState("");
@@ -261,7 +263,7 @@ export const PersonFormModal: React.FC<PersonFormModalProps> = ({
         {/* Status */}
         <div>
           <label className="text-xs font-semibold text-[var(--ui-text)] block mb-1">
-            Status
+            {t("Status")}
           </label>
           <div className="grid grid-cols-2 gap-1 p-0.5 bg-[var(--ui-surface-sunken)] rounded-lg border border-[var(--ui-border)]">
             <button
@@ -273,7 +275,7 @@ export const PersonFormModal: React.FC<PersonFormModalProps> = ({
                   : "text-[var(--ui-text-muted)] hover:text-[var(--ui-text)]"
               }`}
             >
-              Active
+              {t("Active")}
             </button>
             <button
               type="button"
@@ -284,7 +286,7 @@ export const PersonFormModal: React.FC<PersonFormModalProps> = ({
                   : "text-[var(--ui-text-muted)] hover:text-[var(--ui-text)]"
               }`}
             >
-              Inactive
+              {t("Inactive")}
             </button>
           </div>
         </div>
@@ -293,15 +295,15 @@ export const PersonFormModal: React.FC<PersonFormModalProps> = ({
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
           <div className="ui-field">
             <label className="ui-label">
-              Person / Institute
+              {t("Person / Institute")}
             </label>
             <select
               value={type}
               onChange={(e) => setType(e.target.value as any)}
               className="ui-control ui-select w-full bg-[var(--ui-surface)] text-[var(--ui-text)] cursor-pointer text-xs"
             >
-              <option value="PERSON">Person</option>
-              <option value="INSTITUTE">Institute</option>
+              <option value="PERSON">{t("Person")}</option>
+              <option value="INSTITUTE">{t("Institute")}</option>
             </select>
           </div>
 
@@ -322,7 +324,7 @@ export const PersonFormModal: React.FC<PersonFormModalProps> = ({
           <div className="p-2 bg-[var(--ui-surface-sunken)]/60 border border-[var(--ui-border)] rounded-lg flex flex-col gap-1.5 mt-0.5">
             <div className="flex items-center justify-between">
               <span className="text-xs font-bold text-[var(--ui-text)]">
-                Opening Balance Setup
+                {t("Opening Balance Setup")}
               </span>
             </div>
 
@@ -338,7 +340,7 @@ export const PersonFormModal: React.FC<PersonFormModalProps> = ({
                 }`}
               >
                 <FaMinus className="text-[10px]" />
-                None (0.00)
+                {t("None (0.00)")}
               </button>
 
               <button
@@ -351,7 +353,7 @@ export const PersonFormModal: React.FC<PersonFormModalProps> = ({
                 }`}
               >
                 <FaArrowDown className="text-[10px] text-[var(--ui-success)]" />
-                Receivable (Pabo)
+                {t("Receivable (Pabo)")}
               </button>
 
               <button
@@ -364,7 +366,7 @@ export const PersonFormModal: React.FC<PersonFormModalProps> = ({
                 }`}
               >
                 <FaArrowUp className="text-[10px] text-[var(--ui-danger)]" />
-                Payable (Dibo)
+                {t("Payable (Dibo)")}
               </button>
             </div>
 
@@ -401,7 +403,7 @@ export const PersonFormModal: React.FC<PersonFormModalProps> = ({
 
                 <div>
                   <label className="text-xs font-semibold text-[var(--ui-text)] block mb-1">
-                    Opening Date
+                    {t("Opening Date")}
                   </label>
                   <input
                     type="date"
@@ -423,7 +425,7 @@ export const PersonFormModal: React.FC<PersonFormModalProps> = ({
                 <FaPaperPlane size={10} />
               </div>
               <span className="text-xs font-semibold text-[var(--ui-text)]">
-                Send SMS Notification
+                {t("Send SMS Notification")}
               </span>
             </div>
             <label className="relative inline-flex items-center cursor-pointer shrink-0">

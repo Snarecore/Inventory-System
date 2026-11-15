@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import PageHeader from "@/components/page-header/PageHeader";
 import Button from "@/components/button/Button";
 import RefreshButton from "@/components/table-components/RefreshButton";
@@ -23,6 +24,7 @@ import { FaPlus, FaUsers, FaMoneyBillWave } from "react-icons/fa";
 import { usePermission } from "@/hooks/usePermission";
 
 export const KhatabookPage: React.FC = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { canCreate } = usePermission();
   const { persons, allTransactions, kpi, isLoading, isFetching, refetch } = useKhatabookDashboardQuery();
@@ -121,7 +123,7 @@ export const KhatabookPage: React.FC = () => {
           <div className="p-2 sm:p-2.5 rounded-lg border bg-[var(--ui-success-light)]/60 border-[var(--ui-success-border)] hover:border-[var(--ui-success-border)] flex items-center justify-between gap-2 transition-all shadow-xs h-full">
             <div className="flex flex-col min-w-0">
               <span className="text-[11px] font-semibold text-[var(--ui-text-muted)] truncate">
-                Receivable (Pabo)
+                {t("Receivable (Pabo)")}
               </span>
               <span className="text-sm sm:text-base font-bold truncate mt-0.5 text-[var(--ui-success)]">
                 ৳ {formatMoney(kpi.totalPabo)}
@@ -138,7 +140,7 @@ export const KhatabookPage: React.FC = () => {
           <div className="p-2 sm:p-2.5 rounded-lg border bg-[var(--ui-danger-light)]/60 border-[var(--ui-danger-border)] hover:border-[var(--ui-danger-border)] flex items-center justify-between gap-2 transition-all shadow-xs h-full">
             <div className="flex flex-col min-w-0">
               <span className="text-[11px] font-semibold text-[var(--ui-text-muted)] truncate">
-                Payable (Dibo)
+                {t("Payable (Dibo)")}
               </span>
               <span className="text-sm sm:text-base font-bold truncate mt-0.5 text-[var(--ui-danger)]">
                 ৳ {formatMoney(kpi.totalDibo)}
@@ -155,12 +157,12 @@ export const KhatabookPage: React.FC = () => {
           <div className="p-2 sm:p-2.5 rounded-lg border bg-[var(--primary-color-light)]/60 border-[var(--primary-color-muted)] hover:border-[var(--primary-color-muted)] flex items-center justify-between gap-2 transition-all shadow-xs h-full">
             <div className="flex flex-col min-w-0">
               <span className="text-[11px] font-semibold text-[var(--ui-text-muted)] truncate">
-                Net Balance
+                {t("Net Balance")}
               </span>
               <span className="text-sm sm:text-base font-bold truncate mt-0.5 text-[var(--primary-color)]">
                 ৳ {formatMoney(Math.abs(kpi.netBalance))}{" "}
                 <span className="text-[10px] font-normal">
-                  {kpi.netBalance > 0 ? "(Pabo)" : kpi.netBalance < 0 ? "(Dibo)" : ""}
+                  {kpi.netBalance > 0 ? ` (${t("Pabo")})` : kpi.netBalance < 0 ? ` (${t("Dibo")})` : ""}
                 </span>
               </span>
             </div>
@@ -175,7 +177,7 @@ export const KhatabookPage: React.FC = () => {
           <div className="p-2 sm:p-2.5 rounded-lg border bg-amber-50/70 dark:bg-amber-950/20 border-amber-200/80 dark:border-amber-800/40 hover:border-amber-300 dark:hover:border-amber-700 flex items-center justify-between gap-2 transition-all shadow-xs h-full">
             <div className="flex flex-col min-w-0">
               <span className="text-[11px] font-semibold text-amber-800 dark:text-amber-400 truncate">
-                Commission
+                {t("Commission")}
               </span>
               <span className="text-sm sm:text-base font-bold truncate mt-0.5 text-amber-600 dark:text-amber-400">
                 ৳ {formatMoney(kpi.totalCommission)}
@@ -192,7 +194,7 @@ export const KhatabookPage: React.FC = () => {
           <div className="p-2 sm:p-2.5 rounded-lg border bg-[var(--ui-info-light)]/60 border-[var(--ui-info-border)] hover:border-[var(--ui-info-border)] flex items-center justify-between gap-2 transition-all shadow-xs h-full">
             <div className="flex flex-col min-w-0">
               <span className="text-[11px] font-semibold text-[var(--ui-text-muted)] truncate">
-                Total Persons
+                {t("Total Persons")}
               </span>
               <span className="text-sm sm:text-base font-bold truncate mt-0.5 text-[var(--ui-info)]">
                 {kpi.totalPersons}

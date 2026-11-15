@@ -250,7 +250,7 @@ const BANGLA: Record<string, string> = {
   'Payment method': 'পেমেন্টের মাধ্যম',
   Cash: 'নগদ',
   'Bank transfer': 'ব্যাংক ট্রান্সফার',
-  'Mobile banking': 'মোবাইল ব্যাংকিং',
+  'Mobile banking': 'MFS',
   'Reference (read-only)': 'রেফারেন্স (বদলানো যাবে না)',
   Discount: 'ছাড়',
   'Discount cannot be negative': 'ছাড়ের পরিমাণ শূন্যের কম হতে পারবে না',
@@ -405,36 +405,28 @@ interface AppearanceLanguageContextValue {
 
 const AppearanceLanguageContext = createContext<AppearanceLanguageContextValue | null>(null)
 
+import { changeLanguage as setGlobalLanguage, getCurrentLanguage } from '@/i18n'
+import { useTranslation } from 'react-i18next'
+
 export const AppearanceLanguageProvider = ({ children }: { children: ReactNode }) => {
-  const [language, setLanguageState] = useState<AppearanceLanguage>(() => {
-    if (typeof window === 'undefined') return 'bn'
-    try {
-      return window.localStorage.getItem(LANGUAGE_STORAGE_KEY) === 'en' ? 'en' : 'bn'
-    } catch {
-      return 'bn'
-    }
-  })
+  const { t: i18nT, i18n } = useTranslation()
+  const language = (i18n.language?.startsWith('en') ? 'en' : 'bn') as AppearanceLanguage
 
   const setLanguage = (next: AppearanceLanguage) => {
-    setLanguageState(next)
-    try {
-      window.localStorage.setItem(LANGUAGE_STORAGE_KEY, next)
-    } catch {
-      showErrorToast(
-        next === 'bn'
-          ? 'এই ব্রাউজারে ভাষার পছন্দ সেভ করা যায়নি।'
-          : 'Language preference could not be saved in this browser.'
-      )
-    }
+    setGlobalLanguage(next)
   }
 
   const value = useMemo<AppearanceLanguageContextValue>(
     () => ({
       language,
       setLanguage,
-      t: (text) => (language === 'bn' ? BANGLA[text] ?? text : text),
+      t: (text: string) => {
+        const translated = i18nT(text)
+        if (translated && translated !== text) return translated
+        return language === 'bn' ? (BANGLA[text] ?? text) : text
+      },
     }),
-    [language]
+    [language, i18nT]
   )
 
   return (

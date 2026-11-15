@@ -1,4 +1,5 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 import { FiAlertTriangle, FiTrash2, FiEye, FiCheck } from "react-icons/fi";
 import type { LedgerPerson } from "@/types";
 
@@ -19,6 +20,7 @@ export const PersonHasTransactionsModal: React.FC<PersonHasTransactionsModalProp
   onDeleteAllTransactions,
   isDeletingTxns = false,
 }) => {
+  const { t } = useTranslation();
   if (!isOpen || !person) return null;
 
   const txnCount = person.transactionCount ?? 0;
@@ -39,7 +41,7 @@ export const PersonHasTransactionsModal: React.FC<PersonHasTransactionsModalProp
           </div>
 
           <h3 id="txn-warning-title" className="text-sm sm:text-base font-bold text-[var(--ui-text)]">
-            Cannot Delete Person Directly
+            {t("Cannot Delete Person Directly")}
           </h3>
 
           <p className="text-xs text-[var(--ui-text-muted)] mt-1.5 leading-relaxed">
@@ -52,31 +54,31 @@ export const PersonHasTransactionsModal: React.FC<PersonHasTransactionsModalProp
         {/* Transaction Summary Box */}
         <div className="my-3.5 p-3 rounded-lg bg-[var(--ui-surface-sunken)]/60 border border-[var(--ui-border)] text-xs flex flex-col gap-1.5">
           <div className="flex justify-between items-center text-[var(--ui-text-muted)]">
-            <span>Person Phone:</span>
+            <span>{t("Phone")}:</span>
             <span className="font-semibold text-[var(--ui-text)]">{person.phone || "-"}</span>
           </div>
           {person.address && (
             <div className="flex justify-between items-center text-[var(--ui-text-muted)]">
-              <span>Address:</span>
+              <span>{t("Address")}:</span>
               <span className="font-semibold text-[var(--ui-text)] truncate max-w-[220px]" title={person.address}>
                 {person.address}
               </span>
             </div>
           )}
           <div className="flex justify-between items-center text-[var(--ui-text-muted)]">
-            <span>Total Receivable (Pabo):</span>
+            <span>{t("Total Receivable")}:</span>
             <span className="font-semibold text-[var(--ui-success)]">
               ৳{pabo.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
             </span>
           </div>
           <div className="flex justify-between items-center text-[var(--ui-text-muted)]">
-            <span>Total Payable (Dibo):</span>
+            <span>{t("Total Payable")}:</span>
             <span className="font-semibold text-[var(--ui-danger)]">
               ৳{dibo.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
             </span>
           </div>
           <div className="border-t border-[var(--ui-border)] pt-1.5 flex justify-between items-center font-bold">
-            <span className="text-[var(--ui-text)]">Net Balance:</span>
+            <span className="text-[var(--ui-text)]">{t("Net Balance")}:</span>
             <span
               className={
                 net > 0
@@ -88,7 +90,7 @@ export const PersonHasTransactionsModal: React.FC<PersonHasTransactionsModalProp
             >
               ৳{Math.abs(net).toLocaleString("en-IN", { minimumFractionDigits: 2 })}{" "}
               <span className="text-[10px] font-normal">
-                {net > 0 ? "(Pabo)" : net < 0 ? "(Dibo)" : ""}
+                {net > 0 ? ` (${t("Pabo")})` : net < 0 ? ` (${t("Dibo")})` : ""}
               </span>
             </span>
           </div>

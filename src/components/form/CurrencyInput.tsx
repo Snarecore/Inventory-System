@@ -1,4 +1,5 @@
 import React, { ChangeEvent } from "react";
+import { useTranslation } from "react-i18next";
 
 export interface CurrencyInputProps {
   label?: string;
@@ -27,9 +28,12 @@ export const CurrencyInput: React.FC<CurrencyInputProps> = ({
   className = "",
   inputClassName = "",
 }) => {
+  const { t } = useTranslation();
+  const translatedLabel = label ? t(label) : label;
+
   return (
     <div className={`flex items-center justify-between gap-2 ${className}`}>
-      {label && <label className="ui-label truncate">{label}</label>}
+      {translatedLabel && <label className="ui-label truncate">{translatedLabel}</label>}
       <div className="relative w-32 sm:w-36 shrink-0">
         <span className="pointer-events-none absolute left-[var(--ui-control-px)] top-1/2 -translate-y-1/2 select-none font-bold text-[var(--ui-text)]">
           {currencySymbol}

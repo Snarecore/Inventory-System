@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import Search from "@/components/table-components/Search";
 import DropdownFilter from "@/components/table-components/DropdownFilter";
 import EmptyState from "@/components/empty-state/EmptyState";
@@ -39,6 +40,7 @@ export const KhatabookTable: React.FC<KhatabookTableProps> = ({
   onEditPerson,
   onDeletePerson,
 }) => {
+  const { t } = useTranslation();
   const { canCreate, canUpdate, canDelete } = usePermission();
   const [searchQuery, setSearchQuery] = useState("");
   const [balanceFilter, setBalanceFilter] = useState<string>("");
@@ -202,7 +204,7 @@ export const KhatabookTable: React.FC<KhatabookTableProps> = ({
             <ExcelExportButton
               onClick={handleExportExcel}
               disabled={filteredList.length === 0}
-              title="Download Khatabook Excel Report"
+              title={t("Download Khatabook Excel Report")}
             />
           </div>
         </div>
@@ -235,13 +237,13 @@ export const KhatabookTable: React.FC<KhatabookTableProps> = ({
                     <EmptyState
                       title={
                         searchQuery || balanceFilter || statusFilter
-                          ? "No persons matching your filters"
-                          : "No persons registered yet"
+                          ? t("No persons matching your filters")
+                          : t("No persons registered yet")
                       }
                       description={
                         searchQuery || balanceFilter || statusFilter
-                          ? "Try clearing the search or filters to see all persons."
-                          : "Click 'Add Person' above to record your first ledger person."
+                          ? t("Try clearing the search or filters to see all persons.")
+                          : t("Click 'Add Person' above to record your first ledger person.")
                       }
                     />
                   </td>
@@ -306,10 +308,7 @@ export const KhatabookTable: React.FC<KhatabookTableProps> = ({
                               : "text-[var(--ui-text-muted)]"
                           }
                         >
-                          ৳{Math.abs(net).toLocaleString("en-IN", { minimumFractionDigits: 2 })}{" "}
-                          <span className="text-[10px] font-normal">
-                            {net > 0 ? "(Pabo)" : net < 0 ? "(Dibo)" : ""}
-                          </span>
+                          ৳{Math.abs(net).toLocaleString("en-IN", { minimumFractionDigits: 2 })}
                         </span>
                       </td>
 
@@ -322,7 +321,7 @@ export const KhatabookTable: React.FC<KhatabookTableProps> = ({
                               : "bg-[var(--ui-danger-border)] text-[var(--ui-danger-dark)] border-[var(--ui-danger-border)]"
                           }`}
                         >
-                          {isActive ? "Active" : "Inactive"}
+                          {isActive ? t("Active") : t("Inactive")}
                         </span>
                       </td>
 
@@ -330,17 +329,17 @@ export const KhatabookTable: React.FC<KhatabookTableProps> = ({
                       <td className="py-1.5 px-2 text-right whitespace-nowrap">
                         <TableActionButtons
                           onView={() => onViewLedger(person)}
-                          viewTitle="View Ledger Statement"
+                          viewTitle={t("View Ledger Statement")}
                           onEdit={canUpdate("khatabook") ? () => onEditPerson(person) : undefined}
-                          editTitle="Edit Person"
+                          editTitle={t("Edit Person")}
                           onDelete={canDelete("khatabook") ? () => onDeletePerson(person) : undefined}
-                          deleteTitle="Delete Person"
+                          deleteTitle={t("Delete Person")}
                           extraActions={
                             canCreate("khatabook") ? (
                               <button
                                 type="button"
                                 onClick={() => onAddTransaction(person)}
-                                title="Record Transaction"
+                                title={t("Record Transaction")}
                                 className="p-1 rounded text-[var(--ui-success)] hover:bg-[var(--ui-success-border)] transition-colors cursor-pointer"
                               >
                                 <FiPlus size={14} />

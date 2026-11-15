@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { RiArrowDropDownLine } from "react-icons/ri";
 import { FaTimes } from "react-icons/fa";
 import { useDebounce } from "@/hooks/useDebounce";
@@ -96,11 +97,15 @@ const SelectInput: React.FC<SelectInputProps> = ({
         lg: "h-[calc(var(--ui-control-h)+6px)] text-[calc(var(--ui-font-size)+1px)]",
     };
 
+    const { t } = useTranslation();
+    const translatedLabel = label ? t(label) : label;
+    const translatedPlaceholder = placeholder ? t(placeholder) : placeholder;
+
     return (
         <div ref={dropdownRef} className={`ui-field relative w-full ${openDropdown ? 'z-50' : ''} ${className}`}>
-            {label && (
+            {translatedLabel && (
                 <label className={`ui-label ${required ? 'ui-label-required' : ''}`}>
-                    {label}
+                    {translatedLabel}
                 </label>
             )}
 
@@ -123,7 +128,7 @@ const SelectInput: React.FC<SelectInputProps> = ({
                         type="text"
                         disabled={disabled}
                         data-form-nav="true"
-                        placeholder={placeholder}
+                        placeholder={translatedPlaceholder}
                         value={searchTerm}
                         onChange={(e) => {
                             setSearchTerm(e.target.value);

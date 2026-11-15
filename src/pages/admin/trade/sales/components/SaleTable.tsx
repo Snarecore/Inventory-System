@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { FiChevronDown, FiCopy, FiCheck } from "react-icons/fi";
 import moment from "moment";
@@ -98,6 +99,7 @@ export const SaleTable: React.FC<SaleTableProps> = ({
   onDelete: _onDelete,
   onExport,
 }) => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { canUpdate, canDelete, canCreate } = usePermission();
   const [isCustomerDropdownOpen, setIsCustomerDropdownOpen] = useState<boolean>(false);
@@ -160,8 +162,8 @@ export const SaleTable: React.FC<SaleTableProps> = ({
     : null;
 
   const currentCustomerLabel = selectedCustomerObj
-    ? (selectedCustomerObj.name || "Customer")
-    : "All Customers";
+    ? (selectedCustomerObj.name || t("Customer"))
+    : t("All Customers");
 
   // Lightweight sort header render helper with small black chevron
   const renderSortHeader = (label: string, activeKey: "customer" | "amount") => {
@@ -368,7 +370,7 @@ export const SaleTable: React.FC<SaleTableProps> = ({
                         );
                       })
                     ) : (
-                      <div className="p-3 text-center text-[var(--ui-text-subtle)] text-xs">No customer found</div>
+                      <div className="p-3 text-center text-[var(--ui-text-subtle)] text-xs">{t("No customer found")}</div>
                     )}
                   </div>
                 </div>
@@ -386,10 +388,10 @@ export const SaleTable: React.FC<SaleTableProps> = ({
               }}
               className="w-full h-8 pl-2.5 pr-6 text-xs border border-[var(--ui-border)] rounded-lg bg-[var(--ui-surface-muted)]/50 hover:bg-[var(--ui-surface)] text-[var(--ui-text)] font-medium focus:outline-none focus:border-[var(--color-primary)] cursor-pointer appearance-none"
             >
-              <option value="">All Status</option>
-              <option value="PAID">Paid</option>
-              <option value="PARTIAL">Partial</option>
-              <option value="DUE">Due / Credit</option>
+              <option value="">{t("All Status")}</option>
+              <option value="PAID">{t("Paid")}</option>
+              <option value="PARTIAL">{t("Partial")}</option>
+              <option value="DUE">{t("Due / Credit")}</option>
             </select>
             <FiChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 text-[var(--ui-text-muted)] pointer-events-none text-xs" size={13} />
           </div>
@@ -404,9 +406,9 @@ export const SaleTable: React.FC<SaleTableProps> = ({
               }}
               className="w-full h-8 pl-2.5 pr-6 text-xs border border-[var(--ui-border)] rounded-lg bg-[var(--ui-surface-muted)]/50 hover:bg-[var(--ui-surface)] text-[var(--ui-text)] font-medium focus:outline-none focus:border-[var(--color-primary)] cursor-pointer appearance-none"
             >
-              <option value="all">All Methods</option>
-              <option value="CASH">Cash</option>
-              <option value="CREDIT">Credit</option>
+              <option value="all">{t("All Methods")}</option>
+              <option value="CASH">{t("Cash")}</option>
+              <option value="CREDIT">{t("Credit")}</option>
             </select>
             <FiChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 text-[var(--ui-text-muted)] pointer-events-none text-xs" size={13} />
           </div>
@@ -426,11 +428,11 @@ export const SaleTable: React.FC<SaleTableProps> = ({
             <button
               type="button"
               onClick={handleExport}
-              title="Download Excel Report"
+              title={t("Download Excel Report")}
               className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3 h-8 text-[11px] sm:text-xs font-semibold text-[var(--ui-success-dark)] bg-[var(--ui-success-light)] hover:bg-[var(--ui-success-border)] border border-[var(--ui-success-border)] rounded-lg transition-all shadow-xs cursor-pointer active:scale-95"
             >
               <FaFileExcel className="text-[var(--ui-success)] shrink-0" size={12} />
-              <span>Export</span>
+              <span>{t("Export")}</span>
             </button>
           </div>
         </TableToolbar>
@@ -617,7 +619,7 @@ export const SaleTable: React.FC<SaleTableProps> = ({
                     {isColVisible("status") && (
                       <td className="py-2.5 px-3 text-center">
                         <span className={`inline-block px-1.5 py-0.5 text-[10px] border rounded-md ${statusBg}`}>
-                          {statusBadge}
+                          {t(statusBadge)}
                         </span>
                       </td>
                     )}

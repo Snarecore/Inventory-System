@@ -2,6 +2,8 @@ import React from "react";
 import { FiSearch, FiX } from "react-icons/fi";
 import TextInput from "@/components/form/TextInput";
 
+import { useTranslation } from "react-i18next";
+
 interface SearchProps {
 	searchQuery: string;
 	onSearchChange?: (query: string) => void;
@@ -18,6 +20,7 @@ const Search = React.memo(({
 	placeholder = "Search",
 	className = "",
 }: SearchProps) => {
+	const { t } = useTranslation();
 	const handleChange = (val: string) => {
 		if (onSearchChange) onSearchChange(val);
 		if (setSearchQuery) setSearchQuery(val);
@@ -43,7 +46,7 @@ const Search = React.memo(({
 					type="button"
 					onClick={handleClear}
 					className="absolute right-2 text-[var(--ui-text-subtle)] hover:text-[var(--ui-text-muted)] cursor-pointer p-0.5 rounded-full transition-colors"
-					title="Clear"
+					title={t("Clear")}
 				>
 					<FiX className="text-xs" />
 				</button>

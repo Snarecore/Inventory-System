@@ -1,4 +1,5 @@
 import React, { ChangeEvent } from "react";
+import { useTranslation } from "react-i18next";
 
 export interface TextInputProps {
   label?: string;
@@ -59,7 +60,12 @@ const InputField: React.FC<TextInputProps> = ({
   placeholder = "",
   onChange,
 }) => {
-  const displayError = error || message;
+  const { t } = useTranslation();
+  const translatedLabel = label ? t(label) : label;
+  const translatedPlaceholder = placeholder ? t(placeholder) : placeholder;
+  const rawError = error || message;
+  const displayError = rawError ? t(rawError) : rawError;
+
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
     if (onChange) {
       const fnStr = typeof onChange === "function" ? onChange.toString() : "";
@@ -89,9 +95,9 @@ const InputField: React.FC<TextInputProps> = ({
 
   return (
     <div className={`ui-field ${className}`}>
-      {label && (
+      {translatedLabel && (
         <label htmlFor={name} className={`ui-label ${required ? "ui-label-required" : ""}`}>
-          {label}
+          {translatedLabel}
         </label>
       )}
 
@@ -106,7 +112,7 @@ const InputField: React.FC<TextInputProps> = ({
           name={name}
           type={type}
           value={value}
-          placeholder={placeholder}
+          placeholder={translatedPlaceholder}
           disabled={disabled}
           required={required}
           readOnly={readOnly}

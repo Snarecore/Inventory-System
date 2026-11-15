@@ -1,6 +1,7 @@
 import React, { useRef } from "react";
 import { FaTimesCircle } from "react-icons/fa";
 import { useFormKeyboardNavigation } from "@/hooks/useFormKeyboardNavigation";
+import { useTranslation } from "react-i18next";
 
 interface ModalProps {
 	isOpen: boolean;
@@ -37,6 +38,7 @@ const Modal: React.FC<ModalProps> = ({
 	enableArrowKeys = true,
 	enableEnterNavigation = true,
 }) => {
+	const { t } = useTranslation();
 	const panelRef = useRef<HTMLDivElement>(null);
 
 	useFormKeyboardNavigation(panelRef, {
@@ -62,12 +64,12 @@ const Modal: React.FC<ModalProps> = ({
 		<div className={`ui-modal-backdrop fixed inset-0 flex items-center justify-center bg-[var(--ui-text)]/60 ${zIndex} p-2 sm:p-4 overflow-y-auto`}>
 			<div ref={panelRef} className={`ui-modal-panel bg-[var(--ui-surface)] rounded-xl shadow-2xl ${resolvedWidth} px-3.5 sm:px-5 py-3 sm:py-3.5 flex flex-col relative max-h-[92vh] overflow-y-auto ${className}`}>
 				<div className={`flex justify-between items-center pb-2 border-b border-[var(--ui-border)] ${headerClassName}`}>
-					<h2 className="text-base font-semibold text-[var(--ui-text)]">{title}</h2>
+					<h2 className="text-base font-semibold text-[var(--ui-text)]">{typeof title === "string" ? t(title) : title}</h2>
 					<button
 						type="button"
 						onClick={onClose}
 						className="text-[var(--ui-text-subtle)] hover:text-[var(--ui-danger)] transition-colors p-0.5 rounded-lg hover:bg-[var(--ui-surface-sunken)] cursor-pointer"
-						title="Close Modal"
+						title={t("Close Modal")}
 					>
 						<FaTimesCircle className="text-xl text-[var(--ui-danger)] transition-colors" />
 					</button>

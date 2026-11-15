@@ -1,4 +1,5 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 import type { IconType } from "react-icons";
 
 export interface StatCardItem {
@@ -15,6 +16,7 @@ export interface StatsCardsProps {
 }
 
 export const StatsCards: React.FC<StatsCardsProps> = ({ cards }) => {
+  const { t } = useTranslation();
   return (
     <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 w-full">
       {cards.map((card, idx) => {
@@ -28,7 +30,7 @@ export const StatsCards: React.FC<StatsCardsProps> = ({ cards }) => {
           >
             <div className="flex flex-col min-w-0">
               <span className="text-[11px] font-semibold text-[var(--ui-text)] truncate">
-                {card.title}
+                {t(card.title)}
               </span>
               <span
                 className={`text-base sm:text-lg font-bold truncate mt-0.5 ${

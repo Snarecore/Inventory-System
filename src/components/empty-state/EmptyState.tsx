@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import Button from '../button/Button';
 import { MdHourglassEmpty } from 'react-icons/md';
 import { FaBoxOpen } from 'react-icons/fa';
@@ -18,20 +19,21 @@ const EmptyState: React.FC<EmptyStateProps> = ({
     buttonText,
     onButtonClick
 }) => {
+    const { t } = useTranslation();
     return (
         <div className="flex flex-col items-center justify-center py-10">
             {/* <img src={image} alt="No Data" className="w-40 h-40" /> */}
             <FaBoxOpen className='border border-[var(--primary-color)] rounded-full bg-[var(--primary-color-light)] w-20 h-20 p-4 text-[var(--primary-color)] mb-4' />
             {title && (
-                <p className="font-semibold text-lg">{title}</p>
+                <p className="font-semibold text-lg">{t(title)}</p>
             )}
             {description && (
-                <p className="text-[var(--ui-text-muted)] text-sm">{description}</p>
+                <p className="text-[var(--ui-text-muted)] text-sm">{t(description)}</p>
             )}
             {buttonText && onButtonClick && (
                 <div className='mt-2'>
                     <Button
-                        label={buttonText}
+                        label={t(buttonText)}
                         onClick={onButtonClick}
                         color="var(--color-primary)"
                         hoverColor="var(--color-primary-hover)"
