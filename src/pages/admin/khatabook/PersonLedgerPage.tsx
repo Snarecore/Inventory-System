@@ -36,6 +36,7 @@ import {
   FaTrash,
   FaMoneyBillWave,
   FaUsers,
+  FaPercent,
 } from "react-icons/fa";
 import { FiArrowLeft } from "react-icons/fi";
 
@@ -174,18 +175,21 @@ export const PersonLedgerPage: React.FC = () => {
   const paginatedTransactions = filteredTransactions.slice(startIndex, startIndex + pageSize);
 
   // Aggregate stats
-  const { totalPabo, totalDibo, netBalance } = useMemo(() => {
+  const { totalPabo, totalDibo, totalCommission, netBalance } = useMemo(() => {
     let pabo = 0;
     let dibo = 0;
+    let comm = 0;
     for (const t of rawTransactions) {
       const amt = Number(t.amount) || 0;
       const typeUpper = (t.transactionType || "").toUpperCase();
       if (typeUpper.includes("PABO")) pabo += amt;
       else if (typeUpper.includes("DIBO")) dibo += amt;
+      if (t.commission) comm += Number(t.commission);
     }
     return {
       totalPabo: pabo,
       totalDibo: dibo,
+      totalCommission: comm,
       netBalance: pabo - dibo,
     };
   }, [rawTransactions]);
@@ -235,7 +239,7 @@ export const PersonLedgerPage: React.FC = () => {
       "Transaction Type": "-",
       "Receivable (BDT)": totalPabo,
       "Payable (BDT)": totalDibo,
-      "Commission (BDT)": "-",
+      "Commission (BDT)": totalCommission > 0 ? totalCommission : "-",
       "Running Balance (BDT)": netBalance,
     };
 
@@ -380,9 +384,13 @@ export const PersonLedgerPage: React.FC = () => {
           )}
         </div>
 
-        {/* Right: 3 Balanced KPI Cards */}
+        {/* Right: Balanced KPI Cards (with Commission card if commission exists) */}
         <div className="shrink-0 w-full lg:w-auto lg:border-l lg:border-[var(--ui-border)] lg:pl-4">
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-2.5">
+          <div
+            className={`grid grid-cols-1 sm:grid-cols-2 ${
+              totalCommission > 0 ? "lg:grid-cols-4" : "lg:grid-cols-3"
+            } gap-2 sm:gap-2.5`}
+          >
             {/* Card 1: Receivable (Pabo) */}
             <div className="p-2 sm:px-3 sm:py-2 rounded-lg border bg-[var(--ui-success-light)]/60 border-[var(--ui-success-border)] flex items-center justify-between gap-3 shadow-2xs sm:min-w-[145px]">
               <div className="flex flex-col min-w-0">
@@ -463,6 +471,23 @@ export const PersonLedgerPage: React.FC = () => {
                 <FaUsers size={13} />
               </div>
             </div>
+
+            {/* Card 4: Total Commission (when commission exists) */}
+            {totalCommission > 0 && (
+              <div className="p-2 sm:px-3 sm:py-2 rounded-lg border bg-amber-50/70 dark:bg-amber-950/20 border-amber-200/80 dark:border-amber-800/40 flex items-center justify-between gap-3 shadow-2xs sm:min-w-[145px]">
+                <div className="flex flex-col min-w-0">
+                  <span className="text-[10px] font-bold text-amber-800 dark:text-amber-400 uppercase tracking-wider truncate">
+                    Commission
+                  </span>
+                  <span className="text-sm sm:text-base font-extrabold text-amber-600 dark:text-amber-400 mt-0.5 truncate">
+                    ৳ {formatMoney(totalCommission)}
+                  </span>
+                </div>
+                <div className="p-1.5 rounded-md bg-amber-100 dark:bg-amber-900/40 text-amber-600 dark:text-amber-300 shrink-0">
+                  <FaPercent size={12} />
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -616,18 +641,30 @@ export const PersonLedgerPage: React.FC = () => {
                         </td>
 
                         {/* Note & Ref */}
-                        <td className="py-2.5 px-3 truncate whitespace-nowrap">
-                          <span
-                            className="font-semibold text-xs text-[var(--ui-text)] inline-flex items-center gap-1 truncate"
-                            title={`${t.note || (isOpening ? "Opening Balance" : "General Transaction")}${t.refNo ? ` (Ref: ${t.refNo})` : ""}${t.commission ? ` [Commission: ৳${t.commission}]` : ""}`}
-                          >
-                            <span>{t.note || (isOpening ? "Opening Balance" : "General Transaction")}</span>
-                            {t.refNo && (
-                              <span className="text-[10px] text-[var(--ui-text-subtle)] font-normal">
-                                ({t.refNo})
+                        <td className="py-2.5 px-3">
+                          <div className="flex flex-col min-w-0">
+                            <div className="flex items-center gap-1.5 truncate">
+                              <span
+                                className="font-semibold text-xs text-[var(--ui-text)] truncate"
+                                title={t.note || (isOpening ? "Opening Balance" : "General Transaction")}
+                              >
+                                {t.note || (isOpening ? "Opening Balance" : "General Transaction")}
                               </span>
+                              {t.refNo && (
+                                <span className="text-[10px] text-[var(--ui-text-subtle)] font-normal shrink-0">
+                                  ({t.refNo})
+                                </span>
+                              )}
+                            </div>
+                            {t.commission != null && Number(t.commission) > 0 && (
+                              <div className="flex items-center gap-1 mt-0.5">
+                                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800 shrink-0">
+                                  <FaPercent className="text-[8px]" />
+                                  <span>Commission: ৳{formatMoney(Number(t.commission))}</span>
+                                </span>
+                              </div>
                             )}
-                          </span>
+                          </div>
                         </td>
 
                         {/* Tender / Payment Method badge */}
