@@ -353,36 +353,30 @@ export const PersonLedgerPage: React.FC = () => {
       {/* Unified Hero Card: Person Identity (Left) & Financial Balance KPI (Right) */}
       <div className="bg-[var(--ui-surface)] border border-[var(--ui-border)] rounded-xl p-2.5 sm:p-3 shadow-xs flex flex-col lg:flex-row lg:items-center justify-between gap-3 sm:gap-4">
         {/* Left: Person Name, Phone & Address in ONE single line */}
-        <div className="flex items-center gap-2.5 sm:gap-3 flex-wrap min-w-0 flex-1">
+        <div className="flex items-center gap-3 sm:gap-4 flex-wrap min-w-0 flex-1">
           <h1 className="text-base sm:text-lg font-bold text-[var(--ui-text)] truncate shrink-0" title={person.name}>
             {person.name}
           </h1>
 
           {person.phone && (
-            <>
-              <span className="text-[var(--ui-border)] shrink-0">•</span>
-              <a
-                href={`tel:${person.phone}`}
-                className="inline-flex items-center gap-1.5 text-xs text-[var(--ui-text-muted)] hover:text-[var(--primary-color)] transition-colors shrink-0"
-                title="Click to call"
-              >
-                <FaPhone className="text-[10px] text-[var(--ui-text-subtle)]" />
-                <span className="font-medium">{person.phone}</span>
-              </a>
-            </>
+            <a
+              href={`tel:${person.phone}`}
+              className="inline-flex items-center gap-1.5 text-xs text-[var(--ui-text-muted)] hover:text-[var(--primary-color)] transition-colors shrink-0"
+              title="Click to call"
+            >
+              <FaPhone className="text-[10px] text-[var(--ui-text-subtle)]" />
+              <span className="font-medium">{person.phone}</span>
+            </a>
           )}
 
           {person.address && (
-            <>
-              <span className="text-[var(--ui-border)] shrink-0">•</span>
-              <span
-                className="inline-flex items-center gap-1.5 text-xs text-[var(--ui-text-muted)] truncate max-w-[320px]"
-                title={person.address}
-              >
-                <FaMapMarkerAlt className="text-[10px] text-[var(--ui-text-subtle)] shrink-0" />
-                <span className="truncate">{person.address}</span>
-              </span>
-            </>
+            <span
+              className="inline-flex items-center gap-1.5 text-xs text-[var(--ui-text-muted)] truncate max-w-[320px]"
+              title={person.address}
+            >
+              <FaMapMarkerAlt className="text-[10px] text-[var(--ui-text-subtle)] shrink-0" />
+              <span className="truncate">{person.address}</span>
+            </span>
           )}
         </div>
 
