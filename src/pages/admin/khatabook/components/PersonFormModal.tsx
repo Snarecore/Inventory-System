@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import DrawerModal from "@/components/modal/DrawerModal";
 import TextInput from "@/components/form/TextInput";
 import Button from "@/components/button/Button";
-import type { LedgerPerson, SaveLedgerPersonPayload } from "@/types";
+import type { LedgerPerson, SaveLedgerPersonPayload, LedgerPersonType } from "@/types";
 import { useSaveLedgerPersonMutation } from "@/hooks/useKhatabook";
 import { sendSmsMessage } from "@/services/sms-service";
 import { getStoredUser } from "@/utils/auth-storage";
@@ -38,7 +38,7 @@ export const PersonFormModal: React.FC<PersonFormModalProps> = ({
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
   const [email, setEmail] = useState("");
-  const [type, setType] = useState<"CUSTOMER" | "SUPPLIER" | "OTHER">("CUSTOMER");
+  const [type, setType] = useState<LedgerPersonType>("PERSON");
   const [tag, setTag] = useState("Regular");
   const [status, setStatus] = useState<"Active" | "Inactive">("Active");
 
@@ -60,7 +60,8 @@ export const PersonFormModal: React.FC<PersonFormModalProps> = ({
       setPhone(personToEdit.phone || "");
       setAddress(personToEdit.address || "");
       setEmail(personToEdit.email || "");
-      setType((personToEdit.type as any) || "CUSTOMER");
+      const rawType = (personToEdit.type || "").toUpperCase();
+      setType(rawType.includes("INSTITUT") ? "INSTITUTE" : "PERSON");
       setTag(personToEdit.tag || "Regular");
       setStatus(personToEdit.status === "Inactive" ? "Inactive" : "Active");
       setOpeningType("NONE");
@@ -71,7 +72,7 @@ export const PersonFormModal: React.FC<PersonFormModalProps> = ({
       setPhone("");
       setAddress("");
       setEmail("");
-      setType("CUSTOMER");
+      setType("PERSON");
       setTag("Regular");
       setStatus("Active");
       setOpeningType("NONE");
@@ -292,16 +293,15 @@ export const PersonFormModal: React.FC<PersonFormModalProps> = ({
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
           <div className="ui-field">
             <label className="ui-label">
-              Person Type
+              Person / Institute
             </label>
             <select
               value={type}
               onChange={(e) => setType(e.target.value as any)}
               className="ui-control ui-select w-full bg-[var(--ui-surface)] text-[var(--ui-text)] cursor-pointer text-xs"
             >
-              <option value="CUSTOMER">Customer</option>
-              <option value="SUPPLIER">Supplier</option>
-              <option value="OTHER">Other</option>
+              <option value="PERSON">Person</option>
+              <option value="INSTITUTE">Institute</option>
             </select>
           </div>
 

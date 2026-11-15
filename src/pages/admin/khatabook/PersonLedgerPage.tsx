@@ -298,7 +298,7 @@ export const PersonLedgerPage: React.FC = () => {
               </span>
               {person.type && (
                 <span className="text-[10px] font-medium px-1.5 py-0.2 rounded bg-[var(--ui-surface-sunken)] text-[var(--ui-text-muted)] border border-[var(--ui-border)] shrink-0">
-                  {person.type.charAt(0).toUpperCase() + person.type.slice(1).toLowerCase()}
+                  {person.type.toUpperCase() === "INSTITUTE" ? "Institute" : "Person"}
                 </span>
               )}
             </div>

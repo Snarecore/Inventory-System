@@ -1,4 +1,4 @@
-export type LedgerPersonType = "CUSTOMER" | "SUPPLIER" | "OTHER";
+export type LedgerPersonType = "PERSON" | "INSTITUTE" | "CUSTOMER" | "SUPPLIER" | "OTHER";
 export type LedgerPersonStatus = "Active" | "Inactive";
 export type LedgerTransactionType =
   | "PABO"

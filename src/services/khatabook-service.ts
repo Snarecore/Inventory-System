@@ -111,7 +111,7 @@ export const fetchLedgerPersonList = async (
       phone: item.phone || item.mobile || item.phoneNumber || item.phone_number || "",
       address: item.address || "",
       email: item.email || "",
-      type: item.type || "CUSTOMER",
+      type: item.type || "PERSON",
       tag: item.tag || "",
       isSync: item.isSync ?? 0,
       addedBy: item.addedBy || "",
@@ -156,7 +156,7 @@ export const saveLedgerPerson = async (
       phone: payload.phone.trim(),
       address: payload.address?.trim() || "",
       email: payload.email?.trim() || "",
-      type: payload.type || "CUSTOMER",
+      type: payload.type || "PERSON",
       tag: payload.tag?.trim() || "Regular",
       status: payload.status || "Active",
       openingDena: Number(payload.openingDena) || 0,
@@ -184,7 +184,7 @@ export const saveLedgerPerson = async (
     name: payload.name.trim(),
     phone: payload.phone.trim(),
     address: payload.address?.trim() || "",
-    type: payload.type || "CUSTOMER",
+    type: payload.type || "PERSON",
     status: payload.status || "Active",
   };
 
