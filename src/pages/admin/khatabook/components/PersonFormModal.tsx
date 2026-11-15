@@ -290,14 +290,14 @@ export const PersonFormModal: React.FC<PersonFormModalProps> = ({
 
         {/* Person Type & Tag */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-          <div>
-            <label className="text-xs font-semibold text-[var(--ui-text)] block mb-1">
+          <div className="ui-field">
+            <label className="ui-label">
               Person Type
             </label>
             <select
               value={type}
               onChange={(e) => setType(e.target.value as any)}
-              className="w-full h-8 px-2.5 text-xs bg-[var(--ui-surface)] text-[var(--ui-text)] border border-[var(--ui-border)] rounded-lg focus:outline-none focus:ring-1 focus:ring-[var(--primary-color,#009fe3)] cursor-pointer"
+              className="ui-control ui-select w-full bg-[var(--ui-surface)] text-[var(--ui-text)] cursor-pointer text-xs"
             >
               <option value="CUSTOMER">Customer</option>
               <option value="SUPPLIER">Supplier</option>

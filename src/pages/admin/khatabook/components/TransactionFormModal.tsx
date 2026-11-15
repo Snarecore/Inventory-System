@@ -341,8 +341,8 @@ export const TransactionFormModal: React.FC<TransactionFormModalProps> = ({
         {/* Row: Select Person & Amount (2 columns) */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
           {/* Person Selector */}
-          <div>
-            <label className="text-xs font-semibold text-[var(--ui-text)] block mb-1">
+          <div className="ui-field">
+            <label className="ui-label">
               Select Person <span className="text-[var(--ui-danger)]">*</span>
             </label>
             <select
@@ -352,7 +352,7 @@ export const TransactionFormModal: React.FC<TransactionFormModalProps> = ({
                 if (errors.personId) setErrors((prev) => ({ ...prev, personId: "" }));
               }}
               disabled={Boolean(defaultPersonId)}
-              className="w-full h-8 px-2.5 text-xs bg-[var(--ui-surface)] border border-[var(--ui-border)] rounded-lg text-[var(--ui-text)] focus:outline-none focus:ring-1 focus:ring-[var(--primary-color,#009fe3)] focus:border-[var(--primary-color,#009fe3)] cursor-pointer disabled:opacity-60"
+              className="ui-control ui-select w-full bg-[var(--ui-surface)] text-[var(--ui-text)] cursor-pointer disabled:opacity-60 text-xs"
             >
               <option value="" className="bg-[var(--ui-surface)] text-[var(--ui-text)]">-- Choose Person --</option>
               {persons.map((p) => (
@@ -470,7 +470,7 @@ export const TransactionFormModal: React.FC<TransactionFormModalProps> = ({
                 setBankAccountNo(e.target.value);
                 if (errors.bankAccountNo) setErrors((prev) => ({ ...prev, bankAccountNo: "" }));
               }}
-              className="w-full h-8 px-2.5 text-xs bg-[var(--ui-surface)] text-[var(--ui-text)] border border-[var(--ui-border)] rounded-lg focus:outline-none focus:ring-1 focus:ring-[var(--primary-color,#009fe3)] cursor-pointer"
+              className="ui-control ui-select w-full bg-[var(--ui-surface)] text-[var(--ui-text)] cursor-pointer text-xs"
             >
               <option value="">-- Select Bank Account --</option>
               {bankAccounts.map((b: any) => (
@@ -497,7 +497,7 @@ export const TransactionFormModal: React.FC<TransactionFormModalProps> = ({
                 setMfsUserId(e.target.value);
                 if (errors.mfsUserId) setErrors((prev) => ({ ...prev, mfsUserId: "" }));
               }}
-              className="w-full h-8 px-2.5 text-xs bg-[var(--ui-surface)] text-[var(--ui-text)] border border-[var(--ui-border)] rounded-lg focus:outline-none focus:ring-1 focus:ring-[var(--primary-color,#009fe3)] cursor-pointer"
+              className="ui-control ui-select w-full bg-[var(--ui-surface)] text-[var(--ui-text)] cursor-pointer text-xs"
             >
               <option value="">-- Select MFS Account --</option>
               {mfsAccounts.map((m: any) => (
