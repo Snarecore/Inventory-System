@@ -5,7 +5,6 @@ import EmptyState from "@/components/empty-state/EmptyState";
 import Button from "@/components/button/Button";
 import ExcelExportButton from "@/components/table-components/ExcelExportButton";
 import TableActionButtons from "@/components/table-components/TableActionButtons";
-import Search from "@/components/table-components/Search";
 import {
   TableContainer,
   TableScroll,
@@ -48,7 +47,6 @@ export const PersonLedgerView: React.FC<PersonLedgerViewProps> = ({
   onDeleteTransaction,
   onDeleteAllTransactions,
 }) => {
-  const [searchTerm, setSearchTerm] = useState("");
   const [typeFilter, setTypeFilter] = useState<string>("ALL");
 
   const personId = person?.id ? Number(person.id) : null;
@@ -103,18 +101,8 @@ export const PersonLedgerView: React.FC<PersonLedgerViewProps> = ({
       });
     }
 
-    if (searchTerm.trim()) {
-      const q = searchTerm.toLowerCase();
-      list = list.filter(
-        (t) =>
-          (t.note || "").toLowerCase().includes(q) ||
-          (t.refNo || "").toLowerCase().includes(q) ||
-          (t.paymentType || "").toLowerCase().includes(q)
-      );
-    }
-
     return list;
-  }, [transactionsWithRunningBalance, typeFilter, searchTerm]);
+  }, [transactionsWithRunningBalance, typeFilter]);
 
   // Overall totals for this person
   const { totalPabo, totalDibo, netBalance } = useMemo(() => {
@@ -358,16 +346,8 @@ export const PersonLedgerView: React.FC<PersonLedgerViewProps> = ({
             })}
           </div>
 
-          {/* Right Controls: Search + Excel + Print + Delete All */}
-          <div className="flex items-center gap-1.5 flex-wrap sm:flex-nowrap">
-            <div className="w-full sm:w-44 md:w-52">
-              <Search
-                searchQuery={searchTerm}
-                onSearchChange={(v) => setSearchTerm(v)}
-                placeholder="Search note, ref..."
-              />
-            </div>
-
+          {/* Right Controls: Excel + Print + Delete All */}
+          <div className="flex items-center gap-1.5 shrink-0">
             <ExcelExportButton
               onClick={handleExportExcel}
               disabled={filteredTransactions.length === 0}
@@ -422,11 +402,7 @@ export const PersonLedgerView: React.FC<PersonLedgerViewProps> = ({
                       <td colSpan={7} className="py-12 text-center">
                         <EmptyState
                           title="No transactions found"
-                          description={
-                            searchTerm
-                              ? "No transactions match your search criteria."
-                              : "No transactions recorded for this person yet."
-                          }
+                          description="No transactions recorded for this filter category."
                         />
                       </td>
                     </tr>
