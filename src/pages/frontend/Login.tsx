@@ -11,6 +11,7 @@ import { loginApi } from '@/features/auth/login/login.api'
 import { LoginSuccessResponse } from '@/features/auth/login/login.types'
 import { isSessionValid, saveLoginSession } from '@/utils/auth-storage'
 import { showErrorToast, showSuccessToast } from '@/utils/toast-utils'
+import { verifyAuthorizationPin } from '@/services/authorization-service'
 
 const PIN_LENGTH = 4
 
@@ -186,36 +187,41 @@ export const Login: React.FC = () => {
     setIsLoggingIn(true)
 
     try {
-      // 1. Direct PIN validation against retrieved user profile
+      // 1. Primary: Server-side PIN verification via /authorization-verify-pin
+      const phoneToVerify = userData?.phoneNumber || identifier
+      const tokenToVerify = userData?.token || ''
+
+      const verifyRes = await verifyAuthorizationPin(pinCode, phoneToVerify, tokenToVerify)
+
+      if (verifyRes.isValid) {
+        const sessionData = userData || (await loginApi.checkUser(identifier))
+        saveLoginSession(sessionData as LoginSuccessResponse, rememberMe)
+        showSuccessToast('Login successful!')
+        setTimeout(() => {
+          navigate(redirectUrl, { replace: true })
+        }, 600)
+        return
+      }
+
+      // If backend explicitly rejected the PIN (e.g. "PIN did not match")
+      if (
+        verifyRes.message?.toLowerCase().includes('not match') ||
+        verifyRes.message?.toLowerCase().includes('incorrect pin') ||
+        verifyRes.message?.toLowerCase().includes('invalid pin')
+      ) {
+        showErrorToast(verifyRes.message || 'PIN did not match. Please try again.')
+        setPin(Array(PIN_LENGTH).fill(''))
+        setFocusedIndex(0)
+        setTimeout(() => {
+          pinInputRefs[0]?.current?.focus()
+        }, 50)
+        return
+      }
+
+      // 2. Graceful Fallback: If Live backend returned a server error (endpoint not deployed on Live yet)
       if (userData && userData.pin) {
         if (userData.pin === pinCode) {
           saveLoginSession(userData, rememberMe)
-          showSuccessToast('Login successful!')
-          setTimeout(() => {
-            navigate(redirectUrl, { replace: true })
-          }, 600)
-          return
-        } else {
-          showErrorToast('Invalid PIN. Please try again.')
-          setPin(Array(PIN_LENGTH).fill(''))
-          setFocusedIndex(0)
-          setTimeout(() => {
-            pinInputRefs[0]?.current?.focus()
-          }, 50)
-          return
-        }
-      }
-
-      // 2. Fallback check via checkUser
-      const checkRes = await loginApi.checkUser(identifier)
-      if (
-        !(checkRes as any).error &&
-        String(checkRes.status).toLowerCase() === 'success' &&
-        (checkRes as LoginSuccessResponse).pin
-      ) {
-        const userRes = checkRes as LoginSuccessResponse
-        if (userRes.pin === pinCode) {
-          saveLoginSession(userRes, rememberMe)
           showSuccessToast('Login successful!')
           setTimeout(() => {
             navigate(redirectUrl, { replace: true })

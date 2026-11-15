@@ -35,7 +35,8 @@
         "orderDetailUrl": "orders"
     },
     "auth": {
-        "loginUrl": "user-login"
+        "loginUrl": "user-login",
+        "verifyPinUrl": "authorization-verify-pin"
     },
     "dashboard": {
         "adminDashboardUrl": "site/admin-dashboard"

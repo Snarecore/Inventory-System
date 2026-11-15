@@ -469,3 +469,26 @@ export type CheckPurchaseDeletePayload = CheckTradeDeletePayload;
 export type CheckPurchaseDeleteResponse = CheckTradeDeleteResponse;
 export type DeletePurchaseOrderPayload = DeleteTradeOrderPayload;
 export type DeletePurchaseOrderResponse = DeleteTradeOrderResponse;
+
+// Authorization PIN Verification types
+export interface VerifyPinPayload {
+  authentication: {
+    phone_number: string;
+    pin: string;
+  };
+}
+
+export interface VerifyPinResponse {
+  error?: boolean;
+  status?: string;
+  msg?: string;
+  message?: string;
+  data?: any;
+  [key: string]: any;
+}
+
+export interface NormalizedPinVerificationResult {
+  isValid: boolean;
+  message: string;
+  raw?: any;
+}
