@@ -9,11 +9,13 @@ import DeleteModal from "@/components/modal/DeleteModal";
 import { TransactionFormModal } from "./components/TransactionFormModal";
 import {
   TableContainer,
+  TableToolbar,
   TableScroll,
   Table,
   TableHead,
   TableTh,
   TableBody,
+  TablePaginationFooter,
 } from "@/components/common";
 import type { LedgerPerson, LedgerTransaction } from "@/types";
 import {
@@ -69,8 +71,10 @@ export const PersonLedgerPage: React.FC = () => {
 
   const rawTransactions: LedgerTransaction[] = txnsData?.data || [];
 
-  // Filter state
+  // Filter & Pagination state
   const [typeFilter, setTypeFilter] = useState<string>("ALL");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
 
   // Modals state
   const [isTxnModalOpen, setIsTxnModalOpen] = useState(false);
@@ -99,6 +103,25 @@ export const PersonLedgerPage: React.FC = () => {
       refetchDashboard();
     },
   });
+
+  // Tab counts for status tabs
+  const tabCounts = useMemo(() => {
+    let pabo = 0;
+    let dibo = 0;
+    let opening = 0;
+    for (const t of rawTransactions) {
+      const typeUpper = (t.transactionType || "").toUpperCase();
+      if (typeUpper.includes("OPENING")) opening++;
+      else if (typeUpper.includes("PABO")) pabo++;
+      else if (typeUpper.includes("DIBO")) dibo++;
+    }
+    return {
+      all: rawTransactions.length,
+      pabo,
+      dibo,
+      opening,
+    };
+  }, [rawTransactions]);
 
   // Compute chronological running balance, then display reverse chronological
   const chronologicalTransactions = useMemo(() => {
@@ -142,6 +165,13 @@ export const PersonLedgerPage: React.FC = () => {
         return true;
       });
   }, [transactionsWithBalance, typeFilter]);
+
+  // Pagination calculation
+  const totalItems = filteredTransactions.length;
+  const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
+  const safeCurrentPage = Math.min(currentPage, totalPages);
+  const startIndex = (safeCurrentPage - 1) * pageSize;
+  const paginatedTransactions = filteredTransactions.slice(startIndex, startIndex + pageSize);
 
   // Aggregate stats
   const { totalPabo, totalDibo, netBalance } = useMemo(() => {
@@ -443,96 +473,121 @@ export const PersonLedgerPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Unified Toolbar: Filter Tabs on Left, Action Controls on Right */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-1 border-t border-[var(--ui-border)]">
-        {/* Segmented Filter Tabs */}
-        <div className="inline-flex items-center rounded-lg border border-[var(--ui-border)] p-0.5 bg-[var(--ui-surface-sunken)] h-8 self-start sm:self-auto overflow-x-auto scrollbar-none">
-          {[
-            { id: "ALL", label: `All (${rawTransactions.length})` },
-            { id: "PABO", label: "Receivable" },
-            { id: "DIBO", label: "Payable" },
-            { id: "OPENING", label: "Opening" },
-          ].map((tab) => {
-            const active = typeFilter === tab.id;
-            return (
-              <button
-                key={tab.id}
-                type="button"
-                onClick={() => setTypeFilter(tab.id)}
-                className={`h-7 px-2.5 sm:px-3 rounded-md text-xs font-semibold transition-all cursor-pointer whitespace-nowrap flex items-center gap-1 ${
-                  active
-                    ? "bg-[var(--ui-surface)] text-[var(--primary-color)] shadow-xs font-bold border border-[var(--primary-color)]/20"
-                    : "text-[var(--ui-text-muted)] hover:text-[var(--ui-text)]"
-                }`}
-              >
-                {tab.label}
-              </button>
-            );
-          })}
-        </div>
-
-        {/* Right Controls: Excel + Print + Delete All */}
-        <div className="flex items-center gap-1.5 shrink-0 self-end sm:self-auto">
-          <ExcelExportButton
-            onClick={handleExportExcel}
-            disabled={filteredTransactions.length === 0}
-            title="Export Ledger to Excel"
-          />
-
-          <button
-            type="button"
-            onClick={handlePrint}
-            className="h-8 px-2.5 text-xs font-medium text-[var(--ui-text)] bg-[var(--ui-surface)] border border-[var(--ui-border)] hover:bg-[var(--ui-surface-sunken)] rounded-lg transition-colors flex items-center gap-1.5 cursor-pointer shrink-0 shadow-xs"
-            title="Print Statement"
-          >
-            <FaPrint className="text-[var(--ui-text-subtle)] text-xs" />
-            <span>Print</span>
-          </button>
-
-          {canDelete("khatabook") && rawTransactions.length > 0 && (
-            <button
-              type="button"
-              onClick={() => setIsDeleteAllModalOpen(true)}
-              className="h-8 px-2.5 text-xs font-semibold text-[var(--ui-danger)] bg-[var(--ui-surface)] border border-[var(--ui-danger-border)] hover:bg-[var(--ui-danger-light)] rounded-lg transition-colors flex items-center gap-1.5 cursor-pointer shrink-0 shadow-xs"
-              title="Delete all transactions of this person"
-            >
-              <FaTrash className="text-xs" />
-              <span>Delete All</span>
-            </button>
-          )}
-        </div>
-      </div>
-
-      {/* Transactions Table */}
+      {/* Transactions Table Card Container */}
       <TableContainer className="w-full shadow-xs">
+        {/* Table Toolbar matching Cash-Boi design system */}
+        <TableToolbar>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 w-full">
+            {/* Left: Filter Tabs with count badges */}
+            <div className="inline-flex items-center rounded-lg border border-[var(--ui-border)] p-0.5 bg-[var(--ui-surface-sunken)] h-8 self-start sm:self-auto overflow-x-auto scrollbar-none">
+              {[
+                { id: "ALL", label: "All", count: tabCounts.all },
+                { id: "PABO", label: "Receivable", count: tabCounts.pabo },
+                { id: "DIBO", label: "Payable", count: tabCounts.dibo },
+                { id: "OPENING", label: "Opening", count: tabCounts.opening },
+              ].map((tab) => {
+                const active = typeFilter === tab.id;
+                return (
+                  <button
+                    key={tab.id}
+                    type="button"
+                    onClick={() => {
+                      setTypeFilter(tab.id);
+                      setCurrentPage(1);
+                    }}
+                    className={`h-7 px-2.5 sm:px-3 rounded-md text-xs font-semibold transition-all cursor-pointer whitespace-nowrap flex items-center gap-1.5 ${
+                      active
+                        ? "bg-[var(--ui-surface)] text-[var(--primary-color)] shadow-xs font-bold"
+                        : "text-[var(--ui-text-muted)] hover:text-[var(--ui-text)]"
+                    }`}
+                  >
+                    <span>{tab.label}</span>
+                    <span
+                      className={`text-[10px] px-1.5 py-0.2 rounded-full font-semibold ${
+                        active
+                          ? "bg-[var(--primary-color-light)] text-[var(--primary-color)]"
+                          : "bg-[var(--ui-border)] text-[var(--ui-text-muted)]"
+                      }`}
+                    >
+                      {tab.count}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Right Controls: Excel Export + Print + Delete All */}
+            <div className="flex items-center gap-1.5 shrink-0 self-end sm:self-auto">
+              <ExcelExportButton
+                onClick={handleExportExcel}
+                disabled={filteredTransactions.length === 0}
+                title="Export Ledger to Excel"
+              />
+
+              <button
+                type="button"
+                onClick={handlePrint}
+                disabled={filteredTransactions.length === 0}
+                className="h-8 px-2.5 sm:px-3 text-xs font-semibold text-[var(--ui-text)] bg-[var(--ui-surface)] border border-[var(--ui-border)] hover:bg-[var(--ui-surface-sunken)] rounded-lg transition-all flex items-center gap-1.5 cursor-pointer shrink-0 shadow-xs active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed"
+                title="Print Statement"
+              >
+                <FaPrint className="text-[var(--ui-text-subtle)] text-xs" />
+                <span>Print</span>
+              </button>
+
+              {canDelete("khatabook") && rawTransactions.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setIsDeleteAllModalOpen(true)}
+                  className="h-8 px-2.5 sm:px-3 text-xs font-semibold text-[var(--ui-danger)] bg-[var(--ui-surface)] border border-[var(--ui-danger-border)] hover:bg-[var(--ui-danger-light)] rounded-lg transition-all flex items-center gap-1.5 cursor-pointer shrink-0 shadow-xs active:scale-95"
+                  title="Delete all transactions of this person"
+                >
+                  <FaTrash className="text-xs" />
+                  <span>Delete All</span>
+                </button>
+              )}
+            </div>
+          </div>
+        </TableToolbar>
+
+        {/* Table Content */}
         <TableScroll>
           {isTxnsLoading ? (
             <div className="p-4">
-              <TableSkeleton columnCount={7} rowCount={6} />
+              <TableSkeleton columnCount={8} rowCount={6} />
             </div>
           ) : (
-            <Table className="table-fixed min-w-[750px]">
+            <Table className="table-fixed min-w-[800px]">
               <TableHead>
+                <TableTh width="5%" align="center">SL</TableTh>
                 <TableTh width="16%">Date & Time</TableTh>
                 <TableTh width="24%">Description & Ref</TableTh>
-                <TableTh width="12%">Method</TableTh>
-                <TableTh width="14%" align="right">Receivable (+)</TableTh>
-                <TableTh width="14%" align="right">Payable (-)</TableTh>
-                <TableTh width="14%" align="right">Balance</TableTh>
-                <TableTh width="8%" align="right">Actions</TableTh>
+                <TableTh width="11%">Method</TableTh>
+                <TableTh width="13%" align="right">Receivable (+)</TableTh>
+                <TableTh width="13%" align="right">Payable (-)</TableTh>
+                <TableTh width="12%" align="right">Balance</TableTh>
+                <TableTh width="6%" align="right">Actions</TableTh>
               </TableHead>
               <TableBody>
-                {filteredTransactions.length === 0 ? (
+                {paginatedTransactions.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="py-12 text-center">
+                    <td colSpan={8} className="py-12 text-center">
                       <EmptyState
-                        title="No transactions found"
-                        description="No transactions recorded for this filter category."
+                        title={
+                          typeFilter !== "ALL"
+                            ? "No transactions matching filter"
+                            : "No transactions recorded yet"
+                        }
+                        description={
+                          typeFilter !== "ALL"
+                            ? "Try selecting 'All' tab to see all transactions for this account."
+                            : "Click 'Receive' or 'Prodan' above to record the first transaction."
+                        }
                       />
                     </td>
                   </tr>
                 ) : (
-                  filteredTransactions.map((t) => {
+                  paginatedTransactions.map((t, idx) => {
                     const typeUpper = (t.transactionType || "").toUpperCase();
                     const isPabo = typeUpper.includes("PABO");
                     const isDibo = typeUpper.includes("DIBO");
@@ -556,6 +611,11 @@ export const PersonLedgerPage: React.FC = () => {
                         key={t.id}
                         className="hover:bg-[var(--primary-color-light)]/40 transition-colors group"
                       >
+                        {/* SL */}
+                        <td className="py-2.5 px-3 text-center text-[var(--ui-text-muted)] text-[11px] tabular-nums">
+                          {startIndex + idx + 1}
+                        </td>
+
                         {/* Date */}
                         <td className="py-2.5 px-3 whitespace-nowrap text-[var(--ui-text-muted)] text-[11px]">
                           {formattedDate}
@@ -668,6 +728,24 @@ export const PersonLedgerPage: React.FC = () => {
             </Table>
           )}
         </TableScroll>
+
+        {/* Pagination Footer */}
+        {!isTxnsLoading && totalItems > 0 && (
+          <TablePaginationFooter
+            totalCount={totalItems}
+            pageCount={totalPages}
+            currentPageNumber={safeCurrentPage}
+            dataLimit={pageSize}
+            setDataLimit={(limit) => {
+              setPageSize(limit);
+              setCurrentPage(1);
+            }}
+            setCurrentPageNumber={setCurrentPage}
+            handlePagination={(d) => setCurrentPage(d.selected + 1)}
+            entityLabel="transactions"
+            pageSizeOptions={[10, 20, 50, 100]}
+          />
+        )}
       </TableContainer>
 
       {/* Transaction Form Modal (Create / Edit) */}
