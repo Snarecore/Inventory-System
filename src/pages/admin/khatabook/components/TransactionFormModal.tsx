@@ -338,45 +338,48 @@ export const TransactionFormModal: React.FC<TransactionFormModalProps> = ({
           </div>
         </div>
 
-        {/* Person Selector */}
-        <div>
-          <label className="text-xs font-semibold text-[var(--ui-text)] block mb-1">
-            Select Person <span className="text-[var(--ui-danger)]">*</span>
-          </label>
-          <select
-            value={personId}
-            onChange={(e) => {
-              setPersonId(Number(e.target.value) || "");
-              if (errors.personId) setErrors((prev) => ({ ...prev, personId: "" }));
-            }}
-            disabled={Boolean(defaultPersonId)}
-            className="w-full h-8 px-2.5 text-xs bg-[var(--ui-surface)] border border-[var(--ui-border)] rounded-lg text-[var(--ui-text)] focus:outline-none focus:ring-1 focus:ring-[var(--primary-color,#009fe3)] focus:border-[var(--primary-color,#009fe3)] cursor-pointer"
-          >
-            <option value="">-- Choose Person --</option>
-            {persons.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.name} ({p.phone})
-              </option>
-            ))}
-          </select>
-          {errors.personId && <p className="text-[11px] text-[var(--ui-danger)] mt-0.5">{errors.personId}</p>}
-        </div>
+        {/* Row: Select Person & Amount (2 columns) */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          {/* Person Selector */}
+          <div>
+            <label className="text-xs font-semibold text-[var(--ui-text)] block mb-1">
+              Select Person <span className="text-[var(--ui-danger)]">*</span>
+            </label>
+            <select
+              value={personId}
+              onChange={(e) => {
+                setPersonId(Number(e.target.value) || "");
+                if (errors.personId) setErrors((prev) => ({ ...prev, personId: "" }));
+              }}
+              disabled={Boolean(defaultPersonId)}
+              className="w-full h-8 px-2.5 text-xs bg-[var(--ui-surface)] border border-[var(--ui-border)] rounded-lg text-[var(--ui-text)] focus:outline-none focus:ring-1 focus:ring-[var(--primary-color,#009fe3)] focus:border-[var(--primary-color,#009fe3)] cursor-pointer disabled:opacity-60"
+            >
+              <option value="" className="bg-[var(--ui-surface)] text-[var(--ui-text)]">-- Choose Person --</option>
+              {persons.map((p) => (
+                <option key={p.id} value={p.id} className="bg-[var(--ui-surface)] text-[var(--ui-text)]">
+                  {p.name} ({p.phone})
+                </option>
+              ))}
+            </select>
+            {errors.personId && <p className="text-[11px] text-[var(--ui-danger)] mt-0.5">{errors.personId}</p>}
+          </div>
 
-        {/* Amount */}
-        <div>
-          <TextInput
-            label="Amount (৳)"
-            type="number"
-            placeholder="0.00"
-            value={amount}
-            onChange={(val: any) => {
-              setAmount(typeof val === "string" ? val : (val?.target?.value ?? ""));
-              if (errors.amount) setErrors((prev) => ({ ...prev, amount: "" }));
-            }}
-            required
-            message={errors.amount}
-            icon={<FaMoneyBillWave className="text-[var(--ui-text-subtle)] text-xs" />}
-          />
+          {/* Amount */}
+          <div>
+            <TextInput
+              label="Amount (৳)"
+              type="number"
+              placeholder="0.00"
+              value={amount}
+              onChange={(val: any) => {
+                setAmount(typeof val === "string" ? val : (val?.target?.value ?? ""));
+                if (errors.amount) setErrors((prev) => ({ ...prev, amount: "" }));
+              }}
+              required
+              message={errors.amount}
+              icon={<FaMoneyBillWave className="text-[var(--ui-text-subtle)] text-xs" />}
+            />
+          </div>
         </div>
 
         {/* Commission Toggle Bar & Fixed Amount Input */}
@@ -509,28 +512,31 @@ export const TransactionFormModal: React.FC<TransactionFormModalProps> = ({
           </div>
         )}
 
-        {/* Date */}
-        <div>
-          <label className="text-xs font-semibold text-[var(--ui-text)] block mb-1">
-            Date
-          </label>
-          <input
-            type="date"
-            value={date}
-            onChange={(e) => setDate(e.target.value)}
-            className="w-full h-9 px-2.5 text-xs bg-[var(--ui-surface)] text-[var(--ui-text)] border border-[var(--ui-border)] rounded-lg focus:outline-none focus:ring-1 focus:ring-[var(--primary-color,#009fe3)]"
-          />
-        </div>
+        {/* Row: Date & Reference / Invoice No (2 columns) */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          {/* Date */}
+          <div>
+            <label className="text-xs font-semibold text-[var(--ui-text)] block mb-1">
+              Date
+            </label>
+            <input
+              type="date"
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
+              className="w-full h-8 px-2.5 text-xs bg-[var(--ui-surface)] text-[var(--ui-text)] border border-[var(--ui-border)] rounded-lg focus:outline-none focus:ring-1 focus:ring-[var(--primary-color,#009fe3)] cursor-pointer"
+            />
+          </div>
 
-        {/* Reference / Invoice No */}
-        <div>
-          <TextInput
-            label="Reference / Invoice No (Optional)"
-            placeholder="TXN-001"
-            value={refNo}
-            onChange={(val: any) => setRefNo(typeof val === "string" ? val : (val?.target?.value ?? ""))}
-            icon={<FaFileAlt className="text-[var(--ui-text-subtle)] text-xs" />}
-          />
+          {/* Reference / Invoice No */}
+          <div>
+            <TextInput
+              label="Reference / Invoice No (Optional)"
+              placeholder="TXN-001"
+              value={refNo}
+              onChange={(val: any) => setRefNo(typeof val === "string" ? val : (val?.target?.value ?? ""))}
+              icon={<FaFileAlt className="text-[var(--ui-text-subtle)] text-xs" />}
+            />
+          </div>
         </div>
 
         {/* Note / Description */}
