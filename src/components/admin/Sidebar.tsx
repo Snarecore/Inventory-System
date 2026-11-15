@@ -142,7 +142,9 @@ const Sidebar = ({ sidebarClick }: SidebarProps) => {
               const isParentActive = item.subItems?.some(
                 (subItem: any) => subItem.path === pathname
               );
-              const isItemActive = item.path === pathname;
+              const isItemActive =
+                item.path === pathname ||
+                (Boolean(item.path) && item.path !== "/admin" && pathname.startsWith(item.path + "/"));
               const isOpen = openSubMenu === item.id;
 
               const shouldShowActive =

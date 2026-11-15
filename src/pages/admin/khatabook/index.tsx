@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import PageHeader from "@/components/page-header/PageHeader";
 import Button from "@/components/button/Button";
 import RefreshButton from "@/components/table-components/RefreshButton";
@@ -7,7 +8,6 @@ import { MotionDiv } from "@/utils/framer.motion";
 import { KhatabookTable } from "./components/KhatabookTable";
 import { PersonFormModal } from "./components/PersonFormModal";
 import { TransactionFormModal } from "./components/TransactionFormModal";
-import { PersonLedgerView } from "./components/PersonLedgerView";
 import { PersonHasTransactionsModal } from "./components/PersonHasTransactionsModal";
 import {
   useKhatabookDashboardQuery,
@@ -23,6 +23,7 @@ import { FaPlus, FaUsers, FaMoneyBillWave } from "react-icons/fa";
 import { usePermission } from "@/hooks/usePermission";
 
 export const KhatabookPage: React.FC = () => {
+  const navigate = useNavigate();
   const { canCreate } = usePermission();
   const { persons, allTransactions, kpi, isLoading, isFetching, refetch } = useKhatabookDashboardQuery();
 
@@ -34,9 +35,6 @@ export const KhatabookPage: React.FC = () => {
   const [txnDefaultPersonId, setTxnDefaultPersonId] = useState<number | null>(null);
   const [txnDefaultType, setTxnDefaultType] = useState<"PABO" | "DIBO">("PABO");
   const [txnToEdit, setTxnToEdit] = useState<LedgerTransaction | null>(null);
-
-  const [isLedgerViewOpen, setIsLedgerViewOpen] = useState(false);
-  const [activeLedgerPerson, setActiveLedgerPerson] = useState<LedgerPerson | null>(null);
 
   // Delete Modals
   const [isDeletePersonModalOpen, setIsDeletePersonModalOpen] = useState(false);
@@ -195,8 +193,7 @@ export const KhatabookPage: React.FC = () => {
         persons={persons}
         isLoading={isLoading}
         onViewLedger={(person) => {
-          setActiveLedgerPerson(person);
-          setIsLedgerViewOpen(true);
+          navigate(`/admin/khatabook/${person.id}`, { state: { person } });
         }}
         onAddTransaction={(person) => {
           setTxnToEdit(null);
@@ -247,36 +244,6 @@ export const KhatabookPage: React.FC = () => {
         personToEdit={personToEdit}
       />
 
-      {/* Person Detailed Ledger View (DrawerModal) */}
-      <PersonLedgerView
-        isOpen={isLedgerViewOpen}
-        onClose={() => {
-          setIsLedgerViewOpen(false);
-          setActiveLedgerPerson(null);
-        }}
-        person={activeLedgerPerson}
-        onAddTransaction={(type) => {
-          if (!activeLedgerPerson) return;
-          setTxnToEdit(null);
-          setTxnDefaultPersonId(activeLedgerPerson.id);
-          setTxnDefaultType(type);
-          setIsTxnDrawerOpen(true);
-        }}
-        onEditTransaction={(txn) => {
-          setTxnToEdit(txn);
-          setTxnDefaultPersonId(txn.personId);
-          setIsTxnDrawerOpen(true);
-        }}
-        onDeleteTransaction={(txn) => {
-          setTxnToDelete(txn);
-          setIsDeleteTxnModalOpen(true);
-        }}
-        onDeleteAllTransactions={(person) => {
-          setPersonWithTxns(person);
-          setIsPersonHasTxnsModalOpen(true);
-        }}
-      />
-
       {/* Has Transactions Warning / Action Modal */}
       <PersonHasTransactionsModal
         isOpen={isPersonHasTxnsModalOpen}
@@ -287,8 +254,7 @@ export const KhatabookPage: React.FC = () => {
         }}
         onViewLedger={(person) => {
           setIsPersonHasTxnsModalOpen(false);
-          setActiveLedgerPerson(person);
-          setIsLedgerViewOpen(true);
+          navigate(`/admin/khatabook/${person.id}`, { state: { person } });
         }}
         onDeleteAllTransactions={(person) => {
           if (person?.id) {

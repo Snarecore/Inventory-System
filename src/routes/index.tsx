@@ -57,6 +57,7 @@ const ExpensePage = React.lazy(() => import('@/pages/admin/finance/expense'))
 const IncomePage = React.lazy(() => import('@/pages/admin/finance/income'))
 const FundTransferPage = React.lazy(() => import('@/pages/admin/finance/fund-transfer'))
 const KhatabookPage = React.lazy(() => import('@/pages/admin/khatabook'))
+const PersonLedgerPage = React.lazy(() => import('@/pages/admin/khatabook/PersonLedgerPage'))
 const StockAdjustmentPage = React.lazy(() => import('@/pages/admin/inventory/stock-adjustment'))
 const InventoryReport = React.lazy(() => import('@/pages/admin/inventory/inventory-report'))
 const CashClosingPage = React.lazy(() => import('@/pages/admin/finance/cash-closing'))
@@ -696,6 +697,10 @@ export const router = createBrowserRouter([
       {
         path: 'khatabook',
         element: withPermission(KhatabookPage, 'khatabook'),
+      },
+      {
+        path: 'khatabook/:id',
+        element: withPermission(PersonLedgerPage, 'khatabook'),
       },
       {
         path: 'cash-closing',
