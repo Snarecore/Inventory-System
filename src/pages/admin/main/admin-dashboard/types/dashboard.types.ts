@@ -6,6 +6,7 @@ export interface DashboardKpiData {
   cashBalance: number;
   bankBalance: number;
   mfsBalance?: number;
+  totalBalance?: number;
 }
 
 export type SalesTimeframe = 'daily' | 'weekly' | 'monthly';

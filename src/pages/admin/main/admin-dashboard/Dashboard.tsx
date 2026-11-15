@@ -70,19 +70,24 @@ const AdminDashboard: React.FC = () => {
         0
       );
 
+    const computedCash = typeof liveCashBalance === 'number' ? liveCashBalance : mockKpiData.cashBalance;
+    const computedBank = bankQuery.isSuccess
+      ? liveBank
+      : registeredBankAccounts.length > 0
+      ? liveBank
+      : mockKpiData.bankBalance;
+    const computedMfs = mfsQuery.isSuccess
+      ? liveMfs
+      : registeredMfsAccounts.length > 0
+      ? liveMfs
+      : (mockKpiData.mfsBalance ?? 0);
+
     return {
       ...mockKpiData,
-      cashBalance: typeof liveCashBalance === 'number' ? liveCashBalance : mockKpiData.cashBalance,
-      bankBalance: bankQuery.isSuccess
-        ? liveBank
-        : registeredBankAccounts.length > 0
-        ? liveBank
-        : mockKpiData.bankBalance,
-      mfsBalance: mfsQuery.isSuccess
-        ? liveMfs
-        : registeredMfsAccounts.length > 0
-        ? liveMfs
-        : (mockKpiData.mfsBalance ?? 0),
+      cashBalance: computedCash,
+      bankBalance: computedBank,
+      mfsBalance: computedMfs,
+      totalBalance: computedCash + computedBank + computedMfs,
     };
   }, [
     liveCashBalance,
