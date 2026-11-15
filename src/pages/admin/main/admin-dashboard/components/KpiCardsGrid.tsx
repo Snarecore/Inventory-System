@@ -45,9 +45,9 @@ export const KpiCardsGrid: React.FC<KpiCardsGridProps> = ({ data }) => {
         </div>
       </MotionDiv>
 
-      {/* 2. Today's Expense - Vibrant Coral Red */}
+      {/* 2. Today's Expense - Bright Sky Blue */}
       <MotionDiv>
-        <div className="px-4 py-4 rounded-md bg-[#ea5455] text-white shadow-sm hover:shadow-md transition-all duration-300">
+        <div className="px-4 py-4 rounded-md bg-[#009fe3] text-white shadow-sm hover:shadow-md transition-all duration-300">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-[24px] font-bold">{formatCurrency(data.todaysExpense)}</p>
