@@ -501,3 +501,36 @@ export const enrichPersonsWithTransactions = (
     };
   });
 };
+
+/**
+ * 8. DELETE ALL TRANSACTIONS OF A PERSON
+ * Fetches all transactions of a person and deletes each sequentially, restoring balances.
+ */
+export const deleteAllTransactionsOfPerson = async (
+  personId: number
+): Promise<{ success: boolean; deletedCount: number; message: string }> => {
+  const res = await fetchLedgerTransactionList(personId);
+  const txns: LedgerTransaction[] = Array.isArray(res)
+    ? res
+    : Array.isArray(res?.data)
+    ? res.data
+    : [];
+
+  if (txns.length === 0) {
+    return { success: true, deletedCount: 0, message: "No transactions to delete" };
+  }
+
+  let deletedCount = 0;
+  for (const txn of txns) {
+    if (txn.id) {
+      await deleteLedgerTransaction(txn.id);
+      deletedCount++;
+    }
+  }
+
+  return {
+    success: true,
+    deletedCount,
+    message: `${deletedCount} টি লেনদেন সফলভাবে মুছে ফেলা হয়েছে`,
+  };
+};

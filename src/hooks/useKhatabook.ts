@@ -17,6 +17,7 @@ import {
   createLedgerTransaction,
   updateLedgerTransaction,
   deleteLedgerTransaction,
+  deleteAllTransactionsOfPerson,
   enrichPersonsWithTransactions,
 } from "@/services/khatabook-service";
 import type {
@@ -293,6 +294,37 @@ export const useDeleteLedgerTransactionMutation = (
     },
     onError: (error, variables, context) => {
       showErrorToast(error?.message || "Failed to delete transaction");
+      callbacks?.onError?.(error, variables, context);
+    },
+    onSettled: callbacks?.onSettled,
+  });
+};
+
+/**
+ * 9. Delete all transactions of a person mutation
+ */
+export const useDeleteAllTransactionsOfPersonMutation = (
+  callbacks?: LedgerMutationCallbacks<{ success: boolean; deletedCount: number; message: string }, number>
+) => {
+  const queryClient = useQueryClient();
+
+  return useMutation<{ success: boolean; deletedCount: number; message: string }, Error, number>({
+    mutationFn: deleteAllTransactionsOfPerson,
+    onSuccess: (data, variables, context) => {
+      queryClient.invalidateQueries({ queryKey: [ledgerTransactionListQueryKey] });
+      queryClient.invalidateQueries({ queryKey: [ledgerPersonListQueryKey] });
+      queryClient.invalidateQueries({ queryKey: [cashBalanceQueryKey] });
+      queryClient.invalidateQueries({ queryKey: [bankInfoListQueryKey] });
+      queryClient.invalidateQueries({ queryKey: [mfsUserListQueryKey] });
+      queryClient.invalidateQueries({ queryKey: [financialTransactionQueryKey] });
+      queryClient.invalidateQueries({ queryKey: [dashboardQueryKey] });
+      queryClient.invalidateQueries({ queryKey: [financeDashboardQueryKey] });
+
+      showSuccessToast(data.message || "সকল লেনদেন সফলভাবে ডিলিট করা হয়েছে");
+      callbacks?.onSuccess?.(data, variables, context);
+    },
+    onError: (error, variables, context) => {
+      showErrorToast(error?.message || "লেনদেনগুলো ডিলিট করতে সমস্যা হয়েছে");
       callbacks?.onError?.(error, variables, context);
     },
     onSettled: callbacks?.onSettled,

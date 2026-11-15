@@ -17,7 +17,7 @@ import { useBankInfoListQuery } from "@/hooks/useBankQueries";
 import { useMfsUserListQuery } from "@/hooks/useMfsQueries";
 import { sendSmsMessage } from "@/services/sms-service";
 import { getStoredUser } from "@/utils/auth-storage";
-import { showSuccessToast, showErrorToast } from "@/utils/toast-utils";
+import { showErrorToast } from "@/utils/toast-utils";
 import {
   FaMoneyBillWave,
   FaLandmark,
@@ -157,9 +157,7 @@ export const TransactionFormModal: React.FC<TransactionFormModalProps> = ({
         type: "Khatabook",
       })
         .then((smsRes) => {
-          if (smsRes.success) {
-            showSuccessToast("লেনদেনের এসএমএস সফলভাবে পাঠানো হয়েছে!");
-          } else {
+          if (!smsRes.success) {
             showErrorToast(smsRes.message || "এসএমএস পাঠানো সম্ভব হয়নি।");
           }
         })

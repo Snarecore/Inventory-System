@@ -212,25 +212,26 @@ export const KhatabookTable: React.FC<KhatabookTableProps> = ({
       <TableScroll>
         {isLoading ? (
           <div className="p-3">
-            <TableSkeleton columnCount={8} />
+            <TableSkeleton columnCount={9} />
           </div>
         ) : (
-          <Table className="table-fixed min-w-[850px]">
+          <Table className="table-fixed min-w-[950px]">
             <TableHead>
-              <TableTh width="5%">SL</TableTh>
-              <TableTh width="22%">Person Name</TableTh>
-              <TableTh width="14%">Contact Info</TableTh>
+              <TableTh width="4%">SL</TableTh>
+              <TableTh width="16%">Person Name</TableTh>
+              <TableTh width="12%">Contact Info</TableTh>
+              <TableTh width="15%">Address</TableTh>
               <TableTh width="12%" align="right">Receivable (Pabo)</TableTh>
               <TableTh width="12%" align="right">Payable (Dibo)</TableTh>
-              <TableTh width="13%" align="right">Net Balance</TableTh>
-              <TableTh width="8%" align="center">Status</TableTh>
-              <TableTh width="14%" align="right">Actions</TableTh>
+              <TableTh width="12%" align="right">Net Balance</TableTh>
+              <TableTh width="6%" align="center">Status</TableTh>
+              <TableTh width="11%" align="right">Actions</TableTh>
             </TableHead>
 
             <TableBody>
               {paginatedList.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="py-10 text-center">
+                  <td colSpan={9} className="py-10 text-center">
                     <EmptyState
                       title={
                         searchQuery || balanceFilter || statusFilter
@@ -273,7 +274,14 @@ export const KhatabookTable: React.FC<KhatabookTableProps> = ({
                       {/* Contact Info (Phone - Single line) */}
                       <td className="py-1.5 px-2.5 text-left font-normal text-xs text-[var(--ui-text)] truncate whitespace-nowrap">
                         <span className="block truncate" title={person.phone}>
-                          {person.phone}
+                          {person.phone || "-"}
+                        </span>
+                      </td>
+
+                      {/* Address */}
+                      <td className="py-1.5 px-2.5 text-left font-normal text-xs text-[var(--ui-text-muted)] truncate whitespace-nowrap">
+                        <span className="block truncate" title={person.address || "-"}>
+                          {person.address || "-"}
                         </span>
                       </td>
 

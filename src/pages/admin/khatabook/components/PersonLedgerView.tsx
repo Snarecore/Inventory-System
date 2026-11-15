@@ -24,6 +24,7 @@ import {
   FaPlus,
   FaMinus,
   FaPrint,
+  FaTrash,
 } from "react-icons/fa";
 
 interface PersonLedgerViewProps {
@@ -33,6 +34,7 @@ interface PersonLedgerViewProps {
   onAddTransaction: (type: "PABO" | "DIBO") => void;
   onEditTransaction: (txn: LedgerTransaction) => void;
   onDeleteTransaction: (txn: LedgerTransaction) => void;
+  onDeleteAllTransactions?: (person: LedgerPerson) => void;
 }
 
 export const PersonLedgerView: React.FC<PersonLedgerViewProps> = ({
@@ -42,6 +44,7 @@ export const PersonLedgerView: React.FC<PersonLedgerViewProps> = ({
   onAddTransaction,
   onEditTransaction,
   onDeleteTransaction,
+  onDeleteAllTransactions,
 }) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [typeFilter, setTypeFilter] = useState<string>("ALL");
@@ -268,6 +271,17 @@ export const PersonLedgerView: React.FC<PersonLedgerViewProps> = ({
               <FaPrint className="text-[var(--ui-text-subtle)] text-xs" />
               <span>Print</span>
             </button>
+            {onDeleteAllTransactions && rawTransactions.length > 0 && (
+              <button
+                type="button"
+                onClick={() => onDeleteAllTransactions(person)}
+                className="h-8 px-2.5 text-xs font-medium text-[var(--ui-danger)] bg-[var(--ui-surface)] border border-[var(--ui-danger-border)] hover:bg-[var(--ui-danger-light)] rounded-lg transition-colors flex items-center gap-1.5 cursor-pointer"
+                title="Delete all transactions of this person"
+              >
+                <FaTrash className="text-xs" />
+                <span>Delete All</span>
+              </button>
+            )}
           </div>
         </div>
 

@@ -6,7 +6,7 @@ import type { LedgerPerson, SaveLedgerPersonPayload } from "@/types";
 import { useSaveLedgerPersonMutation } from "@/hooks/useKhatabook";
 import { sendSmsMessage } from "@/services/sms-service";
 import { getStoredUser } from "@/utils/auth-storage";
-import { showSuccessToast, showErrorToast } from "@/utils/toast-utils";
+import { showErrorToast } from "@/utils/toast-utils";
 import {
   FaUser,
   FaPhone,
@@ -104,9 +104,7 @@ export const PersonFormModal: React.FC<PersonFormModalProps> = ({
           type: "Khatabook",
         })
           .then((smsRes) => {
-            if (smsRes.success) {
-              showSuccessToast("ব্যক্তি যুক্ত হয়েছে এবং এসএমএস পাঠানো হয়েছে!");
-            } else {
+            if (!smsRes.success) {
               showErrorToast(smsRes.message || "এসএমএস পাঠানো সম্ভব হয়নি।");
             }
           })

@@ -8,10 +8,12 @@ import { KhatabookTable } from "./components/KhatabookTable";
 import { PersonFormModal } from "./components/PersonFormModal";
 import { TransactionFormModal } from "./components/TransactionFormModal";
 import { PersonLedgerView } from "./components/PersonLedgerView";
+import { PersonHasTransactionsModal } from "./components/PersonHasTransactionsModal";
 import {
   useKhatabookDashboardQuery,
   useDeleteLedgerPersonMutation,
   useDeleteLedgerTransactionMutation,
+  useDeleteAllTransactionsOfPersonMutation,
 } from "@/hooks/useKhatabook";
 import { formatMoney } from "@/utils/formatters";
 import { showErrorToast } from "@/utils/toast-utils";
@@ -43,6 +45,10 @@ export const KhatabookPage: React.FC = () => {
   const [isDeleteTxnModalOpen, setIsDeleteTxnModalOpen] = useState(false);
   const [txnToDelete, setTxnToDelete] = useState<LedgerTransaction | null>(null);
 
+  // Modal when person has transactions
+  const [isPersonHasTxnsModalOpen, setIsPersonHasTxnsModalOpen] = useState(false);
+  const [personWithTxns, setPersonWithTxns] = useState<LedgerPerson | null>(null);
+
   const deletePersonMutation = useDeleteLedgerPersonMutation({
     onSuccess: () => {
       setIsDeletePersonModalOpen(false);
@@ -54,6 +60,17 @@ export const KhatabookPage: React.FC = () => {
     onSuccess: () => {
       setIsDeleteTxnModalOpen(false);
       setTxnToDelete(null);
+    },
+  });
+
+  const deleteAllTxnsMutation = useDeleteAllTransactionsOfPersonMutation({
+    onSuccess: () => {
+      setIsPersonHasTxnsModalOpen(false);
+      if (personWithTxns) {
+        setPersonToDelete(personWithTxns);
+        setIsDeletePersonModalOpen(true);
+        setPersonWithTxns(null);
+      }
     },
   });
 
@@ -194,9 +211,8 @@ export const KhatabookPage: React.FC = () => {
         onDeletePerson={async (person) => {
           const txnCount = person.transactionCount ?? 0;
           if (txnCount > 0) {
-            showErrorToast(
-              `"${person.name}" এর সাথে ${txnCount} টি লেনদেন বিদ্যমান! ব্যক্তি ডিলিট করার আগে তার সকল লেনদেন ডিলিট করতে হবে।`
-            );
+            setPersonWithTxns(person);
+            setIsPersonHasTxnsModalOpen(true);
             return;
           }
 
@@ -208,9 +224,8 @@ export const KhatabookPage: React.FC = () => {
               ? res.data
               : [];
             if (txns.length > 0) {
-              showErrorToast(
-                `"${person.name}" এর সাথে ${txns.length} টি লেনদেন বিদ্যমান! ব্যক্তি ডিলিট করার আগে তার সকল লেনদেন ডিলিট করতে হবে।`
-              );
+              setPersonWithTxns({ ...person, transactionCount: txns.length });
+              setIsPersonHasTxnsModalOpen(true);
               return;
             }
           } catch {
@@ -256,6 +271,31 @@ export const KhatabookPage: React.FC = () => {
           setTxnToDelete(txn);
           setIsDeleteTxnModalOpen(true);
         }}
+        onDeleteAllTransactions={(person) => {
+          setPersonWithTxns(person);
+          setIsPersonHasTxnsModalOpen(true);
+        }}
+      />
+
+      {/* Has Transactions Warning / Action Modal */}
+      <PersonHasTransactionsModal
+        isOpen={isPersonHasTxnsModalOpen}
+        person={personWithTxns}
+        onClose={() => {
+          setIsPersonHasTxnsModalOpen(false);
+          setPersonWithTxns(null);
+        }}
+        onViewLedger={(person) => {
+          setIsPersonHasTxnsModalOpen(false);
+          setActiveLedgerPerson(person);
+          setIsLedgerViewOpen(true);
+        }}
+        onDeleteAllTransactions={(person) => {
+          if (person?.id) {
+            deleteAllTxnsMutation.mutate(person.id);
+          }
+        }}
+        isDeletingTxns={deleteAllTxnsMutation.isPending}
       />
 
       {/* Transaction Form Drawer (Create / Edit) */}
