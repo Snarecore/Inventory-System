@@ -1346,7 +1346,7 @@ export const TradeReturnForm: React.FC<TradeReturnFormProps> = ({ mode }) => {
                           />
                         </td>
                         <td className="py-2 px-2">
-                          <span className="font-semibold text-[var(--ui-text)]">{item.productName}</span>
+                          <span className="text-[var(--ui-text)]">{item.productName}</span>
                         </td>
                         <td className="py-2 px-2 text-right tabular-nums">
                           ৳ {formatMoney(item.sellPrice)}
