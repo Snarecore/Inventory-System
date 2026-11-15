@@ -213,7 +213,7 @@ export const PersonLedgerView: React.FC<PersonLedgerViewProps> = ({
             </div>
           </div>
 
-          {/* Quick Action Buttons (Pabo & Dibo) */}
+          {/* Quick Action Buttons (Receive & Prodan) */}
           <div className="flex items-center gap-2 shrink-0 self-end sm:self-auto">
             <button
               type="button"
@@ -221,7 +221,7 @@ export const PersonLedgerView: React.FC<PersonLedgerViewProps> = ({
               className="h-8 px-3 rounded-lg text-xs font-semibold bg-[#059669] hover:bg-[#047857] text-white flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs"
             >
               <FaPlus className="text-[10px]" />
-              <span>Record Pabo</span>
+              <span>Receive</span>
             </button>
             <button
               type="button"
@@ -229,7 +229,7 @@ export const PersonLedgerView: React.FC<PersonLedgerViewProps> = ({
               className="h-8 px-3 rounded-lg text-xs font-semibold bg-[#dc2626] hover:bg-[#b91c1c] text-white flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs"
             >
               <FaMinus className="text-[10px]" />
-              <span>Record Dibo</span>
+              <span>Prodan</span>
             </button>
           </div>
         </div>
