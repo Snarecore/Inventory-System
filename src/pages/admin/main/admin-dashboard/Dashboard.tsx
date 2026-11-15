@@ -20,7 +20,6 @@ const AdminDashboard: React.FC = () => {
     staleTime: 0,
     refetchOnMount: "always",
     refetchOnWindowFocus: true,
-    refetchInterval: 10000,
   });
 
   const {
@@ -33,13 +32,11 @@ const AdminDashboard: React.FC = () => {
       staleTime: 0,
       refetchOnMount: "always",
       refetchOnWindowFocus: true,
-      refetchInterval: 10000,
     },
     mfsOptions: {
       staleTime: 0,
       refetchOnMount: "always",
       refetchOnWindowFocus: true,
-      refetchInterval: 10000,
     },
   });
 

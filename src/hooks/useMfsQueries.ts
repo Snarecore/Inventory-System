@@ -42,7 +42,7 @@ export const useMfsUserListQuery = (
     queryFn: fetchMfsUserList,
     staleTime: 0,
     refetchOnMount: "always",
-    refetchOnWindowFocus: false,
+    refetchOnWindowFocus: true,
     ...options,
   });
 };

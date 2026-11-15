@@ -37,6 +37,7 @@ export const useBankInfoListQuery = (
     queryFn: fetchBankInfoList,
     staleTime: 0,
     refetchOnMount: "always",
+    refetchOnWindowFocus: true,
     ...options,
   });
 };
