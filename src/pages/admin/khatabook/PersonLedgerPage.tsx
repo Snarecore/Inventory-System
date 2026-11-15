@@ -393,7 +393,7 @@ export const PersonLedgerPage: React.FC = () => {
             {/* Card 1: Receivable (Pabo) */}
             <div className="p-2 sm:px-3 sm:py-2 rounded-lg border bg-[var(--ui-success-light)]/60 border-[var(--ui-success-border)] flex items-center justify-between gap-3 shadow-2xs sm:min-w-[145px]">
               <div className="flex flex-col min-w-0">
-                <span className="text-[10px] font-bold text-[var(--ui-success-dark)] uppercase tracking-wider truncate">
+                <span className="text-[11px] font-semibold text-[var(--ui-success-dark)] truncate">
                   Receivable (Pabo)
                 </span>
                 <span className="text-sm sm:text-base font-extrabold text-[var(--ui-success)] mt-0.5 truncate">
@@ -408,7 +408,7 @@ export const PersonLedgerPage: React.FC = () => {
             {/* Card 2: Payable (Dibo) */}
             <div className="p-2 sm:px-3 sm:py-2 rounded-lg border bg-[var(--ui-danger-light)]/60 border-[var(--ui-danger-border)] flex items-center justify-between gap-3 shadow-2xs sm:min-w-[145px]">
               <div className="flex flex-col min-w-0">
-                <span className="text-[10px] font-bold text-[var(--ui-danger-dark)] uppercase tracking-wider truncate">
+                <span className="text-[11px] font-semibold text-[var(--ui-danger-dark)] truncate">
                   Payable (Dibo)
                 </span>
                 <span className="text-sm sm:text-base font-extrabold text-[var(--ui-danger)] mt-0.5 truncate">
@@ -432,7 +432,7 @@ export const PersonLedgerPage: React.FC = () => {
             >
               <div className="flex flex-col min-w-0">
                 <span
-                  className={`text-[10px] font-bold uppercase tracking-wider truncate ${
+                  className={`text-[11px] font-semibold truncate ${
                     netBalance > 0
                       ? "text-[var(--ui-success-dark)]"
                       : netBalance < 0
@@ -475,7 +475,7 @@ export const PersonLedgerPage: React.FC = () => {
             {totalCommission > 0 && (
               <div className="p-2 sm:px-3 sm:py-2 rounded-lg border bg-amber-50/70 dark:bg-amber-950/20 border-amber-200/80 dark:border-amber-800/40 flex items-center justify-between gap-3 shadow-2xs sm:min-w-[145px]">
                 <div className="flex flex-col min-w-0">
-                  <span className="text-[10px] font-bold text-amber-800 dark:text-amber-400 uppercase tracking-wider truncate">
+                  <span className="text-[11px] font-semibold text-amber-800 dark:text-amber-400 truncate">
                     Commission
                   </span>
                   <span className="text-sm sm:text-base font-extrabold text-amber-600 dark:text-amber-400 mt-0.5 truncate">

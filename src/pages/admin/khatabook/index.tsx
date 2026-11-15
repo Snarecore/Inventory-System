@@ -120,7 +120,7 @@ export const KhatabookPage: React.FC = () => {
         <MotionDiv delay={0.05}>
           <div className="p-2 sm:p-2.5 rounded-lg border bg-[var(--ui-success-light)]/60 border-[var(--ui-success-border)] hover:border-[var(--ui-success-border)] flex items-center justify-between gap-2 transition-all shadow-xs h-full">
             <div className="flex flex-col min-w-0">
-              <span className="text-[10px] font-semibold text-[var(--ui-text-muted)] uppercase tracking-wider truncate">
+              <span className="text-[11px] font-semibold text-[var(--ui-text-muted)] truncate">
                 Receivable (Pabo)
               </span>
               <span className="text-sm sm:text-base font-bold truncate mt-0.5 text-[var(--ui-success)]">
@@ -137,7 +137,7 @@ export const KhatabookPage: React.FC = () => {
         <MotionDiv delay={0.1}>
           <div className="p-2 sm:p-2.5 rounded-lg border bg-[var(--ui-danger-light)]/60 border-[var(--ui-danger-border)] hover:border-[var(--ui-danger-border)] flex items-center justify-between gap-2 transition-all shadow-xs h-full">
             <div className="flex flex-col min-w-0">
-              <span className="text-[10px] font-semibold text-[var(--ui-text-muted)] uppercase tracking-wider truncate">
+              <span className="text-[11px] font-semibold text-[var(--ui-text-muted)] truncate">
                 Payable (Dibo)
               </span>
               <span className="text-sm sm:text-base font-bold truncate mt-0.5 text-[var(--ui-danger)]">
@@ -154,7 +154,7 @@ export const KhatabookPage: React.FC = () => {
         <MotionDiv delay={0.15}>
           <div className="p-2 sm:p-2.5 rounded-lg border bg-[var(--primary-color-light)]/60 border-[var(--primary-color-muted)] hover:border-[var(--primary-color-muted)] flex items-center justify-between gap-2 transition-all shadow-xs h-full">
             <div className="flex flex-col min-w-0">
-              <span className="text-[10px] font-semibold text-[var(--ui-text-muted)] uppercase tracking-wider truncate">
+              <span className="text-[11px] font-semibold text-[var(--ui-text-muted)] truncate">
                 Net Balance
               </span>
               <span className="text-sm sm:text-base font-bold truncate mt-0.5 text-[var(--primary-color)]">
@@ -174,7 +174,7 @@ export const KhatabookPage: React.FC = () => {
         <MotionDiv delay={0.2}>
           <div className="p-2 sm:p-2.5 rounded-lg border bg-amber-50/70 dark:bg-amber-950/20 border-amber-200/80 dark:border-amber-800/40 hover:border-amber-300 dark:hover:border-amber-700 flex items-center justify-between gap-2 transition-all shadow-xs h-full">
             <div className="flex flex-col min-w-0">
-              <span className="text-[10px] font-semibold text-[var(--ui-text-muted)] uppercase tracking-wider truncate">
+              <span className="text-[11px] font-semibold text-amber-800 dark:text-amber-400 truncate">
                 Commission
               </span>
               <span className="text-sm sm:text-base font-bold truncate mt-0.5 text-amber-600 dark:text-amber-400">
@@ -191,7 +191,7 @@ export const KhatabookPage: React.FC = () => {
         <MotionDiv delay={0.25}>
           <div className="p-2 sm:p-2.5 rounded-lg border bg-[var(--ui-info-light)]/60 border-[var(--ui-info-border)] hover:border-[var(--ui-info-border)] flex items-center justify-between gap-2 transition-all shadow-xs h-full">
             <div className="flex flex-col min-w-0">
-              <span className="text-[10px] font-semibold text-[var(--ui-text-muted)] uppercase tracking-wider truncate">
+              <span className="text-[11px] font-semibold text-[var(--ui-text-muted)] truncate">
                 Total Persons
               </span>
               <span className="text-sm sm:text-base font-bold truncate mt-0.5 text-[var(--ui-info)]">
