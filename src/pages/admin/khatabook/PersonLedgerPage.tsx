@@ -1,6 +1,5 @@
 import React, { useState, useMemo } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
-import PageHeader from "@/components/page-header/PageHeader";
 import RefreshButton from "@/components/table-components/RefreshButton";
 import TableSkeleton from "@/components/skeleton/TableSkeleton";
 import EmptyState from "@/components/empty-state/EmptyState";
@@ -263,48 +262,33 @@ export const PersonLedgerPage: React.FC = () => {
 
   return (
     <div className="flex flex-col gap-2.5 px-2.5 py-1.5 sm:px-4 sm:py-2 max-w-[1600px] mx-auto w-full">
-      {/* Page Header with Back button */}
-      <div className="flex flex-col gap-1.5 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex items-center gap-2.5">
+      {/* Unified Single-Line Top Header & Profile Strip */}
+      <div className="p-2.5 sm:p-3 bg-[var(--ui-surface)] border border-[var(--ui-border)] rounded-xl flex flex-col lg:flex-row lg:items-center justify-between gap-3 shadow-xs">
+        {/* Left: Back button + Divider + Avatar + Person Info */}
+        <div className="flex items-center gap-3 min-w-0">
           <button
             type="button"
             onClick={() => navigate("/admin/khatabook")}
-            className="h-8 px-2.5 rounded-lg border border-[var(--ui-border)] bg-[var(--ui-surface)] hover:bg-[var(--ui-surface-sunken)] text-[var(--ui-text)] transition-colors cursor-pointer flex items-center gap-1.5 text-xs font-semibold shrink-0 shadow-xs"
+            className="h-8 px-2.5 rounded-lg border border-[var(--ui-border)] bg-[var(--ui-surface-sunken)] hover:bg-[var(--ui-surface)] text-[var(--ui-text)] transition-colors cursor-pointer flex items-center gap-1.5 text-xs font-semibold shrink-0 shadow-2xs group"
             title="Back to Khatabook"
           >
-            <FiArrowLeft size={14} />
+            <FiArrowLeft size={14} className="group-hover:-translate-x-0.5 transition-transform" />
             <span className="hidden sm:inline">Back to Khatabook</span>
           </button>
-          <PageHeader
-            headerTitle={`${person.name} — Detailed Ledger`}
-            headerDescription="Detailed debit & credit transaction history, statement balances, and receipts"
-          />
-        </div>
 
-        <div className="flex items-center gap-1.5 self-end sm:self-auto">
-          <RefreshButton
-            onClick={() => {
-              refetchTxns();
-              refetchDashboard();
-            }}
-            isLoading={isTxnsLoading || isTxnsFetching}
-          />
-        </div>
-      </div>
+          <div className="hidden sm:block h-6 w-px bg-[var(--ui-border)] shrink-0" />
 
-      {/* Header Profile & Quick Action Strip */}
-      <div className="p-3 bg-[var(--ui-surface-sunken)]/60 border border-[var(--ui-border)] rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-[var(--primary-color-light,#e0f2fe)] text-[var(--primary-color,#009fe3)] flex items-center justify-center font-bold text-base shrink-0 border border-[var(--primary-color-muted,#bae6fd)] shadow-xs">
+          <div className="w-9 h-9 rounded-lg bg-[var(--primary-color-light,#e0f2fe)] text-[var(--primary-color,#009fe3)] flex items-center justify-center font-bold text-sm shrink-0 border border-[var(--primary-color-muted,#bae6fd)] shadow-2xs">
             {(person.name || "P").charAt(0).toUpperCase()}
           </div>
+
           <div className="flex flex-col min-w-0">
             <div className="flex items-center gap-2">
-              <h3 className="text-sm font-bold text-[var(--ui-text)] truncate" title={person.name}>
+              <h1 className="text-sm font-bold text-[var(--ui-text)] truncate leading-none" title={person.name}>
                 {person.name}
-              </h3>
+              </h1>
               <span
-                className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border shrink-0 ${
+                className={`text-[10px] font-semibold px-2 py-0.2 rounded-full border shrink-0 ${
                   (person.status || "").toLowerCase() === "active"
                     ? "bg-[var(--ui-success-border)] text-[var(--ui-success-dark)] border-[var(--ui-success-border)]"
                     : "bg-[var(--ui-danger-border)] text-[var(--ui-danger-dark)] border-[var(--ui-danger-border)]"
@@ -312,51 +296,74 @@ export const PersonLedgerPage: React.FC = () => {
               >
                 {person.status || "Active"}
               </span>
-            </div>
-            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-[var(--ui-text-muted)] mt-1">
-              <span className="flex items-center gap-1.5">
-                <FaPhone className="text-[var(--ui-text-subtle)] text-[10px]" />
-                <span>{person.phone || "-"}</span>
-              </span>
-              {person.address && (
-                <span className="flex items-center gap-1.5 truncate max-w-[280px]" title={person.address}>
-                  <FaMapMarkerAlt className="text-[var(--ui-text-subtle)] text-[10px] shrink-0" />
-                  <span className="truncate">{person.address}</span>
+              {person.type && (
+                <span className="text-[10px] font-medium px-1.5 py-0.2 rounded bg-[var(--ui-surface-sunken)] text-[var(--ui-text-muted)] border border-[var(--ui-border)] shrink-0">
+                  {person.type.charAt(0).toUpperCase() + person.type.slice(1).toLowerCase()}
                 </span>
               )}
+            </div>
+
+            <div className="flex flex-wrap items-center gap-x-2.5 gap-y-0.5 text-[11px] text-[var(--ui-text-muted)] mt-1">
+              {person.phone && (
+                <span className="flex items-center gap-1 shrink-0">
+                  <FaPhone className="text-[var(--ui-text-subtle)] text-[9px]" />
+                  <span>{person.phone}</span>
+                </span>
+              )}
+              {person.address && (
+                <>
+                  <span className="text-[var(--ui-text-subtle)] hidden sm:inline">•</span>
+                  <span className="flex items-center gap-1 truncate max-w-[280px]" title={person.address}>
+                    <FaMapMarkerAlt className="text-[var(--ui-text-subtle)] text-[9px] shrink-0" />
+                    <span className="truncate">{person.address}</span>
+                  </span>
+                </>
+              )}
+              <span className="text-[var(--ui-text-subtle)] hidden sm:inline">•</span>
+              <span className="text-[var(--ui-text-subtle)] italic hidden sm:inline">Ledger Statement</span>
             </div>
           </div>
         </div>
 
-        {/* Quick Action Buttons (Receive & Prodan) */}
-        {canCreate("khatabook") && (
-          <div className="flex items-center gap-2 shrink-0 self-end sm:self-auto">
-            <button
-              type="button"
-              onClick={() => {
-                setTxnToEdit(null);
-                setTxnDefaultType("PABO");
-                setIsTxnModalOpen(true);
-              }}
-              className="h-8 px-3 rounded-lg text-xs font-semibold bg-[#059669] hover:bg-[#047857] text-white flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs"
-            >
-              <FaPlus className="text-[10px]" />
-              <span>Receive</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setTxnToEdit(null);
-                setTxnDefaultType("DIBO");
-                setIsTxnModalOpen(true);
-              }}
-              className="h-8 px-3 rounded-lg text-xs font-semibold bg-[#dc2626] hover:bg-[#b91c1c] text-white flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs"
-            >
-              <FaMinus className="text-[10px]" />
-              <span>Prodan</span>
-            </button>
-          </div>
-        )}
+        {/* Right: Refresh + Receive + Prodan Actions */}
+        <div className="flex items-center gap-2 shrink-0 self-end lg:self-auto">
+          <RefreshButton
+            onClick={() => {
+              refetchTxns();
+              refetchDashboard();
+            }}
+            isLoading={isTxnsLoading || isTxnsFetching}
+          />
+
+          {canCreate("khatabook") && (
+            <>
+              <button
+                type="button"
+                onClick={() => {
+                  setTxnToEdit(null);
+                  setTxnDefaultType("PABO");
+                  setIsTxnModalOpen(true);
+                }}
+                className="h-8 px-3 rounded-lg text-xs font-semibold bg-[#059669] hover:bg-[#047857] text-white flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs"
+              >
+                <FaPlus className="text-[10px]" />
+                <span>Receive</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setTxnToEdit(null);
+                  setTxnDefaultType("DIBO");
+                  setIsTxnModalOpen(true);
+                }}
+                className="h-8 px-3 rounded-lg text-xs font-semibold bg-[#dc2626] hover:bg-[#b91c1c] text-white flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs"
+              >
+                <FaMinus className="text-[10px]" />
+                <span>Prodan</span>
+              </button>
+            </>
+          )}
+        </div>
       </div>
 
       {/* 3 Metric Summary Cards matching design system */}
