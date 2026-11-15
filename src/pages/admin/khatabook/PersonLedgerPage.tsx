@@ -34,6 +34,8 @@ import {
   FaTrash,
   FaMoneyBillWave,
   FaUsers,
+  FaBuilding,
+  FaUser,
 } from "react-icons/fa";
 import { FiArrowLeft } from "react-icons/fi";
 
@@ -262,71 +264,25 @@ export const PersonLedgerPage: React.FC = () => {
 
   return (
     <div className="flex flex-col gap-2.5 px-2.5 py-1.5 sm:px-4 sm:py-2 max-w-[1600px] mx-auto w-full">
-      {/* Unified Single-Line Top Header & Profile Strip */}
-      <div className="p-2.5 sm:p-3 bg-[var(--ui-surface)] border border-[var(--ui-border)] rounded-xl flex flex-col lg:flex-row lg:items-center justify-between gap-3 shadow-xs">
-        {/* Left: Back button + Divider + Avatar + Person Info */}
-        <div className="flex items-center gap-3 min-w-0">
+      {/* Top Bar: Navigation & Action Controls */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pb-0.5">
+        {/* Left: Breadcrumbs / Back button */}
+        <div className="flex items-center gap-2">
           <button
             type="button"
             onClick={() => navigate("/admin/khatabook")}
-            className="h-8 px-2.5 rounded-lg border border-[var(--ui-border)] bg-[var(--ui-surface-sunken)] hover:bg-[var(--ui-surface)] text-[var(--ui-text)] transition-colors cursor-pointer flex items-center gap-1.5 text-xs font-semibold shrink-0 shadow-2xs group"
+            className="h-8 px-2.5 rounded-lg border border-[var(--ui-border)] bg-[var(--ui-surface)] hover:bg-[var(--ui-surface-sunken)] text-[var(--ui-text)] transition-colors cursor-pointer flex items-center gap-1.5 text-xs font-semibold shadow-2xs group"
             title="Back to Khatabook"
           >
-            <FiArrowLeft size={14} className="group-hover:-translate-x-0.5 transition-transform" />
-            <span className="hidden sm:inline">Back to Khatabook</span>
+            <FiArrowLeft size={13} className="group-hover:-translate-x-0.5 transition-transform" />
+            <span>Back to Khatabook</span>
           </button>
-
-          <div className="hidden sm:block h-6 w-px bg-[var(--ui-border)] shrink-0" />
-
-          <div className="w-9 h-9 rounded-lg bg-[var(--primary-color-light,#e0f2fe)] text-[var(--primary-color,#009fe3)] flex items-center justify-center font-bold text-sm shrink-0 border border-[var(--primary-color-muted,#bae6fd)] shadow-2xs">
-            {(person.name || "P").charAt(0).toUpperCase()}
-          </div>
-
-          <div className="flex flex-col min-w-0">
-            <div className="flex items-center gap-2">
-              <h1 className="text-sm font-bold text-[var(--ui-text)] truncate leading-none" title={person.name}>
-                {person.name}
-              </h1>
-              <span
-                className={`text-[10px] font-semibold px-2 py-0.2 rounded-full border shrink-0 ${
-                  (person.status || "").toLowerCase() === "active"
-                    ? "bg-[var(--ui-success-border)] text-[var(--ui-success-dark)] border-[var(--ui-success-border)]"
-                    : "bg-[var(--ui-danger-border)] text-[var(--ui-danger-dark)] border-[var(--ui-danger-border)]"
-                }`}
-              >
-                {person.status || "Active"}
-              </span>
-              {person.type && (
-                <span className="text-[10px] font-medium px-1.5 py-0.2 rounded bg-[var(--ui-surface-sunken)] text-[var(--ui-text-muted)] border border-[var(--ui-border)] shrink-0">
-                  {person.type.toUpperCase() === "INSTITUTE" ? "Institute" : "Person"}
-                </span>
-              )}
-            </div>
-
-            <div className="flex flex-wrap items-center gap-x-2.5 gap-y-0.5 text-[11px] text-[var(--ui-text-muted)] mt-1">
-              {person.phone && (
-                <span className="flex items-center gap-1 shrink-0">
-                  <FaPhone className="text-[var(--ui-text-subtle)] text-[9px]" />
-                  <span>{person.phone}</span>
-                </span>
-              )}
-              {person.address && (
-                <>
-                  <span className="text-[var(--ui-text-subtle)] hidden sm:inline">•</span>
-                  <span className="flex items-center gap-1 truncate max-w-[280px]" title={person.address}>
-                    <FaMapMarkerAlt className="text-[var(--ui-text-subtle)] text-[9px] shrink-0" />
-                    <span className="truncate">{person.address}</span>
-                  </span>
-                </>
-              )}
-              <span className="text-[var(--ui-text-subtle)] hidden sm:inline">•</span>
-              <span className="text-[var(--ui-text-subtle)] italic hidden sm:inline">Ledger Statement</span>
-            </div>
-          </div>
+          <span className="text-[var(--ui-text-subtle)] text-xs">/</span>
+          <span className="text-xs font-medium text-[var(--ui-text-muted)]">Ledger Statement</span>
         </div>
 
-        {/* Right: Refresh + Receive + Prodan Actions */}
-        <div className="flex items-center gap-2 shrink-0 self-end lg:self-auto">
+        {/* Right: Actions (Refresh, Receive, Prodan) */}
+        <div className="flex items-center gap-2 shrink-0 self-end sm:self-auto">
           <RefreshButton
             onClick={() => {
               refetchTxns();
@@ -344,7 +300,7 @@ export const PersonLedgerPage: React.FC = () => {
                   setTxnDefaultType("PABO");
                   setIsTxnModalOpen(true);
                 }}
-                className="h-8 px-3 rounded-lg text-xs font-semibold bg-[#059669] hover:bg-[#047857] text-white flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs"
+                className="h-8 px-3 rounded-lg text-xs font-semibold bg-[#059669] hover:bg-[#047857] text-white flex items-center gap-1.5 transition-all cursor-pointer shadow-xs active:scale-95"
               >
                 <FaPlus className="text-[10px]" />
                 <span>Receive</span>
@@ -356,7 +312,7 @@ export const PersonLedgerPage: React.FC = () => {
                   setTxnDefaultType("DIBO");
                   setIsTxnModalOpen(true);
                 }}
-                className="h-8 px-3 rounded-lg text-xs font-semibold bg-[#dc2626] hover:bg-[#b91c1c] text-white flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs"
+                className="h-8 px-3 rounded-lg text-xs font-semibold bg-[#dc2626] hover:bg-[#b91c1c] text-white flex items-center gap-1.5 transition-all cursor-pointer shadow-xs active:scale-95"
               >
                 <FaMinus className="text-[10px]" />
                 <span>Prodan</span>
@@ -366,86 +322,162 @@ export const PersonLedgerPage: React.FC = () => {
         </div>
       </div>
 
-      {/* 3 Metric Summary Cards matching design system */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-        {/* 1. Total Receivable (Pabo) */}
-        <div className="p-2.5 rounded-xl border bg-[var(--ui-success-light)]/60 border-[var(--ui-success-border)] flex items-center justify-between shadow-xs">
-          <div className="flex flex-col min-w-0">
-            <span className="text-[10px] font-bold text-[var(--ui-success-dark,#047857)] uppercase tracking-wider truncate">
-              Receivable (Pabo)
-            </span>
-            <span className="text-sm sm:text-base font-extrabold text-[var(--ui-success)] mt-0.5 truncate">
-              ৳ {formatMoney(totalPabo)}
-            </span>
-          </div>
-          <div className="p-1.5 rounded-lg bg-[var(--ui-success-border)] text-[var(--ui-success)] shrink-0">
-            <FaMoneyBillWave size={14} />
-          </div>
-        </div>
+      {/* Unified Hero Card: Person Identity (Left) & Financial Balance KPI (Right) */}
+      <div className="bg-[var(--ui-surface)] border border-[var(--ui-border)] rounded-xl p-3.5 sm:p-4 shadow-xs">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-center">
+          {/* Left Column: Person / Institute Identity & Contact (5 cols) */}
+          <div className="lg:col-span-5 flex items-start sm:items-center gap-3.5 min-w-0">
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-sky-500 to-blue-600 text-white font-extrabold text-lg flex items-center justify-center shrink-0 shadow-xs ring-2 ring-sky-500/10">
+              {(person.name || "P").charAt(0).toUpperCase()}
+            </div>
 
-        {/* 2. Total Payable (Dibo) */}
-        <div className="p-2.5 rounded-xl border bg-[var(--ui-danger-light)]/60 border-[var(--ui-danger-border)] flex items-center justify-between shadow-xs">
-          <div className="flex flex-col min-w-0">
-            <span className="text-[10px] font-bold text-[var(--ui-danger-dark,#b91c1c)] uppercase tracking-wider truncate">
-              Payable (Dibo)
-            </span>
-            <span className="text-sm sm:text-base font-extrabold text-[var(--ui-danger)] mt-0.5 truncate">
-              ৳ {formatMoney(totalDibo)}
-            </span>
-          </div>
-          <div className="p-1.5 rounded-lg bg-[var(--ui-danger-border)] text-[var(--ui-danger)] shrink-0">
-            <FaMoneyBillWave size={14} />
-          </div>
-        </div>
+            <div className="flex flex-col min-w-0 gap-1 flex-1">
+              <div className="flex items-center gap-2 flex-wrap">
+                <h1 className="text-base sm:text-lg font-bold text-[var(--ui-text)] truncate leading-tight" title={person.name}>
+                  {person.name}
+                </h1>
+                <span
+                  className={`inline-flex items-center gap-1.5 text-[10px] font-semibold px-2 py-0.5 rounded-full border shrink-0 ${
+                    (person.status || "").toLowerCase() === "active"
+                      ? "bg-[var(--ui-success-light)] text-[var(--ui-success-dark)] border-[var(--ui-success-border)]"
+                      : "bg-[var(--ui-danger-light)] text-[var(--ui-danger-dark)] border-[var(--ui-danger-border)]"
+                  }`}
+                >
+                  <span
+                    className={`w-1.5 h-1.5 rounded-full ${
+                      (person.status || "").toLowerCase() === "active" ? "bg-[var(--ui-success)]" : "bg-[var(--ui-danger)]"
+                    }`}
+                  />
+                  {person.status || "Active"}
+                </span>
+                {person.type && (
+                  <span className="inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full bg-[var(--ui-surface-sunken)] text-[var(--ui-text-muted)] border border-[var(--ui-border)] shrink-0">
+                    {person.type.toUpperCase() === "INSTITUTE" ? (
+                      <>
+                        <FaBuilding className="text-[9px]" />
+                        <span>Institute</span>
+                      </>
+                    ) : (
+                      <>
+                        <FaUser className="text-[9px]" />
+                        <span>Person</span>
+                      </>
+                    )}
+                  </span>
+                )}
+              </div>
 
-        {/* 3. Net Balance */}
-        <div
-          className={`p-2.5 rounded-xl border flex items-center justify-between shadow-xs ${
-            netBalance > 0
-              ? "bg-[var(--ui-success-light)]/80 border-[var(--ui-success-border)]"
-              : netBalance < 0
-              ? "bg-[var(--ui-danger-light)]/80 border-[var(--ui-danger-border)]"
-              : "bg-[var(--ui-surface-sunken)] border-[var(--ui-border)]"
-          }`}
-        >
-          <div className="flex flex-col min-w-0">
-            <span
-              className={`text-[10px] font-bold uppercase tracking-wider truncate ${
-                netBalance > 0
-                  ? "text-[var(--ui-success-dark,#047857)]"
-                  : netBalance < 0
-                  ? "text-[var(--ui-danger-dark,#b91c1c)]"
-                  : "text-[var(--ui-text-muted)]"
-              }`}
-            >
-              {netBalance > 0
-                ? "Net Receivable (Pabo)"
-                : netBalance < 0
-                ? "Net Payable (Dibo)"
-                : "Settled (Balanced)"}
-            </span>
-            <span
-              className={`text-sm sm:text-base font-extrabold mt-0.5 truncate ${
-                netBalance > 0
-                  ? "text-[var(--ui-success)]"
-                  : netBalance < 0
-                  ? "text-[var(--ui-danger)]"
-                  : "text-[var(--ui-text)]"
-              }`}
-            >
-              ৳ {formatMoney(Math.abs(netBalance))}
-            </span>
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-[var(--ui-text-muted)] mt-0.5">
+                {person.phone ? (
+                  <a
+                    href={`tel:${person.phone}`}
+                    className="inline-flex items-center gap-1.5 hover:text-[var(--primary-color)] transition-colors shrink-0"
+                    title="Click to call"
+                  >
+                    <FaPhone className="text-[10px] text-[var(--ui-text-subtle)]" />
+                    <span className="font-medium">{person.phone}</span>
+                  </a>
+                ) : null}
+                {person.phone && person.address ? (
+                  <span className="text-[var(--ui-border)] hidden sm:inline">•</span>
+                ) : null}
+                {person.address ? (
+                  <span className="inline-flex items-center gap-1.5 truncate max-w-[280px]" title={person.address}>
+                    <FaMapMarkerAlt className="text-[10px] text-[var(--ui-text-subtle)] shrink-0" />
+                    <span className="truncate">{person.address}</span>
+                  </span>
+                ) : null}
+                {!person.phone && !person.address ? (
+                  <span className="text-[11px] text-[var(--ui-text-subtle)] italic">No contact info provided</span>
+                ) : null}
+              </div>
+            </div>
           </div>
-          <div
-            className={`p-1.5 rounded-lg shrink-0 ${
-              netBalance > 0
-                ? "bg-[var(--ui-success-border)] text-[var(--ui-success)]"
-                : netBalance < 0
-                ? "bg-[var(--ui-danger-border)] text-[var(--ui-danger)]"
-                : "bg-[var(--ui-border)] text-[var(--ui-text-muted)]"
-            }`}
-          >
-            <FaUsers size={14} />
+
+          {/* Right Column: 3 Balanced KPI Cards (7 cols) */}
+          <div className="lg:col-span-7 lg:border-l lg:border-[var(--ui-border)] lg:pl-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+              {/* Card 1: Receivable (Pabo) */}
+              <div className="p-2.5 rounded-lg border bg-[var(--ui-success-light)]/60 border-[var(--ui-success-border)] flex items-center justify-between gap-2 shadow-2xs">
+                <div className="flex flex-col min-w-0">
+                  <span className="text-[10px] font-bold text-[var(--ui-success-dark)] uppercase tracking-wider truncate">
+                    Receivable (Pabo)
+                  </span>
+                  <span className="text-sm sm:text-base font-extrabold text-[var(--ui-success)] mt-0.5 truncate">
+                    ৳ {formatMoney(totalPabo)}
+                  </span>
+                </div>
+                <div className="p-1.5 rounded-md bg-[var(--ui-success-border)] text-[var(--ui-success)] shrink-0">
+                  <FaMoneyBillWave size={13} />
+                </div>
+              </div>
+
+              {/* Card 2: Payable (Dibo) */}
+              <div className="p-2.5 rounded-lg border bg-[var(--ui-danger-light)]/60 border-[var(--ui-danger-border)] flex items-center justify-between gap-2 shadow-2xs">
+                <div className="flex flex-col min-w-0">
+                  <span className="text-[10px] font-bold text-[var(--ui-danger-dark)] uppercase tracking-wider truncate">
+                    Payable (Dibo)
+                  </span>
+                  <span className="text-sm sm:text-base font-extrabold text-[var(--ui-danger)] mt-0.5 truncate">
+                    ৳ {formatMoney(totalDibo)}
+                  </span>
+                </div>
+                <div className="p-1.5 rounded-md bg-[var(--ui-danger-border)] text-[var(--ui-danger)] shrink-0">
+                  <FaMoneyBillWave size={13} />
+                </div>
+              </div>
+
+              {/* Card 3: Net Balance */}
+              <div
+                className={`p-2.5 rounded-lg border flex items-center justify-between gap-2 shadow-2xs ${
+                  netBalance > 0
+                    ? "bg-[var(--ui-success-light)]/80 border-[var(--ui-success-border)]"
+                    : netBalance < 0
+                    ? "bg-[var(--ui-danger-light)]/80 border-[var(--ui-danger-border)]"
+                    : "bg-[var(--ui-surface-sunken)] border-[var(--ui-border)]"
+                }`}
+              >
+                <div className="flex flex-col min-w-0">
+                  <span
+                    className={`text-[10px] font-bold uppercase tracking-wider truncate ${
+                      netBalance > 0
+                        ? "text-[var(--ui-success-dark)]"
+                        : netBalance < 0
+                        ? "text-[var(--ui-danger-dark)]"
+                        : "text-[var(--ui-text-muted)]"
+                    }`}
+                  >
+                    {netBalance > 0
+                      ? "Net Receivable"
+                      : netBalance < 0
+                      ? "Net Payable"
+                      : "Settled (Balance)"}
+                  </span>
+                  <span
+                    className={`text-sm sm:text-base font-extrabold mt-0.5 truncate ${
+                      netBalance > 0
+                        ? "text-[var(--ui-success)]"
+                        : netBalance < 0
+                        ? "text-[var(--ui-danger)]"
+                        : "text-[var(--ui-text)]"
+                    }`}
+                  >
+                    ৳ {formatMoney(Math.abs(netBalance))}
+                  </span>
+                </div>
+                <div
+                  className={`p-1.5 rounded-md shrink-0 ${
+                    netBalance > 0
+                      ? "bg-[var(--ui-success-border)] text-[var(--ui-success)]"
+                      : netBalance < 0
+                      ? "bg-[var(--ui-danger-border)] text-[var(--ui-danger)]"
+                      : "bg-[var(--ui-border)] text-[var(--ui-text-muted)]"
+                  }`}
+                >
+                  <FaUsers size={13} />
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
