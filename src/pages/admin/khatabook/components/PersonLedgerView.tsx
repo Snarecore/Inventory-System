@@ -149,6 +149,7 @@ export const PersonLedgerView: React.FC<PersonLedgerViewProps> = ({
         "Transaction Type": t.transactionType || "-",
         "Receivable (BDT)": isPabo ? amt : 0,
         "Payable (BDT)": isDibo ? amt : 0,
+        "Commission (BDT)": Number(t.commission) || 0,
         "Running Balance (BDT)": t.runningBalance ?? 0,
       };
     });
@@ -162,6 +163,7 @@ export const PersonLedgerView: React.FC<PersonLedgerViewProps> = ({
       "Transaction Type": "-",
       "Receivable (BDT)": totalPabo,
       "Payable (BDT)": totalDibo,
+      "Commission (BDT)": "-",
       "Running Balance (BDT)": netBalance,
     };
 
@@ -388,13 +390,18 @@ export const PersonLedgerView: React.FC<PersonLedgerViewProps> = ({
                           {/* Note & Ref (Single line) */}
                           <td className="py-2.5 px-3 truncate whitespace-nowrap">
                             <span
-                              className="font-semibold text-xs text-[var(--ui-text)] block truncate"
-                              title={`${t.note || (isOpening ? "Opening Balance" : "General Transaction")}${t.refNo ? ` (Ref: ${t.refNo})` : ""}`}
+                              className="font-semibold text-xs text-[var(--ui-text)] inline-flex items-center gap-1 truncate"
+                              title={`${t.note || (isOpening ? "Opening Balance" : "General Transaction")}${t.refNo ? ` (Ref: ${t.refNo})` : ""}${t.commission ? ` [Commission: ৳${t.commission}]` : ""}`}
                             >
-                              {t.note || (isOpening ? "Opening Balance" : "General Transaction")}
+                              <span>{t.note || (isOpening ? "Opening Balance" : "General Transaction")}</span>
                               {t.refNo && (
-                                <span className="text-[10px] text-[var(--ui-text-subtle)] font-normal ml-1">
+                                <span className="text-[10px] text-[var(--ui-text-subtle)] font-normal">
                                   ({t.refNo})
+                                </span>
+                              )}
+                              {t.commission != null && Number(t.commission) > 0 && (
+                                <span className="text-[10px] text-[var(--ui-info-dark,#0284c7)] bg-[var(--ui-info-light,#e0f2fe)] px-1.5 py-0.5 rounded font-medium border border-[var(--ui-info-border,#bae6fd)]">
+                                  কমিশন: ৳{Number(t.commission).toLocaleString("en-IN", { minimumFractionDigits: 2 })}
                                 </span>
                               )}
                             </span>
