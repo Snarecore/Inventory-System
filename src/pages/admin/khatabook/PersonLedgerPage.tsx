@@ -36,7 +36,6 @@ import {
   FaTrash,
   FaMoneyBillWave,
   FaUsers,
-  FaPercent,
 } from "react-icons/fa";
 import { FiArrowLeft } from "react-icons/fi";
 
@@ -484,7 +483,7 @@ export const PersonLedgerPage: React.FC = () => {
                   </span>
                 </div>
                 <div className="p-1.5 rounded-md bg-amber-100 dark:bg-amber-900/40 text-amber-600 dark:text-amber-300 shrink-0">
-                  <FaPercent size={12} />
+                  <FaMoneyBillWave size={12} />
                 </div>
               </div>
             )}
@@ -578,19 +577,20 @@ export const PersonLedgerPage: React.FC = () => {
           ) : (
             <Table className="table-fixed min-w-[800px]">
               <TableHead>
-                <TableTh width="5%" align="center">SL</TableTh>
-                <TableTh width="16%">Date & Time</TableTh>
-                <TableTh width="24%">Description & Ref</TableTh>
-                <TableTh width="11%">Method</TableTh>
-                <TableTh width="13%" align="right">Receivable (+)</TableTh>
-                <TableTh width="13%" align="right">Payable (-)</TableTh>
-                <TableTh width="12%" align="right">Balance</TableTh>
-                <TableTh width="6%" align="right">Actions</TableTh>
+                <TableTh width="4%" align="center">SL</TableTh>
+                <TableTh width="15%">Date & Time</TableTh>
+                <TableTh width="20%">Description & Ref</TableTh>
+                <TableTh width="10%">Method</TableTh>
+                <TableTh width="12%" align="right">Receivable (+)</TableTh>
+                <TableTh width="12%" align="right">Payable (-)</TableTh>
+                <TableTh width="11%" align="right">Commission</TableTh>
+                <TableTh width="11%" align="right">Balance</TableTh>
+                <TableTh width="5%" align="right">Actions</TableTh>
               </TableHead>
               <TableBody>
                 {paginatedTransactions.length === 0 ? (
                   <tr>
-                    <td colSpan={8} className="py-12 text-center">
+                    <td colSpan={9} className="py-12 text-center">
                       <EmptyState
                         title={
                           typeFilter !== "ALL"
@@ -641,30 +641,18 @@ export const PersonLedgerPage: React.FC = () => {
                         </td>
 
                         {/* Note & Ref */}
-                        <td className="py-2.5 px-3">
-                          <div className="flex flex-col min-w-0">
-                            <div className="flex items-center gap-1.5 truncate">
-                              <span
-                                className="font-semibold text-xs text-[var(--ui-text)] truncate"
-                                title={t.note || (isOpening ? "Opening Balance" : "General Transaction")}
-                              >
-                                {t.note || (isOpening ? "Opening Balance" : "General Transaction")}
+                        <td className="py-2.5 px-3 truncate whitespace-nowrap">
+                          <span
+                            className="font-semibold text-xs text-[var(--ui-text)] inline-flex items-center gap-1 truncate"
+                            title={`${t.note || (isOpening ? "Opening Balance" : "General Transaction")}${t.refNo ? ` (Ref: ${t.refNo})` : ""}`}
+                          >
+                            <span>{t.note || (isOpening ? "Opening Balance" : "General Transaction")}</span>
+                            {t.refNo && (
+                              <span className="text-[10px] text-[var(--ui-text-subtle)] font-normal">
+                                ({t.refNo})
                               </span>
-                              {t.refNo && (
-                                <span className="text-[10px] text-[var(--ui-text-subtle)] font-normal shrink-0">
-                                  ({t.refNo})
-                                </span>
-                              )}
-                            </div>
-                            {t.commission != null && Number(t.commission) > 0 && (
-                              <div className="flex items-center gap-1 mt-0.5">
-                                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800 shrink-0">
-                                  <FaPercent className="text-[8px]" />
-                                  <span>Commission: ৳{formatMoney(Number(t.commission))}</span>
-                                </span>
-                              </div>
                             )}
-                          </div>
+                          </span>
                         </td>
 
                         {/* Tender / Payment Method badge */}
@@ -701,6 +689,17 @@ export const PersonLedgerPage: React.FC = () => {
                         {/* Payable (Dibo) */}
                         <td className="py-2.5 px-3 whitespace-nowrap text-right font-bold text-xs text-[var(--ui-danger)]">
                           {isDibo ? `৳${amt.toLocaleString("en-IN", { minimumFractionDigits: 2 })}` : "-"}
+                        </td>
+
+                        {/* Commission */}
+                        <td className="py-2.5 px-3 whitespace-nowrap text-right text-xs">
+                          {t.commission != null && Number(t.commission) > 0 ? (
+                            <span className="font-bold text-amber-600 dark:text-amber-400">
+                              ৳{Number(t.commission).toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                            </span>
+                          ) : (
+                            <span className="text-[var(--ui-text-muted)]">-</span>
+                          )}
                         </td>
 
                         {/* Running Balance */}

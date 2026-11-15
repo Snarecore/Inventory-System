@@ -25,7 +25,6 @@ import {
   FaFileAlt,
   FaArrowDown,
   FaArrowUp,
-  FaPercent,
   FaPaperPlane,
 } from "react-icons/fa";
 
@@ -387,10 +386,10 @@ export const TransactionFormModal: React.FC<TransactionFormModalProps> = ({
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <div className="p-1.5 rounded-md bg-[var(--ui-info-light)] text-[var(--ui-info)]">
-                <FaPercent size={10} />
+                <FaMoneyBillWave size={10} />
               </div>
               <span className="text-xs font-semibold text-[var(--ui-text)]">
-                Add Commission
+                Add Commission (Fixed ৳)
               </span>
             </div>
             <label className="relative inline-flex items-center cursor-pointer shrink-0">
