@@ -15,6 +15,9 @@ import {
 } from "@/hooks/useKhatabook";
 import { useBankInfoListQuery } from "@/hooks/useBankQueries";
 import { useMfsUserListQuery } from "@/hooks/useMfsQueries";
+import { sendSmsMessage } from "@/services/sms-service";
+import { getStoredUser } from "@/utils/auth-storage";
+import { showSuccessToast, showErrorToast } from "@/utils/toast-utils";
 import {
   FaMoneyBillWave,
   FaLandmark,
@@ -22,6 +25,8 @@ import {
   FaFileAlt,
   FaArrowDown,
   FaArrowUp,
+  FaPercent,
+  FaPaperPlane,
 } from "react-icons/fa";
 
 interface TransactionFormModalProps {
@@ -49,11 +54,16 @@ export const TransactionFormModal: React.FC<TransactionFormModalProps> = ({
   const [transactionType, setTransactionType] = useState<"PABO" | "DIBO">("PABO");
   const [paymentType, setPaymentType] = useState<"CASH" | "BANK" | "MFS">("CASH");
   const [amount, setAmount] = useState<string>("");
+  const [hasCommission, setHasCommission] = useState(false);
+  const [commission, setCommission] = useState<string>("");
   const [bankAccountNo, setBankAccountNo] = useState<string>("");
   const [mfsUserId, setMfsUserId] = useState<string>("");
   const [note, setNote] = useState<string>("");
   const [refNo, setRefNo] = useState<string>("");
   const [date, setDate] = useState<string>(new Date().toISOString().split("T")[0]);
+
+  // SMS notification toggle
+  const [sendSms, setSendSms] = useState(false);
 
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -62,9 +72,13 @@ export const TransactionFormModal: React.FC<TransactionFormModalProps> = ({
   const { data: mfsData } = useMfsUserListQuery();
   const { data: personsData } = useLedgerPersonsQuery();
 
-  const bankAccounts = bankData?.bankAccounts || [];
-  const mfsAccounts = mfsData?.mfsUsers || [];
-  const persons: LedgerPerson[] = personsData?.data || [];
+  const bankAccounts = bankData?.bankAccounts || (Array.isArray((bankData as any)?.data) ? (bankData as any).data : []);
+  const mfsAccounts = mfsData?.mfsUsers || (Array.isArray((mfsData as any)?.data) ? (mfsData as any).data : []);
+  const persons: LedgerPerson[] = Array.isArray(personsData)
+    ? personsData
+    : Array.isArray(personsData?.data)
+    ? personsData.data
+    : [];
 
   useEffect(() => {
     if (transactionToEdit) {
@@ -78,27 +92,41 @@ export const TransactionFormModal: React.FC<TransactionFormModalProps> = ({
       else setPaymentType("CASH");
 
       setAmount(String(transactionToEdit.amount || ""));
+
+      const existingComm = transactionToEdit.commission != null ? Number(transactionToEdit.commission) : 0;
+      if (existingComm > 0) {
+        setHasCommission(true);
+        setCommission(String(existingComm));
+      } else {
+        setHasCommission(false);
+        setCommission("");
+      }
+
       setBankAccountNo(transactionToEdit.bankAccountNo || "");
       setMfsUserId(transactionToEdit.mfsUserId ? String(transactionToEdit.mfsUserId) : "");
       setNote(transactionToEdit.note || "");
       setRefNo(transactionToEdit.refNo || "");
 
-      const tDate = transactionToEdit.createdDate || transactionToEdit.createdAt || "";
+      const tDate = transactionToEdit.transactionDate || transactionToEdit.createdDate || transactionToEdit.createdAt || "";
       if (tDate) {
         setDate(tDate.split("T")[0]);
       } else {
         setDate(new Date().toISOString().split("T")[0]);
       }
+      setSendSms(false);
     } else {
       setPersonId(defaultPersonId ? Number(defaultPersonId) : "");
       setTransactionType(defaultType);
       setPaymentType("CASH");
       setAmount("");
+      setHasCommission(false);
+      setCommission("");
       setBankAccountNo("");
       setMfsUserId("");
       setNote("");
-      setRefNo(`TXN-${Date.now()}`);
+      setRefNo("");
       setDate(new Date().toISOString().split("T")[0]);
+      setSendSms(false);
     }
     setErrors({});
   }, [transactionToEdit, defaultPersonId, defaultType, isOpen]);
@@ -113,8 +141,37 @@ export const TransactionFormModal: React.FC<TransactionFormModalProps> = ({
     }
   }, [paymentType, bankAccounts, mfsAccounts]);
 
+  const handleSmsNotification = () => {
+    if (!sendSms || !personId) return;
+    const targetPerson = persons.find((p) => Number(p.id) === Number(personId));
+    if (targetPerson?.phone) {
+      const user = getStoredUser();
+      const businessName = user?.businessName || user?.name || "Cash Boi";
+      const typeText = transactionType === "PABO" ? "আদায়/প্রাপ্তি" : "প্রদান/পরিশোধ";
+      const tenderText = paymentType === "CASH" ? "ক্যাশ" : paymentType === "BANK" ? "ব্যাংক" : "এমএফএস";
+      const smsMsg = `প্রিয় ${targetPerson.name}, ${businessName}-এ ${tenderText} মারফত ৳${amount} লেনদেন (${typeText}) সফলভাবে সম্পন্ন হয়েছে। ধন্যবাদ।`;
+
+      sendSmsMessage({
+        phoneNumber: targetPerson.phone.trim(),
+        msg: smsMsg,
+        type: "Khatabook",
+      })
+        .then((smsRes) => {
+          if (smsRes.success) {
+            showSuccessToast("লেনদেনের এসএমএস সফলভাবে পাঠানো হয়েছে!");
+          } else {
+            showErrorToast(smsRes.message || "এসএমএস পাঠানো সম্ভব হয়নি।");
+          }
+        })
+        .catch(() => {
+          showErrorToast("এসএমএস পাঠাতে ত্রুটি হয়েছে।");
+        });
+    }
+  };
+
   const createMutation = useCreateLedgerTransactionMutation({
     onSuccess: () => {
+      handleSmsNotification();
       onSuccess?.();
       onClose();
     },
@@ -122,6 +179,7 @@ export const TransactionFormModal: React.FC<TransactionFormModalProps> = ({
 
   const updateMutation = useUpdateLedgerTransactionMutation({
     onSuccess: () => {
+      handleSmsNotification();
       onSuccess?.();
       onClose();
     },
@@ -138,6 +196,9 @@ export const TransactionFormModal: React.FC<TransactionFormModalProps> = ({
     if (!amount || isNaN(numAmount) || numAmount <= 0) {
       errs.amount = "Please enter a valid amount greater than 0";
     }
+    if (hasCommission && Number(commission) < 0) {
+      errs.commission = "Commission cannot be negative";
+    }
     if (paymentType === "BANK" && !bankAccountNo) {
       errs.bankAccountNo = "Please select a bank account";
     }
@@ -152,6 +213,8 @@ export const TransactionFormModal: React.FC<TransactionFormModalProps> = ({
     if (e) e.preventDefault();
     if (!validate()) return;
 
+    const commValue = hasCommission ? (Number(commission) || 0) : 0;
+
     if (isEdit && transactionToEdit?.id) {
       const payload: UpdateLedgerTransactionPayload = {
         transactionId: transactionToEdit.id,
@@ -159,6 +222,7 @@ export const TransactionFormModal: React.FC<TransactionFormModalProps> = ({
         transactionType,
         paymentType,
         amount: Number(amount),
+        commission: commValue,
         note: note.trim(),
         refNo: refNo.trim(),
         transactionDate: date,
@@ -177,6 +241,7 @@ export const TransactionFormModal: React.FC<TransactionFormModalProps> = ({
         transactionType,
         paymentType,
         amount: Number(amount),
+        commission: commValue,
         note: note.trim(),
         refNo: refNo.trim(),
         transactionDate: date,
@@ -197,17 +262,18 @@ export const TransactionFormModal: React.FC<TransactionFormModalProps> = ({
       isOpen={isOpen}
       onClose={onClose}
       title={isEdit ? "Edit Transaction" : "Record Transaction"}
-      maxWidth="max-w-[340px]"
+      maxWidth="max-w-[420px] sm:max-w-[460px]"
       zIndex={zIndex}
       onSubmit={handleSubmit}
       footerButtons={
-        <div className="flex items-center justify-end gap-2 w-full">
+        <div className="flex items-center justify-end gap-1.5 w-full">
           <Button
             label="Cancel"
             onClick={onClose}
             variant="outline"
             disabled={isSubmitting}
-            buttonClass="!bg-[var(--ui-surface)] hover:!bg-[var(--ui-surface-sunken)] !border-[var(--ui-border)] !text-[var(--ui-text)] font-medium !rounded-lg !py-1.5 !px-3 text-xs"
+            size="sm"
+            buttonClass="!bg-[var(--ui-surface)] hover:!bg-[var(--ui-surface-sunken)] !border-[var(--ui-border)] !text-[var(--ui-text)] font-medium text-xs"
           />
           <Button
             label={
@@ -224,41 +290,52 @@ export const TransactionFormModal: React.FC<TransactionFormModalProps> = ({
             hoverColor={transactionType === "PABO" ? "#047857" : "#b91c1c"}
             isLoading={isSubmitting}
             disabled={isSubmitting}
-            buttonClass="font-semibold !rounded-lg !py-1.5 !px-4 text-xs text-white"
+            size="sm"
+            buttonClass="font-semibold text-xs text-white"
           />
         </div>
       }
     >
-      <div className="flex flex-col gap-2.5 text-left">
+      <div className="flex flex-col gap-2 text-left">
         {/* Transaction Type Segmented Selector */}
         <div>
           <label className="text-xs font-semibold text-[var(--ui-text)] block mb-1">
             Transaction Type <span className="text-[var(--ui-danger)]">*</span>
           </label>
-          <div className="grid grid-cols-2 gap-1.5 p-1 bg-[var(--ui-surface-sunken)] rounded-xl border border-[var(--ui-border)]">
+          <div className="grid grid-cols-2 gap-1 p-0.5 bg-[var(--ui-surface-sunken)] rounded-lg border border-[var(--ui-border)]">
             <button
               type="button"
               onClick={() => setTransactionType("PABO")}
-              className={`flex items-center justify-center gap-1.5 py-1.5 px-3 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+              className={`flex flex-col items-center justify-center py-1.5 px-2 rounded-md text-xs font-semibold transition-all cursor-pointer ${
                 transactionType === "PABO"
-                  ? "bg-[var(--ui-surface)] text-[var(--ui-success)] shadow-xs border border-[var(--ui-success-border)]"
-                  : "text-[var(--ui-text-muted)] hover:text-[var(--ui-text)] hover:bg-[var(--ui-surface)]/50 border border-transparent"
+                  ? "bg-[var(--ui-surface)] text-[var(--ui-success)] shadow-xs border border-[var(--ui-success-border)] font-bold"
+                  : "text-[var(--ui-text-muted)] hover:text-[var(--ui-text)] border border-transparent"
               }`}
             >
-              <FaArrowDown className={transactionType === "PABO" ? "text-[var(--ui-success)] text-xs" : "text-[var(--ui-text-subtle)] text-xs"} />
-              Receivable (Pabo)
+              <span className="flex items-center gap-1.5">
+                <FaArrowDown className={transactionType === "PABO" ? "text-[var(--ui-success)] text-xs" : "text-[var(--ui-text-subtle)] text-xs"} />
+                Receivable (Pabo)
+              </span>
+              <span className="text-[10px] font-normal text-[var(--ui-text-muted)]">
+                Money Received (+Balance)
+              </span>
             </button>
             <button
               type="button"
               onClick={() => setTransactionType("DIBO")}
-              className={`flex items-center justify-center gap-1.5 py-1.5 px-3 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+              className={`flex flex-col items-center justify-center py-1.5 px-2 rounded-md text-xs font-semibold transition-all cursor-pointer ${
                 transactionType === "DIBO"
-                  ? "bg-[var(--ui-surface)] text-[var(--ui-danger)] shadow-xs border border-[var(--ui-danger-border)]"
-                  : "text-[var(--ui-text-muted)] hover:text-[var(--ui-text)] hover:bg-[var(--ui-surface)]/50 border border-transparent"
+                  ? "bg-[var(--ui-surface)] text-[var(--ui-danger)] shadow-xs border border-[var(--ui-danger-border)] font-bold"
+                  : "text-[var(--ui-text-muted)] hover:text-[var(--ui-text)] border border-transparent"
               }`}
             >
-              <FaArrowUp className={transactionType === "DIBO" ? "text-[var(--ui-danger)] text-xs" : "text-[var(--ui-text-subtle)] text-xs"} />
-              Payable (Dibo)
+              <span className="flex items-center gap-1.5">
+                <FaArrowUp className={transactionType === "DIBO" ? "text-[var(--ui-danger)] text-xs" : "text-[var(--ui-text-subtle)] text-xs"} />
+                Payable (Dibo)
+              </span>
+              <span className="text-[10px] font-normal text-[var(--ui-text-muted)]">
+                Money Paid (-Balance)
+              </span>
             </button>
           </div>
         </div>
@@ -275,7 +352,7 @@ export const TransactionFormModal: React.FC<TransactionFormModalProps> = ({
               if (errors.personId) setErrors((prev) => ({ ...prev, personId: "" }));
             }}
             disabled={Boolean(defaultPersonId)}
-            className="w-full h-9 px-2.5 text-xs bg-[var(--ui-surface)] border border-[var(--ui-border)] rounded-lg text-[var(--ui-text)] focus:outline-none focus:ring-1 focus:ring-[var(--primary-color,#009fe3)] focus:border-[var(--primary-color,#009fe3)] cursor-pointer"
+            className="w-full h-8 px-2.5 text-xs bg-[var(--ui-surface)] border border-[var(--ui-border)] rounded-lg text-[var(--ui-text)] focus:outline-none focus:ring-1 focus:ring-[var(--primary-color,#009fe3)] focus:border-[var(--primary-color,#009fe3)] cursor-pointer"
           >
             <option value="">-- Choose Person --</option>
             {persons.map((p) => (
@@ -284,7 +361,7 @@ export const TransactionFormModal: React.FC<TransactionFormModalProps> = ({
               </option>
             ))}
           </select>
-          {errors.personId && <p className="text-[11px] text-[var(--ui-danger)] mt-1">{errors.personId}</p>}
+          {errors.personId && <p className="text-[11px] text-[var(--ui-danger)] mt-0.5">{errors.personId}</p>}
         </div>
 
         {/* Amount */}
@@ -302,6 +379,58 @@ export const TransactionFormModal: React.FC<TransactionFormModalProps> = ({
             message={errors.amount}
             icon={<FaMoneyBillWave className="text-[var(--ui-text-subtle)] text-xs" />}
           />
+        </div>
+
+        {/* Commission Toggle Bar & Fixed Amount Input */}
+        <div className="p-2 rounded-lg bg-[var(--ui-surface-sunken)]/60 border border-[var(--ui-border)] flex flex-col gap-1.5">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="p-1.5 rounded-md bg-[var(--ui-info-light)] text-[var(--ui-info)]">
+                <FaPercent size={10} />
+              </div>
+              <div className="flex flex-col">
+                <span className="text-xs font-semibold text-[var(--ui-text)]">
+                  Add Commission
+                </span>
+                <span className="text-[10px] text-[var(--ui-text-muted)]">
+                  Fixed commission amount (no impact on ledger or cash/bank balance)
+                </span>
+              </div>
+            </div>
+            <label className="relative inline-flex items-center cursor-pointer shrink-0">
+              <input
+                type="checkbox"
+                checked={hasCommission}
+                onChange={(e) => {
+                  setHasCommission(e.target.checked);
+                  if (!e.target.checked) setCommission("");
+                }}
+                className="sr-only peer"
+              />
+              <div className="w-8 h-4 bg-gray-300 dark:bg-gray-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[1px] after:left-[1px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-3.5 after:w-3.5 after:transition-all peer-checked:bg-[var(--primary-color,#009fe3)]"></div>
+            </label>
+          </div>
+
+          {hasCommission && (
+            <div className="pt-0.5">
+              <TextInput
+                label="Commission Amount (৳)"
+                type="number"
+                placeholder="0.00"
+                value={commission}
+                onChange={(val: any) => {
+                  setCommission(typeof val === "string" ? val : (val?.target?.value ?? ""));
+                  if (errors.commission) setErrors((prev) => ({ ...prev, commission: "" }));
+                }}
+                required
+                message={errors.commission}
+                icon={<FaMoneyBillWave className="text-[var(--ui-text-subtle)] text-xs" />}
+              />
+              <p className="text-[10px] text-[var(--ui-text-muted)] mt-0.5">
+                * Commission is recorded with transaction and does not affect ledger or cash/bank balance.
+              </p>
+            </div>
+          )}
         </div>
 
         {/* Tender Type Selector */}
@@ -351,9 +480,9 @@ export const TransactionFormModal: React.FC<TransactionFormModalProps> = ({
               className="w-full h-8 px-2.5 text-xs bg-[var(--ui-surface)] text-[var(--ui-text)] border border-[var(--ui-border)] rounded-lg focus:outline-none focus:ring-1 focus:ring-[var(--primary-color,#009fe3)] cursor-pointer"
             >
               <option value="">-- Select Bank Account --</option>
-              {bankAccounts.map((b) => (
+              {bankAccounts.map((b: any) => (
                 <option key={b.bankId || b.id} value={b.accountNo}>
-                  {b.bankName} - {b.bankAccountName || b.accountName} ({b.accountNo})
+                  {b.bankName} - {b.bankAccountName || b.accountName || b.name || "Account"} ({b.accountNo})
                 </option>
               ))}
             </select>
@@ -378,10 +507,9 @@ export const TransactionFormModal: React.FC<TransactionFormModalProps> = ({
               className="w-full h-8 px-2.5 text-xs bg-[var(--ui-surface)] text-[var(--ui-text)] border border-[var(--ui-border)] rounded-lg focus:outline-none focus:ring-1 focus:ring-[var(--primary-color,#009fe3)] cursor-pointer"
             >
               <option value="">-- Select MFS Account --</option>
-              {mfsAccounts.map((m) => (
+              {mfsAccounts.map((m: any) => (
                 <option key={m.id || m.userId} value={m.id || m.userId}>
-                  {m.mfsName || m.providerName} - {m.accountNumber || m.accountNo} (
-                  {m.accountType || "Agent"})
+                  {m.method || m.name || "MFS"} - {m.phoneNumber || m.accountNumber || ""} ({m.name || "Account"})
                 </option>
               ))}
             </select>
@@ -427,6 +555,32 @@ export const TransactionFormModal: React.FC<TransactionFormModalProps> = ({
             placeholder="Add any notes about this transaction..."
             className="w-full px-2.5 py-1.5 text-xs bg-[var(--ui-surface)] text-[var(--ui-text)] border border-[var(--ui-border)] rounded-lg focus:outline-none focus:ring-1 focus:ring-[var(--primary-color,#009fe3)] resize-none"
           />
+        </div>
+
+        {/* SMS Notification Toggle Bar */}
+        <div className="flex items-center justify-between p-2 rounded-lg bg-[var(--ui-surface-sunken)]/60 border border-[var(--ui-border)] mt-0.5">
+          <div className="flex items-center gap-2">
+            <div className="p-1.5 rounded-md bg-[var(--primary-color,#009fe3)]/10 text-[var(--primary-color,#009fe3)]">
+              <FaPaperPlane size={10} />
+            </div>
+            <div className="flex flex-col">
+              <span className="text-xs font-semibold text-[var(--ui-text)]">
+                Send SMS Notification
+              </span>
+              <span className="text-[10px] text-[var(--ui-text-muted)]">
+                Send confirmation SMS to person's phone upon transaction
+              </span>
+            </div>
+          </div>
+          <label className="relative inline-flex items-center cursor-pointer shrink-0">
+            <input
+              type="checkbox"
+              checked={sendSms}
+              onChange={(e) => setSendSms(e.target.checked)}
+              className="sr-only peer"
+            />
+            <div className="w-8 h-4 bg-gray-300 dark:bg-gray-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[1px] after:left-[1px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-3.5 after:w-3.5 after:transition-all peer-checked:bg-[var(--primary-color,#009fe3)]"></div>
+          </label>
         </div>
       </div>
     </DrawerModal>

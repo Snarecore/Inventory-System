@@ -5,6 +5,9 @@ import {
   cashBalanceQueryKey,
   bankInfoListQueryKey,
   mfsUserListQueryKey,
+  dashboardQueryKey,
+  financialTransactionQueryKey,
+  financeDashboardQueryKey,
 } from "@/config/query-key";
 import {
   fetchLedgerPersonList,
@@ -43,11 +46,12 @@ export interface LedgerMutationCallbacks<TData = LedgerActionResponse, TVariable
  * 1. Fetch persons list
  */
 export const useLedgerPersonsQuery = (
+  status: string = "Active",
   options?: Omit<UseQueryOptions<LedgerPersonListResponse, Error>, "queryKey" | "queryFn">
 ) => {
   return useQuery<LedgerPersonListResponse, Error>({
-    queryKey: [ledgerPersonListQueryKey],
-    queryFn: fetchLedgerPersonList,
+    queryKey: [ledgerPersonListQueryKey, status],
+    queryFn: () => fetchLedgerPersonList(status),
     staleTime: 0,
     ...options,
   });
@@ -69,14 +73,25 @@ export const useLedgerTransactionsQuery = (
 };
 
 /**
- * 3. Combined hook for Khatabook dashboard with pre-aggregated person balances
+ * 3. Combined hook for Khatabook dashboard with persons and KPIs
  */
-export const useKhatabookDashboardQuery = () => {
-  const personsQuery = useLedgerPersonsQuery();
-  const allTransactionsQuery = useLedgerTransactionsQuery(null);
+export const useKhatabookDashboardQuery = (status: string = "Active") => {
+  const personsQuery = useLedgerPersonsQuery(status);
+  const transactionsQuery = useLedgerTransactionsQuery(null);
 
-  const rawPersons: LedgerPerson[] = personsQuery.data?.data || [];
-  const allTransactions: LedgerTransaction[] = allTransactionsQuery.data?.data || [];
+  // Safely extract persons from either direct array or { data: [...] }
+  const rawPersons: LedgerPerson[] = Array.isArray(personsQuery.data)
+    ? personsQuery.data
+    : Array.isArray(personsQuery.data?.data)
+    ? personsQuery.data.data
+    : [];
+
+  // Safely extract transactions from either direct array or { data: [...] }
+  const allTransactions: LedgerTransaction[] = Array.isArray(transactionsQuery.data)
+    ? transactionsQuery.data
+    : Array.isArray(transactionsQuery.data?.data)
+    ? transactionsQuery.data.data
+    : [];
 
   const enrichedPersons = enrichPersonsWithTransactions(rawPersons, allTransactions);
 
@@ -84,22 +99,21 @@ export const useKhatabookDashboardQuery = () => {
   let totalDibo = 0;
 
   for (const person of enrichedPersons) {
-    if ((person.netBalance ?? 0) > 0) {
-      totalPabo += person.netBalance!;
-    } else if ((person.netBalance ?? 0) < 0) {
-      totalDibo += Math.abs(person.netBalance!);
-    }
+    const pabo = Number(person.totalPabo ?? 0);
+    const dibo = Number(person.totalDibo ?? 0);
+    totalPabo += pabo;
+    totalDibo += dibo;
   }
 
   const netBalance = totalPabo - totalDibo;
 
-  const isLoading = personsQuery.isLoading || allTransactionsQuery.isLoading;
-  const isFetching = personsQuery.isFetching || allTransactionsQuery.isFetching;
-  const isError = personsQuery.isError || allTransactionsQuery.isError;
-  const error = personsQuery.error || allTransactionsQuery.error;
+  const isLoading = personsQuery.isLoading || transactionsQuery.isLoading;
+  const isFetching = personsQuery.isFetching || transactionsQuery.isFetching;
+  const isError = personsQuery.isError || transactionsQuery.isError;
+  const error = personsQuery.error || transactionsQuery.error;
 
   const refetch = async () => {
-    await Promise.all([personsQuery.refetch(), allTransactionsQuery.refetch()]);
+    await Promise.all([personsQuery.refetch(), transactionsQuery.refetch()]);
   };
 
   return {
@@ -161,11 +175,23 @@ export const useDeleteLedgerPersonMutation = (
     mutationFn: deleteLedgerPerson,
     onSuccess: (data, variables, context) => {
       queryClient.invalidateQueries({ queryKey: [ledgerPersonListQueryKey] });
-      showSuccessToast(data.msg || "Person deleted successfully");
+      showSuccessToast(data.msg || "ব্যক্তিটি তালিকা থেকে সফলভাবে ডিলিট করা হয়েছে");
       callbacks?.onSuccess?.(data, variables, context);
     },
     onError: (error, variables, context) => {
-      showErrorToast(error?.message || "Failed to delete person");
+      const errMsg = error?.message || "";
+      const isTxnError =
+        errMsg.toLowerCase().includes("transaction") ||
+        errMsg.toLowerCase().includes("লেনদেন") ||
+        errMsg.toLowerCase().includes("foreign") ||
+        errMsg.toLowerCase().includes("constraint") ||
+        errMsg.toLowerCase().includes("cannot delete");
+
+      showErrorToast(
+        isTxnError
+          ? "এই ব্যক্তির সাথে লেনদেন রয়েছে। ব্যক্তি ডিলিট করার আগে তার সকল লেনদেন ডিলিট করতে হবে।"
+          : errMsg || "ব্যক্তি ডিলিট করা সম্ভব হয়নি।"
+      );
       callbacks?.onError?.(error, variables, context);
     },
     onSettled: callbacks?.onSettled,
@@ -185,10 +211,13 @@ export const useCreateLedgerTransactionMutation = (
     onSuccess: (data, variables, context) => {
       queryClient.invalidateQueries({ queryKey: [ledgerTransactionListQueryKey] });
       queryClient.invalidateQueries({ queryKey: [ledgerPersonListQueryKey] });
-      // If transaction affects CASH, BANK, or MFS balance, invalidate financial balances
+      // Invalidate live financial balances
       queryClient.invalidateQueries({ queryKey: [cashBalanceQueryKey] });
       queryClient.invalidateQueries({ queryKey: [bankInfoListQueryKey] });
       queryClient.invalidateQueries({ queryKey: [mfsUserListQueryKey] });
+      queryClient.invalidateQueries({ queryKey: [financialTransactionQueryKey] });
+      queryClient.invalidateQueries({ queryKey: [dashboardQueryKey] });
+      queryClient.invalidateQueries({ queryKey: [financeDashboardQueryKey] });
 
       const isPabo = variables.transactionType === "PABO";
       showSuccessToast(
@@ -224,6 +253,9 @@ export const useUpdateLedgerTransactionMutation = (
       queryClient.invalidateQueries({ queryKey: [cashBalanceQueryKey] });
       queryClient.invalidateQueries({ queryKey: [bankInfoListQueryKey] });
       queryClient.invalidateQueries({ queryKey: [mfsUserListQueryKey] });
+      queryClient.invalidateQueries({ queryKey: [financialTransactionQueryKey] });
+      queryClient.invalidateQueries({ queryKey: [dashboardQueryKey] });
+      queryClient.invalidateQueries({ queryKey: [financeDashboardQueryKey] });
 
       showSuccessToast(data.msg || "Transaction updated successfully");
       callbacks?.onSuccess?.(data, variables, context);
@@ -252,6 +284,9 @@ export const useDeleteLedgerTransactionMutation = (
       queryClient.invalidateQueries({ queryKey: [cashBalanceQueryKey] });
       queryClient.invalidateQueries({ queryKey: [bankInfoListQueryKey] });
       queryClient.invalidateQueries({ queryKey: [mfsUserListQueryKey] });
+      queryClient.invalidateQueries({ queryKey: [financialTransactionQueryKey] });
+      queryClient.invalidateQueries({ queryKey: [dashboardQueryKey] });
+      queryClient.invalidateQueries({ queryKey: [financeDashboardQueryKey] });
 
       showSuccessToast(data.msg || "Transaction deleted successfully and balance restored");
       callbacks?.onSuccess?.(data, variables, context);

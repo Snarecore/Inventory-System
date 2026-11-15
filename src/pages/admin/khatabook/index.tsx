@@ -14,13 +14,15 @@ import {
   useDeleteLedgerTransactionMutation,
 } from "@/hooks/useKhatabook";
 import { formatMoney } from "@/utils/formatters";
+import { showErrorToast } from "@/utils/toast-utils";
+import { fetchLedgerTransactionList } from "@/services/khatabook-service";
 import type { LedgerPerson, LedgerTransaction } from "@/types";
 import { FaPlus, FaUsers, FaMoneyBillWave } from "react-icons/fa";
 import { usePermission } from "@/hooks/usePermission";
 
 export const KhatabookPage: React.FC = () => {
   const { canCreate } = usePermission();
-  const { persons, kpi, isLoading, isFetching, refetch } = useKhatabookDashboardQuery();
+  const { persons, allTransactions, kpi, isLoading, isFetching, refetch } = useKhatabookDashboardQuery();
 
   // Drawer States
   const [isPersonDrawerOpen, setIsPersonDrawerOpen] = useState(false);
@@ -56,15 +58,15 @@ export const KhatabookPage: React.FC = () => {
   });
 
   return (
-    <div className="flex flex-col gap-2.5 px-3 py-2 sm:px-4 sm:py-2.5 max-w-[1600px] mx-auto w-full">
+    <div className="flex flex-col gap-2 px-2.5 py-1.5 sm:px-4 sm:py-2 max-w-[1600px] mx-auto w-full">
       {/* Page Header & Top Action Buttons */}
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-1.5 sm:flex-row sm:items-center sm:justify-between">
         <PageHeader
           headerTitle="Khatabook"
           headerDescription="Manage all customer and supplier ledger accounts, debits, credits, and balances"
         />
 
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center gap-1.5">
           <RefreshButton onClick={() => refetch()} isLoading={isLoading || isFetching} />
 
           {canCreate("khatabook") && (
@@ -78,7 +80,8 @@ export const KhatabookPage: React.FC = () => {
                   setIsTxnDrawerOpen(true);
                 }}
                 color="#059669"
-                icon={<FaPlus size={11} />}
+                icon={<FaPlus size={10} />}
+                size="sm"
               />
 
               <Button
@@ -88,82 +91,83 @@ export const KhatabookPage: React.FC = () => {
                   setIsPersonDrawerOpen(true);
                 }}
                 color="#009fe3"
-                icon={<FaPlus size={11} />}
+                icon={<FaPlus size={10} />}
+                size="sm"
               />
             </>
           )}
         </div>
       </div>
 
-      {/* KPI Summary Cards matching parties/index.tsx exactly */}
-      <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 w-full">
+      {/* KPI Summary Cards - Compact & aligned with design system */}
+      <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-2 w-full">
         {/* 1. Total Receivable (Pabo) - Emerald */}
         <MotionDiv delay={0.05}>
-          <div className="p-3 rounded-xl border bg-[var(--ui-success-light)]/60 border-[var(--ui-success-border)] hover:border-[var(--ui-success-border)] flex items-center justify-between gap-2.5 transition-all shadow-xs h-full">
+          <div className="p-2 sm:p-2.5 rounded-lg border bg-[var(--ui-success-light)]/60 border-[var(--ui-success-border)] hover:border-[var(--ui-success-border)] flex items-center justify-between gap-2 transition-all shadow-xs h-full">
             <div className="flex flex-col min-w-0">
-              <span className="text-[11px] font-semibold text-[var(--ui-text)] tracking-wider truncate">
-                Total Receivable (Pabo)
+              <span className="text-[10px] font-semibold text-[var(--ui-text-muted)] uppercase tracking-wider truncate">
+                Receivable (Pabo)
               </span>
-              <span className="text-base sm:text-lg font-bold truncate mt-0.5 text-[var(--ui-success)]">
+              <span className="text-sm sm:text-base font-bold truncate mt-0.5 text-[var(--ui-success)]">
                 ৳ {formatMoney(kpi.totalPabo)}
               </span>
             </div>
-            <div className="p-2 rounded-lg shrink-0 bg-[var(--ui-success-border)] text-[var(--ui-success)]">
-              <FaMoneyBillWave size={16} />
+            <div className="p-1.5 rounded-md shrink-0 bg-[var(--ui-success-border)] text-[var(--ui-success)]">
+              <FaMoneyBillWave size={14} />
             </div>
           </div>
         </MotionDiv>
 
         {/* 2. Total Payable (Dibo) - Danger / Rose */}
         <MotionDiv delay={0.1}>
-          <div className="p-3 rounded-xl border bg-[var(--ui-danger-light)]/60 border-[var(--ui-danger-border)] hover:border-[var(--ui-danger-border)] flex items-center justify-between gap-2.5 transition-all shadow-xs h-full">
+          <div className="p-2 sm:p-2.5 rounded-lg border bg-[var(--ui-danger-light)]/60 border-[var(--ui-danger-border)] hover:border-[var(--ui-danger-border)] flex items-center justify-between gap-2 transition-all shadow-xs h-full">
             <div className="flex flex-col min-w-0">
-              <span className="text-[11px] font-semibold text-[var(--ui-text)] tracking-wider truncate">
-                Total Payable (Dibo)
+              <span className="text-[10px] font-semibold text-[var(--ui-text-muted)] uppercase tracking-wider truncate">
+                Payable (Dibo)
               </span>
-              <span className="text-base sm:text-lg font-bold truncate mt-0.5 text-[var(--ui-danger)]">
+              <span className="text-sm sm:text-base font-bold truncate mt-0.5 text-[var(--ui-danger)]">
                 ৳ {formatMoney(kpi.totalDibo)}
               </span>
             </div>
-            <div className="p-2 rounded-lg shrink-0 bg-[var(--ui-danger-border)] text-[var(--ui-danger)]">
-              <FaMoneyBillWave size={16} />
+            <div className="p-1.5 rounded-md shrink-0 bg-[var(--ui-danger-border)] text-[var(--ui-danger)]">
+              <FaMoneyBillWave size={14} />
             </div>
           </div>
         </MotionDiv>
 
         {/* 3. Net Balance - Primary Accent */}
         <MotionDiv delay={0.15}>
-          <div className="p-3 rounded-xl border bg-[var(--primary-color-light)]/60 border-[var(--primary-color-muted)] hover:border-[var(--primary-color-muted)] flex items-center justify-between gap-2.5 transition-all shadow-xs h-full">
+          <div className="p-2 sm:p-2.5 rounded-lg border bg-[var(--primary-color-light)]/60 border-[var(--primary-color-muted)] hover:border-[var(--primary-color-muted)] flex items-center justify-between gap-2 transition-all shadow-xs h-full">
             <div className="flex flex-col min-w-0">
-              <span className="text-[11px] font-semibold text-[var(--ui-text)] tracking-wider truncate">
+              <span className="text-[10px] font-semibold text-[var(--ui-text-muted)] uppercase tracking-wider truncate">
                 Net Balance
               </span>
-              <span className="text-base sm:text-lg font-bold truncate mt-0.5 text-[var(--primary-color)]">
+              <span className="text-sm sm:text-base font-bold truncate mt-0.5 text-[var(--primary-color)]">
                 ৳ {formatMoney(Math.abs(kpi.netBalance))}{" "}
-                <span className="text-xs font-normal">
+                <span className="text-[10px] font-normal">
                   {kpi.netBalance > 0 ? "(Pabo)" : kpi.netBalance < 0 ? "(Dibo)" : ""}
                 </span>
               </span>
             </div>
-            <div className="p-2 rounded-lg shrink-0 bg-[var(--primary-color-muted)] text-[var(--primary-color)]">
-              <FaUsers size={16} />
+            <div className="p-1.5 rounded-md shrink-0 bg-[var(--primary-color-muted)] text-[var(--primary-color)]">
+              <FaUsers size={14} />
             </div>
           </div>
         </MotionDiv>
 
         {/* 4. Total Persons - Info */}
         <MotionDiv delay={0.2}>
-          <div className="p-3 rounded-xl border bg-[var(--ui-info-light)]/60 border-[var(--ui-info-border)] hover:border-[var(--ui-info-border)] flex items-center justify-between gap-2.5 transition-all shadow-xs h-full">
+          <div className="p-2 sm:p-2.5 rounded-lg border bg-[var(--ui-info-light)]/60 border-[var(--ui-info-border)] hover:border-[var(--ui-info-border)] flex items-center justify-between gap-2 transition-all shadow-xs h-full">
             <div className="flex flex-col min-w-0">
-              <span className="text-[11px] font-semibold text-[var(--ui-text)] tracking-wider truncate">
+              <span className="text-[10px] font-semibold text-[var(--ui-text-muted)] uppercase tracking-wider truncate">
                 Total Persons
               </span>
-              <span className="text-base sm:text-lg font-bold truncate mt-0.5 text-[var(--ui-info)]">
+              <span className="text-sm sm:text-base font-bold truncate mt-0.5 text-[var(--ui-info)]">
                 {kpi.totalPersons}
               </span>
             </div>
-            <div className="p-2 rounded-lg shrink-0 bg-[var(--ui-info-border)] text-[var(--ui-info)]">
-              <FaUsers size={16} />
+            <div className="p-1.5 rounded-md shrink-0 bg-[var(--ui-info-border)] text-[var(--ui-info)]">
+              <FaUsers size={14} />
             </div>
           </div>
         </MotionDiv>
@@ -187,7 +191,32 @@ export const KhatabookPage: React.FC = () => {
           setPersonToEdit(person);
           setIsPersonDrawerOpen(true);
         }}
-        onDeletePerson={(person) => {
+        onDeletePerson={async (person) => {
+          const txnCount = person.transactionCount ?? 0;
+          if (txnCount > 0) {
+            showErrorToast(
+              `"${person.name}" এর সাথে ${txnCount} টি লেনদেন বিদ্যমান! ব্যক্তি ডিলিট করার আগে তার সকল লেনদেন ডিলিট করতে হবে।`
+            );
+            return;
+          }
+
+          try {
+            const res = await fetchLedgerTransactionList(person.id);
+            const txns = Array.isArray(res)
+              ? res
+              : Array.isArray(res?.data)
+              ? res.data
+              : [];
+            if (txns.length > 0) {
+              showErrorToast(
+                `"${person.name}" এর সাথে ${txns.length} টি লেনদেন বিদ্যমান! ব্যক্তি ডিলিট করার আগে তার সকল লেনদেন ডিলিট করতে হবে।`
+              );
+              return;
+            }
+          } catch {
+            // If check fails, allow opening modal
+          }
+
           setPersonToDelete(person);
           setIsDeletePersonModalOpen(true);
         }}

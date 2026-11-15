@@ -148,10 +148,10 @@ export const KhatabookTable: React.FC<KhatabookTableProps> = ({
     <TableContainer className="w-full">
       {/* Table Toolbar with Search on Left and Dropdowns & Export on Right */}
       <TableToolbar>
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 w-full">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 w-full">
           {/* Left: Search Box */}
-          <div className="flex items-center gap-2 w-full sm:w-auto">
-            <div className="w-full sm:w-60">
+          <div className="flex items-center gap-1.5 w-full sm:w-auto">
+            <div className="w-full sm:w-52">
               <Search
                 searchQuery={searchQuery}
                 onSearchChange={(value) => {
@@ -164,7 +164,7 @@ export const KhatabookTable: React.FC<KhatabookTableProps> = ({
           </div>
 
           {/* Right: Dropdown Filters & Excel Button */}
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex flex-wrap items-center gap-1.5">
 
             {/* Balance Dropdown */}
             <DropdownFilter
@@ -211,26 +211,26 @@ export const KhatabookTable: React.FC<KhatabookTableProps> = ({
       {/* Table Content */}
       <TableScroll>
         {isLoading ? (
-          <div className="p-4">
+          <div className="p-3">
             <TableSkeleton columnCount={8} />
           </div>
         ) : (
           <Table className="table-fixed min-w-[850px]">
             <TableHead>
               <TableTh width="5%">SL</TableTh>
-              <TableTh width="26%">Person Name</TableTh>
-              <TableTh width="15%">Contact Info</TableTh>
-              <TableTh width="13%" align="right">Receivable (Pabo)</TableTh>
-              <TableTh width="13%" align="right">Payable (Dibo)</TableTh>
-              <TableTh width="14%" align="right">Net Balance</TableTh>
+              <TableTh width="22%">Person Name</TableTh>
+              <TableTh width="14%">Contact Info</TableTh>
+              <TableTh width="12%" align="right">Receivable (Pabo)</TableTh>
+              <TableTh width="12%" align="right">Payable (Dibo)</TableTh>
+              <TableTh width="13%" align="right">Net Balance</TableTh>
               <TableTh width="8%" align="center">Status</TableTh>
-              <TableTh width="6%" align="right">Actions</TableTh>
+              <TableTh width="14%" align="right">Actions</TableTh>
             </TableHead>
 
             <TableBody>
               {paginatedList.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="py-12 text-center">
+                  <td colSpan={8} className="py-10 text-center">
                     <EmptyState
                       title={
                         searchQuery || balanceFilter || statusFilter
@@ -259,36 +259,36 @@ export const KhatabookTable: React.FC<KhatabookTableProps> = ({
                       className="hover:bg-[var(--primary-color-light)]/40 transition-colors group"
                     >
                       {/* SL */}
-                      <td className="py-2.5 px-3 text-left text-xs font-normal text-[var(--ui-text)] truncate">
+                      <td className="py-1.5 px-2.5 text-left text-xs font-normal text-[var(--ui-text)] truncate">
                         {sl}
                       </td>
 
                       {/* Person Name (Single line) */}
-                      <td className="py-2.5 px-3 text-left font-medium text-xs text-[var(--ui-text)] truncate whitespace-nowrap">
+                      <td className="py-1.5 px-2.5 text-left font-medium text-xs text-[var(--ui-text)] truncate whitespace-nowrap">
                         <span className="font-semibold text-xs text-[var(--ui-text)] block truncate" title={person.name}>
                           {person.name}
                         </span>
                       </td>
 
                       {/* Contact Info (Phone - Single line) */}
-                      <td className="py-2.5 px-3 text-left font-normal text-xs text-[var(--ui-text)] truncate whitespace-nowrap">
+                      <td className="py-1.5 px-2.5 text-left font-normal text-xs text-[var(--ui-text)] truncate whitespace-nowrap">
                         <span className="block truncate" title={person.phone}>
                           {person.phone}
                         </span>
                       </td>
 
                       {/* Receivable (Pabo) */}
-                      <td className="py-2.5 px-3 text-right font-normal text-xs text-[var(--ui-success)] whitespace-nowrap">
+                      <td className="py-1.5 px-2 text-right font-normal text-xs text-[var(--ui-success)] whitespace-nowrap">
                         ৳{pabo.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
                       </td>
 
                       {/* Payable (Dibo) */}
-                      <td className="py-2.5 px-3 text-right font-normal text-xs text-[var(--ui-danger)] whitespace-nowrap">
+                      <td className="py-1.5 px-2 text-right font-normal text-xs text-[var(--ui-danger)] whitespace-nowrap">
                         ৳{dibo.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
                       </td>
 
                       {/* Net Balance */}
-                      <td className="py-2.5 px-3 text-right font-semibold text-xs whitespace-nowrap">
+                      <td className="py-1.5 px-2 text-right font-semibold text-xs whitespace-nowrap">
                         <span
                           className={
                             net > 0
@@ -305,8 +305,8 @@ export const KhatabookTable: React.FC<KhatabookTableProps> = ({
                         </span>
                       </td>
 
-                      {/* Status Badge matching PartyTable */}
-                      <td className="py-2.5 px-2.5 text-center">
+                      {/* Status Badge */}
+                      <td className="py-1.5 px-1.5 text-center whitespace-nowrap">
                         <span
                           className={`inline-flex items-center px-1.5 py-0.5 rounded-md text-[10px] font-semibold border ${
                             isActive
@@ -319,7 +319,7 @@ export const KhatabookTable: React.FC<KhatabookTableProps> = ({
                       </td>
 
                       {/* Action Buttons matching PartyTable exactly */}
-                      <td className="py-2 px-3 text-right">
+                      <td className="py-1.5 px-2 text-right whitespace-nowrap">
                         <TableActionButtons
                           onView={() => onViewLedger(person)}
                           viewTitle="View Ledger Statement"
@@ -339,7 +339,7 @@ export const KhatabookTable: React.FC<KhatabookTableProps> = ({
                               </button>
                             ) : undefined
                           }
-                          className="justify-end"
+                          className="justify-end flex-nowrap shrink-0 gap-1"
                         />
                       </td>
                     </tr>

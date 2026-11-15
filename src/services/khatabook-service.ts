@@ -13,78 +13,120 @@ import type {
 } from "@/types";
 
 /**
- * Formats a local date/time into naive ISO "YYYY-MM-DDTHH:mm:ss.SSS"
- * Prevents timezone offset shifts and satisfies Postgres not-null created_date constraints.
+ * Formats a local date/time into naive ISO "YYYY-MM-DDTHH:mm:ss" matching Postman collection exactly.
  */
 export const toNaiveIso = (date?: Date | string | null): string => {
+  const pad = (n: number) => String(n).padStart(2, "0");
   if (!date) {
     const now = new Date();
-    const pad = (n: number) => String(n).padStart(2, "0");
     return (
       `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}` +
-      `T${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}` +
-      `.${String(now.getMilliseconds()).padStart(3, "0")}`
+      `T${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`
     );
   }
   if (typeof date === "string") {
     const trimmed = date.trim();
     if (trimmed.includes("T")) {
-      return trimmed.replace(/Z$/, "");
+      return trimmed.split(".")[0].replace(/Z$/, "");
     }
     if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
       const now = new Date();
-      const pad = (n: number) => String(n).padStart(2, "0");
-      return `${trimmed}T${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}.${String(now.getMilliseconds()).padStart(3, "0")}`;
+      return `${trimmed}T${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
     }
   }
   const d = date instanceof Date ? date : new Date(date);
   if (Number.isNaN(d.getTime())) return toNaiveIso();
-  const pad = (n: number) => String(n).padStart(2, "0");
   return (
     `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}` +
-    `T${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}` +
-    `.${String(d.getMilliseconds()).padStart(3, "0")}`
+    `T${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`
   );
 };
 
 /**
- * 1. GET PERSON LIST
+ * 1. GET PERSON LIST (Image 3: POST /api/ledger/person/list)
+ * Body: { accessUser: { phone, orgId, branchId }, status?: string }
  */
-export const fetchLedgerPersonList = async (): Promise<LedgerPersonListResponse> => {
+export const fetchLedgerPersonList = async (
+  statusArg?: string | unknown
+): Promise<LedgerPersonListResponse> => {
   const accessUser = buildAccessUser();
   const url = apiConfig.ledger.personListUrl;
 
+  // React Query passes QueryFunctionContext object when queryFn is passed directly.
+  // Ensure status is always a clean string, strictly defaulting to "Active" as per Postman.
+  let status = "Active";
+  if (typeof statusArg === "string" && statusArg.trim() !== "") {
+    const trimmed = statusArg.trim();
+    status = trimmed === "ALL" ? "Active" : trimmed;
+  }
+
+  const body: any = {
+    accessUser,
+    status,
+  };
+
   const res: any = await postData<LedgerPersonListResponse>({
     url,
-    body: { accessUser },
+    body,
   });
 
   if (res?.error || String(res?.status).toLowerCase() === "error") {
     throw new Error(res?.msg || res?.message || "Failed to fetch ledger person list");
   }
 
-  const rawList = Array.isArray(res?.data)
-    ? res.data
-    : Array.isArray(res?.personList)
-    ? res.personList
-    : [];
+  let rawList: any[] = [];
+  if (Array.isArray(res)) {
+    rawList = res;
+  } else if (Array.isArray(res?.data)) {
+    rawList = res.data;
+  } else if (Array.isArray(res?.data?.persons)) {
+    rawList = res.data.persons;
+  } else if (Array.isArray(res?.data?.personList)) {
+    rawList = res.data.personList;
+  } else if (Array.isArray(res?.data?.list)) {
+    rawList = res.data.list;
+  } else if (Array.isArray(res?.personList)) {
+    rawList = res.personList;
+  } else if (Array.isArray(res?.persons)) {
+    rawList = res.persons;
+  } else if (Array.isArray(res?.list)) {
+    rawList = res.list;
+  }
 
-  const data: LedgerPerson[] = rawList.map((item: any) => ({
-    id: Number(item.id),
-    name: item.name || "Unknown",
-    phone: item.phone || "",
-    address: item.address || "",
-    email: item.email || "",
-    type: item.type || "CUSTOMER",
-    tag: item.tag || "",
-    isSync: item.isSync ?? 0,
-    addedBy: item.addedBy || "",
-    updatedBy: item.updatedBy || null,
-    createdAt: item.createdAt || "",
-    updatedAt: item.updatedAt || "",
-    lastSyncedAt: item.lastSyncedAt || null,
-    status: item.status || "Active",
-  }));
+  const data: LedgerPerson[] = rawList.map((item: any) => {
+    const rawOpeningBal = Number(item.openingBalance ?? item.opening_balance ?? 0);
+    const openingPona = Number(
+      item.openingPona ?? item.opening_pona ?? (rawOpeningBal > 0 ? rawOpeningBal : 0)
+    );
+    const openingDena = Number(
+      item.openingDena ?? item.opening_dena ?? (rawOpeningBal < 0 ? Math.abs(rawOpeningBal) : 0)
+    );
+    const serverPabo = Number(item.totalPabo ?? item.total_pabo ?? openingPona);
+    const serverDibo = Number(item.totalDibo ?? item.total_dibo ?? openingDena);
+    const serverNet = item.netBalance != null ? Number(item.netBalance) : (serverPabo - serverDibo);
+
+    return {
+      id: Number(item.id ?? item.personId ?? item.person_id),
+      name: item.name || item.personName || item.person_name || "Unknown",
+      phone: item.phone || item.mobile || item.phoneNumber || item.phone_number || "",
+      address: item.address || "",
+      email: item.email || "",
+      type: item.type || "CUSTOMER",
+      tag: item.tag || "",
+      isSync: item.isSync ?? 0,
+      addedBy: item.addedBy || "",
+      updatedBy: item.updatedBy || null,
+      createdAt: item.createdAt || item.createdDate || "",
+      updatedAt: item.updatedAt || "",
+      lastSyncedAt: item.lastSyncedAt || null,
+      status: item.status || "Active",
+      totalPabo: serverPabo,
+      totalDibo: serverDibo,
+      netBalance: serverNet,
+      transactionCount: Number(item.transactionCount ?? item.transaction_count ?? 0),
+      lastTransactionDate: item.lastTransactionDate || null,
+    };
+  });
 
   return {
     status: res?.status || "Success",
@@ -94,8 +136,11 @@ export const fetchLedgerPersonList = async (): Promise<LedgerPersonListResponse>
 };
 
 /**
- * 2. SAVE PERSON
- * Supports both creating a new person (with opening balances) and updating existing person.
+ * 2. SAVE PERSON (Image 1 & 2: POST /api/ledger/person/save)
+ * - Save New Person (Image 1):
+ *   Body: { accessUser, name, phone, address, email, type, tag, status, openingDena, openingPona, openingDate }
+ * - Update Person (Image 2):
+ *   Body: { accessUser, id, name, phone, address, type, status }
  */
 export const saveLedgerPerson = async (
   payload: SaveLedgerPersonPayload
@@ -103,47 +148,62 @@ export const saveLedgerPerson = async (
   const accessUser = buildAccessUser();
   const url = apiConfig.ledger.personSaveUrl;
 
-  const body: any = {
+  // New Person
+  if (!payload.id) {
+    const body = {
+      accessUser,
+      name: payload.name.trim(),
+      phone: payload.phone.trim(),
+      address: payload.address?.trim() || "",
+      email: payload.email?.trim() || "",
+      type: payload.type || "CUSTOMER",
+      tag: payload.tag?.trim() || "Regular",
+      status: payload.status || "Active",
+      openingDena: Number(payload.openingDena) || 0,
+      openingPona: Number(payload.openingPona) || 0,
+      openingDate: payload.openingDate || new Date().toISOString().split("T")[0],
+    };
+
+    const res: any = await postData<LedgerActionResponse>({ url, body });
+
+    if (res?.error || String(res?.status).toLowerCase() === "error") {
+      throw new Error(res?.msg || res?.message || "Failed to save ledger person");
+    }
+
+    return {
+      status: res?.status || "Success",
+      msg: res?.msg || "Person saved successfully",
+      data: res?.data,
+    };
+  }
+
+  // Update Person (strictly matching Image 2 keys)
+  const body = {
     accessUser,
+    id: Number(payload.id),
     name: payload.name.trim(),
     phone: payload.phone.trim(),
     address: payload.address?.trim() || "",
-    email: payload.email?.trim() || "",
     type: payload.type || "CUSTOMER",
-    tag: payload.tag?.trim() || "regular",
     status: payload.status || "Active",
   };
-
-  if (payload.id) {
-    body.id = Number(payload.id);
-  }
-
-  if (payload.openingDena !== undefined) {
-    body.openingDena = Number(payload.openingDena) || 0;
-  }
-  if (payload.openingPona !== undefined) {
-    body.openingPona = Number(payload.openingPona) || 0;
-  }
-  if (payload.openingDate) {
-    body.openingDate = payload.openingDate;
-  }
 
   const res: any = await postData<LedgerActionResponse>({ url, body });
 
   if (res?.error || String(res?.status).toLowerCase() === "error") {
-    throw new Error(res?.msg || res?.message || "Failed to save ledger person");
+    throw new Error(res?.msg || res?.message || "Failed to update ledger person");
   }
 
   return {
     status: res?.status || "Success",
-    msg: res?.msg || "Person saved successfully",
+    msg: res?.msg || "Person updated successfully",
     data: res?.data,
   };
 };
 
 /**
- * 3. DELETE PERSON
- * Deletes person. If transactions exist, server rejects with explanation.
+ * 3. DELETE PERSON (Image 4: POST /api/ledger/person/delete)
+ * Body: { accessUser: { phone, orgId, branchId }, personId }
  */
 export const deleteLedgerPerson = async (personId: number): Promise<LedgerActionResponse> => {
   const accessUser = buildAccessUser();
@@ -169,9 +229,8 @@ export const deleteLedgerPerson = async (personId: number): Promise<LedgerAction
 };
 
 /**
- * 4. GET TRANSACTION LIST
- * If personId is provided, returns transactions for that person.
- * If omitted, returns all ledger transactions.
+ * 4. GET TRANSACTION LIST (Image 8: POST /api/ledger/transaction/list)
+ * Body: { accessUser: { phone, orgId, branchId }, personId }
  */
 export const fetchLedgerTransactionList = async (
   personId?: number | null
@@ -184,17 +243,40 @@ export const fetchLedgerTransactionList = async (
     body.personId = Number(personId);
   }
 
-  const res: any = await postData<LedgerTransactionListResponse>({ url, body });
+  let res: any;
+  try {
+    res = await postData<LedgerTransactionListResponse>({ url, body });
+  } catch (err: any) {
+    if (!personId) {
+      return { status: "Success", msg: "", data: [] };
+    }
+    throw err;
+  }
 
   if (res?.error || String(res?.status).toLowerCase() === "error") {
+    // If fetching all transactions without personId is rejected by backend, safely return empty list
+    if (!personId) {
+      return { status: "Success", msg: "", data: [] };
+    }
     throw new Error(res?.msg || res?.message || "Failed to fetch ledger transactions");
   }
 
-  const rawList = Array.isArray(res?.data)
-    ? res.data
-    : Array.isArray(res?.transactionList)
-    ? res.transactionList
-    : [];
+  let rawList: any[] = [];
+  if (Array.isArray(res)) {
+    rawList = res;
+  } else if (Array.isArray(res?.data)) {
+    rawList = res.data;
+  } else if (Array.isArray(res?.data?.transactions)) {
+    rawList = res.data.transactions;
+  } else if (Array.isArray(res?.data?.list)) {
+    rawList = res.data.list;
+  } else if (Array.isArray(res?.transactionList)) {
+    rawList = res.transactionList;
+  } else if (Array.isArray(res?.transactions)) {
+    rawList = res.transactions;
+  } else if (Array.isArray(res?.list)) {
+    rawList = res.list;
+  }
 
   const data: LedgerTransaction[] = rawList.map((item: any) => ({
     id: Number(item.id),
@@ -222,8 +304,10 @@ export const fetchLedgerTransactionList = async (
 };
 
 /**
- * 5. CREATE TRANSACTION
- * Creates a PABO (receivable) or DIBO (payable) transaction with CASH, BANK, or MFS tender.
+ * 5. CREATE TRANSACTION (Images 5, 6, 7: POST /api/ledger/transaction/create)
+ * CASH (Image 5): { accessUser, personId, transactionType, paymentType: "CASH", amount, commission, note, refNo, transactionDate }
+ * BANK (Image 6): + bankAccountNo
+ * MFS (Image 7): + mfsUserId
  */
 export const createLedgerTransaction = async (
   payload: CreateLedgerTransactionPayload
@@ -231,8 +315,7 @@ export const createLedgerTransaction = async (
   const accessUser = buildAccessUser();
   const url = apiConfig.ledger.transactionCreateUrl;
 
-  const naiveDate = toNaiveIso(payload.createdDate || payload.transactionDate);
-  const refNo = payload.refNo?.trim() || `TXN-${Date.now()}`;
+  const naiveDate = toNaiveIso(payload.transactionDate || payload.createdDate);
 
   const body: any = {
     accessUser,
@@ -240,18 +323,16 @@ export const createLedgerTransaction = async (
     transactionType: payload.transactionType,
     paymentType: payload.paymentType,
     amount: Number(payload.amount),
+    commission: Number(payload.commission) || 0,
     note: payload.note?.trim() || "",
-    refNo,
-    createdDate: naiveDate,
+    refNo: payload.refNo?.trim() || "",
     transactionDate: naiveDate,
   };
 
-  if (payload.paymentType === "BANK" && payload.bankAccountNo) {
-    body.bankAccountNo = String(payload.bankAccountNo).trim();
-  }
-
-  if (payload.paymentType === "MFS" && payload.mfsUserId) {
-    body.mfsUserId = payload.mfsUserId;
+  if (payload.paymentType === "BANK") {
+    body.bankAccountNo = String(payload.bankAccountNo || "").trim();
+  } else if (payload.paymentType === "MFS") {
+    body.mfsUserId = Number(payload.mfsUserId) || 0;
   }
 
   const res: any = await postData<LedgerActionResponse>({ url, body });
@@ -268,8 +349,8 @@ export const createLedgerTransaction = async (
 };
 
 /**
- * 6. UPDATE TRANSACTION
- * Edits an existing ledger transaction.
+ * 6. UPDATE TRANSACTION (Image 9: POST /api/ledger/transaction/update)
+ * Body: { accessUser, transactionId, personId, transactionType, paymentType, amount, commission, note, refNo, transactionDate, ... }
  */
 export const updateLedgerTransaction = async (
   payload: UpdateLedgerTransactionPayload
@@ -277,7 +358,7 @@ export const updateLedgerTransaction = async (
   const accessUser = buildAccessUser();
   const url = apiConfig.ledger.transactionUpdateUrl;
 
-  const naiveDate = toNaiveIso(payload.createdDate || payload.transactionDate);
+  const naiveDate = toNaiveIso(payload.transactionDate || payload.createdDate);
 
   const body: any = {
     accessUser,
@@ -286,18 +367,16 @@ export const updateLedgerTransaction = async (
     transactionType: payload.transactionType,
     paymentType: payload.paymentType,
     amount: Number(payload.amount),
+    commission: Number(payload.commission) || 0,
     note: payload.note?.trim() || "",
-    refNo: payload.refNo?.trim() || `TXN-${Date.now()}`,
-    createdDate: naiveDate,
+    refNo: payload.refNo?.trim() || "",
     transactionDate: naiveDate,
   };
 
-  if (payload.paymentType === "BANK" && payload.bankAccountNo) {
-    body.bankAccountNo = String(payload.bankAccountNo).trim();
-  }
-
-  if (payload.paymentType === "MFS" && payload.mfsUserId) {
-    body.mfsUserId = payload.mfsUserId;
+  if (payload.paymentType === "BANK") {
+    body.bankAccountNo = String(payload.bankAccountNo || "").trim();
+  } else if (payload.paymentType === "MFS") {
+    body.mfsUserId = Number(payload.mfsUserId) || 0;
   }
 
   const res: any = await postData<LedgerActionResponse>({ url, body });
@@ -314,8 +393,8 @@ export const updateLedgerTransaction = async (
 };
 
 /**
- * 7. DELETE TRANSACTION
- * Deletes transaction and restores financial balance.
+ * 7. DELETE TRANSACTION (Image 10: POST /api/ledger/transaction/delete)
+ * Body: { accessUser: { phone, orgId, branchId }, transactionId }
  */
 export const deleteLedgerTransaction = async (
   transactionId: number
@@ -400,6 +479,16 @@ export const enrichPersonsWithTransactions = (
 
   return persons.map((person) => {
     const pTxns = txnMap.get(Number(person.id)) || [];
+    if (pTxns.length === 0) {
+      return {
+        ...person,
+        totalPabo: person.totalPabo ?? 0,
+        totalDibo: person.totalDibo ?? 0,
+        netBalance: person.netBalance ?? 0,
+        transactionCount: person.transactionCount ?? 0,
+      };
+    }
+
     const balances = calculatePersonBalances(pTxns);
 
     return {
@@ -408,7 +497,7 @@ export const enrichPersonsWithTransactions = (
       totalDibo: balances.totalDibo,
       netBalance: balances.netBalance,
       transactionCount: balances.count,
-      lastTransactionDate: balances.lastTransactionDate,
+      lastTransactionDate: balances.lastTransactionDate || person.lastTransactionDate,
     };
   });
 };

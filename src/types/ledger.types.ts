@@ -43,6 +43,7 @@ export interface SaveLedgerPersonPayload {
   openingDena?: number;
   openingPona?: number;
   openingDate?: string;
+  sendSms?: boolean;
 }
 
 export interface LedgerTransaction {
@@ -69,12 +70,14 @@ export interface CreateLedgerTransactionPayload {
   transactionType: "PABO" | "DIBO";
   paymentType: "CASH" | "BANK" | "MFS";
   amount: number;
+  commission?: number;
   note?: string;
   refNo?: string;
   bankAccountNo?: string | null;
   mfsUserId?: string | number | null;
   createdDate?: string;
   transactionDate?: string;
+  sendSms?: boolean;
 }
 
 export interface UpdateLedgerTransactionPayload {
@@ -83,12 +86,14 @@ export interface UpdateLedgerTransactionPayload {
   transactionType: "PABO" | "DIBO";
   paymentType: "CASH" | "BANK" | "MFS";
   amount: number;
+  commission?: number;
   note?: string;
   refNo?: string;
   bankAccountNo?: string | null;
   mfsUserId?: string | number | null;
   createdDate?: string;
   transactionDate?: string;
+  sendSms?: boolean;
 }
 
 export interface LedgerPersonListResponse {
