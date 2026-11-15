@@ -553,14 +553,9 @@ export const TransactionFormModal: React.FC<TransactionFormModalProps> = ({
             <div className="p-1.5 rounded-md bg-[var(--primary-color,#009fe3)]/10 text-[var(--primary-color,#009fe3)]">
               <FaPaperPlane size={10} />
             </div>
-            <div className="flex flex-col">
-              <span className="text-xs font-semibold text-[var(--ui-text)]">
-                Send SMS Notification
-              </span>
-              <span className="text-[10px] text-[var(--ui-text-muted)]">
-                Send confirmation SMS to person's phone upon transaction
-              </span>
-            </div>
+            <span className="text-xs font-semibold text-[var(--ui-text)]">
+              Send SMS Notification
+            </span>
           </div>
           <label className="relative inline-flex items-center cursor-pointer shrink-0">
             <input
