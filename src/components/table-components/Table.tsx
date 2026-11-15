@@ -7,10 +7,10 @@ export const TABLE_CLASSES = {
   scroll: "w-full overflow-x-auto relative z-10",
   table: "ui-table w-full text-left border-collapse text-xs",
   headerRow: "bg-[var(--table-header-bg,var(--primary-color))] text-[var(--table-header-text,var(--ui-on-accent,#ffffff))] text-xs font-semibold",
-  headerCell: "py-2.5 px-3 text-[var(--table-header-text,var(--ui-on-accent,#ffffff))] text-xs font-semibold select-none",
+  headerCell: "py-2 px-2.5 text-[var(--table-header-text,var(--ui-on-accent,#ffffff))] text-xs font-semibold select-none",
   body: "divide-y divide-[var(--ui-border)] bg-[var(--ui-surface)]",
   row: "hover:bg-[var(--primary-color-light)]/40 transition-colors group",
-  cell: "py-2.5 px-3 text-[var(--ui-text)] text-xs font-normal",
+  cell: "py-1 px-2.5 text-[var(--ui-text)] text-xs font-normal",
 } as const;
 
 // 1. TableContainer (Outer card wrapper)

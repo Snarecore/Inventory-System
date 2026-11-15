@@ -721,7 +721,7 @@ export function TradeReturnTable<T extends Record<string, any>>({
 
                             {details.length > 0 ? (
                               <div className="overflow-x-auto rounded-lg border border-[var(--ui-border)]">
-                                <table className="w-full text-left border-collapse text-xs">
+                                <table className="ui-table w-full text-left border-collapse text-xs">
                                   <thead>
                                     <tr className="bg-[var(--table-header-bg,var(--primary-color))] text-[var(--table-header-text,var(--ui-on-accent,#ffffff))] text-xs font-semibold select-none !h-auto">
                                       <th style={{ paddingTop: "7px", paddingBottom: "7px" }} className="px-2.5 text-center w-10 text-[var(--table-header-text,var(--ui-on-accent,#ffffff))] text-xs font-semibold select-none leading-normal">SL</th>

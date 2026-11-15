@@ -191,7 +191,7 @@ export const TradeDueInvoiceAllocationTable: React.FC<TradeDueInvoiceAllocationT
       {/* Allocation Table Container */}
       <div className="border border-[var(--ui-border)] rounded-lg overflow-hidden bg-[var(--ui-surface)]">
         <div className="max-h-56 overflow-y-auto">
-          <table className="w-full text-left text-xs border-collapse">
+          <table className="ui-table w-full text-left text-xs border-collapse">
             <thead className="sticky top-0 bg-[var(--ui-surface-muted)] z-10 text-[var(--ui-text-muted)] text-[11px] border-b border-[var(--ui-border)] font-semibold">
               <tr>
                 <th className="py-2 px-2.5 w-8 text-center">

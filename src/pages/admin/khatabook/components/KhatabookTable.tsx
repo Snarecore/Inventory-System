@@ -262,43 +262,43 @@ export const KhatabookTable: React.FC<KhatabookTableProps> = ({
                       className="hover:bg-[var(--primary-color-light)]/40 transition-colors group"
                     >
                       {/* SL */}
-                      <td className="py-1.5 px-2.5 text-left text-xs font-normal text-[var(--ui-text)] truncate">
+                      <td className="py-1 px-2.5 text-left text-xs font-normal text-[var(--ui-text)] truncate">
                         {sl}
                       </td>
 
                       {/* Person Name (Single line) */}
-                      <td className="py-1.5 px-2.5 text-left font-medium text-xs text-[var(--ui-text)] truncate whitespace-nowrap">
+                      <td className="py-1 px-2.5 text-left font-medium text-xs text-[var(--ui-text)] truncate whitespace-nowrap">
                         <span className="font-semibold text-xs text-[var(--ui-text)] block truncate" title={person.name}>
                           {person.name}
                         </span>
                       </td>
 
                       {/* Contact Info (Phone - Single line) */}
-                      <td className="py-1.5 px-2.5 text-left font-normal text-xs text-[var(--ui-text)] truncate whitespace-nowrap">
+                      <td className="py-1 px-2.5 text-left font-normal text-xs text-[var(--ui-text)] truncate whitespace-nowrap">
                         <span className="block truncate" title={person.phone}>
                           {person.phone || "-"}
                         </span>
                       </td>
 
                       {/* Address */}
-                      <td className="py-1.5 px-2.5 text-left font-normal text-xs text-[var(--ui-text-muted)] truncate whitespace-nowrap">
+                      <td className="py-1 px-2.5 text-left font-normal text-xs text-[var(--ui-text-muted)] truncate whitespace-nowrap">
                         <span className="block truncate" title={person.address || "-"}>
                           {person.address || "-"}
                         </span>
                       </td>
 
                       {/* Receivable (Pabo) */}
-                      <td className="py-1.5 px-2 text-right font-normal text-xs text-[var(--ui-success)] whitespace-nowrap">
+                      <td className="py-1 px-2 text-right font-normal text-xs text-[var(--ui-success)] whitespace-nowrap">
                         ৳{pabo.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
                       </td>
 
                       {/* Payable (Dibo) */}
-                      <td className="py-1.5 px-2 text-right font-normal text-xs text-[var(--ui-danger)] whitespace-nowrap">
+                      <td className="py-1 px-2 text-right font-normal text-xs text-[var(--ui-danger)] whitespace-nowrap">
                         ৳{dibo.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
                       </td>
 
                       {/* Net Balance */}
-                      <td className="py-1.5 px-2 text-right font-semibold text-xs whitespace-nowrap">
+                      <td className="py-1 px-2 text-right font-semibold text-xs whitespace-nowrap">
                         <span
                           className={
                             net > 0
@@ -313,7 +313,7 @@ export const KhatabookTable: React.FC<KhatabookTableProps> = ({
                       </td>
 
                       {/* Status Badge */}
-                      <td className="py-1.5 px-1.5 text-center whitespace-nowrap">
+                      <td className="py-1 px-1.5 text-center whitespace-nowrap">
                         <span
                           className={`inline-flex items-center px-1.5 py-0.5 rounded-md text-[10px] font-semibold border ${
                             isActive
@@ -326,7 +326,7 @@ export const KhatabookTable: React.FC<KhatabookTableProps> = ({
                       </td>
 
                       {/* Action Buttons matching PartyTable exactly */}
-                      <td className="py-1.5 px-2 text-right whitespace-nowrap">
+                      <td className="py-1 px-2 text-right whitespace-nowrap">
                         <TableActionButtons
                           onView={() => onViewLedger(person)}
                           viewTitle={t("View Ledger Statement")}
@@ -342,7 +342,7 @@ export const KhatabookTable: React.FC<KhatabookTableProps> = ({
                                 title={t("Record Transaction")}
                                 className="p-1 rounded text-[var(--ui-success)] hover:bg-[var(--ui-success-border)] transition-colors cursor-pointer"
                               >
-                                <FiPlus size={14} />
+                                <FiPlus size={13.5} />
                               </button>
                             ) : undefined
                           }

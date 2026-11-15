@@ -50,7 +50,7 @@ export const TableActionButtons: React.FC<TableActionButtonsProps> = ({
           title={t(viewTitle)}
           className="p-1 rounded text-[var(--primary-color)] hover:bg-[var(--primary-color-muted)] transition-colors cursor-pointer"
         >
-          <FiEye size={14} />
+          <FiEye size={13.5} />
         </button>
       )}
       {onEdit && (
@@ -60,7 +60,7 @@ export const TableActionButtons: React.FC<TableActionButtonsProps> = ({
           title={t(editTitle)}
           className="p-1 rounded text-[var(--ui-warning)] hover:bg-[var(--ui-warning-border)] transition-colors cursor-pointer"
         >
-          <FiEdit size={14} />
+          <FiEdit size={13.5} />
         </button>
       )}
       {onMessage && (
@@ -70,7 +70,7 @@ export const TableActionButtons: React.FC<TableActionButtonsProps> = ({
           title={t(messageTitle)}
           className="p-1 rounded text-sky-500 hover:bg-sky-50 dark:hover:bg-sky-950/30 transition-colors cursor-pointer"
         >
-          <FiMessageSquare size={14} />
+          <FiMessageSquare size={13.5} />
         </button>
       )}
       {onPrint && (
@@ -80,7 +80,7 @@ export const TableActionButtons: React.FC<TableActionButtonsProps> = ({
           title={t(printTitle)}
           className="p-1 rounded text-[var(--ui-text-muted)] hover:bg-[var(--ui-surface-sunken)] transition-colors cursor-pointer"
         >
-          <FiPrinter size={14} />
+          <FiPrinter size={13.5} />
         </button>
       )}
       {onReturn && (
@@ -89,7 +89,7 @@ export const TableActionButtons: React.FC<TableActionButtonsProps> = ({
             title={t(returnDisabledTitle)}
             className="p-1 rounded text-[var(--ui-text-subtle)] cursor-not-allowed inline-flex items-center"
           >
-            <FaUndoAlt size={12} />
+            <FaUndoAlt size={12.5} />
           </span>
         ) : (
           <button
@@ -98,7 +98,7 @@ export const TableActionButtons: React.FC<TableActionButtonsProps> = ({
             title={t(returnTitle)}
             className="p-1 rounded text-[var(--primary-color)] hover:bg-[var(--primary-color-muted)] transition-colors cursor-pointer"
           >
-            <FaUndoAlt size={12} />
+            <FaUndoAlt size={12.5} />
           </button>
         )
       )}
@@ -109,7 +109,7 @@ export const TableActionButtons: React.FC<TableActionButtonsProps> = ({
           title={t(deleteTitle)}
           className="p-1 rounded text-[var(--ui-danger)] hover:bg-[var(--ui-danger-border)] transition-colors cursor-pointer"
         >
-          <FiTrash2 size={14} />
+          <FiTrash2 size={13.5} />
         </button>
       )}
       {extraActions}

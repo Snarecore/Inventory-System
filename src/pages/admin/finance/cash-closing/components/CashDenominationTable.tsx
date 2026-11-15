@@ -90,7 +90,7 @@ export const CashDenominationTable: React.FC<CashDenominationTableProps> = ({
 
       {/* Table Content */}
       <div className="overflow-x-auto overflow-y-auto max-h-[480px]">
-        <table className="w-full text-left border-collapse text-xs">
+        <table className="ui-table w-full text-left border-collapse text-xs">
           <thead>
             <tr className="border-b border-[var(--ui-border)] bg-[var(--ui-surface-sunken)]/60 text-xs font-bold text-black dark:text-white tracking-wider sticky top-0 z-10 backdrop-blur-xs">
               <th className="py-2 px-2.5 text-black dark:text-white font-bold">Note </th>

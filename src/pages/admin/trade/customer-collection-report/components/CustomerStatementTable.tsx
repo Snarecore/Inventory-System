@@ -74,7 +74,7 @@ export const CustomerStatementTable: React.FC<CustomerStatementTableProps> = ({
 
   return (
     <div className="w-full overflow-x-auto rounded-lg border border-[var(--ui-border)] bg-[var(--ui-surface)] shadow-xs">
-      <table className="w-full text-left border-collapse min-w-[700px]">
+      <table className="ui-table w-full text-left border-collapse min-w-[700px]">
         <thead>
           <tr className="border-b border-[var(--ui-border)] bg-[var(--ui-surface-muted)]/50 text-xs font-semibold text-[var(--ui-text-muted)]">
             <th className="py-2.5 px-3 text-center w-12 whitespace-nowrap">SL</th>

@@ -425,7 +425,7 @@ export const TradeInvoiceModal: React.FC<TradeInvoiceModalProps> = ({
 
           {/* Items Table with Slate Gray Header */}
           <div style={{ width: "100%" }}>
-            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "11px" }}>
+            <table className="invoice-print-table" style={{ width: "100%", borderCollapse: "collapse", fontSize: "11px" }}>
               <thead>
                 <tr
                   style={{

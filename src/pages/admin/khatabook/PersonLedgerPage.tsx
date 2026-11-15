@@ -633,17 +633,17 @@ export const PersonLedgerPage: React.FC = () => {
                         className="hover:bg-[var(--primary-color-light)]/40 transition-colors group"
                       >
                         {/* SL */}
-                        <td className="py-2.5 px-3 text-center text-[var(--ui-text-muted)] text-[11px] tabular-nums">
+                        <td className="py-1 px-2.5 text-center text-[var(--ui-text-muted)] text-[11px] tabular-nums">
                           {startIndex + idx + 1}
                         </td>
 
                         {/* Date */}
-                        <td className="py-2.5 px-3 whitespace-nowrap text-[var(--ui-text-muted)] text-[11px]">
+                        <td className="py-1 px-2.5 whitespace-nowrap text-[var(--ui-text-muted)] text-[11px]">
                           {formattedDate}
                         </td>
 
                         {/* Note & Ref */}
-                        <td className="py-2.5 px-3 truncate whitespace-nowrap">
+                        <td className="py-1 px-2.5 truncate whitespace-nowrap">
                           <span
                             className="font-semibold text-xs text-[var(--ui-text)] inline-flex items-center gap-1 truncate"
                             title={`${txn.note || (isOpening ? "Opening Balance" : "General Transaction")}${txn.refNo ? ` (Ref: ${txn.refNo})` : ""}`}
@@ -658,7 +658,7 @@ export const PersonLedgerPage: React.FC = () => {
                         </td>
 
                         {/* Tender / Payment Method badge */}
-                        <td className="py-2.5 px-3 whitespace-nowrap">
+                        <td className="py-1 px-2.5 whitespace-nowrap">
                           {(() => {
                             const method = (txn.paymentMethod || txn.tender || "CASH").toUpperCase();
                             const isCash = method === "CASH";
@@ -684,17 +684,17 @@ export const PersonLedgerPage: React.FC = () => {
                         </td>
 
                         {/* Receivable (Pabo) */}
-                        <td className="py-2.5 px-3 whitespace-nowrap text-right font-bold text-xs text-[var(--ui-success)]">
+                        <td className="py-1 px-2.5 whitespace-nowrap text-right font-bold text-xs text-[var(--ui-success)]">
                           {isPabo ? `৳${amt.toLocaleString("en-IN", { minimumFractionDigits: 2 })}` : "-"}
                         </td>
 
                         {/* Payable (Dibo) */}
-                        <td className="py-2.5 px-3 whitespace-nowrap text-right font-bold text-xs text-[var(--ui-danger)]">
+                        <td className="py-1 px-2.5 whitespace-nowrap text-right font-bold text-xs text-[var(--ui-danger)]">
                           {isDibo ? `৳${amt.toLocaleString("en-IN", { minimumFractionDigits: 2 })}` : "-"}
                         </td>
 
                         {/* Commission */}
-                        <td className="py-2.5 px-3 whitespace-nowrap text-right text-xs">
+                        <td className="py-1 px-2.5 whitespace-nowrap text-right text-xs">
                           {txn.commission != null && Number(txn.commission) > 0 ? (
                             <span className="font-bold text-amber-600 dark:text-amber-400">
                               ৳{Number(txn.commission).toLocaleString("en-IN", { minimumFractionDigits: 2 })}
@@ -705,7 +705,7 @@ export const PersonLedgerPage: React.FC = () => {
                         </td>
 
                         {/* Running Balance */}
-                        <td className="py-2.5 px-3 whitespace-nowrap text-right text-xs">
+                        <td className="py-1 px-2.5 whitespace-nowrap text-right text-xs">
                           <span
                             className={`font-extrabold ${
                               txn.runningBalance > 0
@@ -720,7 +720,7 @@ export const PersonLedgerPage: React.FC = () => {
                         </td>
 
                         {/* Actions */}
-                        <td className="py-2.5 px-3 text-right whitespace-nowrap">
+                        <td className="py-1 px-2.5 text-right whitespace-nowrap">
                           {isOpening ? (
                             <span className="text-[10px] text-[var(--ui-text-subtle)] italic">
                               {t("Opening")}

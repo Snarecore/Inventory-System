@@ -99,7 +99,7 @@ const HeroSliderTable = ({
 	return (
 		<div className="bg-[var(--ui-surface)] rounded-xl shadow-xs border border-[var(--ui-border)] flex flex-col relative z-20 overflow-visible">
 			<div className="w-full overflow-x-auto relative z-10">
-				<table className="w-full text-left border-collapse min-w-[900px] text-xs">
+				<table className="ui-table w-full text-left border-collapse min-w-[900px] text-xs">
 					<thead>
 						<tr className="bg-[var(--table-header-bg,var(--primary-color))] text-[var(--table-header-text,var(--ui-on-accent,#ffffff))] text-xs font-semibold">
 							{tableHeaders.map(({ key, label }) => (

@@ -141,15 +141,15 @@ export const TABLE_DENSITY_SCALE: Record<
   TableDensityId,
   { rowH: string; cellPx: string; cellPy: string; pagePadding: string }
 > = {
-  compact: { rowH: '36px', cellPx: '10px', cellPy: '6px', pagePadding: '16px' },
-  default: { rowH: '44px', cellPx: '14px', cellPy: '10px', pagePadding: '24px' },
-  comfortable: { rowH: '52px', cellPx: '18px', cellPy: '14px', pagePadding: '32px' },
+  compact: { rowH: '30px', cellPx: '8px', cellPy: '3px', pagePadding: '16px' },
+  default: { rowH: '35px', cellPx: '10px', cellPy: '5px', pagePadding: '20px' },
+  comfortable: { rowH: '42px', cellPx: '12px', cellPy: '8px', pagePadding: '24px' },
 }
 
 export const TABLE_DENSITY_OPTIONS: ScaleOption<TableDensityId>[] = [
-  { id: 'compact', label: 'Compact', hint: '36px rows' },
-  { id: 'default', label: 'Default', hint: '44px rows' },
-  { id: 'comfortable', label: 'Comfortable', hint: '52px rows' },
+  { id: 'compact', label: 'Compact', hint: '30px rows' },
+  { id: 'default', label: 'Default', hint: '35px rows' },
+  { id: 'comfortable', label: 'Comfortable', hint: '42px rows' },
 ]
 
 /* ---------------------------------------------------------------------------
