@@ -430,6 +430,7 @@ export const deleteLedgerTransaction = async (
 export const calculatePersonBalances = (transactions: LedgerTransaction[]) => {
   let totalPabo = 0;
   let totalDibo = 0;
+  let totalCommission = 0;
   let lastDate: string | null = null;
 
   for (const txn of transactions) {
@@ -444,6 +445,10 @@ export const calculatePersonBalances = (transactions: LedgerTransaction[]) => {
       totalDibo += amount;
     }
 
+    if (txn.commission != null && Number(txn.commission) > 0) {
+      totalCommission += Number(txn.commission);
+    }
+
     const tDate = txn.createdAt || txn.createdDate || txn.transactionDate;
     if (tDate && (!lastDate || new Date(tDate).getTime() > new Date(lastDate).getTime())) {
       lastDate = tDate;
@@ -453,6 +458,7 @@ export const calculatePersonBalances = (transactions: LedgerTransaction[]) => {
   return {
     totalPabo,
     totalDibo,
+    totalCommission,
     netBalance: totalPabo - totalDibo,
     count: transactions.length,
     lastTransactionDate: lastDate,
@@ -484,6 +490,7 @@ export const enrichPersonsWithTransactions = (
         ...person,
         totalPabo: person.totalPabo ?? 0,
         totalDibo: person.totalDibo ?? 0,
+        totalCommission: person.totalCommission ?? 0,
         netBalance: person.netBalance ?? 0,
         transactionCount: person.transactionCount ?? 0,
       };
@@ -495,6 +502,7 @@ export const enrichPersonsWithTransactions = (
       ...person,
       totalPabo: balances.totalPabo,
       totalDibo: balances.totalDibo,
+      totalCommission: balances.totalCommission,
       netBalance: balances.netBalance,
       transactionCount: balances.count,
       lastTransactionDate: balances.lastTransactionDate || person.lastTransactionDate,

@@ -115,7 +115,7 @@ export const KhatabookPage: React.FC = () => {
       </div>
 
       {/* KPI Summary Cards - Compact & aligned with design system */}
-      <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-2 w-full">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 w-full">
         {/* 1. Total Receivable (Pabo) - Emerald */}
         <MotionDiv delay={0.05}>
           <div className="p-2 sm:p-2.5 rounded-lg border bg-[var(--ui-success-light)]/60 border-[var(--ui-success-border)] hover:border-[var(--ui-success-border)] flex items-center justify-between gap-2 transition-all shadow-xs h-full">
@@ -170,8 +170,25 @@ export const KhatabookPage: React.FC = () => {
           </div>
         </MotionDiv>
 
-        {/* 4. Total Persons - Info */}
+        {/* 4. Total Commission - Amber */}
         <MotionDiv delay={0.2}>
+          <div className="p-2 sm:p-2.5 rounded-lg border bg-amber-50/70 dark:bg-amber-950/20 border-amber-200/80 dark:border-amber-800/40 hover:border-amber-300 dark:hover:border-amber-700 flex items-center justify-between gap-2 transition-all shadow-xs h-full">
+            <div className="flex flex-col min-w-0">
+              <span className="text-[10px] font-semibold text-[var(--ui-text-muted)] uppercase tracking-wider truncate">
+                Commission
+              </span>
+              <span className="text-sm sm:text-base font-bold truncate mt-0.5 text-amber-600 dark:text-amber-400">
+                ৳ {formatMoney(kpi.totalCommission)}
+              </span>
+            </div>
+            <div className="p-1.5 rounded-md shrink-0 bg-amber-100 dark:bg-amber-900/40 text-amber-600 dark:text-amber-300">
+              <FaMoneyBillWave size={14} />
+            </div>
+          </div>
+        </MotionDiv>
+
+        {/* 5. Total Persons - Info */}
+        <MotionDiv delay={0.25}>
           <div className="p-2 sm:p-2.5 rounded-lg border bg-[var(--ui-info-light)]/60 border-[var(--ui-info-border)] hover:border-[var(--ui-info-border)] flex items-center justify-between gap-2 transition-all shadow-xs h-full">
             <div className="flex flex-col min-w-0">
               <span className="text-[10px] font-semibold text-[var(--ui-text-muted)] uppercase tracking-wider truncate">

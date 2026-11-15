@@ -26,6 +26,7 @@ export interface LedgerPerson {
   // Computed aggregations
   totalPabo?: number;
   totalDibo?: number;
+  totalCommission?: number;
   netBalance?: number;
   transactionCount?: number;
   lastTransactionDate?: string | null;

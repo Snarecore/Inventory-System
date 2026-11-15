@@ -98,12 +98,15 @@ export const useKhatabookDashboardQuery = (status: string = "Active") => {
 
   let totalPabo = 0;
   let totalDibo = 0;
+  let totalCommission = 0;
 
   for (const person of enrichedPersons) {
     const pabo = Number(person.totalPabo ?? 0);
     const dibo = Number(person.totalDibo ?? 0);
+    const comm = Number(person.totalCommission ?? 0);
     totalPabo += pabo;
     totalDibo += dibo;
+    totalCommission += comm;
   }
 
   const netBalance = totalPabo - totalDibo;
@@ -124,6 +127,7 @@ export const useKhatabookDashboardQuery = (status: string = "Active") => {
       totalPersons: enrichedPersons.length,
       totalPabo,
       totalDibo,
+      totalCommission,
       netBalance,
       totalTransactions: allTransactions.length,
     },
