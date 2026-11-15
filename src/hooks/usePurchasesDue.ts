@@ -72,7 +72,8 @@ export const usePurchasesDueQuery = (
     queryKey: [purchasesDueQueryKey],
     queryFn: fetchPurchasesDue,
     staleTime: 0,
-    refetchOnWindowFocus: false,
+    refetchOnMount: "always",
+    refetchOnWindowFocus: true,
     ...options,
   });
 };

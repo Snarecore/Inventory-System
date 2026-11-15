@@ -33,13 +33,17 @@ export const useFinanceDashboardQuery = (params?: FinanceDashboardParams) => {
   });
 };
 
-export const useFinancialTransactionsQuery = (params?: FetchFinancialTransactionsParams) => {
+export const useFinancialTransactionsQuery = (
+  params?: FetchFinancialTransactionsParams,
+  options?: Omit<UseQueryOptions<any[]>, "queryKey" | "queryFn">
+) => {
   return useQuery<any[]>({
     queryKey: [financialTransactionQueryKey, params?.type, params?.startDate, params?.endDate],
     queryFn: () => fetchFinancialTransactions(params),
     staleTime: 0,
     refetchOnMount: "always",
-    refetchOnWindowFocus: false,
+    refetchOnWindowFocus: true,
+    ...options,
   });
 };
 

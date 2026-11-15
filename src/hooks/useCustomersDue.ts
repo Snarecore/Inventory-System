@@ -70,7 +70,8 @@ export const useCustomersDueQuery = (
     queryKey: [customersDueQueryKey],
     queryFn: fetchCustomersDue,
     staleTime: 0,
-    refetchOnWindowFocus: false,
+    refetchOnMount: "always",
+    refetchOnWindowFocus: true,
     ...options,
   });
 };

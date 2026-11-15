@@ -1,17 +1,23 @@
 import React, { useMemo } from 'react';
+import moment from 'moment';
 import { KpiCardsGrid } from './components/KpiCardsGrid';
 import { SaleAnalysisChart } from './components/SaleAnalysisChart';
 import { ProfitLossChart } from './components/ProfitLossChart';
 import { AssetAnalysisChart } from './components/AssetAnalysisChart';
 import { TopCustomersWidget } from './components/TopCustomersWidget';
 import { TopSaleItemsWidget } from './components/TopSaleItemsWidget';
-import { mockKpiData } from './data/mockDashboardData';
 import { useCashBalanceQuery } from '@/hooks/useCashBalance';
 import { useFinancialAccounts } from '@/hooks/useFinancialAccounts';
+import { useSalesQuery } from '@/pages/admin/trade/sales/hooks/useSalesQueries';
+import { useFinancialTransactionsQuery } from '@/hooks/useFinanceQueries';
+import { useCustomersDueQuery } from '@/hooks/useCustomersDue';
+import { usePurchasesDueQuery } from '@/hooks/usePurchasesDue';
+import { useKhatabookDashboardQuery } from '@/hooks/useKhatabook';
 import PageHeader from '@/components/page-header/PageHeader';
 import { RefreshButton } from '@/components/common';
 
 const AdminDashboard: React.FC = () => {
+  // 1. Live Cash Balance Query
   const {
     data: liveCashBalance,
     refetch: refetchCash,
@@ -22,6 +28,7 @@ const AdminDashboard: React.FC = () => {
     refetchOnWindowFocus: true,
   });
 
+  // 2. Financial Accounts Query (Bank & MFS Wallets)
   const {
     registeredBankAccounts,
     registeredMfsAccounts,
@@ -40,18 +47,80 @@ const AdminDashboard: React.FC = () => {
     },
   });
 
-  const isRefreshing = isRefetchingCash || bankQuery.isRefetching || mfsQuery.isRefetching;
+  // 3. Sales Query (for Today's Sale)
+  const {
+    data: salesList = [],
+    refetch: refetchSales,
+    isRefetching: isRefetchingSales,
+  } = useSalesQuery({
+    staleTime: 0,
+    refetchOnMount: "always",
+    refetchOnWindowFocus: true,
+  });
+
+  // 4. Financial Transactions Query (for Today's Expense)
+  const {
+    data: expenses = [],
+    refetch: refetchExpenses,
+    isRefetching: isRefetchingExpenses,
+  } = useFinancialTransactionsQuery({
+    type: "EXPENSE",
+  });
+
+  // 5. Customers Due Query (for Total Receivable)
+  const {
+    data: customersDue = [],
+    refetch: refetchCustomersDue,
+    isRefetching: isRefetchingDue,
+  } = useCustomersDueQuery({
+    staleTime: 0,
+    refetchOnMount: "always",
+    refetchOnWindowFocus: true,
+  });
+
+  // 6. Purchases Due Query (for Total Payable)
+  const {
+    data: purchasesDue = [],
+    refetch: refetchPurchasesDue,
+    isRefetching: isRefetchingPurchasesDue,
+  } = usePurchasesDueQuery({
+    staleTime: 0,
+    refetchOnMount: "always",
+    refetchOnWindowFocus: true,
+  });
+
+  // 7. Khatabook Dashboard Query (for person ledger dues)
+  const {
+    kpi: khatabookKpi,
+    refetch: refetchKhatabook,
+    isFetching: isFetchingKhatabook,
+  } = useKhatabookDashboardQuery();
+
+  const isRefreshing =
+    isRefetchingCash ||
+    bankQuery.isRefetching ||
+    mfsQuery.isRefetching ||
+    isRefetchingSales ||
+    isRefetchingExpenses ||
+    isRefetchingDue ||
+    isRefetchingPurchasesDue ||
+    isFetchingKhatabook;
 
   const handleRefresh = async () => {
     await Promise.all([
       refetchCash(),
       bankQuery.refetch(),
       mfsQuery.refetch(),
+      refetchSales(),
+      refetchExpenses(),
+      refetchCustomersDue(),
+      refetchPurchasesDue(),
+      refetchKhatabook(),
     ]);
   };
 
   const kpiData = useMemo(() => {
-    // Following cash-boi-v2: Only active bank accounts count toward standing bank balance
+    // 1. Active Bank Accounts total balance
     const liveBank = registeredBankAccounts
       .filter((b) => String(b.status || '').toLowerCase() === 'active')
       .reduce(
@@ -59,7 +128,7 @@ const AdminDashboard: React.FC = () => {
         0
       );
 
-    // Following cash-boi-v2: Only active MFS accounts count toward standing MFS balance
+    // 2. Active MFS Accounts total balance
     const liveMfs = registeredMfsAccounts
       .filter((m) => String(m.status || '').toLowerCase() === 'active')
       .reduce(
@@ -67,20 +136,58 @@ const AdminDashboard: React.FC = () => {
         0
       );
 
-    const computedCash = typeof liveCashBalance === 'number' ? liveCashBalance : mockKpiData.cashBalance;
+    const computedCash = typeof liveCashBalance === 'number' ? liveCashBalance : 0;
     const computedBank = bankQuery.isSuccess
       ? liveBank
       : registeredBankAccounts.length > 0
       ? liveBank
-      : mockKpiData.bankBalance;
+      : 0;
     const computedMfs = mfsQuery.isSuccess
       ? liveMfs
       : registeredMfsAccounts.length > 0
       ? liveMfs
-      : (mockKpiData.mfsBalance ?? 0);
+      : 0;
+
+    // 3. Today's Sale: Sum of completed sales created today
+    const todaysSale = (salesList || []).reduce((sum, s) => {
+      if (s.isReturnRecord) return sum;
+      const date = s.salesDate || s.saleDate || s.sales_date || s.date || s.createdAt || s.createdDate;
+      if (date && moment(date).isSame(moment(), 'day')) {
+        return sum + (Number(s.grandTotal ?? s.totalAmount ?? s.paidAmount ?? 0) || 0);
+      }
+      return sum;
+    }, 0);
+
+    // 4. Today's Expense: Sum of financial expense entries recorded today
+    const todaysExpense = (expenses || []).reduce((sum, e) => {
+      const date = e.transactionDate || e.date || e.createdAt || e.createdDate;
+      if (date && moment(date).isSame(moment(), 'day')) {
+        return sum + (Number(e.amount ?? 0) || 0);
+      }
+      return sum;
+    }, 0);
+
+    // 5. Total Receivable: Outstanding dues from trade customers + Khatabook Pabo
+    const tradeCustomerDue = (customersDue || []).reduce(
+      (sum, c) => sum + (Number(c.totalDue ?? c.dueAmount ?? 0) || 0),
+      0
+    );
+    const khatabookPabo = Number(khatabookKpi?.totalPabo || 0);
+    const totalReceivable = tradeCustomerDue + khatabookPabo;
+
+    // 6. Total Payable: Outstanding dues to suppliers + Khatabook Dibo
+    const tradeSupplierDue = (purchasesDue || []).reduce(
+      (sum, s) => sum + (Number(s.totalDue ?? s.dueAmount ?? 0) || 0),
+      0
+    );
+    const khatabookDibo = Number(khatabookKpi?.totalDibo || 0);
+    const totalPayable = tradeSupplierDue + khatabookDibo;
 
     return {
-      ...mockKpiData,
+      todaysSale,
+      todaysExpense,
+      totalReceivable,
+      totalPayable,
       cashBalance: computedCash,
       bankBalance: computedBank,
       mfsBalance: computedMfs,
@@ -92,6 +199,12 @@ const AdminDashboard: React.FC = () => {
     registeredMfsAccounts,
     bankQuery.isSuccess,
     mfsQuery.isSuccess,
+    salesList,
+    expenses,
+    customersDue,
+    purchasesDue,
+    khatabookKpi?.totalPabo,
+    khatabookKpi?.totalDibo,
   ]);
 
   return (
