@@ -34,8 +34,6 @@ import {
   FaTrash,
   FaMoneyBillWave,
   FaUsers,
-  FaBuilding,
-  FaUser,
 } from "react-icons/fa";
 import { FiArrowLeft } from "react-icons/fi";
 
@@ -324,73 +322,38 @@ export const PersonLedgerPage: React.FC = () => {
 
       {/* Unified Hero Card: Person Identity (Left) & Financial Balance KPI (Right) */}
       <div className="bg-[var(--ui-surface)] border border-[var(--ui-border)] rounded-xl p-2.5 sm:p-3 shadow-xs flex flex-col lg:flex-row lg:items-center justify-between gap-3 sm:gap-4">
-        {/* Left: Person Identity, Status, Type, Phone & Address in ONE single line */}
-        <div className="flex items-center gap-3 min-w-0 flex-1">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-sky-500 to-blue-600 text-white font-extrabold text-base flex items-center justify-center shrink-0 shadow-xs ring-2 ring-sky-500/10">
-            {(person.name || "P").charAt(0).toUpperCase()}
-          </div>
+        {/* Left: Person Name, Phone & Address in ONE single line */}
+        <div className="flex items-center gap-2.5 sm:gap-3 flex-wrap min-w-0 flex-1">
+          <h1 className="text-base sm:text-lg font-bold text-[var(--ui-text)] truncate shrink-0" title={person.name}>
+            {person.name}
+          </h1>
 
-          <div className="flex items-center gap-2 sm:gap-2.5 flex-wrap min-w-0">
-            <h1 className="text-sm sm:text-base font-bold text-[var(--ui-text)] truncate shrink-0" title={person.name}>
-              {person.name}
-            </h1>
-            <span
-              className={`inline-flex items-center gap-1.5 text-[10px] font-semibold px-2 py-0.5 rounded-full border shrink-0 ${
-                (person.status || "").toLowerCase() === "active"
-                  ? "bg-[var(--ui-success-light)] text-[var(--ui-success-dark)] border-[var(--ui-success-border)]"
-                  : "bg-[var(--ui-danger-light)] text-[var(--ui-danger-dark)] border-[var(--ui-danger-border)]"
-              }`}
-            >
+          {person.phone && (
+            <>
+              <span className="text-[var(--ui-border)] shrink-0">•</span>
+              <a
+                href={`tel:${person.phone}`}
+                className="inline-flex items-center gap-1.5 text-xs text-[var(--ui-text-muted)] hover:text-[var(--primary-color)] transition-colors shrink-0"
+                title="Click to call"
+              >
+                <FaPhone className="text-[10px] text-[var(--ui-text-subtle)]" />
+                <span className="font-medium">{person.phone}</span>
+              </a>
+            </>
+          )}
+
+          {person.address && (
+            <>
+              <span className="text-[var(--ui-border)] shrink-0">•</span>
               <span
-                className={`w-1.5 h-1.5 rounded-full ${
-                  (person.status || "").toLowerCase() === "active" ? "bg-[var(--ui-success)]" : "bg-[var(--ui-danger)]"
-                }`}
-              />
-              {person.status || "Active"}
-            </span>
-            {person.type && (
-              <span className="inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full bg-[var(--ui-surface-sunken)] text-[var(--ui-text-muted)] border border-[var(--ui-border)] shrink-0">
-                {person.type.toUpperCase() === "INSTITUTE" ? (
-                  <>
-                    <FaBuilding className="text-[9px]" />
-                    <span>Institute</span>
-                  </>
-                ) : (
-                  <>
-                    <FaUser className="text-[9px]" />
-                    <span>Person</span>
-                  </>
-                )}
+                className="inline-flex items-center gap-1.5 text-xs text-[var(--ui-text-muted)] truncate max-w-[320px]"
+                title={person.address}
+              >
+                <FaMapMarkerAlt className="text-[10px] text-[var(--ui-text-subtle)] shrink-0" />
+                <span className="truncate">{person.address}</span>
               </span>
-            )}
-
-            {person.phone && (
-              <>
-                <span className="text-[var(--ui-border)] shrink-0">•</span>
-                <a
-                  href={`tel:${person.phone}`}
-                  className="inline-flex items-center gap-1.5 text-xs text-[var(--ui-text-muted)] hover:text-[var(--primary-color)] transition-colors shrink-0"
-                  title="Click to call"
-                >
-                  <FaPhone className="text-[10px] text-[var(--ui-text-subtle)]" />
-                  <span className="font-medium">{person.phone}</span>
-                </a>
-              </>
-            )}
-
-            {person.address && (
-              <>
-                <span className="text-[var(--ui-border)] shrink-0">•</span>
-                <span
-                  className="inline-flex items-center gap-1.5 text-xs text-[var(--ui-text-muted)] truncate max-w-[280px]"
-                  title={person.address}
-                >
-                  <FaMapMarkerAlt className="text-[10px] text-[var(--ui-text-subtle)] shrink-0" />
-                  <span className="truncate">{person.address}</span>
-                </span>
-              </>
-            )}
-          </div>
+            </>
+          )}
         </div>
 
         {/* Right: 3 Balanced KPI Cards */}
