@@ -114,58 +114,53 @@ const Sales: React.FC = () => {
     if (!Array.isArray(apiReturnsData)) return { combinedSales: [], rawReturns: [] };
 
     const salesList: SaleItem[] = [];
-    const returnsList: SalesReturnItem[] = [];
+    const rawRList: SalesReturnItem[] = [];
     const seenSaleKeys = new Set<string>();
-    const seenReturnKeys = new Set<string>();
 
     apiReturnsData.forEach((item: any, idx: number) => {
       const isRet = item.isReturnRecord === true || isReturnRecord(item);
 
       if (isRet) {
-        const retKey = String(item.returnNo || item.id || `ret_${idx}`).trim();
-        if (!seenReturnKeys.has(retKey)) {
-          seenReturnKeys.add(retKey);
-          const noteText = extractReturnRemarks(item);
-          const details =
-            Array.isArray(item.returnDetails) && item.returnDetails.length > 0
-              ? item.returnDetails
-              : Array.isArray(item.salesReturnDetails) && item.salesReturnDetails.length > 0
-              ? item.salesReturnDetails
-              : Array.isArray(item.details) && item.details.length > 0
-              ? item.details
-              : Array.isArray(item.items) && item.items.length > 0
-              ? item.items
-              : Array.isArray(item.products) && item.products.length > 0
-              ? item.products
-              : [];
+        const noteText = extractReturnRemarks(item);
+        const details =
+          Array.isArray(item.returnDetails) && item.returnDetails.length > 0
+            ? item.returnDetails
+            : Array.isArray(item.salesReturnDetails) && item.salesReturnDetails.length > 0
+            ? item.salesReturnDetails
+            : Array.isArray(item.details) && item.details.length > 0
+            ? item.details
+            : Array.isArray(item.items) && item.items.length > 0
+            ? item.items
+            : Array.isArray(item.products) && item.products.length > 0
+            ? item.products
+            : [];
 
-          returnsList.push({
-            id: item.id || item.returnId || item.salesReturnId || item.returnNo || item.orderNo || `ret_${item.returnNo || idx}`,
-            returnNo: item.returnNo || "",
-            orderNo: item.orderNo || "",
-            salesInvoiceNo: item.salesInvoiceNo || item.invoiceNo || "",
-            invoiceNo: item.invoiceNo || item.salesInvoiceNo || "",
-            returnDate: item.returnDate || item.salesDate || moment().format("YYYY-MM-DD"),
-            createdAt: item.createdAt || item.returnDate,
-            customerId: item.customerId,
-            customerName: item.customerName || "Customer",
-            customerPhone: item.customerPhone,
-            customerAddress: item.customerAddress,
-            totalAmount: Number(item.totalAmount ?? item.returnGrandTotal ?? 0),
-            discount: Number(item.discount ?? 0),
-            vat: Number(item.vat ?? 0),
-            deliveryCharge: Number(item.deliveryCharge ?? 0),
-            grandTotal: Number(item.returnGrandTotal ?? item.grandTotal ?? 0),
-            refundAmount: Number(item.returnRefundAmount ?? item.refundAmount ?? item.returnGrandTotal ?? 0),
-            paymentType: item.paymentType || "CASH",
-            status: item.status || "Completed",
-            note: noteText,
-            remarks: noteText,
-            reason: noteText,
-            returnDetails: details,
-            itemsCount: details.length || 1,
-          });
-        }
+        rawRList.push({
+          id: item.id || item.returnId || item.salesReturnId || item.returnNo || item.orderNo || `ret_${item.returnNo || idx}`,
+          returnNo: item.returnNo || "",
+          orderNo: item.orderNo || "",
+          salesInvoiceNo: item.salesInvoiceNo || item.invoiceNo || "",
+          invoiceNo: item.invoiceNo || item.salesInvoiceNo || "",
+          returnDate: item.returnDate || item.salesDate || moment().format("YYYY-MM-DD"),
+          createdAt: item.createdAt || item.returnDate,
+          customerId: item.customerId,
+          customerName: item.customerName || "Customer",
+          customerPhone: item.customerPhone,
+          customerAddress: item.customerAddress,
+          totalAmount: Number(item.totalAmount ?? item.returnGrandTotal ?? 0),
+          discount: Number(item.discount ?? 0),
+          vat: Number(item.vat ?? 0),
+          deliveryCharge: Number(item.deliveryCharge ?? 0),
+          grandTotal: Number(item.returnGrandTotal ?? item.grandTotal ?? 0),
+          refundAmount: Number(item.returnRefundAmount ?? item.refundAmount ?? item.returnGrandTotal ?? 0),
+          paymentType: item.paymentType || "CASH",
+          status: item.status || "Completed",
+          note: noteText,
+          remarks: noteText,
+          reason: noteText,
+          returnDetails: details,
+          itemsCount: details.length || 1,
+        });
       }
 
       if (!item.isReturnRecord) {
@@ -177,7 +172,102 @@ const Sales: React.FC = () => {
       }
     });
 
-    return { combinedSales: salesList, rawReturns: returnsList };
+    // Deduplicate return vouchers: always prioritize backend-generated return numbers (16-digit numbers)
+    const isAuthenticBackendNo = (no?: string): boolean => {
+      if (!no) return false;
+      const clean = String(no).trim().toUpperCase();
+      return (
+        clean.length > 0 &&
+        !clean.startsWith("SR-") &&
+        !clean.startsWith("RET_") &&
+        !clean.startsWith("RET-") &&
+        !clean.startsWith("SR_")
+      );
+    };
+
+    // Sort candidates so authentic backend return records come FIRST
+    const sortedCandidates = [...rawRList].sort((a, b) => {
+      const aIsBackend = isAuthenticBackendNo(a.returnNo);
+      const bIsBackend = isAuthenticBackendNo(b.returnNo);
+      if (aIsBackend && !bIsBackend) return -1;
+      if (!aIsBackend && bIsBackend) return 1;
+      return 0;
+    });
+
+    const dedupedReturns: SalesReturnItem[] = [];
+    const seenRetNos = new Set<string>();
+    const seenOrderRefundPairs = new Set<string>();
+    const seenInvoiceRefundPairs = new Set<string>();
+
+    // Collect rich line item details across all vouchers so authentic backend records keep line item details
+    const detailsMap = new Map<string, any[]>();
+    rawRList.forEach((r) => {
+      if (Array.isArray(r.returnDetails) && r.returnDetails.length > 0) {
+        const cleanOrd = getCleanOrderNo(r.orderNo, r.salesInvoiceNo || r.invoiceNo);
+        const ord = String(cleanOrd || r.orderNo || "").trim().toLowerCase();
+        const inv = String(r.salesInvoiceNo || r.invoiceNo || "").trim().toLowerCase();
+        if (ord) detailsMap.set(ord, r.returnDetails);
+        if (inv) detailsMap.set(inv, r.returnDetails);
+      }
+    });
+
+    sortedCandidates.forEach((item) => {
+      const retNo = String(item.returnNo || "").trim();
+      const cleanOrd = getCleanOrderNo(item.orderNo, item.salesInvoiceNo || item.invoiceNo);
+      const ordNo = String(cleanOrd || item.orderNo || "").trim().toLowerCase();
+      const invNo = String(item.salesInvoiceNo || item.invoiceNo || "").trim().toLowerCase();
+      const refundAmt = Number(item.refundAmount || item.grandTotal || 0).toFixed(2);
+      const isBackend = isAuthenticBackendNo(retNo);
+
+      // Check duplicate return number
+      if (retNo) {
+        const retKey = retNo.toLowerCase();
+        if (seenRetNos.has(retKey)) return;
+      }
+
+      // Check duplicate order & refund amount
+      if (ordNo && ordNo !== "-") {
+        const ordKey = `${ordNo}_${refundAmt}`;
+        if (seenOrderRefundPairs.has(ordKey)) return;
+      }
+
+      // Check duplicate invoice & refund amount
+      if (invNo && invNo !== "-") {
+        const invKey = `${invNo}_${refundAmt}`;
+        if (seenInvoiceRefundPairs.has(invKey)) return;
+      }
+
+      // If this is a synthetic SR- / RET- record, but an authentic backend return already exists for this order/invoice:
+      if (!isBackend) {
+        if (ordNo && ordNo !== "-" && seenOrderRefundPairs.has(ordNo)) return;
+        if (invNo && invNo !== "-" && seenInvoiceRefundPairs.has(invNo)) return;
+      }
+
+      // Register seen keys
+      if (retNo) seenRetNos.add(retNo.toLowerCase());
+      if (ordNo && ordNo !== "-") {
+        seenOrderRefundPairs.add(`${ordNo}_${refundAmt}`);
+        seenOrderRefundPairs.add(ordNo);
+      }
+      if (invNo && invNo !== "-") {
+        seenInvoiceRefundPairs.add(`${invNo}_${refundAmt}`);
+        seenInvoiceRefundPairs.add(invNo);
+      }
+
+      // Preserve line item details if authentic backend record was missing details
+      const existingDetails = Array.isArray(item.returnDetails) && item.returnDetails.length > 0 ? item.returnDetails : [];
+      const fallbackDetails = (ordNo && detailsMap.get(ordNo)) || (invNo && detailsMap.get(invNo)) || [];
+      const bestDetails = existingDetails.length >= fallbackDetails.length ? existingDetails : fallbackDetails;
+
+      dedupedReturns.push({
+        ...item,
+        orderNo: cleanOrd || item.orderNo,
+        returnDetails: bestDetails,
+        itemsCount: bestDetails.length || item.itemsCount || 1,
+      });
+    });
+
+    return { combinedSales: salesList, rawReturns: dedupedReturns };
   }, [apiReturnsData]);
 
   // Set of returned invoice keys for the return icon indicators

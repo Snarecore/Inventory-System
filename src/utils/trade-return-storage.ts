@@ -130,6 +130,69 @@ export function getPersistedTradeReturns(): {
 }
 
 /**
+ * Remove persisted trade returns that match verified backend sales invoices.
+ */
+export function removePersistedTradeReturnsByInvoices(invoiceKeys: string[]): void {
+  try {
+    if (
+      typeof window === "undefined" ||
+      !window.localStorage ||
+      !Array.isArray(invoiceKeys) ||
+      invoiceKeys.length === 0
+    ) {
+      return;
+    }
+    const key = getStorageKey(SALES_STORAGE_PREFIX);
+    const raw = localStorage.getItem(key);
+    if (!raw) return;
+
+    const map: Record<string, PersistedReturnRecord> = JSON.parse(raw);
+    const targetSet = new Set(
+      invoiceKeys.map((k) => String(k || "").trim().toLowerCase()).filter(Boolean)
+    );
+    let changed = false;
+
+    Object.keys(map).forEach((k) => {
+      const rec = map[k];
+      const saleInv = String(
+        rec?.sale?.invoiceNo ||
+          rec?.sale?.salesInvoiceNo ||
+          rec?.sale?.orderNo ||
+          rec?.returnItem?.salesInvoiceNo ||
+          rec?.returnItem?.invoiceNo ||
+          k
+      )
+        .trim()
+        .toLowerCase();
+
+      if (targetSet.has(k) || targetSet.has(saleInv)) {
+        delete map[k];
+        changed = true;
+      }
+    });
+
+    if (changed) {
+      localStorage.setItem(key, JSON.stringify(map));
+    }
+  } catch (err) {
+    console.warn("Failed to clean up persisted trade returns:", err);
+  }
+}
+
+/**
+ * Completely clear all persisted trade (sales) returns from localStorage.
+ */
+export function clearAllPersistedTradeReturns(): void {
+  try {
+    if (typeof window === "undefined" || !window.localStorage) return;
+    const key = getStorageKey(SALES_STORAGE_PREFIX);
+    localStorage.removeItem(key);
+  } catch (err) {
+    console.warn("Failed to clear persisted trade returns:", err);
+  }
+}
+
+/**
  * Persist a purchase return so that 100% returned purchases are never lost
  * even if backend APIs drop them from active purchase listings.
  */

@@ -12,7 +12,10 @@ import {
 import apiConfig from "@/config/api.json";
 import { postData } from "@/services/api-service";
 import { buildAccessUser } from "@/utils/access-user";
-import { getPersistedTradeReturns } from "@/utils/trade-return-storage";
+import {
+  getPersistedTradeReturns,
+  removePersistedTradeReturnsByInvoices,
+} from "@/utils/trade-return-storage";
 import {
   checkSalesDelete,
   deleteSalesOrder,
@@ -302,14 +305,37 @@ export const fetchSalesAndReturnList = async (): Promise<UnifiedTradeRecord[]> =
       ? res
       : [];
 
-    const seen = new Set<string>();
+    // Deduplicate into unified records array with multi-alias indexing to avoid duplicate sales
+    const seenReturnKeys = new Set<string>();
     const returnedInvoices = new Set<string>();
+    const backendReturnAliases = new Set<string>();
     const unifiedList: UnifiedTradeRecord[] = [];
+    const aliasToSaleIdx = new Map<string, number>();
+
+    const getSaleAliases = (item: any): string[] => {
+      if (!item) return [];
+      const invNo = item.salesInvoiceNo || item.sales_invoice_no || item.invoiceNo || item.invoice_no;
+      const ordNo = item.orderNo || item.order_no || item.orderId || item.order_id || item.saleOrderNo;
+      const sId = item.saleId || item.sale_id || item.id;
+      const cleanOrd = getCleanOrderNo(ordNo, invNo);
+
+      return [
+        cleanOrd ? `sale_ord_${cleanOrd.toLowerCase()}` : null,
+        ordNo ? `sale_ord_${String(ordNo).trim().toLowerCase()}` : null,
+        invNo ? `sale_inv_${String(invNo).trim().toLowerCase()}` : null,
+        item.invoiceNo ? `sale_inv_${String(item.invoiceNo).trim().toLowerCase()}` : null,
+        item.salesInvoiceNo ? `sale_inv_${String(item.salesInvoiceNo).trim().toLowerCase()}` : null,
+        sId ? `sale_id_${String(sId).trim().toLowerCase()}` : null,
+      ].filter(Boolean) as string[];
+    };
 
     const addSaleRecord = (item: any, fallbackIdx: number) => {
       if (!item) return;
-      const idKey = item.invoiceNo || item.salesInvoiceNo || item.orderNo || item.id || `sale_idx_${fallbackIdx}`;
-      const key = `sale_${idKey}`;
+      const aliases = getSaleAliases(item);
+      const cleanOrd = getCleanOrderNo(
+        item.orderNo || item.order_no || item.orderId || item.order_id || item.saleOrderNo,
+        item.invoiceNo || item.salesInvoiceNo
+      );
 
       const hasReturnInfo = Boolean(
         item.hasReturn ||
@@ -323,19 +349,45 @@ export const fetchSalesAndReturnList = async (): Promise<UnifiedTradeRecord[]> =
         (Array.isArray(item.salesReturns) && item.salesReturns.length > 0)
       );
 
-      if (!seen.has(key)) {
-        seen.add(key);
+      let existingIdx = -1;
+      for (const a of aliases) {
+        if (aliasToSaleIdx.has(a)) {
+          existingIdx = aliasToSaleIdx.get(a)!;
+          break;
+        }
+      }
+
+      if (existingIdx === -1) {
         const normalized = normalizeSaleRecord(item) as UnifiedTradeRecord;
         normalized.isReturnRecord = false;
         normalized.hasReturn = hasReturnInfo;
+        const newIdx = unifiedList.length;
         unifiedList.push(normalized);
+        aliases.forEach((a) => aliasToSaleIdx.set(a, newIdx));
+      } else {
+        const existing = unifiedList[existingIdx];
+        const existingDetails = Array.isArray(existing.salesDetails) && existing.salesDetails.length > 0
+          ? existing.salesDetails
+          : existing.details || [];
+        const newDetails = extractLineItems(item);
+        const bestDetails = existingDetails.length >= newDetails.length ? existingDetails : newDetails;
+
+        unifiedList[existingIdx] = {
+          ...existing,
+          ...item,
+          orderNo: cleanOrd || existing.orderNo || item.orderNo,
+          hasReturn: Boolean(existing.hasReturn || hasReturnInfo),
+          grandTotal: existing.grandTotal || Number(item.grandTotal ?? 0),
+          paidAmount: existing.paidAmount || Number(item.paidAmount ?? 0),
+          salesDetails: bestDetails,
+          details: bestDetails,
+          isReturnRecord: false,
+        };
+        aliases.forEach((a) => aliasToSaleIdx.set(a, existingIdx));
       }
 
       if (hasReturnInfo) {
-        const invRef = String(item.salesInvoiceNo || item.invoiceNo || item.orderNo || "").trim().toLowerCase();
-        if (invRef) returnedInvoices.add(invRef);
-        if (item.orderNo) returnedInvoices.add(String(item.orderNo).trim().toLowerCase());
-        if (item.id) returnedInvoices.add(String(item.id).trim().toLowerCase());
+        aliases.forEach((a) => returnedInvoices.add(a));
 
         // Extract nested return records
         const nestedReturns = [
@@ -347,10 +399,16 @@ export const fetchSalesAndReturnList = async (): Promise<UnifiedTradeRecord[]> =
           nestedReturns.forEach((r: any, rIdx: number) => {
             if (!r || typeof r !== "object") return;
             const rNo = r.returnNo || r.return_no || (item.orderNo ? `SR-${item.orderNo}-${rIdx + 1}` : `SR-${item.id || fallbackIdx}`);
-            const rKey = `ret_${rNo}`;
-            if (!seen.has(rKey)) {
-              seen.add(rKey);
-              const rDetails = Array.isArray(r.returnDetails) ? r.returnDetails : Array.isArray(r.details) ? r.details : [];
+            const rKey = `ret_${String(rNo).trim().toLowerCase()}`;
+            if (!seenReturnKeys.has(rKey)) {
+              seenReturnKeys.add(rKey);
+              const rDetails = Array.isArray(r.returnDetails)
+                ? r.returnDetails
+                : Array.isArray(r.salesReturnDetails)
+                ? r.salesReturnDetails
+                : Array.isArray(r.details)
+                ? r.details
+                : [];
               const retRecord: UnifiedTradeRecord = {
                 ...normalizeSaleRecord({ ...item, ...r }),
                 id: r.id || r.returnId || `${item.id}_ret_${rIdx}`,
@@ -371,48 +429,54 @@ export const fetchSalesAndReturnList = async (): Promise<UnifiedTradeRecord[]> =
               unifiedList.push(retRecord);
             }
           });
-        } else {
-          // Embedded return details on the sale object itself
-          const embeddedDetails =
-            Array.isArray(item.returnDetails) && item.returnDetails.length > 0
-              ? item.returnDetails
-              : Array.isArray(item.salesReturnDetails) && item.salesReturnDetails.length > 0
-              ? item.salesReturnDetails
-              : [];
-
-          const rNo = item.returnNo || item.return_no || (item.orderNo ? `SR-${item.orderNo}` : `SR-${item.invoiceNo || item.id || fallbackIdx + 1}`);
-          const rKey = `ret_${rNo}`;
-          if (!seen.has(rKey)) {
-            seen.add(rKey);
-            const retRecord: UnifiedTradeRecord = {
-              ...item,
-              id: item.returnId || item.salesReturnId || `ret_${item.id || rNo}`,
-              returnNo: rNo,
-              salesInvoiceNo: item.salesInvoiceNo || item.invoiceNo || item.orderNo || "",
-              invoiceNo: item.invoiceNo || item.salesInvoiceNo || "",
-              orderNo: item.orderNo || "",
-              returnDate: item.returnDate || item.return_date || item.salesDate || moment().format("YYYY-MM-DD"),
-              grandTotal: Number(item.returnGrandTotal ?? item.returnRefundAmount ?? item.refundAmount ?? item.grandTotal ?? 0),
-              refundAmount: Number(item.returnRefundAmount ?? item.refundAmount ?? item.returnGrandTotal ?? item.grandTotal ?? 0),
-              totalAmount: Number(item.returnTotalAmount ?? item.totalAmount ?? item.returnGrandTotal ?? item.grandTotal ?? 0),
-              returnDetails: embeddedDetails,
-              salesDetails: [],
-              details: embeddedDetails,
-              isReturnRecord: true,
-              hasReturn: true,
-            };
-            unifiedList.push(retRecord);
-          }
         }
       }
     };
 
-    const addReturnRecord = (item: any, fallbackIdx: number) => {
+    const isBackendGeneratedNo = (no?: string): boolean => {
+      if (!no) return false;
+      const clean = String(no).trim().toUpperCase();
+      return (
+        clean.length > 0 &&
+        !clean.startsWith("SR-") &&
+        !clean.startsWith("RET_") &&
+        !clean.startsWith("RET-") &&
+        !clean.startsWith("SR_")
+      );
+    };
+
+    const addReturnRecord = (item: any, fallbackIdx: number, isPersistedSource: boolean = false) => {
       if (!item) return;
-      const rNo = item.returnNo || item.return_no || item.id || `ret_idx_${fallbackIdx}`;
-      const key = `ret_${rNo}`;
-      if (!seen.has(key)) {
-        seen.add(key);
+      const rNo = String(item.returnNo || item.return_no || item.salesReturnNo || item.id || `ret_idx_${fallbackIdx}`).trim();
+      const rKey = `ret_${rNo.toLowerCase()}`;
+      const saleAliases = getSaleAliases(item);
+      const isBackend = isBackendGeneratedNo(rNo);
+
+      // If this is from localStorage / persisted or synthetic, drop it if backend already has this return!
+      if (isPersistedSource || !isBackend) {
+        const hasBackend = saleAliases.some((a) => backendReturnAliases.has(a));
+        if (hasBackend) {
+          return;
+        }
+      }
+
+      if (isBackend) {
+        saleAliases.forEach((a) => backendReturnAliases.add(a));
+
+        // If a synthetic SR- / RET- record was already added earlier for this sale, remove it!
+        const existingSyntheticIdx = unifiedList.findIndex(
+          (u) =>
+            u.isReturnRecord &&
+            !isBackendGeneratedNo(u.returnNo) &&
+            getSaleAliases(u).some((a) => saleAliases.includes(a))
+        );
+        if (existingSyntheticIdx !== -1) {
+          unifiedList.splice(existingSyntheticIdx, 1);
+        }
+      }
+
+      if (!seenReturnKeys.has(rKey)) {
+        seenReturnKeys.add(rKey);
         const explicitReturnDetails = [
           item.returnDetails,
           item.salesReturnDetails,
@@ -432,71 +496,80 @@ export const fetchSalesAndReturnList = async (): Promise<UnifiedTradeRecord[]> =
         const normalized = normalizeSaleRecord(item) as UnifiedTradeRecord;
         normalized.isReturnRecord = true;
         normalized.hasReturn = true;
+        if (rNo && !normalized.returnNo) {
+          normalized.returnNo = rNo;
+        }
         normalized.returnDetails = returnDetails;
         normalized.details = returnDetails;
         normalized.salesDetails = [];
         unifiedList.push(normalized);
 
-        const invRef = String(item.salesInvoiceNo || item.invoiceNo || item.orderNo || "").trim().toLowerCase();
-        if (invRef) returnedInvoices.add(invRef);
-        if (item.orderNo) returnedInvoices.add(String(item.orderNo).trim().toLowerCase());
-        if (item.saleId || item.sale_id) returnedInvoices.add(String(item.saleId || item.sale_id).trim().toLowerCase());
+        saleAliases.forEach((a) => returnedInvoices.add(a));
       }
 
-      // Guarantee that if the backend grouped this returned sale only in `returns`,
-      // its corresponding original sale record is also preserved in unifiedList with hasReturn: true
-      const saleIdentifier = item.orderNo || item.salesInvoiceNo || item.invoiceNo || item.saleId || item.sale_id;
-      if (saleIdentifier) {
-        const saleKey = `sale_${saleIdentifier}`;
-        if (!seen.has(saleKey)) {
-          seen.add(saleKey);
-          const saleLineItems =
-            [
-              item.salesDetails,
-              item.saleDetails,
-              item.saleDetailsList,
-            ].find((lines) => Array.isArray(lines) && lines.length > 0) || [];
-          const saleNorm = normalizeSaleRecord({
-            ...item,
-            id: item.saleId || item.sale_id || item.id || saleIdentifier,
-            orderNo: item.orderNo || saleIdentifier,
-            invoiceNo: item.invoiceNo || item.salesInvoiceNo || saleIdentifier,
-            salesInvoiceNo: item.salesInvoiceNo || item.invoiceNo || saleIdentifier,
-            salesDate: item.salesDate || item.returnDate || item.createdAt || moment().format("YYYY-MM-DD"),
-            grandTotal: Number(item.grandTotal ?? item.returnGrandTotal ?? item.totalAmount ?? 0),
-            paidAmount: Number(item.paidAmount ?? item.returnGrandTotal ?? item.grandTotal ?? 0),
-            dueAmount: Number(item.dueAmount ?? 0),
-            salesDetails: saleLineItems,
-            details: saleLineItems,
-          }) as UnifiedTradeRecord;
-          saleNorm.isReturnRecord = false;
-          saleNorm.hasReturn = true;
-          unifiedList.push(saleNorm);
+      // Check if original sale already exists
+      const saleAliasesForCheck = getSaleAliases(item);
+      let existingIdx = -1;
+      for (const a of saleAliasesForCheck) {
+        if (aliasToSaleIdx.has(a)) {
+          existingIdx = aliasToSaleIdx.get(a)!;
+          break;
         }
+      }
+
+      if (existingIdx !== -1) {
+        // Original sale already exists! DO NOT create a synthetic duplicate!
+        unifiedList[existingIdx].hasReturn = true;
+        saleAliasesForCheck.forEach((a) => aliasToSaleIdx.set(a, existingIdx));
+      } else {
+        // Only reconstruct fallback sale if original sale is completely missing
+        const cleanOrd = getCleanOrderNo(
+          item.orderNo || item.order_no || item.orderId || item.order_id || item.saleOrderNo,
+          item.salesInvoiceNo || item.invoiceNo
+        );
+        addSaleRecord({
+          ...item,
+          id: item.saleId || item.sale_id || item.id || cleanOrd,
+          orderNo: cleanOrd,
+          invoiceNo: item.invoiceNo || item.salesInvoiceNo || cleanOrd,
+          salesInvoiceNo: item.salesInvoiceNo || item.invoiceNo || cleanOrd,
+          salesDate: item.salesDate || item.returnDate || item.createdAt || moment().format("YYYY-MM-DD"),
+          grandTotal: Number(item.grandTotal ?? item.returnGrandTotal ?? item.totalAmount ?? 0),
+          paidAmount: Number(item.paidAmount ?? item.returnGrandTotal ?? item.grandTotal ?? 0),
+          dueAmount: Number(item.dueAmount ?? 0),
+          salesDetails: extractLineItems(item),
+          details: extractLineItems(item),
+          hasReturn: true,
+          isReturnRecord: false,
+        }, fallbackIdx);
       }
     };
 
-    returns.forEach((r: any, idx: number) => addReturnRecord(r, idx));
+    // 1. Process actual sales first
     sales.forEach((s: any, idx: number) => addSaleRecord(s, idx));
+
+    // 2. Process combinedList (actual sales / returns from API)
     combinedList.forEach((d: any, idx: number) => {
       if (isReturnRecord(d)) {
-        addReturnRecord(d, idx);
+        addReturnRecord(d, idx, false);
       } else {
         addSaleRecord(d, idx);
       }
     });
 
-    // Process persisted returns and sales from browser localStorage
-    persistedVouchers.forEach((pv, idx) => addReturnRecord(pv, idx));
+    // 3. Process persisted sales from browser localStorage
     persistedSales.forEach((ps, idx) => addSaleRecord(ps, idx));
 
-    // Reconstruct missing fully returned sales & return vouchers from financial transactions
+    // 4. Process backend returns first
+    returns.forEach((r: any, idx: number) => addReturnRecord(r, idx, false));
+
+    // 5. Financial transactions (carries authentic 16-digit backend return numbers like 2611...)
     finTxList.forEach((tx: any, idx: number) => {
       let invNo = "";
       let custName = "Customer";
 
       if (tx.notes) {
-        const invMatch = tx.notes.match(/(?:invoice|from)\s+([A-Za-z0-9_-]+)/i);
+        const invMatch = tx.notes.match(/(?:invoice|from|customer)\s+([A-Za-z0-9_-]+)/i);
         if (invMatch && invMatch[1]) {
           invNo = invMatch[1].trim();
         }
@@ -518,17 +591,16 @@ export const fetchSalesAndReturnList = async (): Promise<UnifiedTradeRecord[]> =
 
       if (!invNo) return;
 
-      const invKey = invNo.toLowerCase();
-      returnedInvoices.add(invKey);
+      const persistedSale = persistedSaleMap.get(invNo.toLowerCase());
+      const cleanOrdNo = getCleanOrderNo(persistedSale?.orderNo, invNo);
+      const finAliases = [
+        cleanOrdNo ? `sale_ord_${cleanOrdNo.toLowerCase()}` : null,
+        invNo ? `sale_inv_${invNo.toLowerCase()}` : null,
+      ].filter(Boolean) as string[];
 
-      // Check if this sale already exists in unifiedList or was persisted in localStorage
-      const saleKey = `sale_${invKey}`;
-      const persistedSale = persistedSaleMap.get(invKey);
-
-      if (!seen.has(saleKey)) {
-        seen.add(saleKey);
-        const cleanOrdNo = getCleanOrderNo(persistedSale?.orderNo, invNo);
-        const reconstructedSale: UnifiedTradeRecord = {
+      const finSaleExists = finAliases.some((a) => aliasToSaleIdx.has(a));
+      if (!finSaleExists) {
+        addSaleRecord({
           id: persistedSale?.id || `sale_fin_${tx.id || tx.billRef}`,
           orderNo: cleanOrdNo,
           invoiceNo: persistedSale?.invoiceNo || invNo,
@@ -565,106 +637,88 @@ export const fetchSalesAndReturnList = async (): Promise<UnifiedTradeRecord[]> =
           salesDetails: persistedSale?.salesDetails || [],
           details: persistedSale?.details || persistedSale?.salesDetails || [],
           isReturnRecord: false,
-        };
-        unifiedList.push(reconstructedSale);
-      } else {
-        const existingSale = unifiedList.find(
-          (u) =>
-            !u.isReturnRecord &&
-            String(u.invoiceNo || u.salesInvoiceNo || u.orderNo || "").toLowerCase() === invKey
-        );
-        if (existingSale) {
-          existingSale.hasReturn = true;
-          if (
-            custName !== "Customer" &&
-            (existingSale.customerName === "Customer" || !existingSale.customerName)
-          ) {
-            existingSale.customerName = custName;
-          }
-          if (!existingSale.orderNo || existingSale.orderNo.includes("-")) {
-            existingSale.orderNo = getCleanOrderNo(existingSale.orderNo, invNo);
-          }
-          if (
-            persistedSale?.salesDetails &&
-            (!existingSale.salesDetails || existingSale.salesDetails.length === 0)
-          ) {
-            existingSale.salesDetails = persistedSale.salesDetails;
-            existingSale.details = persistedSale.salesDetails;
-          }
-        }
+        }, idx);
       }
 
-      // Reconstruct return voucher if not seen
-      const returnVoucherNo = tx.billRef || `RET-${tx.id}`;
-      const retKey = `ret_${String(returnVoucherNo).trim().toLowerCase()}`;
+      // Authentic return voucher with backend-generated return number (e.g. 2611...)
+      const returnNo = tx.billRef || persistedSale?.returnNo || `SR-${invNo}`;
+      const retKey = `ret_${String(returnNo).toLowerCase()}`;
       const persistedVoucher =
-        persistedReturnMap.get(String(returnVoucherNo).toLowerCase()) || persistedReturnMap.get(invKey);
+        persistedReturnMap.get(String(returnNo).toLowerCase()) || persistedReturnMap.get(invNo.toLowerCase());
+      const resolvedOrdNo = getCleanOrderNo(persistedVoucher?.orderNo || persistedSale?.orderNo, invNo);
 
-      if (!seen.has(retKey)) {
-        seen.add(retKey);
-        const cleanOrdNo = getCleanOrderNo(persistedVoucher?.orderNo, invNo);
-        const reconstructedReturn: UnifiedTradeRecord = {
-          id: persistedVoucher?.id || `ret_fin_${tx.id || tx.billRef}`,
-          returnNo: returnVoucherNo,
-          orderNo: cleanOrdNo,
-          invoiceNo: persistedVoucher?.invoiceNo || invNo,
-          salesInvoiceNo: persistedVoucher?.salesInvoiceNo || invNo,
-          customerName:
-            persistedVoucher?.customerName && persistedVoucher.customerName !== "Customer"
-              ? persistedVoucher.customerName
-              : custName,
-          customerId: persistedVoucher?.customerId || 0,
-          customerPhone: persistedVoucher?.customerPhone || "",
-          customerAddress: persistedVoucher?.customerAddress || "",
-          returnDate:
-            persistedVoucher?.returnDate ||
-            tx.transactionDate ||
-            (tx.createdDate ? String(tx.createdDate).split("T")[0] : moment().format("YYYY-MM-DD")),
-          createdAt: persistedVoucher?.createdAt || tx.createdDate || tx.transactionDate,
-          totalAmount: Number(persistedVoucher?.totalAmount ?? tx.amount ?? 0),
-          discount: Number(persistedVoucher?.discount ?? 0),
-          vat: Number(persistedVoucher?.vat ?? 0),
-          deliveryCharge: 0,
-          grandTotal: Number(persistedVoucher?.grandTotal ?? tx.amount ?? 0),
-          paidAmount: Number(tx.amount || 0),
-          refundAmount: Number(persistedVoucher?.refundAmount ?? tx.amount ?? 0),
-          dueAmount: 0,
-          paymentType: String(persistedVoucher?.paymentType || tx.accountType || "CASH").toUpperCase(),
-          status: "Completed",
-          note: persistedVoucher?.note || tx.notes || "Sales return refund",
-          remarks: persistedVoucher?.remarks || tx.notes || "Sales return refund",
-          reason: persistedVoucher?.reason || tx.notes || "Sales return refund",
-          osType: "WEB",
-          hasReturn: true,
-          returnGrandTotal: Number(persistedVoucher?.grandTotal ?? tx.amount ?? 0),
-          returnRefundAmount: Number(persistedVoucher?.refundAmount ?? tx.amount ?? 0),
-          salesDetails: [],
-          details: persistedVoucher?.returnDetails || [],
-          returnDetails: persistedVoucher?.returnDetails || [],
-          isReturnRecord: true,
-        };
+      const reconstructedReturn: UnifiedTradeRecord = {
+        id: persistedVoucher?.id || `ret_fin_${tx.id || tx.billRef || idx}`,
+        returnNo,
+        orderNo: resolvedOrdNo,
+        invoiceNo: persistedVoucher?.invoiceNo || invNo,
+        salesInvoiceNo: persistedVoucher?.salesInvoiceNo || invNo,
+        customerName:
+          persistedVoucher?.customerName ||
+          persistedSale?.customerName ||
+          custName,
+        customerId: persistedVoucher?.customerId || persistedSale?.customerId || 0,
+        customerPhone: persistedVoucher?.customerPhone || persistedSale?.customerPhone || "",
+        customerAddress: persistedVoucher?.customerAddress || persistedSale?.customerAddress || "",
+        returnDate:
+          persistedVoucher?.returnDate ||
+          tx.transactionDate ||
+          (tx.createdDate ? String(tx.createdDate).split("T")[0] : moment().format("YYYY-MM-DD")),
+        createdAt: persistedVoucher?.createdAt || tx.createdDate || tx.transactionDate,
+        grandTotal: Number(tx.amount || persistedVoucher?.grandTotal || 0),
+        refundAmount: Number(tx.amount || persistedVoucher?.refundAmount || 0),
+        totalAmount: Number(tx.amount || persistedVoucher?.totalAmount || 0),
+        paymentType: String(persistedVoucher?.paymentType || tx.accountType || "CASH").toUpperCase(),
+        status: "Completed",
+        note: persistedVoucher?.note || tx.notes || "Sales return refund",
+        remarks: persistedVoucher?.remarks || tx.notes || "Sales return refund",
+        reason: persistedVoucher?.reason || tx.notes || "Sales return refund",
+        returnDetails: persistedVoucher?.returnDetails || persistedSale?.salesDetails || [],
+        salesDetails: [],
+        details: persistedVoucher?.returnDetails || persistedSale?.salesDetails || [],
+        isReturnRecord: true,
+        hasReturn: true,
+      };
+
+      // If a synthetic SR- or RET- record was already in unifiedList, replace it with this authentic backend return!
+      const existingSyntheticIdx = unifiedList.findIndex(
+        (u) =>
+          u.isReturnRecord &&
+          !isBackendGeneratedNo(u.returnNo) &&
+          (getSaleAliases(u).some((a) => finAliases.includes(a)) ||
+            (resolvedOrdNo && String(u.orderNo || "").toLowerCase() === resolvedOrdNo.toLowerCase()) ||
+            (invNo && String(u.invoiceNo || u.salesInvoiceNo || "").toLowerCase() === invNo.toLowerCase()))
+      );
+
+      if (existingSyntheticIdx !== -1) {
+        const existing = unifiedList[existingSyntheticIdx];
+        if (Array.isArray(existing.returnDetails) && existing.returnDetails.length > 0) {
+          reconstructedReturn.returnDetails = existing.returnDetails;
+          reconstructedReturn.details = existing.returnDetails;
+        }
+        unifiedList[existingSyntheticIdx] = reconstructedReturn;
+      } else if (!seenReturnKeys.has(retKey)) {
+        seenReturnKeys.add(retKey);
         unifiedList.push(reconstructedReturn);
-      } else {
-        const existingReturn = unifiedList.find(
-          (u) =>
-            u.isReturnRecord &&
-            String(u.returnNo).toLowerCase() === String(returnVoucherNo).toLowerCase()
-        );
-        if (existingReturn) {
-          if (
-            custName !== "Customer" &&
-            (existingReturn.customerName === "Customer" || !existingReturn.customerName)
-          ) {
-            existingReturn.customerName = custName;
-          }
-          if (
-            invNo &&
-            (!existingReturn.salesInvoiceNo || existingReturn.salesInvoiceNo === existingReturn.returnNo)
-          ) {
-            existingReturn.salesInvoiceNo = invNo;
-            existingReturn.invoiceNo = invNo;
-            existingReturn.orderNo = getCleanOrderNo(existingReturn.orderNo, invNo);
-          }
+      }
+
+      finAliases.forEach((a) => backendReturnAliases.add(a));
+    });
+
+    // 6. Clean up persisted returns matching backend returns so localStorage doesn't keep duplicate RET- records
+    if (backendReturnAliases.size > 0) {
+      removePersistedTradeReturnsByInvoices(Array.from(backendReturnAliases));
+    }
+
+    // 7. Persisted vouchers ONLY if no authentic backend return exists
+    persistedVouchers.forEach((pv, idx) => addReturnRecord(pv, idx, true));
+
+    // 8. Ensure hasReturn is set on any sale record whose aliases match returnedInvoices
+    unifiedList.forEach((rec) => {
+      if (!rec.isReturnRecord) {
+        const aliases = getSaleAliases(rec);
+        if (aliases.some((a) => returnedInvoices.has(a))) {
+          rec.hasReturn = true;
         }
       }
     });

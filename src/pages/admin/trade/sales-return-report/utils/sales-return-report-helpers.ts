@@ -26,6 +26,7 @@ import {
 } from "@/pages/admin/trade/constants/returnReasons";
 import {
   isReturnRecord,
+  getCleanOrderNo,
   type UnifiedTradeRecord,
 } from "@/pages/admin/trade/sales/hooks/useSalesQueries";
 import type { SalesReturnItem } from "@/types";
@@ -307,6 +308,18 @@ function deriveReturnStatuses(records: UnifiedTradeRecord[]): Map<any, string> {
   return statuses;
 }
 
+const isBackendReturnNo = (no?: string): boolean => {
+  if (!no) return false;
+  const clean = String(no).trim().toUpperCase();
+  return (
+    clean.length > 0 &&
+    !clean.startsWith("SR-") &&
+    !clean.startsWith("RET_") &&
+    !clean.startsWith("RET-") &&
+    !clean.startsWith("SR_")
+  );
+};
+
 /**
  * Extracts and normalizes return records from `get-sales-and-return` unified API output.
  */
@@ -330,21 +343,59 @@ export function extractNormalizedSalesReturns(
     });
   });
 
+  const getInvoiceKey = (item: any): string => {
+    const rawInv = String(
+      item.salesInvoiceNo || item.sales_invoice_no || item.invoiceNo || item.invoice_no || item.orderNo || ""
+    ).trim().toLowerCase();
+    return rawInv && rawInv !== "-" ? rawInv : "";
+  };
+
+  // Filter raw return records
+  const rawReturnItems = records.filter(
+    (item: any) => Boolean(item?.isReturnRecord) || isReturnRecord(item)
+  );
+
+  const backendReturnsByInvoice = new Set<string>();
+  rawReturnItems.forEach((item: any) => {
+    const rNo = String(item.returnNo || item.return_no || item.salesReturnNo || item.id || "").trim();
+    if (isBackendReturnNo(rNo)) {
+      const invKey = getInvoiceKey(item);
+      if (invKey) backendReturnsByInvoice.add(invKey);
+      if (item.orderNo) backendReturnsByInvoice.add(String(item.orderNo).trim().toLowerCase());
+    }
+  });
+
+  // Sort candidates so authentic backend return records come FIRST
+  const sortedReturns = [...rawReturnItems].sort((a: any, b: any) => {
+    const aNo = String(a.returnNo || a.return_no || a.salesReturnNo || a.id || "").trim();
+    const bNo = String(b.returnNo || b.return_no || b.salesReturnNo || b.id || "").trim();
+    const aIsBackend = isBackendReturnNo(aNo);
+    const bIsBackend = isBackendReturnNo(bNo);
+    if (aIsBackend && !bIsBackend) return -1;
+    if (!aIsBackend && bIsBackend) return 1;
+    return 0;
+  });
+
   const result: NormalizedSalesReturnRecord[] = [];
+  const seenReturnNos = new Set<string>();
+  const seenInvoiceRefundPairs = new Set<string>();
+  const seenOrderRefundPairs = new Set<string>();
   const returnStatuses = deriveReturnStatuses(records);
 
-  records.forEach((item: any, idx: number) => {
-    if (!(Boolean(item?.isReturnRecord) || isReturnRecord(item))) return;
+  sortedReturns.forEach((item: any, idx: number) => {
+    let returnNo = String(
+      item.returnNo || item.return_no || item.salesReturnNo || item.refNo || item.orderNo || `SR-${idx + 1}`
+    ).trim();
 
-    const rawDate =
-      item.returnDate ||
-      item.return_date ||
-      item.salesDate ||
-      item.date ||
-      item.createdAt ||
-      item.created_at ||
-      "";
-    if (!isDateInReportRange(rawDate, startDate, endDate)) return;
+    // Prefer backend-generated ID if available on the object
+    if (!isBackendReturnNo(returnNo) && item.id && isBackendReturnNo(String(item.id))) {
+      returnNo = String(item.id).trim();
+    }
+
+    const isBackend = isBackendReturnNo(returnNo);
+    const invKey = getInvoiceKey(item);
+    const cleanOrd = getCleanOrderNo(item.orderNo, item.salesInvoiceNo || item.invoiceNo);
+    const ordKey = String(cleanOrd || item.orderNo || "").trim().toLowerCase();
 
     const refundAmount = Number(
       item.refundAmount ??
@@ -356,15 +407,60 @@ export function extractNormalizedSalesReturns(
         item.totalAmount ??
         0
     );
+
+    // If this is a synthetic client-persisted RET- / SR- record:
+    if (!isBackend) {
+      // If an authentic backend return exists for this sale invoice or order, DROP this client duplicate!
+      if (invKey && invKey !== "-" && backendReturnsByInvoice.has(invKey)) {
+        return;
+      }
+      if (ordKey && ordKey !== "-" && backendReturnsByInvoice.has(ordKey)) {
+        return;
+      }
+    }
+
+    // Deduplicate identical return numbers
+    const dedupKey = returnNo.toLowerCase();
+    if (seenReturnNos.has(dedupKey)) {
+      return;
+    }
+
+    // Deduplicate multiple returns for the same invoice & refund amount (keeping backend record)
+    if (invKey && invKey !== "-") {
+      const invDedupKey = `${invKey}_${refundAmount.toFixed(2)}`;
+      if (seenInvoiceRefundPairs.has(invDedupKey)) {
+        return;
+      }
+      seenInvoiceRefundPairs.add(invDedupKey);
+    }
+
+    // Deduplicate multiple returns for the same order & refund amount
+    if (ordKey && ordKey !== "-") {
+      const ordDedupKey = `${ordKey}_${refundAmount.toFixed(2)}`;
+      if (seenOrderRefundPairs.has(ordDedupKey)) {
+        return;
+      }
+      seenOrderRefundPairs.add(ordDedupKey);
+    }
+
+    seenReturnNos.add(dedupKey);
+
+    const rawDate =
+      item.returnDate ||
+      item.return_date ||
+      item.salesDate ||
+      item.date ||
+      item.createdAt ||
+      item.created_at ||
+      "";
+    if (!isDateInReportRange(rawDate, startDate, endDate)) return;
+
     const grandTotal = Number(
       item.returnGrandTotal ??
         item.return_grand_total ??
         item.grandTotal ??
         item.totalAmount ??
         refundAmount
-    );
-    const returnNo = String(
-      item.returnNo || item.return_no || item.orderNo || `SR-${item.id || idx + 1}`
     );
     const salesInvoiceNo = String(
       item.salesInvoiceNo || item.invoiceNo || "-"
@@ -375,6 +471,7 @@ export function extractNormalizedSalesReturns(
       "";
     const directOrderNo = String(item.orderNo || item.order_no || "").trim();
     const orderNo =
+      cleanOrd ||
       (directOrderNo && directOrderNo !== returnNo ? directOrderNo : "") ||
       matchedOrderNo ||
       directOrderNo ||
