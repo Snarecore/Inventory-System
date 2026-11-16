@@ -596,6 +596,145 @@ export interface CorporatePdfConfig {
   columnStyles: { [key: string]: Partial<Styles> };
   meta: ReportCompanyMeta;
   fontSize?: number;
+  orientation?: "portrait" | "landscape";
+}
+
+/**
+ * Renders lines of text containing Bengali Unicode glyphs onto a high-DPI HTML5 canvas
+ * using the browser's native text shaping engine (DirectWrite / HarfBuzz).
+ * Returns a crisp PNG data URI and its exact millimeter dimensions for jsPDF.
+ */
+export function renderBengaliLinesToCanvas(
+  lines: string[],
+  opts: {
+    fontSize: number; // pt (e.g. 7.5 or 12)
+    fontStyle?: "bold" | "normal";
+    textColor?: [number, number, number];
+    halign?: "left" | "center" | "right";
+    maxAllowedWidthMm?: number;
+  }
+): { dataUrl: string; widthMm: number; heightMm: number } | null {
+  if (typeof document === "undefined" || !lines || lines.length === 0) {
+    return null;
+  }
+
+  // 3x DPR gives ~288 DPI print resolution for crisp, razor-sharp typography
+  const dpr = 3;
+  const pxFontSize = Math.max(16, Math.round(opts.fontSize * 1.3333 * dpr));
+  const lineSpacingPx = Math.round(pxFontSize * 1.32);
+
+  const canvas = document.createElement("canvas");
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return null;
+
+  const fontFamily =
+    "'Noto Sans Bengali', 'Nirmala UI', 'SolaimanLipi', 'Kalpurush', 'Segoe UI', system-ui, sans-serif";
+  const fontStyle = opts.fontStyle === "bold" ? "bold" : "normal";
+  const fontStr = `${fontStyle} ${pxFontSize}px ${fontFamily}`;
+  ctx.font = fontStr;
+
+  let maxLineW = 0;
+  for (const line of lines) {
+    const w = ctx.measureText(line).width;
+    if (w > maxLineW) maxLineW = w;
+  }
+
+  const padX = 3 * dpr;
+  const totalWPx = Math.max(1, Math.ceil(maxLineW + padX * 2));
+  const totalHPx = Math.max(1, Math.ceil(lines.length * lineSpacingPx));
+
+  canvas.width = totalWPx;
+  canvas.height = totalHPx;
+
+  ctx.font = fontStr;
+  const color = opts.textColor || [15, 23, 42];
+  ctx.fillStyle = `rgb(${color[0]}, ${color[1]}, ${color[2]})`;
+  ctx.textBaseline = "middle";
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    const y = (i + 0.5) * lineSpacingPx;
+    let x = padX;
+    if (opts.halign === "center") {
+      const w = ctx.measureText(line).width;
+      x = (totalWPx - w) / 2;
+    } else if (opts.halign === "right") {
+      const w = ctx.measureText(line).width;
+      x = totalWPx - w - padX;
+    }
+    ctx.fillText(line, x, y);
+  }
+
+  // 1 px at 96 DPI = 0.264583 mm
+  let widthMm = (totalWPx / dpr) * 0.264583;
+  let heightMm = (totalHPx / dpr) * 0.264583;
+
+  if (opts.maxAllowedWidthMm && widthMm > opts.maxAllowedWidthMm && opts.maxAllowedWidthMm > 0) {
+    const scale = opts.maxAllowedWidthMm / widthMm;
+    widthMm = opts.maxAllowedWidthMm;
+    heightMm = heightMm * scale;
+  }
+
+  return {
+    dataUrl: canvas.toDataURL("image/png"),
+    widthMm,
+    heightMm,
+  };
+}
+
+/**
+ * Draws text on jsPDF. If text contains Bengali characters, renders via canvas image;
+ * otherwise uses native vector doc.text().
+ */
+export function drawPdfTextSmart(
+  doc: any,
+  text: string,
+  x: number,
+  y: number,
+  opts: {
+    fontSize: number;
+    fontStyle?: "bold" | "normal";
+    textColor?: [number, number, number];
+    align?: "left" | "center" | "right";
+  }
+): void {
+  if (!text) return;
+  const hasBengali = /[\u0980-\u09FF]/.test(text);
+  if (!hasBengali) {
+    doc.setFont("helvetica", opts.fontStyle || "normal");
+    doc.setFontSize(opts.fontSize);
+    doc.setTextColor(
+      opts.textColor?.[0] ?? 15,
+      opts.textColor?.[1] ?? 23,
+      opts.textColor?.[2] ?? 42
+    );
+    doc.text(text, x, y, { align: opts.align || "left" });
+    return;
+  }
+
+  const rendered = renderBengaliLinesToCanvas([text], {
+    fontSize: opts.fontSize,
+    fontStyle: opts.fontStyle,
+    textColor: opts.textColor,
+    halign: opts.align,
+    maxAllowedWidthMm: 120,
+  });
+
+  if (!rendered) return;
+
+  let drawX = x;
+  if (opts.align === "center") {
+    drawX = x - rendered.widthMm / 2;
+  } else if (opts.align === "right") {
+    drawX = x - rendered.widthMm;
+  }
+  const drawY = y - rendered.heightMm * 0.7;
+
+  try {
+    doc.addImage(rendered.dataUrl, "PNG", drawX, drawY, rendered.widthMm, rendered.heightMm);
+  } catch (err) {
+    console.warn("Could not draw Bengali header text:", err);
+  }
 }
 
 /**
@@ -610,9 +749,12 @@ export async function generateAndDownloadCorporatePdf(
   ]);
   const autoTable = autoTableMod.default || autoTableMod.autoTable;
 
-  const isPortrait = config.headers.length <= 6;
+  const orientation =
+    config.orientation ||
+    (config.headers.length <= 6 ? "portrait" : "landscape");
+  const isPortrait = orientation === "portrait";
   const doc = new jsPDF({
-    orientation: isPortrait ? "portrait" : "landscape",
+    orientation,
     unit: "mm",
     format: "a4",
   });
@@ -644,17 +786,19 @@ export async function generateAndDownloadCorporatePdf(
   }
 
   // Company Name
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(13);
-  doc.setTextColor(15, 23, 42);
-  doc.text(businessName || "Cash Boi Trade Ltd", textStartX, 11.5);
+  drawPdfTextSmart(doc, businessName || "Cash Boi Trade Ltd", textStartX, 11.5, {
+    fontSize: 13,
+    fontStyle: "bold",
+    textColor: [15, 23, 42],
+  });
 
   // Company Address
   if (businessAddress) {
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(8.5);
-    doc.setTextColor(71, 85, 105);
-    doc.text(businessAddress, textStartX, 16);
+    drawPdfTextSmart(doc, businessAddress, textStartX, 16, {
+      fontSize: 8.5,
+      fontStyle: "normal",
+      textColor: [71, 85, 105],
+    });
   }
 
   // Print Date (Top Right)
@@ -721,6 +865,73 @@ export async function generateAndDownloadCorporatePdf(
         const colStyle = config.columnStyles[String(hookData.column.index)];
         if (colStyle?.halign) {
           hookData.cell.styles.halign = colStyle.halign;
+        }
+      }
+
+      // Detect cells containing Bengali characters
+      const cellText = Array.isArray(hookData.cell.text)
+        ? hookData.cell.text
+        : [String(hookData.cell.text || "")];
+      const rawContent =
+        typeof hookData.cell.raw === "object" && hookData.cell.raw !== null
+          ? String((hookData.cell.raw as any).content ?? "")
+          : String(hookData.cell.raw ?? "");
+
+      const hasBengali =
+        cellText.some((t) => /[\u0980-\u09FF]/.test(t)) ||
+        /[\u0980-\u09FF]/.test(rawContent);
+
+      if (hasBengali) {
+        (hookData.cell as any)._bengaliLines =
+          cellText.length > 0 && cellText.some((t) => t.trim().length > 0)
+            ? [...cellText]
+            : [rawContent];
+      }
+    },
+    willDrawCell: (hookData) => {
+      const cell = hookData.cell as any;
+      if (cell._bengaliLines && cell._bengaliLines.length > 0) {
+        const padL = cell.padding("left");
+        const padR = cell.padding("right");
+        const availW = Math.max(0, cell.width - padL - padR);
+
+        const rendered = renderBengaliLinesToCanvas(cell._bengaliLines, {
+          fontSize: cell.styles.fontSize || tableFontSize,
+          fontStyle: cell.styles.fontStyle === "bold" ? "bold" : "normal",
+          textColor: cell.styles.textColor,
+          halign: cell.styles.halign,
+          maxAllowedWidthMm: availW,
+        });
+
+        cell._bengaliImage = rendered;
+        // Clear cell.text so default autoTableText won't draw corrupted characters
+        cell.text = [];
+      }
+    },
+    didDrawCell: (hookData) => {
+      const cell = hookData.cell as any;
+      if (cell._bengaliImage) {
+        const { dataUrl, widthMm, heightMm } = cell._bengaliImage;
+        const padL = cell.padding("left");
+        const padR = cell.padding("right");
+        const padT = cell.padding("top");
+        const padB = cell.padding("bottom");
+        const availW = cell.width - padL - padR;
+        const availH = cell.height - padT - padB;
+
+        let drawX = cell.x + padL;
+        if (cell.styles.halign === "center") {
+          drawX = availW > widthMm ? cell.x + padL + (availW - widthMm) / 2 : cell.x + padL;
+        } else if (cell.styles.halign === "right") {
+          drawX = cell.x + cell.width - padR - widthMm;
+        }
+
+        const drawY = availH > heightMm ? cell.y + padT + (availH - heightMm) / 2 : cell.y + padT;
+
+        try {
+          doc.addImage(dataUrl, "PNG", drawX, drawY, widthMm, heightMm);
+        } catch (err) {
+          console.warn("Could not draw Bengali cell image:", err);
         }
       }
     },

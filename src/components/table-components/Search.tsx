@@ -5,43 +5,51 @@ import TextInput from "@/components/form/TextInput";
 import { useTranslation } from "react-i18next";
 
 interface SearchProps {
-	searchQuery: string;
+	searchQuery?: string;
+	value?: string;
 	onSearchChange?: (query: string) => void;
 	setSearchQuery?: (query: string) => void;
+	onChange?: (query: string) => void;
 	placeholder?: string;
 	className?: string;
 	debounceDelay?: number;
 }
 
 const Search = React.memo(({
-	searchQuery,
+	searchQuery: propSearchQuery,
+	value,
 	onSearchChange,
 	setSearchQuery,
+	onChange,
 	placeholder = "Search",
 	className = "",
 }: SearchProps) => {
 	const { t } = useTranslation();
+	const currentQuery = propSearchQuery !== undefined ? propSearchQuery : (value ?? "");
+
 	const handleChange = (val: string) => {
 		if (onSearchChange) onSearchChange(val);
 		if (setSearchQuery) setSearchQuery(val);
+		if (onChange) onChange(val);
 	};
 
 	const handleClear = () => {
 		if (onSearchChange) onSearchChange("");
 		if (setSearchQuery) setSearchQuery("");
+		if (onChange) onChange("");
 	};
 
 	return (
 		<div className={`relative flex items-center w-full ${className}`}>
 			<TextInput
 				placeholder={placeholder}
-				value={searchQuery}
+				value={currentQuery}
 				onChange={handleChange}
 				icon={<FiSearch className="text-[var(--ui-text-subtle)] text-sm pointer-events-none" />}
 				wrapperClass="!h-[32px] !border-[var(--color-primary)] !rounded-md focus-within:!ring-1 focus-within:!ring-[var(--color-primary)]"
-				inputClass={`${searchQuery ? "!pr-6" : "!pr-1"}`}
+				inputClass={`${currentQuery ? "!pr-6" : "!pr-1"}`}
 			/>
-			{searchQuery && (
+			{currentQuery && (
 				<button
 					type="button"
 					onClick={handleClear}

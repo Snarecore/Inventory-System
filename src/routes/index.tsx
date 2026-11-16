@@ -62,6 +62,7 @@ const StockAdjustmentPage = React.lazy(() => import('@/pages/admin/inventory/sto
 const InventoryReport = React.lazy(() => import('@/pages/admin/inventory/inventory-report'))
 const CashClosingPage = React.lazy(() => import('@/pages/admin/finance/cash-closing'))
 const CashClosingReport = React.lazy(() => import('@/pages/admin/finance/cash-closing-report'))
+const KhatabookReportPage = React.lazy(() => import('@/pages/admin/finance/khatabook-report'))
 const OpeningCashBalancePage = React.lazy(() => import('@/pages/admin/finance/opening-cash-balance'))
 const PackagesPage = React.lazy(() => import('@/pages/admin/packages'))
 const BranchList = React.lazy(() => import('@/pages/admin/branch/BranchList'))
@@ -275,6 +276,14 @@ export const router = createBrowserRouter([
   {
     path: '/reports/collection',
     element: <Navigate to="/admin/reports/customer-collection" replace />,
+  },
+  {
+    path: '/reports/khatabook',
+    element: <Navigate to="/admin/reports/khatabook" replace />,
+  },
+  {
+    path: '/khatabook-report',
+    element: <Navigate to="/admin/reports/khatabook" replace />,
   },
   {
     path: '/sales/collection',
@@ -621,6 +630,14 @@ export const router = createBrowserRouter([
       {
         path: 'reports/customer-collection',
         element: withPermission(CustomerCollectionReport, 'reports'),
+      },
+      {
+        path: 'khatabook-report',
+        element: withPermission(KhatabookReportPage, 'reports'),
+      },
+      {
+        path: 'reports/khatabook',
+        element: withPermission(KhatabookReportPage, 'reports'),
       },
       {
         path: 'sales-return',

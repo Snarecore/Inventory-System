@@ -18,9 +18,8 @@ import {
 } from "@/hooks/useKhatabook";
 import { formatMoney } from "@/utils/formatters";
 import { showErrorToast } from "@/utils/toast-utils";
-import { fetchLedgerTransactionList } from "@/services/khatabook-service";
 import type { LedgerPerson, LedgerTransaction } from "@/types";
-import { FaPlus, FaUsers, FaMoneyBillWave } from "react-icons/fa";
+import { FaPlus, FaUsers, FaMoneyBillWave, FaChartBar } from "react-icons/fa";
 import { usePermission } from "@/hooks/usePermission";
 
 export const KhatabookPage: React.FC = () => {
@@ -85,6 +84,14 @@ export const KhatabookPage: React.FC = () => {
 
         <div className="flex flex-wrap items-center gap-1.5">
           <RefreshButton onClick={() => refetch()} isLoading={isLoading || isFetching} />
+
+          <Button
+            label={t("Report")}
+            onClick={() => navigate("/admin/reports/khatabook")}
+            color="#4f46e5"
+            icon={<FaChartBar size={10} />}
+            size="sm"
+          />
 
           {canCreate("khatabook") && (
             <>

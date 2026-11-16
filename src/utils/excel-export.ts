@@ -242,15 +242,17 @@ export async function buildAndDownloadExcel<T extends Record<string, any>>(
   );
 
   let currentExcelRow = 1;
+  let hasLogo = false;
 
   // ── Corporate Header Block ──
   if (isCorporateReport) {
     const logoData =
-      colCount >= 4 ? await fetchLogoBase64(options?.businessLogoUrl) : null;
-    const startTextCol = logoData ? 3 : 1;
+      colCount >= 3 ? await fetchLogoBase64(options?.businessLogoUrl) : null;
+    hasLogo = Boolean(logoData);
+    const startTextCol = logoData ? 2 : 1;
     const printDateStr = formatReportDate(new Date().toISOString());
 
-    // Embed Logo image (spans approx A1:B2)
+    // Embed Logo image (spans neatly in Column A, rows 1-2)
     if (logoData) {
       try {
         const imageId = workbook.addImage({
@@ -258,8 +260,8 @@ export async function buildAndDownloadExcel<T extends Record<string, any>>(
           extension: logoData.extension,
         });
         worksheet.addImage(imageId, {
-          tl: { col: 0.15, row: 0.15 },
-          ext: { width: 85, height: 34 },
+          tl: { col: 0.08, row: 0.12 },
+          ext: { width: 70, height: 32 },
           editAs: "oneCell",
         });
       } catch (err) {
@@ -846,10 +848,14 @@ export async function buildAndDownloadExcel<T extends Record<string, any>>(
     if (colCount === 1) minW = Math.max(minW, 42);
     else if (colCount === 2) minW = Math.max(minW, 24);
 
-    worksheet.getColumn(idx + 1).width = Math.min(
+    let colWidth = Math.min(
       Math.max(maxLen + (isMoney ? 4 : 3), minW),
       48
     );
+    if (idx === 0 && hasLogo) {
+      colWidth = Math.max(colWidth, 11);
+    }
+    worksheet.getColumn(idx + 1).width = colWidth;
   });
 
   // ── Page Setup for Printing from Excel ──
