@@ -19,6 +19,7 @@ import {
   type ExportColumnDef,
 } from "@/utils/report-export-columns";
 import { ensureFontLoaded } from "@/theme/fonts";
+import { getCleanOrderNo } from "@/pages/admin/trade/sales/hooks/useSalesQueries";
 
 export type TradeDomain = "sale" | "purchase";
 export type TradeReportTab = "invoices" | "products" | "parties";
@@ -304,9 +305,8 @@ export function extractTradeRecordMetrics(
 
   return {
     orderNo:
-      item?.orderNo ||
-      item?.invoiceNo ||
-      `${isPurchase ? "PO" : "ORD"}-${item?.id || fallbackIndex + 1}`,
+      getCleanOrderNo(item?.orderNo, item?.invoiceNo) ||
+      (item?.id ? String(item.id).padStart(6, "0") : String(fallbackIndex + 1).padStart(6, "0")),
     partyId,
     partyName,
     partyPhone,

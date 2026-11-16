@@ -46,28 +46,54 @@ export const extractLineItems = (item: any): any[] => {
 
 
 export const getCleanOrderNo = (orderNo?: string | null, invoiceNo?: string | null): string => {
-  const ord = String(orderNo || "").trim();
-  const inv = String(invoiceNo || "").trim();
+  const rawOrd = String(orderNo || "").trim();
+  const rawInv = String(invoiceNo || "").trim();
 
-  // 1. Direct priority to real database/backend orderNo (e.g., "000335", "ORD-101", "332")
+  // Strip synthetic or accidental "ORD-" / "ORD_" prefix if present
+  const ord = rawOrd.replace(/^ORD[-_]?/i, "").trim();
+  const inv = rawInv.replace(/^ORD[-_]?/i, "").trim();
+
+  // 1. Direct priority to real database/backend orderNo (e.g., "000354", "354")
   if (ord && !/^\d{3,}-\d{10,}$/.test(ord)) {
+    if (/^\d+$/.test(ord)) {
+      if (ord.length < 6) return ord.padStart(6, "0");
+      if (ord.length > 8) return ord.slice(-6).padStart(6, "0");
+      return ord;
+    }
     return ord;
   }
 
-  // 2. Direct priority to clean invoiceNo
+  // 2. Direct priority to clean invoiceNo (e.g., "000354", "354")
   if (inv && !/^\d{3,}-\d{10,}$/.test(inv)) {
+    if (/^\d+$/.test(inv)) {
+      if (inv.length < 6) return inv.padStart(6, "0");
+      if (inv.length > 8) return inv.slice(-6).padStart(6, "0");
+      return inv;
+    }
     return inv;
   }
 
   // 3. Fallback for raw auto-generated timestamp strings (businessCode-YYYYMMDDHHmmssSSS)
   const target = ord || inv;
+  if (!target) return "";
+
   if (target.includes("-")) {
     const parts = target.split("-");
     const suffix = parts[parts.length - 1];
-    return `ORD-${suffix.slice(-6)}`;
+    const digitsOnly = suffix.replace(/\D/g, "");
+    if (digitsOnly.length > 0) {
+      return digitsOnly.slice(-6).padStart(6, "0");
+    }
+    return suffix;
   }
 
-  return target || "";
+  if (/^\d+$/.test(target)) {
+    if (target.length < 6) return target.padStart(6, "0");
+    if (target.length > 8) return target.slice(-6).padStart(6, "0");
+    return target;
+  }
+
+  return target;
 };
 
 /**
@@ -482,9 +508,14 @@ export const fetchSalesAndReturnList = async (): Promise<UnifiedTradeRecord[]> =
     // 4. Financial transactions (carries authentic 16-digit backend return numbers like 2611...)
     finTxList.forEach((tx: any, idx: number) => {
       let invNo = "";
+      let ordNo = "";
       let custName = "Customer";
 
       if (tx.notes) {
+        const ordMatch = tx.notes.match(/(?:order|order\s*#|ord\s*#?)\s*([A-Za-z0-9_-]+)/i);
+        if (ordMatch && ordMatch[1]) {
+          ordNo = ordMatch[1].trim();
+        }
         const invMatch = tx.notes.match(/(?:invoice|from|customer)\s+([A-Za-z0-9_-]+)/i);
         if (invMatch && invMatch[1]) {
           invNo = invMatch[1].trim();
@@ -505,9 +536,9 @@ export const fetchSalesAndReturnList = async (): Promise<UnifiedTradeRecord[]> =
         invNo = String(tx.billRef).trim();
       }
 
-      if (!invNo) return;
+      if (!invNo && !ordNo) return;
 
-      const cleanOrdNo = getCleanOrderNo(null, invNo);
+      const cleanOrdNo = getCleanOrderNo(ordNo, invNo);
       const finAliases = [
         cleanOrdNo ? `sale_ord_${cleanOrdNo.toLowerCase()}` : null,
         invNo ? `sale_inv_${invNo.toLowerCase()}` : null,

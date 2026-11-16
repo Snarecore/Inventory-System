@@ -942,6 +942,9 @@ export const TradeReturnForm: React.FC<TradeReturnFormProps> = ({ mode }) => {
         payload.invoiceNo = invoiceNo || selectedOrder?.purchaseInvoiceNo || selectedOrder?.challanNo || "";
         payload.purchaseInvoiceNo = invoiceNo || selectedOrder?.purchaseInvoiceNo || selectedOrder?.challanNo || "";
         payload.challanNo = selectedOrder?.challanNo || invoiceNo || "";
+        if (selectedOrder?.orderNo) {
+          payload.orderNo = selectedOrder.orderNo;
+        }
         payload.supplierId = partyId ?? selectedOrder?.supplierId ?? selectedOrder?.partyId ?? 0;
         payload.supplierName = partyName || selectedOrder?.supplierName || selectedOrder?.partyName || "Supplier";
         payload.supplierPhone = partyPhone || selectedOrder?.supplierPhone || selectedOrder?.partyPhone || "";

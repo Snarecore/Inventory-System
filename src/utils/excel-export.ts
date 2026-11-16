@@ -1,6 +1,7 @@
 import type { PurchaseItem, PurchaseReturnItem, CategoryItem, ProductCategoryItem, BankAccountItem, MfsUserItem, EmployeeItem } from "@/types";
 import { isCategoryAdmin, normalizeCategoryType } from "@/services/category-service";
 import { buildDynamicExcelPayload, type ExportColumnDef } from "@/utils/report-export-columns";
+import { getCleanOrderNo } from "@/pages/admin/trade/sales/hooks/useSalesQueries";
 
 export interface GenericExcelExportOptions {
   fileName?: string;
@@ -1042,7 +1043,7 @@ export async function exportSalesToExcel(
     sumItems += itemsCount;
 
     return {
-      orderId: item.orderNo || item.invoiceNo || `ORD-${item.id || index + 1}`,
+      orderId: getCleanOrderNo(item.orderNo, item.invoiceNo) || (item.id ? String(item.id).padStart(6, "0") : String(index + 1).padStart(6, "0")),
       dateStr,
       customerName: item.customerName || item.customer_name || "Walk-in Customer",
       phone: item.customerPhone || item.customer_phone || "-",

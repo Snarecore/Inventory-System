@@ -463,9 +463,14 @@ export const fetchPurchaseAndReturnList = async (): Promise<UnifiedPurchaseRecor
     // 4. Financial transactions (carries authentic 16-digit backend return numbers like 2611161438531964)
     finTxList.forEach((tx: any, idx: number) => {
       let invNo = "";
+      let ordNo = "";
       let supName = "Supplier";
 
       if (tx.notes) {
+        const ordMatch = tx.notes.match(/(?:order|order\s*#|ord\s*#?)\s*([A-Za-z0-9_-]+)/i);
+        if (ordMatch && ordMatch[1]) {
+          ordNo = ordMatch[1].trim();
+        }
         const invMatch = tx.notes.match(/(?:invoice|from|supplier)\s+([A-Za-z0-9_-]+)/i);
         if (invMatch && invMatch[1]) {
           invNo = invMatch[1].trim();
@@ -486,9 +491,9 @@ export const fetchPurchaseAndReturnList = async (): Promise<UnifiedPurchaseRecor
         invNo = String(tx.billRef).trim();
       }
 
-      if (!invNo) return;
+      if (!invNo && !ordNo) return;
 
-      const cleanOrdNo = getCleanOrderNo(null, invNo);
+      const cleanOrdNo = getCleanOrderNo(ordNo, invNo);
       const finAliases = [
         cleanOrdNo ? `pur_ord_${cleanOrdNo.toLowerCase()}` : null,
         invNo ? `pur_inv_${invNo.toLowerCase()}` : null,

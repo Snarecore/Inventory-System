@@ -24,6 +24,7 @@ import type { PartyItem } from "@/types";
 import { showSuccessToast, showErrorToast } from "@/utils/toast-utils";
 import { formatMoney } from "@/utils/formatters";
 import { getReturnReasonLabel, getPurchaseReturnReasonLabel } from "@/pages/admin/trade/constants/returnReasons";
+import { getCleanOrderNo } from "@/pages/admin/trade/sales/hooks/useSalesQueries";
 
 export interface TradeReturnTableProps<T = any> {
   partyType?: "customer" | "supplier";
@@ -490,6 +491,7 @@ export function TradeReturnTable<T extends Record<string, any>>({
                 const sl = (currentPageNumber - 1) * dataLimit + index + 1;
                 const refund = Number(item.refundAmount ?? item.grandTotal ?? item.totalAmount ?? 0);
                 const pType = String(item.paymentType || "CASH").toUpperCase();
+                const displayOrderId = getCleanOrderNo(item.orderNo, item.salesInvoiceNo || item.purchaseInvoiceNo || item.invoiceNo);
 
                 // Payment badges
                 const paymentBg = "bg-[var(--primary-color-muted)] text-[var(--primary-color-dark)] border-[var(--primary-color-muted)] font-semibold";
@@ -578,12 +580,12 @@ export function TradeReturnTable<T extends Record<string, any>>({
                               title="Click to view voucher"
                               className="cursor-pointer hover:text-[var(--primary-color)] transition-colors"
                             >
-                              {item.orderNo || item.returnNo || "N/A"}
+                              {displayOrderId || item.orderNo || item.returnNo || "N/A"}
                             </span>
-                            {item.orderNo && (
+                            {(displayOrderId || item.orderNo) && (
                               <button
                                 type="button"
-                                onClick={() => handleCopyOrderId(item.orderNo, item.id)}
+                                onClick={() => handleCopyOrderId(displayOrderId || item.orderNo, item.id)}
                                 title="Copy Order ID"
                                 className="p-1 text-[var(--ui-text-subtle)] hover:text-[var(--primary-color)] transition-colors opacity-0 group-hover/ord:opacity-100 cursor-pointer"
                               >
