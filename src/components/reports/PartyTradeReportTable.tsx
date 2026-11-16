@@ -13,6 +13,7 @@ import {
   TablePaginationFooter,
   TableSkeleton,
   EmptyState,
+  TableFilterSelect,
 } from "@/components/common";
 import { formatMoney } from "@/utils/formatters";
 import { useDebounce } from "@/hooks/useDebounce";
@@ -185,45 +186,36 @@ export const PartyTradeReportTable: React.FC<PartyTradeReportTableProps> = ({
 
         <div className="flex flex-wrap items-center justify-end gap-2 shrink-0">
           {/* Status filter */}
-          <div className="relative w-36 shrink-0">
-            <select
-              value={statusFilter}
-              onChange={(e) => {
-                setStatusFilter(e.target.value);
-                setCurrentPage(1);
-              }}
-              className="w-full h-8 pl-2.5 pr-6 text-xs border border-[var(--ui-border)] rounded-lg bg-[var(--ui-surface-muted)]/50 hover:bg-[var(--ui-surface)] text-[var(--ui-text)] font-medium focus:outline-none focus:border-[var(--primary-color)] cursor-pointer appearance-none"
-            >
-              <option value="all">{labels.allStatusLabel}</option>
-              <option value="due_only">With Outstanding Due</option>
-              <option value="cleared_only">Settled / Zero Due</option>
-            </select>
-            <FiChevronDown
-              className="absolute right-2 top-1/2 -translate-y-1/2 text-[var(--ui-text-subtle)] pointer-events-none text-xs"
-              size={13}
-            />
-          </div>
+          <TableFilterSelect
+            value={statusFilter}
+            onChange={(val) => {
+              setStatusFilter(val);
+              setCurrentPage(1);
+            }}
+            className="w-36 shrink-0"
+            options={[
+              { value: "all", label: labels.allStatusLabel },
+              { value: "due_only", label: "With Outstanding Due" },
+              { value: "cleared_only", label: "Settled / Zero Due" },
+            ]}
+          />
 
           {/* Sort selector */}
-          <div className="relative w-36 shrink-0">
-            <select
-              value={sortBy}
-              onChange={(e) => {
-                setSortBy(e.target.value);
-                setCurrentPage(1);
-              }}
-              className="w-full h-8 pl-2.5 pr-6 text-xs border border-[var(--ui-border)] rounded-lg bg-[var(--ui-surface-muted)]/50 hover:bg-[var(--ui-surface)] text-[var(--ui-text)] font-medium focus:outline-none focus:border-[var(--primary-color)] cursor-pointer appearance-none"
-            >
-              <option value="billed_desc">Highest Billed</option>
-              <option value="due_desc">Highest Due</option>
-              <option value="orders_desc">Most Orders</option>
-              <option value="name_asc">Name (A-Z)</option>
-            </select>
-            <FiChevronDown
-              className="absolute right-2 top-1/2 -translate-y-1/2 text-[var(--ui-text-subtle)] pointer-events-none text-xs"
-              size={13}
-            />
-          </div>
+          <TableFilterSelect
+            value={sortBy}
+            onChange={(val) => {
+              setSortBy(val);
+              setCurrentPage(1);
+            }}
+            isFiltered={sortBy !== "billed_desc"}
+            className="w-36 shrink-0"
+            options={[
+              { value: "billed_desc", label: "Highest Billed" },
+              { value: "due_desc", label: "Highest Due" },
+              { value: "orders_desc", label: "Most Orders" },
+              { value: "name_asc", label: "Name (A-Z)" },
+            ]}
+          />
 
           <ColumnVisibilityDropdown
             columns={availableColumns}

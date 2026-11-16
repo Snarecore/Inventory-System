@@ -41,6 +41,8 @@ export { default as EmptyState } from "@/components/empty-state/EmptyState";
 // Table Components
 export { default as Search } from "@/components/table-components/Search";
 export { default as DropdownFilter } from "@/components/table-components/DropdownFilter";
+export { default as TableFilterSelect } from "@/components/table-components/TableFilterSelect";
+export * from "@/components/table-components/TableFilterSelect";
 export { default as RefreshButton } from "@/components/table-components/RefreshButton";
 export { default as ExcelExportButton } from "@/components/table-components/ExcelExportButton";
 export { default as ColumnVisibilityDropdown } from "@/components/table-components/ColumnVisibilityDropdown";

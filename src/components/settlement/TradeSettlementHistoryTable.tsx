@@ -18,6 +18,7 @@ import {
   TablePaginationFooter,
   TableSkeleton,
   EmptyState,
+  TableFilterSelect,
 } from "@/components/common";
 import ColumnVisibilityDropdown, { type ColumnItem } from "@/components/table-components/ColumnVisibilityDropdown";
 import { useDebounce } from "@/hooks/useDebounce";
@@ -342,25 +343,20 @@ export const TradeSettlementHistoryTable = <T extends GenericSettlementHistoryIt
             />
           </div>
 
-          <div className="relative shrink-0">
-            <select
-              value={paymentModeFilter}
-              onChange={(e) => {
-                setPaymentModeFilter(e.target.value);
-                setCurrentPageNumber(1);
-              }}
-              className="h-8 pl-2.5 pr-7 text-xs bg-[var(--ui-surface)] border border-[var(--ui-border)] rounded-lg text-[var(--ui-text)] focus:outline-none focus:ring-1 focus:ring-[var(--primary-color)] appearance-none cursor-pointer font-medium"
-            >
-              <option value="all">All Methods</option>
-              <option value="cash">Cash</option>
-              <option value="bank">Bank / Card</option>
-              <option value="mfs">MFS</option>
-            </select>
-            <FiChevronDown
-              className="absolute right-2 top-1/2 -translate-y-1/2 text-[var(--ui-text-muted)] pointer-events-none text-xs"
-              size={13}
-            />
-          </div>
+          <TableFilterSelect
+            value={paymentModeFilter}
+            onChange={(val) => {
+              setPaymentModeFilter(val);
+              setCurrentPageNumber(1);
+            }}
+            className="shrink-0"
+            options={[
+              { value: "all", label: "All Methods" },
+              { value: "cash", label: "Cash" },
+              { value: "bank", label: "Bank / Card" },
+              { value: "mfs", label: "MFS" },
+            ]}
+          />
         </div>
 
         <div className="flex items-center justify-end gap-1.5 sm:gap-2 shrink-0 w-full sm:w-auto pt-1 sm:pt-0 border-t sm:border-t-0 border-[var(--ui-border)]">

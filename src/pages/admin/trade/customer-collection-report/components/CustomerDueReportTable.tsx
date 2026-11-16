@@ -23,6 +23,7 @@ import {
   TablePaginationFooter,
   TableSkeleton,
   EmptyState,
+  TableFilterSelect,
 } from "@/components/common";
 import { formatMoney } from "@/utils/formatters";
 import { useDebounce } from "@/hooks/useDebounce";
@@ -196,25 +197,21 @@ export const CustomerDueReportTable: React.FC<CustomerDueReportTableProps> = ({
             />
           </div>
 
-          <div className="relative shrink-0">
-            <select
-              value={sortBy}
-              onChange={(e) => {
-                setSortBy(e.target.value);
-                setCurrentPage(1);
-              }}
-              className="h-8 pl-2.5 pr-7 text-xs bg-[var(--ui-surface)] border border-[var(--ui-border)] rounded-lg text-[var(--ui-text)] focus:outline-none focus:ring-1 focus:ring-[var(--primary-color)] appearance-none cursor-pointer font-medium"
-            >
-              <option value="due_desc">Highest Due</option>
-              <option value="due_asc">Lowest Due</option>
-              <option value="invoices_desc">Most Pending Invoices</option>
-              <option value="name_asc">Customer Name A–Z</option>
-            </select>
-            <FiChevronDown
-              className="absolute right-2 top-1/2 -translate-y-1/2 text-[var(--ui-text-muted)] pointer-events-none"
-              size={12}
-            />
-          </div>
+          <TableFilterSelect
+            value={sortBy}
+            onChange={(val) => {
+              setSortBy(val);
+              setCurrentPage(1);
+            }}
+            isFiltered={sortBy !== "due_desc"}
+            className="shrink-0"
+            options={[
+              { value: "due_desc", label: "Highest Due" },
+              { value: "due_asc", label: "Lowest Due" },
+              { value: "invoices_desc", label: "Most Pending Invoices" },
+              { value: "name_asc", label: "Customer Name A–Z" },
+            ]}
+          />
 
           {hasActiveFilter && (
             <button

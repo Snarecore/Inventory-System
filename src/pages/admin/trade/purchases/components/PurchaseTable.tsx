@@ -18,6 +18,7 @@ import {
   TableCell,
   TablePaginationFooter,
   TableActionButtons,
+  TableFilterSelect,
 } from "@/components/common";
 import ColumnVisibilityDropdown, { type ColumnItem } from "@/components/table-components/ColumnVisibilityDropdown";
 import type { PurchaseItem, PartyItem } from "@/types";
@@ -384,39 +385,35 @@ export const PurchaseTable: React.FC<PurchaseTableProps> = ({
           )}
 
           {/* Status Filter */}
-          <div className="relative w-[calc(50%-4px)] sm:w-28 shrink-0">
-            <select
-              value={statusFilter}
-              onChange={(e) => {
-                setStatusFilter(e.target.value);
-                setCurrentPageNumber(1);
-              }}
-              className="w-full h-8 pl-2.5 pr-6 text-xs border border-[var(--ui-border)] rounded-lg bg-[var(--ui-surface-muted)]/50 hover:bg-[var(--ui-surface)] text-[var(--ui-text)] font-medium focus:outline-none focus:border-[var(--color-primary)] cursor-pointer appearance-none"
-            >
-              <option value="">All Status</option>
-              <option value="PAID">Paid</option>
-              <option value="PARTIAL">Partial</option>
-              <option value="DUE">Due / Credit</option>
-            </select>
-            <FiChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 text-[var(--ui-text-muted)] pointer-events-none text-xs" size={13} />
-          </div>
+          <TableFilterSelect
+            value={statusFilter}
+            onChange={(val) => {
+              setStatusFilter(val);
+              setCurrentPageNumber(1);
+            }}
+            className="w-[calc(50%-4px)] sm:w-28 shrink-0"
+            options={[
+              { value: "", label: "All Status" },
+              { value: "PAID", label: "Paid" },
+              { value: "PARTIAL", label: "Partial" },
+              { value: "DUE", label: "Due / Credit" },
+            ]}
+          />
 
           {/* Payment Method Filter */}
-          <div className="relative w-[calc(50%-4px)] sm:w-28 shrink-0">
-            <select
-              value={paymentMethodFilter}
-              onChange={(e) => {
-                setPaymentMethodFilter(e.target.value);
-                setCurrentPageNumber(1);
-              }}
-              className="w-full h-8 pl-2.5 pr-6 text-xs border border-[var(--ui-border)] rounded-lg bg-[var(--ui-surface-muted)]/50 hover:bg-[var(--ui-surface)] text-[var(--ui-text)] font-medium focus:outline-none focus:border-[var(--color-primary)] cursor-pointer appearance-none"
-            >
-              <option value="all">All Methods</option>
-              <option value="CASH">Cash</option>
-              <option value="CREDIT">Credit</option>
-            </select>
-            <FiChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 text-[var(--ui-text-muted)] pointer-events-none text-xs" size={13} />
-          </div>
+          <TableFilterSelect
+            value={paymentMethodFilter}
+            onChange={(val) => {
+              setPaymentMethodFilter(val);
+              setCurrentPageNumber(1);
+            }}
+            className="w-[calc(50%-4px)] sm:w-28 shrink-0"
+            options={[
+              { value: "all", label: "All Methods" },
+              { value: "CASH", label: "Cash" },
+              { value: "CREDIT", label: "Credit" },
+            ]}
+          />
         </div>
 
         {/* Right Actions: Column Visibility, Export */}

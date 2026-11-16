@@ -18,6 +18,7 @@ import {
   TablePaginationFooter,
   TableSkeleton,
   EmptyState,
+  TableFilterSelect,
 } from "@/components/common";
 import { formatMoney } from "@/utils/formatters";
 import { useDebounce } from "@/hooks/useDebounce";
@@ -188,45 +189,33 @@ export const KhatabookPersonSummaryReportTable: React.FC<
               </div>
 
               {/* Balance Filter */}
-              <div className="relative">
-                <select
-                  value={balanceFilter}
-                  onChange={(e) => {
-                    setBalanceFilter(e.target.value);
-                    setCurrentPage(1);
-                  }}
-                  className="h-8 pl-2.5 pr-7 text-xs font-medium rounded-lg border border-[var(--ui-border)] bg-[var(--ui-surface)] text-[var(--ui-text)] appearance-none cursor-pointer focus:outline-none focus:ring-1 focus:ring-[var(--primary-color)]"
-                >
-                  <option value="all">{t("All Balances")}</option>
-                  <option value="PABO">{t("Receivable (Pabo)")}</option>
-                  <option value="DIBO">{t("Payable (Dibo)")}</option>
-                  <option value="SETTLED">{t("Settled (Zero)")}</option>
-                </select>
-                <FiChevronDown
-                  className="absolute right-2 top-1/2 -translate-y-1/2 text-[var(--ui-text-muted)] pointer-events-none"
-                  size={12}
-                />
-              </div>
+              <TableFilterSelect
+                value={balanceFilter}
+                onChange={(val) => {
+                  setBalanceFilter(val);
+                  setCurrentPage(1);
+                }}
+                options={[
+                  { value: "all", label: "All Balances" },
+                  { value: "PABO", label: "Receivable (Pabo)" },
+                  { value: "DIBO", label: "Payable (Dibo)" },
+                  { value: "SETTLED", label: "Settled (Zero)" },
+                ]}
+              />
 
               {/* Status Filter */}
-              <div className="relative">
-                <select
-                  value={statusFilter}
-                  onChange={(e) => {
-                    setStatusFilter(e.target.value);
-                    setCurrentPage(1);
-                  }}
-                  className="h-8 pl-2.5 pr-7 text-xs font-medium rounded-lg border border-[var(--ui-border)] bg-[var(--ui-surface)] text-[var(--ui-text)] appearance-none cursor-pointer focus:outline-none focus:ring-1 focus:ring-[var(--primary-color)]"
-                >
-                  <option value="all">{t("All Status")}</option>
-                  <option value="active">{t("Active")}</option>
-                  <option value="inactive">{t("Inactive")}</option>
-                </select>
-                <FiChevronDown
-                  className="absolute right-2 top-1/2 -translate-y-1/2 text-[var(--ui-text-muted)] pointer-events-none"
-                  size={12}
-                />
-              </div>
+              <TableFilterSelect
+                value={statusFilter}
+                onChange={(val) => {
+                  setStatusFilter(val);
+                  setCurrentPage(1);
+                }}
+                options={[
+                  { value: "all", label: "All Status" },
+                  { value: "active", label: "Active" },
+                  { value: "inactive", label: "Inactive" },
+                ]}
+              />
 
 
               {/* Reset Filter Button */}

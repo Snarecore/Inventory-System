@@ -18,6 +18,7 @@ import {
   TableSkeleton,
   TableActionButtons,
   EmptyState,
+  TableFilterSelect,
 } from "@/components/common";
 import { formatMoney } from "@/utils/formatters";
 import { useDebounce } from "@/hooks/useDebounce";
@@ -156,45 +157,36 @@ export const CollectionHistoryReportTable: React.FC<
             />
           </div>
 
-          <div className="relative shrink-0">
-            <select
-              value={methodFilter}
-              onChange={(e) => {
-                setMethodFilter(e.target.value);
-                setCurrentPage(1);
-              }}
-              className="h-8 pl-2.5 pr-7 text-xs bg-[var(--ui-surface)] border border-[var(--ui-border)] rounded-lg text-[var(--ui-text)] focus:outline-none focus:ring-1 focus:ring-[var(--primary-color)] appearance-none cursor-pointer font-medium"
-            >
-              <option value="all">All Methods</option>
-              <option value="cash">Cash</option>
-              <option value="bank">Bank / Card</option>
-              <option value="mfs">MFS</option>
-            </select>
-            <FiChevronDown
-              className="absolute right-2 top-1/2 -translate-y-1/2 text-[var(--ui-text-muted)] pointer-events-none"
-              size={12}
-            />
-          </div>
+          <TableFilterSelect
+            value={methodFilter}
+            onChange={(val) => {
+              setMethodFilter(val);
+              setCurrentPage(1);
+            }}
+            className="shrink-0"
+            options={[
+              { value: "all", label: "All Methods" },
+              { value: "cash", label: "Cash" },
+              { value: "bank", label: "Bank / Card" },
+              { value: "mfs", label: "MFS" },
+            ]}
+          />
 
-          <div className="relative shrink-0">
-            <select
-              value={sortBy}
-              onChange={(e) => {
-                setSortBy(e.target.value);
-                setCurrentPage(1);
-              }}
-              className="h-8 pl-2.5 pr-7 text-xs bg-[var(--ui-surface)] border border-[var(--ui-border)] rounded-lg text-[var(--ui-text)] focus:outline-none focus:ring-1 focus:ring-[var(--primary-color)] appearance-none cursor-pointer font-medium"
-            >
-              <option value="latest">Latest First</option>
-              <option value="oldest">Oldest First</option>
-              <option value="amount_desc">Highest Amount</option>
-              <option value="amount_asc">Lowest Amount</option>
-            </select>
-            <FiChevronDown
-              className="absolute right-2 top-1/2 -translate-y-1/2 text-[var(--ui-text-muted)] pointer-events-none"
-              size={12}
-            />
-          </div>
+          <TableFilterSelect
+            value={sortBy}
+            onChange={(val) => {
+              setSortBy(val);
+              setCurrentPage(1);
+            }}
+            isFiltered={sortBy !== "latest"}
+            className="shrink-0"
+            options={[
+              { value: "latest", label: "Latest First" },
+              { value: "oldest", label: "Oldest First" },
+              { value: "amount_desc", label: "Highest Amount" },
+              { value: "amount_asc", label: "Lowest Amount" },
+            ]}
+          />
 
           {hasActiveFilter && (
             <button

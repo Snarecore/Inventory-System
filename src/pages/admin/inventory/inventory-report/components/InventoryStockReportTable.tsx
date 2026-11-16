@@ -18,6 +18,7 @@ import {
   TableSkeleton,
   TableActionButtons,
   EmptyState,
+  TableFilterSelect,
 } from "@/components/common";
 import { formatMoney } from "@/utils/formatters";
 import { useDebounce } from "@/hooks/useDebounce";
@@ -183,73 +184,55 @@ export const InventoryStockReportTable: React.FC<
           />
 
           {/* Category Filter */}
-          <div className="relative w-[calc(50%-4px)] sm:w-36 shrink-0">
-            <select
-              value={categoryFilter}
-              onChange={(e) => {
-                setCategoryFilter(e.target.value);
-                setCurrentPage(1);
-              }}
-              className="w-full h-8 pl-2.5 pr-6 text-xs border border-[var(--ui-border)] rounded-lg bg-[var(--ui-surface-muted)]/50 hover:bg-[var(--ui-surface)] text-[var(--ui-text)] font-medium focus:outline-none focus:border-[var(--color-primary)] cursor-pointer appearance-none"
-            >
-              <option value="all">All Categories</option>
-              {categoryOptions.map((cat) => (
-                <option key={cat} value={cat}>
-                  {cat}
-                </option>
-              ))}
-            </select>
-            <FiChevronDown
-              className="absolute right-2 top-1/2 -translate-y-1/2 text-[var(--ui-text)] pointer-events-none text-xs"
-              size={13}
-            />
-          </div>
+          <TableFilterSelect
+            value={categoryFilter}
+            onChange={(val) => {
+              setCategoryFilter(val);
+              setCurrentPage(1);
+            }}
+            className="w-[calc(50%-4px)] sm:w-36 shrink-0"
+            options={[
+              { value: "all", label: "All Categories" },
+              ...categoryOptions.map((cat) => ({ value: cat, label: cat })),
+            ]}
+          />
 
           {/* Stock & Status Filter */}
-          <div className="relative w-[calc(50%-4px)] sm:w-32 shrink-0">
-            <select
-              value={stockFilter}
-              onChange={(e) => {
-                setStockFilter(e.target.value);
-                setCurrentPage(1);
-              }}
-              className="w-full h-8 pl-2.5 pr-6 text-xs border border-[var(--ui-border)] rounded-lg bg-[var(--ui-surface-muted)]/50 hover:bg-[var(--ui-surface)] text-[var(--ui-text)] font-medium focus:outline-none focus:border-[var(--color-primary)] cursor-pointer appearance-none"
-            >
-              <option value="all">All Stock/Status</option>
-              <option value="active">Active Only</option>
-              <option value="inactive">Inactive Only</option>
-              <option value="in_stock">Healthy Stock</option>
-              <option value="low_stock">Low / Out Stock</option>
-              <option value="out_of_stock">Out of Stock</option>
-            </select>
-            <FiChevronDown
-              className="absolute right-2 top-1/2 -translate-y-1/2 text-[var(--ui-text)] pointer-events-none text-xs"
-              size={13}
-            />
-          </div>
+          <TableFilterSelect
+            value={stockFilter}
+            onChange={(val) => {
+              setStockFilter(val);
+              setCurrentPage(1);
+            }}
+            className="w-[calc(50%-4px)] sm:w-32 shrink-0"
+            options={[
+              { value: "all", label: "All Stock/Status" },
+              { value: "active", label: "Active Only" },
+              { value: "inactive", label: "Inactive Only" },
+              { value: "in_stock", label: "Healthy Stock" },
+              { value: "low_stock", label: "Low / Out Stock" },
+              { value: "out_of_stock", label: "Out of Stock" },
+            ]}
+          />
 
           {/* Sort Selector */}
-          <div className="relative w-[calc(50%-4px)] sm:w-36 shrink-0">
-            <select
-              value={sortBy}
-              onChange={(e) => {
-                setSortBy(e.target.value);
-                setCurrentPage(1);
-              }}
-              className="w-full h-8 pl-2.5 pr-6 text-xs border border-[var(--ui-border)] rounded-lg bg-[var(--ui-surface-muted)]/50 hover:bg-[var(--ui-surface)] text-[var(--ui-text)] font-medium focus:outline-none focus:border-[var(--color-primary)] cursor-pointer appearance-none"
-            >
-              <option value="latest">Latest Products</option>
-              <option value="cost_desc">Highest Cost Value</option>
-              <option value="retail_desc">Highest Retail Value</option>
-              <option value="qty_desc">Highest Stock Qty</option>
-              <option value="qty_asc">Lowest Stock Qty</option>
-              <option value="name_asc">Name (A-Z)</option>
-            </select>
-            <FiChevronDown
-              className="absolute right-2 top-1/2 -translate-y-1/2 text-[var(--ui-text)] pointer-events-none text-xs"
-              size={13}
-            />
-          </div>
+          <TableFilterSelect
+            value={sortBy}
+            onChange={(val) => {
+              setSortBy(val);
+              setCurrentPage(1);
+            }}
+            isFiltered={sortBy !== "latest"}
+            className="w-[calc(50%-4px)] sm:w-36 shrink-0"
+            options={[
+              { value: "latest", label: "Latest Products" },
+              { value: "cost_desc", label: "Highest Cost Value" },
+              { value: "retail_desc", label: "Highest Retail Value" },
+              { value: "qty_desc", label: "Highest Stock Qty" },
+              { value: "qty_asc", label: "Lowest Stock Qty" },
+              { value: "name_asc", label: "Name (A-Z)" },
+            ]}
+          />
         </div>
 
         {/* Right Actions */}

@@ -12,6 +12,7 @@ import {
   TablePaginationFooter,
   TableSkeleton,
   EmptyState,
+  TableFilterSelect,
 } from "@/components/common";
 import { formatMoney } from "@/utils/formatters";
 import { useDebounce } from "@/hooks/useDebounce";
@@ -185,28 +186,21 @@ export const ProductTradeReportTable: React.FC<ProductTradeReportTableProps> = (
 
         <div className="flex flex-wrap items-center justify-end gap-2 shrink-0">
           {/* Sort selector */}
-          <div className="relative w-44 shrink-0">
-            <select
-              value={sortBy}
-              onChange={(e) => {
-                setSortBy(e.target.value);
-                setCurrentPage(1);
-              }}
-              className="w-full h-8 pl-2.5 pr-6 text-xs border border-[var(--ui-border)] 
-              rounded-lg bg-[var(--ui-surface-muted)]/50 hover:bg-[var(--ui-surface)] 
-              text-[var(--ui-text)] font-medium focus:outline-none focus:border-[var(--primary-color)] 
-              cursor-pointer appearance-none"
-            >
-              <option value="revenue_desc">{labels.highAmountOpt}</option>
-              <option value="revenue_asc">{labels.lowAmountOpt}</option>
-              <option value="qty_desc">{labels.highQtyOpt}</option>
-              <option value="name_asc">Product Name (A-Z)</option>
-            </select>
-            <FiChevronDown
-              className="absolute right-2 top-1/2 -translate-y-1/2 text-[var(--ui-text-subtle)] pointer-events-none text-xs"
-              size={13}
-            />
-          </div>
+          <TableFilterSelect
+            value={sortBy}
+            onChange={(val) => {
+              setSortBy(val);
+              setCurrentPage(1);
+            }}
+            isFiltered={sortBy !== "revenue_desc"}
+            className="w-44 shrink-0"
+            options={[
+              { value: "revenue_desc", label: labels.highAmountOpt },
+              { value: "revenue_asc", label: labels.lowAmountOpt },
+              { value: "qty_desc", label: labels.highQtyOpt },
+              { value: "name_asc", label: "Product Name (A-Z)" },
+            ]}
+          />
 
           <ColumnVisibilityDropdown
             columns={availableColumns}

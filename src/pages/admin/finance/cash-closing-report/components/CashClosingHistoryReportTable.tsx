@@ -14,6 +14,7 @@ import {
   TableSkeleton,
   TableActionButtons,
   EmptyState,
+  TableFilterSelect,
 } from "@/components/common";
 import ColumnVisibilityDropdown, {
   type ColumnItem,
@@ -234,46 +235,36 @@ export const CashClosingHistoryReportTable: React.FC<
           />
 
           {/* Variance Filter */}
-          <div className="relative w-[calc(50%-4px)] sm:w-36 shrink-0">
-            <select
-              value={varianceFilter}
-              onChange={(e) => {
-                setVarianceFilter(e.target.value);
-                setCurrentPage(1);
-              }}
-              className="w-full h-8 pl-2.5 pr-6 text-xs border border-[var(--ui-border)] rounded-lg bg-[var(--ui-surface-muted)]/50 hover:bg-[var(--ui-surface)] text-[var(--ui-text)] font-medium focus:outline-none focus:border-[var(--color-primary)] cursor-pointer appearance-none"
-            >
-              <option value="all">All Variance</option>
-              <option value="matched">Matched (৳ 0)</option>
-              <option value="mismatched">Mismatched Only</option>
-              <option value="shortage">Shortage (-)</option>
-              <option value="surplus">Surplus (+)</option>
-            </select>
-            <FiChevronDown
-              className="absolute right-2 top-1/2 -translate-y-1/2 text-[var(--ui-text)] pointer-events-none text-xs"
-              size={13}
-            />
-          </div>
+          <TableFilterSelect
+            value={varianceFilter}
+            onChange={(val) => {
+              setVarianceFilter(val);
+              setCurrentPage(1);
+            }}
+            className="w-[calc(50%-4px)] sm:w-36 shrink-0"
+            options={[
+              { value: "all", label: "All Variance" },
+              { value: "matched", label: "Matched (৳ 0)" },
+              { value: "mismatched", label: "Mismatched Only" },
+              { value: "shortage", label: "Shortage (-)" },
+              { value: "surplus", label: "Surplus (+)" },
+            ]}
+          />
 
           {/* Closing Status Filter */}
-          <div className="relative w-[calc(50%-4px)] sm:w-28 shrink-0">
-            <select
-              value={statusFilter}
-              onChange={(e) => {
-                setStatusFilter(e.target.value);
-                setCurrentPage(1);
-              }}
-              className="w-full h-8 pl-2.5 pr-6 text-xs border border-[var(--ui-border)] rounded-lg bg-[var(--ui-surface-muted)]/50 hover:bg-[var(--ui-surface)] text-[var(--ui-text)] font-medium focus:outline-none focus:border-[var(--color-primary)] cursor-pointer appearance-none"
-            >
-              <option value="all">All Status</option>
-              <option value="closed">Closed</option>
-              <option value="open">Open</option>
-            </select>
-            <FiChevronDown
-              className="absolute right-2 top-1/2 -translate-y-1/2 text-[var(--ui-text)] pointer-events-none text-xs"
-              size={13}
-            />
-          </div>
+          <TableFilterSelect
+            value={statusFilter}
+            onChange={(val) => {
+              setStatusFilter(val);
+              setCurrentPage(1);
+            }}
+            className="w-[calc(50%-4px)] sm:w-28 shrink-0"
+            options={[
+              { value: "all", label: "All Status" },
+              { value: "closed", label: "Closed" },
+              { value: "open", label: "Open" },
+            ]}
+          />
         </div>
 
         {/* Right Toolbar Actions */}

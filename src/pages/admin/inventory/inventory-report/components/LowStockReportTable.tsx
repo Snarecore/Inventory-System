@@ -15,6 +15,7 @@ import {
   TableSkeleton,
   TableActionButtons,
   EmptyState,
+  TableFilterSelect,
 } from "@/components/common";
 import { formatMoney } from "@/utils/formatters";
 import { useDebounce } from "@/hooks/useDebounce";
@@ -156,46 +157,32 @@ export const LowStockReportTable: React.FC<LowStockReportTableProps> = ({
             className="w-[calc(50%-4px)] sm:w-40 lg:w-44 shrink-0 z-50"
           />
 
-          <div className="relative w-[calc(50%-4px)] sm:w-36 shrink-0">
-            <select
-              value={categoryFilter}
-              onChange={(e) => {
-                setCategoryFilter(e.target.value);
-                setCurrentPage(1);
-              }}
-              className="w-full h-8 pl-2.5 pr-6 text-xs border border-[var(--ui-border)] rounded-lg bg-[var(--ui-surface-muted)]/50 hover:bg-[var(--ui-surface)] text-[var(--ui-text)] font-medium focus:outline-none focus:border-[var(--color-primary)] cursor-pointer appearance-none"
-            >
-              <option value="all">All Categories</option>
-              {categoryOptions.map((cat) => (
-                <option key={cat} value={cat}>
-                  {cat}
-                </option>
-              ))}
-            </select>
-            <FiChevronDown
-              className="absolute right-2 top-1/2 -translate-y-1/2 text-[var(--ui-text)] pointer-events-none text-xs"
-              size={13}
-            />
-          </div>
+          <TableFilterSelect
+            value={categoryFilter}
+            onChange={(val) => {
+              setCategoryFilter(val);
+              setCurrentPage(1);
+            }}
+            className="w-[calc(50%-4px)] sm:w-36 shrink-0"
+            options={[
+              { value: "all", label: "All Categories" },
+              ...categoryOptions.map((cat) => ({ value: cat, label: cat })),
+            ]}
+          />
 
-          <div className="relative w-full sm:w-36 shrink-0">
-            <select
-              value={severityFilter}
-              onChange={(e) => {
-                setSeverityFilter(e.target.value);
-                setCurrentPage(1);
-              }}
-              className="w-full h-8 pl-2.5 pr-6 text-xs border border-[var(--ui-border)] rounded-lg bg-[var(--ui-surface-muted)]/50 hover:bg-[var(--ui-surface)] text-[var(--ui-text)] font-medium focus:outline-none focus:border-[var(--color-primary)] cursor-pointer appearance-none"
-            >
-              <option value="all">All Stock Alerts</option>
-              <option value="out">Out of Stock Only</option>
-              <option value="low">Low Stock Only</option>
-            </select>
-            <FiChevronDown
-              className="absolute right-2 top-1/2 -translate-y-1/2 text-[var(--ui-text)] pointer-events-none text-xs"
-              size={13}
-            />
-          </div>
+          <TableFilterSelect
+            value={severityFilter}
+            onChange={(val) => {
+              setSeverityFilter(val);
+              setCurrentPage(1);
+            }}
+            className="w-full sm:w-36 shrink-0"
+            options={[
+              { value: "all", label: "All Stock Alerts" },
+              { value: "out", label: "Out of Stock Only" },
+              { value: "low", label: "Low Stock Only" },
+            ]}
+          />
         </div>
 
         <div className="flex items-center flex-wrap justify-end gap-1.5 sm:gap-2 shrink-0 w-full sm:w-auto pt-1 sm:pt-0 border-t sm:border-t-0 border-[var(--ui-border)]">

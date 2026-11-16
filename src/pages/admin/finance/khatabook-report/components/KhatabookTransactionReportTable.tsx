@@ -19,6 +19,7 @@ import {
   TablePaginationFooter,
   TableSkeleton,
   EmptyState,
+  TableFilterSelect,
 } from "@/components/common";
 import { formatMoney } from "@/utils/formatters";
 import { useDebounce } from "@/hooks/useDebounce";
@@ -186,46 +187,35 @@ export const KhatabookTransactionReportTable: React.FC<
               />
 
               {/* Type Filter */}
-              <div className="relative">
-                <select
-                  value={typeFilter}
-                  onChange={(e) => {
-                    setTypeFilter(e.target.value);
-                    setCurrentPage(1);
-                  }}
-                  className="h-8 pl-2.5 pr-7 text-xs font-medium rounded-lg border border-[var(--ui-border)] bg-[var(--ui-surface)] text-[var(--ui-text)] appearance-none cursor-pointer focus:outline-none focus:ring-1 focus:ring-[var(--primary-color)]"
-                >
-                  <option value="all">{t("All Types")}</option>
-                  <option value="PABO">{t("Receivable (Pabo)")}</option>
-                  <option value="DIBO">{t("Payable (Dibo)")}</option>
-                  <option value="OPENING">{t("Opening Balance")}</option>
-                </select>
-                <FiChevronDown
-                  className="absolute right-2 top-1/2 -translate-y-1/2 text-[var(--ui-text-muted)] pointer-events-none"
-                  size={12}
-                />
-              </div>
+              <TableFilterSelect
+                value={typeFilter}
+                onChange={(val) => {
+                  setTypeFilter(val);
+                  setCurrentPage(1);
+                }}
+                options={[
+                  { value: "all", label: "All Types" },
+                  { value: "PABO", label: "Receivable (Pabo)" },
+                  { value: "DIBO", label: "Payable (Dibo)" },
+                  { value: "OPENING", label: "Opening Balance" },
+                ]}
+              />
 
               {/* Sort By */}
-              <div className="relative">
-                <select
-                  value={sortBy}
-                  onChange={(e) => {
-                    setSortBy(e.target.value);
-                    setCurrentPage(1);
-                  }}
-                  className="h-8 pl-2.5 pr-7 text-xs font-medium rounded-lg border border-[var(--ui-border)] bg-[var(--ui-surface)] text-[var(--ui-text)] appearance-none cursor-pointer focus:outline-none focus:ring-1 focus:ring-[var(--primary-color)]"
-                >
-                  <option value="latest">{t("Latest First")}</option>
-                  <option value="oldest">{t("Oldest First")}</option>
-                  <option value="amount_desc">{t("Amount: High to Low")}</option>
-                  <option value="amount_asc">{t("Amount: Low to High")}</option>
-                </select>
-                <FiChevronDown
-                  className="absolute right-2 top-1/2 -translate-y-1/2 text-[var(--ui-text-muted)] pointer-events-none"
-                  size={12}
-                />
-              </div>
+              <TableFilterSelect
+                value={sortBy}
+                onChange={(val) => {
+                  setSortBy(val);
+                  setCurrentPage(1);
+                }}
+                isFiltered={sortBy !== "latest"}
+                options={[
+                  { value: "latest", label: "Latest First" },
+                  { value: "oldest", label: "Oldest First" },
+                  { value: "amount_desc", label: "Amount: High to Low" },
+                  { value: "amount_asc", label: "Amount: Low to High" },
+                ]}
+              />
 
               {/* Reset Filter Button */}
               {hasActiveFilters && (
