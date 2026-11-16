@@ -12,10 +12,7 @@ import {
 import apiConfig from "@/config/api.json";
 import { postData } from "@/services/api-service";
 import { buildAccessUser } from "@/utils/access-user";
-import {
-  getPersistedTradeReturns,
-  removePersistedTradeReturnsByInvoices,
-} from "@/utils/trade-return-storage";
+
 import {
   checkSalesDelete,
   deleteSalesOrder,
@@ -180,23 +177,7 @@ export const fetchSalesList = async (): Promise<SaleItem[]> => {
       res?.sale_list ||
       [];
 
-    const normalizedList = (Array.isArray(list) ? list : []).map(normalizeSaleRecord);
-
-    const { returnedSales } = getPersistedTradeReturns();
-    if (returnedSales && returnedSales.length > 0) {
-      const existingKeys = new Set(
-        normalizedList.map((s) => String(s.invoiceNo || s.orderNo || s.id || "").trim().toLowerCase())
-      );
-      returnedSales.forEach((ps) => {
-        const k = String(ps.invoiceNo || ps.orderNo || ps.id || "").trim().toLowerCase();
-        if (k && !existingKeys.has(k)) {
-          existingKeys.add(k);
-          normalizedList.push(normalizeSaleRecord({ ...ps, hasReturn: true }));
-        }
-      });
-    }
-
-    return normalizedList;
+    return (Array.isArray(list) ? list : []).map(normalizeSaleRecord);
   } catch (error) {
     console.error("Failed to fetch sales list:", error);
     return [];
@@ -245,19 +226,7 @@ export const fetchSalesAndReturnList = async (): Promise<UnifiedTradeRecord[]> =
           )
         : [];
 
-    const { returnedSales: persistedSales, returnVouchers: persistedVouchers } = getPersistedTradeReturns();
-    const persistedSaleMap = new Map<string, SaleItem>();
-    persistedSales.forEach((ps) => {
-      const k = String(ps.invoiceNo || ps.salesInvoiceNo || ps.orderNo || ps.id || "").trim().toLowerCase();
-      if (k) persistedSaleMap.set(k, ps);
-    });
-    const persistedReturnMap = new Map<string, any>();
-    persistedVouchers.forEach((pv) => {
-      const k = String(pv.returnNo || pv.id || "").trim().toLowerCase();
-      if (k) persistedReturnMap.set(k, pv);
-      const invK = String(pv.salesInvoiceNo || pv.invoiceNo || pv.orderNo || "").trim().toLowerCase();
-      if (invK) persistedReturnMap.set(invK, pv);
-    });
+
 
     const sales = Array.isArray(res?.data)
       ? res.data
@@ -445,15 +414,15 @@ export const fetchSalesAndReturnList = async (): Promise<UnifiedTradeRecord[]> =
       );
     };
 
-    const addReturnRecord = (item: any, fallbackIdx: number, isPersistedSource: boolean = false) => {
+    const addReturnRecord = (item: any, fallbackIdx: number) => {
       if (!item) return;
       const rNo = String(item.returnNo || item.return_no || item.salesReturnNo || item.id || `ret_idx_${fallbackIdx}`).trim();
       const rKey = `ret_${rNo.toLowerCase()}`;
       const saleAliases = getSaleAliases(item);
       const isBackend = isBackendGeneratedNo(rNo);
 
-      // If this is from localStorage / persisted or synthetic, drop it if backend already has this return!
-      if (isPersistedSource || !isBackend) {
+      // If this is synthetic, drop it if backend already has this return!
+      if (!isBackend) {
         const hasBackend = saleAliases.some((a) => backendReturnAliases.has(a));
         if (hasBackend) {
           return;
@@ -557,13 +526,10 @@ export const fetchSalesAndReturnList = async (): Promise<UnifiedTradeRecord[]> =
       }
     });
 
-    // 3. Process persisted sales from browser localStorage
-    persistedSales.forEach((ps, idx) => addSaleRecord(ps, idx));
+    // 3. Process backend returns first
+    returns.forEach((r: any, idx: number) => addReturnRecord(r, idx));
 
-    // 4. Process backend returns first
-    returns.forEach((r: any, idx: number) => addReturnRecord(r, idx, false));
-
-    // 5. Financial transactions (carries authentic 16-digit backend return numbers like 2611...)
+    // 4. Financial transactions (carries authentic 16-digit backend return numbers like 2611...)
     finTxList.forEach((tx: any, idx: number) => {
       let invNo = "";
       let custName = "Customer";
@@ -591,8 +557,7 @@ export const fetchSalesAndReturnList = async (): Promise<UnifiedTradeRecord[]> =
 
       if (!invNo) return;
 
-      const persistedSale = persistedSaleMap.get(invNo.toLowerCase());
-      const cleanOrdNo = getCleanOrderNo(persistedSale?.orderNo, invNo);
+      const cleanOrdNo = getCleanOrderNo(null, invNo);
       const finAliases = [
         cleanOrdNo ? `sale_ord_${cleanOrdNo.toLowerCase()}` : null,
         invNo ? `sale_inv_${invNo.toLowerCase()}` : null,
@@ -601,81 +566,71 @@ export const fetchSalesAndReturnList = async (): Promise<UnifiedTradeRecord[]> =
       const finSaleExists = finAliases.some((a) => aliasToSaleIdx.has(a));
       if (!finSaleExists) {
         addSaleRecord({
-          id: persistedSale?.id || `sale_fin_${tx.id || tx.billRef}`,
+          id: `sale_fin_${tx.id || tx.billRef}`,
           orderNo: cleanOrdNo,
-          invoiceNo: persistedSale?.invoiceNo || invNo,
-          salesInvoiceNo: persistedSale?.salesInvoiceNo || invNo,
-          customerName:
-            persistedSale?.customerName && persistedSale.customerName !== "Customer"
-              ? persistedSale.customerName
-              : custName,
-          customerId: persistedSale?.customerId || 0,
-          customerPhone: persistedSale?.customerPhone || "",
-          customerAddress: persistedSale?.customerAddress || "",
+          invoiceNo: invNo,
+          salesInvoiceNo: invNo,
+          customerName: custName,
+          customerId: 0,
+          customerPhone: "",
+          customerAddress: "",
           salesDate:
-            persistedSale?.salesDate ||
             tx.transactionDate ||
             (tx.createdDate ? String(tx.createdDate).split("T")[0] : moment().format("YYYY-MM-DD")),
-          createdAt: persistedSale?.createdAt || tx.createdDate || tx.transactionDate,
-          totalAmount: Number(persistedSale?.totalAmount ?? tx.amount ?? 0),
-          discount: Number(persistedSale?.discount ?? 0),
-          vat: Number(persistedSale?.vat ?? 0),
-          deliveryCharge: Number(persistedSale?.deliveryCharge ?? 0),
-          grandTotal: Number(persistedSale?.grandTotal ?? tx.amount ?? 0),
-          paidAmount: Number(persistedSale?.paidAmount ?? tx.amount ?? 0),
-          dueAmount: Number(persistedSale?.dueAmount ?? 0),
-          paymentType: String(persistedSale?.paymentType || tx.accountType || "CASH").toUpperCase(),
+          createdAt: tx.createdDate || tx.transactionDate,
+          totalAmount: Number(tx.amount ?? 0),
+          discount: 0,
+          vat: 0,
+          deliveryCharge: 0,
+          grandTotal: Number(tx.amount ?? 0),
+          paidAmount: Number(tx.amount ?? 0),
+          dueAmount: 0,
+          paymentType: String(tx.accountType || "CASH").toUpperCase(),
           status: "Returned",
           paymentStatus: "Returned",
-          note: persistedSale?.note || tx.notes || "Sales return refund",
+          note: tx.notes || "Sales return refund",
           osType: "WEB",
           hasReturn: true,
-          returnNo: tx.billRef || persistedSale?.returnNo,
+          returnNo: tx.billRef,
           returnDate: tx.transactionDate,
-          returnGrandTotal: Number(tx.amount || persistedSale?.returnGrandTotal || 0),
-          returnRefundAmount: Number(tx.amount || persistedSale?.returnRefundAmount || 0),
-          salesDetails: persistedSale?.salesDetails || [],
-          details: persistedSale?.details || persistedSale?.salesDetails || [],
+          returnGrandTotal: Number(tx.amount || 0),
+          returnRefundAmount: Number(tx.amount || 0),
+          salesDetails: [],
+          details: [],
           isReturnRecord: false,
         }, idx);
       }
 
       // Authentic return voucher with backend-generated return number (e.g. 2611...)
-      const returnNo = tx.billRef || persistedSale?.returnNo || `SR-${invNo}`;
+      const returnNo = tx.billRef || `SR-${invNo}`;
       const retKey = `ret_${String(returnNo).toLowerCase()}`;
-      const persistedVoucher =
-        persistedReturnMap.get(String(returnNo).toLowerCase()) || persistedReturnMap.get(invNo.toLowerCase());
-      const resolvedOrdNo = getCleanOrderNo(persistedVoucher?.orderNo || persistedSale?.orderNo, invNo);
+      const resolvedOrdNo = cleanOrdNo;
 
       const reconstructedReturn: UnifiedTradeRecord = {
-        id: persistedVoucher?.id || `ret_fin_${tx.id || tx.billRef || idx}`,
+        id: `ret_fin_${tx.id || tx.billRef || idx}`,
         returnNo,
         orderNo: resolvedOrdNo,
-        invoiceNo: persistedVoucher?.invoiceNo || invNo,
-        salesInvoiceNo: persistedVoucher?.salesInvoiceNo || invNo,
-        customerName:
-          persistedVoucher?.customerName ||
-          persistedSale?.customerName ||
-          custName,
-        customerId: persistedVoucher?.customerId || persistedSale?.customerId || 0,
-        customerPhone: persistedVoucher?.customerPhone || persistedSale?.customerPhone || "",
-        customerAddress: persistedVoucher?.customerAddress || persistedSale?.customerAddress || "",
+        invoiceNo: invNo,
+        salesInvoiceNo: invNo,
+        customerName: custName,
+        customerId: 0,
+        customerPhone: "",
+        customerAddress: "",
         returnDate:
-          persistedVoucher?.returnDate ||
           tx.transactionDate ||
           (tx.createdDate ? String(tx.createdDate).split("T")[0] : moment().format("YYYY-MM-DD")),
-        createdAt: persistedVoucher?.createdAt || tx.createdDate || tx.transactionDate,
-        grandTotal: Number(tx.amount || persistedVoucher?.grandTotal || 0),
-        refundAmount: Number(tx.amount || persistedVoucher?.refundAmount || 0),
-        totalAmount: Number(tx.amount || persistedVoucher?.totalAmount || 0),
-        paymentType: String(persistedVoucher?.paymentType || tx.accountType || "CASH").toUpperCase(),
+        createdAt: tx.createdDate || tx.transactionDate,
+        grandTotal: Number(tx.amount || 0),
+        refundAmount: Number(tx.amount || 0),
+        totalAmount: Number(tx.amount || 0),
+        paymentType: String(tx.accountType || "CASH").toUpperCase(),
         status: "Completed",
-        note: persistedVoucher?.note || tx.notes || "Sales return refund",
-        remarks: persistedVoucher?.remarks || tx.notes || "Sales return refund",
-        reason: persistedVoucher?.reason || tx.notes || "Sales return refund",
-        returnDetails: persistedVoucher?.returnDetails || persistedSale?.salesDetails || [],
+        note: tx.notes || "Sales return refund",
+        remarks: tx.notes || "Sales return refund",
+        reason: tx.notes || "Sales return refund",
+        returnDetails: [],
         salesDetails: [],
-        details: persistedVoucher?.returnDetails || persistedSale?.salesDetails || [],
+        details: [],
         isReturnRecord: true,
         hasReturn: true,
       };
@@ -705,15 +660,7 @@ export const fetchSalesAndReturnList = async (): Promise<UnifiedTradeRecord[]> =
       finAliases.forEach((a) => backendReturnAliases.add(a));
     });
 
-    // 6. Clean up persisted returns matching backend returns so localStorage doesn't keep duplicate RET- records
-    if (backendReturnAliases.size > 0) {
-      removePersistedTradeReturnsByInvoices(Array.from(backendReturnAliases));
-    }
-
-    // 7. Persisted vouchers ONLY if no authentic backend return exists
-    persistedVouchers.forEach((pv, idx) => addReturnRecord(pv, idx, true));
-
-    // 8. Ensure hasReturn is set on any sale record whose aliases match returnedInvoices
+    // 5. Ensure hasReturn is set on any sale record whose aliases match returnedInvoices
     unifiedList.forEach((rec) => {
       if (!rec.isReturnRecord) {
         const aliases = getSaleAliases(rec);

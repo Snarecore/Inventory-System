@@ -24,10 +24,7 @@ import type {
   DeletePurchaseOrderPayload,
   DeletePurchaseOrderResponse,
 } from "@/types";
-import {
-  getPersistedPurchaseReturns,
-  removePersistedPurchaseReturnsByInvoices,
-} from "@/utils/trade-return-storage";
+
 import { getCleanOrderNo } from "@/pages/admin/trade/sales/hooks/useSalesQueries";
 
 /**
@@ -174,24 +171,7 @@ export const fetchPurchasesList = async (): Promise<PurchaseItem[]> => {
         : res?.data?.purchaseList || res?.data?.purchases || res?.data?.purchase_list) ||
       [];
 
-    const normalizedList = (Array.isArray(list) ? list : []).map(normalizePurchaseRecord);
-
-    // Merge persisted returned purchases so they are never lost from purchases listings
-    const { returnedPurchases } = getPersistedPurchaseReturns();
-    if (returnedPurchases && returnedPurchases.length > 0) {
-      const existingKeys = new Set(
-        normalizedList.map((p) => String(p.invoiceNo || p.purchaseInvoiceNo || p.orderNo || p.id || "").trim().toLowerCase())
-      );
-      returnedPurchases.forEach((pp) => {
-        const k = String(pp.invoiceNo || pp.purchaseInvoiceNo || pp.orderNo || pp.id || "").trim().toLowerCase();
-        if (k && !existingKeys.has(k)) {
-          existingKeys.add(k);
-          normalizedList.push(normalizePurchaseRecord({ ...pp, hasReturn: true }));
-        }
-      });
-    }
-
-    return normalizedList;
+    return (Array.isArray(list) ? list : []).map(normalizePurchaseRecord);
   } catch (error) {
     console.error("Failed to fetch purchases list:", error);
     return [];
@@ -240,19 +220,6 @@ export const fetchPurchaseAndReturnList = async (): Promise<UnifiedPurchaseRecor
           )
         : [];
 
-    const { returnedPurchases: persistedPurchases, returnVouchers: persistedVouchers } = getPersistedPurchaseReturns();
-    const persistedPurchaseMap = new Map<string, PurchaseItem>();
-    persistedPurchases.forEach((pp) => {
-      const k = String(pp.invoiceNo || pp.purchaseInvoiceNo || pp.orderNo || pp.challanNo || pp.id || "").trim().toLowerCase();
-      if (k) persistedPurchaseMap.set(k, pp);
-    });
-    const persistedReturnMap = new Map<string, any>();
-    persistedVouchers.forEach((pv) => {
-      const k = String(pv.returnNo || pv.id || "").trim().toLowerCase();
-      if (k) persistedReturnMap.set(k, pv);
-      const invK = String(pv.purchaseInvoiceNo || pv.invoiceNo || pv.orderNo || pv.challanNo || "").trim().toLowerCase();
-      if (invK) persistedReturnMap.set(invK, pv);
-    });
 
     const purchases = Array.isArray(res?.data)
       ? res.data
@@ -527,13 +494,10 @@ export const fetchPurchaseAndReturnList = async (): Promise<UnifiedPurchaseRecor
       }
     });
 
-    // 3. Process persisted purchases from browser localStorage
-    persistedPurchases.forEach((pp, idx) => addPurchaseRecord(pp, idx));
-
-    // 4. Process backend returns first
+    // 3. Process backend returns first
     returns.forEach((r: any, idx: number) => addReturnRecord(r, idx, false));
 
-    // 5. Financial transactions (carries authentic 16-digit backend return numbers like 2611161438531964)
+    // 4. Financial transactions (carries authentic 16-digit backend return numbers like 2611161438531964)
     finTxList.forEach((tx: any, idx: number) => {
       let invNo = "";
       let supName = "Supplier";
@@ -561,8 +525,7 @@ export const fetchPurchaseAndReturnList = async (): Promise<UnifiedPurchaseRecor
 
       if (!invNo) return;
 
-      const persistedPur = persistedPurchaseMap.get(invNo.toLowerCase());
-      const cleanOrdNo = getCleanOrderNo(persistedPur?.orderNo, invNo);
+      const cleanOrdNo = getCleanOrderNo(null, invNo);
       const finAliases = [
         cleanOrdNo ? `pur_ord_${cleanOrdNo.toLowerCase()}` : null,
         invNo ? `pur_inv_${invNo.toLowerCase()}` : null,
@@ -571,81 +534,72 @@ export const fetchPurchaseAndReturnList = async (): Promise<UnifiedPurchaseRecor
       const finPurchaseExists = finAliases.some((a) => aliasToPurIdx.has(a));
       if (!finPurchaseExists) {
         addPurchaseRecord({
-          id: persistedPur?.id || `pur_fin_${tx.id || tx.billRef}`,
+          id: `pur_fin_${tx.id || tx.billRef}`,
           orderNo: cleanOrdNo,
-          invoiceNo: persistedPur?.invoiceNo || invNo,
-          purchaseInvoiceNo: (persistedPur as any)?.purchaseInvoiceNo || invNo,
-          challanNo: persistedPur?.challanNo || "",
-          supplierName:
-            persistedPur?.supplierName && persistedPur.supplierName !== "Supplier" && persistedPur.supplierName !== "Direct Supplier"
-              ? persistedPur.supplierName
-              : supName,
-          supplierId: persistedPur?.supplierId || 0,
-          supplierPhone: persistedPur?.supplierPhone || "",
-          supplierAddress: persistedPur?.supplierAddress || "",
+          invoiceNo: invNo,
+          purchaseInvoiceNo: invNo,
+          challanNo: "",
+          supplierName: supName,
+          supplierId: 0,
+          supplierPhone: "",
+          supplierAddress: "",
           purchaseDate:
-            persistedPur?.purchaseDate ||
             tx.transactionDate ||
             (tx.createdDate ? String(tx.createdDate).split("T")[0] : moment().format("YYYY-MM-DD")),
-          createdAt: persistedPur?.createdAt || tx.createdDate || tx.transactionDate,
-          totalAmount: Number(persistedPur?.totalAmount ?? tx.amount ?? 0),
-          discount: Number(persistedPur?.discount ?? 0),
-          vat: Number(persistedPur?.vat ?? 0),
-          deliveryCharge: Number((persistedPur as any)?.deliveryCharge ?? 0),
-          grandTotal: Number(persistedPur?.grandTotal ?? tx.amount ?? 0),
-          paidAmount: Number(persistedPur?.paidAmount ?? tx.amount ?? 0),
-          dueAmount: Number(persistedPur?.dueAmount ?? 0),
-          paymentType: String(persistedPur?.paymentType || tx.accountType || "CASH").toUpperCase(),
+          createdAt: tx.createdDate || tx.transactionDate,
+          totalAmount: Number(tx.amount ?? 0),
+          discount: 0,
+          vat: 0,
+          deliveryCharge: 0,
+          grandTotal: Number(tx.amount ?? 0),
+          paidAmount: Number(tx.amount ?? 0),
+          dueAmount: 0,
+          paymentType: String(tx.accountType || "CASH").toUpperCase(),
           status: "Returned",
           paymentStatus: "Returned",
-          note: persistedPur?.note || tx.notes || "Purchase return refund",
+          note: tx.notes || "Purchase return refund",
           osType: "WEB",
           hasReturn: true,
-          returnNo: tx.billRef || persistedPur?.returnNo,
+          returnNo: tx.billRef,
           returnDate: tx.transactionDate,
-          returnGrandTotal: Number(tx.amount || (persistedPur as any)?.returnGrandTotal || 0),
-          returnRefundAmount: Number(tx.amount || (persistedPur as any)?.returnRefundAmount || 0),
-          purchaseDetails: persistedPur?.purchaseDetails || [],
-          details: persistedPur?.details || persistedPur?.purchaseDetails || [],
+          returnGrandTotal: Number(tx.amount || 0),
+          returnRefundAmount: Number(tx.amount || 0),
+          purchaseDetails: [],
+          details: [],
           isReturnRecord: false,
         }, idx);
       }
 
       // Authentic return voucher with backend-generated return number (e.g. 2611161438531964)
-      const returnNo = tx.billRef || persistedPur?.returnNo || `PR-${invNo}`;
-      const retKey = `ret_${returnNo.toLowerCase()}`;
-      const persistedVoucher = persistedReturnMap.get(returnNo.toLowerCase()) || persistedReturnMap.get(invNo.toLowerCase());
-      const resolvedOrdNo = getCleanOrderNo(persistedVoucher?.orderNo || persistedPur?.orderNo, invNo);
+      const returnNo = tx.billRef || `PR-${invNo}`;
+      const retKey = `ret_${String(returnNo).toLowerCase()}`;
+      const resolvedOrdNo = cleanOrdNo;
 
       const reconstructedReturn: UnifiedPurchaseRecord = {
-        id: persistedVoucher?.id || `ret_fin_${tx.id || tx.billRef || idx}`,
+        id: `ret_fin_${tx.id || tx.billRef || idx}`,
         returnNo,
         orderNo: resolvedOrdNo,
-        invoiceNo: persistedVoucher?.invoiceNo || invNo,
-        purchaseInvoiceNo: persistedVoucher?.purchaseInvoiceNo || invNo,
-        challanNo: persistedVoucher?.challanNo || persistedPur?.challanNo || "",
-        supplierName:
-          persistedVoucher?.supplierName ||
-          persistedPur?.supplierName ||
-          supName,
-        supplierId: persistedVoucher?.supplierId || persistedPur?.supplierId || 0,
-        supplierPhone: persistedVoucher?.supplierPhone || persistedPur?.supplierPhone || "",
-        supplierAddress: persistedVoucher?.supplierAddress || persistedPur?.supplierAddress || "",
+        invoiceNo: invNo,
+        purchaseInvoiceNo: invNo,
+        challanNo: "",
+        supplierName: supName,
+        supplierId: 0,
+        supplierPhone: "",
+        supplierAddress: "",
         returnDate:
-          persistedVoucher?.returnDate ||
           tx.transactionDate ||
           (tx.createdDate ? String(tx.createdDate).split("T")[0] : moment().format("YYYY-MM-DD")),
-        createdAt: persistedVoucher?.createdAt || tx.createdDate || tx.transactionDate,
-        grandTotal: Number(tx.amount || persistedVoucher?.grandTotal || 0),
-        refundAmount: Number(tx.amount || persistedVoucher?.refundAmount || 0),
-        totalAmount: Number(tx.amount || persistedVoucher?.totalAmount || 0),
-        paymentType: String(persistedVoucher?.paymentType || tx.accountType || "CASH").toUpperCase(),
+        createdAt: tx.createdDate || tx.transactionDate,
+        grandTotal: Number(tx.amount || 0),
+        refundAmount: Number(tx.amount || 0),
+        totalAmount: Number(tx.amount || 0),
+        paymentType: String(tx.accountType || "CASH").toUpperCase(),
         status: "Completed",
-        note: persistedVoucher?.note || tx.notes || "Purchase return refund",
-        remarks: persistedVoucher?.remarks || tx.notes || "Purchase return refund",
-        returnDetails: persistedVoucher?.returnDetails || persistedPur?.purchaseDetails || [],
+        note: tx.notes || "Purchase return refund",
+        remarks: tx.notes || "Purchase return refund",
+        returnDetails: [],
         purchaseDetails: [],
-        details: persistedVoucher?.returnDetails || persistedPur?.purchaseDetails || [],
+        details: [],
         isReturnRecord: true,
         hasReturn: true,
       };
@@ -675,15 +629,7 @@ export const fetchPurchaseAndReturnList = async (): Promise<UnifiedPurchaseRecor
       finAliases.forEach((a) => backendReturnAliases.add(a));
     });
 
-    // 6. Clean up persisted returns matching backend returns so localStorage doesn't keep duplicate PR- records
-    if (backendReturnAliases.size > 0) {
-      removePersistedPurchaseReturnsByInvoices(Array.from(backendReturnAliases));
-    }
-
-    // 7. Persisted vouchers ONLY if no authentic backend return exists
-    persistedVouchers.forEach((pv, idx) => addReturnRecord(pv, idx, true));
-
-    // 8. Ensure hasReturn is set on any purchase record whose aliases match returnedInvoices
+    // 5. Ensure hasReturn is set on any purchase record whose aliases match returnedInvoices
     unifiedList.forEach((rec) => {
       if (!rec.isReturnRecord) {
         const aliases = getPurchaseAliases(rec);
@@ -692,6 +638,16 @@ export const fetchPurchaseAndReturnList = async (): Promise<UnifiedPurchaseRecor
         }
       }
     });
+
+    // Fallback: If purchases array from /get-purchase-and-return was empty, fetch from /get-purchase-list
+    if (purchases.length === 0 && combinedList.length === 0) {
+      try {
+        const directPurchases = await fetchPurchasesList();
+        directPurchases.forEach((p, idx) => addPurchaseRecord(p, idx));
+      } catch (err) {
+        console.warn("Fallback to fetchPurchasesList in fetchPurchaseAndReturnList failed:", err);
+      }
+    }
 
     return unifiedList;
   } catch (error) {
@@ -772,27 +728,6 @@ export const extractReturnedPurchaseKeysSet = (records: any[]): Set<string> => {
       }
     }
   });
-
-  // Also merge persisted purchase returns from local storage
-  try {
-    const { returnVouchers, returnedPurchases } = getPersistedPurchaseReturns();
-    returnVouchers.forEach((pv: any) => {
-      const inv = pv.purchaseInvoiceNo || pv.purchase_invoice_no || pv.invoiceNo || pv.invoice_no;
-      if (inv && inv !== "-") set.add(String(inv).trim().toLowerCase());
-      if (pv.orderNo) set.add(String(pv.orderNo).trim().toLowerCase());
-      if (pv.challanNo) set.add(String(pv.challanNo).trim().toLowerCase());
-      if (pv.purchaseId) set.add(String(pv.purchaseId).trim().toLowerCase());
-    });
-    returnedPurchases.forEach((pp: any) => {
-      const inv = pp.purchaseInvoiceNo || pp.purchase_invoice_no || pp.invoiceNo || pp.invoice_no;
-      if (inv && inv !== "-") set.add(String(inv).trim().toLowerCase());
-      if (pp.orderNo) set.add(String(pp.orderNo).trim().toLowerCase());
-      if (pp.challanNo) set.add(String(pp.challanNo).trim().toLowerCase());
-      if (pp.purchaseId || pp.id) set.add(String(pp.purchaseId || pp.id).trim().toLowerCase());
-    });
-  } catch {
-    // Ignore browser storage read errors in SSR/test
-  }
 
   return set;
 };

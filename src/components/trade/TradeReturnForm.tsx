@@ -37,12 +37,7 @@ import TradeRefundSection from "@/components/trade/TradeRefundSection";
 import TradeInvoiceModal from "@/components/invoice/TradeInvoiceModal";
 import { normalizeSalesReturnInvoice, normalizePurchaseReturnInvoice } from "@/components/invoice/trade-invoice-adapters";
 import { usePermission } from "@/hooks/usePermission";
-import {
-  savePersistedTradeReturn,
-  savePersistedPurchaseReturn,
-  getPersistedTradeReturns,
-  getPersistedPurchaseReturns,
-} from "@/utils/trade-return-storage";
+
 import { fetchSalesAndReturnList } from "@/pages/admin/trade/sales/hooks/useSalesQueries";
 import { fetchPurchaseAndReturnList } from "@/pages/admin/trade/purchases/hooks/usePurchaseQueries";
 import { useTradeProducts } from "@/hooks/useTradeProducts";
@@ -218,42 +213,7 @@ export const TradeReturnForm: React.FC<TradeReturnFormProps> = ({ mode }) => {
         return false;
       });
 
-      if (hasApiReturn) return true;
-
-      // 2. Check in local persisted returns
-      const persistedReturnVouchers = isSale
-        ? getPersistedTradeReturns().returnVouchers
-        : getPersistedPurchaseReturns().returnVouchers;
-
-      const hasPersistedReturn = (persistedReturnVouchers || []).some((pv: any) => {
-        if (!pv) return false;
-        const pvKeys = [
-          isSale ? (pv.salesInvoiceNo || pv.sales_invoice_no) : (pv.purchaseInvoiceNo || pv.purchase_invoice_no),
-          pv.invoiceNo || pv.invoice_no,
-          pv.challanNo || pv.challan_no,
-          pv.orderNo || pv.order_no,
-          pv.refNo || pv.ref_no,
-          isSale ? (pv.saleId || pv.sale_id) : (pv.purchaseId || pv.purchase_id),
-        ]
-          .map(cleanKey)
-          .filter(Boolean);
-
-        const matchFound = targetKeys.some((tk) => pvKeys.includes(tk));
-        if (matchFound) return true;
-
-        if (typeof pv.notes === "string" || typeof pv.remarks === "string") {
-          const notesStr = cleanKey(String(pv.notes || "") + " " + String(pv.remarks || ""));
-          if (targetKeys.some((tk) => tk.length >= 5 && notesStr.includes(tk))) {
-            return true;
-          }
-        }
-
-        return false;
-      });
-
-      if (hasPersistedReturn) return true;
-
-      return false;
+      return Boolean(hasApiReturn);
     },
     [apiOrdersAndReturnData, isSale]
   );
@@ -354,33 +314,7 @@ export const TradeReturnForm: React.FC<TradeReturnFormProps> = ({ mode }) => {
         }
       });
 
-      // 3. Process local persisted return vouchers
-      const persistedReturnVouchers = isSale
-        ? getPersistedTradeReturns().returnVouchers
-        : getPersistedPurchaseReturns().returnVouchers;
 
-      persistedReturnVouchers.forEach((pv: any) => {
-        if (!pv) return;
-        const pvInv = cleanKey(isSale ? (pv.salesInvoiceNo || pv.invoiceNo) : (pv.purchaseInvoiceNo || pv.invoiceNo));
-        const pvRef = cleanKey(isSale ? pv.orderNo : pv.challanNo);
-        const pvId = cleanKey(isSale ? pv.saleId : pv.purchaseId);
-
-        const matches =
-          (targetInv && pvInv && targetInv === pvInv) ||
-          (targetRef && pvRef && targetRef === pvRef) ||
-          (targetId && pvId && targetId === pvId);
-
-        if (matches) {
-          const pvKey = cleanKey(pv.returnNo || pv.id || pv.refNo);
-          if (!pvKey || !seenReturnKeys.has(pvKey)) {
-            if (pvKey) seenReturnKeys.add(pvKey);
-            const pvDetails = [pv.returnDetails, pv.purchaseReturnDetails, pv.details].find(
-              (details) => Array.isArray(details) && details.length > 0
-            );
-            processDetailsList(pvDetails || []);
-          }
-        }
-      });
 
       return returnedQtyMap;
     },
@@ -1119,11 +1053,7 @@ export const TradeReturnForm: React.FC<TradeReturnFormProps> = ({ mode }) => {
         createdItem.supplierAddress = partyAddress;
       }
 
-      if (isSale && selectedOrder) {
-        savePersistedTradeReturn(selectedOrder, createdItem);
-      } else if (!isSale && selectedOrder) {
-        savePersistedPurchaseReturn(selectedOrder, createdItem);
-      }
+
 
       setHasJustSubmitted(true);
 
