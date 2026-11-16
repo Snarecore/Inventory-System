@@ -1042,14 +1042,35 @@ export const TradeReturnForm: React.FC<TradeReturnFormProps> = ({ mode }) => {
         return;
       }
 
-      const generatedReturnNo =
+      const backendReturnNo =
         response?.returnNo ||
+        response?.return_no ||
+        response?.purchaseReturnNo ||
+        response?.purchase_return_no ||
+        response?.salesReturnNo ||
+        response?.sales_return_no ||
+        response?.refNo ||
+        response?.orderNo ||
+        response?.id ||
+        response?.returnId ||
         response?.data?.returnNo ||
+        response?.data?.return_no ||
+        response?.data?.purchaseReturnNo ||
+        response?.data?.purchase_return_no ||
+        response?.data?.salesReturnNo ||
+        response?.data?.sales_return_no ||
+        response?.data?.refNo ||
+        response?.data?.orderNo ||
+        response?.data?.id ||
+        response?.data?.returnId;
+
+      const generatedReturnNo =
+        backendReturnNo ||
         `${isSale ? "RET" : "PR"}-${moment().format("YYYYMMDD")}-${Math.floor(100 + Math.random() * 900)}`;
 
       const createdItem: any = {
-        id: Date.now(),
-        returnNo: generatedReturnNo,
+        id: backendReturnNo || Date.now(),
+        returnNo: String(generatedReturnNo),
         returnType,
         invoiceNo,
         returnDate,

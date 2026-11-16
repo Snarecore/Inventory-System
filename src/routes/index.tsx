@@ -42,6 +42,8 @@ const SalesReport = React.lazy(() => import('@/pages/admin/trade/sales-report'))
 const PurchaseReport = React.lazy(() => import('@/pages/admin/trade/purchase-report'))
 const SalesReturnReport = React.lazy(() => import('@/pages/admin/trade/sales-return-report'))
 const CustomerCollectionReport = React.lazy(() => import('@/pages/admin/trade/customer-collection-report'))
+const PurchaseReturnReport = React.lazy(() => import('@/pages/admin/trade/purchase-return-report'))
+const SupplierPaymentReport = React.lazy(() => import('@/pages/admin/trade/supplier-payment-report'))
 const CreateSalesReturn = React.lazy(() => import('@/pages/admin/trade/create-sales-return'))
 const CreatePurchaseReturn = React.lazy(() => import('@/pages/admin/trade/purchase-return/CreatePurchaseReturnPage'))
 const CustomerCollection = React.lazy(() => import('@/pages/admin/trade/customer-collection'))
@@ -276,6 +278,26 @@ export const router = createBrowserRouter([
   {
     path: '/reports/collection',
     element: <Navigate to="/admin/reports/customer-collection" replace />,
+  },
+  {
+    path: '/reports/purchase-return',
+    element: <Navigate to="/admin/reports/purchase-return" replace />,
+  },
+  {
+    path: '/purchase-return-report',
+    element: <Navigate to="/admin/reports/purchase-return" replace />,
+  },
+  {
+    path: '/reports/supplier-payment',
+    element: <Navigate to="/admin/reports/supplier-payment" replace />,
+  },
+  {
+    path: '/supplier-payment-report',
+    element: <Navigate to="/admin/reports/supplier-payment" replace />,
+  },
+  {
+    path: '/reports/payment',
+    element: <Navigate to="/admin/reports/supplier-payment" replace />,
   },
   {
     path: '/reports/khatabook',
@@ -630,6 +652,22 @@ export const router = createBrowserRouter([
       {
         path: 'reports/customer-collection',
         element: withPermission(CustomerCollectionReport, 'reports'),
+      },
+      {
+        path: 'purchase-return-report',
+        element: withPermission(PurchaseReturnReport, 'reports'),
+      },
+      {
+        path: 'reports/purchase-return',
+        element: withPermission(PurchaseReturnReport, 'reports'),
+      },
+      {
+        path: 'supplier-payment-report',
+        element: withPermission(SupplierPaymentReport, 'reports'),
+      },
+      {
+        path: 'reports/supplier-payment',
+        element: withPermission(SupplierPaymentReport, 'reports'),
       },
       {
         path: 'khatabook-report',

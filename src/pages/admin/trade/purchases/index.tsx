@@ -110,7 +110,7 @@ const Purchases: React.FC = () => {
   // Single-pass memoized extraction of Purchases and Returns
   const { combinedPurchases, rawReturns } = useMemo(() => {
     const pList: PurchaseItem[] = [];
-    const rList: PurchaseReturnItem[] = [];
+    const rawRList: PurchaseReturnItem[] = [];
 
     if (Array.isArray(combinedData)) {
       combinedData.forEach((item: any, idx: number) => {
@@ -131,7 +131,7 @@ const Purchases: React.FC = () => {
               ? item.products
               : [];
 
-          rList.push({
+          rawRList.push({
             id: item.id || item.returnId || item.purchaseReturnId || item.returnNo || item.orderNo || `ret_${item.returnNo || idx}`,
             returnNo: item.returnNo || "",
             orderNo: item.orderNo || "",
@@ -174,7 +174,101 @@ const Purchases: React.FC = () => {
       });
     }
 
-    return { combinedPurchases: pList, rawReturns: rList };
+    // Deduplicate return vouchers: always prioritize backend-generated return numbers (16-digit numbers)
+    const isAuthenticBackendNo = (no?: string): boolean => {
+      if (!no) return false;
+      const clean = String(no).trim().toUpperCase();
+      return (
+        clean.length > 0 &&
+        !clean.startsWith("PR-") &&
+        !clean.startsWith("RET_") &&
+        !clean.startsWith("RET-") &&
+        !clean.startsWith("PR_")
+      );
+    };
+
+    // Sort candidates so authentic backend return records come FIRST
+    const sortedCandidates = [...rawRList].sort((a, b) => {
+      const aIsBackend = isAuthenticBackendNo(a.returnNo);
+      const bIsBackend = isAuthenticBackendNo(b.returnNo);
+      if (aIsBackend && !bIsBackend) return -1;
+      if (!aIsBackend && bIsBackend) return 1;
+      return 0;
+    });
+
+    const dedupedReturns: PurchaseReturnItem[] = [];
+    const seenRetNos = new Set<string>();
+    const seenOrderRefundPairs = new Set<string>();
+    const seenInvoiceRefundPairs = new Set<string>();
+
+    // Collect rich line item details across all vouchers so authentic backend records keep line item details
+    const detailsMap = new Map<string, any[]>();
+    rawRList.forEach((r) => {
+      if (Array.isArray(r.returnDetails) && r.returnDetails.length > 0) {
+        const cleanOrd = getCleanOrderNo(r.orderNo, r.purchaseInvoiceNo || r.invoiceNo);
+        const ord = String(cleanOrd || r.orderNo || "").trim().toLowerCase();
+        const inv = String(r.purchaseInvoiceNo || r.invoiceNo || "").trim().toLowerCase();
+        if (ord) detailsMap.set(ord, r.returnDetails);
+        if (inv) detailsMap.set(inv, r.returnDetails);
+      }
+    });
+
+    sortedCandidates.forEach((item) => {
+      const retNo = String(item.returnNo || "").trim();
+      const cleanOrd = getCleanOrderNo(item.orderNo, item.purchaseInvoiceNo || item.invoiceNo);
+      const ordNo = String(cleanOrd || item.orderNo || "").trim().toLowerCase();
+      const invNo = String(item.purchaseInvoiceNo || item.invoiceNo || "").trim().toLowerCase();
+      const refundAmt = Number(item.refundAmount || item.grandTotal || 0).toFixed(2);
+      const isBackend = isAuthenticBackendNo(retNo);
+
+      // Check duplicate return number
+      if (retNo) {
+        const retKey = retNo.toLowerCase();
+        if (seenRetNos.has(retKey)) return;
+      }
+
+      // Check duplicate order & refund amount
+      if (ordNo && ordNo !== "-") {
+        const ordKey = `${ordNo}_${refundAmt}`;
+        if (seenOrderRefundPairs.has(ordKey)) return;
+      }
+
+      // Check duplicate invoice & refund amount
+      if (invNo && invNo !== "-") {
+        const invKey = `${invNo}_${refundAmt}`;
+        if (seenInvoiceRefundPairs.has(invKey)) return;
+      }
+
+      // If this is a synthetic PR- record, but an authentic backend return already exists for this order/invoice:
+      if (!isBackend) {
+        if (ordNo && ordNo !== "-" && seenOrderRefundPairs.has(ordNo)) return;
+        if (invNo && invNo !== "-" && seenInvoiceRefundPairs.has(invNo)) return;
+      }
+
+      // Register seen keys
+      if (retNo) seenRetNos.add(retNo.toLowerCase());
+      if (ordNo && ordNo !== "-") {
+        seenOrderRefundPairs.add(`${ordNo}_${refundAmt}`);
+        if (isBackend) seenOrderRefundPairs.add(ordNo);
+      }
+      if (invNo && invNo !== "-") {
+        seenInvoiceRefundPairs.add(`${invNo}_${refundAmt}`);
+        if (isBackend) seenInvoiceRefundPairs.add(invNo);
+      }
+
+      // Ensure line details are retained
+      if (!Array.isArray(item.returnDetails) || item.returnDetails.length === 0) {
+        const matched = detailsMap.get(ordNo) || detailsMap.get(invNo);
+        if (matched && matched.length > 0) {
+          item.returnDetails = matched;
+          item.itemsCount = matched.length;
+        }
+      }
+
+      dedupedReturns.push(item);
+    });
+
+    return { combinedPurchases: pList, rawReturns: dedupedReturns };
   }, [combinedData]);
 
   // Set of returned invoice keys for the return icon indicators

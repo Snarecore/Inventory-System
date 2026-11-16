@@ -24,7 +24,10 @@ import type {
   DeletePurchaseOrderPayload,
   DeletePurchaseOrderResponse,
 } from "@/types";
-import { getPersistedPurchaseReturns } from "@/utils/trade-return-storage";
+import {
+  getPersistedPurchaseReturns,
+  removePersistedPurchaseReturnsByInvoices,
+} from "@/utils/trade-return-storage";
 import { getCleanOrderNo } from "@/pages/admin/trade/sales/hooks/useSalesQueries";
 
 /**
@@ -296,6 +299,7 @@ export const fetchPurchaseAndReturnList = async (): Promise<UnifiedPurchaseRecor
     // Deduplicate into unified records array with multi-alias indexing to avoid duplicate purchases
     const seenReturnKeys = new Set<string>();
     const returnedInvoices = new Set<string>();
+    const backendReturnAliases = new Set<string>();
     const unifiedList: UnifiedPurchaseRecord[] = [];
     const aliasToPurIdx = new Map<string, number>();
 
@@ -420,25 +424,65 @@ export const fetchPurchaseAndReturnList = async (): Promise<UnifiedPurchaseRecor
       }
     };
 
-    const addReturnRecord = (item: any, fallbackIdx: number) => {
+    const isBackendGeneratedNo = (no?: string): boolean => {
+      if (!no) return false;
+      const clean = String(no).trim().toUpperCase();
+      return (
+        clean.length > 0 &&
+        !clean.startsWith("PR-") &&
+        !clean.startsWith("RET_") &&
+        !clean.startsWith("RET-") &&
+        !clean.startsWith("PR_")
+      );
+    };
+
+    const addReturnRecord = (item: any, fallbackIdx: number, isPersistedSource: boolean = false) => {
       if (!item) return;
-      const rNo = item.returnNo || item.return_no || item.id || `ret_idx_${fallbackIdx}`;
-      const rKey = `ret_${rNo}`;
+      const rNo = String(item.returnNo || item.return_no || item.purchaseReturnNo || item.id || `ret_idx_${fallbackIdx}`).trim();
+      const rKey = `ret_${rNo.toLowerCase()}`;
+      const purAliases = getPurchaseAliases(item);
+      const isBackend = isBackendGeneratedNo(rNo);
+
+      // If this is from localStorage / persisted or synthetic, drop it if backend already has this return!
+      if (isPersistedSource || !isBackend) {
+        const hasBackend = purAliases.some((a) => backendReturnAliases.has(a));
+        if (hasBackend) {
+          return;
+        }
+      }
+
+      if (isBackend) {
+        purAliases.forEach((a) => backendReturnAliases.add(a));
+
+        // If a synthetic PR- record was already added earlier for this purchase, remove it!
+        const existingSyntheticIdx = unifiedList.findIndex(
+          (u) =>
+            u.isReturnRecord &&
+            !isBackendGeneratedNo(u.returnNo) &&
+            getPurchaseAliases(u).some((a) => purAliases.includes(a))
+        );
+        if (existingSyntheticIdx !== -1) {
+          unifiedList.splice(existingSyntheticIdx, 1);
+        }
+      }
+
       if (!seenReturnKeys.has(rKey)) {
         seenReturnKeys.add(rKey);
         const normalized = normalizePurchaseRecord(item) as UnifiedPurchaseRecord;
         normalized.isReturnRecord = true;
         normalized.hasReturn = true;
+        if (rNo && !normalized.returnNo) {
+          normalized.returnNo = rNo;
+        }
         unifiedList.push(normalized);
 
-        const purAliases = getPurchaseAliases(item);
         purAliases.forEach((a) => returnedInvoices.add(a));
       }
 
       // Check if original purchase already exists
-      const purAliases = getPurchaseAliases(item);
+      const purAliasesForCheck = getPurchaseAliases(item);
       let existingIdx = -1;
-      for (const a of purAliases) {
+      for (const a of purAliasesForCheck) {
         if (aliasToPurIdx.has(a)) {
           existingIdx = aliasToPurIdx.get(a)!;
           break;
@@ -448,7 +492,7 @@ export const fetchPurchaseAndReturnList = async (): Promise<UnifiedPurchaseRecor
       if (existingIdx !== -1) {
         // Original purchase already exists! DO NOT create a synthetic duplicate!
         unifiedList[existingIdx].hasReturn = true;
-        purAliases.forEach((a) => aliasToPurIdx.set(a, existingIdx));
+        purAliasesForCheck.forEach((a) => aliasToPurIdx.set(a, existingIdx));
       } else {
         // Only reconstruct fallback purchase if original purchase is completely missing
         const cleanOrd = getCleanOrderNo(item.orderNo, item.purchaseInvoiceNo || item.invoiceNo);
@@ -477,7 +521,7 @@ export const fetchPurchaseAndReturnList = async (): Promise<UnifiedPurchaseRecor
     // 2. Process combinedList (actual purchases / returns from API)
     combinedList.forEach((d: any, idx: number) => {
       if (isPurchaseReturnRecord(d)) {
-        addReturnRecord(d, idx);
+        addReturnRecord(d, idx, false);
       } else {
         addPurchaseRecord(d, idx);
       }
@@ -486,11 +530,10 @@ export const fetchPurchaseAndReturnList = async (): Promise<UnifiedPurchaseRecor
     // 3. Process persisted purchases from browser localStorage
     persistedPurchases.forEach((pp, idx) => addPurchaseRecord(pp, idx));
 
-    // 4. Process returns and persisted return vouchers
-    returns.forEach((r: any, idx: number) => addReturnRecord(r, idx));
-    persistedVouchers.forEach((pv, idx) => addReturnRecord(pv, idx));
+    // 4. Process backend returns first
+    returns.forEach((r: any, idx: number) => addReturnRecord(r, idx, false));
 
-    // 5. Financial transactions (fallback ONLY for missing purchases and vouchers)
+    // 5. Financial transactions (carries authentic 16-digit backend return numbers like 2611161438531964)
     finTxList.forEach((tx: any, idx: number) => {
       let invNo = "";
       let supName = "Supplier";
@@ -568,50 +611,79 @@ export const fetchPurchaseAndReturnList = async (): Promise<UnifiedPurchaseRecor
         }, idx);
       }
 
-      // Ensure return voucher exists in unifiedList for the Returns tab
+      // Authentic return voucher with backend-generated return number (e.g. 2611161438531964)
       const returnNo = tx.billRef || persistedPur?.returnNo || `PR-${invNo}`;
-      const retKey = `ret_${returnNo}`;
-      if (!seenReturnKeys.has(retKey)) {
+      const retKey = `ret_${returnNo.toLowerCase()}`;
+      const persistedVoucher = persistedReturnMap.get(returnNo.toLowerCase()) || persistedReturnMap.get(invNo.toLowerCase());
+      const resolvedOrdNo = getCleanOrderNo(persistedVoucher?.orderNo || persistedPur?.orderNo, invNo);
+
+      const reconstructedReturn: UnifiedPurchaseRecord = {
+        id: persistedVoucher?.id || `ret_fin_${tx.id || tx.billRef || idx}`,
+        returnNo,
+        orderNo: resolvedOrdNo,
+        invoiceNo: persistedVoucher?.invoiceNo || invNo,
+        purchaseInvoiceNo: persistedVoucher?.purchaseInvoiceNo || invNo,
+        challanNo: persistedVoucher?.challanNo || persistedPur?.challanNo || "",
+        supplierName:
+          persistedVoucher?.supplierName ||
+          persistedPur?.supplierName ||
+          supName,
+        supplierId: persistedVoucher?.supplierId || persistedPur?.supplierId || 0,
+        supplierPhone: persistedVoucher?.supplierPhone || persistedPur?.supplierPhone || "",
+        supplierAddress: persistedVoucher?.supplierAddress || persistedPur?.supplierAddress || "",
+        returnDate:
+          persistedVoucher?.returnDate ||
+          tx.transactionDate ||
+          (tx.createdDate ? String(tx.createdDate).split("T")[0] : moment().format("YYYY-MM-DD")),
+        createdAt: persistedVoucher?.createdAt || tx.createdDate || tx.transactionDate,
+        grandTotal: Number(tx.amount || persistedVoucher?.grandTotal || 0),
+        refundAmount: Number(tx.amount || persistedVoucher?.refundAmount || 0),
+        totalAmount: Number(tx.amount || persistedVoucher?.totalAmount || 0),
+        paymentType: String(persistedVoucher?.paymentType || tx.accountType || "CASH").toUpperCase(),
+        status: "Completed",
+        note: persistedVoucher?.note || tx.notes || "Purchase return refund",
+        remarks: persistedVoucher?.remarks || tx.notes || "Purchase return refund",
+        returnDetails: persistedVoucher?.returnDetails || persistedPur?.purchaseDetails || [],
+        purchaseDetails: [],
+        details: persistedVoucher?.returnDetails || persistedPur?.purchaseDetails || [],
+        isReturnRecord: true,
+        hasReturn: true,
+      };
+
+      // If a synthetic PR- record was already in unifiedList, replace it with this authentic backend return!
+      const existingSyntheticIdx = unifiedList.findIndex(
+        (u) =>
+          u.isReturnRecord &&
+          !isBackendGeneratedNo(u.returnNo) &&
+          (getPurchaseAliases(u).some((a) => finAliases.includes(a)) ||
+            (resolvedOrdNo && String(u.orderNo || "").toLowerCase() === resolvedOrdNo.toLowerCase()) ||
+            (invNo && String(u.invoiceNo || u.purchaseInvoiceNo || "").toLowerCase() === invNo.toLowerCase()))
+      );
+
+      if (existingSyntheticIdx !== -1) {
+        const existing = unifiedList[existingSyntheticIdx];
+        if (Array.isArray(existing.returnDetails) && existing.returnDetails.length > 0) {
+          reconstructedReturn.returnDetails = existing.returnDetails;
+          reconstructedReturn.details = existing.returnDetails;
+        }
+        unifiedList[existingSyntheticIdx] = reconstructedReturn;
+      } else if (!seenReturnKeys.has(retKey)) {
         seenReturnKeys.add(retKey);
-        const persistedVoucher = persistedReturnMap.get(returnNo.toLowerCase()) || persistedReturnMap.get(invNo.toLowerCase());
-        const cleanOrdNo = getCleanOrderNo(persistedVoucher?.orderNo || persistedPur?.orderNo, invNo);
-        const reconstructedReturn: UnifiedPurchaseRecord = {
-          id: persistedVoucher?.id || `ret_fin_${tx.id || tx.billRef || idx}`,
-          returnNo,
-          orderNo: cleanOrdNo,
-          invoiceNo: persistedVoucher?.invoiceNo || invNo,
-          purchaseInvoiceNo: persistedVoucher?.purchaseInvoiceNo || invNo,
-          challanNo: persistedVoucher?.challanNo || persistedPur?.challanNo || "",
-          supplierName:
-            persistedVoucher?.supplierName ||
-            persistedPur?.supplierName ||
-            supName,
-          supplierId: persistedVoucher?.supplierId || persistedPur?.supplierId || 0,
-          supplierPhone: persistedVoucher?.supplierPhone || persistedPur?.supplierPhone || "",
-          supplierAddress: persistedVoucher?.supplierAddress || persistedPur?.supplierAddress || "",
-          returnDate:
-            persistedVoucher?.returnDate ||
-            tx.transactionDate ||
-            (tx.createdDate ? String(tx.createdDate).split("T")[0] : moment().format("YYYY-MM-DD")),
-          createdAt: persistedVoucher?.createdAt || tx.createdDate || tx.transactionDate,
-          grandTotal: Number(tx.amount || persistedVoucher?.grandTotal || 0),
-          refundAmount: Number(tx.amount || persistedVoucher?.refundAmount || 0),
-          totalAmount: Number(tx.amount || persistedVoucher?.totalAmount || 0),
-          paymentType: String(persistedVoucher?.paymentType || tx.accountType || "CASH").toUpperCase(),
-          status: "Completed",
-          note: persistedVoucher?.note || tx.notes || "Purchase return refund",
-          remarks: persistedVoucher?.remarks || tx.notes || "Purchase return refund",
-          returnDetails: persistedVoucher?.returnDetails || persistedPur?.purchaseDetails || [],
-          purchaseDetails: [],
-          details: persistedVoucher?.returnDetails || persistedPur?.purchaseDetails || [],
-          isReturnRecord: true,
-          hasReturn: true,
-        };
         unifiedList.push(reconstructedReturn);
       }
+
+      finAliases.forEach((a) => backendReturnAliases.add(a));
     });
 
-    // 6. Ensure hasReturn is set on any purchase record whose aliases match returnedInvoices
+    // 6. Clean up persisted returns matching backend returns so localStorage doesn't keep duplicate PR- records
+    if (backendReturnAliases.size > 0) {
+      removePersistedPurchaseReturnsByInvoices(Array.from(backendReturnAliases));
+    }
+
+    // 7. Persisted vouchers ONLY if no authentic backend return exists
+    persistedVouchers.forEach((pv, idx) => addReturnRecord(pv, idx, true));
+
+    // 8. Ensure hasReturn is set on any purchase record whose aliases match returnedInvoices
     unifiedList.forEach((rec) => {
       if (!rec.isReturnRecord) {
         const aliases = getPurchaseAliases(rec);

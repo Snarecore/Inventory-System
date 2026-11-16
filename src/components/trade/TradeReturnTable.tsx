@@ -578,7 +578,7 @@ export function TradeReturnTable<T extends Record<string, any>>({
                               title="Click to view voucher"
                               className="cursor-pointer hover:text-[var(--primary-color)] transition-colors"
                             >
-                              {item.orderNo}
+                              {item.orderNo || item.returnNo || "N/A"}
                             </span>
                             {item.orderNo && (
                               <button

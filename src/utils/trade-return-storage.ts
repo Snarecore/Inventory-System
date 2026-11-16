@@ -230,3 +230,66 @@ export function getPersistedPurchaseReturns(): {
     return { returnedPurchases: [], returnVouchers: [] };
   }
 }
+
+/**
+ * Remove persisted purchase returns that match verified backend purchase invoices.
+ */
+export function removePersistedPurchaseReturnsByInvoices(invoiceKeys: string[]): void {
+  try {
+    if (
+      typeof window === "undefined" ||
+      !window.localStorage ||
+      !Array.isArray(invoiceKeys) ||
+      invoiceKeys.length === 0
+    ) {
+      return;
+    }
+    const key = getStorageKey(PURCHASE_STORAGE_PREFIX);
+    const raw = localStorage.getItem(key);
+    if (!raw) return;
+
+    const map: Record<string, PersistedPurchaseReturnRecord> = JSON.parse(raw);
+    const targetSet = new Set(
+      invoiceKeys.map((k) => String(k || "").trim().toLowerCase()).filter(Boolean)
+    );
+    let changed = false;
+
+    Object.keys(map).forEach((k) => {
+      const rec = map[k];
+      const purInv = String(
+        rec?.purchase?.invoiceNo ||
+          rec?.purchase?.purchaseInvoiceNo ||
+          rec?.purchase?.orderNo ||
+          rec?.returnItem?.purchaseInvoiceNo ||
+          rec?.returnItem?.invoiceNo ||
+          k
+      )
+        .trim()
+        .toLowerCase();
+
+      if (targetSet.has(k) || targetSet.has(purInv)) {
+        delete map[k];
+        changed = true;
+      }
+    });
+
+    if (changed) {
+      localStorage.setItem(key, JSON.stringify(map));
+    }
+  } catch (err) {
+    console.warn("Failed to clean up persisted purchase returns:", err);
+  }
+}
+
+/**
+ * Completely clear all persisted purchase returns from localStorage.
+ */
+export function clearAllPersistedPurchaseReturns(): void {
+  try {
+    if (typeof window === "undefined" || !window.localStorage) return;
+    const key = getStorageKey(PURCHASE_STORAGE_PREFIX);
+    localStorage.removeItem(key);
+  } catch (err) {
+    console.warn("Failed to clear persisted purchase returns:", err);
+  }
+}
