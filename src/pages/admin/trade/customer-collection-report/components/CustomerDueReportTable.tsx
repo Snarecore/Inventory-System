@@ -566,6 +566,7 @@ export const CustomerDueReportTable: React.FC<CustomerDueReportTableProps> = ({
             setCurrentPage(1);
           }}
           setCurrentPageNumber={setCurrentPage}
+          handlePagination={(d) => setCurrentPage(d.selected + 1)}
           entityLabel="customers"
         />
       )}

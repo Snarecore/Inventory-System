@@ -402,6 +402,7 @@ export const LowStockReportTable: React.FC<LowStockReportTableProps> = ({
             setCurrentPage(1);
           }}
           setCurrentPageNumber={setCurrentPage}
+          handlePagination={(d) => setCurrentPage(d.selected + 1)}
           entityLabel="alerts"
         />
       )}

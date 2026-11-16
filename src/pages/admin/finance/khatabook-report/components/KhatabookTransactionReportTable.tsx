@@ -605,15 +605,18 @@ export const KhatabookTransactionReportTable: React.FC<
 
       {/* Pagination Footer */}
       <TablePaginationFooter
-        totalItems={totalCount}
-        currentPage={safePage}
-        pageSize={pageSize}
+        totalCount={totalCount}
+        pageCount={pageCount}
+        currentPageNumber={safePage}
+        dataLimit={pageSize}
         pageSizeOptions={[10, 25, 50, 100]}
-        onPageChange={(p) => setCurrentPage(p)}
-        onPageSizeChange={(sz) => {
+        setDataLimit={(sz) => {
           setPageSize(sz);
           setCurrentPage(1);
         }}
+        setCurrentPageNumber={(p) => setCurrentPage(p)}
+        handlePagination={(d) => setCurrentPage(d.selected + 1)}
+        entityLabel="transactions"
       />
     </TableContainer>
   );

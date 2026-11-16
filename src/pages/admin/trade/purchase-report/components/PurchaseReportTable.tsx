@@ -215,9 +215,10 @@ export const PurchaseReportTable: React.FC<PurchaseReportTableProps> = ({
 
   const totalCount = filtered.length;
   const pageCount = Math.ceil(totalCount / pageSize) || 1;
+  const safePage = Math.min(Math.max(1, currentPage), pageCount);
   const paginated = filtered.slice(
-    (currentPage - 1) * pageSize,
-    currentPage * pageSize
+    (safePage - 1) * pageSize,
+    safePage * pageSize
   );
 
   const renderSortHeader = (
@@ -693,7 +694,7 @@ export const PurchaseReportTable: React.FC<PurchaseReportTableProps> = ({
         <TablePaginationFooter
           totalCount={totalCount}
           pageCount={pageCount}
-          currentPageNumber={currentPage}
+          currentPageNumber={safePage}
           dataLimit={pageSize}
           setDataLimit={setPageSize}
           setCurrentPageNumber={setCurrentPage}

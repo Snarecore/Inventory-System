@@ -471,6 +471,7 @@ export const RolesAndPermissions: React.FC = () => {
             setPageSize(sz);
             setCurrentPage(1);
           }}
+          entityLabel="roles"
         />
       </TableContainer>
     </div>

@@ -651,6 +651,7 @@ export const CustomerCollectionSummaryTable: React.FC<
             setCurrentPage(1);
           }}
           setCurrentPageNumber={setCurrentPage}
+          handlePagination={(d) => setCurrentPage(d.selected + 1)}
           entityLabel="customers"
         />
       )}

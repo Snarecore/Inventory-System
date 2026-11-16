@@ -809,8 +809,8 @@ export async function exportPersonSummaryExcel(
 
   const isBn = !i18n.language || i18n.language.startsWith("bn");
   const reportTitle = isBn
-    ? "দেনা পাওনা ব্যক্তি সামারি রিপোর্ট"
-    : "Dena Pawna Person Summary Report";
+    ? "দেনা পাওনা সামারি রিপোর্ট"
+    : "Dena Pawna Summary Report";
   const totalSummaryLabel = isBn
     ? `মোট সামারি (${persons.length} টি একাউন্ট)`
     : `TOTAL SUMMARY (${persons.length} Accounts)`;
@@ -826,8 +826,8 @@ export async function exportPersonSummaryExcel(
   );
 
   await buildAndDownloadExcel(rows, totalRow, {
-    fileName: `Dena_Pawna_Person_Summary_${moment().format("YYYY-MM-DD")}.xlsx`,
-    sheetName: isBn ? "ব্যক্তি সামারি" : "Person Summary",
+    fileName: `Dena_Pawna_Summary_${moment().format("YYYY-MM-DD")}.xlsx`,
+    sheetName: isBn ? "সামারি" : "Summary",
     businessName: meta.businessName,
     businessAddress: meta.businessAddress,
     businessLogoUrl: meta.businessLogoUrl,
@@ -862,8 +862,8 @@ export async function downloadPersonSummaryPdf(
 
   const isBn = !i18n.language || i18n.language.startsWith("bn");
   const reportTitle = isBn
-    ? "দেনা পাওনা ব্যক্তি সামারি রিপোর্ট"
-    : "Dena Pawna Person Summary Report";
+    ? "দেনা পাওনা সামারি রিপোর্ট"
+    : "Dena Pawna Summary Report";
   const totalSummaryLabel = isBn
     ? `মোট সামারি (${persons.length} টি একাউন্ট)`
     : `TOTAL SUMMARY (${persons.length} Accounts)`;
@@ -882,7 +882,7 @@ export async function downloadPersonSummaryPdf(
   );
 
   await generateAndDownloadCorporatePdf({
-    fileName: `Dena_Pawna_Person_Summary_${moment().format("YYYY-MM-DD")}.pdf`,
+    fileName: `Dena_Pawna_Summary_${moment().format("YYYY-MM-DD")}.pdf`,
     reportTitle,
     metaRightLabel,
     headers,
@@ -893,6 +893,6 @@ export async function downloadPersonSummaryPdf(
   });
 
   return isBn
-    ? "দেনা পাওনা ব্যক্তি সামারি রিপোর্ট সফলভাবে ডাউনলোড হয়েছে"
-    : "Dena Pawna Person Summary Report downloaded successfully";
+    ? "দেনা পাওনা সামারি রিপোর্ট সফলভাবে ডাউনলোড হয়েছে"
+    : "Dena Pawna Summary Report downloaded successfully";
 }

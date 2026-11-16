@@ -339,6 +339,9 @@ export const StockAdjustmentTable: React.FC<StockAdjustmentTableProps> = ({
             setPageSize(limit);
             setCurrentPage(1);
           }}
+          setCurrentPageNumber={setCurrentPage}
+          handlePagination={(d) => setCurrentPage(d.selected + 1)}
+          entityLabel="adjustments"
         />
       )}
     </TableContainer>

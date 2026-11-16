@@ -643,6 +643,7 @@ export const EmployeeList: React.FC = () => {
             setPageSize(sz);
             setCurrentPage(1);
           }}
+          entityLabel="employees"
         />
       </TableContainer>
 
