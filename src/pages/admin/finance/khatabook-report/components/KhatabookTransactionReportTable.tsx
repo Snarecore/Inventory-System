@@ -2,6 +2,7 @@ import React, { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { FiChevronDown, FiRotateCcw, FiExternalLink } from "react-icons/fi";
+import { FaUserFriends, FaPhone, FaMapMarkerAlt } from "react-icons/fa";
 import Search from "@/components/table-components/Search";
 import ReportDateRangeControl from "@/components/reports/ReportDateRangeControl";
 import ReportExportButtons from "@/components/reports/ReportExportButtons";
@@ -57,7 +58,7 @@ const AVAILABLE_COLUMNS: ColumnItem[] = [
 
 export const KhatabookTransactionReportTable: React.FC<
   KhatabookTransactionReportTableProps
-> = ({ transactions, isLoading, ...dateFilterProps }) => {
+> = ({ transactions, persons, isLoading, ...dateFilterProps }) => {
   const { t } = useTranslation();
   const companyMeta = useReportCompanyMeta(
     dateFilterProps.startDate,
@@ -144,6 +145,37 @@ export const KhatabookTransactionReportTable: React.FC<
     typeFilter !== "all" ||
     sortBy !== "latest";
 
+  const singlePersonMeta = useMemo(() => {
+    if (filtered.length === 0) return null;
+    const firstTxn = filtered[0];
+    const firstKey = firstTxn.personId
+      ? String(firstTxn.personId)
+      : `${firstTxn.personName}_${firstTxn.personPhone}`;
+    const allMatch = filtered.every((t) => {
+      const k = t.personId
+        ? String(t.personId)
+        : `${t.personName}_${t.personPhone}`;
+      return k === firstKey;
+    });
+
+    if (!allMatch) return null;
+
+    const personObj = persons?.find(
+      (p) => Number(p.id) === Number(firstTxn.personId)
+    );
+
+    const net = filteredTotals.totalReceivable - filteredTotals.totalPayable;
+
+    return {
+      name: firstTxn.personName || personObj?.name || "Person",
+      phone: firstTxn.personPhone || personObj?.phone || "",
+      address: personObj?.address || "",
+      netBalance: net,
+      isReceivable: net > 0,
+      isPayable: net < 0,
+    };
+  }, [filtered, persons, filteredTotals]);
+
   const handleResetFilters = () => {
     setSearchQuery("");
     setTypeFilter("all");
@@ -152,11 +184,11 @@ export const KhatabookTransactionReportTable: React.FC<
   };
 
   const handleExportExcel = async () => {
-    return exportKhatabookTransactionsExcel(sorted, companyMeta, visibleColumns);
+    return exportKhatabookTransactionsExcel(sorted, companyMeta, visibleColumns, persons);
   };
 
   const handleDownloadPdf = async () => {
-    return downloadKhatabookTransactionsPdf(sorted, companyMeta, visibleColumns);
+    return downloadKhatabookTransactionsPdf(sorted, companyMeta, visibleColumns, persons);
   };
 
   return (
@@ -249,6 +281,56 @@ export const KhatabookTransactionReportTable: React.FC<
         </div>
       </TableToolbar>
 
+      {/* Single Person Header Banner (shown when filtered/viewing a single person's ledger) */}
+      {singlePersonMeta && (
+        <div className="mx-2 mb-2 px-3.5 py-2.5 rounded-lg border border-[var(--ui-border)] bg-[var(--ui-surface-muted)]/60 flex flex-wrap items-center justify-between gap-2.5 text-xs">
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="flex items-center gap-1.5 font-bold text-sm text-[var(--ui-text)]">
+              <FaUserFriends className="text-[var(--primary-color)]" size={14} />
+              <span>{singlePersonMeta.name}</span>
+            </div>
+            {singlePersonMeta.phone && (
+              <div className="flex items-center gap-1 text-[var(--ui-text-muted)] text-xs">
+                <FaPhone size={11} />
+                <span>{singlePersonMeta.phone}</span>
+              </div>
+            )}
+            {singlePersonMeta.address && (
+              <div className="flex items-center gap-1 text-[var(--ui-text-subtle)] text-xs">
+                <FaMapMarkerAlt size={11} />
+                <span>{singlePersonMeta.address}</span>
+              </div>
+            )}
+            <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold bg-[var(--primary-color-light)] text-[var(--primary-color)]">
+              {filtered.length} {t("Transactions")}
+            </span>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <div
+              className={`px-3 py-1 rounded-md font-bold text-xs flex items-center gap-1.5 border ${
+                singlePersonMeta.isReceivable
+                  ? "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800"
+                  : singlePersonMeta.isPayable
+                  ? "bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-800"
+                  : "bg-slate-50 dark:bg-slate-900/40 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-800"
+              }`}
+            >
+              <span>
+                {singlePersonMeta.isReceivable
+                  ? `${companyMeta.businessName || "Zia Enterprises"} ওদের কাছে পাবে:`
+                  : singlePersonMeta.isPayable
+                  ? `${companyMeta.businessName || "Zia Enterprises"} ওদের দিবে (দেনা):`
+                  : t("হিসাব পরিশোধিত (Settled):")}
+              </span>
+              <span className="tabular-nums">
+                ৳{formatMoney(Math.abs(singlePersonMeta.netBalance))}
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Table Content */}
       <TableScroll>
         {isLoading ? (
@@ -268,13 +350,13 @@ export const KhatabookTransactionReportTable: React.FC<
                   {t("Date & Time")}
                 </TableTh>
               )}
-              {isColVisible("person") && (
-                <TableTh width={90} className="whitespace-nowrap">
+              {!singlePersonMeta && isColVisible("person") && (
+                <TableTh width={120} className="whitespace-nowrap">
                   {t("Name")}
                 </TableTh>
               )}
-              {isColVisible("phone") && (
-                <TableTh width={95} className="whitespace-nowrap">
+              {!singlePersonMeta && isColVisible("phone") && (
+                <TableTh width={115} className="whitespace-nowrap">
                   {t("Phone")}
                 </TableTh>
               )}
@@ -318,7 +400,7 @@ export const KhatabookTransactionReportTable: React.FC<
             <TableBody>
               {paginated.length === 0 ? (
                 <tr>
-                  <td colSpan={11} className="py-12 text-center">
+                  <td colSpan={singlePersonMeta ? 9 : 11} className="py-12 text-center">
                     <EmptyState
                       title={t("No transactions found")}
                       description={
@@ -359,7 +441,7 @@ export const KhatabookTransactionReportTable: React.FC<
                       )}
 
                       {/* Person Name */}
-                      {isColVisible("person") && (
+                      {!singlePersonMeta && isColVisible("person") && (
                         <td className="py-1.5 px-2.5 truncate font-medium text-xs text-[var(--ui-text)]">
                           <Link
                             to={`/admin/khatabook/${txn.personId}`}
@@ -372,7 +454,7 @@ export const KhatabookTransactionReportTable: React.FC<
                       )}
 
                       {/* Phone */}
-                      {isColVisible("phone") && (
+                      {!singlePersonMeta && isColVisible("phone") && (
                         <td className="py-1.5 px-2.5 whitespace-nowrap text-[11px] text-[var(--ui-text-muted)] tabular-nums">
                           {txn.personPhone || "-"}
                         </td>
@@ -488,8 +570,8 @@ export const KhatabookTransactionReportTable: React.FC<
                     colSpan={
                       (isColVisible("sl") ? 1 : 0) +
                       (isColVisible("date") ? 1 : 0) +
-                      (isColVisible("person") ? 1 : 0) +
-                      (isColVisible("phone") ? 1 : 0) +
+                      (!singlePersonMeta && isColVisible("person") ? 1 : 0) +
+                      (!singlePersonMeta && isColVisible("phone") ? 1 : 0) +
                       (isColVisible("type") ? 1 : 0) +
                       (isColVisible("method") ? 1 : 0) +
                       (isColVisible("description") ? 1 : 0)

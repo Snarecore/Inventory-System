@@ -69,7 +69,7 @@ export const KhatabookReportPage: React.FC = () => {
     },
     {
       title: "Net Balance",
-      value: `${kpis.netBalance >= 0 ? "+" : "-"}৳ ${formatMoney(Math.abs(kpis.netBalance))}`,
+      value: `${kpis.netBalance < 0 ? "- " : ""}৳ ${formatMoney(Math.abs(kpis.netBalance))}`,
       icon: FaBalanceScale,
       color:
         kpis.netBalance > 0

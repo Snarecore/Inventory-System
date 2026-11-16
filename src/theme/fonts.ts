@@ -31,7 +31,7 @@ export interface FontDefinition {
  * Bangla with Office, so Bengali text and the ৳ sign still render even when
  * the chosen Latin face has no Bengali coverage.
  */
-const BN_FALLBACK = `'Nirmala UI', 'Shonar Bangla', 'Noto Sans Bengali'`
+const BN_FALLBACK = `'Noto Sans Bengali', 'SolaimanLipi', 'Kalpurush', 'Nirmala UI', 'Shonar Bangla'`
 const SANS_TAIL = `${BN_FALLBACK}, ui-sans-serif, system-ui, sans-serif`
 
 const google = (query: string) => `https://fonts.googleapis.com/css2?family=${query}&display=swap`

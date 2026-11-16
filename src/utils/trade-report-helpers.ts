@@ -18,6 +18,7 @@ import {
   buildDynamicPdfPayload,
   type ExportColumnDef,
 } from "@/utils/report-export-columns";
+import { ensureFontLoaded } from "@/theme/fonts";
 
 export type TradeDomain = "sale" | "purchase";
 export type TradeReportTab = "invoices" | "products" | "parties";
@@ -587,6 +588,14 @@ async function getLogoForPdf(url?: string): Promise<PdfLogoResult | null> {
   }
 }
 
+export interface CorporatePdfPersonMeta {
+  name: string;
+  phone?: string;
+  address?: string;
+  balanceStatement?: string;
+  isReceivable?: boolean;
+}
+
 export interface CorporatePdfConfig {
   fileName: string;
   reportTitle: string;
@@ -597,6 +606,27 @@ export interface CorporatePdfConfig {
   meta: ReportCompanyMeta;
   fontSize?: number;
   orientation?: "portrait" | "landscape";
+  personInfo?: CorporatePdfPersonMeta;
+}
+
+/**
+ * Ensures that the high-quality Noto Sans Bengali font is loaded before rendering
+ * canvas glyphs for jsPDF export.
+ */
+export async function ensureBengaliFontLoaded(): Promise<void> {
+  if (typeof document === "undefined") return;
+  try {
+    ensureFontLoaded("noto-sans-bengali");
+    if (document.fonts) {
+      await Promise.allSettled([
+        document.fonts.load("bold 16px 'Noto Sans Bengali'"),
+        document.fonts.load("normal 16px 'Noto Sans Bengali'"),
+        document.fonts.ready,
+      ]);
+    }
+  } catch {
+    // Graceful fallback if offline or blocked
+  }
 }
 
 /**
@@ -638,7 +668,7 @@ export function renderBengaliLinesToCanvas(
   if (!ctx) return null;
 
   const fontFamily =
-    "'Noto Sans Bengali', 'Nirmala UI', 'SolaimanLipi', 'Kalpurush', 'Segoe UI', system-ui, sans-serif";
+    "'Noto Sans Bengali', 'SolaimanLipi', 'Kalpurush', 'Nirmala UI', 'Segoe UI', system-ui, sans-serif";
   const fontStyle = opts.fontStyle === "bold" ? "bold" : "normal";
   const fontStr = `${fontStyle} ${pxFontSize}px ${fontFamily}`;
   ctx.font = fontStr;
@@ -649,9 +679,10 @@ export function renderBengaliLinesToCanvas(
     if (w > maxLineW) maxLineW = w;
   }
 
-  const padX = 3 * dpr;
+  const padX = Math.max(6 * dpr, Math.round(pxFontSize * 0.25));
+  const padY = Math.max(8 * dpr, Math.round(pxFontSize * 0.35));
   const totalWPx = Math.max(1, Math.ceil(maxLineW + padX * 2));
-  const totalHPx = Math.max(1, Math.ceil(flatLines.length * lineSpacingPx));
+  const totalHPx = Math.max(1, Math.ceil(flatLines.length * lineSpacingPx + padY * 2));
 
   canvas.width = totalWPx;
   canvas.height = totalHPx;
@@ -670,7 +701,7 @@ export function renderBengaliLinesToCanvas(
 
   for (let i = 0; i < flatLines.length; i++) {
     const line = flatLines[i];
-    const y = (i + 0.5) * lineSpacingPx;
+    const y = padY + (i + 0.5) * lineSpacingPx;
     let x = padX;
     if (opts.halign === "center") {
       const w = ctx.measureText(line).width;
@@ -763,6 +794,7 @@ export function drawPdfTextSmart(
 export async function generateAndDownloadCorporatePdf(
   config: CorporatePdfConfig
 ): Promise<void> {
+  await ensureBengaliFontLoaded();
   const [{ jsPDF }, autoTableMod] = await Promise.all([
     import("jspdf"),
     import("jspdf-autotable"),
@@ -836,12 +868,14 @@ export async function generateAndDownloadCorporatePdf(
     maxAllowedWidthMm: pageWidth - 2 * marginX,
   });
 
+  const metaFilterY = config.personInfo ? 26 : 27;
+
   // Meta Filter Row
   drawPdfTextSmart(
     doc,
     `From Date: ${fromStr}   To Date: ${toStr}`,
     marginX,
-    27,
+    metaFilterY,
     {
       fontSize: 8.5,
       fontStyle: "bold",
@@ -851,7 +885,7 @@ export async function generateAndDownloadCorporatePdf(
     }
   );
 
-  drawPdfTextSmart(doc, config.metaRightLabel, rightEdge, 27, {
+  drawPdfTextSmart(doc, config.metaRightLabel, rightEdge, metaFilterY, {
     fontSize: 8.5,
     fontStyle: "bold",
     textColor: [51, 65, 85],
@@ -859,19 +893,72 @@ export async function generateAndDownloadCorporatePdf(
     maxAllowedWidthMm: (pageWidth - 2 * marginX) / 2,
   });
 
-  // Divider line
-  doc.setDrawColor(203, 213, 225);
-  doc.setLineWidth(0.25);
-  doc.line(marginX, 29, rightEdge, 29);
+  if (config.personInfo) {
+    const cardY = 28.5;
+    const cardH = 8.5;
+    const usableW = pageWidth - 2 * marginX;
+
+    // Soft card background & border
+    doc.setFillColor(248, 250, 252);
+    doc.setDrawColor(203, 213, 225);
+    doc.setLineWidth(0.25);
+    doc.roundedRect(marginX, cardY, usableW, cardH, 1, 1, "FD");
+
+    // Person Info (Left)
+    const personParts = [
+      `Person: ${config.personInfo.name}`,
+      config.personInfo.phone ? `Phone: ${config.personInfo.phone}` : "",
+      config.personInfo.address ? `Address: ${config.personInfo.address}` : "",
+    ].filter(Boolean);
+    const personText = personParts.join("   |   ");
+
+    drawPdfTextSmart(doc, personText, marginX + 3, cardY + 5.5, {
+      fontSize: 8.5,
+      fontStyle: "bold",
+      textColor: [15, 23, 42],
+      align: "left",
+      maxAllowedWidthMm: usableW * 0.55,
+    });
+
+    // Balance Statement (Right)
+    if (config.personInfo.balanceStatement) {
+      const textColor: [number, number, number] =
+        config.personInfo.isReceivable === true
+          ? [16, 149, 106]
+          : config.personInfo.isReceivable === false
+          ? [225, 29, 72]
+          : [71, 85, 105];
+
+      drawPdfTextSmart(
+        doc,
+        config.personInfo.balanceStatement,
+        rightEdge - 3,
+        cardY + 5.5,
+        {
+          fontSize: 9,
+          fontStyle: "bold",
+          textColor,
+          align: "right",
+          maxAllowedWidthMm: usableW * 0.45,
+        }
+      );
+    }
+  } else {
+    // Divider line
+    doc.setDrawColor(203, 213, 225);
+    doc.setLineWidth(0.25);
+    doc.line(marginX, 29, rightEdge, 29);
+  }
 
   const tableFontSize =
     config.fontSize ?? (config.headers.length >= 13 ? 7 : 7.5);
+  const tableStartY = config.personInfo ? 39.5 : 31;
 
   // ── Data Table (Global Theme Color Header + Last-Page Summary Row) ──
   autoTable(doc, {
     head: [config.headers],
     body: config.bodyRows,
-    startY: 31,
+    startY: tableStartY,
     margin: { top: 10, right: marginX, bottom: 14, left: marginX },
     theme: "grid",
     showHead: "everyPage",

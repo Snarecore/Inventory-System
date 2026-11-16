@@ -72,7 +72,7 @@
   --ui-section-gap: 24px;
 
   /* Typography */
-  --ui-font-family: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+  --ui-font-family: "Plus Jakarta Sans", "Noto Sans Bengali", "Nirmala UI", ui-sans-serif, system-ui, sans-serif;
   --ui-font-size: 14px;
   --ui-label-size: 11px;
   --ui-label-gap: 2.5px;

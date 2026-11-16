@@ -42,7 +42,6 @@ const AVAILABLE_COLUMNS: ColumnItem[] = [
   { key: "name", label: "Name" },
   { key: "phone", label: "Phone" },
   { key: "address", label: "Address" },
-  { key: "tag", label: "Type / Tag" },
   { key: "pabo", label: "Total Receivable (Pabo)" },
   { key: "dibo", label: "Total Payable (Dibo)" },
   { key: "netBalance", label: "Net Balance" },
@@ -265,23 +264,18 @@ export const KhatabookPersonSummaryReportTable: React.FC<
                 </TableTh>
               )}
               {isColVisible("name") && (
-                <TableTh width={140} className="whitespace-nowrap">
+                <TableTh width={120} className="whitespace-nowrap">
                   {t("Name")}
                 </TableTh>
               )}
               {isColVisible("phone") && (
-                <TableTh width={100} className="whitespace-nowrap">
+                <TableTh width={135} className="whitespace-nowrap">
                   {t("Phone")}
                 </TableTh>
               )}
               {isColVisible("address") && (
-                <TableTh className="whitespace-nowrap">
+                <TableTh className="whitespace-nowrap pl-4">
                   {t("Address")}
-                </TableTh>
-              )}
-              {isColVisible("tag") && (
-                <TableTh width={90} align="center" className="whitespace-nowrap">
-                  {t("Type / Tag")}
                 </TableTh>
               )}
               {isColVisible("pabo") && (
@@ -375,17 +369,8 @@ export const KhatabookPersonSummaryReportTable: React.FC<
 
                       {/* Address */}
                       {isColVisible("address") && (
-                        <td className="py-1.5 px-2.5 truncate text-[11px] text-[var(--ui-text-subtle)] max-w-[150px]">
+                        <td className="py-1.5 px-2.5 pl-4 truncate text-[11px] text-[var(--ui-text-subtle)] max-w-[200px]">
                           {row.address || "-"}
-                        </td>
-                      )}
-
-                      {/* Tag / Type */}
-                      {isColVisible("tag") && (
-                        <td className="py-1.5 px-2.5 whitespace-nowrap text-center">
-                          <span className="text-[10px] font-medium px-2 py-0.5 rounded bg-[var(--ui-surface-muted)] text-[var(--ui-text-muted)] border border-[var(--ui-border)] inline-block">
-                            {row.tag || row.type || "Regular"}
-                          </span>
                         </td>
                       )}
 
@@ -415,7 +400,7 @@ export const KhatabookPersonSummaryReportTable: React.FC<
                                 : "text-[var(--ui-text)]"
                             }
                           >
-                            {isPabo ? "+" : isDibo ? "-" : ""}৳{formatMoney(Math.abs(net))}
+                            {isDibo ? "- " : ""}৳{formatMoney(Math.abs(net))}
                           </span>
                         </td>
                       )}
@@ -476,8 +461,7 @@ export const KhatabookPersonSummaryReportTable: React.FC<
                       (isColVisible("sl") ? 1 : 0) +
                       (isColVisible("name") ? 1 : 0) +
                       (isColVisible("phone") ? 1 : 0) +
-                      (isColVisible("address") ? 1 : 0) +
-                      (isColVisible("tag") ? 1 : 0)
+                      (isColVisible("address") ? 1 : 0)
                     }
                     className="py-2 px-3 text-right"
                   >
@@ -504,7 +488,7 @@ export const KhatabookPersonSummaryReportTable: React.FC<
                             : "text-[var(--ui-text)]"
                         }
                       >
-                        {filteredTotals.netBalance >= 0 ? "+" : "-"}৳
+                        {filteredTotals.netBalance < 0 ? "- " : ""}৳
                         {formatMoney(Math.abs(filteredTotals.netBalance))}
                       </span>
                     </td>

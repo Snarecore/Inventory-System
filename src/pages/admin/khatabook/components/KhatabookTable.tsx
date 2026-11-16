@@ -308,7 +308,7 @@ export const KhatabookTable: React.FC<KhatabookTableProps> = ({
                               : "text-[var(--ui-text-muted)]"
                           }
                         >
-                          ৳{Math.abs(net).toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                          {net < 0 ? "- " : ""}৳{Math.abs(net).toLocaleString("en-IN", { minimumFractionDigits: 2 })}
                         </span>
                       </td>
 

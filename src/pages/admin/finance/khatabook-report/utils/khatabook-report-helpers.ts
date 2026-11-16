@@ -1,4 +1,5 @@
 import moment from "moment";
+import i18n from "@/i18n";
 import { formatMoney } from "@/utils/formatters";
 import {
   buildAndDownloadExcel,
@@ -209,15 +210,19 @@ export function computeKhatabookReportKpis(
 // ============================================================================
 
 export function buildKhatabookTxnColumns(
-  themeRgb: [number, number, number]
+  themeRgb: [number, number, number],
+  opts?: { hidePersonColumns?: boolean }
 ): ExportColumnDef<NormalizedKhatabookTransaction, any>[] {
-  return [
+  const isBn = !i18n.language || i18n.language.startsWith("bn");
+  const hidePerson = Boolean(opts?.hidePersonColumns);
+
+  const cols: ExportColumnDef<NormalizedKhatabookTransaction, any>[] = [
     {
       key: "sl",
       excelHeader: "SL",
       isLeadingLabel: true,
       excelValue: (_row, idx) => idx + 1,
-      pdfStyle: { halign: "center", cellWidth: 10 },
+      pdfStyle: { halign: "center", cellWidth: hidePerson ? 12 : 10 },
       pdfCell: (_row, idx) => ({
         content: String(idx + 1),
         styles: { halign: "center" },
@@ -225,49 +230,57 @@ export function buildKhatabookTxnColumns(
     },
     {
       key: "date",
-      excelHeader: "Date & Time",
-      pdfHeader: "Date & Time",
+      excelHeader: isBn ? "তারিখ ও সময়" : "Date & Time",
+      pdfHeader: isBn ? "তারিখ ও সময়" : "Date & Time",
       isLeadingLabel: true,
       excelValue: (r) => r.formattedDate,
-      pdfStyle: { halign: "center", cellWidth: 33 },
+      pdfStyle: { halign: "center", cellWidth: hidePerson ? 40 : 33 },
       pdfCell: (r) => ({
         content: r.formattedDate,
-        styles: { halign: "center" },
+        styles: { halign: "center", cellWidth: hidePerson ? 40 : 33 },
       }),
     },
-    {
-      key: "person",
-      excelHeader: "Name",
-      pdfHeader: "Name",
-      isLeadingLabel: true,
-      excelValue: (r) => r.personName,
-      pdfStyle: { halign: "left", cellWidth: 37 },
-      pdfCell: (r) => ({
-        content:
-          r.personName ||
-          (r.personPhone ? `Account (${r.personPhone})` : `Person #${r.personId}`),
-        styles: { halign: "left" },
-      }),
-    },
-    {
-      key: "phone",
-      excelHeader: "Phone Number",
-      pdfHeader: "Phone Number",
-      isLeadingLabel: true,
-      excelValue: (r) => r.personPhone || "-",
-      pdfStyle: { halign: "center", cellWidth: 26 },
-      pdfCell: (r) => ({
-        content: r.personPhone || "-",
-        styles: { halign: "center" },
-      }),
-    },
+  ];
+
+  if (!hidePerson) {
+    cols.push(
+      {
+        key: "person",
+        excelHeader: isBn ? "নাম" : "Name",
+        pdfHeader: isBn ? "নাম" : "Name",
+        isLeadingLabel: true,
+        excelValue: (r) => r.personName,
+        pdfStyle: { halign: "left", cellWidth: 37 },
+        pdfCell: (r) => ({
+          content:
+            r.personName ||
+            (r.personPhone ? `Account (${r.personPhone})` : `Person #${r.personId}`),
+          styles: { halign: "left" },
+        }),
+      },
+      {
+        key: "phone",
+        excelHeader: isBn ? "ফোন নম্বর" : "Phone Number",
+        pdfHeader: isBn ? "ফোন নম্বর" : "Phone Number",
+        isLeadingLabel: true,
+        excelValue: (r) => r.personPhone || "-",
+        pdfStyle: { halign: "center", cellWidth: 26 },
+        pdfCell: (r) => ({
+          content: r.personPhone || "-",
+          styles: { halign: "center" },
+        }),
+      }
+    );
+  }
+
+  cols.push(
     {
       key: "type",
-      excelHeader: "Transaction Type",
-      pdfHeader: "Transaction Type",
+      excelHeader: isBn ? "লেনদেনের ধরন" : "Transaction Type",
+      pdfHeader: isBn ? "লেনদেনের ধরন" : "Transaction Type",
       isLeadingLabel: true,
       excelValue: (r) => r.displayType,
-      pdfStyle: { halign: "center", cellWidth: 28 },
+      pdfStyle: { halign: "center", cellWidth: hidePerson ? 32 : 28 },
       pdfCell: (r) => ({
         content: r.displayType,
         styles: { halign: "center" },
@@ -275,11 +288,11 @@ export function buildKhatabookTxnColumns(
     },
     {
       key: "method",
-      excelHeader: "Payment Method",
-      pdfHeader: "Method",
+      excelHeader: isBn ? "পদ্ধতি" : "Payment Method",
+      pdfHeader: isBn ? "পদ্ধতি" : "Method",
       isLeadingLabel: true,
       excelValue: (r) => r.paymentType,
-      pdfStyle: { halign: "center", cellWidth: 22 },
+      pdfStyle: { halign: "center", cellWidth: hidePerson ? 26 : 22 },
       pdfCell: (r) => ({
         content: r.paymentType,
         styles: { halign: "center" },
@@ -287,13 +300,13 @@ export function buildKhatabookTxnColumns(
     },
     {
       key: "description",
-      excelHeader: "Description / Ref",
-      pdfHeader: "Description / Ref",
+      excelHeader: isBn ? "বিবরণ / রেফারেন্স" : "Description / Ref",
+      pdfHeader: isBn ? "বিবরণ / রেফারেন্স" : "Description / Ref",
       isLeadingLabel: true,
       excelValue: (r) =>
         [r.note, r.refNo ? `(Ref: ${r.refNo})` : ""].filter(Boolean).join(" ") ||
         "-",
-      pdfStyle: { halign: "left", cellWidth: 45 },
+      pdfStyle: { halign: "left", cellWidth: hidePerson ? 83 : 45 },
       pdfCell: (r) => {
         const descText = [
           r.note,
@@ -309,11 +322,11 @@ export function buildKhatabookTxnColumns(
     },
     {
       key: "receivable",
-      excelHeader: "Receivable (BDT)",
-      pdfHeader: "Receivable (BDT)",
+      excelHeader: isBn ? "পাওনা / গ্রহণ (BDT)" : "Receivable (BDT)",
+      pdfHeader: isBn ? "পাওনা / গ্রহণ (BDT)" : "Receivable (BDT)",
       excelValue: (r) => (r.receivableAmount > 0 ? r.receivableAmount : 0),
       excelTotalValue: (t) => t.totalPabo,
-      pdfStyle: { halign: "right", cellWidth: 26 },
+      pdfStyle: { halign: "right", cellWidth: hidePerson ? 28 : 26 },
       pdfCell: (r) =>
         r.receivableAmount > 0
           ? {
@@ -342,11 +355,11 @@ export function buildKhatabookTxnColumns(
     },
     {
       key: "payable",
-      excelHeader: "Payable (BDT)",
-      pdfHeader: "Payable (BDT)",
+      excelHeader: isBn ? "দেনা / প্রদান (BDT)" : "Payable (BDT)",
+      pdfHeader: isBn ? "দেনা / প্রদান (BDT)" : "Payable (BDT)",
       excelValue: (r) => (r.payableAmount > 0 ? r.payableAmount : 0),
       excelTotalValue: (t) => t.totalDibo,
-      pdfStyle: { halign: "right", cellWidth: 26 },
+      pdfStyle: { halign: "right", cellWidth: hidePerson ? 28 : 26 },
       pdfCell: (r) =>
         r.payableAmount > 0
           ? {
@@ -375,11 +388,11 @@ export function buildKhatabookTxnColumns(
     },
     {
       key: "commission",
-      excelHeader: "Commission (BDT)",
-      pdfHeader: "Commission (BDT)",
+      excelHeader: isBn ? "কমিশন (BDT)" : "Commission (BDT)",
+      pdfHeader: isBn ? "কমিশন (BDT)" : "Commission (BDT)",
       excelValue: (r) => r.commission || 0,
       excelTotalValue: (t) => t.totalCommission,
-      pdfStyle: { halign: "right", cellWidth: 24 },
+      pdfStyle: { halign: "right", cellWidth: hidePerson ? 28 : 24 },
       pdfCell: (r) =>
         r.commission > 0
           ? {
@@ -405,8 +418,10 @@ export function buildKhatabookTxnColumns(
           textColor: REPORT_RGB.amber,
         },
       }),
-    },
-  ];
+    }
+  );
+
+  return cols;
 }
 
 /**
@@ -415,7 +430,8 @@ export function buildKhatabookTxnColumns(
 export async function exportKhatabookTransactionsExcel(
   transactions: NormalizedKhatabookTransaction[],
   meta: ReportCompanyMeta,
-  visibleColumns?: Record<string, boolean>
+  visibleColumns?: Record<string, boolean>,
+  persons?: LedgerPerson[]
 ): Promise<string> {
   if (!transactions || transactions.length === 0) {
     throw new Error("No transactions available to export");
@@ -431,29 +447,75 @@ export async function exportKhatabookTransactionsExcel(
     { totalPabo: 0, totalDibo: 0, totalCommission: 0 }
   );
 
+  const netBalance = totals.totalPabo - totals.totalDibo;
+  const isBn = !i18n.language || i18n.language.startsWith("bn");
+  const businessName = meta.businessName || "Zia Enterprises";
+
+  const uniquePersonKeys = new Set(
+    transactions.map((t) =>
+      t.personId ? String(t.personId) : `${t.personName}_${t.personPhone}`
+    )
+  );
+  const isSinglePerson = uniquePersonKeys.size === 1 && transactions.length > 0;
+
+  let balanceStatement = "";
+  if (netBalance > 0) {
+    balanceStatement = isBn
+      ? `${businessName} ওদের কাছে পাবে: BDT ${formatMoney(netBalance)}`
+      : `${businessName} will receive: BDT ${formatMoney(netBalance)}`;
+  } else if (netBalance < 0) {
+    balanceStatement = isBn
+      ? `${businessName} ওদের দিবে: BDT ${formatMoney(Math.abs(netBalance))}`
+      : `${businessName} will pay: BDT ${formatMoney(Math.abs(netBalance))}`;
+  } else {
+    balanceStatement = isBn
+      ? "হিসাব পরিশোধিত (Settled): BDT 0"
+      : "Account Settled: BDT 0";
+  }
+
+  const firstTxn = transactions[0];
+  const personObj = persons?.find((p) => Number(p.id) === Number(firstTxn.personId));
+  const personName = firstTxn.personName || personObj?.name || "Person";
+  const personPhone = firstTxn.personPhone || personObj?.phone || "";
+
   const themeRgb = argbToRgbTuple(resolveThemeArgb());
-  const columns = buildKhatabookTxnColumns(themeRgb);
+  const columns = buildKhatabookTxnColumns(themeRgb, { hidePersonColumns: isSinglePerson });
+
+  const totalSummaryLabel = isBn
+    ? `মোট সামারি (${transactions.length} টি লেনদেন)`
+    : `TOTAL SUMMARY (${transactions.length} Transactions)`;
+
   const { rows, totalRow, totalSummarySpan } = buildDynamicExcelPayload(
     transactions,
     columns,
     totals,
-    `TOTAL SUMMARY (${transactions.length} Transactions)`,
+    totalSummaryLabel,
     visibleColumns
   );
 
+  const reportTitle = isSinglePerson
+    ? `${isBn ? "খাতাবই লেজার রিপোর্ট" : "Khatabook Ledger Report"} - ${personName} ${personPhone ? `(${personPhone})` : ""} [${balanceStatement}]`
+    : (isBn ? "খাতাবই লেনদেন ও লেজার রিপোর্ট" : "Khatabook Transaction & Ledger Report");
+
+  const fileName = isSinglePerson
+    ? `Khatabook_Ledger_${personName.replace(/\s+/g, "_")}_${moment().format("YYYY-MM-DD")}.xlsx`
+    : `Khatabook_Report_${moment().format("YYYY-MM-DD")}.xlsx`;
+
   await buildAndDownloadExcel(rows, totalRow, {
-    fileName: `Khatabook_Report_${moment().format("YYYY-MM-DD")}.xlsx`,
-    sheetName: "Khatabook Ledger",
+    fileName,
+    sheetName: isBn ? "লেনদেন লেজার" : "Khatabook Ledger",
     businessName: meta.businessName,
     businessAddress: meta.businessAddress,
     businessLogoUrl: meta.businessLogoUrl,
-    reportTitle: "Khatabook Transaction & Ledger Report",
+    reportTitle,
     startDate: meta.startDate,
     endDate: meta.endDate,
     totalSummarySpan,
   });
 
-  return `${transactions.length} টি লেনদেন এক্সেলে এক্সপোর্ট করা হয়েছে`;
+  return isBn
+    ? `${transactions.length} টি লেনদেন এক্সেলে এক্সপোর্ট করা হয়েছে`
+    : `${transactions.length} transactions exported to Excel`;
 }
 
 /**
@@ -462,7 +524,8 @@ export async function exportKhatabookTransactionsExcel(
 export async function downloadKhatabookTransactionsPdf(
   transactions: NormalizedKhatabookTransaction[],
   meta: ReportCompanyMeta,
-  visibleColumns?: Record<string, boolean>
+  visibleColumns?: Record<string, boolean>,
+  persons?: LedgerPerson[]
 ): Promise<string> {
   if (!transactions || transactions.length === 0) {
     throw new Error("No transactions available to download");
@@ -478,28 +541,96 @@ export async function downloadKhatabookTransactionsPdf(
     { totalPabo: 0, totalDibo: 0, totalCommission: 0 }
   );
 
+  const netBalance = totals.totalPabo - totals.totalDibo;
+  const isBn = !i18n.language || i18n.language.startsWith("bn");
+  const businessName = meta.businessName || "Zia Enterprises";
+
+  const uniquePersonKeys = new Set(
+    transactions.map((t) =>
+      t.personId ? String(t.personId) : `${t.personName}_${t.personPhone}`
+    )
+  );
+  const isSinglePerson = uniquePersonKeys.size === 1 && transactions.length > 0;
+
+  let balanceStatement = "";
+  let isReceivable: boolean | undefined = undefined;
+
+  if (netBalance > 0) {
+    isReceivable = true;
+    balanceStatement = isBn
+      ? `${businessName} ওদের কাছে পাবে: BDT ${formatMoney(netBalance)}`
+      : `${businessName} will receive: BDT ${formatMoney(netBalance)}`;
+  } else if (netBalance < 0) {
+    isReceivable = false;
+    balanceStatement = isBn
+      ? `${businessName} ওদের দিবে: BDT ${formatMoney(Math.abs(netBalance))}`
+      : `${businessName} will pay: BDT ${formatMoney(Math.abs(netBalance))}`;
+  } else {
+    balanceStatement = isBn
+      ? "হিসাব পরিশোধিত (Settled): BDT 0"
+      : "Account Settled: BDT 0";
+  }
+
+  const firstTxn = transactions[0];
+  const personObj = persons?.find((p) => Number(p.id) === Number(firstTxn.personId));
+  const personName = firstTxn.personName || personObj?.name || "Person";
+  const personPhone = firstTxn.personPhone || personObj?.phone || "";
+  const personAddress = personObj?.address || "";
+
   const themeRgb = argbToRgbTuple(resolveThemeArgb());
-  const columns = buildKhatabookTxnColumns(themeRgb);
+  const columns = buildKhatabookTxnColumns(themeRgb, { hidePersonColumns: isSinglePerson });
+
+  const totalSummaryLabel = isBn
+    ? `মোট সামারি (${transactions.length} টি লেনদেন)`
+    : `TOTAL SUMMARY (${transactions.length} Transactions)`;
+
   const { headers, bodyRows, columnStyles } = buildDynamicPdfPayload(
     transactions,
     columns,
     totals,
-    `TOTAL SUMMARY (${transactions.length} Transactions)`,
+    totalSummaryLabel,
     { visibleColumns }
   );
 
+  const reportTitle = isBn
+    ? "খাতাবই লেনদেন ও লেজার রিপোর্ট"
+    : "Khatabook Transaction & Ledger Report";
+
+  const metaRightLabel = isSinglePerson
+    ? (isBn ? `মোট লেনদেন: ${transactions.length}` : `Total Transactions: ${transactions.length}`)
+    : (isBn
+        ? `মোট লেনদেন: ${transactions.length} | নেট ব্যালেন্স: BDT ${netBalance < 0 ? "- " : ""}${formatMoney(Math.abs(netBalance))}`
+        : `Total Transactions: ${transactions.length} | Net Balance: BDT ${netBalance < 0 ? "- " : ""}${formatMoney(Math.abs(netBalance))}`);
+
+  const personInfo = isSinglePerson
+    ? {
+        name: personName,
+        phone: personPhone,
+        address: personAddress,
+        balanceStatement,
+        isReceivable,
+      }
+    : undefined;
+
+  const fileName = isSinglePerson
+    ? `Khatabook_Ledger_${personName.replace(/\s+/g, "_")}_${moment().format("YYYY-MM-DD")}.pdf`
+    : `Khatabook_Report_${moment().format("YYYY-MM-DD")}.pdf`;
+
   await generateAndDownloadCorporatePdf({
-    fileName: `Khatabook_Report_${moment().format("YYYY-MM-DD")}.pdf`,
-    reportTitle: "Khatabook Transaction & Ledger Report",
-    metaRightLabel: `Total Transactions: ${transactions.length} | Net Balance: BDT ${formatMoney(totals.totalPabo - totals.totalDibo)}`,
+    fileName,
+    reportTitle,
+    metaRightLabel,
     headers,
     bodyRows,
     columnStyles,
     meta,
     orientation: "landscape",
+    personInfo,
   });
 
-  return "খাতাবই পিডিএফ রিপোর্ট সফলভাবে ডাউনলোড হয়েছে";
+  return isBn
+    ? "খাতাবই পিডিএফ রিপোর্ট সফলভাবে ডাউনলোড হয়েছে"
+    : "Khatabook PDF report downloaded successfully";
 }
 
 // ============================================================================
@@ -509,6 +640,8 @@ export async function downloadKhatabookTransactionsPdf(
 export function buildPersonSummaryColumns(
   _themeRgb: [number, number, number]
 ): ExportColumnDef<NormalizedPersonSummaryRow, any>[] {
+  const isBn = !i18n.language || i18n.language.startsWith("bn");
+
   return [
     {
       key: "sl",
@@ -523,11 +656,11 @@ export function buildPersonSummaryColumns(
     },
     {
       key: "name",
-      excelHeader: "Name",
-      pdfHeader: "Name",
+      excelHeader: isBn ? "নাম" : "Name",
+      pdfHeader: isBn ? "নাম" : "Name",
       isLeadingLabel: true,
       excelValue: (r) => r.name,
-      pdfStyle: { halign: "left", cellWidth: 42 },
+      pdfStyle: { halign: "left", cellWidth: 30 },
       pdfCell: (r) => ({
         content: r.name || (r.phone ? `Account (${r.phone})` : "-"),
         styles: { halign: "left" },
@@ -535,11 +668,11 @@ export function buildPersonSummaryColumns(
     },
     {
       key: "phone",
-      excelHeader: "Phone",
-      pdfHeader: "Phone",
+      excelHeader: isBn ? "ফোন" : "Phone",
+      pdfHeader: isBn ? "ফোন" : "Phone",
       isLeadingLabel: true,
       excelValue: (r) => r.phone || "-",
-      pdfStyle: { halign: "center", cellWidth: 25 },
+      pdfStyle: { halign: "center", cellWidth: 28 },
       pdfCell: (r) => ({
         content: r.phone || "-",
         styles: { halign: "center" },
@@ -547,32 +680,20 @@ export function buildPersonSummaryColumns(
     },
     {
       key: "address",
-      excelHeader: "Address",
-      pdfHeader: "Address",
+      excelHeader: isBn ? "ঠিকানা" : "Address",
+      pdfHeader: isBn ? "ঠিকানা" : "Address",
       isLeadingLabel: true,
       excelValue: (r) => r.address || "-",
-      pdfStyle: { halign: "left", cellWidth: 35 },
+      pdfStyle: { halign: "left", cellWidth: 49 },
       pdfCell: (r) => ({
         content: r.address || "-",
         styles: { halign: "left" },
       }),
     },
     {
-      key: "tag",
-      excelHeader: "Type / Tag",
-      pdfHeader: "Tag",
-      isLeadingLabel: true,
-      excelValue: (r) => r.tag || r.type || "Regular",
-      pdfStyle: { halign: "center", cellWidth: 20 },
-      pdfCell: (r) => ({
-        content: r.tag || r.type || "Regular",
-        styles: { halign: "center" },
-      }),
-    },
-    {
       key: "pabo",
-      excelHeader: "Total Receivable (Pabo)",
-      pdfHeader: "Total Receivable",
+      excelHeader: isBn ? "মোট পাওনা (Pabo)" : "Total Receivable (Pabo)",
+      pdfHeader: isBn ? "মোট পাওনা" : "Total Receivable",
       excelValue: (r) => r.totalPabo,
       excelTotalValue: (t) => t.totalPabo,
       pdfStyle: { halign: "right", cellWidth: 28 },
@@ -587,8 +708,8 @@ export function buildPersonSummaryColumns(
     },
     {
       key: "dibo",
-      excelHeader: "Total Payable (Dibo)",
-      pdfHeader: "Total Payable",
+      excelHeader: isBn ? "মোট দেনা (Dibo)" : "Total Payable (Dibo)",
+      pdfHeader: isBn ? "মোট দেনা" : "Total Payable",
       excelValue: (r) => r.totalDibo,
       excelTotalValue: (t) => t.totalDibo,
       pdfStyle: { halign: "right", cellWidth: 28 },
@@ -603,13 +724,13 @@ export function buildPersonSummaryColumns(
     },
     {
       key: "netBalance",
-      excelHeader: "Net Balance",
-      pdfHeader: "Net Balance",
+      excelHeader: isBn ? "নেট ব্যালেন্স" : "Net Balance",
+      pdfHeader: isBn ? "নেট ব্যালেন্স" : "Net Balance",
       excelValue: (r) => r.netBalance,
       excelTotalValue: (t) => t.netBalance,
-      pdfStyle: { halign: "right", cellWidth: 28 },
+      pdfStyle: { halign: "right", cellWidth: 26 },
       pdfCell: (r) => ({
-        content: `${r.netBalance >= 0 ? "+" : "-"} ${formatMoney(Math.abs(r.netBalance))}`,
+        content: `${r.netBalance < 0 ? "- " : ""}${formatMoney(Math.abs(r.netBalance))}`,
         styles: {
           halign: "right",
           fontStyle: "bold",
@@ -617,7 +738,7 @@ export function buildPersonSummaryColumns(
         },
       }),
       pdfSummaryCell: (t) => ({
-        content: `${t.netBalance >= 0 ? "+" : "-"} ${formatMoney(Math.abs(t.netBalance))}`,
+        content: `${t.netBalance < 0 ? "- " : ""}${formatMoney(Math.abs(t.netBalance))}`,
         styles: {
           halign: "right",
           fontStyle: "bold",
@@ -627,11 +748,11 @@ export function buildPersonSummaryColumns(
     },
     {
       key: "txnCount",
-      excelHeader: "Transactions",
-      pdfHeader: "Txns",
+      excelHeader: isBn ? "লেনদেন" : "Transactions",
+      pdfHeader: isBn ? "লেনদেন" : "Txns",
       excelValue: (r) => r.transactionCount,
       excelTotalValue: (t) => t.totalTxns,
-      pdfStyle: { halign: "center", cellWidth: 16 },
+      pdfStyle: { halign: "center", cellWidth: 14 },
       pdfCell: (r) => ({
         content: String(r.transactionCount),
         styles: { halign: "center" },
@@ -643,21 +764,21 @@ export function buildPersonSummaryColumns(
     },
     {
       key: "lastTxnDate",
-      excelHeader: "Last Transaction",
-      pdfHeader: "Last Txn",
+      excelHeader: isBn ? "সর্বশেষ লেনদেন" : "Last Transaction",
+      pdfHeader: isBn ? "সর্বশেষ লেনদেন" : "Last Txn",
       excelValue: (r) => formatKhatabookDate(r.lastTransactionDate),
-      pdfStyle: { halign: "center", cellWidth: 26 },
+      pdfStyle: { halign: "center", cellWidth: 40 },
       pdfCell: (r) => ({
         content: formatKhatabookDate(r.lastTransactionDate),
-        styles: { halign: "center" },
+        styles: { halign: "center", cellWidth: 40 },
       }),
     },
     {
       key: "status",
-      excelHeader: "Status",
-      pdfHeader: "Status",
+      excelHeader: isBn ? "স্ট্যাটাস" : "Status",
+      pdfHeader: isBn ? "স্ট্যাটাস" : "Status",
       excelValue: (r) => r.status,
-      pdfStyle: { halign: "center", cellWidth: 18 },
+      pdfStyle: { halign: "center", cellWidth: 16 },
       pdfCell: (r) => ({
         content: r.status,
         styles: { halign: "center" },
@@ -686,27 +807,37 @@ export async function exportPersonSummaryExcel(
     { totalPabo: 0, totalDibo: 0, netBalance: 0, totalTxns: 0 }
   );
 
+  const isBn = !i18n.language || i18n.language.startsWith("bn");
+  const reportTitle = isBn
+    ? "দেনা পাওনা ব্যক্তি সামারি রিপোর্ট"
+    : "Dena Pawna Person Summary Report";
+  const totalSummaryLabel = isBn
+    ? `মোট সামারি (${persons.length} টি একাউন্ট)`
+    : `TOTAL SUMMARY (${persons.length} Accounts)`;
+
   const themeRgb = argbToRgbTuple(resolveThemeArgb());
   const columns = buildPersonSummaryColumns(themeRgb);
   const { rows, totalRow, totalSummarySpan } = buildDynamicExcelPayload(
     persons,
     columns,
     totals,
-    `TOTAL SUMMARY (${persons.length} Accounts)`,
+    totalSummaryLabel,
     visibleColumns
   );
 
   await buildAndDownloadExcel(rows, totalRow, {
-    fileName: `Khatabook_Person_Summary_${moment().format("YYYY-MM-DD")}.xlsx`,
-    sheetName: "Person Summary",
+    fileName: `Dena_Pawna_Person_Summary_${moment().format("YYYY-MM-DD")}.xlsx`,
+    sheetName: isBn ? "ব্যক্তি সামারি" : "Person Summary",
     businessName: meta.businessName,
     businessAddress: meta.businessAddress,
     businessLogoUrl: meta.businessLogoUrl,
-    reportTitle: "Khatabook Accounts & Person Summary Report",
+    reportTitle,
     totalSummarySpan,
   });
 
-  return `${persons.length} টি একাউন্ট এক্সেলে এক্সপোর্ট করা হয়েছে`;
+  return isBn
+    ? `${persons.length} টি একাউন্ট এক্সেলে এক্সপোর্ট করা হয়েছে`
+    : `${persons.length} accounts exported to Excel`;
 }
 
 export async function downloadPersonSummaryPdf(
@@ -729,20 +860,31 @@ export async function downloadPersonSummaryPdf(
     { totalPabo: 0, totalDibo: 0, netBalance: 0, totalTxns: 0 }
   );
 
+  const isBn = !i18n.language || i18n.language.startsWith("bn");
+  const reportTitle = isBn
+    ? "দেনা পাওনা ব্যক্তি সামারি রিপোর্ট"
+    : "Dena Pawna Person Summary Report";
+  const totalSummaryLabel = isBn
+    ? `মোট সামারি (${persons.length} টি একাউন্ট)`
+    : `TOTAL SUMMARY (${persons.length} Accounts)`;
+  const metaRightLabel = isBn
+    ? `মোট একাউন্ট: ${persons.length} | নেট ব্যালেন্স: BDT ${formatMoney(totals.netBalance)}`
+    : `Total Accounts: ${persons.length} | Net Balance: BDT ${formatMoney(totals.netBalance)}`;
+
   const themeRgb = argbToRgbTuple(resolveThemeArgb());
   const columns = buildPersonSummaryColumns(themeRgb);
   const { headers, bodyRows, columnStyles } = buildDynamicPdfPayload(
     persons,
     columns,
     totals,
-    `TOTAL SUMMARY (${persons.length} Accounts)`,
+    totalSummaryLabel,
     { visibleColumns }
   );
 
   await generateAndDownloadCorporatePdf({
-    fileName: `Khatabook_Person_Summary_${moment().format("YYYY-MM-DD")}.pdf`,
-    reportTitle: "Khatabook Accounts & Person Summary Report",
-    metaRightLabel: `Total Accounts: ${persons.length} | Net Balance: BDT ${formatMoney(totals.netBalance)}`,
+    fileName: `Dena_Pawna_Person_Summary_${moment().format("YYYY-MM-DD")}.pdf`,
+    reportTitle,
+    metaRightLabel,
     headers,
     bodyRows,
     columnStyles,
@@ -750,5 +892,7 @@ export async function downloadPersonSummaryPdf(
     orientation: "landscape",
   });
 
-  return "একাউন্টস সামারি পিডিএফ সফলভাবে ডাউনলোড হয়েছে";
+  return isBn
+    ? "দেনা পাওনা ব্যক্তি সামারি রিপোর্ট সফলভাবে ডাউনলোড হয়েছে"
+    : "Dena Pawna Person Summary Report downloaded successfully";
 }
