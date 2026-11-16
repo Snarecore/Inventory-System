@@ -337,16 +337,12 @@ export const DateRangePicker: React.FC<DateRangePickerProps> = ({
         type="button"
         disabled={disabled}
         onClick={handleToggleOpen}
-        className={`ui-control flex w-full items-center justify-between cursor-pointer select-none ${
-          sizeClasses[size] || ""
-        } ${
+        className={`w-full h-8 px-2.5 flex items-center justify-between text-xs font-medium rounded-lg border transition-all cursor-pointer select-none outline-none ${
           disabled
-            ? "cursor-not-allowed bg-[var(--ui-surface-sunken)] text-[var(--ui-text-subtle)]"
+            ? "cursor-not-allowed bg-[var(--ui-surface-sunken)] border-[var(--ui-border)] text-[var(--ui-text-subtle)]"
             : isOpen
-            ? "border-[var(--primary-color)] shadow-[0_0_0_3px_var(--ui-focus-ring)]"
-            : isFiltered
-            ? "border-[var(--color-primary)] bg-[var(--primary-color-light)]/40 text-[var(--color-primary)] font-semibold"
-            : ""
+            ? "border-[var(--color-primary)] ring-1 ring-[var(--color-primary)] bg-[var(--ui-surface)] text-[var(--ui-text)] shadow-sm"
+            : "border-[var(--ui-border)] bg-[var(--ui-surface-muted)]/50 hover:bg-[var(--ui-surface)] text-[var(--ui-text)] hover:border-[var(--ui-border-strong)]"
         } ${error ? "is-invalid" : ""} ${inputClassName}`}
       >
         <div className="flex items-center gap-1.5 truncate mr-1">
@@ -354,8 +350,9 @@ export const DateRangePicker: React.FC<DateRangePickerProps> = ({
           <span className="truncate text-xs text-[var(--ui-text)] font-medium">{displayLabel || placeholder}</span>
         </div>
         <FiChevronDown
-          className={`text-[var(--ui-text-subtle)] shrink-0 text-xs transition-transform duration-200 ${
-            isOpen ? "rotate-180" : ""
+          size={12}
+          className={`shrink-0 text-[var(--ui-text-muted)] transition-transform duration-200 ${
+            isOpen ? "rotate-180 text-[var(--color-primary)]" : ""
           }`}
         />
       </button>

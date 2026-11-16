@@ -154,8 +154,8 @@ export const menu = [
 		items: [
 			{
 				id: 720,
-				name: "Khatabook",
-				title: "Khatabook (Ledger)",
+				name: "Dena Pawna",
+				title: "Dena Pawna (Ledger)",
 				icon: FaBookOpen,
 				path: "/admin/khatabook",
 				permissionKey: "accounts.view",
@@ -257,7 +257,7 @@ export const menu = [
 					{ id: 129, name: "Sales Return Report", path: "/admin/reports/sales-return", permissionKey: "reports.sales_return.view" },
 					{ id: 130, name: "Customer Collection Report", path: "/admin/reports/customer-collection", permissionKey: "reports.customer_collection.view" },
 					{ id: 128, name: "Cash Closing Report", path: "/admin/reports/cash-closing", permissionKey: "reports.cash_closing.view" },
-					{ id: 131, name: "Khatabook Report", path: "/admin/reports/khatabook", permissionKey: "reports.view" },
+					{ id: 131, name: "Dena Pawna Report", path: "/admin/reports/khatabook", permissionKey: "reports.view" },
 					{ id: 98, name: "Inventory Reports", path: "/admin/reports/inventory", permissionKey: "reports.inventory.view" },
 					{ id: 99, name: "Customer Reports", path: "/reports/customer", permissionKey: "reports.customer.view" },
 					{ id: 100, name: "Supplier Reports", path: "/reports/supplier", permissionKey: "reports.supplier.view" },

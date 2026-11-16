@@ -53,7 +53,7 @@ export const KhatabookReportPage: React.FC = () => {
   const kpiCards: StatCardItem[] = [
     {
       title: "Total Receivable (Pabo)",
-      value: `+৳ ${formatMoney(kpis.totalPabo)}`,
+      value: `৳ ${formatMoney(kpis.totalPabo)}`,
       icon: FaArrowDown,
       color: "text-[var(--ui-success)]",
       bg: "bg-[var(--ui-success-light)]/60 border-[var(--ui-success-border)]",
@@ -95,7 +95,7 @@ export const KhatabookReportPage: React.FC = () => {
       {/* Page Header & Top Action Buttons */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2.5">
         <PageHeader
-          headerTitle={t("Khatabook Report")}
+          headerTitle={t("Dena Pawna Report")}
           headerDescription={t(
             "Transaction ledger history, date-wise debit/credit breakdown, and person account summaries"
           )}

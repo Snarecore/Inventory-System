@@ -494,16 +494,16 @@ export async function exportKhatabookTransactionsExcel(
   );
 
   const reportTitle = isSinglePerson
-    ? `${isBn ? "খাতাবই লেজার রিপোর্ট" : "Khatabook Ledger Report"} - ${personName} ${personPhone ? `(${personPhone})` : ""} [${balanceStatement}]`
-    : (isBn ? "খাতাবই লেনদেন ও লেজার রিপোর্ট" : "Khatabook Transaction & Ledger Report");
+    ? `${isBn ? "দেনা পাওনা লেজার রিপোর্ট" : "Dena Pawna Ledger Report"} - ${personName} ${personPhone ? `(${personPhone})` : ""} [${balanceStatement}]`
+    : (isBn ? "দেনা পাওনা লেনদেন ও লেজার রিপোর্ট" : "Dena Pawna Transaction & Ledger Report");
 
   const fileName = isSinglePerson
-    ? `Khatabook_Ledger_${personName.replace(/\s+/g, "_")}_${moment().format("YYYY-MM-DD")}.xlsx`
-    : `Khatabook_Report_${moment().format("YYYY-MM-DD")}.xlsx`;
+    ? `Dena_Pawna_Ledger_${personName.replace(/\s+/g, "_")}_${moment().format("YYYY-MM-DD")}.xlsx`
+    : `Dena_Pawna_Report_${moment().format("YYYY-MM-DD")}.xlsx`;
 
   await buildAndDownloadExcel(rows, totalRow, {
     fileName,
-    sheetName: isBn ? "লেনদেন লেজার" : "Khatabook Ledger",
+    sheetName: isBn ? "দেনা পাওনা লেজার" : "Dena Pawna Ledger",
     businessName: meta.businessName,
     businessAddress: meta.businessAddress,
     businessLogoUrl: meta.businessLogoUrl,
@@ -593,8 +593,8 @@ export async function downloadKhatabookTransactionsPdf(
   );
 
   const reportTitle = isBn
-    ? "খাতাবই লেনদেন ও লেজার রিপোর্ট"
-    : "Khatabook Transaction & Ledger Report";
+    ? "দেনা পাওনা লেনদেন ও লেজার রিপোর্ট"
+    : "Dena Pawna Transaction & Ledger Report";
 
   const metaRightLabel = isSinglePerson
     ? (isBn ? `মোট লেনদেন: ${transactions.length}` : `Total Transactions: ${transactions.length}`)
@@ -613,8 +613,8 @@ export async function downloadKhatabookTransactionsPdf(
     : undefined;
 
   const fileName = isSinglePerson
-    ? `Khatabook_Ledger_${personName.replace(/\s+/g, "_")}_${moment().format("YYYY-MM-DD")}.pdf`
-    : `Khatabook_Report_${moment().format("YYYY-MM-DD")}.pdf`;
+    ? `Dena_Pawna_Ledger_${personName.replace(/\s+/g, "_")}_${moment().format("YYYY-MM-DD")}.pdf`
+    : `Dena_Pawna_Report_${moment().format("YYYY-MM-DD")}.pdf`;
 
   await generateAndDownloadCorporatePdf({
     fileName,
@@ -629,8 +629,8 @@ export async function downloadKhatabookTransactionsPdf(
   });
 
   return isBn
-    ? "খাতাবই পিডিএফ রিপোর্ট সফলভাবে ডাউনলোড হয়েছে"
-    : "Khatabook PDF report downloaded successfully";
+    ? "দেনা পাওনা পিডিএফ রিপোর্ট সফলভাবে ডাউনলোড হয়েছে"
+    : "Dena Pawna PDF report downloaded successfully";
 }
 
 // ============================================================================

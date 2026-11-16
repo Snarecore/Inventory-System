@@ -141,8 +141,8 @@ export const KhatabookTable: React.FC<KhatabookTableProps> = ({
     };
 
     buildAndDownloadExcel(rows, totalRow, {
-      fileName: `Khatabook_Persons_${new Date().toISOString().split("T")[0]}.xlsx`,
-      sheetName: "Khatabook",
+      fileName: `Dena_Pawna_Persons_${new Date().toISOString().split("T")[0]}.xlsx`,
+      sheetName: "Dena Pawna",
     });
   };
 
@@ -204,7 +204,7 @@ export const KhatabookTable: React.FC<KhatabookTableProps> = ({
             <ExcelExportButton
               onClick={handleExportExcel}
               disabled={filteredList.length === 0}
-              title={t("Download Khatabook Excel Report")}
+              title={t("Download Dena Pawna Excel Report")}
             />
           </div>
         </div>
@@ -281,7 +281,7 @@ export const KhatabookTable: React.FC<KhatabookTableProps> = ({
                       </td>
 
                       {/* Address */}
-                      <td className="py-1 px-2.5 text-left font-normal text-xs text-[var(--ui-text-muted)] truncate whitespace-nowrap">
+                      <td className="py-1 px-2.5 text-left font-normal text-xs text-[var(--ui-text)] truncate whitespace-nowrap">
                         <span className="block truncate" title={person.address || "-"}>
                           {person.address || "-"}
                         </span>

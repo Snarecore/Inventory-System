@@ -280,7 +280,7 @@ export const PersonLedgerPage: React.FC = () => {
         <div className="p-8 text-center bg-[var(--ui-surface)] border border-[var(--ui-border)] rounded-xl max-w-md mx-auto space-y-4 shadow-xs">
           <p className="text-base font-bold text-[var(--ui-text)]">{t("Person Not Found")}</p>
           <p className="text-xs text-[var(--ui-text-muted)]">
-            {t("The person with ID #{id} was not found in Khatabook or may have been deleted.")}
+            {t("The person with ID #{id} was not found in Dena Pawna or may have been deleted.")}
           </p>
           <button
             type="button"
@@ -288,7 +288,7 @@ export const PersonLedgerPage: React.FC = () => {
             className="inline-flex items-center gap-2 px-4 py-2 bg-[var(--primary-color,#009fe3)] hover:opacity-90 text-white rounded-lg text-xs font-semibold cursor-pointer transition-opacity"
           >
             <FiArrowLeft />
-            <span>{t("Back to Khatabook")}</span>
+            <span>{t("Back to Dena Pawna")}</span>
           </button>
         </div>
       </div>
@@ -305,10 +305,10 @@ export const PersonLedgerPage: React.FC = () => {
             type="button"
             onClick={() => navigate("/admin/khatabook")}
             className="h-8 px-2.5 rounded-lg border border-[var(--ui-border)] bg-[var(--ui-surface)] hover:bg-[var(--ui-surface-sunken)] text-[var(--ui-text)] transition-colors cursor-pointer flex items-center gap-1.5 text-xs font-semibold shadow-2xs group"
-            title={t("Back to Khatabook")}
+            title={t("Back to Dena Pawna")}
           >
             <FiArrowLeft size={13} className="group-hover:-translate-x-0.5 transition-transform" />
-            <span>{t("Back to Khatabook")}</span>
+            <span>{t("Back to Dena Pawna")}</span>
           </button>
           <span className="text-[var(--ui-text-subtle)] text-xs">/</span>
           <span className="text-xs font-medium text-[var(--ui-text-muted)]">{t("Ledger Statement")}</span>
@@ -633,12 +633,12 @@ export const PersonLedgerPage: React.FC = () => {
                         className="hover:bg-[var(--primary-color-light)]/40 transition-colors group"
                       >
                         {/* SL */}
-                        <td className="py-1 px-2.5 text-center text-[var(--ui-text-muted)] text-[11px] tabular-nums">
+                        <td className="py-1 px-2.5 text-center text-xs font-normal text-[var(--ui-text)] tabular-nums">
                           {startIndex + idx + 1}
                         </td>
 
                         {/* Date */}
-                        <td className="py-1 px-2.5 whitespace-nowrap text-[var(--ui-text-muted)] text-[11px]">
+                        <td className="py-1 px-2.5 whitespace-nowrap text-xs font-normal text-[var(--ui-text)]">
                           {formattedDate}
                         </td>
 

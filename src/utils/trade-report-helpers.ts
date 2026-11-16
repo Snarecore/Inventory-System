@@ -679,8 +679,8 @@ export function renderBengaliLinesToCanvas(
     if (w > maxLineW) maxLineW = w;
   }
 
-  const padX = Math.max(6 * dpr, Math.round(pxFontSize * 0.25));
-  const padY = Math.max(8 * dpr, Math.round(pxFontSize * 0.35));
+  const padX = Math.round(pxFontSize * 0.2) + 2 * dpr;
+  const padY = Math.round(pxFontSize * 0.22) + 2 * dpr;
   const totalWPx = Math.max(1, Math.ceil(maxLineW + padX * 2));
   const totalHPx = Math.max(1, Math.ceil(flatLines.length * lineSpacingPx + padY * 2));
 
@@ -716,17 +716,23 @@ export function renderBengaliLinesToCanvas(
   // 1 px at 96 DPI = 0.264583 mm
   let widthMm = (totalWPx / dpr) * 0.264583;
   let heightMm = (totalHPx / dpr) * 0.264583;
+  let padXMm = (padX / dpr) * 0.264583;
+  let padYMm = (padY / dpr) * 0.264583;
 
   if (opts.maxAllowedWidthMm && widthMm > opts.maxAllowedWidthMm && opts.maxAllowedWidthMm > 0) {
     const scale = opts.maxAllowedWidthMm / widthMm;
     widthMm = opts.maxAllowedWidthMm;
     heightMm = heightMm * scale;
+    padXMm = padXMm * scale;
+    padYMm = padYMm * scale;
   }
 
   return {
     dataUrl: canvas.toDataURL("image/png"),
     widthMm,
     heightMm,
+    padXMm,
+    padYMm,
   };
 }
 
@@ -777,9 +783,11 @@ export function drawPdfTextSmart(
   if (opts.align === "center") {
     drawX = x - rendered.widthMm / 2;
   } else if (opts.align === "right") {
-    drawX = x - rendered.widthMm;
+    drawX = x - rendered.widthMm + (rendered.padXMm || 0);
+  } else {
+    drawX = x - (rendered.padXMm || 0);
   }
-  const drawY = y - rendered.heightMm * 0.7;
+  const drawY = y - rendered.heightMm * 0.58;
 
   try {
     doc.addImage(rendered.dataUrl, "PNG", drawX, drawY, rendered.widthMm, rendered.heightMm);
@@ -1035,22 +1043,27 @@ export async function generateAndDownloadCorporatePdf(
     didDrawCell: (hookData) => {
       const cell = hookData.cell as any;
       if (cell._bengaliImage) {
-        const { dataUrl, widthMm, heightMm } = cell._bengaliImage;
+        const { dataUrl, widthMm, heightMm, padXMm, padYMm } = cell._bengaliImage;
         const padL = cell.padding("left");
         const padR = cell.padding("right");
         const padT = cell.padding("top");
         const padB = cell.padding("bottom");
-        const availW = cell.width - padL - padR;
-        const availH = cell.height - padT - padB;
+        const padXOffset = padXMm || 0;
 
-        let drawX = cell.x + padL;
+        let drawX = cell.x + padL - padXOffset;
         if (cell.styles.halign === "center") {
-          drawX = availW > widthMm ? cell.x + padL + (availW - widthMm) / 2 : cell.x + padL;
+          drawX = cell.x + (cell.width - widthMm) / 2;
         } else if (cell.styles.halign === "right") {
-          drawX = cell.x + cell.width - padR - widthMm;
+          drawX = cell.x + cell.width - padR - widthMm + padXOffset;
         }
 
-        const drawY = availH > heightMm ? cell.y + padT + (availH - heightMm) / 2 : cell.y + padT;
+        // Align Bengali text vertically to match AutoTable valign: "middle"
+        let drawY = cell.y + (cell.height - heightMm) / 2;
+        if (cell.styles.valign === "top") {
+          drawY = cell.y + padT - (padYMm || 0);
+        } else if (cell.styles.valign === "bottom") {
+          drawY = cell.y + cell.height - padB - heightMm + (padYMm || 0);
+        }
 
         try {
           doc.addImage(dataUrl, "PNG", drawX, drawY, widthMm, heightMm);

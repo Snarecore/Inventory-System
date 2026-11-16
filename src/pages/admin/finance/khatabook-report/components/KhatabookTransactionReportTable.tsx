@@ -428,24 +428,24 @@ export const KhatabookTransactionReportTable: React.FC<
                     >
                       {/* SL */}
                       {isColVisible("sl") && (
-                        <td className="py-1.5 px-2.5 text-center text-[var(--ui-text-muted)] text-[11px] tabular-nums">
+                        <td className="py-1.5 px-2.5 text-center text-xs font-normal text-[var(--ui-text)] tabular-nums">
                           {(safePage - 1) * pageSize + idx + 1}
                         </td>
                       )}
 
                       {/* Date */}
                       {isColVisible("date") && (
-                        <td className="py-1.5 px-2.5 whitespace-nowrap text-[var(--ui-text-muted)] text-[11px]">
+                        <td className="py-1.5 px-2.5 whitespace-nowrap text-xs font-normal text-[var(--ui-text)]">
                           {txn.formattedDate}
                         </td>
                       )}
 
                       {/* Person Name */}
                       {!singlePersonMeta && isColVisible("person") && (
-                        <td className="py-1.5 px-2.5 truncate font-medium text-xs text-[var(--ui-text)]">
+                        <td className="py-1.5 px-2.5 truncate font-normal text-xs text-[var(--ui-text)]">
                           <Link
                             to={`/admin/khatabook/${txn.personId}`}
-                            className="hover:text-[var(--primary-color)] transition-colors truncate inline-block max-w-[120px]"
+                            className="text-[var(--ui-text)] hover:text-[var(--primary-color)] transition-colors truncate inline-block max-w-[140px] font-normal"
                             title={txn.personName}
                           >
                             {txn.personName}
@@ -455,7 +455,7 @@ export const KhatabookTransactionReportTable: React.FC<
 
                       {/* Phone */}
                       {!singlePersonMeta && isColVisible("phone") && (
-                        <td className="py-1.5 px-2.5 whitespace-nowrap text-[11px] text-[var(--ui-text-muted)] tabular-nums">
+                        <td className="py-1.5 px-2.5 whitespace-nowrap text-xs font-normal text-[var(--ui-text)] tabular-nums">
                           {txn.personPhone || "-"}
                         </td>
                       )}

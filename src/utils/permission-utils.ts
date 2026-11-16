@@ -149,8 +149,8 @@ export const PERMISSION_MODULES: PermissionModule[] = [
   // ==========================================
   {
     id: "khatabook",
-    name: "Khatabook",
-    description: "Customer and supplier khatabook ledgers",
+    name: "Dena Pawna",
+    description: "Customer and supplier dena pawna ledgers",
     category: "Finance",
     actions: ["read", "create", "update", "delete"],
   },

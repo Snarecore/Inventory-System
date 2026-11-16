@@ -78,7 +78,7 @@ export const KhatabookPage: React.FC = () => {
       {/* Page Header & Top Action Buttons */}
       <div className="flex flex-col gap-1.5 sm:flex-row sm:items-center sm:justify-between">
         <PageHeader
-          headerTitle="Khatabook"
+          headerTitle="Dena Pawna"
           headerDescription="Manage all customer and supplier ledger accounts, debits, credits, and balances"
         />
 
@@ -308,7 +308,7 @@ export const KhatabookPage: React.FC = () => {
       <DeleteModal
         isOpen={isDeletePersonModalOpen}
         title="Delete Person Confirmation"
-        message={`Are you sure you want to delete "${personToDelete?.name}" from Khatabook? Note: If this person has existing transactions, they must be deleted first.`}
+        message={`Are you sure you want to delete "${personToDelete?.name}" from Dena Pawna? Note: If this person has existing transactions, they must be deleted first.`}
         onClose={() => {
           setIsDeletePersonModalOpen(false);
           setPersonToDelete(null);

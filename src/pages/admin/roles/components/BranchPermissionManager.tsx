@@ -111,9 +111,9 @@ const ACTION_TITLES: Record<string, Record<CrudAction, string>> = {
     update: "Edit Templates",
     delete: "Delete SMS Logs",
   },
-  // 13. Khatabook
+  // 13. Dena Pawna
   khatabook: {
-    read: "Khatabook",
+    read: "Dena Pawna",
     create: "Add Entry",
     update: "Update Entry",
     delete: "Delete Entry",

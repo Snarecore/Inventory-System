@@ -342,17 +342,17 @@ export const KhatabookPersonSummaryReportTable: React.FC<
                     >
                       {/* SL */}
                       {isColVisible("sl") && (
-                        <td className="py-1.5 px-2.5 text-center text-[var(--ui-text-muted)] text-[11px] tabular-nums">
+                        <td className="py-1.5 px-2.5 text-center text-xs font-normal text-[var(--ui-text)] tabular-nums">
                           {(safePage - 1) * pageSize + idx + 1}
                         </td>
                       )}
 
                       {/* Name */}
                       {isColVisible("name") && (
-                        <td className="py-1.5 px-2.5 truncate font-medium text-xs text-[var(--ui-text)]">
+                        <td className="py-1.5 px-2.5 truncate font-normal text-xs text-[var(--ui-text)]">
                           <Link
                             to={`/admin/khatabook/${row.id}`}
-                            className="hover:text-[var(--primary-color)] transition-colors truncate inline-block max-w-[200px]"
+                            className="text-[var(--ui-text)] hover:text-[var(--primary-color)] transition-colors truncate inline-block max-w-[200px] font-normal"
                             title={row.name}
                           >
                             {row.name}
@@ -362,14 +362,14 @@ export const KhatabookPersonSummaryReportTable: React.FC<
 
                       {/* Phone */}
                       {isColVisible("phone") && (
-                        <td className="py-1.5 px-2.5 whitespace-nowrap text-[11px] text-[var(--ui-text-muted)] tabular-nums">
+                        <td className="py-1.5 px-2.5 whitespace-nowrap text-xs font-normal text-[var(--ui-text)] tabular-nums">
                           {row.phone || "-"}
                         </td>
                       )}
 
                       {/* Address */}
                       {isColVisible("address") && (
-                        <td className="py-1.5 px-2.5 pl-4 truncate text-[11px] text-[var(--ui-text-subtle)] max-w-[200px]">
+                        <td className="py-1.5 px-2.5 pl-4 truncate text-xs font-normal text-[var(--ui-text)] max-w-[200px]">
                           {row.address || "-"}
                         </td>
                       )}
@@ -407,14 +407,14 @@ export const KhatabookPersonSummaryReportTable: React.FC<
 
                       {/* Transactions count */}
                       {isColVisible("txnCount") && (
-                        <td className="py-1.5 px-2.5 text-center text-xs tabular-nums text-[var(--ui-text-muted)]">
+                        <td className="py-1.5 px-2.5 text-center text-xs font-normal text-[var(--ui-text)] tabular-nums">
                           {row.transactionCount}
                         </td>
                       )}
 
                       {/* Last transaction date */}
                       {isColVisible("lastTxnDate") && (
-                        <td className="py-1.5 px-2.5 whitespace-nowrap text-[11px] text-[var(--ui-text-muted)]">
+                        <td className="py-1.5 px-2.5 whitespace-nowrap text-xs font-normal text-[var(--ui-text)]">
                           {formatKhatabookDate(row.lastTransactionDate)}
                         </td>
                       )}
@@ -494,7 +494,7 @@ export const KhatabookPersonSummaryReportTable: React.FC<
                     </td>
                   )}
                   {isColVisible("txnCount") && (
-                    <td className="py-2 px-2.5 text-center tabular-nums">
+                    <td className="py-2 px-2.5 text-center tabular-nums text-xs font-normal text-[var(--ui-text)]">
                       {filteredTotals.totalTxns}
                     </td>
                   )}
