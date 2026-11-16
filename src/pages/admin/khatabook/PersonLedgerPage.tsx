@@ -707,13 +707,13 @@ export const PersonLedgerPage: React.FC = () => {
                         {/* Running Balance */}
                         <td className="py-1 px-2.5 whitespace-nowrap text-right text-xs">
                           <span
-                            className={`font-extrabold ${
+                            className={
                               txn.runningBalance > 0
                                 ? "text-[var(--ui-success)]"
                                 : txn.runningBalance < 0
                                 ? "text-[var(--ui-danger)]"
                                 : "text-[var(--ui-text)]"
-                            }`}
+                            }
                           >
                             ৳{Math.abs(txn.runningBalance).toLocaleString("en-IN", { minimumFractionDigits: 2 })}
                           </span>

@@ -428,7 +428,7 @@ const Header = ({ sidebarClick }: { sidebarClick: boolean }) => {
                 <div className="relative">
                     <div
                         ref={userImageRef}
-                        className="hidden lg:flex items-center gap-2 cursor-pointer bg-gray-100 dark:bg-[var(--ui-surface-muted)] hover:bg-gray-200 dark:hover:bg-[var(--ui-surface-sunken)] border border-gray-200 dark:border-[var(--ui-border)] px-2.5 py-1 rounded-md select-none transition-colors"
+                        className="hidden lg:flex items-center gap-2 h-8 cursor-pointer bg-gray-100 dark:bg-[var(--ui-surface-muted)] hover:bg-gray-200 dark:hover:bg-[var(--ui-surface-sunken)] border border-gray-200 dark:border-[var(--ui-border)] px-2.5 rounded-lg select-none transition-colors shadow-2xs"
                         onClick={() => setShowUserDropdown(!showUserDropdown)}>
                         <MotionDiv className="flex items-center gap-2">
                             <UserAvatar

@@ -80,7 +80,7 @@ export const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({
       onClick={toggleLanguage}
       title={currentLang === "bn" ? "Switch to English (EN)" : "বাংলায় পরিবর্তন করুন (বাং)"}
       aria-label="Switch Language"
-      className={`inline-flex items-center gap-1.5 h-8 px-2.5 rounded-lg border border-gray-200 dark:border-[var(--ui-border)] bg-gray-100 dark:bg-[var(--ui-surface-muted)] text-gray-700 dark:text-[var(--ui-text)] text-xs font-semibold cursor-pointer shadow-2xs select-none ${className}`}
+      className={`inline-flex items-center gap-1.5 h-8 px-2.5 rounded-lg border border-gray-200 dark:border-[var(--ui-border)] bg-gray-100 dark:bg-[var(--ui-surface-muted)] hover:bg-gray-200 dark:hover:bg-[var(--ui-surface-sunken)] text-gray-700 dark:text-[var(--ui-text)] text-xs font-semibold cursor-pointer shadow-2xs select-none transition-colors ${className}`}
     >
       {currentLang === "bn" ? (
         <BdFlag className="w-4.5 h-3.5" />
