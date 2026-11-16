@@ -189,12 +189,11 @@ export const TradeReturnForm: React.FC<TradeReturnFormProps> = ({ mode }) => {
         if (!isReturn) return false;
 
         const retKeys = [
-          isSale ? (item.salesInvoiceNo || item.sales_invoice_no) : (item.purchaseInvoiceNo || item.purchase_invoice_no),
-          item.invoiceNo || item.invoice_no,
-          item.challanNo || item.challan_no,
-          item.orderNo || item.order_no,
-          item.refNo || item.ref_no,
-          isSale ? (item.saleId || item.sale_id) : (item.purchaseId || item.purchase_id),
+          isSale ? (item.salesInvoiceNo || item.invoiceNo) : (item.purchaseInvoiceNo || item.invoiceNo),
+          item.challanNo,
+          item.orderNo,
+          item.refNo,
+          isSale ? (item.saleId || item.id) : (item.purchaseId || item.id),
         ]
           .map(cleanKey)
           .filter(Boolean);
@@ -226,7 +225,7 @@ export const TradeReturnForm: React.FC<TradeReturnFormProps> = ({ mode }) => {
 
       const targetInv = cleanKey(isSale ? (order.salesInvoiceNo || order.invoiceNo) : (order.purchaseInvoiceNo || order.invoiceNo));
       const targetRef = cleanKey(isSale ? order.orderNo : order.challanNo);
-      const targetId = cleanKey(order.id || (isSale ? order.saleId || order.sale_id : order.purchaseId || order.purchase_id));
+      const targetId = cleanKey(order.id || (isSale ? order.saleId : order.purchaseId));
 
       const seenReturnKeys = new Set<string>();
 
@@ -253,13 +252,12 @@ export const TradeReturnForm: React.FC<TradeReturnFormProps> = ({ mode }) => {
         const isReturn =
           Boolean(item.isReturnRecord) ||
           Boolean(item.returnNo) ||
-          Boolean(item.returnGrandTotal) ||
           (Array.isArray(item.returnDetails) && item.returnDetails.length > 0) ||
           (Array.isArray(item.purchaseReturnDetails) && item.purchaseReturnDetails.length > 0);
 
         const retInv = cleanKey(isSale ? (item.salesInvoiceNo || item.invoiceNo) : (item.purchaseInvoiceNo || item.invoiceNo));
         const retRef = cleanKey(isSale ? item.orderNo : item.challanNo);
-        const retId = cleanKey(isSale ? (item.saleId || item.sale_id) : (item.purchaseId || item.purchase_id));
+        const retId = cleanKey(isSale ? (item.saleId || item.id) : (item.purchaseId || item.id));
 
         const matches =
           (targetInv && retInv && targetInv === retInv) ||
@@ -326,8 +324,8 @@ export const TradeReturnForm: React.FC<TradeReturnFormProps> = ({ mode }) => {
     (record: any): any[] => {
       if (!record || typeof record !== "object") return [];
       const candidates = isSale
-        ? [record.salesDetails, record.saleDetails, record.saleDetailsList, record.details, record.items, record.products]
-        : [record.purchaseDetails, record.purchasesDetails, record.details, record.items, record.products];
+        ? [record.salesDetails, record.saleDetails, record.details]
+        : [record.purchaseDetails, record.details];
       return candidates.find((details) => Array.isArray(details) && details.length > 0) || [];
     },
     [isSale]
@@ -399,10 +397,10 @@ export const TradeReturnForm: React.FC<TradeReturnFormProps> = ({ mode }) => {
           const candidateRef = cleanKey(isSale ? cand.orderNo : cand.challanNo);
           const candidateId = cleanKey(
             isSale
-              ? cand.saleId || cand.sale_id || cand.id
-              : cand.purchaseId || cand.purchase_id || cand.id
+              ? cand.saleId || cand.id
+              : cand.purchaseId || cand.id
           );
-          const orderId = cleanKey(order.id || (isSale ? order.saleId || order.sale_id : order.purchaseId || order.purchase_id));
+          const orderId = cleanKey(order.id || (isSale ? order.saleId : order.purchaseId));
           const cleanInv = cleanKey(inv);
           const cleanRef = cleanKey(ref);
 

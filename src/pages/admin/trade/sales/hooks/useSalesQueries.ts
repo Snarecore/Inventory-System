@@ -40,10 +40,7 @@ export interface UnifiedTradeRecord extends SaleItem {
 export const extractLineItems = (item: any): any[] => {
   if (Array.isArray(item?.salesDetails) && item.salesDetails.length > 0) return item.salesDetails;
   if (Array.isArray(item?.saleDetails) && item.saleDetails.length > 0) return item.saleDetails;
-  if (Array.isArray(item?.saleDetailsList) && item.saleDetailsList.length > 0) return item.saleDetailsList;
   if (Array.isArray(item?.details) && item.details.length > 0) return item.details;
-  if (Array.isArray(item?.items) && item.items.length > 0) return item.items;
-  if (Array.isArray(item?.products) && item.products.length > 0) return item.products;
   return [];
 };
 
@@ -81,39 +78,29 @@ export const normalizeSaleRecord = (item: any): SaleItem => {
   const grandTotal = Number(item?.grandTotal ?? item?.grand_total ?? item?.totalAmount ?? 0);
   const paidAmount = Number(item?.paidAmount ?? item?.paid_amount ?? 0);
   const dueAmount = Number(item?.dueAmount ?? item?.due_amount ?? 0);
-  const customerId = item?.customerId ?? item?.customer_id ?? item?.partyId ?? item?.party_id;
+  const customerId = item?.customerId ?? item?.customer_id;
   const customerName =
     item?.customerName ||
     item?.customer_name ||
-    item?.partyName ||
-    item?.party_name ||
-    item?.customer ||
     "Customer";
   const customerPhone =
     item?.customerPhone ||
     item?.customer_phone ||
-    item?.phone ||
-    item?.partyPhone ||
-    item?.party_phone ||
     "";
   const customerAddress =
     item?.customerAddress ||
     item?.customer_address ||
-    item?.address ||
-    item?.partyAddress ||
     "";
   const hasReturn = Boolean(
     item?.hasReturn ||
     item?.returnNo ||
     item?.return_no ||
-    item?.returnGrandTotal ||
-    item?.returnRefundAmount ||
     (Array.isArray(item?.returnDetails) && item.returnDetails.length > 0) ||
     (Array.isArray(item?.salesReturnDetails) && item.salesReturnDetails.length > 0)
   );
 
   const cleanOrderNo = getCleanOrderNo(
-    item?.orderNo || item?.order_no || item?.orderId || item?.order_id || item?.saleOrderNo,
+    item?.orderNo || item?.order_no,
     item?.invoiceNo || item?.salesInvoiceNo || item?.invoice_no
   );
 
@@ -172,9 +159,6 @@ export const fetchSalesList = async (): Promise<SaleItem[]> => {
       (Array.isArray(res?.data) ? res.data : null) ||
       res?.saleList ||
       res?.salesList ||
-      res?.sales ||
-      res?.saleDetailsList ||
-      res?.sale_list ||
       [];
 
     return (Array.isArray(list) ? list : []).map(normalizeSaleRecord);
@@ -232,16 +216,8 @@ export const fetchSalesAndReturnList = async (): Promise<UnifiedTradeRecord[]> =
       ? res.data
       : Array.isArray(res?.saleList)
       ? res.saleList
-      : Array.isArray(res?.sales)
-      ? res.sales
       : Array.isArray(res?.salesList)
       ? res.salesList
-      : Array.isArray(res?.data?.sales)
-      ? res.data.sales
-      : Array.isArray(res?.data?.saleList)
-      ? res.data.saleList
-      : Array.isArray(res?.data?.salesList)
-      ? res.data.salesList
       : [];
 
     const returns = Array.isArray(res?.returns)
@@ -250,22 +226,6 @@ export const fetchSalesAndReturnList = async (): Promise<UnifiedTradeRecord[]> =
       ? res.returnList
       : Array.isArray(res?.salesReturnList)
       ? res.salesReturnList
-      : Array.isArray(res?.salesReturns)
-      ? res.salesReturns
-      : Array.isArray(res?.saleReturnList)
-      ? res.saleReturnList
-      : Array.isArray(res?.saleReturns)
-      ? res.saleReturns
-      : Array.isArray(res?.sales_returns)
-      ? res.sales_returns
-      : Array.isArray(res?.data?.returns)
-      ? res.data.returns
-      : Array.isArray(res?.data?.returnList)
-      ? res.data.returnList
-      : Array.isArray(res?.data?.salesReturnList)
-      ? res.data.salesReturnList
-      : Array.isArray(res?.data?.salesReturns)
-      ? res.data.salesReturns
       : [];
 
     const combinedList = Array.isArray(res?.salesAndReturnList)
@@ -283,17 +243,15 @@ export const fetchSalesAndReturnList = async (): Promise<UnifiedTradeRecord[]> =
 
     const getSaleAliases = (item: any): string[] => {
       if (!item) return [];
-      const invNo = item.salesInvoiceNo || item.sales_invoice_no || item.invoiceNo || item.invoice_no;
-      const ordNo = item.orderNo || item.order_no || item.orderId || item.order_id || item.saleOrderNo;
-      const sId = item.saleId || item.sale_id || item.id;
+      const invNo = item.salesInvoiceNo || item.invoiceNo || item.sales_invoice_no || item.invoice_no;
+      const ordNo = item.orderNo || item.order_no;
+      const sId = item.id || item.saleId || item.sale_id;
       const cleanOrd = getCleanOrderNo(ordNo, invNo);
 
       return [
         cleanOrd ? `sale_ord_${cleanOrd.toLowerCase()}` : null,
         ordNo ? `sale_ord_${String(ordNo).trim().toLowerCase()}` : null,
         invNo ? `sale_inv_${String(invNo).trim().toLowerCase()}` : null,
-        item.invoiceNo ? `sale_inv_${String(item.invoiceNo).trim().toLowerCase()}` : null,
-        item.salesInvoiceNo ? `sale_inv_${String(item.salesInvoiceNo).trim().toLowerCase()}` : null,
         sId ? `sale_id_${String(sId).trim().toLowerCase()}` : null,
       ].filter(Boolean) as string[];
     };
@@ -302,7 +260,7 @@ export const fetchSalesAndReturnList = async (): Promise<UnifiedTradeRecord[]> =
       if (!item) return;
       const aliases = getSaleAliases(item);
       const cleanOrd = getCleanOrderNo(
-        item.orderNo || item.order_no || item.orderId || item.order_id || item.saleOrderNo,
+        item.orderNo || item.order_no,
         item.invoiceNo || item.salesInvoiceNo
       );
 
@@ -310,12 +268,9 @@ export const fetchSalesAndReturnList = async (): Promise<UnifiedTradeRecord[]> =
         item.hasReturn ||
         item.returnNo ||
         item.return_no ||
-        item.returnGrandTotal ||
-        item.returnRefundAmount ||
         (Array.isArray(item.returnDetails) && item.returnDetails.length > 0) ||
         (Array.isArray(item.salesReturnDetails) && item.salesReturnDetails.length > 0) ||
-        (Array.isArray(item.returns) && item.returns.length > 0) ||
-        (Array.isArray(item.salesReturns) && item.salesReturns.length > 0)
+        (Array.isArray(item.returns) && item.returns.length > 0)
       );
 
       let existingIdx = -1;
@@ -449,15 +404,10 @@ export const fetchSalesAndReturnList = async (): Promise<UnifiedTradeRecord[]> =
         const explicitReturnDetails = [
           item.returnDetails,
           item.salesReturnDetails,
-          item.return_details,
-          item.sales_return_details,
-          item.returnedItems,
-          item.returned_items,
         ].find((lines) => Array.isArray(lines) && lines.length > 0);
         const hasSeparateSaleLines = [
           item.salesDetails,
           item.saleDetails,
-          item.saleDetailsList,
         ].some((lines) => Array.isArray(lines) && lines.length > 0);
         const returnDetails =
           explicitReturnDetails ||
@@ -493,12 +443,12 @@ export const fetchSalesAndReturnList = async (): Promise<UnifiedTradeRecord[]> =
       } else {
         // Only reconstruct fallback sale if original sale is completely missing
         const cleanOrd = getCleanOrderNo(
-          item.orderNo || item.order_no || item.orderId || item.order_id || item.saleOrderNo,
+          item.orderNo || item.order_no,
           item.salesInvoiceNo || item.invoiceNo
         );
         addSaleRecord({
           ...item,
-          id: item.saleId || item.sale_id || item.id || cleanOrd,
+          id: item.saleId || item.id || cleanOrd,
           orderNo: cleanOrd,
           invoiceNo: item.invoiceNo || item.salesInvoiceNo || cleanOrd,
           salesInvoiceNo: item.salesInvoiceNo || item.invoiceNo || cleanOrd,

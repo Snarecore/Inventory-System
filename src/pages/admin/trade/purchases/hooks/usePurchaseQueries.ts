@@ -49,7 +49,6 @@ export interface UnifiedPurchaseRecord extends PurchaseItem {
 export const extractPurchaseLineItems = (item: any): any[] => {
   const raw =
     (Array.isArray(item?.purchaseDetails) && item.purchaseDetails.length > 0 ? item.purchaseDetails : null) ||
-    (Array.isArray(item?.purchasesDetails) && item.purchasesDetails.length > 0 ? item.purchasesDetails : null) ||
     (Array.isArray(item?.details) && item.details.length > 0 ? item.details : null) ||
     [];
   return raw.map((d: any) => ({
@@ -68,26 +67,18 @@ export const normalizePurchaseRecord = (item: any): PurchaseItem => {
   const grandTotal = Number(item?.grandTotal ?? item?.grand_total ?? item?.totalAmount ?? 0);
   const paidAmount = Number(item?.paidAmount ?? item?.paid_amount ?? 0);
   const dueAmount = Number(item?.dueAmount ?? item?.due_amount ?? 0);
-  const supplierId = item?.supplierId ?? item?.supplier_id ?? item?.partyId ?? item?.party_id;
+  const supplierId = item?.supplierId ?? item?.supplier_id;
   const supplierName =
     item?.supplierName ||
     item?.supplier_name ||
-    item?.partyName ||
-    item?.party_name ||
-    item?.supplier ||
     "Direct Supplier";
   const supplierPhone =
     item?.supplierPhone ||
     item?.supplier_phone ||
-    item?.phone ||
-    item?.partyPhone ||
-    item?.party_phone ||
     "";
   const supplierAddress =
     item?.supplierAddress ||
     item?.supplier_address ||
-    item?.address ||
-    item?.partyAddress ||
     "";
   const hasReturn = Boolean(
     item?.hasReturn ||
@@ -97,7 +88,7 @@ export const normalizePurchaseRecord = (item: any): PurchaseItem => {
   );
 
   const cleanOrderNo = getCleanOrderNo(
-    item?.orderNo || item?.order_no || item?.orderId || item?.order_id || item?.purchaseOrderNo,
+    item?.orderNo || item?.order_no,
     item?.invoiceNo || item?.purchaseInvoiceNo || item?.invoice_no
   );
 
@@ -160,15 +151,10 @@ export const fetchPurchasesList = async (): Promise<PurchaseItem[]> => {
     });
 
     const list =
+      (Array.isArray(res?.data) ? res.data : null) ||
       res?.purchaseList ||
       res?.purchasesList ||
       res?.purchases ||
-      res?.purchaseListDetails ||
-      res?.purchaseInfoList ||
-      res?.purchase_list ||
-      (Array.isArray(res?.data)
-        ? res?.data
-        : res?.data?.purchaseList || res?.data?.purchases || res?.data?.purchase_list) ||
       [];
 
     return (Array.isArray(list) ? list : []).map(normalizePurchaseRecord);
@@ -225,16 +211,10 @@ export const fetchPurchaseAndReturnList = async (): Promise<UnifiedPurchaseRecor
       ? res.data
       : Array.isArray(res?.purchaseList)
       ? res.purchaseList
-      : Array.isArray(res?.purchases)
-      ? res.purchases
       : Array.isArray(res?.purchasesList)
       ? res.purchasesList
-      : Array.isArray(res?.data?.purchases)
-      ? res.data.purchases
-      : Array.isArray(res?.data?.purchaseList)
-      ? res.data.purchaseList
-      : Array.isArray(res?.data?.purchasesList)
-      ? res.data.purchasesList
+      : Array.isArray(res?.purchases)
+      ? res.purchases
       : [];
 
     const returns = Array.isArray(res?.returns)
@@ -243,18 +223,6 @@ export const fetchPurchaseAndReturnList = async (): Promise<UnifiedPurchaseRecor
       ? res.returnList
       : Array.isArray(res?.purchaseReturnList)
       ? res.purchaseReturnList
-      : Array.isArray(res?.purchaseReturns)
-      ? res.purchaseReturns
-      : Array.isArray(res?.purchase_returns)
-      ? res.purchase_returns
-      : Array.isArray(res?.data?.returns)
-      ? res.data.returns
-      : Array.isArray(res?.data?.returnList)
-      ? res.data.returnList
-      : Array.isArray(res?.data?.purchaseReturnList)
-      ? res.data.purchaseReturnList
-      : Array.isArray(res?.data?.purchaseReturns)
-      ? res.data.purchaseReturns
       : [];
 
     const combinedList = Array.isArray(res?.purchaseAndReturnList)
@@ -272,18 +240,16 @@ export const fetchPurchaseAndReturnList = async (): Promise<UnifiedPurchaseRecor
 
     const getPurchaseAliases = (item: any): string[] => {
       if (!item) return [];
-      const invNo = item.purchaseInvoiceNo || item.purchase_invoice_no || item.invoiceNo || item.invoice_no;
+      const invNo = item.purchaseInvoiceNo || item.invoiceNo || item.purchase_invoice_no || item.invoice_no;
       const chnNo = item.challanNo || item.challan_no;
       const ordNo = item.orderNo || item.order_no;
-      const pId = item.purchaseId || item.purchase_id || item.id;
+      const pId = item.id || item.purchaseId || item.purchase_id;
       const cleanOrd = getCleanOrderNo(ordNo, invNo);
 
       return [
         cleanOrd ? `pur_ord_${cleanOrd.toLowerCase()}` : null,
         ordNo ? `pur_ord_${String(ordNo).trim().toLowerCase()}` : null,
         invNo ? `pur_inv_${String(invNo).trim().toLowerCase()}` : null,
-        item.invoiceNo ? `pur_inv_${String(item.invoiceNo).trim().toLowerCase()}` : null,
-        item.purchaseInvoiceNo ? `pur_inv_${String(item.purchaseInvoiceNo).trim().toLowerCase()}` : null,
         chnNo ? `pur_chn_${String(chnNo).trim().toLowerCase()}` : null,
         pId ? `pur_id_${String(pId).trim().toLowerCase()}` : null,
       ].filter(Boolean) as string[];
@@ -298,12 +264,9 @@ export const fetchPurchaseAndReturnList = async (): Promise<UnifiedPurchaseRecor
         item.hasReturn ||
         item.returnNo ||
         item.return_no ||
-        item.returnGrandTotal ||
-        item.returnRefundAmount ||
         (Array.isArray(item.returnDetails) && item.returnDetails.length > 0) ||
         (Array.isArray(item.purchaseReturnDetails) && item.purchaseReturnDetails.length > 0) ||
-        (Array.isArray(item.returns) && item.returns.length > 0) ||
-        (Array.isArray(item.purchaseReturns) && item.purchaseReturns.length > 0)
+        (Array.isArray(item.returns) && item.returns.length > 0)
       );
 
       let existingIdx = -1;
@@ -403,15 +366,15 @@ export const fetchPurchaseAndReturnList = async (): Promise<UnifiedPurchaseRecor
       );
     };
 
-    const addReturnRecord = (item: any, fallbackIdx: number, isPersistedSource: boolean = false) => {
+    const addReturnRecord = (item: any, fallbackIdx: number) => {
       if (!item) return;
       const rNo = String(item.returnNo || item.return_no || item.purchaseReturnNo || item.id || `ret_idx_${fallbackIdx}`).trim();
       const rKey = `ret_${rNo.toLowerCase()}`;
       const purAliases = getPurchaseAliases(item);
       const isBackend = isBackendGeneratedNo(rNo);
 
-      // If this is from localStorage / persisted or synthetic, drop it if backend already has this return!
-      if (isPersistedSource || !isBackend) {
+      // If this is synthetic, drop it if backend already has this return!
+      if (!isBackend) {
         const hasBackend = purAliases.some((a) => backendReturnAliases.has(a));
         if (hasBackend) {
           return;
@@ -465,7 +428,7 @@ export const fetchPurchaseAndReturnList = async (): Promise<UnifiedPurchaseRecor
         const cleanOrd = getCleanOrderNo(item.orderNo, item.purchaseInvoiceNo || item.invoiceNo);
         addPurchaseRecord({
           ...item,
-          id: item.purchaseId || item.purchase_id || item.id || cleanOrd,
+          id: item.purchaseId || item.id || cleanOrd,
           orderNo: cleanOrd,
           invoiceNo: item.invoiceNo || item.purchaseInvoiceNo || cleanOrd,
           purchaseInvoiceNo: item.purchaseInvoiceNo || item.invoiceNo || cleanOrd,
@@ -488,14 +451,14 @@ export const fetchPurchaseAndReturnList = async (): Promise<UnifiedPurchaseRecor
     // 2. Process combinedList (actual purchases / returns from API)
     combinedList.forEach((d: any, idx: number) => {
       if (isPurchaseReturnRecord(d)) {
-        addReturnRecord(d, idx, false);
+        addReturnRecord(d, idx);
       } else {
         addPurchaseRecord(d, idx);
       }
     });
 
     // 3. Process backend returns first
-    returns.forEach((r: any, idx: number) => addReturnRecord(r, idx, false));
+    returns.forEach((r: any, idx: number) => addReturnRecord(r, idx));
 
     // 4. Financial transactions (carries authentic 16-digit backend return numbers like 2611161438531964)
     finTxList.forEach((tx: any, idx: number) => {
@@ -701,11 +664,9 @@ export const extractReturnedPurchaseKeysSet = (records: any[]): Set<string> => {
       isPurchaseReturnRecord(item) ||
       Boolean(item.hasReturn) ||
       Boolean(item.returnNo || item.return_no) ||
-      Boolean(item.returnGrandTotal) ||
       (Array.isArray(item.returnDetails) && item.returnDetails.length > 0) ||
       (Array.isArray(item.purchaseReturnDetails) && item.purchaseReturnDetails.length > 0) ||
-      (Array.isArray(item.returns) && item.returns.length > 0) ||
-      (Array.isArray(item.purchaseReturns) && item.purchaseReturns.length > 0);
+      (Array.isArray(item.returns) && item.returns.length > 0);
 
     if (isRet) {
       const inv = item.purchaseInvoiceNo || item.purchase_invoice_no || item.invoiceNo || item.invoice_no;
