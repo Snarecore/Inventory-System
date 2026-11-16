@@ -316,9 +316,9 @@ export const DateRangePicker: React.FC<DateRangePickerProps> = ({
 
   // Size styling
   const sizeClasses: Record<string, string> = {
-    xs: "ui-control-xs",
-    sm: "ui-control-sm",
-    md: "",
+    xs: "ui-control-xs !h-7 !text-xs !rounded-lg !py-0",
+    sm: "ui-control-sm !h-8 !text-xs !rounded-lg !py-0",
+    md: "!h-8 !text-xs !rounded-lg !py-0",
     lg: "h-[calc(var(--ui-control-h)+6px)] text-[calc(var(--ui-font-size)+1px)]",
   };
 

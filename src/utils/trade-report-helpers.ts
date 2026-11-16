@@ -609,13 +609,23 @@ export function renderBengaliLinesToCanvas(
   opts: {
     fontSize: number; // pt (e.g. 7.5 or 12)
     fontStyle?: "bold" | "normal";
-    textColor?: [number, number, number];
+    textColor?: [number, number, number] | number | string;
     halign?: "left" | "center" | "right";
     maxAllowedWidthMm?: number;
   }
 ): { dataUrl: string; widthMm: number; heightMm: number } | null {
   if (typeof document === "undefined" || !lines || lines.length === 0) {
     return null;
+  }
+
+  // Flatten lines splitting on newlines
+  const flatLines: string[] = [];
+  for (const item of lines) {
+    if (typeof item === "string" && item.includes("\n")) {
+      flatLines.push(...item.split("\n"));
+    } else {
+      flatLines.push(String(item ?? ""));
+    }
   }
 
   // 3x DPR gives ~288 DPI print resolution for crisp, razor-sharp typography
@@ -634,25 +644,32 @@ export function renderBengaliLinesToCanvas(
   ctx.font = fontStr;
 
   let maxLineW = 0;
-  for (const line of lines) {
+  for (const line of flatLines) {
     const w = ctx.measureText(line).width;
     if (w > maxLineW) maxLineW = w;
   }
 
   const padX = 3 * dpr;
   const totalWPx = Math.max(1, Math.ceil(maxLineW + padX * 2));
-  const totalHPx = Math.max(1, Math.ceil(lines.length * lineSpacingPx));
+  const totalHPx = Math.max(1, Math.ceil(flatLines.length * lineSpacingPx));
 
   canvas.width = totalWPx;
   canvas.height = totalHPx;
 
   ctx.font = fontStr;
-  const color = opts.textColor || [15, 23, 42];
-  ctx.fillStyle = `rgb(${color[0]}, ${color[1]}, ${color[2]})`;
+  let fillStyle = "rgb(15, 23, 42)";
+  if (Array.isArray(opts.textColor) && opts.textColor.length >= 3) {
+    fillStyle = `rgb(${opts.textColor[0]}, ${opts.textColor[1]}, ${opts.textColor[2]})`;
+  } else if (typeof opts.textColor === "number") {
+    fillStyle = `rgb(${opts.textColor}, ${opts.textColor}, ${opts.textColor})`;
+  } else if (typeof opts.textColor === "string") {
+    fillStyle = opts.textColor;
+  }
+  ctx.fillStyle = fillStyle;
   ctx.textBaseline = "middle";
 
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i];
+  for (let i = 0; i < flatLines.length; i++) {
+    const line = flatLines[i];
     const y = (i + 0.5) * lineSpacingPx;
     let x = padX;
     if (opts.halign === "center") {
@@ -694,8 +711,9 @@ export function drawPdfTextSmart(
   opts: {
     fontSize: number;
     fontStyle?: "bold" | "normal";
-    textColor?: [number, number, number];
+    textColor?: [number, number, number] | number | string;
     align?: "left" | "center" | "right";
+    maxAllowedWidthMm?: number;
   }
 ): void {
   if (!text) return;
@@ -703,11 +721,13 @@ export function drawPdfTextSmart(
   if (!hasBengali) {
     doc.setFont("helvetica", opts.fontStyle || "normal");
     doc.setFontSize(opts.fontSize);
-    doc.setTextColor(
-      opts.textColor?.[0] ?? 15,
-      opts.textColor?.[1] ?? 23,
-      opts.textColor?.[2] ?? 42
-    );
+    if (Array.isArray(opts.textColor) && opts.textColor.length >= 3) {
+      doc.setTextColor(opts.textColor[0], opts.textColor[1], opts.textColor[2]);
+    } else if (typeof opts.textColor === "number") {
+      doc.setTextColor(opts.textColor, opts.textColor, opts.textColor);
+    } else {
+      doc.setTextColor(15, 23, 42);
+    }
     doc.text(text, x, y, { align: opts.align || "left" });
     return;
   }
@@ -717,7 +737,7 @@ export function drawPdfTextSmart(
     fontStyle: opts.fontStyle,
     textColor: opts.textColor,
     halign: opts.align,
-    maxAllowedWidthMm: 120,
+    maxAllowedWidthMm: opts.maxAllowedWidthMm ?? 160,
   });
 
   if (!rendered) return;
@@ -808,19 +828,36 @@ export async function generateAndDownloadCorporatePdf(
   doc.text(`Print Date: ${printDate}`, rightEdge, 11.5, { align: "right" });
 
   // Centered Report Title
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(12);
-  doc.setTextColor(15, 23, 42);
-  doc.text(config.reportTitle.toUpperCase(), pageWidth / 2, 22, {
+  drawPdfTextSmart(doc, config.reportTitle, pageWidth / 2, 22, {
+    fontSize: 12,
+    fontStyle: "bold",
+    textColor: [15, 23, 42],
     align: "center",
+    maxAllowedWidthMm: pageWidth - 2 * marginX,
   });
 
   // Meta Filter Row
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(8.5);
-  doc.setTextColor(51, 65, 85);
-  doc.text(`From Date: ${fromStr}   To Date: ${toStr}`, marginX, 27);
-  doc.text(config.metaRightLabel, rightEdge, 27, { align: "right" });
+  drawPdfTextSmart(
+    doc,
+    `From Date: ${fromStr}   To Date: ${toStr}`,
+    marginX,
+    27,
+    {
+      fontSize: 8.5,
+      fontStyle: "bold",
+      textColor: [51, 65, 85],
+      align: "left",
+      maxAllowedWidthMm: (pageWidth - 2 * marginX) / 2,
+    }
+  );
+
+  drawPdfTextSmart(doc, config.metaRightLabel, rightEdge, 27, {
+    fontSize: 8.5,
+    fontStyle: "bold",
+    textColor: [51, 65, 85],
+    align: "right",
+    maxAllowedWidthMm: (pageWidth - 2 * marginX) / 2,
+  });
 
   // Divider line
   doc.setDrawColor(203, 213, 225);

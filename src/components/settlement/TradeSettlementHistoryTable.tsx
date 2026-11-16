@@ -323,6 +323,7 @@ export const TradeSettlementHistoryTable = <T extends GenericSettlementHistoryIt
               filterPreset={dateFilterPreset}
               onFilterPresetChange={setDateFilterPreset}
               size="sm"
+              inputClassName="!h-8 !rounded-lg !py-0"
             />
           </div>
 

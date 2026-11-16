@@ -308,6 +308,7 @@ export function TradeReturnTable<T extends Record<string, any>>({
                   setCurrentPageNumber(1);
                 }}
                 size="sm"
+                inputClassName="!h-8 !rounded-lg !py-0"
               />
             </div>
           )}

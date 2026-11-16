@@ -37,7 +37,7 @@ export const ReportDateRangeControl: React.FC<ReportDateRangeControlProps> = ({
         }}
         align="left"
         size="sm"
-        inputClassName="h-[32px]"
+        inputClassName="!h-8 !rounded-lg !py-0"
       />
     </div>
   );

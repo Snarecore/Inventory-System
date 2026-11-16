@@ -45,9 +45,10 @@ const Search = React.memo(({
 				placeholder={placeholder}
 				value={currentQuery}
 				onChange={handleChange}
-				icon={<FiSearch className="text-[var(--ui-text-subtle)] text-sm pointer-events-none" />}
-				wrapperClass="!h-[32px] !border-[var(--color-primary)] !rounded-md focus-within:!ring-1 focus-within:!ring-[var(--color-primary)]"
-				inputClass={`${currentQuery ? "!pr-6" : "!pr-1"}`}
+				size="sm"
+				icon={<FiSearch className="text-[var(--ui-text-subtle)] text-xs pointer-events-none shrink-0" />}
+				wrapperClass="!h-8 !rounded-lg !border-[var(--color-primary)] focus-within:!ring-1 focus-within:!ring-[var(--color-primary)] !py-0"
+				inputClass={`text-xs ${currentQuery ? "!pr-6" : "!pr-1"}`}
 			/>
 			{currentQuery && (
 				<button

@@ -300,6 +300,7 @@ export const PurchaseTable: React.FC<PurchaseTableProps> = ({
                 setCurrentPageNumber(1);
               }}
               size="sm"
+              inputClassName="!h-8 !rounded-lg !py-0"
             />
           </div>
 

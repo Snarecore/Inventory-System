@@ -296,6 +296,7 @@ export const SaleTable: React.FC<SaleTableProps> = ({
                 setCurrentPageNumber(1);
               }}
               size="sm"
+              inputClassName="!h-8 !rounded-lg !py-0"
             />
           </div>
 
