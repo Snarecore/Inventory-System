@@ -99,7 +99,10 @@
         "insertFinancialTransactionUrl": "insert-financial-transaction",
         "getCashBalanceInfoUrl": "get-cash-balance-info",
         "getFinancialTransactionUrl": "get-financial-transaction",
-        "getExpenseSummaryDetailsUrl": "get-expense-summary-details"
+        "getExpenseSummaryDetailsUrl": "get-expense-summary-details",
+        "getCashBookUrl": "get-cash-book",
+        "getBankBookUrl": "get-bank-book",
+        "getMfsBookUrl": "get-mfs-book"
     },
     "collection": {
         "customersDueUrl": "customers-due",

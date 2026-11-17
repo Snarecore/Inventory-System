@@ -69,6 +69,11 @@ const OpeningCashBalancePage = React.lazy(() => import('@/pages/admin/finance/op
 const PackagesPage = React.lazy(() => import('@/pages/admin/packages'))
 const BranchList = React.lazy(() => import('@/pages/admin/branch/BranchList'))
 const AddBranch = React.lazy(() => import('@/pages/admin/branch/AddBranch'))
+const FinancialBookPage = React.lazy(() => import('@/pages/admin/finance/financial-book'))
+
+const CashBookRoute: React.FC = () => <FinancialBookPage defaultType="cash" />
+const BankBookRoute: React.FC = () => <FinancialBookPage defaultType="bank" />
+const MfsBookRoute: React.FC = () => <FinancialBookPage defaultType="mfs" />
 
 
 import { usePermission } from '@/hooks/usePermission'
@@ -306,6 +311,30 @@ export const router = createBrowserRouter([
   {
     path: '/khatabook-report',
     element: <Navigate to="/admin/reports/khatabook" replace />,
+  },
+  {
+    path: '/reports/cash-book',
+    element: <Navigate to="/admin/reports/cash-book" replace />,
+  },
+  {
+    path: '/cash-book',
+    element: <Navigate to="/admin/reports/cash-book" replace />,
+  },
+  {
+    path: '/reports/bank-book',
+    element: <Navigate to="/admin/reports/bank-book" replace />,
+  },
+  {
+    path: '/bank-book',
+    element: <Navigate to="/admin/reports/bank-book" replace />,
+  },
+  {
+    path: '/reports/mfs-book',
+    element: <Navigate to="/admin/reports/mfs-book" replace />,
+  },
+  {
+    path: '/mfs-book',
+    element: <Navigate to="/admin/reports/mfs-book" replace />,
   },
   {
     path: '/sales/collection',
@@ -676,6 +705,30 @@ export const router = createBrowserRouter([
       {
         path: 'reports/khatabook',
         element: withPermission(KhatabookReportPage, 'reports'),
+      },
+      {
+        path: 'cash-book',
+        element: withPermission(CashBookRoute, 'reports'),
+      },
+      {
+        path: 'reports/cash-book',
+        element: withPermission(CashBookRoute, 'reports'),
+      },
+      {
+        path: 'bank-book',
+        element: withPermission(BankBookRoute, 'reports'),
+      },
+      {
+        path: 'reports/bank-book',
+        element: withPermission(BankBookRoute, 'reports'),
+      },
+      {
+        path: 'mfs-book',
+        element: withPermission(MfsBookRoute, 'reports'),
+      },
+      {
+        path: 'reports/mfs-book',
+        element: withPermission(MfsBookRoute, 'reports'),
       },
       {
         path: 'sales-return',
