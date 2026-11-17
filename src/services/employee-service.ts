@@ -13,6 +13,9 @@ import {
   PERMISSION_MODULES,
   getReadOnlyPermissionKeys,
   buildPermissionKey,
+  setInMemoryEmployeeBranchPermissions,
+  getInMemoryEmployeeBranchPermissions,
+  removeInMemoryEmployeeBranchPermission,
 } from "@/utils/permission-utils";
 
 /**
@@ -66,26 +69,12 @@ export function isEmployeeActive(emp: any): boolean {
   return true;
 }
 
-const LOCAL_STORAGE_STATUS_KEY = "cb_employee_status_override";
-
+// Legacy status shims (status is server-driven)
 export function getLocalEmployeeStatusMap(): Record<number, boolean> {
-  if (typeof window === "undefined") return {};
-  try {
-    const raw = localStorage.getItem(LOCAL_STORAGE_STATUS_KEY);
-    return raw ? JSON.parse(raw) : {};
-  } catch {
-    return {};
-  }
+  return {};
 }
 
-export function saveLocalEmployeeStatus(employeeId: number, active: boolean): void {
-  if (typeof window === "undefined" || !employeeId) return;
-  try {
-    const map = getLocalEmployeeStatusMap();
-    map[Number(employeeId)] = Boolean(active);
-    localStorage.setItem(LOCAL_STORAGE_STATUS_KEY, JSON.stringify(map));
-  } catch {}
-}
+export function saveLocalEmployeeStatus(_employeeId: number, _active: boolean): void {}
 
 export async function getEmployeeList(organizationId?: number): Promise<EmployeeItem[]> {
   const accessUser = buildAccessUser();
@@ -114,15 +103,9 @@ export async function getEmployeeList(organizationId?: number): Promise<Employee
     ? res
     : [];
 
-  const localStatusMap = getLocalEmployeeStatusMap();
-
   const normalizedList: EmployeeItem[] = rawList.map((emp) => {
     const empId = Number(emp.id || emp.employeeId);
-    let active = isEmployeeActive(emp);
-
-    if (empId && localStatusMap[empId] !== undefined) {
-      active = localStatusMap[empId];
-    }
+    const active = isEmployeeActive(emp);
 
     const rawPhoto = emp.profilePhotoUrl || emp.photo || (emp as any).photoUrl || (emp as any).avatarUrl || (emp as any).image || "";
     const cleanPhotoRef = typeof rawPhoto === "string" ? rawPhoto.replace(/.*\/files\/file\//, "").trim() : "";
@@ -242,9 +225,6 @@ export async function updateEmployee(
     activeVal = Boolean(payload.is_active);
   }
 
-  if (activeVal !== undefined && empId) {
-    saveLocalEmployeeStatus(empId, activeVal);
-  }
 
   let photoUpdate = {};
   if (payload.profilePhotoUrl !== undefined) {
@@ -281,97 +261,64 @@ export async function updateEmployee(
   return res;
 }
 
-const LOCAL_STORAGE_PERMS_KEY = "cb_emp_branch_permissions";
-
+// In-memory employee branch permissions
 export function getLocalEmployeeBranchPermissions(employeeId: number): any[] {
-  if (typeof window === "undefined" || !employeeId) return [];
-  try {
-    const raw = localStorage.getItem(`${LOCAL_STORAGE_PERMS_KEY}_${employeeId}`);
-    return raw ? JSON.parse(raw) : [];
-  } catch {
-    return [];
-  }
+  return getInMemoryEmployeeBranchPermissions(employeeId);
 }
 
 export function saveLocalEmployeeBranchPermission(record: any): void {
-  if (typeof window === "undefined" || !record?.employeeId || !record?.id) return;
+  if (!record?.employeeId || !record?.id) return;
   const realId = Number(record.id);
   if (isNaN(realId) || realId <= 0) return;
 
-  try {
-    const employeeId = Number(record.employeeId);
-    const branchId = Number(record.branchId);
-    const current = getLocalEmployeeBranchPermissions(employeeId);
-    const existingIdx = current.findIndex(
-      (item: any) => Number(item.branchId || item.branch_id) === branchId
-    );
-    const perms = Array.isArray(record.permissions) ? record.permissions : [];
-    const canView =
-      record.canView !== undefined
-        ? Boolean(record.canView)
-        : perms.some((p: string) => p.includes("read") || p.includes("view")) || perms.length > 0;
-    const canEdit =
-      record.canEdit !== undefined
-        ? Boolean(record.canEdit)
-        : perms.some((p: string) => p.includes("create") || p.includes("update"));
-    const canDelete =
-      record.canDelete !== undefined
-        ? Boolean(record.canDelete)
-        : perms.some((p: string) => p.includes("delete"));
+  const employeeId = Number(record.employeeId);
+  const branchId = Number(record.branchId);
+  const current = [...getInMemoryEmployeeBranchPermissions(employeeId)];
+  const existingIdx = current.findIndex(
+    (item: any) => Number(item.branchId || item.branch_id) === branchId
+  );
+  const perms = Array.isArray(record.permissions) ? record.permissions : [];
+  const canView =
+    record.canView !== undefined
+      ? Boolean(record.canView)
+      : perms.some((p: string) => p.includes("read") || p.includes("view")) || perms.length > 0;
+  const canEdit =
+    record.canEdit !== undefined
+      ? Boolean(record.canEdit)
+      : perms.some((p: string) => p.includes("create") || p.includes("update"));
+  const canDelete =
+    record.canDelete !== undefined
+      ? Boolean(record.canDelete)
+      : perms.some((p: string) => p.includes("delete"));
 
-    const normalizedItem = {
-      id: realId,
-      employeeId,
-      branchId,
-      primary: Boolean(record.primary),
-      canView,
-      canEdit,
-      canDelete,
-      grantedBy: record.grantedBy ?? (existingIdx >= 0 ? current[existingIdx].grantedBy : null),
-      permissions: perms,
-      active: record.active !== false,
-      updatedAt: new Date().toISOString(),
-    };
+  const normalizedItem = {
+    id: realId,
+    employeeId,
+    branchId,
+    primary: Boolean(record.primary),
+    canView,
+    canEdit,
+    canDelete,
+    grantedBy: record.grantedBy ?? (existingIdx >= 0 ? current[existingIdx].grantedBy : null),
+    permissions: perms,
+    active: record.active !== false,
+    updatedAt: new Date().toISOString(),
+  };
 
-    if (existingIdx >= 0) {
-      current[existingIdx] = normalizedItem;
-    } else {
-      current.push(normalizedItem);
-    }
-    localStorage.setItem(`${LOCAL_STORAGE_PERMS_KEY}_${employeeId}`, JSON.stringify(current));
-
-    // Also sync to branch-scoped active permissions
-    if (branchId) {
-      const val = JSON.stringify(normalizedItem.permissions);
-      localStorage.setItem(`cb_branch_perms_${branchId}`, val);
-      localStorage.setItem(`branch_perms_${branchId}`, val);
-      sessionStorage.setItem(`cb_branch_perms_${branchId}`, val);
-      sessionStorage.setItem(`branch_perms_${branchId}`, val);
-      try {
-        window.dispatchEvent(new Event("permissions-updated"));
-      } catch {}
-    }
-  } catch (err) {
-    console.error("Failed to save local employee branch permission", err);
+  if (existingIdx >= 0) {
+    current[existingIdx] = normalizedItem;
+  } else {
+    current.push(normalizedItem);
   }
+
+  setInMemoryEmployeeBranchPermissions(employeeId, current);
 }
 
 export function removeLocalEmployeeBranchPermission(
   employeeId: number,
   permissionIdOrBranchId: number
 ): void {
-  if (typeof window === "undefined" || !employeeId) return;
-  try {
-    const current = getLocalEmployeeBranchPermissions(employeeId);
-    const filtered = current.filter(
-      (item: any) =>
-        Number(item.id) !== Number(permissionIdOrBranchId) &&
-        Number(item.branchId || item.branch_id) !== Number(permissionIdOrBranchId)
-    );
-    localStorage.setItem(`${LOCAL_STORAGE_PERMS_KEY}_${employeeId}`, JSON.stringify(filtered));
-  } catch (err) {
-    console.error("Failed to remove local employee branch permission", err);
-  }
+  removeInMemoryEmployeeBranchPermission(employeeId, permissionIdOrBranchId);
 }
 
 export async function createEmployeeBranchPermission(
@@ -653,28 +600,11 @@ export async function getEmployeeBranchPermissions(employeeId: number): Promise<
       };
     });
 
-    // Update verified database records in cache and sync active branch-scoped permissions
-    if (typeof window !== "undefined") {
-      try {
-        localStorage.setItem(`${LOCAL_STORAGE_PERMS_KEY}_${employeeId}`, JSON.stringify(normalized));
-        normalized.forEach((item) => {
-          if (item.branchId) {
-            const val = JSON.stringify(item.permissions);
-            localStorage.setItem(`branch_perms_${item.branchId}`, val);
-            localStorage.setItem(`cb_branch_perms_${item.branchId}`, val);
-            sessionStorage.setItem(`branch_perms_${item.branchId}`, val);
-            sessionStorage.setItem(`cb_branch_perms_${item.branchId}`, val);
-          }
-        });
-        window.dispatchEvent(new Event("permissions-updated"));
-      } catch {}
-    }
-
+    setInMemoryEmployeeBranchPermissions(employeeId, normalized);
     return normalized;
   }
 
-  // Fallback to cache only if network completely failed
-  return getLocalEmployeeBranchPermissions(employeeId);
+  return getInMemoryEmployeeBranchPermissions(employeeId);
 }
 
 /**

@@ -219,12 +219,38 @@ export function removeStoredUser(): void {
             "token",
             "phone",
             "businessCode",
+            "cb_employee_status_override",
         ];
 
         keys.forEach((k) => {
             sessionStorage.removeItem(k);
             localStorage.removeItem(k);
         });
+
+        // Clean legacy keys
+        const isPermissionKey = (k: string) =>
+            k.startsWith("branch_perms_") ||
+            k.startsWith("cb_branch_perms_") ||
+            k.startsWith("cb_emp_branch_permissions_") ||
+            k === "cb_employee_status_override";
+
+        const localKeysToRemove: string[] = [];
+        for (let i = 0; i < localStorage.length; i++) {
+            const k = localStorage.key(i);
+            if (k && isPermissionKey(k)) localKeysToRemove.push(k);
+        }
+        localKeysToRemove.forEach((k) => localStorage.removeItem(k));
+
+        const sessionKeysToRemove: string[] = [];
+        for (let i = 0; i < sessionStorage.length; i++) {
+            const k = sessionStorage.key(i);
+            if (k && isPermissionKey(k)) sessionKeysToRemove.push(k);
+        }
+        sessionKeysToRemove.forEach((k) => sessionStorage.removeItem(k));
+
+        // Reset in-memory permissions
+        window.dispatchEvent(new Event("auth-logout"));
+        window.dispatchEvent(new Event("permissions-updated"));
     } catch (e) {
         console.error("Failed to clear user session:", e);
     }

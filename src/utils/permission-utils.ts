@@ -343,10 +343,123 @@ export const PERMISSION_MODULES: PermissionModule[] = [
   },
 ];
 
-/**
- * Storage key for active branch permissions
- */
 export const STORAGE_KEY_BRANCH_PERMS_PREFIX = "branch_perms_";
+
+// In-memory permission cache for active session
+const inMemoryBranchPermissions: Map<number, string[]> = new Map();
+const inMemoryEmployeePermissions: Map<number, any[]> = new Map();
+
+export function setInMemoryEmployeeBranchPermissions(employeeId: number, records: any[]): void {
+  if (!employeeId || !Array.isArray(records)) return;
+  const empId = Number(employeeId);
+  inMemoryEmployeePermissions.set(empId, records);
+
+  records.forEach((rec) => {
+    const bId = Number(rec.branchId || rec.branch_id);
+    if (bId && Array.isArray(rec.permissions)) {
+      inMemoryBranchPermissions.set(bId, [...rec.permissions]);
+    }
+  });
+
+  if (typeof window !== "undefined") {
+    try {
+      window.dispatchEvent(new Event("permissions-updated"));
+    } catch {}
+  }
+}
+
+export function getInMemoryEmployeeBranchPermissions(employeeId: number): any[] {
+  if (!employeeId) return [];
+  return inMemoryEmployeePermissions.get(Number(employeeId)) || [];
+}
+
+export function removeInMemoryEmployeeBranchPermission(
+  employeeId: number,
+  permissionIdOrBranchId: number
+): void {
+  if (!employeeId) return;
+  const empId = Number(employeeId);
+  const current = inMemoryEmployeePermissions.get(empId) || [];
+  const targetId = Number(permissionIdOrBranchId);
+
+  const filtered = targetId > 0
+    ? current.filter(
+        (item: any) =>
+          Number(item.id) !== targetId &&
+          Number(item.branchId || item.branch_id) !== targetId
+      )
+    : [];
+
+  if (filtered.length > 0) {
+    inMemoryEmployeePermissions.set(empId, filtered);
+  } else {
+    inMemoryEmployeePermissions.delete(empId);
+  }
+
+  if (targetId > 0) {
+    inMemoryBranchPermissions.delete(targetId);
+  }
+
+  if (typeof window !== "undefined") {
+    try {
+      window.dispatchEvent(new Event("permissions-updated"));
+    } catch {}
+  }
+}
+
+export function clearInMemoryPermissions(): void {
+  inMemoryBranchPermissions.clear();
+  inMemoryEmployeePermissions.clear();
+  if (typeof window !== "undefined") {
+    try {
+      window.dispatchEvent(new Event("permissions-updated"));
+    } catch {}
+  }
+}
+
+// Purge legacy storage keys from previous versions
+export function purgeInsecurePermissionStorage(): void {
+  if (typeof window === "undefined") return;
+  try {
+    const isTargetKey = (k: string) =>
+      k.startsWith("branch_perms_") ||
+      k.startsWith("cb_branch_perms_") ||
+      k.startsWith("cb_emp_branch_permissions_") ||
+      k === "cb_employee_status_override";
+
+    if (window.localStorage) {
+      const localKeys: string[] = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && isTargetKey(key)) {
+          localKeys.push(key);
+        }
+      }
+      localKeys.forEach((k) => localStorage.removeItem(k));
+    }
+
+    if (window.sessionStorage) {
+      const sessionKeys: string[] = [];
+      for (let i = 0; i < sessionStorage.length; i++) {
+        const key = sessionStorage.key(i);
+        if (key && isTargetKey(key)) {
+          sessionKeys.push(key);
+        }
+      }
+      sessionKeys.forEach((k) => sessionStorage.removeItem(k));
+    }
+  } catch (err) {
+    console.warn("Failed to purge legacy permission storage:", err);
+  }
+}
+
+// Auto-purge legacy keys and reset on logout
+if (typeof window !== "undefined") {
+  purgeInsecurePermissionStorage();
+  window.addEventListener("auth-logout", () => {
+    clearInMemoryPermissions();
+  });
+}
 
 /**
  * Helper to build permission key string.
@@ -445,12 +558,12 @@ export function getCashierPermissionKeys(): string[] {
 }
 
 /**
- * Returns the active user's permissions array for the active branch.
+ * Returns active permissions for the current branch.
  */
 export function getActiveUserPermissions(): string[] {
   if (typeof window === "undefined") return [];
 
-  // Super Admin / Owner has all permissions
+  // Super admin has all permissions
   if (isUserAdmin()) {
     return getAllSystemPermissionKeys();
   }
@@ -458,112 +571,87 @@ export function getActiveUserPermissions(): string[] {
   const activeBranchId = getActiveBranchId();
   if (!activeBranchId) return [];
 
-  // Check branch-specific cached permissions
-  try {
-    const raw =
-      localStorage.getItem(`${STORAGE_KEY_BRANCH_PERMS_PREFIX}${activeBranchId}`) ||
-      sessionStorage.getItem(`${STORAGE_KEY_BRANCH_PERMS_PREFIX}${activeBranchId}`) ||
-      localStorage.getItem(`cb_branch_perms_${activeBranchId}`) ||
-      sessionStorage.getItem(`cb_branch_perms_${activeBranchId}`);
-    if (raw) {
-      let parsed = JSON.parse(raw);
-      if (typeof parsed === "string") {
-        try { parsed = JSON.parse(parsed); } catch {}
-      }
-      if (Array.isArray(parsed)) return parsed;
-    }
-  } catch {
-    // fallback
+  // Check in-memory branch permissions
+  const branchPerms = inMemoryBranchPermissions.get(Number(activeBranchId));
+  if (Array.isArray(branchPerms) && branchPerms.length > 0) {
+    return branchPerms;
   }
 
-  // Fall back to userInfo.permissions if available
+  // Fall back to login session permissions
   const userInfo = getUserInfo();
-  if (Array.isArray((userInfo as any)?.permissions)) {
+  if (Array.isArray((userInfo as any)?.permissions) && (userInfo as any).permissions.length > 0) {
     return (userInfo as any).permissions;
   }
 
-  // Check employee branch cache if employeeId is present
+  // Check in-memory employee branch records
   const employeeId = (userInfo as any)?.employeeId || (userInfo as any)?.userId || (userInfo as any)?.id;
   if (employeeId) {
-    try {
-      const rawEmp = localStorage.getItem(`cb_emp_branch_permissions_${employeeId}`);
-      if (rawEmp) {
-        const list = JSON.parse(rawEmp);
-        const match = Array.isArray(list)
-          ? list.find((item: any) => Number(item.branchId || item.branch_id) === Number(activeBranchId))
-          : null;
-        if (match) {
-          let perms: string[] = [];
-          if (Array.isArray(match.permissions)) {
-            perms = [...match.permissions];
-          } else if (typeof match.permissions === "string" && match.permissions.trim()) {
-            try {
-              const p = JSON.parse(match.permissions);
-              if (Array.isArray(p)) perms = p;
-            } catch {}
+    const list = inMemoryEmployeePermissions.get(Number(employeeId));
+    if (Array.isArray(list) && list.length > 0) {
+      const match = list.find((item: any) => Number(item.branchId || item.branch_id) === Number(activeBranchId));
+      if (match) {
+        let perms: string[] = [];
+        if (Array.isArray(match.permissions)) {
+          perms = [...match.permissions];
+        } else if (typeof match.permissions === "string" && match.permissions.trim()) {
+          try {
+            const p = JSON.parse(match.permissions);
+            if (Array.isArray(p)) perms = p;
+          } catch {}
+        }
+        if (perms.length > 0) return perms;
+
+        // Fallback synthesis if permissions array is undefined
+        if (match.permissions === undefined || match.permissions === null) {
+          if (match.canView) {
+            perms.push(...getReadOnlyPermissionKeys());
+          }
+          if (match.canEdit) {
+            perms.push(
+              ...PERMISSION_MODULES.flatMap((m) => [
+                buildPermissionKey(m.id, "create"),
+                buildPermissionKey(m.id, "update"),
+              ]),
+              "sales:create",
+              "sales:update",
+              "purchase:create",
+              "purchase:update",
+              "inventory:create",
+              "inventory:update",
+              "banking:create",
+              "banking:update",
+              "accounts:create",
+              "accounts:update"
+            );
+          }
+          if (match.canDelete) {
+            perms.push(
+              ...PERMISSION_MODULES.map((m) => buildPermissionKey(m.id, "delete")),
+              "sales:delete",
+              "purchase:delete",
+              "inventory:delete",
+              "banking:delete",
+              "accounts:delete"
+            );
           }
           if (perms.length > 0) return perms;
-
-          // Only synthesize if permissions array was never defined on match
-          if (match.permissions === undefined || match.permissions === null) {
-            if (match.canView) {
-              perms.push(...getReadOnlyPermissionKeys());
-            }
-            if (match.canEdit) {
-              perms.push(
-                ...PERMISSION_MODULES.flatMap((m) => [
-                  buildPermissionKey(m.id, "create"),
-                  buildPermissionKey(m.id, "update"),
-                ]),
-                // Legacy keys
-                "sales:create",
-                "sales:update",
-                "purchase:create",
-                "purchase:update",
-                "inventory:create",
-                "inventory:update",
-                "banking:create",
-                "banking:update",
-                "accounts:create",
-                "accounts:update"
-              );
-            }
-            if (match.canDelete) {
-              perms.push(
-                ...PERMISSION_MODULES.map((m) => buildPermissionKey(m.id, "delete")),
-                // Legacy keys
-                "sales:delete",
-                "purchase:delete",
-                "inventory:delete",
-                "banking:delete",
-                "accounts:delete"
-              );
-            }
-            if (perms.length > 0) return perms;
-          }
-          return [];
         }
       }
-    } catch {}
+    }
   }
 
-  // If user has no specific permissions defined, deny by default
   return [];
 }
 
-/**
- * Saves permissions for a specific branch in local cache.
- */
+// Save branch permissions to in-memory cache
 export function setActiveBranchPermissions(branchId: number, permissions: string[]): void {
-  if (typeof window === "undefined") return;
-  const val = JSON.stringify(permissions);
-  localStorage.setItem(`${STORAGE_KEY_BRANCH_PERMS_PREFIX}${branchId}`, val);
-  sessionStorage.setItem(`${STORAGE_KEY_BRANCH_PERMS_PREFIX}${branchId}`, val);
-  localStorage.setItem(`cb_branch_perms_${branchId}`, val);
-  sessionStorage.setItem(`cb_branch_perms_${branchId}`, val);
-  try {
-    window.dispatchEvent(new Event("permissions-updated"));
-  } catch {}
+  if (!branchId || !Array.isArray(permissions)) return;
+  inMemoryBranchPermissions.set(Number(branchId), [...permissions]);
+  if (typeof window !== "undefined") {
+    try {
+      window.dispatchEvent(new Event("permissions-updated"));
+    } catch {}
+  }
 }
 
 /**

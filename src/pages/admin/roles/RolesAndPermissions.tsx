@@ -28,6 +28,7 @@ import { employeeBranchPermissionsQueryKey } from "@/config/query-key";
 import {
   getLocalEmployeeBranchPermissions,
   deleteEmployeeBranchPermission,
+  removeLocalEmployeeBranchPermission,
 } from "@/services/employee-service";
 import { showSuccessToast, showErrorToast } from "@/utils/toast-utils";
 import type { EmployeeItem } from "@/types/employee.types";
@@ -203,10 +204,8 @@ const EmployeeActionCell: React.FC<EmployeeActionCellProps> = ({
         );
       }
 
-      if (typeof window !== "undefined") {
-        try {
-          localStorage.removeItem(`cb_emp_branch_permissions_${empId}`);
-        } catch {}
+      if (empId) {
+        removeLocalEmployeeBranchPermission(Number(empId), 0);
       }
 
       await queryClient.invalidateQueries({ queryKey: [employeeBranchPermissionsQueryKey] });
