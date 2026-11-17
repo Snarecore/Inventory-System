@@ -40,9 +40,9 @@ export const useMfsUserListQuery = (
   return useQuery<MfsUserListResponse, Error>({
     queryKey: [mfsUserListQueryKey],
     queryFn: fetchMfsUserList,
-    staleTime: 0,
-    refetchOnMount: "always",
-    refetchOnWindowFocus: true,
+    staleTime: 60 * 1000,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
     ...options,
   });
 };

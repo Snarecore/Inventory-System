@@ -79,16 +79,17 @@ export const useTradeRefund = ({
   useEffect(() => {
     if (!selectedRecord || refundAmount <= 0) {
       if (autoSyncCash && refundAmount > 0) {
-        setRefundCashAmount(String(refundAmount));
-        setRefundBankAmount("");
-        setRefundMfsAmount("");
-        setRefundDueAmount("");
+        const nextCash = String(refundAmount);
+        setRefundCashAmount((prev) => (prev !== nextCash ? nextCash : prev));
+        setRefundBankAmount((prev) => (prev !== "" ? "" : prev));
+        setRefundMfsAmount((prev) => (prev !== "" ? "" : prev));
+        setRefundDueAmount((prev) => (prev !== "" ? "" : prev));
         return;
       }
-      setRefundCashAmount("");
-      setRefundBankAmount("");
-      setRefundMfsAmount("");
-      setRefundDueAmount("");
+      setRefundCashAmount((prev) => (prev !== "" ? "" : prev));
+      setRefundBankAmount((prev) => (prev !== "" ? "" : prev));
+      setRefundMfsAmount((prev) => (prev !== "" ? "" : prev));
+      setRefundDueAmount((prev) => (prev !== "" ? "" : prev));
       return;
     }
 
@@ -97,10 +98,14 @@ export const useTradeRefund = ({
       returnMode === "FULL" &&
       Math.abs(refundAmount - origGrandTotal) < 0.01
     ) {
-      setRefundCashAmount(origCashPaid > 0 ? String(origCashPaid) : "");
-      setRefundBankAmount(origBankPaid > 0 ? String(origBankPaid) : "");
-      setRefundMfsAmount(origMfsPaid > 0 ? String(origMfsPaid) : "");
-      setRefundDueAmount(origDueAmount > 0 ? String(origDueAmount) : "");
+      const nextCash = origCashPaid > 0 ? String(origCashPaid) : "";
+      const nextBank = origBankPaid > 0 ? String(origBankPaid) : "";
+      const nextMfs = origMfsPaid > 0 ? String(origMfsPaid) : "";
+      const nextDue = origDueAmount > 0 ? String(origDueAmount) : "";
+      setRefundCashAmount((prev) => (prev !== nextCash ? nextCash : prev));
+      setRefundBankAmount((prev) => (prev !== nextBank ? nextBank : prev));
+      setRefundMfsAmount((prev) => (prev !== nextMfs ? nextMfs : prev));
+      setRefundDueAmount((prev) => (prev !== nextDue ? nextDue : prev));
       return;
     }
 
@@ -159,10 +164,15 @@ export const useTradeRefund = ({
       }
     }
 
-    setRefundCashAmount(allocCash > 0 ? String(allocCash) : "");
-    setRefundBankAmount(allocBank > 0 ? String(allocBank) : "");
-    setRefundMfsAmount(allocMfs > 0 ? String(allocMfs) : "");
-    setRefundDueAmount(allocDue > 0 ? String(allocDue) : "");
+    const nextCash = allocCash > 0 ? String(allocCash) : "";
+    const nextBank = allocBank > 0 ? String(allocBank) : "";
+    const nextMfs = allocMfs > 0 ? String(allocMfs) : "";
+    const nextDue = allocDue > 0 ? String(allocDue) : "";
+
+    setRefundCashAmount((prev) => (prev !== nextCash ? nextCash : prev));
+    setRefundBankAmount((prev) => (prev !== nextBank ? nextBank : prev));
+    setRefundMfsAmount((prev) => (prev !== nextMfs ? nextMfs : prev));
+    setRefundDueAmount((prev) => (prev !== nextDue ? nextDue : prev));
   }, [
     selectedRecord,
     refundAmount,
@@ -179,21 +189,26 @@ export const useTradeRefund = ({
   // Sync bank / mfs dropdown selection
   useEffect(() => {
     if (selectedRecord?.bankId) {
-      setSelectedRefundBankId(String(selectedRecord.bankId));
-    } else if (registeredBankAccounts.length > 0 && !selectedRefundBankId) {
-      setSelectedRefundBankId(
-        String(registeredBankAccounts[0].id || registeredBankAccounts[0].bankId || "")
-      );
+      const bId = String(selectedRecord.bankId);
+      setSelectedRefundBankId((prev) => (prev !== bId ? bId : prev));
+    } else if (registeredBankAccounts.length > 0) {
+      const firstBankId = String(registeredBankAccounts[0].id || registeredBankAccounts[0].bankId || "");
+      setSelectedRefundBankId((prev) => (!prev ? firstBankId : prev));
     }
 
     if (selectedRecord?.mfsId) {
-      setSelectedRefundMfsId(String(selectedRecord.mfsId));
-    } else if (registeredMfsAccounts.length > 0 && !selectedRefundMfsId) {
-      setSelectedRefundMfsId(
-        String(registeredMfsAccounts[0].id || registeredMfsAccounts[0].mfsId || "")
-      );
+      const mId = String(selectedRecord.mfsId);
+      setSelectedRefundMfsId((prev) => (prev !== mId ? mId : prev));
+    } else if (registeredMfsAccounts.length > 0) {
+      const firstMfsId = String(registeredMfsAccounts[0].id || registeredMfsAccounts[0].mfsId || "");
+      setSelectedRefundMfsId((prev) => (!prev ? firstMfsId : prev));
     }
-  }, [selectedRecord, registeredBankAccounts, registeredMfsAccounts]);
+  }, [
+    selectedRecord?.bankId,
+    selectedRecord?.mfsId,
+    registeredBankAccounts,
+    registeredMfsAccounts,
+  ]);
 
   const numRefundCash = Number(refundCashAmount) || 0;
   const numRefundBank = Number(refundBankAmount) || 0;

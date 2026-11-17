@@ -35,9 +35,9 @@ export const useBankInfoListQuery = (
   return useQuery<BankInfoListResponse, Error>({
     queryKey: [bankInfoListQueryKey],
     queryFn: fetchBankInfoList,
-    staleTime: 0,
-    refetchOnMount: "always",
-    refetchOnWindowFocus: true,
+    staleTime: 60 * 1000,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
     ...options,
   });
 };

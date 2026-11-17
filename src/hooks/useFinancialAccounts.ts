@@ -88,9 +88,9 @@ export const useBankAccountsQuery = (
   return useQuery({
     queryKey: [bankInfoListQueryKey],
     queryFn: fetchBankInfoList,
-    staleTime: 0,
-    refetchOnMount: "always",
-    refetchOnWindowFocus: true,
+    staleTime: 60 * 1000,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
     ...options,
   });
 };
@@ -102,9 +102,9 @@ export const useMfsAccountsQuery = (
   return useQuery({
     queryKey: [mfsUserListQueryKey],
     queryFn: fetchMfsUserList,
-    staleTime: 0,
-    refetchOnMount: "always",
-    refetchOnWindowFocus: true,
+    staleTime: 60 * 1000,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
     ...options,
   });
 };

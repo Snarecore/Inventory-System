@@ -38,7 +38,7 @@ import TradeInvoiceModal from "@/components/invoice/TradeInvoiceModal";
 import { normalizeSalesReturnInvoice, normalizePurchaseReturnInvoice } from "@/components/invoice/trade-invoice-adapters";
 import { usePermission } from "@/hooks/usePermission";
 
-import { fetchSalesAndReturnList } from "@/pages/admin/trade/sales/hooks/useSalesQueries";
+import { fetchSalesAndReturnList, getCleanOrderNo } from "@/pages/admin/trade/sales/hooks/useSalesQueries";
 import { fetchPurchaseAndReturnList } from "@/pages/admin/trade/purchases/hooks/usePurchaseQueries";
 import { useTradeProducts } from "@/hooks/useTradeProducts";
 
@@ -116,6 +116,7 @@ export const TradeReturnForm: React.FC<TradeReturnFormProps> = ({ mode }) => {
   const [lines, setLines] = useState<TradeReturnLineItem[]>([]);
   const [hasJustSubmitted, setHasJustSubmitted] = useState(false);
   const lastLoadedOrderKeyRef = useRef<string>("");
+  const lastEnrichedOrderKeyRef = useRef<string>("");
 
   // Modals
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
@@ -124,8 +125,19 @@ export const TradeReturnForm: React.FC<TradeReturnFormProps> = ({ mode }) => {
   const [autoPrintInvoice, setAutoPrintInvoice] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Financial Accounts
-  const { registeredBankAccounts, registeredMfsAccounts } = useFinancialAccounts();
+  // Financial Accounts (Cached to prevent redundant background network refetches)
+  const { registeredBankAccounts, registeredMfsAccounts } = useFinancialAccounts({
+    bankOptions: {
+      staleTime: 5 * 60 * 1000,
+      refetchOnWindowFocus: false,
+      refetchOnMount: false,
+    },
+    mfsOptions: {
+      staleTime: 5 * 60 * 1000,
+      refetchOnWindowFocus: false,
+      refetchOnMount: false,
+    },
+  });
 
   // Load candidate orders list
   const accessUser = buildAccessUser();
@@ -355,9 +367,17 @@ export const TradeReturnForm: React.FC<TradeReturnFormProps> = ({ mode }) => {
         ? String(order.salesInvoiceNo || order.invoiceNo || order.orderNo || "").trim()
         : String(order.purchaseInvoiceNo || order.invoiceNo || order.challanNo || "").trim();
 
-      const ref = isSale
-        ? String(order.orderNo || order.invoiceNo || "").trim()
-        : String(order.challanNo || order.invoiceNo || "").trim();
+      const cleanOrderId = getCleanOrderNo(
+        order.orderNo,
+        isSale
+          ? (order.salesInvoiceNo || order.invoiceNo)
+          : (order.purchaseInvoiceNo || order.invoiceNo),
+        order.id || (isSale ? (order.saleId || order.sale_id) : (order.purchaseId || order.purchase_id))
+      );
+
+      const ref = cleanOrderId || String(order.orderNo || "").trim() || (isSale
+        ? String(order.invoiceNo || "").trim()
+        : String(order.challanNo || order.invoiceNo || "").trim());
 
       setInvoiceNo(inv);
       setRefOrderOrChallan(ref);
@@ -629,16 +649,19 @@ export const TradeReturnForm: React.FC<TradeReturnFormProps> = ({ mode }) => {
   useEffect(() => {
     if (!selectedOrder) return;
 
+    const targetInv = cleanKey(isSale ? (selectedOrder.salesInvoiceNo || selectedOrder.invoiceNo) : (selectedOrder.purchaseInvoiceNo || selectedOrder.invoiceNo));
+    const targetRef = cleanKey(isSale ? selectedOrder.orderNo : selectedOrder.challanNo);
+    const targetId = cleanKey(selectedOrder.id || (isSale ? selectedOrder.saleId || selectedOrder.sale_id : selectedOrder.purchaseId || selectedOrder.purchase_id));
+    const orderKey = targetInv || targetRef || targetId;
+
+    if (!orderKey || lastEnrichedOrderKeyRef.current === orderKey) return;
+
     const candidatesList: any[] =
       (Array.isArray(apiOrdersAndReturnData) && apiOrdersAndReturnData.length > 0
         ? apiOrdersAndReturnData
         : (queryClient.getQueryData(isSale ? [salesAndReturnQueryKey] : [purchaseAndReturnQueryKey]) as any[])) || [];
 
     if (candidatesList.length === 0) return;
-
-    const targetInv = cleanKey(isSale ? (selectedOrder.salesInvoiceNo || selectedOrder.invoiceNo) : (selectedOrder.purchaseInvoiceNo || selectedOrder.invoiceNo));
-    const targetRef = cleanKey(isSale ? selectedOrder.orderNo : selectedOrder.challanNo);
-    const targetId = cleanKey(selectedOrder.id || (isSale ? selectedOrder.saleId || selectedOrder.sale_id : selectedOrder.purchaseId || selectedOrder.purchase_id));
 
     const matched = candidatesList.find((cand: any) => {
       if (!cand || typeof cand !== "object" || cand.isReturnRecord) return false;
@@ -653,6 +676,7 @@ export const TradeReturnForm: React.FC<TradeReturnFormProps> = ({ mode }) => {
     });
 
     if (matched) {
+      lastEnrichedOrderKeyRef.current = orderKey;
       const fullDetails = getOrderDetails(matched);
       if (fullDetails.length > lines.length || (lines.length <= 1 && fullDetails.length > 1)) {
         loadOrder(matched);
@@ -680,6 +704,23 @@ export const TradeReturnForm: React.FC<TradeReturnFormProps> = ({ mode }) => {
       refundAmount: Number(grand.toFixed(2)),
     };
   }, [lines]);
+
+  // Authentic Order ID strictly matching the Order ID column in Sales/Purchases List Table
+  const displayOrderId = useMemo(() => {
+    if (!selectedOrder) return "";
+    return (
+      getCleanOrderNo(
+        selectedOrder.orderNo,
+        isSale
+          ? (selectedOrder.salesInvoiceNo || selectedOrder.invoiceNo)
+          : (selectedOrder.purchaseInvoiceNo || selectedOrder.invoiceNo),
+        selectedOrder.id || (isSale ? (selectedOrder.saleId || selectedOrder.sale_id) : (selectedOrder.purchaseId || selectedOrder.purchase_id))
+      ) ||
+      refOrderOrChallan ||
+      String(selectedOrder.orderNo || "").trim() ||
+      "—"
+    );
+  }, [selectedOrder, isSale, refOrderOrChallan]);
 
   // Refund management hook
   const tradeRefund = useTradeRefund({
@@ -1159,8 +1200,8 @@ export const TradeReturnForm: React.FC<TradeReturnFormProps> = ({ mode }) => {
             </div>
 
             <div className="flex items-center gap-1.5 whitespace-nowrap">
-              <span className="text-[var(--ui-text-muted)] text-[11px] font-medium">{isSale ? "Order #" : "Challan #"}:</span>
-              <span className="font-semibold text-[var(--ui-text)]">{refOrderOrChallan || "—"}</span>
+              <span className="text-[var(--ui-text-muted)] text-[11px] font-medium">Order ID:</span>
+              <span className="font-semibold text-[var(--ui-text)]">{displayOrderId || refOrderOrChallan || "—"}</span>
             </div>
 
             <div className="flex items-center gap-1.5 whitespace-nowrap">
