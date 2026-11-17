@@ -90,7 +90,7 @@ export const normalizeSaleInvoice = (sale: any): TradeInvoiceData => {
   return {
     type: "SALE",
     invoiceTitle: "Sales Invoice Details",
-    invoiceNo: getCleanOrderNo(s.orderNo, s.invoiceNo, s.id) || (s.id ? String(s.id).padStart(6, "0") : "000001"),
+    invoiceNo: getCleanOrderNo(s.orderNo, s.invoiceNo, s.id) || s.invoiceNo || "",
     date: s.salesDate || s.saleDate || s.date || s.createdAt,
     status: s.status,
     partyTypeTitle: "Customer Information",
@@ -166,7 +166,7 @@ export const normalizePurchaseInvoice = (purchase: any): TradeInvoiceData => {
   return {
     type: "PURCHASE",
     invoiceTitle: "Purchase Invoice Details",
-    invoiceNo: getCleanOrderNo(p.orderNo, p.invoiceNo, p.id) || (p.id ? String(p.id).padStart(6, "0") : p.invoiceNo || ""),
+    invoiceNo: getCleanOrderNo(p.orderNo, p.invoiceNo, p.id) || p.invoiceNo || "",
     date: p.purchaseDate || p.createdAt,
     status: p.status,
     partyTypeTitle: "Supplier Information",
