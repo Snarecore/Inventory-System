@@ -125,19 +125,8 @@ export const TradeReturnForm: React.FC<TradeReturnFormProps> = ({ mode }) => {
   const [autoPrintInvoice, setAutoPrintInvoice] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Financial Accounts (Cached to prevent redundant background network refetches)
-  const { registeredBankAccounts, registeredMfsAccounts } = useFinancialAccounts({
-    bankOptions: {
-      staleTime: 5 * 60 * 1000,
-      refetchOnWindowFocus: false,
-      refetchOnMount: false,
-    },
-    mfsOptions: {
-      staleTime: 5 * 60 * 1000,
-      refetchOnWindowFocus: false,
-      refetchOnMount: false,
-    },
-  });
+  // Financial Accounts
+  const { registeredBankAccounts, registeredMfsAccounts } = useFinancialAccounts();
 
   // Load candidate orders list
   const accessUser = buildAccessUser();
