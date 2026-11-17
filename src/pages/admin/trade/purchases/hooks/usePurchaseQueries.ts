@@ -89,7 +89,8 @@ export const normalizePurchaseRecord = (item: any): PurchaseItem => {
 
   const cleanOrderNo = getCleanOrderNo(
     item?.orderNo || item?.order_no,
-    item?.invoiceNo || item?.purchaseInvoiceNo || item?.invoice_no
+    item?.invoiceNo || item?.purchaseInvoiceNo || item?.invoice_no,
+    item?.id || item?.purchaseId
   );
 
   return {
@@ -244,7 +245,7 @@ export const fetchPurchaseAndReturnList = async (): Promise<UnifiedPurchaseRecor
       const chnNo = item.challanNo || item.challan_no;
       const ordNo = item.orderNo || item.order_no;
       const pId = item.id || item.purchaseId || item.purchase_id;
-      const cleanOrd = getCleanOrderNo(ordNo, invNo);
+      const cleanOrd = getCleanOrderNo(ordNo, invNo, pId);
 
       return [
         cleanOrd ? `pur_ord_${cleanOrd.toLowerCase()}` : null,
@@ -258,7 +259,7 @@ export const fetchPurchaseAndReturnList = async (): Promise<UnifiedPurchaseRecor
     const addPurchaseRecord = (item: any, fallbackIdx: number) => {
       if (!item) return;
       const aliases = getPurchaseAliases(item);
-      const cleanOrd = getCleanOrderNo(item.orderNo, item.invoiceNo || item.purchaseInvoiceNo);
+      const cleanOrd = getCleanOrderNo(item.orderNo, item.invoiceNo || item.purchaseInvoiceNo, item.id || item.purchaseId);
 
       const hasReturnInfo = Boolean(
         item.hasReturn ||
@@ -423,25 +424,6 @@ export const fetchPurchaseAndReturnList = async (): Promise<UnifiedPurchaseRecor
         // Original purchase already exists! DO NOT create a synthetic duplicate!
         unifiedList[existingIdx].hasReturn = true;
         purAliasesForCheck.forEach((a) => aliasToPurIdx.set(a, existingIdx));
-      } else {
-        // Only reconstruct fallback purchase if original purchase is completely missing
-        const cleanOrd = getCleanOrderNo(item.orderNo, item.purchaseInvoiceNo || item.invoiceNo);
-        addPurchaseRecord({
-          ...item,
-          id: item.purchaseId || item.id || cleanOrd,
-          orderNo: cleanOrd,
-          invoiceNo: item.invoiceNo || item.purchaseInvoiceNo || cleanOrd,
-          purchaseInvoiceNo: item.purchaseInvoiceNo || item.invoiceNo || cleanOrd,
-          challanNo: item.challanNo || "",
-          purchaseDate: item.purchaseDate || item.returnDate || item.createdAt || moment().format("YYYY-MM-DD"),
-          grandTotal: Number(item.grandTotal ?? item.returnGrandTotal ?? item.totalAmount ?? 0),
-          paidAmount: Number(item.paidAmount ?? item.returnGrandTotal ?? item.grandTotal ?? 0),
-          dueAmount: Number(item.dueAmount ?? 0),
-          purchaseDetails: extractPurchaseLineItems(item),
-          details: extractPurchaseLineItems(item),
-          hasReturn: true,
-          isReturnRecord: false,
-        }, fallbackIdx);
       }
     };
 
@@ -499,43 +481,12 @@ export const fetchPurchaseAndReturnList = async (): Promise<UnifiedPurchaseRecor
         invNo ? `pur_inv_${invNo.toLowerCase()}` : null,
       ].filter(Boolean) as string[];
 
-      const finPurchaseExists = finAliases.some((a) => aliasToPurIdx.has(a));
-      if (!finPurchaseExists) {
-        addPurchaseRecord({
-          id: `pur_fin_${tx.id || tx.billRef}`,
-          orderNo: cleanOrdNo,
-          invoiceNo: invNo,
-          purchaseInvoiceNo: invNo,
-          challanNo: "",
-          supplierName: supName,
-          supplierId: 0,
-          supplierPhone: "",
-          supplierAddress: "",
-          purchaseDate:
-            tx.transactionDate ||
-            (tx.createdDate ? String(tx.createdDate).split("T")[0] : moment().format("YYYY-MM-DD")),
-          createdAt: tx.createdDate || tx.transactionDate,
-          totalAmount: Number(tx.amount ?? 0),
-          discount: 0,
-          vat: 0,
-          deliveryCharge: 0,
-          grandTotal: Number(tx.amount ?? 0),
-          paidAmount: Number(tx.amount ?? 0),
-          dueAmount: 0,
-          paymentType: String(tx.accountType || "CASH").toUpperCase(),
-          status: "Returned",
-          paymentStatus: "Returned",
-          note: tx.notes || "Purchase return refund",
-          osType: "WEB",
-          hasReturn: true,
-          returnNo: tx.billRef,
-          returnDate: tx.transactionDate,
-          returnGrandTotal: Number(tx.amount || 0),
-          returnRefundAmount: Number(tx.amount || 0),
-          purchaseDetails: [],
-          details: [],
-          isReturnRecord: false,
-        }, idx);
+      for (const alias of finAliases) {
+        if (aliasToPurIdx.has(alias)) {
+          const pIdx = aliasToPurIdx.get(alias)!;
+          unifiedList[pIdx].hasReturn = true;
+          break;
+        }
       }
 
       // Authentic return voucher with backend-generated return number (e.g. 2611161438531964)
@@ -681,7 +632,7 @@ export const extractReturnedPurchaseKeysSet = (records: any[]): Set<string> => {
       const ord = item.orderNo || item.order_no;
       if (ord) {
         set.add(String(ord).trim().toLowerCase());
-        const cleanOrd = getCleanOrderNo(ord, inv);
+        const cleanOrd = getCleanOrderNo(ord, inv, item.id || item.purchaseId);
         if (cleanOrd) set.add(cleanOrd.toLowerCase());
       }
       const chn = item.challanNo || item.challan_no;

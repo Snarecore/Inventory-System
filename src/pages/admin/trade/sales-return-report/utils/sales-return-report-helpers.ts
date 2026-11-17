@@ -394,7 +394,7 @@ export function extractNormalizedSalesReturns(
 
     const isBackend = isBackendReturnNo(returnNo);
     const invKey = getInvoiceKey(item);
-    const cleanOrd = getCleanOrderNo(item.orderNo, item.salesInvoiceNo || item.invoiceNo);
+    const cleanOrd = getCleanOrderNo(item.orderNo, item.salesInvoiceNo || item.invoiceNo, item.id);
     const ordKey = String(cleanOrd || item.orderNo || "").trim().toLowerCase();
 
     const refundAmount = Number(

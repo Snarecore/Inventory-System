@@ -78,7 +78,7 @@ const Purchases: React.FC = () => {
     entityLabel: "Purchase Order",
     deleteFn: (payload) => deleteMutation.mutateAsync(payload),
     getOrderIdentifier: (purchase) =>
-      getCleanOrderNo(purchase.orderNo, purchase.invoiceNo || purchase.purchaseInvoiceNo) || purchase.invoiceNo,
+      getCleanOrderNo(purchase.orderNo, purchase.invoiceNo || purchase.purchaseInvoiceNo, purchase.id) || purchase.invoiceNo,
     onSuccess: () => {
       refetchPurchases();
       refetchCombined();
@@ -205,7 +205,7 @@ const Purchases: React.FC = () => {
     const detailsMap = new Map<string, any[]>();
     rawRList.forEach((r) => {
       if (Array.isArray(r.returnDetails) && r.returnDetails.length > 0) {
-        const cleanOrd = getCleanOrderNo(r.orderNo, r.purchaseInvoiceNo || r.invoiceNo);
+        const cleanOrd = getCleanOrderNo(r.orderNo, r.purchaseInvoiceNo || r.invoiceNo, r.id);
         const ord = String(cleanOrd || r.orderNo || "").trim().toLowerCase();
         const inv = String(r.purchaseInvoiceNo || r.invoiceNo || "").trim().toLowerCase();
         if (ord) detailsMap.set(ord, r.returnDetails);
@@ -215,7 +215,7 @@ const Purchases: React.FC = () => {
 
     sortedCandidates.forEach((item) => {
       const retNo = String(item.returnNo || "").trim();
-      const cleanOrd = getCleanOrderNo(item.orderNo, item.purchaseInvoiceNo || item.invoiceNo);
+      const cleanOrd = getCleanOrderNo(item.orderNo, item.purchaseInvoiceNo || item.invoiceNo, item.id);
       const ordNo = String(cleanOrd || item.orderNo || "").trim().toLowerCase();
       const invNo = String(item.purchaseInvoiceNo || item.invoiceNo || "").trim().toLowerCase();
       const refundAmt = Number(item.refundAmount || item.grandTotal || 0).toFixed(2);
@@ -283,7 +283,7 @@ const Purchases: React.FC = () => {
 
     const registerPurchase = (p: PurchaseItem) => {
       if (!p) return;
-      const cleanOrd = getCleanOrderNo(p.orderNo, p.invoiceNo || (p as any).purchaseInvoiceNo);
+      const cleanOrd = getCleanOrderNo(p.orderNo, p.invoiceNo || (p as any).purchaseInvoiceNo, p.id || (p as any).purchaseId);
       const aliases = [
         cleanOrd ? `ord_${cleanOrd.toLowerCase()}` : null,
         p.orderNo ? `ord_${String(p.orderNo).trim().toLowerCase()}` : null,
@@ -333,10 +333,10 @@ const Purchases: React.FC = () => {
     if (Array.isArray(purchasesData)) purchasesData.forEach(registerPurchase);
     if (Array.isArray(combinedPurchases)) combinedPurchases.forEach(registerPurchase);
 
-    // If any purchase was returned but somehow dropped from both queries, reconstruct from rawReturns
+    // If any purchase was returned, ensure its hasReturn flag is properly updated
     if (Array.isArray(rawReturns)) {
       rawReturns.forEach((r) => {
-        const cleanOrd = getCleanOrderNo(r.orderNo, r.purchaseInvoiceNo || r.invoiceNo);
+        const cleanOrd = getCleanOrderNo(r.orderNo, r.purchaseInvoiceNo || r.invoiceNo, r.id);
         const aliases = [
           cleanOrd ? `ord_${cleanOrd.toLowerCase()}` : null,
           r.orderNo ? `ord_${String(r.orderNo).trim().toLowerCase()}` : null,
@@ -346,30 +346,14 @@ const Purchases: React.FC = () => {
         ].filter(Boolean) as string[];
 
         const exists = aliases.some((a) => aliasToIdx.has(a));
-        if (!exists && (cleanOrd || r.purchaseInvoiceNo || r.invoiceNo)) {
-          registerPurchase(
-            normalizePurchaseRecord({
-              id: r.id || `pur_${r.returnNo || cleanOrd}`,
-              orderNo: cleanOrd,
-              invoiceNo: r.purchaseInvoiceNo || r.invoiceNo || cleanOrd,
-              purchaseInvoiceNo: r.purchaseInvoiceNo || r.invoiceNo || cleanOrd,
-              challanNo: r.challanNo || "",
-              supplierId: r.supplierId,
-              supplierName: r.supplierName || "Direct Supplier",
-              supplierPhone: r.supplierPhone || "",
-              supplierAddress: r.supplierAddress || "",
-              purchaseDate: r.returnDate || moment().format("YYYY-MM-DD"),
-              createdAt: r.createdAt || r.returnDate,
-              grandTotal: Number(r.grandTotal ?? r.refundAmount ?? 0),
-              paidAmount: Number(r.grandTotal ?? r.refundAmount ?? 0),
-              dueAmount: 0,
-              status: "Returned",
-              paymentType: r.paymentType || "CASH",
-              hasReturn: true,
-              purchaseDetails: r.returnDetails || [],
-              details: r.returnDetails || [],
-            })
-          );
+        if (exists) {
+          for (const a of aliases) {
+            if (aliasToIdx.has(a)) {
+              const eIdx = aliasToIdx.get(a)!;
+              purchaseList[eIdx].hasReturn = true;
+              break;
+            }
+          }
         }
       });
     }

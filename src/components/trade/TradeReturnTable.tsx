@@ -491,7 +491,11 @@ export function TradeReturnTable<T extends Record<string, any>>({
                 const sl = (currentPageNumber - 1) * dataLimit + index + 1;
                 const refund = Number(item.refundAmount ?? item.grandTotal ?? item.totalAmount ?? 0);
                 const pType = String(item.paymentType || "CASH").toUpperCase();
-                const displayOrderId = getCleanOrderNo(item.orderNo, item.salesInvoiceNo || item.purchaseInvoiceNo || item.invoiceNo);
+                const displayOrderId = getCleanOrderNo(
+                  item.orderNo,
+                  item.salesInvoiceNo || item.purchaseInvoiceNo || item.invoiceNo,
+                  item.id || (item as any).saleId || (item as any).purchaseId
+                );
 
                 // Payment badges
                 const paymentBg = "bg-[var(--primary-color-muted)] text-[var(--primary-color-dark)] border-[var(--primary-color-muted)] font-semibold";

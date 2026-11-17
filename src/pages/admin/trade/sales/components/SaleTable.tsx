@@ -483,7 +483,11 @@ export const SaleTable: React.FC<SaleTableProps> = ({
                 const paidAmount = Number(sale.paidAmount ?? 0);
                 const dueAmount = Number(sale.dueAmount ?? 0);
                 const paymentType = (sale.paymentType || "CASH").toUpperCase();
-                const displayOrderId = getCleanOrderNo(sale.orderNo, sale.invoiceNo || (sale as any).salesInvoiceNo);
+                const displayOrderId = getCleanOrderNo(
+                  sale.orderNo,
+                  sale.invoiceNo || (sale as any).salesInvoiceNo,
+                  sale.id || (sale as any).saleId
+                );
 
                 let statusBadge = "Paid";
                 let statusBg = "bg-[var(--ui-success-border)] text-[var(--ui-success-dark)] border-[var(--ui-success-border)] font-semibold";

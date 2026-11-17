@@ -1043,7 +1043,7 @@ export async function exportSalesToExcel(
     sumItems += itemsCount;
 
     return {
-      orderId: getCleanOrderNo(item.orderNo, item.invoiceNo) || (item.id ? String(item.id).padStart(6, "0") : String(index + 1).padStart(6, "0")),
+      orderId: getCleanOrderNo(item.orderNo, item.invoiceNo, item.id) || (item.id ? String(item.id).padStart(6, "0") : String(index + 1).padStart(6, "0")),
       dateStr,
       customerName: item.customerName || item.customer_name || "Walk-in Customer",
       phone: item.customerPhone || item.customer_phone || "-",

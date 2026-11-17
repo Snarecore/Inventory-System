@@ -305,7 +305,7 @@ export function extractTradeRecordMetrics(
 
   return {
     orderNo:
-      getCleanOrderNo(item?.orderNo, item?.invoiceNo) ||
+      getCleanOrderNo(item?.orderNo, item?.invoiceNo, item?.id) ||
       (item?.id ? String(item.id).padStart(6, "0") : String(fallbackIndex + 1).padStart(6, "0")),
     partyId,
     partyName,

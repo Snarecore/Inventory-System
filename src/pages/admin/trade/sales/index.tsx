@@ -79,7 +79,7 @@ const Sales: React.FC = () => {
     entityLabel: "Sales Order",
     deleteFn: (payload) => deleteMutation.mutateAsync(payload),
     getOrderIdentifier: (sale) =>
-      getCleanOrderNo(sale.orderNo, sale.invoiceNo || sale.salesInvoiceNo) || sale.invoiceNo,
+      getCleanOrderNo(sale.orderNo, sale.invoiceNo || sale.salesInvoiceNo, sale.id) || sale.invoiceNo,
     onSuccess: () => {
       refetchSales();
       refetchSalesAndReturns();
@@ -203,7 +203,7 @@ const Sales: React.FC = () => {
     const detailsMap = new Map<string, any[]>();
     rawRList.forEach((r) => {
       if (Array.isArray(r.returnDetails) && r.returnDetails.length > 0) {
-        const cleanOrd = getCleanOrderNo(r.orderNo, r.salesInvoiceNo || r.invoiceNo);
+        const cleanOrd = getCleanOrderNo(r.orderNo, r.salesInvoiceNo || r.invoiceNo, r.id);
         const ord = String(cleanOrd || r.orderNo || "").trim().toLowerCase();
         const inv = String(r.salesInvoiceNo || r.invoiceNo || "").trim().toLowerCase();
         if (ord) detailsMap.set(ord, r.returnDetails);
@@ -213,7 +213,7 @@ const Sales: React.FC = () => {
 
     sortedCandidates.forEach((item) => {
       const retNo = String(item.returnNo || "").trim();
-      const cleanOrd = getCleanOrderNo(item.orderNo, item.salesInvoiceNo || item.invoiceNo);
+      const cleanOrd = getCleanOrderNo(item.orderNo, item.salesInvoiceNo || item.invoiceNo, item.id);
       const ordNo = String(cleanOrd || item.orderNo || "").trim().toLowerCase();
       const invNo = String(item.salesInvoiceNo || item.invoiceNo || "").trim().toLowerCase();
       const refundAmt = Number(item.refundAmount || item.grandTotal || 0).toFixed(2);
@@ -287,7 +287,7 @@ const Sales: React.FC = () => {
     const aliasToIdx = new Map<string, number>();
 
     const registerSale = (record: SaleItem) => {
-      const cleanOrd = getCleanOrderNo(record.orderNo, record.invoiceNo || record.salesInvoiceNo);
+      const cleanOrd = getCleanOrderNo(record.orderNo, record.invoiceNo || record.salesInvoiceNo, record.id || (record as any).saleId);
       const aliases = [
         cleanOrd ? `ord_${cleanOrd.toLowerCase()}` : null,
         record.orderNo ? `ord_${String(record.orderNo).trim().toLowerCase()}` : null,
@@ -372,7 +372,7 @@ const Sales: React.FC = () => {
           return;
         }
 
-        const cleanOrd = getCleanOrderNo(r.orderNo, r.salesInvoiceNo || r.invoiceNo);
+        const cleanOrd = getCleanOrderNo(r.orderNo, r.salesInvoiceNo || r.invoiceNo, r.id);
         const aliases = [
           cleanOrd ? `ord_${cleanOrd.toLowerCase()}` : null,
           r.orderNo ? `ord_${String(r.orderNo).trim().toLowerCase()}` : null,
@@ -392,29 +392,6 @@ const Sales: React.FC = () => {
               break;
             }
           }
-        } else {
-          registerSale(
-            normalizeSaleRecord({
-              id: r.id || r.orderNo || `sale_ret_${idx}`,
-              orderNo: cleanOrd || r.orderNo || "",
-              invoiceNo: r.salesInvoiceNo || r.invoiceNo || r.orderNo || "",
-              salesInvoiceNo: r.salesInvoiceNo || r.invoiceNo || "",
-              salesDate: r.returnDate || r.createdAt || moment().format("YYYY-MM-DD"),
-              createdAt: r.createdAt || r.returnDate,
-              customerId: r.customerId,
-              customerName: r.customerName || "Customer",
-              customerPhone: r.customerPhone || "",
-              customerAddress: r.customerAddress || "",
-              grandTotal: Number(r.grandTotal ?? r.totalAmount ?? r.refundAmount ?? 0),
-              paidAmount: Number(r.refundAmount ?? r.grandTotal ?? 0),
-              dueAmount: 0,
-              paymentType: r.paymentType || "CASH",
-              status: "Paid",
-              hasReturn: true,
-              salesDetails: r.returnDetails || [],
-              details: r.returnDetails || [],
-            })
-          );
         }
       });
     }

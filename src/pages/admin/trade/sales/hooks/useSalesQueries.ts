@@ -45,55 +45,53 @@ export const extractLineItems = (item: any): any[] => {
 };
 
 
-export const getCleanOrderNo = (orderNo?: string | null, invoiceNo?: string | null): string => {
+export const getCleanOrderNo = (
+  orderNo?: string | number | null,
+  invoiceNo?: string | null,
+  id?: string | number | null
+): string => {
   const rawOrd = String(orderNo || "").trim();
   const rawInv = String(invoiceNo || "").trim();
+  const rawId = String(id || "").trim();
 
   // Strip synthetic or accidental "ORD-" / "ORD_" prefix if present
   const ord = rawOrd.replace(/^ORD[-_]?/i, "").trim();
   const inv = rawInv.replace(/^ORD[-_]?/i, "").trim();
 
+  // Helper: detect if a string is a timestamp / auto-generated ref
+  // (e.g. "28488-202611161814777", "202611161814777", "2611161438531964", length > 8 digits)
+  const isTimestampOrGeneratedRef = (s: string) => {
+    if (!s) return false;
+    if (s.includes("-") && /\d{10,}/.test(s)) return true;
+    if (/^\d{9,}$/.test(s)) return true;
+    if (/^(pur|sale|ret|fin)_/i.test(s)) return true;
+    return false;
+  };
+
   // 1. Direct priority to real database/backend orderNo (e.g., "000354", "354")
-  if (ord && !/^\d{3,}-\d{10,}$/.test(ord)) {
+  if (ord && !isTimestampOrGeneratedRef(ord)) {
     if (/^\d+$/.test(ord)) {
       if (ord.length < 6) return ord.padStart(6, "0");
-      if (ord.length > 8) return ord.slice(-6).padStart(6, "0");
-      return ord;
+      if (ord.length <= 8) return ord;
+      return "";
     }
     return ord;
   }
 
-  // 2. Direct priority to clean invoiceNo (e.g., "000354", "354")
-  if (inv && !/^\d{3,}-\d{10,}$/.test(inv)) {
+  // 2. Direct priority to numeric database ID (e.g. id: 354 -> "000354")
+  if (rawId && /^\d+$/.test(rawId) && Number(rawId) > 0 && rawId.length <= 8) {
+    return rawId.padStart(6, "0");
+  }
+
+  // 3. Clean numeric invoiceNo (e.g., "000354", "354") - ONLY if genuine short numeric
+  if (inv && !isTimestampOrGeneratedRef(inv)) {
     if (/^\d+$/.test(inv)) {
       if (inv.length < 6) return inv.padStart(6, "0");
-      if (inv.length > 8) return inv.slice(-6).padStart(6, "0");
-      return inv;
+      if (inv.length <= 8) return inv;
     }
-    return inv;
   }
 
-  // 3. Fallback for raw auto-generated timestamp strings (businessCode-YYYYMMDDHHmmssSSS)
-  const target = ord || inv;
-  if (!target) return "";
-
-  if (target.includes("-")) {
-    const parts = target.split("-");
-    const suffix = parts[parts.length - 1];
-    const digitsOnly = suffix.replace(/\D/g, "");
-    if (digitsOnly.length > 0) {
-      return digitsOnly.slice(-6).padStart(6, "0");
-    }
-    return suffix;
-  }
-
-  if (/^\d+$/.test(target)) {
-    if (target.length < 6) return target.padStart(6, "0");
-    if (target.length > 8) return target.slice(-6).padStart(6, "0");
-    return target;
-  }
-
-  return target;
+  return "";
 };
 
 /**
@@ -127,7 +125,8 @@ export const normalizeSaleRecord = (item: any): SaleItem => {
 
   const cleanOrderNo = getCleanOrderNo(
     item?.orderNo || item?.order_no,
-    item?.invoiceNo || item?.salesInvoiceNo || item?.invoice_no
+    item?.invoiceNo || item?.salesInvoiceNo || item?.invoice_no,
+    item?.id || item?.saleId
   );
 
   return {
@@ -272,7 +271,7 @@ export const fetchSalesAndReturnList = async (): Promise<UnifiedTradeRecord[]> =
       const invNo = item.salesInvoiceNo || item.invoiceNo || item.sales_invoice_no || item.invoice_no;
       const ordNo = item.orderNo || item.order_no;
       const sId = item.id || item.saleId || item.sale_id;
-      const cleanOrd = getCleanOrderNo(ordNo, invNo);
+      const cleanOrd = getCleanOrderNo(ordNo, invNo, sId);
 
       return [
         cleanOrd ? `sale_ord_${cleanOrd.toLowerCase()}` : null,
@@ -287,7 +286,8 @@ export const fetchSalesAndReturnList = async (): Promise<UnifiedTradeRecord[]> =
       const aliases = getSaleAliases(item);
       const cleanOrd = getCleanOrderNo(
         item.orderNo || item.order_no,
-        item.invoiceNo || item.salesInvoiceNo
+        item.invoiceNo || item.salesInvoiceNo,
+        item.id || item.saleId
       );
 
       const hasReturnInfo = Boolean(
@@ -466,27 +466,6 @@ export const fetchSalesAndReturnList = async (): Promise<UnifiedTradeRecord[]> =
         // Original sale already exists! DO NOT create a synthetic duplicate!
         unifiedList[existingIdx].hasReturn = true;
         saleAliasesForCheck.forEach((a) => aliasToSaleIdx.set(a, existingIdx));
-      } else {
-        // Only reconstruct fallback sale if original sale is completely missing
-        const cleanOrd = getCleanOrderNo(
-          item.orderNo || item.order_no,
-          item.salesInvoiceNo || item.invoiceNo
-        );
-        addSaleRecord({
-          ...item,
-          id: item.saleId || item.id || cleanOrd,
-          orderNo: cleanOrd,
-          invoiceNo: item.invoiceNo || item.salesInvoiceNo || cleanOrd,
-          salesInvoiceNo: item.salesInvoiceNo || item.invoiceNo || cleanOrd,
-          salesDate: item.salesDate || item.returnDate || item.createdAt || moment().format("YYYY-MM-DD"),
-          grandTotal: Number(item.grandTotal ?? item.returnGrandTotal ?? item.totalAmount ?? 0),
-          paidAmount: Number(item.paidAmount ?? item.returnGrandTotal ?? item.grandTotal ?? 0),
-          dueAmount: Number(item.dueAmount ?? 0),
-          salesDetails: extractLineItems(item),
-          details: extractLineItems(item),
-          hasReturn: true,
-          isReturnRecord: false,
-        }, fallbackIdx);
       }
     };
 
@@ -544,42 +523,12 @@ export const fetchSalesAndReturnList = async (): Promise<UnifiedTradeRecord[]> =
         invNo ? `sale_inv_${invNo.toLowerCase()}` : null,
       ].filter(Boolean) as string[];
 
-      const finSaleExists = finAliases.some((a) => aliasToSaleIdx.has(a));
-      if (!finSaleExists) {
-        addSaleRecord({
-          id: `sale_fin_${tx.id || tx.billRef}`,
-          orderNo: cleanOrdNo,
-          invoiceNo: invNo,
-          salesInvoiceNo: invNo,
-          customerName: custName,
-          customerId: 0,
-          customerPhone: "",
-          customerAddress: "",
-          salesDate:
-            tx.transactionDate ||
-            (tx.createdDate ? String(tx.createdDate).split("T")[0] : moment().format("YYYY-MM-DD")),
-          createdAt: tx.createdDate || tx.transactionDate,
-          totalAmount: Number(tx.amount ?? 0),
-          discount: 0,
-          vat: 0,
-          deliveryCharge: 0,
-          grandTotal: Number(tx.amount ?? 0),
-          paidAmount: Number(tx.amount ?? 0),
-          dueAmount: 0,
-          paymentType: String(tx.accountType || "CASH").toUpperCase(),
-          status: "Returned",
-          paymentStatus: "Returned",
-          note: tx.notes || "Sales return refund",
-          osType: "WEB",
-          hasReturn: true,
-          returnNo: tx.billRef,
-          returnDate: tx.transactionDate,
-          returnGrandTotal: Number(tx.amount || 0),
-          returnRefundAmount: Number(tx.amount || 0),
-          salesDetails: [],
-          details: [],
-          isReturnRecord: false,
-        }, idx);
+      for (const alias of finAliases) {
+        if (aliasToSaleIdx.has(alias)) {
+          const sIdx = aliasToSaleIdx.get(alias)!;
+          unifiedList[sIdx].hasReturn = true;
+          break;
+        }
       }
 
       // Authentic return voucher with backend-generated return number (e.g. 2611...)

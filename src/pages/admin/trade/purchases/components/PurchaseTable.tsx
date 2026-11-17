@@ -485,7 +485,11 @@ export const PurchaseTable: React.FC<PurchaseTableProps> = ({
                   const paidAmount = Number(purchase.paidAmount ?? 0);
                   const dueAmount = Number(purchase.dueAmount ?? 0);
                   const paymentType = (purchase.paymentType || "CASH").toUpperCase();
-                  const displayOrderId = getCleanOrderNo(purchase.orderNo, purchase.invoiceNo || (purchase as any).purchaseInvoiceNo);
+                  const displayOrderId = getCleanOrderNo(
+                    purchase.orderNo,
+                    purchase.invoiceNo || (purchase as any).purchaseInvoiceNo,
+                    purchase.id || (purchase as any).purchaseId
+                  );
 
                   let statusBadge = "Paid";
                   let statusBg = "bg-[var(--ui-success-border)] text-[var(--ui-success-dark)] border-[var(--ui-success-border)] font-semibold";
