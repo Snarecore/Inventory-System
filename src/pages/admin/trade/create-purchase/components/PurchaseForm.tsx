@@ -179,7 +179,8 @@ const CreatePurchaseForm: React.FC = () => {
         return null;
       }
     },
-    staleTime: 5 * 60 * 1000,
+    staleTime: 0,
+    refetchOnWindowFocus: false,
   });
 
   useEffect(() => {

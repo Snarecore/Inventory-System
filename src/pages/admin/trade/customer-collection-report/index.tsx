@@ -68,7 +68,8 @@ const CustomerCollectionReportPage: React.FC = () => {
         url: apiConfig.party.partyListUrl,
         body: { accessUser: buildAccessUser() },
       }),
-    staleTime: 5 * 60 * 1000,
+    staleTime: 0,
+    refetchOnWindowFocus: false,
   });
 
   const { data: salesList = [], refetch: refetchSales } = useSalesQuery({

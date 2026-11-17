@@ -24,7 +24,7 @@ export function useCashClosingQuery(closingDate?: string) {
     queryKey: [cashClosingQueryKey, targetDate],
     queryFn: () => fetchCashClosing(targetDate),
     staleTime: 0,
-    refetchOnWindowFocus: true,
+    refetchOnWindowFocus: false,
   });
 }
 

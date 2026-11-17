@@ -28,7 +28,6 @@ export const useFinanceDashboardQuery = (params?: FinanceDashboardParams) => {
     queryKey: [financeDashboardQueryKey, params?.startDate, params?.endDate],
     queryFn: () => fetchFinanceDashboard(params),
     staleTime: 0,
-    refetchOnMount: "always",
     refetchOnWindowFocus: false,
   });
 };
@@ -41,8 +40,7 @@ export const useFinancialTransactionsQuery = (
     queryKey: [financialTransactionQueryKey, params?.type, params?.startDate, params?.endDate],
     queryFn: () => fetchFinancialTransactions(params),
     staleTime: 0,
-    refetchOnMount: "always",
-    refetchOnWindowFocus: true,
+    refetchOnWindowFocus: false,
     ...options,
   });
 };

@@ -70,7 +70,8 @@ const SupplierPaymentReportPage: React.FC = () => {
         url: apiConfig.party.partyListUrl,
         body: { accessUser: buildAccessUser() },
       }),
-    staleTime: 5 * 60 * 1000,
+    staleTime: 0,
+    refetchOnWindowFocus: false,
   });
 
   // 4. Purchases and Returns Queries for Ledger & Invoices

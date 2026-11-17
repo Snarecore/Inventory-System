@@ -26,7 +26,8 @@ const ProductDetails = () => {
             });
             return response;
         },
-        staleTime: 30 * 1000,
+        staleTime: 0,
+        refetchOnWindowFocus: false,
     });
 
     let rawList: ProductItem[] = [];

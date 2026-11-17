@@ -23,7 +23,8 @@ export const useProductCategoryListQuery = () => {
   return useQuery<ProductCategoryListResponse>({
     queryKey: [productCategoryListQueryKey],
     queryFn: () => fetchProductCategoryList(),
-    staleTime: 1000 * 60 * 3, // 3 minutes cache
+    staleTime: 0,
+    refetchOnWindowFocus: false,
   });
 };
 

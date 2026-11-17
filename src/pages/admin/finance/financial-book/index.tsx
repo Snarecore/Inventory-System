@@ -80,7 +80,8 @@ const FinancialBookPage: React.FC<FinancialBookPageProps> = ({ defaultType }) =>
         navUrl || undefined
       );
     },
-    staleTime: 60 * 1000,
+    staleTime: 0,
+    refetchOnWindowFocus: false,
   });
 
   // Handle postMessage navigation & height requests from sandboxed iframe

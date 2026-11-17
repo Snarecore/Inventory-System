@@ -40,7 +40,8 @@ export const CustomerCollection: React.FC = () => {
       });
       return res;
     },
-    staleTime: 5 * 60 * 1000,
+    staleTime: 0,
+    refetchOnWindowFocus: false,
   });
 
   const partyMap = useMemo(() => {

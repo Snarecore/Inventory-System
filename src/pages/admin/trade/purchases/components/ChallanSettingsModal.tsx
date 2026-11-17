@@ -66,7 +66,8 @@ const ChallanSettingsModal: React.FC<ChallanSettingsModalProps> = ({
       }
     },
     enabled: isOpen,
-    staleTime: 5 * 60 * 1000,
+    staleTime: 0,
+    refetchOnWindowFocus: false,
   });
 
   useEffect(() => {

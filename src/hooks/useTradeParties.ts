@@ -29,8 +29,7 @@ export const useTradeParties = (partyType: TradePartyType) => {
       }
     },
     staleTime: 0,
-    refetchOnMount: "always",
-    refetchOnWindowFocus: true,
+    refetchOnWindowFocus: false,
   });
 
   const partyList: PartyItem[] = useMemo(() => {

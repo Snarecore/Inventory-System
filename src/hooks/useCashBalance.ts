@@ -50,8 +50,7 @@ export const useCashBalanceQuery = (
     queryKey: [cashBalanceQueryKey],
     queryFn: fetchCashBalance,
     staleTime: 0,
-    refetchOnMount: "always",
-    refetchOnWindowFocus: true,
+    refetchOnWindowFocus: false,
     ...options,
   });
 };

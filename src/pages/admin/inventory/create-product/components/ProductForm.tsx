@@ -97,7 +97,8 @@ const CreateProductForm = () => {
             const res = await getData<any>({ url: categoriesUrl });
             return res;
         },
-        staleTime: 5 * 60 * 1000,
+        staleTime: 0,
+        refetchOnWindowFocus: false,
     });
 
     // 2. Fetch Units
@@ -107,7 +108,8 @@ const CreateProductForm = () => {
             const res = await getData<any>({ url: unitsUrl });
             return res;
         },
-        staleTime: 5 * 60 * 1000,
+        staleTime: 0,
+        refetchOnWindowFocus: false,
     });
 
     // 3. Fetch Product List to prefill edit form or auto-generate pcode/barcode/sku for new product
@@ -124,7 +126,7 @@ const CreateProductForm = () => {
                 return null;
             }
         },
-        staleTime: 60 * 1000,
+        staleTime: 0,
         refetchOnWindowFocus: false,
     });
 
