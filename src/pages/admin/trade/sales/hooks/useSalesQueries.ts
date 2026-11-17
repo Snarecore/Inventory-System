@@ -339,6 +339,24 @@ export const fetchSalesAndReturnList = async (): Promise<UnifiedTradeRecord[]> =
       if (hasReturnInfo) {
         aliases.forEach((a) => returnedInvoices.add(a));
 
+        // Update any previously added return record in unifiedList that matches this sale
+        unifiedList.forEach((u) => {
+          if (u.isReturnRecord) {
+            const uAliases = getSaleAliases(u);
+            if (uAliases.some((a) => aliases.includes(a))) {
+              if (cleanOrd && (!u.orderNo || isBackendGeneratedNo(u.orderNo))) {
+                u.orderNo = cleanOrd;
+              }
+              if (!u.customerPhone && item.customerPhone) {
+                u.customerPhone = item.customerPhone;
+              }
+              if ((!u.customerName || u.customerName === "Customer") && item.customerName) {
+                u.customerName = item.customerName;
+              }
+            }
+          }
+        });
+
         // Extract nested return records
         const nestedReturns = [
           ...(Array.isArray(item.returns) ? item.returns : []),
@@ -466,6 +484,16 @@ export const fetchSalesAndReturnList = async (): Promise<UnifiedTradeRecord[]> =
         // Original sale already exists! DO NOT create a synthetic duplicate!
         unifiedList[existingIdx].hasReturn = true;
         saleAliasesForCheck.forEach((a) => aliasToSaleIdx.set(a, existingIdx));
+        const parentSale = unifiedList[existingIdx];
+        if (parentSale.orderNo && (!normalized.orderNo || isBackendGeneratedNo(normalized.orderNo))) {
+          normalized.orderNo = parentSale.orderNo;
+        }
+        if (!normalized.customerPhone && parentSale.customerPhone) {
+          normalized.customerPhone = parentSale.customerPhone;
+        }
+        if ((!normalized.customerName || normalized.customerName === "Customer") && parentSale.customerName) {
+          normalized.customerName = parentSale.customerName;
+        }
       }
     };
 
@@ -491,11 +519,11 @@ export const fetchSalesAndReturnList = async (): Promise<UnifiedTradeRecord[]> =
       let custName = "Customer";
 
       if (tx.notes) {
-        const ordMatch = tx.notes.match(/(?:order|order\s*#|ord\s*#?)\s*([A-Za-z0-9_-]+)/i);
+        const ordMatch = tx.notes.match(/(?:order|order\s*#|ord\s*#?)\s*[:#]?\s*([A-Za-z0-9_-]+)/i);
         if (ordMatch && ordMatch[1]) {
           ordNo = ordMatch[1].trim();
         }
-        const invMatch = tx.notes.match(/(?:invoice|from|customer)\s+([A-Za-z0-9_-]+)/i);
+        const invMatch = tx.notes.match(/(?:invoice|inv|from|customer)\s*[:#]?\s*([A-Za-z0-9_-]+)/i);
         if (invMatch && invMatch[1]) {
           invNo = invMatch[1].trim();
         }
@@ -505,17 +533,14 @@ export const fetchSalesAndReturnList = async (): Promise<UnifiedTradeRecord[]> =
         }
       }
 
-      if (!invNo && tx.refNo && !tx.refNo.startsWith("261111") && !tx.refNo.startsWith("SR-")) {
-        invNo = String(tx.refNo).trim();
-      }
-      if (!invNo && tx.refNo) {
-        invNo = String(tx.refNo).trim();
-      }
-      if (!invNo && tx.billRef) {
+      if (!invNo && tx.billRef && !isBackendGeneratedNo(tx.billRef)) {
         invNo = String(tx.billRef).trim();
       }
+      if (!invNo && tx.refNo && !isBackendGeneratedNo(tx.refNo)) {
+        invNo = String(tx.refNo).trim();
+      }
 
-      if (!invNo && !ordNo) return;
+      if (!invNo && !ordNo && !tx.billRef && !tx.refNo) return;
 
       const cleanOrdNo = getCleanOrderNo(ordNo, invNo);
       const finAliases = [
@@ -523,29 +548,45 @@ export const fetchSalesAndReturnList = async (): Promise<UnifiedTradeRecord[]> =
         invNo ? `sale_inv_${invNo.toLowerCase()}` : null,
       ].filter(Boolean) as string[];
 
+      let matchedSale: UnifiedTradeRecord | null = null;
       for (const alias of finAliases) {
         if (aliasToSaleIdx.has(alias)) {
           const sIdx = aliasToSaleIdx.get(alias)!;
           unifiedList[sIdx].hasReturn = true;
+          matchedSale = unifiedList[sIdx];
           break;
         }
       }
 
+      // If not matched by invoice, match by customer name if known
+      if (!matchedSale && custName && custName !== "Customer") {
+        const foundIdx = unifiedList.findIndex(
+          (u) =>
+            !u.isReturnRecord &&
+            u.customerName &&
+            u.customerName.toLowerCase() === custName.toLowerCase()
+        );
+        if (foundIdx !== -1) {
+          matchedSale = unifiedList[foundIdx];
+          unifiedList[foundIdx].hasReturn = true;
+        }
+      }
+
       // Authentic return voucher with backend-generated return number (e.g. 2611...)
-      const returnNo = tx.billRef || `SR-${invNo}`;
+      const returnNo = tx.billRef || tx.refNo || `SR-${invNo || idx}`;
       const retKey = `ret_${String(returnNo).toLowerCase()}`;
-      const resolvedOrdNo = cleanOrdNo;
+      const resolvedOrdNo = matchedSale?.orderNo || cleanOrdNo;
 
       const reconstructedReturn: UnifiedTradeRecord = {
         id: `ret_fin_${tx.id || tx.billRef || idx}`,
         returnNo,
         orderNo: resolvedOrdNo,
-        invoiceNo: invNo,
-        salesInvoiceNo: invNo,
-        customerName: custName,
-        customerId: 0,
-        customerPhone: "",
-        customerAddress: "",
+        invoiceNo: matchedSale?.invoiceNo || invNo,
+        salesInvoiceNo: matchedSale?.salesInvoiceNo || matchedSale?.invoiceNo || invNo,
+        customerName: matchedSale?.customerName || custName,
+        customerId: matchedSale?.customerId || 0,
+        customerPhone: matchedSale?.customerPhone || "",
+        customerAddress: matchedSale?.customerAddress || "",
         returnDate:
           tx.transactionDate ||
           (tx.createdDate ? String(tx.createdDate).split("T")[0] : moment().format("YYYY-MM-DD")),

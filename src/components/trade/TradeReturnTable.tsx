@@ -491,11 +491,14 @@ export function TradeReturnTable<T extends Record<string, any>>({
                 const sl = (currentPageNumber - 1) * dataLimit + index + 1;
                 const refund = Number(item.refundAmount ?? item.grandTotal ?? item.totalAmount ?? 0);
                 const pType = String(item.paymentType || "CASH").toUpperCase();
-                const displayOrderId = getCleanOrderNo(
+                const cleanOrder = getCleanOrderNo(
                   item.orderNo,
-                  item.salesInvoiceNo || item.purchaseInvoiceNo || item.invoiceNo,
-                  item.id || (item as any).saleId || (item as any).purchaseId
+                  item.salesInvoiceNo || item.purchaseInvoiceNo || item.invoiceNo
                 );
+                const isLongVoucher = (val?: string) =>
+                  Boolean(val && (String(val).startsWith("2611") || /^\d{9,}$/.test(String(val))));
+                const displayOrderId =
+                  cleanOrder || (item.orderNo && !isLongVoucher(item.orderNo) ? String(item.orderNo) : "");
 
                 // Payment badges
                 const paymentBg = "bg-[var(--primary-color-muted)] text-[var(--primary-color-dark)] border-[var(--primary-color-muted)] font-semibold";
@@ -584,12 +587,12 @@ export function TradeReturnTable<T extends Record<string, any>>({
                               title="Click to view voucher"
                               className="cursor-pointer hover:text-[var(--primary-color)] transition-colors"
                             >
-                              {displayOrderId || item.orderNo || item.returnNo || "N/A"}
+                              {displayOrderId || "-"}
                             </span>
-                            {(displayOrderId || item.orderNo) && (
+                            {Boolean(displayOrderId) && (
                               <button
                                 type="button"
-                                onClick={() => handleCopyOrderId(displayOrderId || item.orderNo, item.id)}
+                                onClick={() => handleCopyOrderId(displayOrderId, item.id)}
                                 title="Copy Order ID"
                                 className="p-1 text-[var(--ui-text-subtle)] hover:text-[var(--primary-color)] transition-colors opacity-0 group-hover/ord:opacity-100 cursor-pointer"
                               >

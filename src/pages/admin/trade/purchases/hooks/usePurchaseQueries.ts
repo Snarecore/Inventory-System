@@ -310,6 +310,24 @@ export const fetchPurchaseAndReturnList = async (): Promise<UnifiedPurchaseRecor
       if (hasReturnInfo) {
         aliases.forEach((a) => returnedInvoices.add(a));
 
+        // Update any previously added return record in unifiedList that matches this purchase
+        unifiedList.forEach((u) => {
+          if (u.isReturnRecord) {
+            const uAliases = getPurchaseAliases(u);
+            if (uAliases.some((a) => aliases.includes(a))) {
+              if (cleanOrd && (!u.orderNo || isBackendGeneratedNo(u.orderNo))) {
+                u.orderNo = cleanOrd;
+              }
+              if (!u.supplierPhone && item.supplierPhone) {
+                u.supplierPhone = item.supplierPhone;
+              }
+              if ((!u.supplierName || u.supplierName === "Supplier") && item.supplierName) {
+                u.supplierName = item.supplierName;
+              }
+            }
+          }
+        });
+
         // Extract nested return records
         const nestedReturns = [
           ...(Array.isArray(item.returns) ? item.returns : []),
@@ -424,6 +442,16 @@ export const fetchPurchaseAndReturnList = async (): Promise<UnifiedPurchaseRecor
         // Original purchase already exists! DO NOT create a synthetic duplicate!
         unifiedList[existingIdx].hasReturn = true;
         purAliasesForCheck.forEach((a) => aliasToPurIdx.set(a, existingIdx));
+        const parentPurchase = unifiedList[existingIdx];
+        if (parentPurchase.orderNo && (!normalized.orderNo || isBackendGeneratedNo(normalized.orderNo))) {
+          normalized.orderNo = parentPurchase.orderNo;
+        }
+        if (!normalized.supplierPhone && parentPurchase.supplierPhone) {
+          normalized.supplierPhone = parentPurchase.supplierPhone;
+        }
+        if ((!normalized.supplierName || normalized.supplierName === "Supplier") && parentPurchase.supplierName) {
+          normalized.supplierName = parentPurchase.supplierName;
+        }
       }
     };
 
@@ -449,11 +477,11 @@ export const fetchPurchaseAndReturnList = async (): Promise<UnifiedPurchaseRecor
       let supName = "Supplier";
 
       if (tx.notes) {
-        const ordMatch = tx.notes.match(/(?:order|order\s*#|ord\s*#?)\s*([A-Za-z0-9_-]+)/i);
+        const ordMatch = tx.notes.match(/(?:order|order\s*#|ord\s*#?)\s*[:#]?\s*([A-Za-z0-9_-]+)/i);
         if (ordMatch && ordMatch[1]) {
           ordNo = ordMatch[1].trim();
         }
-        const invMatch = tx.notes.match(/(?:invoice|from|supplier)\s+([A-Za-z0-9_-]+)/i);
+        const invMatch = tx.notes.match(/(?:invoice|inv|from|supplier)\s*[:#]?\s*([A-Za-z0-9_-]+)/i);
         if (invMatch && invMatch[1]) {
           invNo = invMatch[1].trim();
         }
@@ -463,17 +491,14 @@ export const fetchPurchaseAndReturnList = async (): Promise<UnifiedPurchaseRecor
         }
       }
 
-      if (!invNo && tx.refNo && !tx.refNo.startsWith("261111") && !tx.refNo.startsWith("PR-")) {
-        invNo = String(tx.refNo).trim();
-      }
-      if (!invNo && tx.refNo) {
-        invNo = String(tx.refNo).trim();
-      }
-      if (!invNo && tx.billRef) {
+      if (!invNo && tx.billRef && !isBackendGeneratedNo(tx.billRef)) {
         invNo = String(tx.billRef).trim();
       }
+      if (!invNo && tx.refNo && !isBackendGeneratedNo(tx.refNo)) {
+        invNo = String(tx.refNo).trim();
+      }
 
-      if (!invNo && !ordNo) return;
+      if (!invNo && !ordNo && !tx.billRef && !tx.refNo) return;
 
       const cleanOrdNo = getCleanOrderNo(ordNo, invNo);
       const finAliases = [
@@ -481,30 +506,46 @@ export const fetchPurchaseAndReturnList = async (): Promise<UnifiedPurchaseRecor
         invNo ? `pur_inv_${invNo.toLowerCase()}` : null,
       ].filter(Boolean) as string[];
 
+      let matchedPurchase: UnifiedPurchaseRecord | null = null;
       for (const alias of finAliases) {
         if (aliasToPurIdx.has(alias)) {
           const pIdx = aliasToPurIdx.get(alias)!;
           unifiedList[pIdx].hasReturn = true;
+          matchedPurchase = unifiedList[pIdx];
           break;
         }
       }
 
+      // If not matched by invoice, match by supplier name if known
+      if (!matchedPurchase && supName && supName !== "Supplier") {
+        const foundIdx = unifiedList.findIndex(
+          (u) =>
+            !u.isReturnRecord &&
+            u.supplierName &&
+            u.supplierName.toLowerCase() === supName.toLowerCase()
+        );
+        if (foundIdx !== -1) {
+          matchedPurchase = unifiedList[foundIdx];
+          unifiedList[foundIdx].hasReturn = true;
+        }
+      }
+
       // Authentic return voucher with backend-generated return number (e.g. 2611161438531964)
-      const returnNo = tx.billRef || `PR-${invNo}`;
+      const returnNo = tx.billRef || tx.refNo || `PR-${invNo || idx}`;
       const retKey = `ret_${String(returnNo).toLowerCase()}`;
-      const resolvedOrdNo = cleanOrdNo;
+      const resolvedOrdNo = matchedPurchase?.orderNo || cleanOrdNo;
 
       const reconstructedReturn: UnifiedPurchaseRecord = {
         id: `ret_fin_${tx.id || tx.billRef || idx}`,
         returnNo,
         orderNo: resolvedOrdNo,
-        invoiceNo: invNo,
-        purchaseInvoiceNo: invNo,
-        challanNo: "",
-        supplierName: supName,
-        supplierId: 0,
-        supplierPhone: "",
-        supplierAddress: "",
+        invoiceNo: matchedPurchase?.invoiceNo || invNo,
+        purchaseInvoiceNo: matchedPurchase?.purchaseInvoiceNo || matchedPurchase?.invoiceNo || invNo,
+        challanNo: matchedPurchase?.challanNo || "",
+        supplierName: matchedPurchase?.supplierName || supName,
+        supplierId: matchedPurchase?.supplierId || 0,
+        supplierPhone: matchedPurchase?.supplierPhone || "",
+        supplierAddress: matchedPurchase?.supplierAddress || "",
         returnDate:
           tx.transactionDate ||
           (tx.createdDate ? String(tx.createdDate).split("T")[0] : moment().format("YYYY-MM-DD")),

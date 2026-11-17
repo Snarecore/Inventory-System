@@ -415,6 +415,63 @@ const Sales: React.FC = () => {
     });
   }, [salesData, combinedSales, rawReturns, returnedInvoiceSet]);
 
+  // Enrich return records with authentic parent sale data (especially Order ID, customer, phone)
+  const enrichedReturns = useMemo(() => {
+    if (!Array.isArray(rawReturns) || rawReturns.length === 0) return [];
+    const saleByInv = new Map<string, SaleItem>();
+    const saleByOrd = new Map<string, SaleItem>();
+    const saleByCustAmt = new Map<string, SaleItem>();
+    const saleByCust = new Map<string, SaleItem>();
+
+    rawSales.forEach((s) => {
+      const cleanOrd = getCleanOrderNo(s.orderNo, s.invoiceNo || s.salesInvoiceNo, s.id || (s as any).saleId);
+      const effectiveSale = { ...s, orderNo: cleanOrd || s.orderNo };
+      if (s.invoiceNo) saleByInv.set(String(s.invoiceNo).trim().toLowerCase(), effectiveSale);
+      if (s.salesInvoiceNo) saleByInv.set(String(s.salesInvoiceNo).trim().toLowerCase(), effectiveSale);
+      if (cleanOrd) saleByOrd.set(cleanOrd.toLowerCase(), effectiveSale);
+      if (s.orderNo) saleByOrd.set(String(s.orderNo).trim().toLowerCase(), effectiveSale);
+      const cName = String(s.customerName || "").trim().toLowerCase();
+      const sAmt = Number(s.grandTotal || 0).toFixed(2);
+      if (cName && cName !== "customer" && cName !== "walk-in customer") {
+        saleByCustAmt.set(`${cName}_${sAmt}`, effectiveSale);
+        if (!saleByCust.has(cName)) saleByCust.set(cName, effectiveSale);
+      }
+    });
+
+    return rawReturns.map((r) => {
+      let matchedSale: SaleItem | undefined;
+      const rInv = String(r.salesInvoiceNo || r.invoiceNo || "").trim().toLowerCase();
+      if (rInv && saleByInv.has(rInv)) matchedSale = saleByInv.get(rInv);
+      const rOrd = String(r.orderNo || "").trim().toLowerCase();
+      if (!matchedSale && rOrd && saleByOrd.has(rOrd)) matchedSale = saleByOrd.get(rOrd);
+      if (!matchedSale) {
+        const text = String(r.remarks || r.note || "");
+        const invMatch = text.match(/(?:invoice|inv|from|customer)\s*[:#]?\s*([A-Za-z0-9_-]+)/i);
+        if (invMatch && invMatch[1] && saleByInv.has(invMatch[1].trim().toLowerCase())) {
+          matchedSale = saleByInv.get(invMatch[1].trim().toLowerCase());
+        }
+      }
+      const rCust = String(r.customerName || "").trim().toLowerCase();
+      const rRefund = Number(r.refundAmount || r.grandTotal || 0).toFixed(2);
+      if (!matchedSale && rCust && rCust !== "customer" && rCust !== "walk-in customer") {
+        matchedSale = saleByCustAmt.get(`${rCust}_${rRefund}`) || saleByCust.get(rCust);
+      }
+
+      const cleanOrd = matchedSale?.orderNo
+        ? getCleanOrderNo(matchedSale.orderNo)
+        : getCleanOrderNo(r.orderNo, r.salesInvoiceNo || r.invoiceNo);
+
+      return {
+        ...r,
+        orderNo: cleanOrd || matchedSale?.orderNo || (r.orderNo && !String(r.orderNo).startsWith("2611") && !/^\d{9,}$/.test(String(r.orderNo)) ? r.orderNo : ""),
+        customerName: matchedSale?.customerName || r.customerName,
+        customerPhone: matchedSale?.customerPhone || r.customerPhone,
+        customerAddress: matchedSale?.customerAddress || r.customerAddress,
+        salesInvoiceNo: matchedSale?.salesInvoiceNo || matchedSale?.invoiceNo || r.salesInvoiceNo || r.invoiceNo,
+      };
+    });
+  }, [rawReturns, rawSales]);
+
   // Zero-network customers list derived directly from active sales and returns
   const customersList: PartyItem[] = useMemo(() => {
     const custMap = new Map<string, PartyItem>();
@@ -435,7 +492,7 @@ const Sales: React.FC = () => {
       }
     });
 
-    rawReturns.forEach((r) => {
+    enrichedReturns.forEach((r) => {
       const key = String(r.customerId ?? r.partyId ?? r.customerName ?? "").trim();
       if (key && !custMap.has(key)) {
         custMap.set(key, {
@@ -454,7 +511,7 @@ const Sales: React.FC = () => {
     return Array.from(custMap.values()).sort((a, b) =>
       String(a.name || "").localeCompare(String(b.name || ""))
     );
-  }, [rawSales, rawReturns]);
+  }, [rawSales, enrichedReturns]);
 
   const isSalesLoading = (isSalesLoadingQuery || isCombinedLoading) && rawSales.length === 0;
   const isReturnsLoading = isCombinedLoading && rawReturns.length === 0;
@@ -606,7 +663,7 @@ const Sales: React.FC = () => {
 
   // ----------------- RETURNS FILTERING & SORTING -----------------
   const filteredReturns = useMemo(() => {
-    return rawReturns.filter((item) => {
+    return enrichedReturns.filter((item) => {
       if (debouncedSearch.trim()) {
         const q = debouncedSearch.toLowerCase().trim();
         const ordNo = String(item.orderNo || "").toLowerCase();
@@ -667,7 +724,7 @@ const Sales: React.FC = () => {
       return true;
     });
   }, [
-    rawReturns,
+    enrichedReturns,
     debouncedSearch,
     customerFilter,
     paymentMethodFilter,
@@ -882,7 +939,7 @@ const Sales: React.FC = () => {
           }`}
         >
           <FaUndoAlt size={11} />
-          <span>{t("Sales Returns")} ({rawReturns.length})</span>
+          <span>{t("Sales Returns")} ({enrichedReturns.length})</span>
         </button>
       </div>
 

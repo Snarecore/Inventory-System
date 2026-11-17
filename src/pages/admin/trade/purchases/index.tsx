@@ -379,6 +379,67 @@ const Purchases: React.FC = () => {
     });
   }, [purchasesData, combinedPurchases, rawReturns, returnedInvoiceSet]);
 
+  // Enrich return records with authentic parent purchase data (Order ID, supplier name/phone/address)
+  const enrichedReturns = useMemo(() => {
+    if (!Array.isArray(rawReturns) || rawReturns.length === 0) return [];
+    const purByInv = new Map<string, PurchaseItem>();
+    const purByOrd = new Map<string, PurchaseItem>();
+    const purByChn = new Map<string, PurchaseItem>();
+    const purBySupAmt = new Map<string, PurchaseItem>();
+    const purBySup = new Map<string, PurchaseItem>();
+
+    rawPurchases.forEach((p) => {
+      const cleanOrd = getCleanOrderNo(p.orderNo, p.invoiceNo || (p as any).purchaseInvoiceNo, p.id || (p as any).purchaseId);
+      const effectivePur = { ...p, orderNo: cleanOrd || p.orderNo };
+      if (p.invoiceNo) purByInv.set(String(p.invoiceNo).trim().toLowerCase(), effectivePur);
+      if ((p as any).purchaseInvoiceNo) purByInv.set(String((p as any).purchaseInvoiceNo).trim().toLowerCase(), effectivePur);
+      if (cleanOrd) purByOrd.set(cleanOrd.toLowerCase(), effectivePur);
+      if (p.orderNo) purByOrd.set(String(p.orderNo).trim().toLowerCase(), effectivePur);
+      if (p.challanNo) purByChn.set(String(p.challanNo).trim().toLowerCase(), effectivePur);
+      const sName = String(p.supplierName || "").trim().toLowerCase();
+      const pAmt = Number(p.grandTotal || 0).toFixed(2);
+      if (sName && sName !== "supplier" && sName !== "direct supplier") {
+        purBySupAmt.set(`${sName}_${pAmt}`, effectivePur);
+        if (!purBySup.has(sName)) purBySup.set(sName, effectivePur);
+      }
+    });
+
+    return rawReturns.map((r) => {
+      let matchedPur: PurchaseItem | undefined;
+      const rInv = String(r.purchaseInvoiceNo || r.invoiceNo || "").trim().toLowerCase();
+      if (rInv && purByInv.has(rInv)) matchedPur = purByInv.get(rInv);
+      const rOrd = String(r.orderNo || "").trim().toLowerCase();
+      if (!matchedPur && rOrd && purByOrd.has(rOrd)) matchedPur = purByOrd.get(rOrd);
+      if (!matchedPur) {
+        const text = String(r.remarks || r.note || "");
+        const invMatch = text.match(/(?:invoice|inv|from|supplier)\s*[:#]?\s*([A-Za-z0-9_-]+)/i);
+        if (invMatch && invMatch[1] && purByInv.has(invMatch[1].trim().toLowerCase())) {
+          matchedPur = purByInv.get(invMatch[1].trim().toLowerCase());
+        }
+      }
+      const rChn = String(r.challanNo || "").trim().toLowerCase();
+      if (!matchedPur && rChn && purByChn.has(rChn)) matchedPur = purByChn.get(rChn);
+      const rSup = String(r.supplierName || "").trim().toLowerCase();
+      const rRefund = Number(r.refundAmount || r.grandTotal || 0).toFixed(2);
+      if (!matchedPur && rSup && rSup !== "supplier" && rSup !== "direct supplier") {
+        matchedPur = purBySupAmt.get(`${rSup}_${rRefund}`) || purBySup.get(rSup);
+      }
+
+      const cleanOrd = matchedPur?.orderNo
+        ? getCleanOrderNo(matchedPur.orderNo)
+        : getCleanOrderNo(r.orderNo, r.purchaseInvoiceNo || r.invoiceNo);
+
+      return {
+        ...r,
+        orderNo: cleanOrd || matchedPur?.orderNo || (r.orderNo && !String(r.orderNo).startsWith("2611") && !/^\d{9,}$/.test(String(r.orderNo)) ? r.orderNo : ""),
+        supplierName: matchedPur?.supplierName || r.supplierName,
+        supplierPhone: matchedPur?.supplierPhone || r.supplierPhone,
+        supplierAddress: matchedPur?.supplierAddress || r.supplierAddress,
+        purchaseInvoiceNo: matchedPur?.purchaseInvoiceNo || matchedPur?.invoiceNo || r.purchaseInvoiceNo || r.invoiceNo,
+      };
+    });
+  }, [rawReturns, rawPurchases]);
+
   // Zero-network suppliers list derived directly from active purchases and returns
   const suppliersList: PartyItem[] = useMemo(() => {
     const supMap = new Map<string, PartyItem>();
@@ -399,7 +460,7 @@ const Purchases: React.FC = () => {
       }
     });
 
-    rawReturns.forEach((r) => {
+    enrichedReturns.forEach((r) => {
       const key = String(r.supplierId ?? r.partyId ?? r.supplierName ?? "").trim();
       if (key && !supMap.has(key)) {
         supMap.set(key, {
@@ -418,7 +479,7 @@ const Purchases: React.FC = () => {
     return Array.from(supMap.values()).sort((a, b) =>
       String(a.name || "").localeCompare(String(b.name || ""))
     );
-  }, [rawPurchases, rawReturns]);
+  }, [rawPurchases, enrichedReturns]);
 
   const isPurchasesLoading = isPurchasesLoadingQuery && rawPurchases.length === 0;
   const isReturnsLoading = isCombinedLoading;
@@ -564,7 +625,7 @@ const Purchases: React.FC = () => {
 
   // ----------------- RETURNS FILTERING & SORTING -----------------
   const filteredReturns = useMemo(() => {
-    return rawReturns.filter((item) => {
+    return enrichedReturns.filter((item) => {
       if (debouncedSearch.trim()) {
         const q = debouncedSearch.toLowerCase().trim();
         const ordNo = String(item.orderNo || "").toLowerCase();
@@ -627,7 +688,7 @@ const Purchases: React.FC = () => {
       return true;
     });
   }, [
-    rawReturns,
+    enrichedReturns,
     debouncedSearch,
     supplierFilter,
     paymentMethodFilter,
@@ -845,7 +906,7 @@ const Purchases: React.FC = () => {
           }`}
         >
           <FaUndoAlt size={11} />
-          <span>Purchase Returns List ({rawReturns.length})</span>
+          <span>Purchase Returns List ({enrichedReturns.length})</span>
         </button>
       </div>
 
