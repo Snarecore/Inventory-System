@@ -2,6 +2,7 @@ import type { PurchaseItem, PurchaseReturnItem, CategoryItem, ProductCategoryIte
 import { isCategoryAdmin, normalizeCategoryType } from "@/services/category-service";
 import { buildDynamicExcelPayload, type ExportColumnDef } from "@/utils/report-export-columns";
 import { getCleanOrderNo } from "@/pages/admin/trade/sales/hooks/useSalesQueries";
+import { importWithRetry } from "@/utils/lazyWithRetry";
 
 export interface GenericExcelExportOptions {
   fileName?: string;
@@ -212,7 +213,7 @@ export async function buildAndDownloadExcel<T extends Record<string, any>>(
   }
 
   // Lazy-load ExcelJS on-demand with resilient ESM/UMD resolution
-  const ExcelJSModule: any = await import("exceljs");
+  const ExcelJSModule: any = await importWithRetry(() => import("exceljs"));
   const WorkbookClass =
     ExcelJSModule?.Workbook ||
     ExcelJSModule?.default?.Workbook ||

@@ -5,6 +5,7 @@ import {
   resolveThemeArgb,
   argbToRgbTuple,
 } from "@/utils/excel-export";
+import { importWithRetry } from "@/utils/lazyWithRetry";
 import {
   buildDynamicExcelPayload,
   buildDynamicPdfPayload,
@@ -2207,7 +2208,7 @@ export async function exportCustomerWiseDetailedExcel(
     return await exportCustomerStatementExcel(single, stmt.entries, meta);
   }
 
-  const ExcelJSModule: any = await import("exceljs");
+  const ExcelJSModule: any = await importWithRetry(() => import("exceljs"));
   const WorkbookClass =
     ExcelJSModule?.Workbook ||
     ExcelJSModule?.default?.Workbook ||
