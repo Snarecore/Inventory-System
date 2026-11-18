@@ -87,6 +87,9 @@ export interface CustomerProductReturnItem {
   totalAmount: number;
   reasons: string[];
   returnCount: number;
+  sampleOrderNo?: string;
+  sampleInvoiceNo?: string;
+  records?: NormalizedSalesReturnRecord[];
 }
 
 export interface CustomerReturnSummary {
@@ -395,12 +398,22 @@ export function extractNormalizedSalesReturns(
       rec.order_no,
     ].forEach((ref) => {
       const cleanRef = String(ref ?? "").trim().toLowerCase();
-      if (cleanRef) {
+      if (cleanRef && cleanRef !== "-" && cleanRef !== "0") {
         if (recOrderNo && !saleOrderByRef.has(cleanRef)) {
           saleOrderByRef.set(cleanRef, recOrderNo);
         }
         if (!salesByRef.has(cleanRef)) {
           salesByRef.set(cleanRef, rec);
+        }
+        // Also index normalized variants without "order #", "#", hyphens
+        const stripped = cleanRef.replace(/^order\s*#?/i, "").replace(/^#/, "").trim();
+        if (stripped && stripped !== cleanRef) {
+          if (recOrderNo && !saleOrderByRef.has(stripped)) {
+            saleOrderByRef.set(stripped, recOrderNo);
+          }
+          if (!salesByRef.has(stripped)) {
+            salesByRef.set(stripped, rec);
+          }
         }
       }
     });
@@ -637,18 +650,11 @@ export function extractNormalizedSalesReturns(
     );
 
     if (details.length === 0 && refundAmount > 0) {
-      const orderLabel =
-        orderNo && orderNo !== "-"
-          ? `Order #${orderNo}`
-          : returnNo && returnNo !== "-"
-          ? `Return Voucher #${returnNo}`
-          : "Sales Return";
-
       details.push({
         productId: String(item.id || returnNo || `ret-${idx}`),
-        productCode: returnNo || "-",
-        productName: `${orderLabel} (Return Refund)`,
-        unit: "vchr",
+        productCode: "-",
+        productName: "Returned Product",
+        unit: "PCS",
         quantity: 1,
         unitPrice: refundAmount,
         total: refundAmount,
@@ -888,25 +894,47 @@ export function aggregateCustomerReturnedProducts(
 
   records.forEach((r) => {
     (r.details || []).forEach((line) => {
+      let pName = String(line.productName || "Returned Product").trim();
+      if (
+        /^order\s*#?/i.test(pName) ||
+        /return\s*refund/i.test(pName) ||
+        pName.toLowerCase() === "invoice" ||
+        pName.toLowerCase() === "null"
+      ) {
+        pName = "Returned Product";
+      }
+
+      let pCode = String(line.productCode || "-").trim();
+      if (
+        pCode.toLowerCase().startsWith("order") ||
+        pCode.toLowerCase() === "invoice" ||
+        pCode.toLowerCase() === "null"
+      ) {
+        pCode = "-";
+      }
+
       const key =
-        line.productId && line.productId !== "0"
+        line.productId && line.productId !== "0" && !line.productId.startsWith("ret-")
           ? `id_${line.productId}`
-          : line.productCode && line.productCode !== "-"
-          ? `code_${line.productCode}`
-          : `name_${line.productName.toLowerCase().trim()}`;
+          : pCode && pCode !== "-"
+          ? `code_${pCode}`
+          : `name_${pName.toLowerCase().trim()}`;
 
       if (!map[key]) {
         map[key] = {
           productKey: key,
           productId: line.productId || "",
-          productCode: line.productCode || "-",
-          productName: line.productName,
-          unit: line.unit || "PCS",
+          productCode: pCode,
+          productName: pName,
+          unit: line.unit && line.unit !== "vchr" ? line.unit : "PCS",
           totalQuantity: 0,
           unitPrice: line.unitPrice || 0,
           totalAmount: 0,
           reasons: [],
           returnCount: 0,
+          sampleOrderNo: r.orderNo && r.orderNo !== "-" ? r.orderNo : r.salesInvoiceNo,
+          sampleInvoiceNo: r.salesInvoiceNo && r.salesInvoiceNo !== "-" ? r.salesInvoiceNo : r.orderNo,
+          records: [],
         };
       }
 
@@ -920,6 +948,12 @@ export function aggregateCustomerReturnedProducts(
       const rsn = line.reason || r.reasonSummary;
       if (rsn && rsn !== "N/A" && !map[key].reasons.includes(rsn)) {
         map[key].reasons.push(rsn);
+      }
+      if (!map[key].records) {
+        map[key].records = [];
+      }
+      if (!map[key].records!.some((rec) => rec.returnNo === r.returnNo)) {
+        map[key].records!.push(r);
       }
     });
   });

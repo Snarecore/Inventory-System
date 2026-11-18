@@ -802,14 +802,17 @@ export const fetchSalesAndReturnList = async (): Promise<UnifiedTradeRecord[]> =
       let custName = "Customer";
 
       if (tx.notes) {
-        const ordMatch = tx.notes.match(/(?:order|order\s*#|ord\s*#?)\s*[:#]?\s*([A-Za-z0-9_-]+)/i);
-        if (ordMatch && ordMatch[1]) {
+        const ordMatch = tx.notes.match(/(?:order|ord)\s*(?:no|number)?\s*[:#]?\s*([A-Za-z0-9_-]+)/i);
+        if (ordMatch && ordMatch[1] && ordMatch[1].toLowerCase() !== "null" && ordMatch[1].toLowerCase() !== "invoice") {
           ordNo = ordMatch[1].trim();
         }
-        const invMatch = tx.notes.match(/(?:invoice|inv|from|customer)\s*[:#]?\s*([A-Za-z0-9_-]+)/i);
-        if (invMatch && invMatch[1]) {
+
+        const invMatch =
+          tx.notes.match(/(?:return\s+from\s+(?:invoice\s+)?|invoice\s*(?:no|number)?\s*[:#]?\s*|inv\s*[:#]?\s*)([A-Za-z0-9_-]+)/i);
+        if (invMatch && invMatch[1] && invMatch[1].toLowerCase() !== "invoice" && invMatch[1].toLowerCase() !== "null") {
           invNo = invMatch[1].trim();
         }
+
         const custMatch = tx.notes.match(/\(([^)]+)\)/);
         if (custMatch && custMatch[1]) {
           custName = custMatch[1].trim();
