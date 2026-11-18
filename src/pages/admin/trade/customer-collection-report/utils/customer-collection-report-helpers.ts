@@ -1672,11 +1672,11 @@ export async function downloadCustomerStatementPdf(
   ]);
 
   await generateAndDownloadCorporatePdf({
-    fileName: `Customer_Statement_${customer.customerName.replace(
+    fileName: `Customer_Ledger_${customer.customerName.replace(
       /\s+/g,
       "_"
     )}_${moment().format("YYYY-MM-DD")}.pdf`,
-    reportTitle: `Customer Statement - ${customer.customerName}`,
+    reportTitle: `Customer Ledger & Statement - ${customer.customerName}`,
     metaRightLabel: `Phone: ${customer.customerPhone} | Due: BDT ${formatMoney(customer.currentDue)}`,
     headers,
     bodyRows,

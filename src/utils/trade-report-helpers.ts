@@ -12,7 +12,8 @@ import { useBusinessProfileQuery } from "@/hooks/useBusinessProfile";
 import { getFileViewUrl } from "@/services/file-upload-service";
 import { getUserInfo } from "@/utils/auth-storage";
 import { getPurchaseDateString } from "@/pages/admin/trade/purchases/hooks/usePurchaseTableFilter";
-import type { RowInput, Styles } from "jspdf-autotable";
+import { jsPDF } from "jspdf";
+import autoTable, { type RowInput, type Styles } from "jspdf-autotable";
 import {
   buildDynamicExcelPayload,
   buildDynamicPdfPayload,
@@ -801,11 +802,6 @@ export async function generateAndDownloadCorporatePdf(
   config: CorporatePdfConfig
 ): Promise<void> {
   await ensureBengaliFontLoaded();
-  const [{ jsPDF }, autoTableMod] = await Promise.all([
-    import("jspdf"),
-    import("jspdf-autotable"),
-  ]);
-  const autoTable = autoTableMod.default || autoTableMod.autoTable;
 
   const orientation =
     config.orientation ||

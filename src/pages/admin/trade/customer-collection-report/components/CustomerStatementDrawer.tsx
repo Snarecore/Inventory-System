@@ -130,7 +130,7 @@ export const CustomerStatementDrawer: React.FC<CustomerStatementDrawerProps> = (
     <DrawerModal
       isOpen={isOpen}
       onClose={onClose}
-      title="Customer Statement & History"
+      title="Customer Ledger & Statement / গ্রাহক খতিয়ান"
       icon={<FaStore className="text-[var(--primary-color)]" />}
       maxWidth="max-w-4xl sm:max-w-5xl"
     >

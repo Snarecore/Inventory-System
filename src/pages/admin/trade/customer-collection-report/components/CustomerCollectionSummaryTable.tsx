@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import {
   FiChevronDown,
   FiChevronRight,
@@ -49,6 +49,7 @@ import {
 } from "../utils/customer-collection-report-helpers";
 import CustomerStatementTable from "./CustomerStatementTable";
 import CustomerStatementDrawer from "./CustomerStatementDrawer";
+import { showSuccessToast, showErrorToast } from "@/utils/toast-utils";
 
 interface CustomerCollectionSummaryTableProps extends ReportDateFilterProps {
   collections: NormalizedCollectionRecord[];
@@ -71,7 +72,7 @@ const AVAILABLE_COLUMNS: ColumnItem[] = [
   { key: "totalCollected", label: "Total Collected (৳)" },
   { key: "currentDue", label: "Remaining Due (৳)" },
   { key: "lastCollectionDate", label: "Last Collection" },
-  { key: "actions", label: "History" },
+  { key: "actions", label: "Ledger & PDF" },
 ];
 
 export const CustomerCollectionSummaryTable: React.FC<
@@ -179,6 +180,66 @@ export const CustomerCollectionSummaryTable: React.FC<
     dateFilterProps.endDate,
   ]);
 
+  const [downloadingCustomerKey, setDownloadingCustomerKey] = useState<string | null>(null);
+
+  const handleDownloadSingleCustomerPdf = async (targetCustomer: CustomerCollectionSummary) => {
+    if (downloadingCustomerKey) return;
+    setDownloadingCustomerKey(targetCustomer.customerKey);
+    try {
+      const stmt = buildCustomerStatementEntries(
+        targetCustomer,
+        collections,
+        salesList,
+        rawPartyData,
+        {
+          startDate: dateFilterProps.startDate,
+          endDate: dateFilterProps.endDate,
+        }
+      );
+      await downloadCustomerStatementPdf(
+        targetCustomer,
+        stmt.entries,
+        companyMeta
+      );
+      showSuccessToast(`Customer ledger PDF downloaded for ${targetCustomer.customerName}!`);
+    } catch (err: any) {
+      showErrorToast(err?.message || "Failed to download customer ledger PDF");
+    } finally {
+      setDownloadingCustomerKey(null);
+    }
+  };
+
+  const handleExportSingleCustomerExcel = async (targetCustomer: CustomerCollectionSummary) => {
+    try {
+      const stmt = buildCustomerStatementEntries(
+        targetCustomer,
+        collections,
+        salesList,
+        rawPartyData,
+        {
+          startDate: dateFilterProps.startDate,
+          endDate: dateFilterProps.endDate,
+        }
+      );
+      const count = await exportCustomerStatementExcel(
+        targetCustomer,
+        stmt.entries,
+        companyMeta
+      );
+      showSuccessToast(`Exported ${count} ledger entries for ${targetCustomer.customerName} to Excel!`);
+    } catch (err: any) {
+      showErrorToast(err?.message || "Failed to export customer ledger Excel");
+    }
+  };
+
+  // Auto-expand row when search matches a single customer
+  useEffect(() => {
+    const q = debouncedSearch.trim();
+    if (q.length >= 2 && filtered.length === 1) {
+      setExpandedCustomerKey(filtered[0].customerKey);
+    }
+  }, [debouncedSearch, filtered]);
+
   return (
     <TableContainer>
       <TableToolbar>
@@ -245,10 +306,12 @@ export const CustomerCollectionSummaryTable: React.FC<
 
           <ReportExportButtons
             onExportExcel={async () => {
+              const q = debouncedSearch.trim().toLowerCase();
               const targetCustomer =
                 (expandedCustomerKey
                   ? filtered.find((c) => c.customerKey === expandedCustomerKey)
                   : null) ||
+                (q && filtered.length > 0 ? filtered[0] : null) ||
                 (filtered.length === 1 ? filtered[0] : null);
 
               if (targetCustomer) {
@@ -284,10 +347,12 @@ export const CustomerCollectionSummaryTable: React.FC<
               return `Exported ${count} customer transactions and summary to Excel!`;
             }}
             onDownloadPdf={async () => {
+              const q = debouncedSearch.trim().toLowerCase();
               const targetCustomer =
                 (expandedCustomerKey
                   ? filtered.find((c) => c.customerKey === expandedCustomerKey)
                   : null) ||
+                (q && filtered.length > 0 ? filtered[0] : null) ||
                 (filtered.length === 1 ? filtered[0] : null);
 
               if (targetCustomer) {
@@ -306,7 +371,7 @@ export const CustomerCollectionSummaryTable: React.FC<
                   stmt.entries,
                   companyMeta
                 );
-                return `Customer statement PDF downloaded for ${targetCustomer.customerName}!`;
+                return `Customer ledger PDF downloaded for ${targetCustomer.customerName}!`;
               }
 
               await downloadCustomerWiseDetailedPdf(
@@ -497,19 +562,54 @@ export const CustomerCollectionSummaryTable: React.FC<
                       )}
                       {isColVisible("actions") && (
                         <td className="py-2.5 px-3 text-center whitespace-nowrap">
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setSelectedCustomerForDrawer(c);
-                              setIsDrawerOpen(true);
-                            }}
-                            className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold text-[var(--primary-color)] bg-[var(--primary-color-light)] hover:bg-[var(--primary-color-muted)]/30 rounded-lg transition-colors cursor-pointer"
-                            title="View Detailed Statement"
-                          >
-                            <FiFileText size={12} />
-                            <span>Statement</span>
-                          </button>
+                          <div className="inline-flex items-center gap-1.5 justify-center">
+                            {/* Toggle / View Inline Statement Ledger */}
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setExpandedCustomerKey(isExpanded ? null : c.customerKey);
+                              }}
+                              className={`inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-lg border transition-colors cursor-pointer ${
+                                isExpanded
+                                  ? "bg-[var(--primary-color)] text-white border-[var(--primary-color)] shadow-xs"
+                                  : "bg-[var(--primary-color-light)] text-[var(--primary-color)] border-[var(--primary-color-muted)] hover:bg-[var(--primary-color-muted)]"
+                              }`}
+                              title={isExpanded ? "Hide Ledger" : "View Customer Ledger / খতিয়ান"}
+                            >
+                              <FiFileText size={12} />
+                              <span>{isExpanded ? "Close" : "Ledger"}</span>
+                            </button>
+
+                            {/* Direct Download Customer Ledger PDF */}
+                            <button
+                              type="button"
+                              disabled={downloadingCustomerKey === c.customerKey}
+                              onClick={async (e) => {
+                                e.stopPropagation();
+                                await handleDownloadSingleCustomerPdf(c);
+                              }}
+                              className="inline-flex items-center gap-1 px-2 py-1 text-xs font-semibold rounded-lg border border-rose-200 bg-rose-50 hover:bg-rose-100 text-rose-600 transition-colors cursor-pointer disabled:opacity-50"
+                              title="Download Customer Ledger PDF"
+                            >
+                              <FaFilePdf size={11} />
+                              <span>{downloadingCustomerKey === c.customerKey ? "..." : "PDF"}</span>
+                            </button>
+
+                            {/* Full View Drawer */}
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedCustomerForDrawer(c);
+                                setIsDrawerOpen(true);
+                              }}
+                              className="p-1.5 rounded-lg text-[var(--ui-text-muted)] hover:text-[var(--primary-color)] hover:bg-[var(--primary-color-light)] border border-transparent hover:border-[var(--ui-border)] transition-colors cursor-pointer"
+                              title="Open Full Ledger Drawer / সম্পূর্ণ খতিয়ান"
+                            >
+                              <FiMaximize2 size={13} />
+                            </button>
+                          </div>
                         </td>
                       )}
                     </tr>
@@ -534,7 +634,7 @@ export const CustomerCollectionSummaryTable: React.FC<
                                       {c.customerName}
                                     </span>
                                     <span className="text-[11px] text-[var(--ui-text-muted)]">
-                                      (Statement History)
+                                      (Customer Ledger / খতিয়ান)
                                     </span>
                                   </div>
                                   <div className="text-[11px] text-[var(--ui-text-muted)] flex items-center gap-2 mt-0.5 flex-wrap">
@@ -577,15 +677,9 @@ export const CustomerCollectionSummaryTable: React.FC<
                               <div className="flex items-center gap-1.5">
                                 <button
                                   type="button"
-                                  onClick={async () => {
-                                    await exportCustomerStatementExcel(
-                                      c,
-                                      expandedStatementData.entries,
-                                      companyMeta
-                                    );
-                                  }}
+                                  onClick={() => handleExportSingleCustomerExcel(c)}
                                   className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-lg border border-[var(--ui-border)] bg-[var(--ui-surface)] hover:bg-emerald-50 dark:hover:bg-emerald-950/30 text-emerald-600 transition-colors cursor-pointer"
-                                  title="Export This Customer Statement to Excel"
+                                  title="Export This Customer Ledger to Excel"
                                 >
                                   <FaFileExcel size={12} />
                                   <span>Excel</span>
@@ -593,18 +687,13 @@ export const CustomerCollectionSummaryTable: React.FC<
 
                                 <button
                                   type="button"
-                                  onClick={async () => {
-                                    await downloadCustomerStatementPdf(
-                                      c,
-                                      expandedStatementData.entries,
-                                      companyMeta
-                                    );
-                                  }}
-                                  className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-lg border border-[var(--ui-border)] bg-[var(--ui-surface)] hover:bg-rose-50 dark:hover:bg-rose-950/30 text-rose-600 transition-colors cursor-pointer"
-                                  title="Download This Customer Statement PDF"
+                                  disabled={downloadingCustomerKey === c.customerKey}
+                                  onClick={() => handleDownloadSingleCustomerPdf(c)}
+                                  className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-lg border border-[var(--ui-border)] bg-[var(--ui-surface)] hover:bg-rose-50 dark:hover:bg-rose-950/30 text-rose-600 transition-colors cursor-pointer disabled:opacity-50"
+                                  title="Download This Customer Ledger PDF"
                                 >
                                   <FaFilePdf size={12} />
-                                  <span>PDF</span>
+                                  <span>{downloadingCustomerKey === c.customerKey ? "Downloading..." : "PDF"}</span>
                                 </button>
 
                                 <button
@@ -614,10 +703,10 @@ export const CustomerCollectionSummaryTable: React.FC<
                                     setIsDrawerOpen(true);
                                   }}
                                   className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-lg border border-[var(--ui-border)] bg-[var(--ui-surface)] hover:bg-[var(--primary-color-light)] text-[var(--primary-color)] transition-colors cursor-pointer"
-                                  title="Open Full Statement Drawer"
+                                  title="Open Full Ledger Drawer / সম্পূর্ণ খতিয়ান"
                                 >
                                   <FiMaximize2 size={12} />
-                                  <span>Full View</span>
+                                  <span>Full Ledger</span>
                                 </button>
                               </div>
                             </div>
