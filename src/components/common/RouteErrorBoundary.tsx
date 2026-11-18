@@ -2,11 +2,14 @@ import React, { useEffect, useState } from 'react';
 import { useRouteError, isRouteErrorResponse, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/common/Button';
 import { HiOutlineRefresh, HiOutlineHome, HiOutlineExclamationCircle } from 'react-icons/hi';
+import { NotFound } from '@/pages/frontend/NotFound';
 
 export const RouteErrorBoundary: React.FC = () => {
   const error: any = useRouteError();
   const navigate = useNavigate();
   const [isReloading, setIsReloading] = useState(false);
+
+  const is404 = isRouteErrorResponse(error) && error.status === 404;
 
   const errorMessage =
     isRouteErrorResponse(error)
@@ -14,10 +17,11 @@ export const RouteErrorBoundary: React.FC = () => {
       : error?.message || 'Unexpected application error';
 
   const isDynamicImportError =
-    errorMessage.includes('Failed to fetch dynamically imported module') ||
-    errorMessage.includes('Importing a module script failed') ||
-    errorMessage.includes('error loading dynamically imported module') ||
-    error?.name === 'ChunkLoadError';
+    !is404 &&
+    (errorMessage.includes('Failed to fetch dynamically imported module') ||
+      errorMessage.includes('Importing a module script failed') ||
+      errorMessage.includes('error loading dynamically imported module') ||
+      error?.name === 'ChunkLoadError');
 
   useEffect(() => {
     // If it's a dynamic module import error and we haven't tried auto-reload yet
@@ -48,6 +52,10 @@ export const RouteErrorBoundary: React.FC = () => {
     }
     window.location.reload();
   };
+
+  if (is404) {
+    return <NotFound returnTo="/admin" returnLabel="ড্যাশবোর্ডে ফিরে যান" />;
+  }
 
   return (
     <div className="flex flex-col items-center justify-center min-h-[60vh] text-center px-4 space-y-6">

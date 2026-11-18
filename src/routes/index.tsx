@@ -1018,7 +1018,7 @@ export const router = createBrowserRouter([
       },
       {
         path: '404',
-        element: <NotFound returnTo="/admin" returnLabel="Back to Dashboard" />,
+        element: <NotFound returnTo="/admin" returnLabel="ড্যাশবোর্ডে ফিরে যান" />,
       },
       {
         path: 'not-found',
