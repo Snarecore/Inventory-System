@@ -621,70 +621,51 @@ export const CustomerReturnReportTable: React.FC<
                       )}
                     </tr>
 
-                    {/* Inline Expandable Full Customer Details (Image 2 content embedded directly!) */}
+                    {/* Inline Expandable Full Customer Details */}
                     {isExpanded && (
-                      <tr className="bg-slate-50/90 dark:bg-slate-900/50 border-b border-[var(--ui-border)]">
-                        <td colSpan={11} className="p-3 sm:p-4">
-                          <div className="flex flex-col gap-3.5 bg-[var(--ui-surface)] p-3.5 sm:p-4 rounded-xl border border-[var(--ui-border)] shadow-xs">
-                            {/* Unified Single-Line Customer Return Toolbar */}
-                            <div className="flex flex-wrap items-center justify-between gap-2.5 p-2.5 bg-slate-50 dark:bg-slate-900/40 rounded-xl border border-[var(--ui-border)] shadow-xs">
-                              {/* 1. Customer Identity */}
-                              <div className="flex items-center gap-2 shrink-0">
-                                <div className="p-1.5 rounded-lg bg-[var(--primary-color-light)] text-[var(--primary-color)]">
-                                  <FiUser size={14} />
-                                </div>
-                                <div className="flex items-center gap-1.5">
-                                  <span className="text-xs font-bold text-[var(--ui-text)]">
-                                    {c.customerName}
+                      <tr className="bg-slate-50/60 dark:bg-slate-900/40 border-b border-[var(--ui-border)]">
+                        <td colSpan={11} className="p-0 sm:px-1 py-1.5">
+                          <div className="w-full flex flex-col gap-2.5 bg-[var(--ui-surface)] p-2 sm:p-2.5 rounded-lg border border-[var(--ui-border)] shadow-xs">
+                            {/* Sub-Tabs & Action Buttons in a sleek single row */}
+                            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--ui-border)] pb-1.5">
+                              {/* Sub-Tabs: Returned Products vs Return Vouchers */}
+                              <div className="flex items-center gap-1.5">
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    setExpandedTab(c.customerKey, "products")
+                                  }
+                                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer ${
+                                    activeTabForCustomer === "products"
+                                      ? "bg-[#009fe3] text-white shadow-xs"
+                                      : "text-[var(--ui-text-muted)] hover:bg-[var(--ui-border)]/40 hover:text-[var(--ui-text)]"
+                                  }`}
+                                >
+                                  <FiPackage size={13} />
+                                  <span>
+                                    Returned Products ({customerProducts.length})
                                   </span>
-                                  <span className="text-[11px] font-medium text-[var(--ui-text-muted)] bg-[var(--ui-border)]/50 px-1.5 py-0.5 rounded-full font-mono">
-                                    {c.customerPhone}
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    setExpandedTab(c.customerKey, "vouchers")
+                                  }
+                                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer ${
+                                    activeTabForCustomer === "vouchers"
+                                      ? "bg-[#009fe3] text-white shadow-xs"
+                                      : "text-[var(--ui-text-muted)] hover:bg-[var(--ui-border)]/40 hover:text-[var(--ui-text)]"
+                                  }`}
+                                >
+                                  <FiFileText size={13} />
+                                  <span>
+                                    Return Vouchers ({c.returnCount})
                                   </span>
-                                  {c.customerAddress && (
-                                    <span className="text-[11px] text-[var(--ui-text-subtle)] truncate max-w-[120px] hidden md:inline">
-                                      ({c.customerAddress})
-                                    </span>
-                                  )}
-                                </div>
+                                </button>
                               </div>
 
-                              {/* 2. Inline Metrics Badges (All 5 KPIs in one compact row) */}
-                              <div className="flex items-center flex-wrap gap-1.5 text-xs">
-                                <div className="inline-flex items-center gap-1 px-2 py-0.5 bg-[var(--ui-surface)] border border-[var(--ui-border)] rounded-md shadow-2xs">
-                                  <span className="text-[10px] text-[var(--ui-text-muted)] font-medium">Returns:</span>
-                                  <span className="font-bold text-[var(--ui-text)] tabular-nums">{c.returnCount}</span>
-                                </div>
-
-                                <div className="inline-flex items-center gap-1 px-2 py-0.5 bg-[var(--ui-surface)] border border-[var(--ui-border)] rounded-md shadow-2xs">
-                                  <span className="text-[10px] text-[var(--ui-text-muted)] font-medium">Items:</span>
-                                  <span className="font-bold text-[var(--ui-text)] tabular-nums">{c.itemsCount}</span>
-                                </div>
-
-                                <div className="inline-flex items-center gap-1 px-2 py-0.5 bg-[var(--ui-surface)] border border-[var(--ui-border)] rounded-md shadow-2xs">
-                                  <span className="text-[10px] text-[var(--ui-text-muted)] font-medium">Cash:</span>
-                                  <span className="font-bold text-emerald-600 dark:text-emerald-400 tabular-nums">
-                                    ৳ {formatMoney(c.cashRefund)}
-                                  </span>
-                                </div>
-
-                                <div className="inline-flex items-center gap-1 px-2 py-0.5 bg-[var(--ui-surface)] border border-[var(--ui-border)] rounded-md shadow-2xs">
-                                  <span className="text-[10px] text-[var(--ui-text-muted)] font-medium">Due Adj:</span>
-                                  <span className="font-bold text-amber-600 dark:text-amber-400 tabular-nums">
-                                    {c.creditAdjust > 0 ? `৳ ${formatMoney(c.creditAdjust)}` : "0"}
-                                  </span>
-                                </div>
-
-                                <div className="inline-flex items-center gap-1 px-2 py-0.5 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900 rounded-md shadow-2xs">
-                                  <span className="text-[10px] text-rose-700 dark:text-rose-300 font-bold">Total:</span>
-                                  <span className="font-bold text-rose-600 dark:text-rose-400 tabular-nums">
-                                    ৳ {formatMoney(c.totalRefund)}
-                                  </span>
-                                </div>
-                              </div>
-
-                              {/* 3. Action Buttons */}
+                              {/* Customer Action Buttons */}
                               <div className="flex items-center gap-1.5 shrink-0">
-                                {/* Create Return Button for this customer */}
                                 <button
                                   type="button"
                                   onClick={() =>
@@ -697,7 +678,6 @@ export const CustomerReturnReportTable: React.FC<
                                   <span>+ নতুন রিটার্ন</span>
                                 </button>
 
-                                {/* Customer PDF */}
                                 <button
                                   type="button"
                                   onClick={() =>
@@ -717,7 +697,6 @@ export const CustomerReturnReportTable: React.FC<
                                   <span>Customer PDF</span>
                                 </button>
 
-                                {/* Customer Excel */}
                                 <button
                                   type="button"
                                   onClick={() =>
@@ -737,42 +716,6 @@ export const CustomerReturnReportTable: React.FC<
                                   <span>Customer Excel</span>
                                 </button>
                               </div>
-                            </div>
-
-                            {/* Sub-Tabs: Returned Products vs Return Vouchers */}
-                            <div className="flex items-center gap-2 border-b border-[var(--ui-border)] pb-1">
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  setExpandedTab(c.customerKey, "products")
-                                }
-                                className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer ${
-                                  activeTabForCustomer === "products"
-                                    ? "bg-[var(--primary-color)] text-white shadow-xs"
-                                    : "text-[var(--ui-text-muted)] hover:bg-[var(--ui-border)]/40 hover:text-[var(--ui-text)]"
-                                }`}
-                              >
-                                <FiPackage size={13} />
-                                <span>
-                                  Returned Products ({customerProducts.length})
-                                </span>
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  setExpandedTab(c.customerKey, "vouchers")
-                                }
-                                className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer ${
-                                  activeTabForCustomer === "vouchers"
-                                    ? "bg-[var(--primary-color)] text-white shadow-xs"
-                                    : "text-[var(--ui-text-muted)] hover:bg-[var(--ui-border)]/40 hover:text-[var(--ui-text)]"
-                                }`}
-                              >
-                                <FiFileText size={13} />
-                                <span>
-                                  Return Vouchers ({c.returnCount})
-                                </span>
-                              </button>
                             </div>
 
                             {/* TAB 1: Returned Products Table (Row by Row) */}
