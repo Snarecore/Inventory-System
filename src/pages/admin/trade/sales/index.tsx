@@ -564,25 +564,48 @@ const Sales: React.FC = () => {
         }
       }
 
-      if (dateFilter !== "all") {
-        const saleDateStr = sale.salesDate;
-        if (!saleDateStr) return true;
-        const saleDate = moment(saleDateStr);
+      if (dateFilter && dateFilter !== "all") {
+        const saleDate = sale.salesDate;
+        if (!saleDate) return false;
+        const m = moment(saleDate);
+        if (!m.isValid()) return false;
+        const saleDateStr = m.format("YYYY-MM-DD");
+
+        if (customStartDate || customEndDate) {
+          if (customStartDate && saleDateStr < customStartDate) return false;
+          if (customEndDate && saleDateStr > customEndDate) return false;
+          return true;
+        }
+
+        const todayStr = moment().format("YYYY-MM-DD");
+        const tomorrowStr = moment().add(1, "day").format("YYYY-MM-DD");
+        const yesterdayStr = moment().subtract(1, "day").format("YYYY-MM-DD");
 
         if (dateFilter === "today") {
-          if (!saleDate.isSame(moment(), "day")) return false;
+          if (saleDateStr !== todayStr) return false;
+        } else if (dateFilter === "tomorrow") {
+          if (saleDateStr !== tomorrowStr) return false;
         } else if (dateFilter === "yesterday") {
-          if (!saleDate.isSame(moment().subtract(1, "day"), "day")) return false;
-        } else if (dateFilter === "last7days") {
-          if (!saleDate.isAfter(moment().subtract(7, "days"))) return false;
-        } else if (dateFilter === "thisMonth") {
-          if (!saleDate.isSame(moment(), "month")) return false;
-        } else if (dateFilter === "lastMonth") {
-          if (!saleDate.isSame(moment().subtract(1, "month"), "month")) return false;
-        } else if (dateFilter === "custom" && customStartDate && customEndDate) {
-          if (saleDate.isBefore(moment(customStartDate)) || saleDate.isAfter(moment(customEndDate).endOf("day"))) {
-            return false;
-          }
+          if (saleDateStr !== yesterdayStr) return false;
+        } else if (dateFilter === "this_week" || dateFilter === "thisWeek" || dateFilter === "last7days") {
+          const startOfWeek = moment().startOf("week").format("YYYY-MM-DD");
+          const endOfWeek = moment().endOf("week").format("YYYY-MM-DD");
+          if (saleDateStr < startOfWeek || saleDateStr > endOfWeek) return false;
+        } else if (dateFilter === "this_month" || dateFilter === "thisMonth") {
+          const startOfMonth = moment().startOf("month").format("YYYY-MM-DD");
+          const endOfMonth = moment().endOf("month").format("YYYY-MM-DD");
+          if (saleDateStr < startOfMonth || saleDateStr > endOfMonth) return false;
+        } else if (dateFilter === "last_month" || dateFilter === "lastMonth") {
+          const startOfLastMonth = moment().subtract(1, "month").startOf("month").format("YYYY-MM-DD");
+          const endOfLastMonth = moment().subtract(1, "month").endOf("month").format("YYYY-MM-DD");
+          if (saleDateStr < startOfLastMonth || saleDateStr > endOfLastMonth) return false;
+        } else if (dateFilter === "30_days" || dateFilter === "last_30_days" || dateFilter === "last30days") {
+          const startOf30Days = moment().subtract(30, "days").format("YYYY-MM-DD");
+          if (saleDateStr < startOf30Days || saleDateStr > todayStr) return false;
+        } else if (dateFilter === "this_year" || dateFilter === "thisYear") {
+          const startOfYear = moment().startOf("year").format("YYYY-MM-DD");
+          const endOfYear = moment().endOf("year").format("YYYY-MM-DD");
+          if (saleDateStr < startOfYear || saleDateStr > endOfYear) return false;
         }
       }
 
@@ -600,13 +623,21 @@ const Sales: React.FC = () => {
   ]);
 
   const sortedSales = useMemo(() => {
-    return [...filteredSales].sort((a: any, b: any) => {
+    // Reverse first so that latest entered records take natural priority in indexing
+    const reversed = [...filteredSales].reverse();
+
+    return reversed.sort((a: any, b: any) => {
       const dateA = new Date(a.salesDate || 0).getTime();
       const dateB = new Date(b.salesDate || 0).getTime();
       const amountA = Number(a.grandTotal || 0);
       const amountB = Number(b.grandTotal || 0);
 
-      if (sortBy === "oldest") return dateA - dateB;
+      if (sortBy === "oldest") {
+        if (dateA !== dateB && !isNaN(dateA) && !isNaN(dateB)) return dateA - dateB;
+        const numA = Number(String(a.id || a.orderNo || a.invoiceNo || "").replace(/\D/g, "")) || 0;
+        const numB = Number(String(b.id || b.orderNo || b.invoiceNo || "").replace(/\D/g, "")) || 0;
+        return numA - numB;
+      }
       if (sortBy === "amount_high" || sortBy === "amount_high_to_low") {
         const diff = amountB - amountA;
         return diff !== 0 ? diff : dateB - dateA;
@@ -627,7 +658,28 @@ const Sales: React.FC = () => {
         const cmp = nameB.localeCompare(nameA);
         return cmp !== 0 ? cmp : dateB - dateA;
       }
-      return dateB - dateA; // latest default
+
+      // Default: "latest" -> Recent entry is #1 first, then 2nd last, etc.
+      // 1. If salesDate differs, latest date comes first
+      if (dateB !== dateA && !isNaN(dateA) && !isNaN(dateB) && dateA > 0 && dateB > 0) {
+        return dateB - dateA;
+      }
+
+      // 2. If createdAt timestamp exists and differs, latest created comes first
+      const createdA = new Date(a.createdAt || a.created_at || 0).getTime();
+      const createdB = new Date(b.createdAt || b.created_at || 0).getTime();
+      if (createdA > 0 && createdB > 0 && createdB !== createdA) {
+        return createdB - createdA;
+      }
+
+      // 3. Compare numeric Order No / ID: highest number (most recent entry) comes first (#1)
+      const numA = Number(String(a.id || a.orderNo || a.invoiceNo || "").replace(/\D/g, "")) || 0;
+      const numB = Number(String(b.id || b.orderNo || b.invoiceNo || "").replace(/\D/g, "")) || 0;
+      if (numA !== numB) {
+        return numB - numA;
+      }
+
+      return 0;
     });
   }, [filteredSales, sortBy]);
 
@@ -699,25 +751,48 @@ const Sales: React.FC = () => {
         }
       }
 
-      if (dateFilter !== "all") {
-        const dateStr = item.returnDate || item.createdAt;
-        if (dateStr) {
-          const itemDate = moment(dateStr);
-          if (dateFilter === "today") {
-            if (!itemDate.isSame(moment(), "day")) return false;
-          } else if (dateFilter === "yesterday") {
-            if (!itemDate.isSame(moment().subtract(1, "day"), "day")) return false;
-          } else if (dateFilter === "last7days") {
-            if (!itemDate.isAfter(moment().subtract(7, "days"))) return false;
-          } else if (dateFilter === "thisMonth") {
-            if (!itemDate.isSame(moment(), "month")) return false;
-          } else if (dateFilter === "lastMonth") {
-            if (!itemDate.isSame(moment().subtract(1, "month"), "month")) return false;
-          } else if (dateFilter === "custom" && customStartDate && customEndDate) {
-            if (itemDate.isBefore(moment(customStartDate)) || itemDate.isAfter(moment(customEndDate).endOf("day"))) {
-              return false;
-            }
-          }
+      if (dateFilter && dateFilter !== "all") {
+        const rawDate = item.returnDate || item.date || item.createdAt || item.created_at;
+        if (!rawDate) return false;
+        const m = moment(rawDate);
+        if (!m.isValid()) return false;
+        const returnDateStr = m.format("YYYY-MM-DD");
+
+        if (customStartDate || customEndDate) {
+          if (customStartDate && returnDateStr < customStartDate) return false;
+          if (customEndDate && returnDateStr > customEndDate) return false;
+          return true;
+        }
+
+        const todayStr = moment().format("YYYY-MM-DD");
+        const tomorrowStr = moment().add(1, "day").format("YYYY-MM-DD");
+        const yesterdayStr = moment().subtract(1, "day").format("YYYY-MM-DD");
+
+        if (dateFilter === "today") {
+          if (returnDateStr !== todayStr) return false;
+        } else if (dateFilter === "tomorrow") {
+          if (returnDateStr !== tomorrowStr) return false;
+        } else if (dateFilter === "yesterday") {
+          if (returnDateStr !== yesterdayStr) return false;
+        } else if (dateFilter === "this_week" || dateFilter === "thisWeek" || dateFilter === "last7days") {
+          const startOfWeek = moment().startOf("week").format("YYYY-MM-DD");
+          const endOfWeek = moment().endOf("week").format("YYYY-MM-DD");
+          if (returnDateStr < startOfWeek || returnDateStr > endOfWeek) return false;
+        } else if (dateFilter === "this_month" || dateFilter === "thisMonth") {
+          const startOfMonth = moment().startOf("month").format("YYYY-MM-DD");
+          const endOfMonth = moment().endOf("month").format("YYYY-MM-DD");
+          if (returnDateStr < startOfMonth || returnDateStr > endOfMonth) return false;
+        } else if (dateFilter === "last_month" || dateFilter === "lastMonth") {
+          const startOfLastMonth = moment().subtract(1, "month").startOf("month").format("YYYY-MM-DD");
+          const endOfLastMonth = moment().subtract(1, "month").endOf("month").format("YYYY-MM-DD");
+          if (returnDateStr < startOfLastMonth || returnDateStr > endOfLastMonth) return false;
+        } else if (dateFilter === "30_days" || dateFilter === "last_30_days" || dateFilter === "last30days") {
+          const startOf30Days = moment().subtract(30, "days").format("YYYY-MM-DD");
+          if (returnDateStr < startOf30Days || returnDateStr > todayStr) return false;
+        } else if (dateFilter === "this_year" || dateFilter === "thisYear") {
+          const startOfYear = moment().startOf("year").format("YYYY-MM-DD");
+          const endOfYear = moment().endOf("year").format("YYYY-MM-DD");
+          if (returnDateStr < startOfYear || returnDateStr > endOfYear) return false;
         }
       }
 

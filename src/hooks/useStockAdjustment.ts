@@ -45,7 +45,7 @@ export const useSaveStockAdjustmentMutation = (options?: {
       // Invalidate adjustment report list
       queryClient.invalidateQueries({ queryKey: [stockAdjustmentReportQueryKey] });
       // Invalidate product catalog list since inventory stock quantities changed
-      queryClient.invalidateQueries({ queryKey: [productListQueryKey] });
+      queryClient.invalidateQueries({ queryKey: [productListQueryKey], refetchType: "all" });
       options?.onSuccess?.();
     },
     onError: (err: any) => {

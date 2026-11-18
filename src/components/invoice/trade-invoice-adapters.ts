@@ -194,7 +194,14 @@ export const normalizePurchaseInvoice = (purchase: any): TradeInvoiceData => {
 
 export const normalizeSalesReturnInvoice = (returnData: any): TradeInvoiceData => {
   const r = returnData || {};
-  const details: any[] = Array.isArray(r.returnDetails) ? r.returnDetails : [];
+  const details: any[] =
+    Array.isArray(r.returnDetails) && r.returnDetails.length > 0
+      ? r.returnDetails
+      : Array.isArray(r.salesReturnDetails) && r.salesReturnDetails.length > 0
+      ? r.salesReturnDetails
+      : Array.isArray(r.details) && r.details.length > 0
+      ? r.details
+      : [];
 
   const discount = Number(r.discount ?? 0);
   const vat = Number(r.vat ?? 0);

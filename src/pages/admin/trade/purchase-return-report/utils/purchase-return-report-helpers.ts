@@ -148,7 +148,25 @@ export function extractNormalizedPurchaseReturns(
       item && (Boolean(item.isReturnRecord) || isPurchaseReturnRecord(item))
   );
 
-  // Phase 1: Collect all authentic backend returns by purchase invoice reference
+  // Phase 1: Collect all authentic backend returns and parent purchases
+  const purchasesByRef = new Map<string, any>();
+  records.forEach((rec: any) => {
+    if (!rec || Boolean(rec.isReturnRecord) || isPurchaseReturnRecord(rec)) return;
+    [
+      rec.purchaseInvoiceNo,
+      rec.invoiceNo,
+      rec.id,
+      rec.purchaseId,
+      rec.orderNo,
+      rec.challanNo,
+    ].forEach((ref) => {
+      const cleanRef = String(ref ?? "").trim().toLowerCase();
+      if (cleanRef && !purchasesByRef.has(cleanRef)) {
+        purchasesByRef.set(cleanRef, rec);
+      }
+    });
+  });
+
   const backendReturnsByInvoice = new Map<string, any>();
   rawReturns.forEach((item: any) => {
     const rawRNo = String(
@@ -247,20 +265,38 @@ export function extractNormalizedPurchaseReturns(
       return;
     }
 
-    const rawLines = extractRawReturnLines(item);
-    const details: NormalizedPurchaseReturnLine[] = rawLines.map((line: any, lIdx: number) => {
+    let rawLines = extractRawReturnLines(item);
+    if (rawLines.length === 0) {
+      const parentPur =
+        purchasesByRef.get(invKey) ||
+        purchasesByRef.get(String(item.purchaseId ?? item.purchase_id ?? "").trim().toLowerCase()) ||
+        purchasesByRef.get(String(item.id ?? "").trim().toLowerCase());
+
+      if (parentPur) {
+        rawLines = extractRawReturnLines(parentPur);
+      }
+    }
+
+    const validLines = rawLines.filter(
+      (line) =>
+        Number(line?.returnQuantity ?? line?.return_quantity ?? line?.quantity ?? line?.qty ?? 0) > 0 ||
+        (line && (line.productName || line.productId || line.name || line.productCode))
+    );
+
+    const details: NormalizedPurchaseReturnLine[] = validLines.map((line: any, lIdx: number) => {
       const quantity = Number(
         line.returnQuantity ??
           line.return_quantity ??
           line.quantity ??
           line.qty ??
-          0
+          1
       );
       const unitPrice = Number(
         line.unitPrice ??
           line.unit_price ??
           line.rate ??
           line.price ??
+          line.buyPrice ??
           0
       );
       const lineTotal = Number(
@@ -290,6 +326,36 @@ export function extractNormalizedPurchaseReturns(
       };
     });
 
+    const finalRefund =
+      refundAmount > 0
+        ? refundAmount
+        : Number(
+            item.returnRefundAmount ??
+              item.refundAmount ??
+              item.refund_amount ??
+              0
+          );
+
+    if (details.length === 0 && finalRefund > 0) {
+      const orderLabel =
+        item.orderNo && item.orderNo !== "-"
+          ? `Order #${item.orderNo}`
+          : returnNo && returnNo !== "-"
+          ? `Return Voucher #${returnNo}`
+          : "Purchase Return";
+
+      details.push({
+        productId: String(item.id || returnNo || `ret-${idx}`),
+        productCode: returnNo || "-",
+        productName: `${orderLabel} (Return Refund)`,
+        unit: "vchr",
+        quantity: 1,
+        unitPrice: finalRefund,
+        total: finalRefund,
+        reason: "N/A",
+      });
+    }
+
     const reasonSummary =
       extractPurchaseReturnRemarks(item) ||
       details.map((d) => d.reason).filter((r) => r && r !== "N/A").join(", ") ||
@@ -312,16 +378,6 @@ export function extractNormalizedPurchaseReturns(
         item.return_grand_total ??
         details.reduce((sum, d) => sum + d.total, 0)
     );
-
-    const finalRefund =
-      refundAmount > 0
-        ? refundAmount
-        : Number(
-            item.returnRefundAmount ??
-              item.refundAmount ??
-              item.refund_amount ??
-              grandTotal
-          );
 
     const orderNo = String(
       item.orderNo || item.order_no || item.purchaseOrderNo || item.invoiceNo || "-"
@@ -492,6 +548,13 @@ export function aggregatePurchaseReturnProducts(
           totalAmount: 0,
           reasonCounts: {},
         };
+      } else {
+        if ((map[key].productCode === "-" || !map[key].productCode) && line.productCode && line.productCode !== "-") {
+          map[key].productCode = line.productCode;
+        }
+        if (map[key].unit === "Pcs" && line.unit && line.unit !== "Pcs") {
+          map[key].unit = line.unit;
+        }
       }
 
       if (!seenProductsInVoucher.has(key)) {

@@ -131,6 +131,8 @@ export const normalizeSaleRecord = (item: any): SaleItem => {
 
   return {
     ...item,
+    salesDate: item?.salesDate || item?.saleDate || item?.date || item?.createdAt || "",
+    createdAt: item?.createdAt || item?.created_at || item?.salesDate || "",
     orderNo: cleanOrderNo,
     customerId,
     customerName,
@@ -353,6 +355,18 @@ export const fetchSalesAndReturnList = async (): Promise<UnifiedTradeRecord[]> =
               if ((!u.customerName || u.customerName === "Customer") && item.customerName) {
                 u.customerName = item.customerName;
               }
+              if (!u.returnDetails || u.returnDetails.length === 0) {
+                const saleLines = [
+                  item.returnDetails,
+                  item.salesReturnDetails,
+                  item.salesDetails,
+                  item.details,
+                ].find((lines) => Array.isArray(lines) && lines.length > 0);
+                if (saleLines && saleLines.length > 0) {
+                  u.returnDetails = saleLines;
+                  u.details = saleLines;
+                }
+              }
             }
           }
         });
@@ -443,11 +457,19 @@ export const fetchSalesAndReturnList = async (): Promise<UnifiedTradeRecord[]> =
         }
       }
 
+      let normalized: UnifiedTradeRecord | null = null;
       if (!seenReturnKeys.has(rKey)) {
         seenReturnKeys.add(rKey);
         const explicitReturnDetails = [
           item.returnDetails,
           item.salesReturnDetails,
+          item.return_details,
+          item.sales_return_details,
+          item.returnedItems,
+          item.returned_items,
+          item.details,
+          item.items,
+          item.products,
         ].find((lines) => Array.isArray(lines) && lines.length > 0);
         const hasSeparateSaleLines = [
           item.salesDetails,
@@ -456,7 +478,7 @@ export const fetchSalesAndReturnList = async (): Promise<UnifiedTradeRecord[]> =
         const returnDetails =
           explicitReturnDetails ||
           (!hasSeparateSaleLines ? extractLineItems(item) : []);
-        const normalized = normalizeSaleRecord(item) as UnifiedTradeRecord;
+        normalized = normalizeSaleRecord(item) as UnifiedTradeRecord;
         normalized.isReturnRecord = true;
         normalized.hasReturn = true;
         if (rNo && !normalized.returnNo) {
@@ -485,14 +507,28 @@ export const fetchSalesAndReturnList = async (): Promise<UnifiedTradeRecord[]> =
         unifiedList[existingIdx].hasReturn = true;
         saleAliasesForCheck.forEach((a) => aliasToSaleIdx.set(a, existingIdx));
         const parentSale = unifiedList[existingIdx];
-        if (parentSale.orderNo && (!normalized.orderNo || isBackendGeneratedNo(normalized.orderNo))) {
-          normalized.orderNo = parentSale.orderNo;
-        }
-        if (!normalized.customerPhone && parentSale.customerPhone) {
-          normalized.customerPhone = parentSale.customerPhone;
-        }
-        if ((!normalized.customerName || normalized.customerName === "Customer") && parentSale.customerName) {
-          normalized.customerName = parentSale.customerName;
+        if (normalized) {
+          if (parentSale.orderNo && (!normalized.orderNo || isBackendGeneratedNo(normalized.orderNo))) {
+            normalized.orderNo = parentSale.orderNo;
+          }
+          if (!normalized.customerPhone && parentSale.customerPhone) {
+            normalized.customerPhone = parentSale.customerPhone;
+          }
+          if ((!normalized.customerName || normalized.customerName === "Customer") && parentSale.customerName) {
+            normalized.customerName = parentSale.customerName;
+          }
+          if (!normalized.returnDetails || normalized.returnDetails.length === 0) {
+            const parentLines = [
+              parentSale.returnDetails,
+              parentSale.salesReturnDetails,
+              parentSale.salesDetails,
+              parentSale.details,
+            ].find((lines) => Array.isArray(lines) && lines.length > 0);
+            if (parentLines && parentLines.length > 0) {
+              normalized.returnDetails = parentLines;
+              normalized.details = parentLines;
+            }
+          }
         }
       }
     };
@@ -577,6 +613,30 @@ export const fetchSalesAndReturnList = async (): Promise<UnifiedTradeRecord[]> =
       const retKey = `ret_${String(returnNo).toLowerCase()}`;
       const resolvedOrdNo = matchedSale?.orderNo || cleanOrdNo;
 
+      const saleReturnLines = matchedSale
+        ? [
+            matchedSale.returnDetails,
+            matchedSale.salesReturnDetails,
+            (matchedSale as any).return_details,
+            (matchedSale as any).sales_return_details,
+            (matchedSale as any).returnedItems,
+            (matchedSale as any).returned_items,
+          ].find((lines) => Array.isArray(lines) && lines.length > 0)
+        : null;
+
+      const saleLines = matchedSale
+        ? [
+            matchedSale.salesDetails,
+            matchedSale.saleDetails,
+            matchedSale.details,
+            (matchedSale as any).saleDetailsList,
+            (matchedSale as any).items,
+            (matchedSale as any).products,
+          ].find((lines) => Array.isArray(lines) && lines.length > 0)
+        : null;
+
+      const inheritedLines = saleReturnLines || saleLines || [];
+
       const reconstructedReturn: UnifiedTradeRecord = {
         id: `ret_fin_${tx.id || tx.billRef || idx}`,
         returnNo,
@@ -599,9 +659,9 @@ export const fetchSalesAndReturnList = async (): Promise<UnifiedTradeRecord[]> =
         note: tx.notes || "Sales return refund",
         remarks: tx.notes || "Sales return refund",
         reason: tx.notes || "Sales return refund",
-        returnDetails: [],
+        returnDetails: inheritedLines,
         salesDetails: [],
-        details: [],
+        details: inheritedLines,
         isReturnRecord: true,
         hasReturn: true,
       };
@@ -618,9 +678,14 @@ export const fetchSalesAndReturnList = async (): Promise<UnifiedTradeRecord[]> =
 
       if (existingSyntheticIdx !== -1) {
         const existing = unifiedList[existingSyntheticIdx];
-        if (Array.isArray(existing.returnDetails) && existing.returnDetails.length > 0) {
-          reconstructedReturn.returnDetails = existing.returnDetails;
-          reconstructedReturn.details = existing.returnDetails;
+        const existingLines = Array.isArray(existing.returnDetails) && existing.returnDetails.length > 0
+          ? existing.returnDetails
+          : Array.isArray(existing.details) && existing.details.length > 0
+          ? existing.details
+          : [];
+        if (existingLines.length > 0) {
+          reconstructedReturn.returnDetails = existingLines;
+          reconstructedReturn.details = existingLines;
         }
         unifiedList[existingSyntheticIdx] = reconstructedReturn;
       } else if (!seenReturnKeys.has(retKey)) {
@@ -752,7 +817,7 @@ export const useDeleteSalesOrderMutation = (options?: {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: [salesListQueryKey] });
       queryClient.invalidateQueries({ queryKey: [salesAndReturnQueryKey] });
-      queryClient.invalidateQueries({ queryKey: [productListQueryKey] });
+      queryClient.invalidateQueries({ queryKey: [productListQueryKey], refetchType: "all" });
       queryClient.invalidateQueries({ queryKey: [customersDueQueryKey] });
       queryClient.invalidateQueries({ queryKey: [customerInvoicesDueQueryKey] });
       queryClient.invalidateQueries({ queryKey: [cashBalanceQueryKey] });

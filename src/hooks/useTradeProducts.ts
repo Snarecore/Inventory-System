@@ -26,6 +26,7 @@ export const useTradeProducts = () => {
       }
     },
     staleTime: 0,
+    refetchOnMount: "always",
   });
 
   const allProducts: ProductItem[] = useMemo(() => {

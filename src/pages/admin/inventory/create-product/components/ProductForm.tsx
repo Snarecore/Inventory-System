@@ -520,6 +520,10 @@ const CreateProductForm = () => {
             });
 
             if (result?.success) {
+                await queryClient.invalidateQueries({
+                    queryKey: [productListQueryKey],
+                    refetchType: "all",
+                });
                 navigate("/admin/products");
             }
         } catch (error: any) {

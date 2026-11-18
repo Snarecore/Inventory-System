@@ -208,6 +208,11 @@ export const ProductTable = ({
             });
 
             if (result?.success) {
+                await queryClient.invalidateQueries({
+                    queryKey: [productListQueryKey],
+                    refetchType: "all",
+                });
+                onRefresh();
                 closeDeleteModal();
             }
         } catch (error) {
@@ -240,7 +245,7 @@ export const ProductTable = ({
                 updated_at: new Date().toISOString()
             });
 
-            // Optimistically update React Query cache in-memory: 0ms UI delay, 0 extra get-product-list calls!
+            // Optimistically update React Query cache in-memory: 0ms UI delay
             queryClient.setQueryData([productListQueryKey], (oldData: any) => {
                 if (!oldData) return oldData;
                 const updateItem = (item: any) => {
@@ -280,19 +285,24 @@ export const ProductTable = ({
                     accessUser: buildAccessUser(),
                     product: updatedProductPayload
                 },
-                // Do not invalidate productListQueryKey to avoid redundant refetching of all products
-                invalidateQueryKey: [productQueryKey],
+                invalidateQueryKey: [productListQueryKey, productQueryKey],
                 showSuccessMessage: true,
                 showErrorMessage: true
             });
 
-            // Revert cache if server rejected
-            if (!result?.success) {
-                queryClient.invalidateQueries({ queryKey: [productListQueryKey] });
-            }
+            // Ensure full real-time server synchronization
+            await queryClient.invalidateQueries({
+                queryKey: [productListQueryKey],
+                refetchType: "all",
+            });
+            onRefresh();
         } catch (error) {
             console.error("Failed to toggle status:", error);
-            queryClient.invalidateQueries({ queryKey: [productListQueryKey] });
+            await queryClient.invalidateQueries({
+                queryKey: [productListQueryKey],
+                refetchType: "all",
+            });
+            onRefresh();
         } finally {
             setTogglingId(null);
         }
