@@ -1,5 +1,5 @@
 import React from "react";
-import { FiClock, FiEye } from "react-icons/fi";
+import { FiClock, FiEye, FiPackage } from "react-icons/fi";
 import { formatMoney } from "@/utils/formatters";
 import type { CollectionReceiptData } from "@/pages/admin/trade/customer-collection/components/CollectionReceiptModal";
 import type { CustomerStatementEntry } from "../utils/customer-collection-report-helpers";
@@ -59,7 +59,7 @@ export const CustomerStatementTable: React.FC<CustomerStatementTableProps> = ({
         );
       case "SALES_RETURN":
         return (
-          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-[var(--ui-danger-light)] text-[var(--ui-danger)] border border-[var(--ui-danger-border)] whitespace-nowrap shrink-0">
+          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-rose-500/10 text-rose-700 dark:text-rose-400 border border-rose-500/25 whitespace-nowrap shrink-0">
             Return
           </span>
         );
@@ -116,7 +116,7 @@ export const CustomerStatementTable: React.FC<CustomerStatementTableProps> = ({
                   </div>
                 </td>
 
-                {/* Description: Strictly Single Line */}
+                {/* Description: Strictly Single Line with Returned Product Pill */}
                 <td className="py-2.5 px-3 max-w-[420px]">
                   <div className="flex items-center gap-1.5 whitespace-nowrap overflow-hidden text-ellipsis">
                     {getTypeBadge(item.type, item.typeLabel)}
@@ -125,7 +125,16 @@ export const CustomerStatementTable: React.FC<CustomerStatementTableProps> = ({
                         #{item.refNo}
                       </span>
                     )}
-                    {item.paymentMode && item.paymentMode !== "-" && (
+                    {item.returnItemsSummary && (
+                      <span
+                        className="inline-flex items-center gap-1 text-[11px] font-semibold text-rose-700 dark:text-rose-300 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 px-1.5 py-0.5 rounded shrink-0 max-w-[260px] truncate"
+                        title={`Returned Product: ${item.returnItemsSummary}`}
+                      >
+                        <FiPackage size={11} className="shrink-0 text-rose-500" />
+                        <span className="truncate">{item.returnItemsSummary}</span>
+                      </span>
+                    )}
+                    {item.paymentMode && item.paymentMode !== "-" && !item.returnItemsSummary && (
                       <span className="text-[10px] font-medium text-[var(--ui-text-muted)] bg-[var(--ui-surface-muted)] px-1.5 py-0.5 rounded border border-[var(--ui-border)] shrink-0">
                         {item.paymentMode}
                       </span>
@@ -146,6 +155,13 @@ export const CustomerStatementTable: React.FC<CustomerStatementTableProps> = ({
                   {item.salesAmount > 0 ? (
                     <span className="font-medium text-[var(--ui-text)] text-xs">
                       ৳ {formatMoney(item.salesAmount)}
+                    </span>
+                  ) : item.salesAmount < 0 ? (
+                    <span
+                      className="font-bold text-rose-600 dark:text-rose-400 text-xs inline-flex items-center justify-end gap-0.5 bg-rose-50/80 dark:bg-rose-950/40 px-1.5 py-0.5 rounded border border-rose-200/60 dark:border-rose-900/40"
+                      title="Returned product amount deducted from balance"
+                    >
+                      <span>-৳ {formatMoney(Math.abs(item.salesAmount))}</span>
                     </span>
                   ) : (
                     <span className="text-[var(--ui-text-subtle)]">-</span>
