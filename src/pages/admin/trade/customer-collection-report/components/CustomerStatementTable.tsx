@@ -41,14 +41,14 @@ export const CustomerStatementTable: React.FC<CustomerStatementTableProps> = ({
         );
       case "CREDIT_SALE":
         return (
-          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20 whitespace-nowrap shrink-0">
-            {typeLabel === "Sale" ? "Sale" : "Credit Sale"}
+          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/25 whitespace-nowrap shrink-0">
+            Credit Sale
           </span>
         );
       case "CASH_SALE":
         return (
-          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-blue-500/10 text-blue-700 dark:text-blue-400 border border-blue-500/20 whitespace-nowrap shrink-0">
-            Cash Sale
+          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/25 whitespace-nowrap shrink-0">
+            Sale
           </span>
         );
       case "COLLECTION":
@@ -120,9 +120,22 @@ export const CustomerStatementTable: React.FC<CustomerStatementTableProps> = ({
                 <td className="py-2.5 px-3 max-w-[420px]">
                   <div className="flex items-center gap-1.5 whitespace-nowrap overflow-hidden text-ellipsis">
                     {getTypeBadge(item.type, item.typeLabel)}
+                    {item.collectionAmount > 0 && item.type !== "COLLECTION" && item.type !== "OPENING" && (
+                      <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30 whitespace-nowrap shrink-0">
+                        Customer Collection
+                      </span>
+                    )}
                     {item.refNo && item.refNo !== "-" && (
                       <span className="font-mono text-xs font-semibold text-[var(--primary-color)] shrink-0">
                         #{item.refNo}
+                      </span>
+                    )}
+                    {item.voucherNos && item.voucherNos.length > 0 && (
+                      <span
+                        className="inline-flex items-center gap-1 text-[10px] font-medium text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 px-1.5 py-0.5 rounded shrink-0"
+                        title={`Collection Voucher: #${item.voucherNos.join(", #")}`}
+                      >
+                        Voucher: #{item.voucherNos.join(", #")}
                       </span>
                     )}
                     {item.returnItemsSummary && (
@@ -139,7 +152,10 @@ export const CustomerStatementTable: React.FC<CustomerStatementTableProps> = ({
                         {item.paymentMode}
                       </span>
                     )}
-                    {item.note && (
+                    {item.note &&
+                      !item.note.toLowerCase().includes(item.returnItemsSummary?.toLowerCase() || "___never___") &&
+                      !item.note.toLowerCase().includes("voucher: #") &&
+                      item.note !== `Return: ${item.returnItemsSummary}` && (
                       <span
                         className="text-xs text-[var(--ui-text-muted)] truncate"
                         title={item.note}
@@ -195,7 +211,7 @@ export const CustomerStatementTable: React.FC<CustomerStatementTableProps> = ({
                 {/* Receipt View */}
                 {onViewReceipt && (
                   <td className="py-2.5 px-3 text-center whitespace-nowrap w-14">
-                    {item.type === "COLLECTION" && item.receiptData ? (
+                    {item.receiptData && item.collectionAmount > 0 ? (
                       <button
                         type="button"
                         onClick={() => onViewReceipt(item.receiptData!)}

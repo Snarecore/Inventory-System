@@ -114,8 +114,14 @@ const CustomerCollectionReportPage: React.FC = () => {
   }, [salesList, salesAndReturnsList]);
 
   const collections = useMemo(
-    () => normalizeCollectionReportRecords(rawCollections, startDate, endDate),
-    [rawCollections, startDate, endDate]
+    () =>
+      normalizeCollectionReportRecords(
+        rawCollections,
+        startDate,
+        endDate,
+        unifiedSalesAndReturns
+      ),
+    [rawCollections, startDate, endDate, unifiedSalesAndReturns]
   );
 
   const dueRows = useMemo(
