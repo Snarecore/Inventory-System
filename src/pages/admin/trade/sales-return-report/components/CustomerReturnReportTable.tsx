@@ -189,13 +189,18 @@ export const CustomerReturnReportTable: React.FC<
 
   // Direct single-customer detailed PDF download
   const handleDownloadSingleCustomerPdf = async (
-    target: CustomerReturnSummary
+    target: CustomerReturnSummary,
+    tab?: "products" | "vouchers"
   ) => {
     try {
       setIsExporting(true);
-      await downloadCustomerDetailedReturnPdf(target, companyMeta);
+      const activeTab =
+        tab || expandedCustomerTabs[target.customerKey] || "products";
+      await downloadCustomerDetailedReturnPdf(target, companyMeta, activeTab);
       showSuccessToast(
-        `Downloaded detailed return report for ${target.customerName}!`
+        `Downloaded ${
+          activeTab === "products" ? "returned products" : "return vouchers"
+        } report for ${target.customerName}!`
       );
     } catch (err: any) {
       console.error("PDF export error:", err);
@@ -207,16 +212,22 @@ export const CustomerReturnReportTable: React.FC<
 
   // Direct single-customer detailed Excel export
   const handleExportSingleCustomerExcel = async (
-    target: CustomerReturnSummary
+    target: CustomerReturnSummary,
+    tab?: "products" | "vouchers"
   ) => {
     try {
       setIsExporting(true);
+      const activeTab =
+        tab || expandedCustomerTabs[target.customerKey] || "products";
       const count = await exportCustomerDetailedReturnExcel(
         target,
-        companyMeta
+        companyMeta,
+        activeTab
       );
       showSuccessToast(
-        `Exported ${count} return records for ${target.customerName} to Excel!`
+        `Exported ${count} ${
+          activeTab === "products" ? "returned products" : "return vouchers"
+        } records for ${target.customerName} to Excel!`
       );
     } catch (err: any) {
       console.error("Excel export error:", err);
@@ -594,7 +605,12 @@ export const CustomerReturnReportTable: React.FC<
                             </button>
                             <button
                               type="button"
-                              onClick={() => handleDownloadSingleCustomerPdf(c)}
+                              onClick={() =>
+                                handleDownloadSingleCustomerPdf(
+                                  c,
+                                  activeTabForCustomer
+                                )
+                              }
                               className="p-1 rounded text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 border border-rose-200 dark:border-rose-800 transition-colors cursor-pointer"
                               title="Download Customer Return PDF"
                             >
@@ -652,7 +668,10 @@ export const CustomerReturnReportTable: React.FC<
                                 <button
                                   type="button"
                                   onClick={() =>
-                                    handleDownloadSingleCustomerPdf(c)
+                                    handleDownloadSingleCustomerPdf(
+                                      c,
+                                      activeTabForCustomer
+                                    )
                                   }
                                   disabled={isExporting}
                                   className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold text-rose-700 dark:text-rose-300 bg-rose-50 dark:bg-rose-950/40 hover:bg-rose-100 dark:hover:bg-rose-900/60 border border-rose-200 dark:border-rose-800 rounded-lg transition-colors cursor-pointer shadow-xs"
@@ -669,7 +688,10 @@ export const CustomerReturnReportTable: React.FC<
                                 <button
                                   type="button"
                                   onClick={() =>
-                                    handleExportSingleCustomerExcel(c)
+                                    handleExportSingleCustomerExcel(
+                                      c,
+                                      activeTabForCustomer
+                                    )
                                   }
                                   disabled={isExporting}
                                   className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 border border-emerald-200 dark:border-emerald-800 rounded-lg transition-colors cursor-pointer shadow-xs"

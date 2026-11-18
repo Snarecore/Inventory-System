@@ -1570,225 +1570,327 @@ export async function downloadCustomerReturnSummaryPdf(
 
 /**
  * Downloads a detailed Sales Return PDF for a specific customer,
- * itemizing every return voucher and every returned product with quantities,
- * unit prices, totals, return reasons, and refund types.
+ * exporting the exact table data (Returned Products or Return Vouchers)
+ * along with the customer's return KPI metrics.
  */
 export async function downloadCustomerDetailedReturnPdf(
   customer: CustomerReturnSummary,
-  meta: ReportCompanyMeta
+  meta: ReportCompanyMeta,
+  activeTab: "products" | "vouchers" = "products"
 ): Promise<void> {
   const records = customer.records || [];
   if (records.length === 0) {
     throw new Error("No return records found for this customer");
   }
 
+  const commonPersonInfo = {
+    name: customer.customerName,
+    phone: customer.customerPhone,
+    address: customer.customerAddress || "",
+    balanceStatement: `Returns: ${customer.returnCount} | Items: ${customer.itemsCount} | Cash: BDT ${formatMoney(
+      customer.cashRefund
+    )} | Due Adjusted: BDT ${formatMoney(
+      customer.creditAdjust
+    )} | Total Refund: BDT ${formatMoney(customer.totalRefund)}`,
+    isReceivable: false,
+  };
+
+  // Case 1: Returned Products Table (Aggregated by Product, matching the active UI table)
+  if (activeTab === "products") {
+    const products = aggregateCustomerReturnedProducts(records);
+    if (products.length === 0) {
+      throw new Error("No returned products found for this customer");
+    }
+
+    const headers = [
+      "SL",
+      "Product Name & Code",
+      "Unit",
+      "Returned Qty",
+      "Avg / Unit Price (BDT)",
+      "Total Amount (BDT)",
+      "Return Reasons",
+      "Vouchers",
+    ];
+
+    let totalQty = 0;
+    let totalAmt = 0;
+    let totalVouchers = 0;
+
+    const bodyRows: any[][] = products.map((p, idx) => {
+      const avgUnitPrice =
+        p.totalQuantity > 0 ? p.totalAmount / p.totalQuantity : p.unitPrice;
+      totalQty += p.totalQuantity;
+      totalAmt += p.totalAmount;
+      totalVouchers += p.returnCount;
+
+      const pLabel =
+        p.productCode && p.productCode !== "-"
+          ? `${p.productName} (#${p.productCode})`
+          : p.productName;
+
+      const reasonStr =
+        p.reasons && p.reasons.length > 0
+          ? p.reasons.join(", ")
+          : "Quality Issue / Defective";
+
+      return [
+        idx + 1,
+        pLabel,
+        p.unit || "PCS",
+        p.totalQuantity,
+        formatMoney(avgUnitPrice),
+        formatMoney(p.totalAmount),
+        reasonStr,
+        p.returnCount,
+      ];
+    });
+
+    // Summary / Total row
+    bodyRows.push([
+      "Total",
+      `Products: ${products.length}`,
+      "-",
+      totalQty || customer.itemsCount,
+      "-",
+      formatMoney(totalAmt || customer.totalRefund),
+      "-",
+      customer.returnCount || totalVouchers,
+    ]);
+
+    await generateAndDownloadCorporatePdf({
+      fileName: `Customer_Returned_Products_${customer.customerName.replace(
+        /\s+/g,
+        "_"
+      )}_${moment().format("YYYY-MM-DD")}.pdf`,
+      reportTitle: `Customer Returned Products Report - ${customer.customerName}`,
+      metaRightLabel: `Total Items: ${customer.itemsCount} | Total Refund: BDT ${formatMoney(
+        customer.totalRefund
+      )}`,
+      personInfo: commonPersonInfo,
+      headers,
+      bodyRows,
+      orientation: "landscape",
+      columnStyles: {
+        0: { halign: "center", cellWidth: 12 },
+        1: { halign: "left", cellWidth: 70 },
+        2: { halign: "center", cellWidth: 16 },
+        3: { halign: "center", cellWidth: 24 },
+        4: { halign: "right", cellWidth: 36 },
+        5: { halign: "right", cellWidth: 38 },
+        6: { halign: "left", cellWidth: 62 },
+        7: { halign: "center", cellWidth: 18 },
+      },
+      meta,
+    });
+    return;
+  }
+
+  // Case 2: Return Vouchers Table (Individual return vouchers)
   const headers = [
     "SL",
+    "Voucher No",
+    "Order / Invoice #",
     "Return Date",
-    "Return #",
-    "Invoice #",
-    "Product Name & Code",
-    "Unit",
-    "Qty",
-    "Unit Price (BDT)",
-    "Total (BDT)",
+    "Items",
+    "Cash Refund (BDT)",
+    "Due Adjust (BDT)",
+    "Total Refund (BDT)",
     "Reason",
-    "Refund Mode",
   ];
 
-  let sl = 1;
-  let totalQty = 0;
-  let totalAmt = 0;
+  let totalCash = 0;
+  let totalDueAdj = 0;
+  let totalRefundAmt = 0;
+  let totalItemsCount = 0;
 
-  const bodyRows: any[][] = [];
+  const bodyRows: any[][] = records.map((r, idx) => {
+    const invNo =
+      r.orderNo && r.orderNo !== "-"
+        ? r.orderNo
+        : r.salesInvoiceNo || "-";
+    totalCash += r.cashRefund;
+    totalDueAdj += r.creditAdjust;
+    totalRefundAmt += r.refundAmount;
+    totalItemsCount += r.itemsCount;
 
-  records.forEach((r) => {
-    const rDate = formatShortReportDate(r.returnDate);
-    const rNo = String(r.returnNo || "").replace(/^#+/, "");
-    const invNo = String(r.salesInvoiceNo || r.orderNo || "-").replace(/^#+/, "");
-    const mode = r.isCreditAdjust ? "Due Adjusted" : "Cash Refund";
-
-    if (r.details && r.details.length > 0) {
-      r.details.forEach((line) => {
-        const pName =
-          line.productCode && line.productCode !== "-"
-            ? `${line.productName} (${line.productCode})`
-            : line.productName;
-        const lineTotal = line.total || line.quantity * line.unitPrice;
-        totalQty += line.quantity;
-        totalAmt += lineTotal;
-
-        bodyRows.push([
-          sl++,
-          rDate,
-          `#${rNo}`,
-          invNo !== "-" ? `#${invNo}` : "-",
-          pName,
-          line.unit || "PCS",
-          line.quantity,
-          formatMoney(line.unitPrice),
-          formatMoney(lineTotal),
-          line.reason || r.reasonSummary || "-",
-          mode,
-        ]);
-      });
-    } else {
-      totalAmt += r.refundAmount;
-      bodyRows.push([
-        sl++,
-        rDate,
-        `#${rNo}`,
-        invNo !== "-" ? `#${invNo}` : "-",
-        "Returned Items",
-        "PCS",
-        r.itemsCount || 1,
-        formatMoney(r.refundAmount),
-        formatMoney(r.refundAmount),
-        r.reasonSummary || "-",
-        mode,
-      ]);
-    }
+    return [
+      idx + 1,
+      r.returnNo,
+      invNo,
+      formatShortReportDate(r.returnDate),
+      r.itemsCount,
+      formatMoney(r.cashRefund),
+      r.creditAdjust > 0 ? formatMoney(r.creditAdjust) : "-",
+      formatMoney(r.refundAmount),
+      r.reasonSummary || "Quality Issue / Defective",
+    ];
   });
 
   bodyRows.push([
     "Total",
-    "-",
     `Total Returns: ${customer.returnCount}`,
     "-",
-    `Total Refund: BDT ${formatMoney(customer.totalRefund)}`,
     "-",
-    totalQty,
-    "-",
-    formatMoney(totalAmt || customer.totalRefund),
-    "-",
+    totalItemsCount || customer.itemsCount,
+    formatMoney(totalCash || customer.cashRefund),
+    formatMoney(totalDueAdj || customer.creditAdjust),
+    formatMoney(totalRefundAmt || customer.totalRefund),
     "-",
   ]);
 
   await generateAndDownloadCorporatePdf({
-    fileName: `Customer_Return_Details_${customer.customerName.replace(
+    fileName: `Customer_Return_Vouchers_${customer.customerName.replace(
       /\s+/g,
       "_"
     )}_${moment().format("YYYY-MM-DD")}.pdf`,
-    reportTitle: `Customer Return Details - ${customer.customerName}`,
-    metaRightLabel: `Phone: ${customer.customerPhone} | Total Refund: BDT ${formatMoney(
+    reportTitle: `Customer Return Vouchers Report - ${customer.customerName}`,
+    metaRightLabel: `Total Returns: ${customer.returnCount} | Total Refund: BDT ${formatMoney(
       customer.totalRefund
     )}`,
-    personInfo: {
-      name: customer.customerName,
-      phone: customer.customerPhone,
-      address: customer.customerAddress || "",
-      balanceStatement: `Returns: ${customer.returnCount} | Cash: BDT ${formatMoney(
-        customer.cashRefund
-      )} | Due Adjusted: BDT ${formatMoney(customer.creditAdjust)}`,
-      isReceivable: false,
-    },
+    personInfo: commonPersonInfo,
     headers,
     bodyRows,
     orientation: "landscape",
     columnStyles: {
-      0: { halign: "center", cellWidth: 10 },
-      1: { halign: "center", cellWidth: 26 },
-      2: { halign: "left", cellWidth: 28 },
-      3: { halign: "left", cellWidth: 28 },
-      4: { halign: "left", cellWidth: 65 },
-      5: { halign: "center", cellWidth: 14 },
-      6: { halign: "center", cellWidth: 14 },
-      7: { halign: "right", cellWidth: 24 },
-      8: { halign: "right", cellWidth: 24 },
-      9: { halign: "left", cellWidth: 24 },
-      10: { halign: "center", cellWidth: 20 },
+      0: { halign: "center", cellWidth: 12 },
+      1: { halign: "left", cellWidth: 42 },
+      2: { halign: "left", cellWidth: 42 },
+      3: { halign: "center", cellWidth: 26 },
+      4: { halign: "center", cellWidth: 18 },
+      5: { halign: "right", cellWidth: 32 },
+      6: { halign: "right", cellWidth: 32 },
+      7: { halign: "right", cellWidth: 35 },
+      8: { halign: "left", cellWidth: 37 },
     },
     meta,
   });
 }
 
 /**
- * Exports a detailed Sales Return Excel spreadsheet for a specific customer.
+ * Exports a detailed Sales Return Excel spreadsheet for a specific customer,
+ * exporting the exact table data (Returned Products or Return Vouchers) based on active view.
  */
 export async function exportCustomerDetailedReturnExcel(
   customer: CustomerReturnSummary,
-  meta: ReportCompanyMeta
+  meta: ReportCompanyMeta,
+  activeTab: "products" | "vouchers" = "products"
 ): Promise<number> {
   const records = customer.records || [];
   if (records.length === 0) {
     throw new Error("No return records found for this customer");
   }
 
-  const rows: any[] = [];
-  let sl = 1;
-  let totalQty = 0;
-  let totalAmt = 0;
-
-  records.forEach((r) => {
-    const rDate = formatShortReportDate(r.returnDate);
-    const rNo = String(r.returnNo || "").replace(/^#+/, "");
-    const invNo = String(r.salesInvoiceNo || r.orderNo || "-").replace(/^#+/, "");
-    const mode = r.isCreditAdjust ? "Due Adjusted" : "Cash Refund";
-
-    if (r.details && r.details.length > 0) {
-      r.details.forEach((line) => {
-        const lineTotal = line.total || line.quantity * line.unitPrice;
-        totalQty += line.quantity;
-        totalAmt += lineTotal;
-
-        rows.push({
-          SL: sl++,
-          "Return Date": rDate,
-          "Return #": `#${rNo}`,
-          "Invoice #": invNo !== "-" ? `#${invNo}` : "-",
-          "Product Name": line.productName,
-          "Product Code": line.productCode || "-",
-          Unit: line.unit || "PCS",
-          "Return Qty": line.quantity,
-          "Unit Price (BDT)": line.unitPrice,
-          "Total Amount (BDT)": lineTotal,
-          Reason: line.reason || r.reasonSummary || "-",
-          "Refund Mode": mode,
-        });
-      });
-    } else {
-      totalAmt += r.refundAmount;
-      rows.push({
-        SL: sl++,
-        "Return Date": rDate,
-        "Return #": `#${rNo}`,
-        "Invoice #": invNo !== "-" ? `#${invNo}` : "-",
-        "Product Name": "Returned Items",
-        "Product Code": "-",
-        Unit: "PCS",
-        "Return Qty": r.itemsCount || 1,
-        "Unit Price (BDT)": r.refundAmount,
-        "Total Amount (BDT)": r.refundAmount,
-        Reason: r.reasonSummary || "-",
-        "Refund Mode": mode,
-      });
+  if (activeTab === "products") {
+    const products = aggregateCustomerReturnedProducts(records);
+    if (products.length === 0) {
+      throw new Error("No returned products found for this customer");
     }
+
+    let totalQty = 0;
+    let totalAmt = 0;
+    let totalVouchers = 0;
+
+    const rows: any[] = products.map((p, idx) => {
+      const avgUnitPrice =
+        p.totalQuantity > 0 ? p.totalAmount / p.totalQuantity : p.unitPrice;
+      totalQty += p.totalQuantity;
+      totalAmt += p.totalAmount;
+      totalVouchers += p.returnCount;
+
+      return {
+        SL: idx + 1,
+        "Product Name": p.productName,
+        "Product Code": p.productCode || "-",
+        Unit: p.unit || "PCS",
+        "Returned Qty": p.totalQuantity,
+        "Avg / Unit Price (BDT)": avgUnitPrice,
+        "Total Amount (BDT)": p.totalAmount,
+        "Return Reasons":
+          p.reasons && p.reasons.length > 0
+            ? p.reasons.join(", ")
+            : "Quality Issue / Defective",
+        Vouchers: p.returnCount,
+      };
+    });
+
+    const totalRow = {
+      SL: "Total",
+      "Product Name": `Products: ${products.length} (Customer: ${customer.customerName})`,
+      "Product Code": `Phone: ${customer.customerPhone}`,
+      Unit: "-",
+      "Returned Qty": totalQty || customer.itemsCount,
+      "Avg / Unit Price (BDT)": "-",
+      "Total Amount (BDT)": totalAmt || customer.totalRefund,
+      "Return Reasons": `Cash: ${customer.cashRefund} | Due Adj: ${customer.creditAdjust}`,
+      Vouchers: customer.returnCount || totalVouchers,
+    };
+
+    await buildAndDownloadExcel(rows, totalRow, {
+      ...meta,
+      fileName: `Customer_Returned_Products_${customer.customerName.replace(
+        /\s+/g,
+        "_"
+      )}_${moment().format("YYYY-MM-DD")}.xlsx`,
+      sheetName: "Returned Products",
+      reportTitle: `Customer Returned Products - ${customer.customerName}`,
+      totalLabel: "Total Items",
+      includeSignatures: true,
+    });
+
+    return rows.length;
+  }
+
+  // Return Vouchers Excel
+  let totalCash = 0;
+  let totalDueAdj = 0;
+  let totalRefundAmt = 0;
+  let totalItemsCount = 0;
+
+  const rows: any[] = records.map((r, idx) => {
+    const invNo =
+      r.orderNo && r.orderNo !== "-"
+        ? r.orderNo
+        : r.salesInvoiceNo || "-";
+    totalCash += r.cashRefund;
+    totalDueAdj += r.creditAdjust;
+    totalRefundAmt += r.refundAmount;
+    totalItemsCount += r.itemsCount;
+
+    return {
+      SL: idx + 1,
+      "Voucher No": r.returnNo,
+      "Order / Invoice #": invNo,
+      "Return Date": formatShortReportDate(r.returnDate),
+      Items: r.itemsCount,
+      "Cash Refund (BDT)": r.cashRefund,
+      "Due Adjust (BDT)": r.creditAdjust,
+      "Total Refund (BDT)": r.refundAmount,
+      Reason: r.reasonSummary || "Quality Issue / Defective",
+    };
   });
 
   const totalRow = {
     SL: "Total",
+    "Voucher No": `Total Returns: ${customer.returnCount}`,
+    "Order / Invoice #": `Customer: ${customer.customerName} (${customer.customerPhone})`,
     "Return Date": "-",
-    "Return #": `Returns: ${customer.returnCount}`,
-    "Invoice #": "-",
-    "Product Name": `Customer: ${customer.customerName} (${customer.customerPhone})`,
-    "Product Code": "-",
-    Unit: "-",
-    "Return Qty": totalQty,
-    "Unit Price (BDT)": "-",
-    "Total Amount (BDT)": totalAmt || customer.totalRefund,
+    Items: totalItemsCount || customer.itemsCount,
+    "Cash Refund (BDT)": totalCash || customer.cashRefund,
+    "Due Adjust (BDT)": totalDueAdj || customer.creditAdjust,
+    "Total Refund (BDT)": totalRefundAmt || customer.totalRefund,
     Reason: "-",
-    "Refund Mode": `Cash: ${customer.cashRefund} | Due Adj: ${customer.creditAdjust}`,
   };
 
   await buildAndDownloadExcel(rows, totalRow, {
     ...meta,
-    fileName: `Customer_Return_Details_${customer.customerName.replace(
+    fileName: `Customer_Return_Vouchers_${customer.customerName.replace(
       /\s+/g,
       "_"
     )}_${moment().format("YYYY-MM-DD")}.xlsx`,
-    sheetName: "Return Details",
-    reportTitle: `Customer Return Details - ${customer.customerName}`,
-    totalLabel: "Total Items",
+    sheetName: "Return Vouchers",
+    reportTitle: `Customer Return Vouchers - ${customer.customerName}`,
+    totalLabel: "Total Returns",
     includeSignatures: true,
   });
 
