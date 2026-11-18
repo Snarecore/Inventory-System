@@ -156,13 +156,13 @@ export const NotFound: React.FC<NotFoundProps> = ({
                 <Link
                   key={item.path}
                   to={item.path}
-                  className={`group flex items-center gap-2.5 p-2.5 rounded-lg border transition-all duration-200 hover:shadow-xs hover:-translate-y-0.5 ${item.bg}`}
+                  className={`flex items-center gap-2.5 p-2.5 rounded-lg border ${item.bg}`}
                 >
-                  <div className="p-1.5 rounded-md bg-white dark:bg-slate-900 shadow-2xs group-hover:scale-105 transition-transform shrink-0">
+                  <div className="p-1.5 rounded-md bg-white dark:bg-slate-900 shadow-2xs shrink-0">
                     {item.icon}
                   </div>
                   <div className="min-w-0 flex-1">
-                    <div className="text-xs font-bold text-[var(--ui-text,#0f172a)] dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                    <div className="text-xs font-bold text-[var(--ui-text,#0f172a)] dark:text-white">
                       {item.title}
                     </div>
                     <div className="text-[11px] text-[var(--ui-text-muted,#475569)] dark:text-[var(--ui-text-subtle,#94a3b8)] truncate">
