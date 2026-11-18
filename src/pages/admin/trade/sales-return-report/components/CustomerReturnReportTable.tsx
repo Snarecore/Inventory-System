@@ -1,5 +1,4 @@
 import React, { useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import {
   FiChevronDown,
   FiChevronRight,
@@ -83,7 +82,6 @@ export const CustomerReturnReportTable: React.FC<
   onPrint,
   ...dateFilterProps
 }) => {
-  const navigate = useNavigate();
   const companyMeta = useReportCompanyMeta(
     dateFilterProps.startDate,
     dateFilterProps.endDate
@@ -238,29 +236,6 @@ export const CustomerReturnReportTable: React.FC<
       showErrorToast(err?.message || "Failed to export Excel");
     } finally {
       setIsExporting(false);
-    }
-  };
-
-  // Action: Create Return for this specific customer
-  const handleCreateReturnForCustomer = (customer: CustomerReturnSummary) => {
-    const candidates = Array.isArray(allUnifiedRecords) ? allUnifiedRecords : [];
-    const matchedSale = candidates.find(
-      (cand: any) =>
-        !cand.isReturnRecord &&
-        ((customer.customerId &&
-          String(cand.customerId || cand.customer_id) ===
-            String(customer.customerId)) ||
-          (customer.customerName &&
-            String(cand.customerName || cand.customer_name).toLowerCase() ===
-              customer.customerName.toLowerCase()))
-    );
-
-    if (matchedSale) {
-      navigate("/admin/create-sales-return", {
-        state: { sale: matchedSale },
-      });
-    } else {
-      navigate("/admin/create-sales-return");
     }
   };
 
@@ -623,20 +598,8 @@ export const CustomerReturnReportTable: React.FC<
                                 </button>
                               </div>
 
-                              {/* Customer Action Buttons */}
+                              {/* Export Action Buttons */}
                               <div className="flex items-center gap-1.5 shrink-0">
-                                <button
-                                  type="button"
-                                  onClick={() =>
-                                    handleCreateReturnForCustomer(c)
-                                  }
-                                  className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-bold text-white bg-[var(--primary-color)] hover:opacity-90 rounded-md transition-all cursor-pointer shadow-xs whitespace-nowrap"
-                                  title="Create a new sales return for this customer"
-                                >
-                                  <FiRotateCcw size={11} />
-                                  <span>+ নতুন রিটার্ন</span>
-                                </button>
-
                                 <button
                                   type="button"
                                   onClick={() =>
@@ -647,13 +610,13 @@ export const CustomerReturnReportTable: React.FC<
                                   }
                                   disabled={isExporting}
                                   className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold text-rose-700 dark:text-rose-300 bg-rose-50 dark:bg-rose-950/40 hover:bg-rose-100 dark:hover:bg-rose-900/60 border border-rose-200 dark:border-rose-800 rounded-md transition-colors cursor-pointer shadow-xs whitespace-nowrap"
-                                  title="Download Customer Return PDF"
+                                  title="Download PDF Report"
                                 >
                                   <FaFilePdf
                                     size={11}
                                     className="text-rose-600"
                                   />
-                                  <span>Customer PDF</span>
+                                  <span>PDF</span>
                                 </button>
 
                                 <button
@@ -666,13 +629,13 @@ export const CustomerReturnReportTable: React.FC<
                                   }
                                   disabled={isExporting}
                                   className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 border border-emerald-200 dark:border-emerald-800 rounded-md transition-colors cursor-pointer shadow-xs whitespace-nowrap"
-                                  title="Download Customer Return Excel"
+                                  title="Download Excel Report"
                                 >
                                   <FaFileExcel
                                     size={11}
                                     className="text-emerald-600"
                                   />
-                                  <span>Customer Excel</span>
+                                  <span>Excel</span>
                                 </button>
                               </div>
                             </div>
