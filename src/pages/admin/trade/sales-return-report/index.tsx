@@ -141,6 +141,8 @@ const SalesReturnReportPage: React.FC = () => {
           <CustomerReturnReportTable
             records={returnRecords}
             isLoading={isLoading}
+            onView={handleView}
+            onPrint={handlePrint}
             {...datePickerProps}
           />
         )}
