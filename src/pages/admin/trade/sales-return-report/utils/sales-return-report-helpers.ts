@@ -386,6 +386,21 @@ export function extractNormalizedSalesReturns(
 
   const saleOrderByRef = new Map<string, string>();
   const salesByRef = new Map<string, any>();
+  const salesByCustomerPhone = new Map<string, any[]>();
+  const salesByCustomerId = new Map<string, any[]>();
+  const salesByCustomerName = new Map<string, any[]>();
+  const customerProductsMap = new Map<
+    string,
+    Array<{
+      productId: string;
+      productCode: string;
+      productName: string;
+      unit: string;
+      unitPrice: number;
+      total: number;
+    }>
+  >();
+
   records.forEach((rec: any) => {
     if (!rec || Boolean(rec?.isReturnRecord) || isReturnRecord(rec)) return;
     const recOrderNo = String(rec.orderNo || rec.order_no || "").trim();
@@ -417,13 +432,75 @@ export function extractNormalizedSalesReturns(
         }
       }
     });
+
+    const cPhone = String(rec.customerPhone || rec.phone || "").replace(/\D/g, "");
+    const cId = String(rec.customerId || rec.customer_id || "").trim();
+    const cName = String(rec.customerName || rec.customer_name || "").trim().toLowerCase();
+
+    if (cPhone.length >= 7) {
+      if (!salesByCustomerPhone.has(cPhone)) salesByCustomerPhone.set(cPhone, []);
+      salesByCustomerPhone.get(cPhone)!.push(rec);
+    }
+    if (cId && cId !== "-" && cId !== "0") {
+      if (!salesByCustomerId.has(cId)) salesByCustomerId.set(cId, []);
+      salesByCustomerId.get(cId)!.push(rec);
+    }
+    if (cName && cName !== "customer" && cName !== "-") {
+      if (!salesByCustomerName.has(cName)) salesByCustomerName.set(cName, []);
+      salesByCustomerName.get(cName)!.push(rec);
+    }
+
+    const lines = extractRawReturnLines(rec);
+    lines.forEach((l: any) => {
+      const pName = String(
+        l.productName || l.product_name || l.name || l.itemName || l.item_name || ""
+      ).trim();
+      if (
+        pName &&
+        pName !== "Returned Product" &&
+        pName !== "Returned Item" &&
+        !/^order\s*#?/i.test(pName) &&
+        !/return\s*refund/i.test(pName) &&
+        pName.toLowerCase() !== "invoice" &&
+        pName.toLowerCase() !== "null"
+      ) {
+        const prodItem = {
+          productId: String(l.productId || l.product_id || l.id || ""),
+          productCode: String(l.productCode || l.product_code || l.pcode || l.sku || "-"),
+          productName: pName,
+          unit: String(l.unit || l.unitName || l.unit_name || "PCS"),
+          unitPrice: Number(l.unitPrice ?? l.unit_price ?? l.price ?? l.rate ?? 0),
+          total: Number(l.total ?? l.totalAmount ?? 0),
+        };
+        const addCustProd = (key: string) => {
+          if (!customerProductsMap.has(key)) customerProductsMap.set(key, []);
+          customerProductsMap.get(key)!.push(prodItem);
+        };
+        if (cPhone.length >= 7) addCustProd(`phone_${cPhone}`);
+        if (cId && cId !== "-" && cId !== "0") addCustProd(`id_${cId}`);
+        if (cName && cName !== "customer" && cName !== "-") addCustProd(`name_${cName}`);
+      }
+    });
   });
 
   const getInvoiceKey = (item: any): string => {
     const rawInv = String(
       item.salesInvoiceNo || item.sales_invoice_no || item.invoiceNo || item.invoice_no || item.orderNo || ""
     ).trim().toLowerCase();
-    return rawInv && rawInv !== "-" ? rawInv : "";
+    if (rawInv && rawInv !== "-" && rawInv !== "0" && rawInv !== "null") return rawInv;
+
+    const noteText = String(
+      item.remarks || item.note || item.notes || item.reason || item.reasonSummary || item.description || ""
+    );
+    const match = noteText.match(/([0-9]{4,8}-[0-9]{10,25})/);
+    if (match) return match[1].toLowerCase();
+
+    const ordMatch = noteText.match(/(?:order|ord)\s*(?:no|number)?\s*[:#]?\s*([A-Za-z0-9_-]+)/i);
+    if (ordMatch && ordMatch[1] && ordMatch[1].toLowerCase() !== "null" && ordMatch[1].toLowerCase() !== "invoice") {
+      return ordMatch[1].toLowerCase();
+    }
+
+    return "";
   };
 
   // Filter raw return records
@@ -538,21 +615,32 @@ export function extractNormalizedSalesReturns(
         item.totalAmount ??
         refundAmount
     );
+    const rawReasonText = extractReturnRemarks(item);
+    const rawNoteText = String(
+      item.remarks || item.note || item.notes || item.reason || item.reasonSummary || item.description || ""
+    );
+    const extractedInvoiceFromNote = rawNoteText.match(/([0-9]{4,8}-[0-9]{10,25})/)?.[1] || "";
+    const extractedOrderFromNote = rawNoteText.match(/(?:order|ord)\s*(?:no|number)?\s*[:#]?\s*([A-Za-z0-9_-]+)/i)?.[1] || "";
+
     const salesInvoiceNo = String(
-      item.salesInvoiceNo || item.invoiceNo || "-"
+      item.salesInvoiceNo && item.salesInvoiceNo !== "-"
+        ? item.salesInvoiceNo
+        : item.invoiceNo && item.invoiceNo !== "-"
+        ? item.invoiceNo
+        : extractedInvoiceFromNote || "-"
     );
     const matchedOrderNo =
       saleOrderByRef.get(salesInvoiceNo.trim().toLowerCase()) ||
       saleOrderByRef.get(String(item.saleId ?? item.sale_id ?? "").trim().toLowerCase()) ||
+      (extractedInvoiceFromNote ? saleOrderByRef.get(extractedInvoiceFromNote.toLowerCase()) : "") ||
       "";
-    const directOrderNo = String(item.orderNo || item.order_no || "").trim();
+    const directOrderNo = String(item.orderNo || item.order_no || extractedOrderFromNote || "").trim();
     const orderNo =
       cleanOrd ||
       (directOrderNo && directOrderNo !== returnNo ? directOrderNo : "") ||
       matchedOrderNo ||
       directOrderNo ||
       (salesInvoiceNo !== "-" ? salesInvoiceNo : "-");
-    const rawReasonText = extractReturnRemarks(item);
     const matchedReason = rawReasonText
       ? SALES_RETURN_REASONS.find(
           (opt) =>
@@ -567,16 +655,63 @@ export function extractNormalizedSalesReturns(
       paymentType.includes("DUE") ||
       paymentType.includes("ADJUST");
 
-    let rawLines = extractRawReturnLines(item);
-    if (rawLines.length === 0) {
-      const parentSale =
-        salesByRef.get(invKey) ||
-        salesByRef.get(ordKey) ||
-        salesByRef.get(String(item.saleId ?? item.sale_id ?? "").trim().toLowerCase()) ||
-        salesByRef.get(String(item.id ?? "").trim().toLowerCase());
+    const itemPhone = String(item.customerPhone || item.phone || "").replace(/\D/g, "");
+    const itemId = String(item.customerId || item.customer_id || "").trim();
+    const itemName = String(item.customerName || item.customer_name || "").trim().toLowerCase();
 
-      if (parentSale) {
-        rawLines = extractRawReturnLines(parentSale);
+    let rawLines = extractRawReturnLines(item);
+    let parentSale =
+      salesByRef.get(invKey) ||
+      salesByRef.get(ordKey) ||
+      (extractedInvoiceFromNote ? salesByRef.get(extractedInvoiceFromNote.toLowerCase()) : undefined) ||
+      salesByRef.get(String(item.saleId ?? item.sale_id ?? "").trim().toLowerCase()) ||
+      salesByRef.get(String(item.id ?? "").trim().toLowerCase());
+
+    // If parent sale not found by reference, look up among the customer's sales
+    if (!parentSale && (itemPhone.length >= 7 || (itemId && itemId !== "-") || (itemName && itemName !== "customer"))) {
+      const candidateSales =
+        (itemPhone.length >= 7 && salesByCustomerPhone.get(itemPhone)) ||
+        (itemId && itemId !== "-" && salesByCustomerId.get(itemId)) ||
+        (itemName && itemName !== "customer" && salesByCustomerName.get(itemName)) ||
+        [];
+
+      parentSale =
+        candidateSales.find((s) => {
+          const sLines = extractRawReturnLines(s);
+          return (
+            Math.abs(Number(s.grandTotal || 0) - refundAmount) < 0.01 ||
+            sLines.some(
+              (l) =>
+                Math.abs(Number(l.total ?? l.price ?? l.unitPrice ?? 0) - refundAmount) < 0.01
+            )
+          );
+        }) || candidateSales[0];
+    }
+
+    if (rawLines.length === 0 && parentSale) {
+      const saleLines = extractRawReturnLines(parentSale);
+      if (saleLines.length > 0) {
+        // Try finding matching item by refund amount
+        const matchingLine = saleLines.find(
+          (l) =>
+            Math.abs(Number(l.total ?? l.unitPrice ?? l.price ?? 0) - refundAmount) < 0.01
+        );
+        if (matchingLine) {
+          rawLines = [matchingLine];
+        } else if (
+          Math.abs(Number(parentSale.grandTotal || 0) - refundAmount) < 0.01 ||
+          saleLines.length === 1
+        ) {
+          rawLines = saleLines;
+        } else {
+          // Select line with closest price
+          const sortedByClosest = [...saleLines].sort((a, b) => {
+            const diffA = Math.abs(Number(a.unitPrice ?? a.price ?? 0) - refundAmount);
+            const diffB = Math.abs(Number(b.unitPrice ?? b.price ?? 0) - refundAmount);
+            return diffA - diffB;
+          });
+          rawLines = [sortedByClosest[0]];
+        }
       }
     }
 
@@ -613,6 +748,18 @@ export function extractNormalizedSalesReturns(
               line.remarks
           ) || reasonSummary;
 
+        const resolvedLineName = String(
+          line.productName ||
+            line.product_name ||
+            line.name ||
+            line.itemName ||
+            line.item_name ||
+            line.product?.name ||
+            line.product?.productName ||
+            line.product?.title ||
+            "Returned Product"
+        );
+
         return {
           productId: String(
             line.productId ||
@@ -628,17 +775,13 @@ export function extractNormalizedSalesReturns(
               line.sku ||
               "-"
           ),
-          productName: String(
-            line.productName ||
-              line.product_name ||
-              line.name ||
-              "Returned Item"
-          ),
+          productName: resolvedLineName,
           unit: String(
             line.unit ||
               line.unitName ||
               line.unit_name ||
               line.secondary_unit ||
+              line.product?.unit ||
               "pcs"
           ),
           quantity: qty,
@@ -650,11 +793,57 @@ export function extractNormalizedSalesReturns(
     );
 
     if (details.length === 0 && refundAmount > 0) {
+      let resolvedProdName = String(
+        item.productName ||
+        item.product_name ||
+        item.itemName ||
+        item.item_name ||
+        item.name ||
+        ""
+      ).trim();
+      let resolvedProdCode = String(
+        item.productCode ||
+        item.product_code ||
+        item.pcode ||
+        item.sku ||
+        "-"
+      ).trim();
+      let resolvedUnit = String(item.unit || item.unitName || item.unit_name || "PCS").trim();
+
+      if (!resolvedProdName || resolvedProdName === "Returned Product" || resolvedProdName === "Returned Item") {
+        const custProds =
+          (itemPhone.length >= 7 && customerProductsMap.get(`phone_${itemPhone}`)) ||
+          (itemId && itemId !== "-" && customerProductsMap.get(`id_${itemId}`)) ||
+          (itemName && itemName !== "customer" && customerProductsMap.get(`name_${itemName}`)) ||
+          [];
+
+        if (custProds.length > 0) {
+          const priceMatch = custProds.find(
+            (p) => Math.abs(p.unitPrice - refundAmount) < 0.01 || Math.abs(p.total - refundAmount) < 0.01
+          );
+          const chosen = priceMatch || custProds[0];
+          resolvedProdName = chosen.productName;
+          resolvedProdCode = chosen.productCode;
+          resolvedUnit = chosen.unit || "PCS";
+        }
+      }
+
+      if (!resolvedProdName || resolvedProdName === "Returned Product" || resolvedProdName === "Returned Item") {
+        const noteMatch = rawNoteText.match(/(?:product|item|return(?:ed)?)\s*[:#]?\s*([A-Za-z0-9\s_-]+?)(?:\s*(?:price|qty|amount|inv|\(|$))/i);
+        if (noteMatch && noteMatch[1] && noteMatch[1].trim().length > 2 && !noteMatch[1].toLowerCase().includes("invoice")) {
+          resolvedProdName = noteMatch[1].trim();
+        }
+      }
+
+      if (!resolvedProdName) {
+        resolvedProdName = "Returned Product";
+      }
+
       details.push({
         productId: String(item.id || returnNo || `ret-${idx}`),
-        productCode: "-",
-        productName: "Returned Product",
-        unit: "PCS",
+        productCode: resolvedProdCode,
+        productName: resolvedProdName,
+        unit: resolvedUnit || "PCS",
         quantity: 1,
         unitPrice: refundAmount,
         total: refundAmount,
@@ -892,19 +1081,60 @@ export function aggregateCustomerReturnedProducts(
 ): CustomerProductReturnItem[] {
   const map: Record<string, CustomerProductReturnItem> = {};
 
+  // Find all known real products among these customer return records
+  const knownRealProducts: Array<{ name: string; code: string; unit: string; price: number }> = [];
+  records.forEach((r) => {
+    (r.details || []).forEach((line) => {
+      const name = String(line.productName || "").trim();
+      if (
+        name &&
+        name !== "Returned Product" &&
+        name !== "Returned Item" &&
+        !/^order\s*#?/i.test(name) &&
+        !/return\s*refund/i.test(name) &&
+        name.toLowerCase() !== "invoice" &&
+        name.toLowerCase() !== "null"
+      ) {
+        knownRealProducts.push({
+          name,
+          code: String(line.productCode || "-").trim(),
+          unit: String(line.unit || "PCS").trim(),
+          price: Number(line.unitPrice || line.total || 0),
+        });
+      }
+    });
+  });
+
   records.forEach((r) => {
     (r.details || []).forEach((line) => {
       let pName = String(line.productName || "Returned Product").trim();
+      let pCode = String(line.productCode || "-").trim();
+      let pUnit = line.unit && line.unit !== "vchr" ? line.unit : "PCS";
+
+      // If generic, resolve using knownRealProducts from this customer
       if (
+        !pName ||
+        pName === "Returned Product" ||
+        pName === "Returned Item" ||
         /^order\s*#?/i.test(pName) ||
         /return\s*refund/i.test(pName) ||
         pName.toLowerCase() === "invoice" ||
         pName.toLowerCase() === "null"
       ) {
-        pName = "Returned Product";
+        if (knownRealProducts.length > 0) {
+          const linePrice = Number(line.unitPrice || line.total || 0);
+          const priceMatch = knownRealProducts.find(
+            (kp) => Math.abs(kp.price - linePrice) < 0.01
+          );
+          const chosen = priceMatch || knownRealProducts[0];
+          pName = chosen.name;
+          if (pCode === "-" && chosen.code !== "-") pCode = chosen.code;
+          if (pUnit === "PCS" && chosen.unit) pUnit = chosen.unit;
+        } else {
+          pName = "Returned Product";
+        }
       }
 
-      let pCode = String(line.productCode || "-").trim();
       if (
         pCode.toLowerCase().startsWith("order") ||
         pCode.toLowerCase() === "invoice" ||
@@ -926,7 +1156,7 @@ export function aggregateCustomerReturnedProducts(
           productId: line.productId || "",
           productCode: pCode,
           productName: pName,
-          unit: line.unit && line.unit !== "vchr" ? line.unit : "PCS",
+          unit: pUnit,
           totalQuantity: 0,
           unitPrice: line.unitPrice || 0,
           totalAmount: 0,
@@ -1604,7 +1834,7 @@ export async function downloadCustomerDetailedReturnPdf(
 
     const headers = [
       "SL",
-      "Product Name & Code",
+      "Product Name",
       "Unit",
       "Returned Qty",
       "Avg / Unit Price (BDT)",
@@ -1624,11 +1854,6 @@ export async function downloadCustomerDetailedReturnPdf(
       totalAmt += p.totalAmount;
       totalVouchers += p.returnCount;
 
-      const pLabel =
-        p.productCode && p.productCode !== "-"
-          ? `${p.productName} (#${p.productCode})`
-          : p.productName;
-
       const reasonStr =
         p.reasons && p.reasons.length > 0
           ? p.reasons.join(", ")
@@ -1636,7 +1861,7 @@ export async function downloadCustomerDetailedReturnPdf(
 
       return [
         idx + 1,
-        pLabel,
+        p.productName,
         p.unit || "PCS",
         p.totalQuantity,
         formatMoney(avgUnitPrice),
@@ -1801,7 +2026,6 @@ export async function exportCustomerDetailedReturnExcel(
       return {
         SL: idx + 1,
         "Product Name": p.productName,
-        "Product Code": p.productCode || "-",
         Unit: p.unit || "PCS",
         "Returned Qty": p.totalQuantity,
         "Avg / Unit Price (BDT)": avgUnitPrice,
@@ -1817,7 +2041,6 @@ export async function exportCustomerDetailedReturnExcel(
     const totalRow = {
       SL: "Total",
       "Product Name": `Products: ${products.length} (Customer: ${customer.customerName})`,
-      "Product Code": `Phone: ${customer.customerPhone}`,
       Unit: "-",
       "Returned Qty": totalQty || customer.itemsCount,
       "Avg / Unit Price (BDT)": "-",

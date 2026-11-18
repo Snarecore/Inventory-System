@@ -785,7 +785,7 @@ export const CustomerReturnReportTable: React.FC<
                                         SL
                                       </th>
                                       <th className="py-2 px-3 font-bold">
-                                        Product Name &amp; Code
+                                        Product Name
                                       </th>
                                       <th className="py-2 px-2.5 text-center font-bold">
                                         Unit
@@ -826,17 +826,9 @@ export const CustomerReturnReportTable: React.FC<
                                               {pIdx + 1}
                                             </td>
                                             <td className="py-2.5 px-3 text-xs">
-                                              <div className="flex flex-col">
-                                                <span className="font-bold text-[var(--ui-text)]">
-                                                  {p.productName}
-                                                </span>
-                                                {p.productCode &&
-                                                  p.productCode !== "-" && (
-                                                    <span className="text-[11px] text-[var(--ui-text-muted)] font-mono">
-                                                      #{p.productCode}
-                                                    </span>
-                                                  )}
-                                              </div>
+                                              <span className="font-bold text-[var(--ui-text)]">
+                                                {p.productName}
+                                              </span>
                                             </td>
                                             <td className="py-2.5 px-2.5 text-center text-xs text-[var(--ui-text-muted)]">
                                               {p.unit || "PCS"}

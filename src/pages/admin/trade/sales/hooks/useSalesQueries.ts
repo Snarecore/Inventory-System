@@ -339,6 +339,17 @@ export const fetchSalesAndReturnList = async (): Promise<UnifiedTradeRecord[]> =
       const rawInv = item.salesInvoiceNo || item.sales_invoice_no || item.invoiceNo || item.invoice_no;
       const rawSaleId = item.saleId || item.sale_id; // ONLY authentic parent saleId, NEVER return's own item.id!
 
+      const noteText = String(
+        item.remarks || item.note || item.notes || item.reason || item.reasonSummary || item.description || ""
+      );
+      const match = noteText.match(/([0-9]{4,8}-[0-9]{10,25})/);
+      const extractedInv = match ? match[1] : "";
+      const ordMatch = noteText.match(/(?:order|ord)\s*(?:no|number)?\s*[:#]?\s*([A-Za-z0-9_-]+)/i);
+      const extractedOrd =
+        ordMatch && ordMatch[1] && ordMatch[1].toLowerCase() !== "null" && ordMatch[1].toLowerCase() !== "invoice"
+          ? ordMatch[1]
+          : "";
+
       const ordNo =
         rawOrd &&
         String(rawOrd).trim() !== "-" &&
@@ -346,14 +357,14 @@ export const fetchSalesAndReturnList = async (): Promise<UnifiedTradeRecord[]> =
         String(rawOrd).trim().toLowerCase() !== retNo &&
         !String(rawOrd).trim().toUpperCase().startsWith("SR-")
           ? String(rawOrd).trim()
-          : "";
+          : extractedOrd;
       const invNo =
         rawInv &&
         String(rawInv).trim() !== "-" &&
         String(rawInv).trim() !== "0" &&
         String(rawInv).trim().toLowerCase() !== retNo
           ? String(rawInv).trim()
-          : "";
+          : extractedInv;
       const sId =
         rawSaleId && String(rawSaleId).trim() !== "-" && String(rawSaleId).trim() !== "0"
           ? String(rawSaleId).trim()
@@ -802,15 +813,22 @@ export const fetchSalesAndReturnList = async (): Promise<UnifiedTradeRecord[]> =
       let custName = "Customer";
 
       if (tx.notes) {
+        const directInvMatch = tx.notes.match(/([0-9]{4,8}-[0-9]{10,25})/);
+        if (directInvMatch) {
+          invNo = directInvMatch[1].trim();
+        }
+
         const ordMatch = tx.notes.match(/(?:order|ord)\s*(?:no|number)?\s*[:#]?\s*([A-Za-z0-9_-]+)/i);
         if (ordMatch && ordMatch[1] && ordMatch[1].toLowerCase() !== "null" && ordMatch[1].toLowerCase() !== "invoice") {
           ordNo = ordMatch[1].trim();
         }
 
-        const invMatch =
-          tx.notes.match(/(?:return\s+from\s+(?:invoice\s+)?|invoice\s*(?:no|number)?\s*[:#]?\s*|inv\s*[:#]?\s*)([A-Za-z0-9_-]+)/i);
-        if (invMatch && invMatch[1] && invMatch[1].toLowerCase() !== "invoice" && invMatch[1].toLowerCase() !== "null") {
-          invNo = invMatch[1].trim();
+        if (!invNo) {
+          const invMatch =
+            tx.notes.match(/(?:return\s+(?:from|for|against)\s+(?:invoice\s+)?|refund\s+(?:for|from)\s+(?:invoice\s+)?|invoice\s*(?:no|number)?\s*[:#]?\s*|inv\s*[:#]?\s*)([A-Za-z0-9_-]+)/i);
+          if (invMatch && invMatch[1] && invMatch[1].toLowerCase() !== "invoice" && invMatch[1].toLowerCase() !== "null") {
+            invNo = invMatch[1].trim();
+          }
         }
 
         const custMatch = tx.notes.match(/\(([^)]+)\)/);
@@ -819,11 +837,27 @@ export const fetchSalesAndReturnList = async (): Promise<UnifiedTradeRecord[]> =
         }
       }
 
-      if (!invNo && tx.billRef && !isBackendGeneratedNo(tx.billRef)) {
-        invNo = String(tx.billRef).trim();
+      if (!invNo && tx.billRef) {
+        const refStr = String(tx.billRef).trim();
+        if (
+          aliasToSaleIdx.has(`sale_inv_${refStr.toLowerCase()}`) ||
+          aliasToSaleIdx.has(`sale_ord_${refStr.toLowerCase()}`) ||
+          aliasToSaleIdx.has(`sale_id_${refStr.toLowerCase()}`) ||
+          /^[0-9]{4,8}-[0-9]{10,25}$/.test(refStr)
+        ) {
+          invNo = refStr;
+        }
       }
-      if (!invNo && tx.refNo && !isBackendGeneratedNo(tx.refNo)) {
-        invNo = String(tx.refNo).trim();
+      if (!invNo && tx.refNo) {
+        const refStr = String(tx.refNo).trim();
+        if (
+          aliasToSaleIdx.has(`sale_inv_${refStr.toLowerCase()}`) ||
+          aliasToSaleIdx.has(`sale_ord_${refStr.toLowerCase()}`) ||
+          aliasToSaleIdx.has(`sale_id_${refStr.toLowerCase()}`) ||
+          /^[0-9]{4,8}-[0-9]{10,25}$/.test(refStr)
+        ) {
+          invNo = refStr;
+        }
       }
 
       if (!invNo && !ordNo && !tx.billRef && !tx.refNo) return;
@@ -843,10 +877,6 @@ export const fetchSalesAndReturnList = async (): Promise<UnifiedTradeRecord[]> =
           break;
         }
       }
-
-      // We do NOT match sales to returns solely by customer name!
-      // A customer can have multiple sales, and an old refund for that customer
-      // must NEVER mark their new or unrelated sales as returned.
 
       // Authentic return voucher with backend-generated return number (e.g. 2611...)
       const returnNo = tx.billRef || tx.refNo || `SR-${invNo || idx}`;
@@ -875,7 +905,16 @@ export const fetchSalesAndReturnList = async (): Promise<UnifiedTradeRecord[]> =
           ].find((lines) => Array.isArray(lines) && lines.length > 0)
         : null;
 
-      const inheritedLines = saleReturnLines || saleLines || [];
+      let inheritedLines = saleReturnLines || saleLines || [];
+      const txAmt = Number(tx.amount || 0);
+      if (inheritedLines.length > 0 && txAmt > 0) {
+        const exactMatch = inheritedLines.find((l: any) =>
+          Math.abs(Number(l.total ?? l.price ?? l.unitPrice ?? 0) - txAmt) < 0.01
+        );
+        if (exactMatch) {
+          inheritedLines = [exactMatch];
+        }
+      }
 
       const reconstructedReturn: UnifiedTradeRecord = {
         id: `ret_fin_${tx.id || tx.billRef || idx}`,
