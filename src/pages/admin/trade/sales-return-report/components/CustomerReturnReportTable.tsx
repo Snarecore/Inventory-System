@@ -42,6 +42,7 @@ import {
   type NormalizedSalesReturnRecord,
   type CustomerReturnSummary,
   type CustomerProductReturnItem,
+  formatUnit,
   aggregateSalesReturnCustomers,
   aggregateCustomerReturnedProducts,
   exportCustomerReturnSummaryExcel,
@@ -108,10 +109,13 @@ export const CustomerReturnReportTable: React.FC<
     isColVisible,
     handleToggleColumn,
     handleResetColumns,
+    activeVisibleColumnCount,
   } = useColumnVisibility(
     AVAILABLE_COLUMNS,
     "sales_return_report_customers_columns"
   );
+
+  const visibleTotalColumns = activeVisibleColumnCount + 1;
 
   // Group all records by customer
   const customers = useMemo(
@@ -260,51 +264,6 @@ export const CustomerReturnReportTable: React.FC<
     }
   };
 
-  // Action: Return specific product for this customer
-  const handleReturnProductForCustomer = (
-    customer: CustomerReturnSummary,
-    product: CustomerProductReturnItem
-  ) => {
-    const candidates = Array.isArray(allUnifiedRecords) ? allUnifiedRecords : [];
-    const targetRef = (
-      product.sampleOrderNo ||
-      product.sampleInvoiceNo ||
-      ""
-    )
-      .toLowerCase()
-      .trim();
-
-    let matchedSale = candidates.find((cand: any) => {
-      if (cand.isReturnRecord) return false;
-      const cOrd = String(cand.orderNo || "").toLowerCase().trim();
-      const cInv = String(cand.salesInvoiceNo || cand.invoiceNo || "")
-        .toLowerCase()
-        .trim();
-      return targetRef && (cOrd === targetRef || cInv === targetRef);
-    });
-
-    if (!matchedSale) {
-      matchedSale = candidates.find(
-        (cand: any) =>
-          !cand.isReturnRecord &&
-          ((customer.customerId &&
-            String(cand.customerId || cand.customer_id) ===
-              String(customer.customerId)) ||
-            (customer.customerName &&
-              String(cand.customerName || cand.customer_name).toLowerCase() ===
-                customer.customerName.toLowerCase()))
-      );
-    }
-
-    if (matchedSale) {
-      navigate("/admin/create-sales-return", {
-        state: { sale: matchedSale },
-      });
-    } else {
-      navigate("/admin/create-sales-return");
-    }
-  };
-
   return (
     <TableContainer>
       <TableToolbar>
@@ -424,7 +383,7 @@ export const CustomerReturnReportTable: React.FC<
       {/* Main Customers Summary Table with Embedded Row-by-Row Details */}
       <TableScroll>
         {isLoading ? (
-          <TableSkeleton rows={pageSize} columns={activeVisibleColumnCount(visibleColumns) + 1} />
+          <TableSkeleton columnCount={visibleTotalColumns} rowCount={pageSize} />
         ) : filteredCustomers.length === 0 ? (
           <EmptyState
             title="No Customer Returns Found"
@@ -624,10 +583,10 @@ export const CustomerReturnReportTable: React.FC<
                     {/* Inline Expandable Full Customer Details */}
                     {isExpanded && (
                       <tr className="bg-slate-50/60 dark:bg-slate-900/40 border-b border-[var(--ui-border)]">
-                        <td colSpan={11} className="p-0 sm:px-1 py-1.5">
+                        <td colSpan={visibleTotalColumns} className="p-0 sm:px-1 py-1.5">
                           <div className="w-full flex flex-col gap-2.5 bg-[var(--ui-surface)] p-2 sm:p-2.5 rounded-lg border border-[var(--ui-border)] shadow-xs">
                             {/* Sub-Tabs & Action Buttons in a sleek single row */}
-                            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--ui-border)] pb-1.5">
+                            <div className="w-full flex flex-wrap items-center justify-between gap-2 border-b border-[var(--ui-border)] pb-1.5">
                               {/* Sub-Tabs: Returned Products vs Return Vouchers */}
                               <div className="flex items-center gap-1.5">
                                 <button
@@ -720,36 +679,33 @@ export const CustomerReturnReportTable: React.FC<
 
                             {/* TAB 1: Returned Products Table (Row by Row) */}
                             {activeTabForCustomer === "products" && (
-                              <div className="overflow-x-auto rounded-lg border border-[var(--ui-border)]">
-                                <table className="w-full text-left text-xs border-collapse">
+                              <div className="w-full overflow-x-auto rounded-lg border border-[var(--ui-border)]">
+                                <table className="w-full min-w-full text-left text-xs border-collapse">
                                   <thead className="bg-[#009fe3] text-white">
                                     <tr>
-                                      <th className="py-2 px-2.5 text-center w-12 font-bold">
+                                      <th className="py-2.5 px-3 text-center w-12 font-bold whitespace-nowrap">
                                         SL
                                       </th>
-                                      <th className="py-2 px-3 font-bold">
+                                      <th className="py-2.5 px-3 font-bold">
                                         Product Name
                                       </th>
-                                      <th className="py-2 px-2.5 text-center font-bold">
+                                      <th className="py-2.5 px-3 text-center w-20 font-bold whitespace-nowrap">
                                         Unit
                                       </th>
-                                      <th className="py-2 px-2.5 text-center font-bold">
+                                      <th className="py-2.5 px-3 text-center w-28 font-bold whitespace-nowrap">
                                         Returned Qty
                                       </th>
-                                      <th className="py-2 px-3 text-right font-bold">
+                                      <th className="py-2.5 px-3 text-right w-36 font-bold whitespace-nowrap">
                                         Avg / Unit Price (৳)
                                       </th>
-                                      <th className="py-2 px-3 text-right font-bold">
+                                      <th className="py-2.5 px-3 text-right w-36 font-bold whitespace-nowrap">
                                         Total Amount (৳)
                                       </th>
-                                      <th className="py-2 px-3 font-bold">
+                                      <th className="py-2.5 px-3 font-bold">
                                         Return Reasons
                                       </th>
-                                      <th className="py-2 px-2.5 text-center font-bold">
+                                      <th className="py-2.5 px-3 text-center w-24 font-bold whitespace-nowrap">
                                         Vouchers
-                                      </th>
-                                      <th className="py-2 px-2.5 text-center font-bold w-20">
-                                        Action
                                       </th>
                                     </tr>
                                   </thead>
@@ -765,7 +721,7 @@ export const CustomerReturnReportTable: React.FC<
                                             key={p.productKey || pIdx}
                                             className="hover:bg-[var(--primary-color-light)]/20 transition-colors"
                                           >
-                                            <td className="py-2.5 px-2.5 text-center text-xs text-[var(--ui-text-muted)] tabular-nums">
+                                            <td className="py-2.5 px-3 text-center text-xs text-[var(--ui-text-muted)] tabular-nums">
                                               {pIdx + 1}
                                             </td>
                                             <td className="py-2.5 px-3 text-xs">
@@ -773,10 +729,10 @@ export const CustomerReturnReportTable: React.FC<
                                                 {p.productName}
                                               </span>
                                             </td>
-                                            <td className="py-2.5 px-2.5 text-center text-xs text-[var(--ui-text-muted)]">
-                                              {p.unit || "PCS"}
+                                            <td className="py-2.5 px-3 text-center text-xs text-[var(--ui-text-muted)] whitespace-nowrap">
+                                              {formatUnit(p.unit)}
                                             </td>
-                                            <td className="py-2.5 px-2.5 text-center text-xs font-bold text-rose-600 dark:text-rose-400 tabular-nums">
+                                            <td className="py-2.5 px-3 text-center text-xs font-bold text-rose-600 dark:text-rose-400 tabular-nums">
                                               {p.totalQuantity}
                                             </td>
                                             <td className="py-2.5 px-3 text-right text-xs text-[var(--ui-text)] tabular-nums whitespace-nowrap">
@@ -785,29 +741,13 @@ export const CustomerReturnReportTable: React.FC<
                                             <td className="py-2.5 px-3 text-right text-xs font-bold text-[var(--ui-danger)] tabular-nums whitespace-nowrap">
                                               ৳ {formatMoney(p.totalAmount)}
                                             </td>
-                                            <td className="py-2.5 px-3 text-xs text-[var(--ui-text-muted)] max-w-xs truncate">
+                                            <td className="py-2.5 px-3 text-xs text-[var(--ui-text-muted)]">
                                               {p.reasons.length > 0
                                                 ? p.reasons.join(", ")
                                                 : "Quality Issue / Defective"}
                                             </td>
-                                            <td className="py-2.5 px-2.5 text-center text-xs text-[var(--ui-text)] tabular-nums">
+                                            <td className="py-2.5 px-3 text-center text-xs text-[var(--ui-text)] tabular-nums">
                                               {p.returnCount}
-                                            </td>
-                                            <td className="py-2.5 px-2.5 text-center whitespace-nowrap">
-                                              <button
-                                                type="button"
-                                                onClick={() =>
-                                                  handleReturnProductForCustomer(
-                                                    c,
-                                                    p
-                                                  )
-                                                }
-                                                className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-semibold text-[var(--primary-color)] bg-[var(--primary-color-light)] hover:bg-[var(--primary-color)] hover:text-white rounded transition-colors cursor-pointer"
-                                                title="Return this item for customer"
-                                              >
-                                                <FiRotateCcw size={11} />
-                                                <span>ফেরত</span>
-                                              </button>
                                             </td>
                                           </tr>
                                         );
@@ -815,7 +755,7 @@ export const CustomerReturnReportTable: React.FC<
                                     ) : (
                                       <tr>
                                         <td
-                                          colSpan={9}
+                                          colSpan={8}
                                           className="py-6 text-center text-xs text-[var(--ui-text-muted)] italic"
                                         >
                                           No returned products recorded for this customer.
@@ -829,8 +769,8 @@ export const CustomerReturnReportTable: React.FC<
 
                             {/* TAB 2: Return Vouchers Table */}
                             {activeTabForCustomer === "vouchers" && (
-                              <div className="overflow-x-auto rounded-lg border border-[var(--ui-border)]">
-                                <table className="w-full text-left text-xs border-collapse">
+                              <div className="w-full overflow-x-auto rounded-lg border border-[var(--ui-border)]">
+                                <table className="w-full min-w-full text-left text-xs border-collapse">
                                   <thead className="bg-[#009fe3] text-white">
                                     <tr>
                                       <th className="py-2 px-2.5 text-center w-12 font-bold">

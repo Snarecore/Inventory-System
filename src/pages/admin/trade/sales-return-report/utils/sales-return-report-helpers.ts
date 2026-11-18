@@ -44,6 +44,30 @@ export interface NormalizedSalesReturnLine {
   reason: string;
 }
 
+/**
+ * Format product unit nicely without all-caps (e.g. "PCS" -> "Pcs", "KG" -> "Kg").
+ */
+export const formatUnit = (unit?: string): string => {
+  if (!unit) return "Pcs";
+  const str = String(unit).trim();
+  if (
+    !str ||
+    str.toLowerCase() === "vchr" ||
+    str.toLowerCase() === "item" ||
+    str.toLowerCase() === "none" ||
+    str === "-"
+  ) {
+    return "Pcs";
+  }
+  if (str.toUpperCase() === "PCS") {
+    return "Pcs";
+  }
+  if (str === str.toUpperCase() && str.length > 1) {
+    return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
+  }
+  return str;
+};
+
 export interface NormalizedSalesReturnRecord {
   id: string | number;
   returnNo: string;
@@ -481,7 +505,7 @@ export function extractNormalizedSalesReturns(
           productId: String(l.productId || l.product_id || l.id || ""),
           productCode: String(l.productCode || l.product_code || l.pcode || l.sku || "-"),
           productName: pName,
-          unit: String(l.unit || l.unitName || l.unit_name || "PCS"),
+          unit: formatUnit(String(l.unit || l.unitName || l.unit_name || "Pcs")),
           unitPrice: Number(l.unitPrice ?? l.unit_price ?? l.price ?? l.rate ?? 0),
           total: Number(l.total ?? l.totalAmount ?? 0),
         };
@@ -823,7 +847,7 @@ export function extractNormalizedSalesReturns(
         item.sku ||
         "-"
       ).trim();
-      let resolvedUnit = String(item.unit || item.unitName || item.unit_name || "PCS").trim();
+      let resolvedUnit = formatUnit(String(item.unit || item.unitName || item.unit_name || "Pcs").trim());
 
       if (!resolvedProdName || resolvedProdName === "Returned Product" || resolvedProdName === "Returned Item") {
         const custProds =
@@ -839,7 +863,7 @@ export function extractNormalizedSalesReturns(
           const chosen = priceMatch || custProds[0];
           resolvedProdName = chosen.productName;
           resolvedProdCode = chosen.productCode;
-          resolvedUnit = chosen.unit || "PCS";
+          resolvedUnit = formatUnit(chosen.unit || "Pcs");
         }
       }
 
@@ -858,7 +882,7 @@ export function extractNormalizedSalesReturns(
         productId: String(item.id || returnNo || `ret-${idx}`),
         productCode: resolvedProdCode,
         productName: resolvedProdName,
-        unit: resolvedUnit || "PCS",
+        unit: formatUnit(resolvedUnit || "Pcs"),
         quantity: 1,
         unitPrice: refundAmount,
         total: refundAmount,
@@ -1113,7 +1137,7 @@ export function aggregateCustomerReturnedProducts(
         knownRealProducts.push({
           name,
           code: String(line.productCode || "-").trim(),
-          unit: String(line.unit || "PCS").trim(),
+          unit: formatUnit(String(line.unit || "Pcs").trim()),
           price: Number(line.unitPrice || line.total || 0),
         });
       }
@@ -1124,7 +1148,7 @@ export function aggregateCustomerReturnedProducts(
     (r.details || []).forEach((line) => {
       let pName = String(line.productName || "Returned Product").trim();
       let pCode = String(line.productCode || "-").trim();
-      let pUnit = line.unit && line.unit !== "vchr" ? line.unit : "PCS";
+      let pUnit = formatUnit(line.unit && line.unit !== "vchr" ? line.unit : "Pcs");
 
       // If generic, resolve using knownRealProducts from this customer
       if (
@@ -1144,7 +1168,7 @@ export function aggregateCustomerReturnedProducts(
           const chosen = priceMatch || knownRealProducts[0];
           pName = chosen.name;
           if (pCode === "-" && chosen.code !== "-") pCode = chosen.code;
-          if (pUnit === "PCS" && chosen.unit) pUnit = chosen.unit;
+          if (pUnit === "Pcs" && chosen.unit) pUnit = formatUnit(chosen.unit);
         } else {
           pName = "Returned Product";
         }
@@ -1171,7 +1195,7 @@ export function aggregateCustomerReturnedProducts(
           productId: line.productId || "",
           productCode: pCode,
           productName: pName,
-          unit: pUnit,
+          unit: formatUnit(pUnit),
           totalQuantity: 0,
           unitPrice: line.unitPrice || 0,
           totalAmount: 0,
@@ -1877,7 +1901,7 @@ export async function downloadCustomerDetailedReturnPdf(
       return [
         idx + 1,
         p.productName,
-        p.unit || "PCS",
+        formatUnit(p.unit),
         p.totalQuantity,
         formatMoney(avgUnitPrice),
         formatMoney(p.totalAmount),
@@ -2041,7 +2065,7 @@ export async function exportCustomerDetailedReturnExcel(
       return {
         SL: idx + 1,
         "Product Name": p.productName,
-        Unit: p.unit || "PCS",
+        Unit: formatUnit(p.unit),
         "Returned Qty": p.totalQuantity,
         "Avg / Unit Price (BDT)": avgUnitPrice,
         "Total Amount (BDT)": p.totalAmount,
