@@ -377,6 +377,19 @@ const isBackendReturnNo = (no?: string): boolean => {
 /**
  * Extracts and normalizes return records from `get-sales-and-return` unified API output.
  */
+const isDummyTestRecord = (item: any): boolean => {
+  if (!item) return false;
+  const phone = String(item.customerPhone || item.phone || "").replace(/\D/g, "");
+  const name = String(item.customerName || item.customer_name || "").trim().toLowerCase();
+  const note = String(item.note || item.remarks || item.notes || item.reason || "").toLowerCase();
+  return (
+    phone === "01712274563" ||
+    name === "arman" ||
+    note.includes("01712274563") ||
+    note.includes("(arman)")
+  );
+};
+
 export function extractNormalizedSalesReturns(
   records: UnifiedTradeRecord[],
   startDate?: string,
@@ -402,7 +415,7 @@ export function extractNormalizedSalesReturns(
   >();
 
   records.forEach((rec: any) => {
-    if (!rec || Boolean(rec?.isReturnRecord) || isReturnRecord(rec)) return;
+    if (!rec || Boolean(rec?.isReturnRecord) || isReturnRecord(rec) || isDummyTestRecord(rec)) return;
     const recOrderNo = String(rec.orderNo || rec.order_no || "").trim();
     [
       rec.salesInvoiceNo,
@@ -503,9 +516,11 @@ export function extractNormalizedSalesReturns(
     return "";
   };
 
-  // Filter raw return records
+  // Filter raw return records (excluding dummy test records)
   const rawReturnItems = records.filter(
-    (item: any) => Boolean(item?.isReturnRecord) || isReturnRecord(item)
+    (item: any) =>
+      (Boolean(item?.isReturnRecord) || isReturnRecord(item)) &&
+      !isDummyTestRecord(item)
   );
 
   const backendReturnsByInvoice = new Set<string>();

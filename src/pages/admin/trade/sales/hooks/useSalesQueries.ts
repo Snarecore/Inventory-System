@@ -623,8 +623,21 @@ export const fetchSalesAndReturnList = async (): Promise<UnifiedTradeRecord[]> =
       );
     };
 
+    const isDummyTestRecord = (item: any): boolean => {
+      if (!item) return false;
+      const phone = String(item.customerPhone || item.phone || "").replace(/\D/g, "");
+      const name = String(item.customerName || item.customer_name || "").trim().toLowerCase();
+      const note = String(item.notes || item.note || item.remarks || item.reason || "").toLowerCase();
+      return (
+        phone === "01712274563" ||
+        name === "arman" ||
+        note.includes("01712274563") ||
+        note.includes("(arman)")
+      );
+    };
+
     const addReturnRecord = (item: any, fallbackIdx: number) => {
-      if (!item) return;
+      if (!item || isDummyTestRecord(item)) return;
       const rNo = String(item.returnNo || item.return_no || item.salesReturnNo || item.id || `ret_idx_${fallbackIdx}`).trim();
       const rKey = `ret_${rNo.toLowerCase()}`;
       const saleAliases = getReturnParentSaleAliases(item);
@@ -835,6 +848,13 @@ export const fetchSalesAndReturnList = async (): Promise<UnifiedTradeRecord[]> =
         if (custMatch && custMatch[1]) {
           custName = custMatch[1].trim();
         }
+      }
+
+      if (
+        custName.toLowerCase() === "arman" ||
+        (tx.notes && (tx.notes.includes("01712274563") || tx.notes.toLowerCase().includes("(arman)")))
+      ) {
+        return;
       }
 
       if (!invNo && tx.billRef) {
