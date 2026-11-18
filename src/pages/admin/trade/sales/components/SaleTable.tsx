@@ -500,16 +500,14 @@ export const SaleTable: React.FC<SaleTableProps> = ({
                 }
 
                 // Directly read return flag from backend or returnedInvoiceSet
-                const invoiceKey = String(sale.invoiceNo || "").trim().toLowerCase();
+                const invoiceKey = String(sale.invoiceNo || sale.salesInvoiceNo || "").trim().toLowerCase();
                 const orderKey = String(sale.orderNo || "").trim().toLowerCase();
-                const idKey = String(sale.id || "").trim().toLowerCase();
                 const isAlreadyReturned =
                   Boolean(sale.hasReturn) ||
                   Boolean(
                     returnedInvoiceSet &&
-                      ((invoiceKey && returnedInvoiceSet.has(invoiceKey)) ||
-                        (orderKey && returnedInvoiceSet.has(orderKey)) ||
-                        (idKey && returnedInvoiceSet.has(idKey)))
+                      ((invoiceKey && invoiceKey !== "-" && returnedInvoiceSet.has(invoiceKey)) ||
+                        (orderKey && orderKey !== "-" && returnedInvoiceSet.has(orderKey)))
                   );
 
                 return (

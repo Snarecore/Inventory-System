@@ -205,9 +205,12 @@ const Purchases: React.FC = () => {
     const detailsMap = new Map<string, any[]>();
     rawRList.forEach((r) => {
       if (Array.isArray(r.returnDetails) && r.returnDetails.length > 0) {
-        const cleanOrd = getCleanOrderNo(r.orderNo, r.purchaseInvoiceNo || r.invoiceNo, r.id);
-        const ord = String(cleanOrd || r.orderNo || "").trim().toLowerCase();
-        const inv = String(r.purchaseInvoiceNo || r.invoiceNo || "").trim().toLowerCase();
+        const parentOrd = r.orderNo && r.orderNo !== "-" && !String(r.orderNo).startsWith("PR-") ? r.orderNo : "";
+        const parentInv = (r.purchaseInvoiceNo && r.purchaseInvoiceNo !== "-") ? r.purchaseInvoiceNo : ((r.invoiceNo && r.invoiceNo !== "-" && r.invoiceNo !== r.returnNo) ? r.invoiceNo : "");
+        const parentPurId = (r as any).purchaseId || (r as any).purchase_id;
+        const cleanOrd = (parentOrd || parentInv || parentPurId) ? getCleanOrderNo(parentOrd, parentInv, parentPurId) : "";
+        const ord = String(cleanOrd || parentOrd || "").trim().toLowerCase();
+        const inv = String(parentInv || "").trim().toLowerCase();
         if (ord) detailsMap.set(ord, r.returnDetails);
         if (inv) detailsMap.set(inv, r.returnDetails);
       }
@@ -215,9 +218,12 @@ const Purchases: React.FC = () => {
 
     sortedCandidates.forEach((item) => {
       const retNo = String(item.returnNo || "").trim();
-      const cleanOrd = getCleanOrderNo(item.orderNo, item.purchaseInvoiceNo || item.invoiceNo, item.id);
-      const ordNo = String(cleanOrd || item.orderNo || "").trim().toLowerCase();
-      const invNo = String(item.purchaseInvoiceNo || item.invoiceNo || "").trim().toLowerCase();
+      const parentOrd = item.orderNo && item.orderNo !== "-" && !String(item.orderNo).startsWith("PR-") ? item.orderNo : "";
+      const parentInv = (item.purchaseInvoiceNo && item.purchaseInvoiceNo !== "-") ? item.purchaseInvoiceNo : ((item.invoiceNo && item.invoiceNo !== "-" && item.invoiceNo !== item.returnNo) ? item.invoiceNo : "");
+      const parentPurId = (item as any).purchaseId || (item as any).purchase_id;
+      const cleanOrd = (parentOrd || parentInv || parentPurId) ? getCleanOrderNo(parentOrd, parentInv, parentPurId) : "";
+      const ordNo = String(cleanOrd || parentOrd || "").trim().toLowerCase();
+      const invNo = String(parentInv || "").trim().toLowerCase();
       const refundAmt = Number(item.refundAmount || item.grandTotal || 0).toFixed(2);
       const isBackend = isAuthenticBackendNo(retNo);
 
@@ -336,12 +342,19 @@ const Purchases: React.FC = () => {
     // If any purchase was returned, ensure its hasReturn flag is properly updated
     if (Array.isArray(rawReturns)) {
       rawReturns.forEach((r) => {
-        const cleanOrd = getCleanOrderNo(r.orderNo, r.purchaseInvoiceNo || r.invoiceNo, r.id);
+        const parentOrd = r.orderNo && r.orderNo !== "-" && !String(r.orderNo).startsWith("PR-") ? r.orderNo : "";
+        const parentInv = (r.purchaseInvoiceNo && r.purchaseInvoiceNo !== "-") ? r.purchaseInvoiceNo : ((r.invoiceNo && r.invoiceNo !== "-" && r.invoiceNo !== r.returnNo) ? r.invoiceNo : "");
+        const parentPurId = (r as any).purchaseId || (r as any).purchase_id;
+
+        if (!parentOrd && !parentInv && !parentPurId) {
+          return;
+        }
+
+        const cleanOrd = getCleanOrderNo(parentOrd, parentInv, parentPurId);
         const aliases = [
           cleanOrd ? `ord_${cleanOrd.toLowerCase()}` : null,
-          r.orderNo ? `ord_${String(r.orderNo).trim().toLowerCase()}` : null,
-          r.purchaseInvoiceNo ? `inv_${String(r.purchaseInvoiceNo).trim().toLowerCase()}` : null,
-          r.invoiceNo ? `inv_${String(r.invoiceNo).trim().toLowerCase()}` : null,
+          parentOrd ? `ord_${String(parentOrd).trim().toLowerCase()}` : null,
+          parentInv ? `inv_${String(parentInv).trim().toLowerCase()}` : null,
           r.challanNo ? `chn_${String(r.challanNo).trim().toLowerCase()}` : null,
         ].filter(Boolean) as string[];
 
@@ -363,14 +376,12 @@ const Purchases: React.FC = () => {
       const orderKey = String(p.orderNo || "").trim().toLowerCase();
       const invoiceKey = String(p.invoiceNo || (p as any).purchaseInvoiceNo || "").trim().toLowerCase();
       const challanKey = String(p.challanNo || "").trim().toLowerCase();
-      const idKey = String(p.id || (p as any).purchaseId || "").trim().toLowerCase();
 
       const isMarkedReturned =
         Boolean(p.hasReturn) ||
-        Boolean(orderKey && returnedInvoiceSet.has(orderKey)) ||
-        Boolean(invoiceKey && returnedInvoiceSet.has(invoiceKey)) ||
-        Boolean(challanKey && returnedInvoiceSet.has(challanKey)) ||
-        Boolean(idKey && returnedInvoiceSet.has(idKey));
+        Boolean(orderKey && orderKey !== "-" && returnedInvoiceSet.has(orderKey)) ||
+        Boolean(invoiceKey && invoiceKey !== "-" && returnedInvoiceSet.has(invoiceKey)) ||
+        Boolean(challanKey && challanKey !== "-" && returnedInvoiceSet.has(challanKey));
 
       if (isMarkedReturned && !p.hasReturn) {
         return { ...p, hasReturn: true };

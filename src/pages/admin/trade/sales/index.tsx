@@ -203,9 +203,12 @@ const Sales: React.FC = () => {
     const detailsMap = new Map<string, any[]>();
     rawRList.forEach((r) => {
       if (Array.isArray(r.returnDetails) && r.returnDetails.length > 0) {
-        const cleanOrd = getCleanOrderNo(r.orderNo, r.salesInvoiceNo || r.invoiceNo, r.id);
-        const ord = String(cleanOrd || r.orderNo || "").trim().toLowerCase();
-        const inv = String(r.salesInvoiceNo || r.invoiceNo || "").trim().toLowerCase();
+        const parentOrd = r.orderNo && r.orderNo !== "-" && !String(r.orderNo).startsWith("SR-") ? r.orderNo : "";
+        const parentInv = (r.salesInvoiceNo && r.salesInvoiceNo !== "-") ? r.salesInvoiceNo : ((r.invoiceNo && r.invoiceNo !== "-" && r.invoiceNo !== r.returnNo) ? r.invoiceNo : "");
+        const parentSaleId = (r as any).saleId || (r as any).sale_id;
+        const cleanOrd = (parentOrd || parentInv || parentSaleId) ? getCleanOrderNo(parentOrd, parentInv, parentSaleId) : "";
+        const ord = String(cleanOrd || parentOrd || "").trim().toLowerCase();
+        const inv = String(parentInv || "").trim().toLowerCase();
         if (ord) detailsMap.set(ord, r.returnDetails);
         if (inv) detailsMap.set(inv, r.returnDetails);
       }
@@ -213,9 +216,12 @@ const Sales: React.FC = () => {
 
     sortedCandidates.forEach((item) => {
       const retNo = String(item.returnNo || "").trim();
-      const cleanOrd = getCleanOrderNo(item.orderNo, item.salesInvoiceNo || item.invoiceNo, item.id);
-      const ordNo = String(cleanOrd || item.orderNo || "").trim().toLowerCase();
-      const invNo = String(item.salesInvoiceNo || item.invoiceNo || "").trim().toLowerCase();
+      const parentOrd = item.orderNo && item.orderNo !== "-" && !String(item.orderNo).startsWith("SR-") ? item.orderNo : "";
+      const parentInv = (item.salesInvoiceNo && item.salesInvoiceNo !== "-") ? item.salesInvoiceNo : ((item.invoiceNo && item.invoiceNo !== "-" && item.invoiceNo !== item.returnNo) ? item.invoiceNo : "");
+      const parentSaleId = (item as any).saleId || (item as any).sale_id;
+      const cleanOrd = (parentOrd || parentInv || parentSaleId) ? getCleanOrderNo(parentOrd, parentInv, parentSaleId) : "";
+      const ordNo = String(cleanOrd || parentOrd || "").trim().toLowerCase();
+      const invNo = String(parentInv || "").trim().toLowerCase();
       const refundAmt = Number(item.refundAmount || item.grandTotal || 0).toFixed(2);
       const isBackend = isAuthenticBackendNo(retNo);
 
@@ -372,12 +378,20 @@ const Sales: React.FC = () => {
           return;
         }
 
-        const cleanOrd = getCleanOrderNo(r.orderNo, r.salesInvoiceNo || r.invoiceNo, r.id);
+        const parentOrd = r.orderNo && r.orderNo !== "-" && !String(r.orderNo).startsWith("SR-") ? r.orderNo : "";
+        const parentInv = (r.salesInvoiceNo && r.salesInvoiceNo !== "-") ? r.salesInvoiceNo : ((r.invoiceNo && r.invoiceNo !== "-" && r.invoiceNo !== r.returnNo) ? r.invoiceNo : "");
+        const parentSaleId = (r as any).saleId || (r as any).sale_id;
+
+        // ONLY attempt matching if there is an authentic parent sale identifier!
+        if (!parentOrd && !parentInv && !parentSaleId) {
+          return;
+        }
+
+        const cleanOrd = getCleanOrderNo(parentOrd, parentInv, parentSaleId);
         const aliases = [
           cleanOrd ? `ord_${cleanOrd.toLowerCase()}` : null,
-          r.orderNo ? `ord_${String(r.orderNo).trim().toLowerCase()}` : null,
-          r.salesInvoiceNo ? `inv_${String(r.salesInvoiceNo).trim().toLowerCase()}` : null,
-          r.invoiceNo ? `inv_${String(r.invoiceNo).trim().toLowerCase()}` : null,
+          parentOrd ? `ord_${String(parentOrd).trim().toLowerCase()}` : null,
+          parentInv ? `inv_${String(parentInv).trim().toLowerCase()}` : null,
         ].filter(Boolean) as string[];
 
         const exists = aliases.some((a) => aliasToIdx.has(a));
@@ -400,13 +414,11 @@ const Sales: React.FC = () => {
     return saleList.map((sale) => {
       const orderKey = String(sale.orderNo || "").trim().toLowerCase();
       const invoiceKey = String(sale.invoiceNo || sale.salesInvoiceNo || "").trim().toLowerCase();
-      const idKey = String(sale.id || "").trim().toLowerCase();
 
       const isMarkedReturned =
         Boolean(sale.hasReturn) ||
-        Boolean(orderKey && returnedInvoiceSet.has(orderKey)) ||
-        Boolean(invoiceKey && returnedInvoiceSet.has(invoiceKey)) ||
-        Boolean(idKey && returnedInvoiceSet.has(idKey));
+        Boolean(orderKey && orderKey !== "-" && returnedInvoiceSet.has(orderKey)) ||
+        Boolean(invoiceKey && invoiceKey !== "-" && returnedInvoiceSet.has(invoiceKey));
 
       if (isMarkedReturned && !sale.hasReturn) {
         return { ...sale, hasReturn: true };

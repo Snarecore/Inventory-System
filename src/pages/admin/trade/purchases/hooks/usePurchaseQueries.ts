@@ -80,11 +80,34 @@ export const normalizePurchaseRecord = (item: any): PurchaseItem => {
     item?.supplierAddress ||
     item?.supplier_address ||
     "";
-  const hasReturn = Boolean(
-    item?.hasReturn ||
-    item?.returnNo ||
+  // Strict check for hasReturn:
+  const rawHasReturn = item?.hasReturn;
+  const isExplicitlyTrue =
+    rawHasReturn === true ||
+    rawHasReturn === 1 ||
+    rawHasReturn === "1" ||
+    rawHasReturn === "true";
+  const validReturnNo =
+    typeof item?.returnNo === "string" &&
+    item.returnNo.trim() !== "" &&
+    item.returnNo.trim() !== "-" &&
+    item.returnNo.trim() !== "0" &&
+    item.returnNo.trim().toLowerCase() !== "null";
+  const validReturn_no =
+    typeof item?.return_no === "string" &&
+    item.return_no.trim() !== "" &&
+    item.return_no.trim() !== "-" &&
+    item.return_no.trim() !== "0" &&
+    item.return_no.trim().toLowerCase() !== "null";
+  const hasReturnDetails =
     (Array.isArray(item?.returnDetails) && item.returnDetails.length > 0) ||
-    (Array.isArray(item?.purchaseReturnDetails) && item.purchaseReturnDetails.length > 0)
+    (Array.isArray(item?.purchaseReturnDetails) && item.purchaseReturnDetails.length > 0);
+
+  const hasReturn = Boolean(
+    isExplicitlyTrue ||
+    validReturnNo ||
+    validReturn_no ||
+    hasReturnDetails
   );
 
   const cleanOrderNo = getCleanOrderNo(
@@ -565,19 +588,8 @@ export const fetchPurchaseAndReturnList = async (): Promise<UnifiedPurchaseRecor
         }
       }
 
-      // If not matched by invoice, match by supplier name if known
-      if (!matchedPurchase && supName && supName !== "Supplier") {
-        const foundIdx = unifiedList.findIndex(
-          (u) =>
-            !u.isReturnRecord &&
-            u.supplierName &&
-            u.supplierName.toLowerCase() === supName.toLowerCase()
-        );
-        if (foundIdx !== -1) {
-          matchedPurchase = unifiedList[foundIdx];
-          unifiedList[foundIdx].hasReturn = true;
-        }
-      }
+      // We do NOT match purchases to returns solely by supplier name!
+      // A supplier can have multiple purchases, and an old refund must never mark new purchases as returned.
 
       // Authentic return voucher with backend-generated return number (e.g. 2611161438531964)
       const returnNo = tx.billRef || tx.refNo || `PR-${invNo || idx}`;
@@ -749,7 +761,7 @@ export const extractReturnedPurchaseKeysSet = (records: any[]): Set<string> => {
       const ord = item.orderNo || item.order_no;
       if (ord) {
         set.add(String(ord).trim().toLowerCase());
-        const cleanOrd = getCleanOrderNo(ord, inv, item.id || item.purchaseId);
+        const cleanOrd = getCleanOrderNo(ord, inv, item.purchaseId || item.purchase_id);
         if (cleanOrd) set.add(cleanOrd.toLowerCase());
       }
       const chn = item.challanNo || item.challan_no;

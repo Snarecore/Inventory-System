@@ -115,12 +115,37 @@ export const normalizeSaleRecord = (item: any): SaleItem => {
     item?.customerAddress ||
     item?.customer_address ||
     "";
-  const hasReturn = Boolean(
-    item?.hasReturn ||
-    item?.returnNo ||
-    item?.return_no ||
+  // Strict check for hasReturn:
+  // ONLY true if item.hasReturn is explicitly true/1,
+  // or returnNo is a non-empty, non-dash, non-zero string,
+  // or returnDetails array actually contains items.
+  const rawHasReturn = item?.hasReturn;
+  const isExplicitlyTrue =
+    rawHasReturn === true ||
+    rawHasReturn === 1 ||
+    rawHasReturn === "1" ||
+    rawHasReturn === "true";
+  const validReturnNo =
+    typeof item?.returnNo === "string" &&
+    item.returnNo.trim() !== "" &&
+    item.returnNo.trim() !== "-" &&
+    item.returnNo.trim() !== "0" &&
+    item.returnNo.trim().toLowerCase() !== "null";
+  const validReturn_no =
+    typeof item?.return_no === "string" &&
+    item.return_no.trim() !== "" &&
+    item.return_no.trim() !== "-" &&
+    item.return_no.trim() !== "0" &&
+    item.return_no.trim().toLowerCase() !== "null";
+  const hasReturnDetails =
     (Array.isArray(item?.returnDetails) && item.returnDetails.length > 0) ||
-    (Array.isArray(item?.salesReturnDetails) && item.salesReturnDetails.length > 0)
+    (Array.isArray(item?.salesReturnDetails) && item.salesReturnDetails.length > 0);
+
+  const hasReturn = Boolean(
+    isExplicitlyTrue ||
+    validReturnNo ||
+    validReturn_no ||
+    hasReturnDetails
   );
 
   const cleanOrderNo = getCleanOrderNo(
@@ -283,6 +308,46 @@ export const fetchSalesAndReturnList = async (): Promise<UnifiedTradeRecord[]> =
       ].filter(Boolean) as string[];
     };
 
+    // Safely extract aliases for the PARENT SALE of a return record
+    // CRITICAL: NEVER use return record's own item.id as parent saleId or orderId!
+    const getReturnParentSaleAliases = (item: any): string[] => {
+      if (!item) return [];
+      const retNo = String(item.returnNo || item.return_no || item.salesReturnNo || "").trim().toLowerCase();
+
+      const rawOrd = item.orderNo || item.order_no;
+      const rawInv = item.salesInvoiceNo || item.sales_invoice_no || item.invoiceNo || item.invoice_no;
+      const rawSaleId = item.saleId || item.sale_id; // ONLY authentic parent saleId, NEVER return's own item.id!
+
+      const ordNo =
+        rawOrd &&
+        String(rawOrd).trim() !== "-" &&
+        String(rawOrd).trim() !== "0" &&
+        String(rawOrd).trim().toLowerCase() !== retNo &&
+        !String(rawOrd).trim().toUpperCase().startsWith("SR-")
+          ? String(rawOrd).trim()
+          : "";
+      const invNo =
+        rawInv &&
+        String(rawInv).trim() !== "-" &&
+        String(rawInv).trim() !== "0" &&
+        String(rawInv).trim().toLowerCase() !== retNo
+          ? String(rawInv).trim()
+          : "";
+      const sId =
+        rawSaleId && String(rawSaleId).trim() !== "-" && String(rawSaleId).trim() !== "0"
+          ? String(rawSaleId).trim()
+          : "";
+
+      const cleanOrd = ordNo || invNo || sId ? getCleanOrderNo(ordNo, invNo, sId) : "";
+
+      return [
+        cleanOrd ? `sale_ord_${cleanOrd.toLowerCase()}` : null,
+        ordNo ? `sale_ord_${ordNo.toLowerCase()}` : null,
+        invNo ? `sale_inv_${invNo.toLowerCase()}` : null,
+        sId ? `sale_id_${sId.toLowerCase()}` : null,
+      ].filter(Boolean) as string[];
+    };
+
     const addSaleRecord = (item: any, fallbackIdx: number) => {
       if (!item) return;
       const aliases = getSaleAliases(item);
@@ -292,13 +357,35 @@ export const fetchSalesAndReturnList = async (): Promise<UnifiedTradeRecord[]> =
         item.id || item.saleId
       );
 
+      const rawHasReturn = item?.hasReturn;
+      const isExplicitlyTrue =
+        rawHasReturn === true ||
+        rawHasReturn === 1 ||
+        rawHasReturn === "1" ||
+        rawHasReturn === "true";
+      const validReturnNo =
+        typeof item?.returnNo === "string" &&
+        item.returnNo.trim() !== "" &&
+        item.returnNo.trim() !== "-" &&
+        item.returnNo.trim() !== "0" &&
+        item.returnNo.trim().toLowerCase() !== "null";
+      const validReturn_no =
+        typeof item?.return_no === "string" &&
+        item.return_no.trim() !== "" &&
+        item.return_no.trim() !== "-" &&
+        item.return_no.trim() !== "0" &&
+        item.return_no.trim().toLowerCase() !== "null";
+      const hasReturnDetails =
+        (Array.isArray(item?.returnDetails) && item.returnDetails.length > 0) ||
+        (Array.isArray(item?.salesReturnDetails) && item.salesReturnDetails.length > 0) ||
+        (Array.isArray(item?.returns) && item.returns.length > 0) ||
+        (Array.isArray(item?.salesReturns) && item.salesReturns.length > 0);
+
       const hasReturnInfo = Boolean(
-        item.hasReturn ||
-        item.returnNo ||
-        item.return_no ||
-        (Array.isArray(item.returnDetails) && item.returnDetails.length > 0) ||
-        (Array.isArray(item.salesReturnDetails) && item.salesReturnDetails.length > 0) ||
-        (Array.isArray(item.returns) && item.returns.length > 0)
+        isExplicitlyTrue ||
+        validReturnNo ||
+        validReturn_no ||
+        hasReturnDetails
       );
 
       let existingIdx = -1;
@@ -344,7 +431,7 @@ export const fetchSalesAndReturnList = async (): Promise<UnifiedTradeRecord[]> =
         // Update any previously added return record in unifiedList that matches this sale
         unifiedList.forEach((u) => {
           if (u.isReturnRecord) {
-            const uAliases = getSaleAliases(u);
+            const uAliases = getReturnParentSaleAliases(u);
             if (uAliases.some((a) => aliases.includes(a))) {
               if (cleanOrd && (!u.orderNo || isBackendGeneratedNo(u.orderNo))) {
                 u.orderNo = cleanOrd;
@@ -431,18 +518,18 @@ export const fetchSalesAndReturnList = async (): Promise<UnifiedTradeRecord[]> =
       if (!item) return;
       const rNo = String(item.returnNo || item.return_no || item.salesReturnNo || item.id || `ret_idx_${fallbackIdx}`).trim();
       const rKey = `ret_${rNo.toLowerCase()}`;
-      const saleAliases = getSaleAliases(item);
+      const saleAliases = getReturnParentSaleAliases(item);
       const isBackend = isBackendGeneratedNo(rNo);
 
       // If this is synthetic, drop it if backend already has this return!
-      if (!isBackend) {
+      if (!isBackend && saleAliases.length > 0) {
         const hasBackend = saleAliases.some((a) => backendReturnAliases.has(a));
         if (hasBackend) {
           return;
         }
       }
 
-      if (isBackend) {
+      if (isBackend && saleAliases.length > 0) {
         saleAliases.forEach((a) => backendReturnAliases.add(a));
 
         // If a synthetic SR- / RET- record was already added earlier for this sale, remove it!
@@ -450,7 +537,7 @@ export const fetchSalesAndReturnList = async (): Promise<UnifiedTradeRecord[]> =
           (u) =>
             u.isReturnRecord &&
             !isBackendGeneratedNo(u.returnNo) &&
-            getSaleAliases(u).some((a) => saleAliases.includes(a))
+            getReturnParentSaleAliases(u).some((a) => saleAliases.includes(a))
         );
         if (existingSyntheticIdx !== -1) {
           unifiedList.splice(existingSyntheticIdx, 1);
@@ -489,23 +576,27 @@ export const fetchSalesAndReturnList = async (): Promise<UnifiedTradeRecord[]> =
         normalized.salesDetails = [];
         unifiedList.push(normalized);
 
-        saleAliases.forEach((a) => returnedInvoices.add(a));
+        // ONLY index returned invoice aliases if this return genuinely has parent sale aliases!
+        if (saleAliases.length > 0) {
+          saleAliases.forEach((a) => returnedInvoices.add(a));
+        }
       }
 
-      // Check if original sale already exists
-      const saleAliasesForCheck = getSaleAliases(item);
+      // Check if original sale already exists (ONLY if genuine parent sale aliases exist)
       let existingIdx = -1;
-      for (const a of saleAliasesForCheck) {
-        if (aliasToSaleIdx.has(a)) {
-          existingIdx = aliasToSaleIdx.get(a)!;
-          break;
+      if (saleAliases.length > 0) {
+        for (const a of saleAliases) {
+          if (aliasToSaleIdx.has(a)) {
+            existingIdx = aliasToSaleIdx.get(a)!;
+            break;
+          }
         }
       }
 
       if (existingIdx !== -1) {
         // Original sale already exists! DO NOT create a synthetic duplicate!
         unifiedList[existingIdx].hasReturn = true;
-        saleAliasesForCheck.forEach((a) => aliasToSaleIdx.set(a, existingIdx));
+        saleAliases.forEach((a) => aliasToSaleIdx.set(a, existingIdx));
         const parentSale = unifiedList[existingIdx];
         if (normalized) {
           if (parentSale.orderNo && (!normalized.orderNo || isBackendGeneratedNo(normalized.orderNo))) {
@@ -594,19 +685,9 @@ export const fetchSalesAndReturnList = async (): Promise<UnifiedTradeRecord[]> =
         }
       }
 
-      // If not matched by invoice, match by customer name if known
-      if (!matchedSale && custName && custName !== "Customer") {
-        const foundIdx = unifiedList.findIndex(
-          (u) =>
-            !u.isReturnRecord &&
-            u.customerName &&
-            u.customerName.toLowerCase() === custName.toLowerCase()
-        );
-        if (foundIdx !== -1) {
-          matchedSale = unifiedList[foundIdx];
-          unifiedList[foundIdx].hasReturn = true;
-        }
-      }
+      // We do NOT match sales to returns solely by customer name!
+      // A customer can have multiple sales, and an old refund for that customer
+      // must NEVER mark their new or unrelated sales as returned.
 
       // Authentic return voucher with backend-generated return number (e.g. 2611...)
       const returnNo = tx.billRef || tx.refNo || `SR-${invNo || idx}`;
@@ -671,7 +752,7 @@ export const fetchSalesAndReturnList = async (): Promise<UnifiedTradeRecord[]> =
         (u) =>
           u.isReturnRecord &&
           !isBackendGeneratedNo(u.returnNo) &&
-          (getSaleAliases(u).some((a) => finAliases.includes(a)) ||
+          (getReturnParentSaleAliases(u).some((a) => finAliases.includes(a)) ||
             (resolvedOrdNo && String(u.orderNo || "").toLowerCase() === resolvedOrdNo.toLowerCase()) ||
             (invNo && String(u.invoiceNo || u.salesInvoiceNo || "").toLowerCase() === invNo.toLowerCase()))
       );
@@ -762,30 +843,48 @@ export const extractReturnedSalesInvoiceKeysSet = (records: any[]): Set<string> 
   if (!Array.isArray(records)) return set;
 
   records.forEach((item: any) => {
+    if (!item || typeof item !== "object") return;
     const isRet = item?.isReturnRecord === true || isReturnRecord(item);
     const hasRet = Boolean(item?.hasReturn);
 
-    if (isRet || hasRet) {
+    if (isRet) {
+      const retNo = String(item.returnNo || item.return_no || item.salesReturnNo || "").trim().toLowerCase();
+
+      const inv = item.salesInvoiceNo || item.sales_invoice_no || item.invoiceNo || item.invoice_no;
+      if (inv && inv !== "-" && inv !== "0" && String(inv).trim().toLowerCase() !== retNo) {
+        set.add(String(inv).trim().toLowerCase());
+      }
+
+      const ord = item.orderNo || item.order_no;
+      if (ord && ord !== "-" && ord !== "0" && String(ord).trim().toLowerCase() !== retNo && !String(ord).trim().toUpperCase().startsWith("SR-")) {
+        set.add(String(ord).trim().toLowerCase());
+        const cleanOrd = getCleanOrderNo(ord);
+        if (cleanOrd) set.add(cleanOrd.toLowerCase());
+      }
+
+      const saleId = item.saleId || item.sale_id;
+      if (saleId && String(saleId).trim() !== "-" && String(saleId).trim() !== "0") {
+        const cleanIdOrd = getCleanOrderNo(undefined, undefined, saleId);
+        if (cleanIdOrd) set.add(cleanIdOrd.toLowerCase());
+      }
+
+      if (item.challanNo && item.challanNo !== "-") {
+        set.add(String(item.challanNo).trim().toLowerCase());
+      }
+    } else if (hasRet) {
       if (item.salesInvoiceNo && item.salesInvoiceNo !== "-") {
         set.add(String(item.salesInvoiceNo).trim().toLowerCase());
       }
       if (item.invoiceNo && item.invoiceNo !== "-") {
         set.add(String(item.invoiceNo).trim().toLowerCase());
       }
-      if (item.orderNo) {
+      if (item.orderNo && item.orderNo !== "-") {
         set.add(String(item.orderNo).trim().toLowerCase());
+        const cleanOrd = getCleanOrderNo(item.orderNo);
+        if (cleanOrd) set.add(cleanOrd.toLowerCase());
       }
-      if (item.challanNo) {
+      if (item.challanNo && item.challanNo !== "-") {
         set.add(String(item.challanNo).trim().toLowerCase());
-      }
-      if (item.saleId) {
-        set.add(String(item.saleId).trim().toLowerCase());
-      }
-      if (item.sale_id) {
-        set.add(String(item.sale_id).trim().toLowerCase());
-      }
-      if (hasRet && item.id) {
-        set.add(String(item.id).trim().toLowerCase());
       }
     }
   });

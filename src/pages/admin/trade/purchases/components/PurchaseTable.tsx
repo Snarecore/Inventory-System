@@ -501,14 +501,15 @@ export const PurchaseTable: React.FC<PurchaseTableProps> = ({
                     statusBg = "bg-[var(--ui-danger-border)] text-[var(--ui-danger-dark)] border-[var(--ui-danger-border)] font-semibold";
                   }
 
+                  const invKey = String(purchase.invoiceNo || (purchase as any).purchaseInvoiceNo || "").trim().toLowerCase();
+                  const ordKey = String(purchase.orderNo || "").trim().toLowerCase();
+                  const chnKey = String(purchase.challanNo || "").trim().toLowerCase();
                   const isAlreadyReturned = Boolean(
                     purchase.hasReturn ||
                     (returnedInvoiceSet && (
-                      (purchase.invoiceNo && returnedInvoiceSet.has(String(purchase.invoiceNo).trim().toLowerCase())) ||
-                      (purchase.orderNo && returnedInvoiceSet.has(String(purchase.orderNo).trim().toLowerCase())) ||
-                      (purchase.challanNo && returnedInvoiceSet.has(String(purchase.challanNo).trim().toLowerCase())) ||
-                      (purchase.id && returnedInvoiceSet.has(String(purchase.id).trim().toLowerCase())) ||
-                      (purchase.purchaseId && returnedInvoiceSet.has(String(purchase.purchaseId).trim().toLowerCase()))
+                      (invKey && invKey !== "-" && returnedInvoiceSet.has(invKey)) ||
+                      (ordKey && ordKey !== "-" && returnedInvoiceSet.has(ordKey)) ||
+                      (chnKey && chnKey !== "-" && returnedInvoiceSet.has(chnKey))
                     ))
                   );
 
