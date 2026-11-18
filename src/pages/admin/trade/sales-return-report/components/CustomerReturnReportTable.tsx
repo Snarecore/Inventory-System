@@ -626,41 +626,74 @@ export const CustomerReturnReportTable: React.FC<
                       <tr className="bg-slate-50/90 dark:bg-slate-900/50 border-b border-[var(--ui-border)]">
                         <td colSpan={11} className="p-3 sm:p-4">
                           <div className="flex flex-col gap-3.5 bg-[var(--ui-surface)] p-3.5 sm:p-4 rounded-xl border border-[var(--ui-border)] shadow-xs">
-                            {/* Customer Header Banner */}
-                            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-3 bg-slate-50 dark:bg-slate-900/40 rounded-xl border border-[var(--ui-border)] shadow-xs">
-                              <div className="flex flex-wrap items-center gap-2.5">
-                                <div className="p-2 rounded-lg bg-[var(--primary-color-light)] text-[var(--primary-color)]">
-                                  <FiUser size={16} />
+                            {/* Unified Single-Line Customer Return Toolbar */}
+                            <div className="flex flex-wrap items-center justify-between gap-2.5 p-2.5 bg-slate-50 dark:bg-slate-900/40 rounded-xl border border-[var(--ui-border)] shadow-xs">
+                              {/* 1. Customer Identity */}
+                              <div className="flex items-center gap-2 shrink-0">
+                                <div className="p-1.5 rounded-lg bg-[var(--primary-color-light)] text-[var(--primary-color)]">
+                                  <FiUser size={14} />
                                 </div>
-                                <div>
-                                  <div className="flex items-center gap-2">
-                                    <span className="text-sm font-bold text-[var(--ui-text)]">
-                                      {c.customerName}
-                                    </span>
-                                    <span className="text-xs font-medium text-[var(--ui-text-muted)] bg-[var(--ui-border)]/50 px-2 py-0.5 rounded-full">
-                                      {c.customerPhone}
-                                    </span>
-                                  </div>
+                                <div className="flex items-center gap-1.5">
+                                  <span className="text-xs font-bold text-[var(--ui-text)]">
+                                    {c.customerName}
+                                  </span>
+                                  <span className="text-[11px] font-medium text-[var(--ui-text-muted)] bg-[var(--ui-border)]/50 px-1.5 py-0.5 rounded-full font-mono">
+                                    {c.customerPhone}
+                                  </span>
                                   {c.customerAddress && (
-                                    <span className="text-[11px] text-[var(--ui-text-subtle)] truncate block max-w-md">
-                                      {c.customerAddress}
+                                    <span className="text-[11px] text-[var(--ui-text-subtle)] truncate max-w-[120px] hidden md:inline">
+                                      ({c.customerAddress})
                                     </span>
                                   )}
                                 </div>
                               </div>
 
-                              {/* Quick Action Buttons for This Customer */}
-                              <div className="flex items-center flex-wrap gap-2 self-start sm:self-auto">
+                              {/* 2. Inline Metrics Badges (All 5 KPIs in one compact row) */}
+                              <div className="flex items-center flex-wrap gap-1.5 text-xs">
+                                <div className="inline-flex items-center gap-1 px-2 py-0.5 bg-[var(--ui-surface)] border border-[var(--ui-border)] rounded-md shadow-2xs">
+                                  <span className="text-[10px] text-[var(--ui-text-muted)] font-medium">Returns:</span>
+                                  <span className="font-bold text-[var(--ui-text)] tabular-nums">{c.returnCount}</span>
+                                </div>
+
+                                <div className="inline-flex items-center gap-1 px-2 py-0.5 bg-[var(--ui-surface)] border border-[var(--ui-border)] rounded-md shadow-2xs">
+                                  <span className="text-[10px] text-[var(--ui-text-muted)] font-medium">Items:</span>
+                                  <span className="font-bold text-[var(--ui-text)] tabular-nums">{c.itemsCount}</span>
+                                </div>
+
+                                <div className="inline-flex items-center gap-1 px-2 py-0.5 bg-[var(--ui-surface)] border border-[var(--ui-border)] rounded-md shadow-2xs">
+                                  <span className="text-[10px] text-[var(--ui-text-muted)] font-medium">Cash:</span>
+                                  <span className="font-bold text-emerald-600 dark:text-emerald-400 tabular-nums">
+                                    ৳ {formatMoney(c.cashRefund)}
+                                  </span>
+                                </div>
+
+                                <div className="inline-flex items-center gap-1 px-2 py-0.5 bg-[var(--ui-surface)] border border-[var(--ui-border)] rounded-md shadow-2xs">
+                                  <span className="text-[10px] text-[var(--ui-text-muted)] font-medium">Due Adj:</span>
+                                  <span className="font-bold text-amber-600 dark:text-amber-400 tabular-nums">
+                                    {c.creditAdjust > 0 ? `৳ ${formatMoney(c.creditAdjust)}` : "0"}
+                                  </span>
+                                </div>
+
+                                <div className="inline-flex items-center gap-1 px-2 py-0.5 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900 rounded-md shadow-2xs">
+                                  <span className="text-[10px] text-rose-700 dark:text-rose-300 font-bold">Total:</span>
+                                  <span className="font-bold text-rose-600 dark:text-rose-400 tabular-nums">
+                                    ৳ {formatMoney(c.totalRefund)}
+                                  </span>
+                                </div>
+                              </div>
+
+                              {/* 3. Action Buttons */}
+                              <div className="flex items-center gap-1.5 shrink-0">
                                 {/* Create Return Button for this customer */}
                                 <button
                                   type="button"
                                   onClick={() =>
                                     handleCreateReturnForCustomer(c)
                                   }
-                                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-white bg-[var(--primary-color)] hover:opacity-90 rounded-lg transition-all cursor-pointer shadow-xs"
+                                  className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-bold text-white bg-[var(--primary-color)] hover:opacity-90 rounded-md transition-all cursor-pointer shadow-xs whitespace-nowrap"
                                   title="Create a new sales return for this customer"
                                 >
-                                  <FiRotateCcw size={12} />
+                                  <FiRotateCcw size={11} />
                                   <span>+ নতুন রিটার্ন</span>
                                 </button>
 
@@ -674,7 +707,7 @@ export const CustomerReturnReportTable: React.FC<
                                     )
                                   }
                                   disabled={isExporting}
-                                  className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold text-rose-700 dark:text-rose-300 bg-rose-50 dark:bg-rose-950/40 hover:bg-rose-100 dark:hover:bg-rose-900/60 border border-rose-200 dark:border-rose-800 rounded-lg transition-colors cursor-pointer shadow-xs"
+                                  className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold text-rose-700 dark:text-rose-300 bg-rose-50 dark:bg-rose-950/40 hover:bg-rose-100 dark:hover:bg-rose-900/60 border border-rose-200 dark:border-rose-800 rounded-md transition-colors cursor-pointer shadow-xs whitespace-nowrap"
                                   title="Download Customer Return PDF"
                                 >
                                   <FaFilePdf
@@ -694,7 +727,7 @@ export const CustomerReturnReportTable: React.FC<
                                     )
                                   }
                                   disabled={isExporting}
-                                  className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 border border-emerald-200 dark:border-emerald-800 rounded-lg transition-colors cursor-pointer shadow-xs"
+                                  className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 border border-emerald-200 dark:border-emerald-800 rounded-md transition-colors cursor-pointer shadow-xs whitespace-nowrap"
                                   title="Download Customer Return Excel"
                                 >
                                   <FaFileExcel
@@ -703,52 +736,6 @@ export const CustomerReturnReportTable: React.FC<
                                   />
                                   <span>Customer Excel</span>
                                 </button>
-                              </div>
-                            </div>
-
-                            {/* Customer Stat Cards Strip */}
-                            <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 text-xs">
-                              <div className="p-2.5 bg-[var(--ui-surface)] border border-[var(--ui-border)] rounded-lg">
-                                <span className="text-[11px] text-[var(--ui-text-muted)] font-medium">
-                                  Total Returns
-                                </span>
-                                <p className="text-base font-bold text-[var(--ui-text)] mt-0.5">
-                                  {c.returnCount}
-                                </p>
-                              </div>
-                              <div className="p-2.5 bg-[var(--ui-surface)] border border-[var(--ui-border)] rounded-lg">
-                                <span className="text-[11px] text-[var(--ui-text-muted)] font-medium">
-                                  Total Items
-                                </span>
-                                <p className="text-base font-bold text-[var(--ui-text)] mt-0.5">
-                                  {c.itemsCount}
-                                </p>
-                              </div>
-                              <div className="p-2.5 bg-[var(--ui-surface)] border border-[var(--ui-border)] rounded-lg">
-                                <span className="text-[11px] text-[var(--ui-text-muted)] font-medium">
-                                  Cash Refund
-                                </span>
-                                <p className="text-base font-bold text-emerald-600 dark:text-emerald-400 mt-0.5">
-                                  ৳ {formatMoney(c.cashRefund)}
-                                </p>
-                              </div>
-                              <div className="p-2.5 bg-[var(--ui-surface)] border border-[var(--ui-border)] rounded-lg">
-                                <span className="text-[11px] text-[var(--ui-text-muted)] font-medium">
-                                  Due Adjusted
-                                </span>
-                                <p className="text-base font-bold text-amber-600 dark:text-amber-400 mt-0.5">
-                                  {c.creditAdjust > 0
-                                    ? `৳ ${formatMoney(c.creditAdjust)}`
-                                    : "-"}
-                                </p>
-                              </div>
-                              <div className="col-span-2 sm:col-span-1 p-2.5 bg-rose-50/50 dark:bg-rose-950/20 border border-rose-200 dark:border-rose-900 rounded-lg">
-                                <span className="text-[11px] text-rose-700 dark:text-rose-300 font-medium">
-                                  Total Refund
-                                </span>
-                                <p className="text-base font-bold text-rose-600 dark:text-rose-400 mt-0.5">
-                                  ৳ {formatMoney(c.totalRefund)}
-                                </p>
                               </div>
                             </div>
 
