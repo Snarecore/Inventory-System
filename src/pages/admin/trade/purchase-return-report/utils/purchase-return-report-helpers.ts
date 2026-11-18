@@ -450,8 +450,10 @@ export function extractNormalizedPurchaseReturns(
       mfsReceived: Number(item.mfsReceived ?? 0),
       dueAmount: Number(item.dueAmount ?? 0),
       bankName: item.bankName,
-      mfsName: item.mfsName,
-      returnDetails: details,
+      returnDetails: details.map((d) => ({
+        ...d,
+        buyPrice: d.unitPrice,
+      })),
       itemsCount: details.length,
     };
 

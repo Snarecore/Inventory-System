@@ -251,7 +251,7 @@ export function useFormKeyboardNavigation<T extends HTMLElement = HTMLElement>(
         Boolean(activeEl.closest('[role="listbox"]'));
       if (isComboboxExpanded) {
         // Let the dropdown component handle option selection with arrow keys
-        if (isArrowDown || isArrowUp || key === "Escape") {
+        if (isArrowDown || isArrowUp) {
           return;
         }
       }

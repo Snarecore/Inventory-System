@@ -249,7 +249,7 @@ export const SupplierStatementDrawer: React.FC<
             totalPayments: statementResult.totalPayments,
             totalReturns: statementResult.totalReturns,
             totalDiscounts: statementResult.totalDiscounts,
-            finalBalance: statementResult.closingBalance,
+            closingBalance: statementResult.closingBalance,
           }}
           onViewReceipt={onViewReceipt}
         />

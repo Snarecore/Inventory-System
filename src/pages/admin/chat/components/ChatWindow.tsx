@@ -150,7 +150,7 @@ const ChatWindow = ({ selectedUser }: { selectedUser: SelectedUser }) => {
                                 {!msg.isMe && (
                                     <div className="w-8 h-8 rounded-full overflow-hidden">
                                         <img
-                                            src={msg.participantOne?.image || avatar}
+                                            src={msg.participantOne?.image || msg.avatar || ""}
                                             alt="User Avatar"
                                             className="w-full h-full object-cover"
                                             onError={(e) => {

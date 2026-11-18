@@ -209,7 +209,6 @@ const BANGLA: Record<string, string> = {
   'Hex value': 'রঙের কোড',
   'Enter a 6-digit hex colour, e.g. #01306B': '৬ সংখ্যার রঙের কোড লিখুন, যেমন #01306B',
   'Bengali sample': 'বাংলা লেখার নমুনা',
-  System: 'কম্পিউটারের ফন্ট',
   Google: 'গুগল ফন্ট',
   CDN: 'অনলাইন ফন্ট',
   Helvetica: 'হেলভেটিকা',

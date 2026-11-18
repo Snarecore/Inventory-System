@@ -124,7 +124,7 @@ const AdminDashboard: React.FC = () => {
     const liveBank = registeredBankAccounts
       .filter((b) => String(b.status || '').toLowerCase() === 'active')
       .reduce(
-        (sum, b) => sum + (Number(b.currentBalance ?? b.balance ?? 0) || 0),
+        (sum, b) => sum + (Number(b.currentBalance ?? b.openingBalance ?? 0) || 0),
         0
       );
 

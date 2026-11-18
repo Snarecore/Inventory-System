@@ -341,7 +341,7 @@ export async function createEmployeeBranchPermission(
       : perms.some((p) => p.includes("delete"));
   const primary = Boolean(payload.primary);
   const grantedBy =
-    payload.grantedBy !== undefined ? payload.grantedBy : accessUser.userId || null;
+    payload.grantedBy !== undefined ? payload.grantedBy : (getUserInfo()?.userId || null);
 
   const employeeId = Number(payload.employeeId);
   const branchId = Number(payload.branchId);
@@ -433,7 +433,7 @@ export async function updateEmployeeBranchPermission(
   }
 
   const grantedBy =
-    payload.grantedBy !== undefined ? payload.grantedBy : accessUser.userId || null;
+    payload.grantedBy !== undefined ? payload.grantedBy : (getUserInfo()?.userId || null);
 
   const employeeId = Number(payload.employeeId);
   const branchId = Number(payload.branchId);

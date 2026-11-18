@@ -357,7 +357,7 @@ const CreatePurchaseForm: React.FC = () => {
 
       if (Array.isArray(rawDetails) && rawDetails.length > 0) {
         const seenProductKeys = new Set<string>();
-        const loadedItems: FormLineItem[] = [];
+        const loadedItems: TradeLineItem[] = [];
 
         rawDetails.forEach((item: any) => {
           const pId = String(item.productId || item.id || "");

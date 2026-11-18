@@ -178,7 +178,7 @@ export function useReportCompanyMeta(
   return {
     businessName:
       businessProfile?.businessName ||
-      userInfo?.orgName ||
+      userInfo?.businessName ||
       "Cash Boi Trade Ltd",
     businessAddress: businessProfile?.address || "",
     businessLogoUrl,
@@ -641,7 +641,7 @@ export function renderBengaliLinesToCanvas(
     halign?: "left" | "center" | "right";
     maxAllowedWidthMm?: number;
   }
-): { dataUrl: string; widthMm: number; heightMm: number } | null {
+): { dataUrl: string; widthMm: number; heightMm: number; padXMm?: number; padYMm?: number } | null {
   if (typeof document === "undefined" || !lines || lines.length === 0) {
     return null;
   }

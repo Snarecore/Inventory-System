@@ -222,7 +222,7 @@ export const PersonLedgerPage: React.FC = () => {
         "Date & Time": formattedDate,
         "Description": txn.note || (isOpening ? "Opening Balance" : "General Transaction"),
         "Reference": txn.refNo || "-",
-        "Tender": (txn.paymentMethod || txn.tender || "CASH").toUpperCase(),
+        "Tender": (txn.paymentType || "CASH").toUpperCase(),
         "Transaction Type": txn.transactionType || "-",
         "Receivable (BDT)": isPabo ? amt : 0,
         "Payable (BDT)": isDibo ? amt : 0,
@@ -660,7 +660,7 @@ export const PersonLedgerPage: React.FC = () => {
                         {/* Tender / Payment Method badge */}
                         <td className="py-1 px-2.5 whitespace-nowrap">
                           {(() => {
-                            const method = (txn.paymentMethod || txn.tender || "CASH").toUpperCase();
+                            const method = (txn.paymentType || "CASH").toUpperCase();
                             const isCash = method === "CASH";
                             const isBank = method === "BANK";
                             const isMfs = method === "MFS";
@@ -803,7 +803,7 @@ export const PersonLedgerPage: React.FC = () => {
             deleteTxnMutation.mutate(txnToDelete.id);
           }
         }}
-        isDeleting={deleteTxnMutation.isPending}
+        isLoading={deleteTxnMutation.isPending}
       />
 
       {/* Delete All Transactions Confirmation Modal */}
@@ -819,7 +819,7 @@ export const PersonLedgerPage: React.FC = () => {
             deleteAllTxnsMutation.mutate(person.id);
           }
         }}
-        isDeleting={deleteAllTxnsMutation.isPending}
+        isLoading={deleteAllTxnsMutation.isPending}
       />
     </div>
   );

@@ -173,28 +173,51 @@ export const normalizeSaleRecord = (item: any): SaleItem => {
 };
 
 export const isReturnRecord = (item: any): boolean => {
-  if (!item) return false;
+  if (!item || typeof item !== "object") return false;
   if (item.isReturnRecord === true) return true;
   if (item.isReturnRecord === false) return false;
 
-  const lineItems = extractLineItems(item);
-  const hasSalesLines = lineItems.length > 0;
-
-  // A sale invoice is ALWAYS a sale record, even if it has returned items attached
-  if (hasSalesLines && (item.invoiceNo || item.salesInvoiceNo || item.orderNo)) return false;
-  if (item.invoiceNo && item.salesDate && !item.returnNo?.startsWith?.("SR-")) return false;
+  const hasExplicitReturnNo = Boolean(
+    (typeof item.returnNo === "string" && item.returnNo.trim() !== "" && item.returnNo !== "-" && item.returnNo !== "0") ||
+    (typeof item.salesReturnNo === "string" && item.salesReturnNo.trim() !== "") ||
+    (typeof item.return_no === "string" && item.return_no.trim() !== "")
+  );
 
   const hasReturnLines =
     (Array.isArray(item.returnDetails) && item.returnDetails.length > 0) ||
     (Array.isArray(item.salesReturnDetails) && item.salesReturnDetails.length > 0);
 
-  return (
-    (typeof item.refNo === "string" && item.refNo.startsWith("SR-")) ||
-    (typeof item.returnNo === "string" && !item.invoiceNo && !item.salesDate) ||
-    String(item.returnType || "").toUpperCase() === "RETURN" ||
-    (String(item.status || "").toUpperCase() === "RETURN" && !item.invoiceNo) ||
-    (hasReturnLines && !hasSalesLines)
-  );
+  const lineItems = extractLineItems(item);
+  const hasSalesLines = lineItems.length > 0;
+
+  // An enriched sale record (sale lines + sale date + sale grand total) is primarily a sale
+  // Its return voucher will be extracted separately
+  if (hasSalesLines && item.salesDate && item.invoiceNo && !item.returnDate && !hasExplicitReturnNo) {
+    return false;
+  }
+
+  // Explicit return markers
+  if (typeof item.refNo === "string" && (item.refNo.startsWith("SR-") || item.refNo.startsWith("SR_"))) {
+    return true;
+  }
+  if (item.head === "Sales Return") {
+    return true;
+  }
+  const retType = String(item.returnType || "").toUpperCase();
+  if (retType === "RETURN" || retType === "FULL" || retType === "PARTIAL") {
+    return true;
+  }
+  if (String(item.status || "").toUpperCase() === "RETURN" && (hasReturnLines || !hasSalesLines || hasExplicitReturnNo)) {
+    return true;
+  }
+  if (hasExplicitReturnNo && (hasReturnLines || !hasSalesLines || item.returnDate || item.refundAmount || item.returnGrandTotal)) {
+    return true;
+  }
+  if (hasReturnLines && !hasSalesLines) {
+    return true;
+  }
+
+  return false;
 };
 
 export const fetchSalesList = async (): Promise<SaleItem[]> => {
@@ -242,25 +265,23 @@ export const fetchSalesAndReturnList = async (): Promise<UnifiedTradeRecord[]> =
     ]);
 
     const res: any = salesAndReturnRes.status === "fulfilled" ? salesAndReturnRes.value : null;
+    const finVal: any = finTxRes.status === "fulfilled" ? finTxRes.value : null;
     const finTxList: any[] =
-      finTxRes.status === "fulfilled"
-        ? (Array.isArray(finTxRes.value?.data)
-            ? finTxRes.value.data
-            : Array.isArray(finTxRes.value?.financialTransactionList)
-            ? finTxRes.value.financialTransactionList
-            : Array.isArray(finTxRes.value)
-            ? finTxRes.value
-            : []
-          ).filter(
+      (Array.isArray(finVal?.data)
+        ? finVal.data
+        : Array.isArray(finVal?.financialTransactionList)
+        ? finVal.financialTransactionList
+        : Array.isArray(finVal)
+        ? finVal
+        : []
+      ).filter(
             (t: any) =>
               t &&
               t.isDeleted !== "Y" &&
               t.head === "Sales Return" &&
               (!t.notes || !t.notes.includes("Auto Sales Return")) &&
-              !(t.refNo && t.billRef && String(t.refNo).trim() === String(t.billRef).trim()) &&
-              !(t.refNo && String(t.refNo).startsWith("261111"))
-          )
-        : [];
+              !(t.refNo && t.billRef && String(t.refNo).trim() === String(t.billRef).trim())
+          );
 
 
 
@@ -381,11 +402,30 @@ export const fetchSalesAndReturnList = async (): Promise<UnifiedTradeRecord[]> =
         (Array.isArray(item?.returns) && item.returns.length > 0) ||
         (Array.isArray(item?.salesReturns) && item.salesReturns.length > 0);
 
+      const statusStr = String(item?.status || "").trim().toUpperCase();
+      const returnTypeStr = String(item?.returnType || item?.return_type || item?.returnMode || "").trim().toUpperCase();
+      const isStatusReturn =
+        statusStr === "RETURN" ||
+        statusStr === "RETURNED" ||
+        statusStr === "FULL_RETURN" ||
+        statusStr === "FULL RETURN" ||
+        statusStr === "PARTIAL_RETURN" ||
+        statusStr === "PARTIAL RETURN";
+      const isReturnTypeReturn =
+        returnTypeStr === "FULL" ||
+        returnTypeStr === "PARTIAL" ||
+        returnTypeStr === "RETURN";
+      const hasReturnAmount =
+        Number(item?.returnGrandTotal ?? item?.returnTotalAmount ?? item?.returnRefundAmount ?? item?.refundAmount ?? 0) > 0;
+
       const hasReturnInfo = Boolean(
         isExplicitlyTrue ||
         validReturnNo ||
         validReturn_no ||
-        hasReturnDetails
+        hasReturnDetails ||
+        isStatusReturn ||
+        isReturnTypeReturn ||
+        hasReturnAmount
       );
 
       let existingIdx = -1;
@@ -467,7 +507,7 @@ export const fetchSalesAndReturnList = async (): Promise<UnifiedTradeRecord[]> =
         if (nestedReturns.length > 0) {
           nestedReturns.forEach((r: any, rIdx: number) => {
             if (!r || typeof r !== "object") return;
-            const rNo = r.returnNo || r.return_no || (item.orderNo ? `SR-${item.orderNo}-${rIdx + 1}` : `SR-${item.id || fallbackIdx}`);
+            const rNo = r.returnNo || r.return_no || (cleanOrd ? `SR-${cleanOrd}-${rIdx + 1}` : `SR-${item.id || fallbackIdx}`);
             const rKey = `ret_${String(rNo).trim().toLowerCase()}`;
             if (!seenReturnKeys.has(rKey)) {
               seenReturnKeys.add(rKey);
@@ -484,7 +524,7 @@ export const fetchSalesAndReturnList = async (): Promise<UnifiedTradeRecord[]> =
                 returnNo: rNo,
                 salesInvoiceNo: item.salesInvoiceNo || item.invoiceNo || item.orderNo || "",
                 invoiceNo: item.invoiceNo || item.salesInvoiceNo || "",
-                orderNo: r.orderNo || item.orderNo || "",
+                orderNo: r.orderNo || cleanOrd || item.orderNo || "",
                 returnDate: r.returnDate || r.return_date || item.salesDate || moment().format("YYYY-MM-DD"),
                 grandTotal: Number(r.returnGrandTotal ?? r.grandTotal ?? r.totalAmount ?? 0),
                 refundAmount: Number(r.returnRefundAmount ?? r.refundAmount ?? r.returnGrandTotal ?? r.grandTotal ?? 0),
@@ -498,6 +538,64 @@ export const fetchSalesAndReturnList = async (): Promise<UnifiedTradeRecord[]> =
               unifiedList.push(retRecord);
             }
           });
+        } else {
+          // Direct return on sale record (as returned by /get-sales-and-return API)
+          const rNo =
+            item.returnNo ||
+            item.return_no ||
+            item.salesReturnNo ||
+            (cleanOrd ? `SR-${cleanOrd}` : `SR-${item.id || fallbackIdx}`);
+          const rKey = `ret_${String(rNo).trim().toLowerCase()}`;
+          if (!seenReturnKeys.has(rKey)) {
+            seenReturnKeys.add(rKey);
+            const rDetails = [
+              item.returnDetails,
+              item.salesReturnDetails,
+              item.returnedItems,
+              item.returned_items,
+              item.salesDetails,
+              item.details,
+              item.items,
+              item.products,
+            ].find((lines) => Array.isArray(lines) && lines.length > 0) || [];
+
+            const returnAmt = Number(
+              item.returnGrandTotal ??
+              item.returnTotalAmount ??
+              item.returnRefundAmount ??
+              item.refundAmount ??
+              item.grandTotal ??
+              item.totalAmount ??
+              0
+            );
+
+            const refundAmt = Number(
+              item.returnRefundAmount ??
+              item.refundAmount ??
+              item.returnGrandTotal ??
+              item.returnTotalAmount ??
+              returnAmt
+            );
+
+            const retRecord: UnifiedTradeRecord = {
+              ...normalizeSaleRecord(item),
+              id: item.returnId || item.salesReturnId || `${item.id}_ret`,
+              returnNo: rNo,
+              salesInvoiceNo: item.salesInvoiceNo || item.invoiceNo || item.orderNo || "",
+              invoiceNo: item.invoiceNo || item.salesInvoiceNo || "",
+              orderNo: cleanOrd || item.orderNo || "",
+              returnDate: item.returnDate || item.return_date || item.salesDate || item.saleDate || moment().format("YYYY-MM-DD"),
+              grandTotal: returnAmt,
+              refundAmount: refundAmt,
+              totalAmount: returnAmt,
+              returnDetails: rDetails,
+              salesDetails: [],
+              details: rDetails,
+              isReturnRecord: true,
+              hasReturn: true,
+            };
+            unifiedList.push(retRecord);
+          }
         }
       }
     };
@@ -521,27 +619,80 @@ export const fetchSalesAndReturnList = async (): Promise<UnifiedTradeRecord[]> =
       const saleAliases = getReturnParentSaleAliases(item);
       const isBackend = isBackendGeneratedNo(rNo);
 
-      // If this is synthetic, drop it if backend already has this return!
-      if (!isBackend && saleAliases.length > 0) {
-        const hasBackend = saleAliases.some((a) => backendReturnAliases.has(a));
-        if (hasBackend) {
-          return;
-        }
-      }
-
-      if (isBackend && saleAliases.length > 0) {
-        saleAliases.forEach((a) => backendReturnAliases.add(a));
-
-        // If a synthetic SR- / RET- record was already added earlier for this sale, remove it!
+      // If a synthetic record was already added earlier for this sale, update it with authentic backend info
+      if (saleAliases.length > 0) {
         const existingSyntheticIdx = unifiedList.findIndex(
           (u) =>
             u.isReturnRecord &&
             !isBackendGeneratedNo(u.returnNo) &&
             getReturnParentSaleAliases(u).some((a) => saleAliases.includes(a))
         );
+
         if (existingSyntheticIdx !== -1) {
-          unifiedList.splice(existingSyntheticIdx, 1);
+          const existing = unifiedList[existingSyntheticIdx];
+          const existingDetails =
+            Array.isArray(existing.returnDetails) && existing.returnDetails.length > 0
+              ? existing.returnDetails
+              : existing.details || [];
+          const incomingDetails = [
+            item.returnDetails,
+            item.salesReturnDetails,
+            item.returnedItems,
+            item.returned_items,
+            item.salesDetails,
+            item.details,
+            item.items,
+          ].find((lines) => Array.isArray(lines) && lines.length > 0) || [];
+          const bestDetails = incomingDetails.length >= existingDetails.length ? incomingDetails : existingDetails;
+
+          unifiedList[existingSyntheticIdx] = {
+            ...existing,
+            ...normalizeSaleRecord(item),
+            returnNo: isBackend ? rNo : existing.returnNo || rNo,
+            orderNo: existing.orderNo || item.orderNo,
+            returnDetails: bestDetails,
+            details: bestDetails,
+            salesDetails: [],
+            grandTotal: Number(item.returnGrandTotal ?? item.grandTotal ?? existing.grandTotal ?? 0),
+            refundAmount: Number(item.returnRefundAmount ?? item.refundAmount ?? existing.refundAmount ?? 0),
+            totalAmount: Number(item.returnTotalAmount ?? item.totalAmount ?? existing.totalAmount ?? 0),
+            isReturnRecord: true,
+            hasReturn: true,
+          };
+          if (isBackend) {
+            saleAliases.forEach((a) => backendReturnAliases.add(a));
+          }
+          return;
         }
+      }
+
+      // If this is synthetic and a backend record already exists, enrich the backend record if it was missing items
+      if (!isBackend && saleAliases.length > 0) {
+        const existingBackendIdx = unifiedList.findIndex(
+          (u) =>
+            u.isReturnRecord &&
+            isBackendGeneratedNo(u.returnNo) &&
+            getReturnParentSaleAliases(u).some((a) => saleAliases.includes(a))
+        );
+        if (existingBackendIdx !== -1) {
+          const existing = unifiedList[existingBackendIdx];
+          const incomingDetails = [
+            item.returnDetails,
+            item.salesReturnDetails,
+            item.salesDetails,
+            item.details,
+            item.items,
+          ].find((lines) => Array.isArray(lines) && lines.length > 0);
+          if (incomingDetails && incomingDetails.length > 0 && (!existing.returnDetails || existing.returnDetails.length === 0)) {
+            existing.returnDetails = incomingDetails;
+            existing.details = incomingDetails;
+          }
+          return;
+        }
+      }
+
+      if (isBackend && saleAliases.length > 0) {
+        saleAliases.forEach((a) => backendReturnAliases.add(a));
       }
 
       let normalized: UnifiedTradeRecord | null = null;
@@ -571,6 +722,10 @@ export const fetchSalesAndReturnList = async (): Promise<UnifiedTradeRecord[]> =
         if (rNo && !normalized.returnNo) {
           normalized.returnNo = rNo;
         }
+        normalized.grandTotal = Number(item.returnGrandTotal ?? item.grandTotal ?? item.returnTotalAmount ?? item.totalAmount ?? item.refundAmount ?? 0);
+        normalized.refundAmount = Number(item.returnRefundAmount ?? item.refundAmount ?? normalized.grandTotal);
+        normalized.totalAmount = Number(item.returnTotalAmount ?? normalized.grandTotal);
+        normalized.returnDate = item.returnDate || item.return_date || item.salesDate || item.saleDate || moment().format("YYYY-MM-DD");
         normalized.returnDetails = returnDetails;
         normalized.details = returnDetails;
         normalized.salesDetails = [];
@@ -624,19 +779,20 @@ export const fetchSalesAndReturnList = async (): Promise<UnifiedTradeRecord[]> =
       }
     };
 
-    // 1. Process actual sales first
-    sales.forEach((s: any, idx: number) => addSaleRecord(s, idx));
-
-    // 2. Process combinedList (actual sales / returns from API)
-    combinedList.forEach((d: any, idx: number) => {
+    // 1. Process items from API (route each item based on isReturnRecord)
+    const rawItems = [
+      ...sales,
+      ...combinedList,
+    ];
+    rawItems.forEach((d: any, idx: number) => {
       if (isReturnRecord(d)) {
-        addReturnRecord(d, idx, false);
+        addReturnRecord(d, idx);
       } else {
         addSaleRecord(d, idx);
       }
     });
 
-    // 3. Process backend returns first
+    // 2. Process explicit backend returns
     returns.forEach((r: any, idx: number) => addReturnRecord(r, idx));
 
     // 4. Financial transactions (carries authentic 16-digit backend return numbers like 2611...)
@@ -845,7 +1001,18 @@ export const extractReturnedSalesInvoiceKeysSet = (records: any[]): Set<string> 
   records.forEach((item: any) => {
     if (!item || typeof item !== "object") return;
     const isRet = item?.isReturnRecord === true || isReturnRecord(item);
-    const hasRet = Boolean(item?.hasReturn);
+    const statusUpper = String(item?.status || "").trim().toUpperCase();
+    const returnTypeUpper = String(item?.returnType || item?.return_type || item?.returnMode || "").trim().toUpperCase();
+    const isStatusReturn =
+      statusUpper === "RETURN" ||
+      statusUpper === "RETURNED" ||
+      statusUpper === "FULL_RETURN" ||
+      statusUpper === "FULL RETURN" ||
+      statusUpper === "PARTIAL_RETURN" ||
+      statusUpper === "PARTIAL RETURN" ||
+      returnTypeUpper === "FULL" ||
+      returnTypeUpper === "RETURN";
+    const hasRet = Boolean(item?.hasReturn || isStatusReturn);
 
     if (isRet) {
       const retNo = String(item.returnNo || item.return_no || item.salesReturnNo || "").trim().toLowerCase();
@@ -885,6 +1052,12 @@ export const extractReturnedSalesInvoiceKeysSet = (records: any[]): Set<string> 
       }
       if (item.challanNo && item.challanNo !== "-") {
         set.add(String(item.challanNo).trim().toLowerCase());
+      }
+      const saleId = item.id || item.saleId || item.sale_id;
+      if (saleId && String(saleId).trim() !== "-" && String(saleId).trim() !== "0") {
+        set.add(String(saleId).trim().toLowerCase());
+        const cleanIdOrd = getCleanOrderNo(undefined, undefined, saleId);
+        if (cleanIdOrd) set.add(cleanIdOrd.toLowerCase());
       }
     }
   });

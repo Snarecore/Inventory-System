@@ -255,13 +255,11 @@ export function normalizePaymentReportRecords(
       item.supplierPhone || item.customerPhone || item.phone || ""
     ).trim();
 
-    const allocations: PaymentAllocation[] = details.map((d: any) => ({
+    const allocations = details.map((d: any) => ({
       invoiceNo: d.invoiceNo || "-",
       paidAmount: Number(d.paidAmount || 0),
       discountAmount: Number(d.discountAmount || d.discount || 0),
-      originalDue: Number(d.dueAmount || 0) + Number(d.paidAmount || 0),
-      remainingDue: Number(d.dueAmount || 0),
-      allocatedAmount: Number(d.paidAmount || 0),
+      dueAmount: Number(d.dueAmount || 0),
     }));
 
     const receiptData: PaymentReceiptData = {
@@ -1106,7 +1104,7 @@ function buildSupplierPaymentSummaryColumns(
         content: s.currentDue > 0 ? formatMoney(s.currentDue) : "0.00",
         styles: {
           fontStyle: "bold",
-          textColor: s.currentDue > 0 ? REPORT_RGB.rose : REPORT_RGB.slateDark,
+          textColor: s.currentDue > 0 ? REPORT_RGB.rose : REPORT_RGB.muted,
         },
       }),
       pdfSummaryCell: (t) => ({
@@ -1502,6 +1500,7 @@ export async function downloadSupplierStatementPdf(
   >[] = [
     {
       key: "sl",
+      excelHeader: "SL",
       pdfHeader: "SL",
       isLeadingLabel: true,
       pdfStyle: { halign: "center", cellWidth: 10 },
@@ -1510,6 +1509,7 @@ export async function downloadSupplierStatementPdf(
     },
     {
       key: "date",
+      excelHeader: "Date",
       pdfHeader: "Date",
       isLeadingLabel: true,
       pdfStyle: { halign: "center" },
@@ -1518,6 +1518,7 @@ export async function downloadSupplierStatementPdf(
     },
     {
       key: "type",
+      excelHeader: "Type",
       pdfHeader: "Type",
       isLeadingLabel: true,
       pdfStyle: { halign: "left" },
@@ -1526,6 +1527,7 @@ export async function downloadSupplierStatementPdf(
     },
     {
       key: "refNo",
+      excelHeader: "Ref / Voucher",
       pdfHeader: "Ref / Voucher",
       isLeadingLabel: true,
       pdfStyle: { halign: "left", fontStyle: "bold" },
@@ -1534,6 +1536,7 @@ export async function downloadSupplierStatementPdf(
     },
     {
       key: "description",
+      excelHeader: "Description",
       pdfHeader: "Description",
       isLeadingLabel: true,
       pdfStyle: { halign: "left" },
@@ -1542,6 +1545,7 @@ export async function downloadSupplierStatementPdf(
     },
     {
       key: "billAmount",
+      excelHeader: "Bill (BDT)",
       pdfHeader: "Bill (BDT)",
       pdfStyle: { halign: "right" },
       excelValue: (e) => e.billAmount,
@@ -1551,6 +1555,7 @@ export async function downloadSupplierStatementPdf(
     },
     {
       key: "paymentAmount",
+      excelHeader: "Payment (BDT)",
       pdfHeader: "Payment (BDT)",
       pdfStyle: { halign: "right" },
       excelValue: (e) => e.paymentAmount,
@@ -1560,6 +1565,7 @@ export async function downloadSupplierStatementPdf(
     },
     {
       key: "runningBalance",
+      excelHeader: "Balance (BDT)",
       pdfHeader: "Balance (BDT)",
       pdfStyle: { halign: "right", fontStyle: "bold" },
       excelValue: (e) => e.runningBalance,

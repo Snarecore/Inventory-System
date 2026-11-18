@@ -41,7 +41,6 @@ const RecruitPageUI = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Recruitment form submitted:', formData, uploadedFiles);
   };
 
   return (

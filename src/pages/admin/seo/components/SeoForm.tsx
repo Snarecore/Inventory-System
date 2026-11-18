@@ -53,7 +53,7 @@ const SeoForm = ({ isOpen, onClose, editData }: PageMetaFormProps) => {
         onClose();
     };
 
-    const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const handleChange = (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const { name, value } = event.target;
         setFieldValues((prev) => ({
             ...prev,
@@ -104,8 +104,6 @@ const SeoForm = ({ isOpen, onClose, editData }: PageMetaFormProps) => {
                         <div className="grid grid-cols-1 gap-2">
                             <p>Meta Description <span className="text-[var(--ui-danger)] font-bold">*</span></p>
                             <textarea
-                                label="Meta Description"
-                                type="textarea"
                                 name="metaDescription"
                                 value={fieldValues.metaDescription}
                                 required

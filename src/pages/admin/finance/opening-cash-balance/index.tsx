@@ -244,11 +244,14 @@ export const OpeningCashBalancePage: React.FC = () => {
 
       {/* Cash Record Table */}
       <TableContainer>
-        <TableToolbar
-          title="Cash Register Entries"
-          totalCount={cashRecords.length}
-          countLabel={cashRecords.length === 1 ? "Entry" : "Entries"}
-        />
+        <TableToolbar>
+          <div className="flex items-center justify-between w-full">
+            <span className="text-sm font-semibold text-[var(--ui-text)]">Cash Register Entries</span>
+            <span className="text-xs text-[var(--ui-text-muted)]">
+              {cashRecords.length} {cashRecords.length === 1 ? "Entry" : "Entries"}
+            </span>
+          </div>
+        </TableToolbar>
         <TableScroll>
           <Table minWidth={750}>
             <TableHead>
@@ -312,13 +315,16 @@ export const OpeningCashBalancePage: React.FC = () => {
                   );
                 })
               ) : (
-                <EmptyState
-                  colSpan={6}
-                  title="No Opening Cash Balance Found"
-                  description="No opening cash balance recorded yet. Click 'New Opening Cash' to initialize your starting cash in hand."
-                  actionLabel={canCreate("opening_cash") ? "New Opening Cash" : undefined}
-                  onAction={canCreate("opening_cash") ? handleOpenNewModal : undefined}
-                />
+                <TableRow>
+                  <TableCell colSpan={6}>
+                    <EmptyState
+                      title="No Opening Cash Balance Found"
+                      description="No opening cash balance recorded yet. Click 'New Opening Cash' to initialize your starting cash in hand."
+                      buttonText={canCreate("opening_cash") ? "New Opening Cash" : undefined}
+                      onButtonClick={canCreate("opening_cash") ? handleOpenNewModal : undefined}
+                    />
+                  </TableCell>
+                </TableRow>
               )}
             </TableBody>
           </Table>

@@ -10,6 +10,8 @@ interface EmptyStateProps {
     image?: string;
     buttonText?: string;
     onButtonClick?: () => void;
+    actionText?: string;
+    onAction?: () => void;
 }
 
 const EmptyState: React.FC<EmptyStateProps> = ({
@@ -17,9 +19,14 @@ const EmptyState: React.FC<EmptyStateProps> = ({
     description,
     image = "/empty-box.svg",
     buttonText,
-    onButtonClick
+    onButtonClick,
+    actionText,
+    onAction,
 }) => {
     const { t } = useTranslation();
+    const resolvedButtonText = buttonText || actionText;
+    const resolvedButtonClick = onButtonClick || onAction;
+
     return (
         <div className="flex flex-col items-center justify-center py-10">
             {/* <img src={image} alt="No Data" className="w-40 h-40" /> */}
@@ -30,11 +37,11 @@ const EmptyState: React.FC<EmptyStateProps> = ({
             {description && (
                 <p className="text-[var(--ui-text-muted)] text-sm">{t(description)}</p>
             )}
-            {buttonText && onButtonClick && (
+            {resolvedButtonText && resolvedButtonClick && (
                 <div className='mt-2'>
                     <Button
-                        label={t(buttonText)}
-                        onClick={onButtonClick}
+                        label={t(resolvedButtonText)}
+                        onClick={resolvedButtonClick}
                         color="var(--color-primary)"
                         hoverColor="var(--color-primary-hover)"
                     />

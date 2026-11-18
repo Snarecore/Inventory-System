@@ -472,11 +472,11 @@ const Purchases: React.FC = () => {
     });
 
     enrichedReturns.forEach((r) => {
-      const key = String(r.supplierId ?? r.partyId ?? r.supplierName ?? "").trim();
+      const key = String(r.supplierId ?? r.supplierName ?? "").trim();
       if (key && !supMap.has(key)) {
         supMap.set(key, {
-          id: r.supplierId ?? r.partyId,
-          partyId: r.supplierId ?? r.partyId,
+          id: r.supplierId,
+          partyId: r.supplierId,
           name: r.supplierName || "Supplier",
           partyName: r.supplierName || "Supplier",
           phone: r.supplierPhone || "",
@@ -698,7 +698,7 @@ const Purchases: React.FC = () => {
       }
 
       if (dateFilter && dateFilter !== "all") {
-        const rawDate = item.returnDate || item.date || item.createdAt || item.created_at;
+        const rawDate = item.returnDate || item.createdAt || (item as any).purchaseDate || (item as any).date;
         if (!rawDate) return false;
         const m = moment(rawDate);
         if (!m.isValid()) return false;

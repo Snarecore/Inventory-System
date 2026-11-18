@@ -162,6 +162,17 @@ export const TradeReturnForm: React.FC<TradeReturnFormProps> = ({ mode }) => {
       if (Array.isArray(order.returns) && order.returns.length > 0) return true;
       if (Array.isArray(order.purchaseReturns) && order.purchaseReturns.length > 0) return true;
       if (Array.isArray(order.salesReturns) && order.salesReturns.length > 0) return true;
+      const statusUpper = String(order.status || "").trim().toUpperCase();
+      const returnTypeUpper = String(order.returnType || order.return_type || "").trim().toUpperCase();
+      if (
+        statusUpper === "RETURN" ||
+        statusUpper === "RETURNED" ||
+        statusUpper === "FULL_RETURN" ||
+        statusUpper === "FULL RETURN" ||
+        returnTypeUpper === "FULL"
+      ) {
+        return true;
+      }
 
       const targetKeys = [
         isSale ? order.salesInvoiceNo : (order.purchaseInvoiceNo || order.purchase_invoice_no),
@@ -272,6 +283,7 @@ export const TradeReturnForm: React.FC<TradeReturnFormProps> = ({ mode }) => {
               if (retKey) seenReturnKeys.add(retKey);
               const returnDetails = [
                 item.returnDetails,
+                item.salesReturnDetails,
                 item.purchaseReturnDetails,
                 item.details,
               ].find((details) => Array.isArray(details) && details.length > 0);
@@ -282,13 +294,14 @@ export const TradeReturnForm: React.FC<TradeReturnFormProps> = ({ mode }) => {
           // Check nested returns on purchase/order records
           const nestedReturns = [
             ...(Array.isArray(item.returns) ? item.returns : []),
+            ...(Array.isArray(item.salesReturns) ? item.salesReturns : []),
             ...(Array.isArray(item.purchaseReturns) ? item.purchaseReturns : []),
           ];
           nestedReturns.forEach((nr: any) => {
             const nrKey = cleanKey(nr.returnNo || nr.id || nr.refNo);
             if (!nrKey || !seenReturnKeys.has(nrKey)) {
               if (nrKey) seenReturnKeys.add(nrKey);
-              const nrDetails = [nr.returnDetails, nr.purchaseReturnDetails, nr.details].find(
+              const nrDetails = [nr.returnDetails, nr.salesReturnDetails, nr.purchaseReturnDetails, nr.details].find(
                 (details) => Array.isArray(details) && details.length > 0
               );
               processDetailsList(nrDetails || []);
@@ -300,18 +313,26 @@ export const TradeReturnForm: React.FC<TradeReturnFormProps> = ({ mode }) => {
       // 2. Process nested returns on the passed order object itself
       const orderNestedReturns = [
         ...(Array.isArray(order.returns) ? order.returns : []),
+        ...(Array.isArray(order.salesReturns) ? order.salesReturns : []),
         ...(Array.isArray(order.purchaseReturns) ? order.purchaseReturns : []),
       ];
       orderNestedReturns.forEach((nr: any) => {
         const nrKey = cleanKey(nr.returnNo || nr.id || nr.refNo);
         if (!nrKey || !seenReturnKeys.has(nrKey)) {
           if (nrKey) seenReturnKeys.add(nrKey);
-          const nrDetails = [nr.returnDetails, nr.purchaseReturnDetails, nr.details].find(
+          const nrDetails = [nr.returnDetails, nr.salesReturnDetails, nr.purchaseReturnDetails, nr.details].find(
             (details) => Array.isArray(details) && details.length > 0
           );
           processDetailsList(nrDetails || []);
         }
       });
+
+      if (Array.isArray(order.returnDetails) && order.returnDetails.length > 0) {
+        processDetailsList(order.returnDetails);
+      }
+      if (Array.isArray(order.salesReturnDetails) && order.salesReturnDetails.length > 0) {
+        processDetailsList(order.salesReturnDetails);
+      }
 
 
 
@@ -895,17 +916,30 @@ export const TradeReturnForm: React.FC<TradeReturnFormProps> = ({ mode }) => {
           }
         }
 
+        const numericProdId = !isNaN(Number(finalProdId)) ? Number(finalProdId) : finalProdId;
+        const linePrice = Number(l.sellPrice || 0);
+        const lineQty = Number(l.quantity || 0);
+        const lineTotal = Number((lineQty * linePrice).toFixed(2));
+
         return {
-          productId: !isNaN(Number(finalProdId)) ? Number(finalProdId) : finalProdId,
+          productId: numericProdId,
+          product_id: numericProdId,
           productCode: l.productCode,
+          product_code: l.productCode,
           productName: l.productName,
+          product_name: l.productName,
           unit: l.unit || "pcs",
-          quantity: l.quantity,
-          ...(isSale ? { sellPrice: l.sellPrice } : { buyPrice: l.sellPrice }),
+          quantity: lineQty,
+          returnQuantity: lineQty,
+          return_quantity: lineQty,
+          ...(isSale
+            ? { sellPrice: linePrice, sell_price: linePrice }
+            : { buyPrice: linePrice, buy_price: linePrice, sellPrice: linePrice, sell_price: linePrice }),
           discount: l.discount || 0,
           vat: l.vat || 0,
-          total: Number((l.quantity * l.sellPrice).toFixed(2)),
+          total: lineTotal,
           returnReason: l.returnReason || reasonsList[0]?.value || (isSale ? "wrong_order" : "damaged_product"),
+          return_reason: l.returnReason || reasonsList[0]?.value || (isSale ? "wrong_order" : "damaged_product"),
         };
       });
 
@@ -932,16 +966,25 @@ export const TradeReturnForm: React.FC<TradeReturnFormProps> = ({ mode }) => {
       const payload: Record<string, any> = withBranchScope({
         accessUser: buildAccessUser(),
         returnDate,
+        return_date: returnDate,
         returnType,
+        return_type: returnType,
         totalAmount: Number(totals.subtotal.toFixed(2)),
+        total_amount: Number(totals.subtotal.toFixed(2)),
         discount: Number(totals.discount.toFixed(2)),
         vat: Number(totals.vat.toFixed(2)),
         deliveryCharge: 0,
+        delivery_charge: 0,
         grandTotal: Number(totals.grandTotal.toFixed(2)),
+        grand_total: Number(totals.grandTotal.toFixed(2)),
         returnGrandTotal: Number(totals.grandTotal.toFixed(2)),
+        return_grand_total: Number(totals.grandTotal.toFixed(2)),
         returnTotalAmount: Number(totals.grandTotal.toFixed(2)),
+        return_total_amount: Number(totals.grandTotal.toFixed(2)),
         refundAmount: Number(totals.refundAmount.toFixed(2)),
+        refund_amount: Number(totals.refundAmount.toFixed(2)),
         paymentType: effectivePaymentType,
+        payment_type: effectivePaymentType,
         status: status || "Return",
         note: finalNote,
         refNo: `${isSale ? "SR" : "PR"}-${Date.now()}`,
@@ -957,17 +1000,22 @@ export const TradeReturnForm: React.FC<TradeReturnFormProps> = ({ mode }) => {
         mfsName: numRefundMfs > 0 ? matchedMfs?.mfsName || null : null,
         mfsPhone: numRefundMfs > 0 ? matchedMfs?.mfsPhone || null : null,
         returnDetails: returnDetailsPayload,
+        return_details: returnDetailsPayload,
+        salesReturnDetails: returnDetailsPayload,
       });
 
       if (isSale) {
         payload.invoiceNo = invoiceNo || selectedOrder?.orderNo || "";
         payload.salesInvoiceNo = invoiceNo || selectedOrder?.orderNo || "";
         payload.orderNo = selectedOrder?.orderNo || invoiceNo || "";
-        payload.saleId = selectedOrder?.id || selectedOrder?.saleId || null;
-        payload.customerId = partyId;
-        payload.customerName = partyName;
-        payload.customerPhone = partyPhone;
-        payload.customerAddress = partyAddress;
+        const numericSaleId = selectedOrder?.id || selectedOrder?.saleId || selectedOrder?.sale_id;
+        payload.saleId = numericSaleId ? (isNaN(Number(numericSaleId)) ? numericSaleId : Number(numericSaleId)) : null;
+        payload.sale_id = payload.saleId;
+        payload.customerId = partyId ?? selectedOrder?.customerId ?? selectedOrder?.customer_id ?? 0;
+        payload.customer_id = payload.customerId;
+        payload.customerName = partyName || selectedOrder?.customerName || selectedOrder?.customer_name || "Customer";
+        payload.customerPhone = partyPhone || selectedOrder?.customerPhone || selectedOrder?.customer_phone || "";
+        payload.customerAddress = partyAddress || selectedOrder?.customerAddress || selectedOrder?.customer_address || "";
       } else {
         payload.invoiceNo = invoiceNo || selectedOrder?.purchaseInvoiceNo || selectedOrder?.challanNo || "";
         payload.purchaseInvoiceNo = invoiceNo || selectedOrder?.purchaseInvoiceNo || selectedOrder?.challanNo || "";
@@ -993,13 +1041,15 @@ export const TradeReturnForm: React.FC<TradeReturnFormProps> = ({ mode }) => {
 
       const response: any = await postData({ url: endpoint, body: payload });
 
-      if (
+      const isError =
         !response ||
         response?.error ||
-        response?.status === "Error" ||
-        response?.status === "Failed" ||
-        (typeof response?.code === "number" && response.code >= 400)
-      ) {
+        String(response?.status).toLowerCase() === "error" ||
+        String(response?.status).toLowerCase() === "failed" ||
+        response?.status === false ||
+        (typeof response?.code === "number" && response.code >= 400);
+
+      if (isError) {
         const errorMsg = response?.msg || response?.message || `Failed to save ${mode} return. Please try again.`;
         showErrorToast(errorMsg);
         setIsSubmitting(false);

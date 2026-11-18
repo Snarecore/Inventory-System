@@ -40,7 +40,6 @@ const SocialForm = ({ isOpen, onClose, editData }: any) => {
 
     const handleImageUpload = (file: File | null) => {
         if (file) {
-            console.log("file: ", file)
             setFieldValues((prevState) => ({ ...prevState, icon: file }));
         }
     };

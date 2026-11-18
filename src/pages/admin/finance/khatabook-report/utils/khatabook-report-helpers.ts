@@ -119,7 +119,7 @@ export function normalizeKhatabookTransactions(
       normalizedType = "OPENING";
       displayType = isPabo ? "Opening (Pabo)" : "Opening (Dibo)";
     } else if (isDibo) {
-      normalizedType = "Dibo" ? "DIBO" : "PABO";
+      normalizedType = "DIBO";
       displayType = "Payable (Dibo)";
     }
 
