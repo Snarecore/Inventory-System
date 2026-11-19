@@ -74,11 +74,12 @@ export const CustomerStatementTable: React.FC<CustomerStatementTableProps> = ({
 
   return (
     <div className="w-full overflow-x-auto rounded-lg border border-[var(--ui-border)] bg-[var(--ui-surface)] shadow-xs">
-      <table className="ui-table w-full text-left border-collapse min-w-[700px]">
+      <table className="ui-table w-full text-left border-collapse min-w-[760px]">
         <thead>
           <tr className="border-b border-[var(--ui-border)] bg-[var(--ui-surface-muted)]/50 text-xs font-semibold text-[var(--ui-text-muted)]">
             <th className="py-2.5 px-3 text-center w-12 whitespace-nowrap">SL</th>
-            <th className="py-2.5 px-3 text-left w-32 whitespace-nowrap">Date</th>
+            <th className="py-2.5 px-3 text-left w-36 whitespace-nowrap">Date</th>
+            <th className="py-2.5 px-3 text-center w-24 whitespace-nowrap">Type</th>
             <th className="py-2.5 px-3 text-left whitespace-nowrap">Description</th>
             <th className="py-2.5 px-3 text-right min-w-[110px] whitespace-nowrap">Sales (৳)</th>
             <th className="py-2.5 px-3 text-right min-w-[120px] whitespace-nowrap">Collection (৳)</th>
@@ -116,54 +117,71 @@ export const CustomerStatementTable: React.FC<CustomerStatementTableProps> = ({
                   </div>
                 </td>
 
-                {/* Description: Strictly Single Line with Returned Product Pill */}
+                {/* Type: Dedicated Column */}
+                <td className="py-2.5 px-3 text-center whitespace-nowrap">
+                  {getTypeBadge(item.type, item.typeLabel)}
+                </td>
+
+                {/* Description: Strictly Single Line with Details & Returned Product Pill */}
                 <td className="py-2.5 px-3 max-w-[420px]">
-                  <div className="flex items-center gap-1.5 whitespace-nowrap overflow-hidden text-ellipsis">
-                    {getTypeBadge(item.type, item.typeLabel)}
-                    {item.collectionAmount > 0 && item.type !== "COLLECTION" && item.type !== "OPENING" && (
-                      <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30 whitespace-nowrap shrink-0">
-                        Customer Collection
-                      </span>
-                    )}
-                    {item.refNo && item.refNo !== "-" && (
-                      <span className="font-mono text-xs font-semibold text-[var(--primary-color)] shrink-0">
-                        #{item.refNo}
-                      </span>
-                    )}
-                    {item.voucherNos && item.voucherNos.length > 0 && (
-                      <span
-                        className="inline-flex items-center gap-1 text-[10px] font-medium text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 px-1.5 py-0.5 rounded shrink-0"
-                        title={`Collection Voucher: #${item.voucherNos.join(", #")}`}
-                      >
-                        Voucher: #{item.voucherNos.join(", #")}
-                      </span>
-                    )}
-                    {item.returnItemsSummary && (
-                      <span
-                        className="inline-flex items-center gap-1 text-[11px] font-semibold text-rose-700 dark:text-rose-300 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 px-1.5 py-0.5 rounded shrink-0 max-w-[260px] truncate"
-                        title={`Returned Product: ${item.returnItemsSummary}`}
-                      >
-                        <FiPackage size={11} className="shrink-0 text-rose-500" />
-                        <span className="truncate">{item.returnItemsSummary}</span>
-                      </span>
-                    )}
-                    {item.paymentMode && item.paymentMode !== "-" && !item.returnItemsSummary && (
-                      <span className="text-[10px] font-medium text-[var(--ui-text-muted)] bg-[var(--ui-surface-muted)] px-1.5 py-0.5 rounded border border-[var(--ui-border)] shrink-0">
-                        {item.paymentMode}
-                      </span>
-                    )}
-                    {item.note &&
-                      !item.note.toLowerCase().includes(item.returnItemsSummary?.toLowerCase() || "___never___") &&
-                      !item.note.toLowerCase().includes("voucher: #") &&
-                      item.note !== `Return: ${item.returnItemsSummary}` && (
-                      <span
-                        className="text-xs text-[var(--ui-text-muted)] truncate"
-                        title={item.note}
-                      >
-                        {item.note}
-                      </span>
-                    )}
-                  </div>
+                  {isOpening ? (
+                    <span className="text-xs text-[var(--ui-text-muted)] italic">
+                      Opening Balance
+                    </span>
+                  ) : (
+                    <div className="flex items-center gap-1.5 whitespace-nowrap overflow-hidden text-ellipsis">
+                      {item.collectionAmount > 0 &&
+                        item.type !== "COLLECTION" &&
+                        item.type !== "OPENING" &&
+                        item.type !== "SALES_RETURN" && (
+                          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30 whitespace-nowrap shrink-0">
+                            Customer Collection
+                          </span>
+                        )}
+                      {item.refNo &&
+                        item.refNo !== "-" &&
+                        !(item.type === "COLLECTION" && item.voucherNos?.includes(item.refNo)) && (
+                          <span className="font-mono text-xs font-semibold text-[var(--primary-color)] shrink-0">
+                            #{item.refNo}
+                          </span>
+                        )}
+                      {item.voucherNos && item.voucherNos.length > 0 && (
+                        <span
+                          className="inline-flex items-center gap-1 text-[10px] font-medium text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 px-1.5 py-0.5 rounded shrink-0"
+                          title={`Collection Voucher: #${item.voucherNos.join(", #")}`}
+                        >
+                          Voucher: #{item.voucherNos.join(", #")}
+                        </span>
+                      )}
+                      {item.returnItemsSummary && (
+                        <span
+                          className="inline-flex items-center gap-1 text-[11px] font-semibold text-rose-700 dark:text-rose-300 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 px-1.5 py-0.5 rounded shrink-0 max-w-[260px] truncate"
+                          title={`Returned Product: ${item.returnItemsSummary}`}
+                        >
+                          <FiPackage size={11} className="shrink-0 text-rose-500" />
+                          <span className="truncate">{item.returnItemsSummary}</span>
+                        </span>
+                      )}
+                      {item.paymentMode &&
+                        item.paymentMode !== "-" &&
+                        item.type !== "SALES_RETURN" && (
+                          <span className="text-[10px] font-medium text-[var(--ui-text-muted)] bg-[var(--ui-surface-muted)] px-1.5 py-0.5 rounded border border-[var(--ui-border)] shrink-0">
+                            {item.paymentMode}
+                          </span>
+                        )}
+                      {item.note &&
+                        !item.note.toLowerCase().includes(item.returnItemsSummary?.toLowerCase() || "___never___") &&
+                        !item.note.toLowerCase().includes("voucher: #") &&
+                        item.note !== `Return: ${item.returnItemsSummary}` && (
+                          <span
+                            className="text-xs text-[var(--ui-text-muted)] truncate"
+                            title={item.note}
+                          >
+                            {item.note}
+                          </span>
+                        )}
+                    </div>
+                  )}
                 </td>
 
                 {/* Sales (৳) */}
@@ -201,10 +219,14 @@ export const CustomerStatementTable: React.FC<CustomerStatementTableProps> = ({
                     className={`text-xs tabular-nums ${
                       item.runningBalance > 0
                         ? "font-bold text-[var(--ui-danger)]"
-                        : "font-semibold text-[var(--ui-success)]"
+                        : item.runningBalance < 0
+                        ? "font-semibold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-1.5 py-0.5 rounded border border-emerald-200 dark:border-emerald-800"
+                        : "font-semibold text-[var(--ui-text-muted)]"
                     }`}
                   >
-                    ৳ {formatMoney(item.runningBalance)}
+                    {item.runningBalance < 0
+                      ? `৳ ${formatMoney(Math.abs(item.runningBalance))}`
+                      : `৳ ${formatMoney(item.runningBalance)}`}
                   </span>
                 </td>
 
@@ -234,7 +256,7 @@ export const CustomerStatementTable: React.FC<CustomerStatementTableProps> = ({
         {stats && (
           <tfoot>
             <tr className="border-t-2 border-[var(--ui-border)] bg-[var(--ui-surface-muted)]/60 text-xs font-semibold text-[var(--ui-text)]">
-              <td colSpan={3} className="py-2.5 px-3 text-right whitespace-nowrap">
+              <td colSpan={4} className="py-2.5 px-3 text-right whitespace-nowrap">
                 <span className="text-xs text-[var(--ui-text-muted)] mr-2">
                   Total Summary ({stats.entryCount} entries) - Closing Balance:
                 </span>
@@ -250,10 +272,14 @@ export const CustomerStatementTable: React.FC<CustomerStatementTableProps> = ({
                   className={`font-bold tabular-nums text-xs ${
                     stats.finalBalance > 0
                       ? "text-[var(--ui-danger)]"
+                      : stats.finalBalance < 0
+                      ? "text-emerald-700 dark:text-emerald-400"
                       : "text-[var(--ui-success)]"
                   }`}
                 >
-                  ৳ {formatMoney(stats.finalBalance)}
+                  {stats.finalBalance < 0
+                    ? `৳ ${formatMoney(Math.abs(stats.finalBalance))}`
+                    : `৳ ${formatMoney(stats.finalBalance)}`}
                 </span>
               </td>
               {onViewReceipt && <td className="py-2.5 px-3 w-14"></td>}

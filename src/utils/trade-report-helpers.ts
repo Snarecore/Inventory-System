@@ -8,6 +8,7 @@ import {
   formatReportDate,
   fetchLogoBase64,
 } from "@/utils/excel-export";
+export { formatReportDate };
 import { useBusinessProfileQuery } from "@/hooks/useBusinessProfile";
 import { getFileViewUrl } from "@/services/file-upload-service";
 import { getUserInfo } from "@/utils/auth-storage";
@@ -598,7 +599,8 @@ export interface CorporatePdfPersonMeta {
 export interface CorporatePdfConfig {
   fileName: string;
   reportTitle: string;
-  metaRightLabel: string;
+  metaRightLabel?: string;
+  metaLeftLabel?: string;
   headers: string[];
   bodyRows: RowInput[];
   columnStyles: { [key: string]: Partial<Styles> };
@@ -873,9 +875,12 @@ export async function generateAndDownloadCorporatePdf(
   const metaFilterY = config.personInfo ? 26 : 27;
 
   // Meta Filter Row
+  const defaultDateRangeStr = `From Date: ${fromStr}   To Date: ${toStr}`;
+  const leftLabel = config.metaLeftLabel || defaultDateRangeStr;
+
   drawPdfTextSmart(
     doc,
-    `From Date: ${fromStr}   To Date: ${toStr}`,
+    leftLabel,
     marginX,
     metaFilterY,
     {
@@ -883,17 +888,21 @@ export async function generateAndDownloadCorporatePdf(
       fontStyle: "bold",
       textColor: [51, 65, 85],
       align: "left",
-      maxAllowedWidthMm: (pageWidth - 2 * marginX) / 2,
+      maxAllowedWidthMm: config.metaRightLabel
+        ? (pageWidth - 2 * marginX) / 2
+        : pageWidth - 2 * marginX,
     }
   );
 
-  drawPdfTextSmart(doc, config.metaRightLabel, rightEdge, metaFilterY, {
-    fontSize: 8.5,
-    fontStyle: "bold",
-    textColor: [51, 65, 85],
-    align: "right",
-    maxAllowedWidthMm: (pageWidth - 2 * marginX) / 2,
-  });
+  if (config.metaRightLabel) {
+    drawPdfTextSmart(doc, config.metaRightLabel, rightEdge, metaFilterY, {
+      fontSize: 8.5,
+      fontStyle: "bold",
+      textColor: [51, 65, 85],
+      align: "right",
+      maxAllowedWidthMm: (pageWidth - 2 * marginX) / 2,
+    });
+  }
 
   if (config.personInfo) {
     const cardY = 28.5;

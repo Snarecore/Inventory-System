@@ -570,15 +570,23 @@ export const fetchSalesAndReturnList = async (): Promise<UnifiedTradeRecord[]> =
               item.products,
             ].find((lines) => Array.isArray(lines) && lines.length > 0) || [];
 
-            const returnAmt = Number(
-              item.returnGrandTotal ??
-              item.returnTotalAmount ??
-              item.returnRefundAmount ??
-              item.refundAmount ??
-              item.grandTotal ??
-              item.totalAmount ??
-              0
-            );
+            const rDetailsTotal = rDetails.reduce((sum: number, line: any) => {
+              const qty = Number(line.returnQuantity ?? line.quantity ?? 1);
+              const price = Number(line.sellPrice ?? line.sell_price ?? line.buyPrice ?? line.buy_price ?? line.unitPrice ?? line.unit_price ?? line.price ?? line.rate ?? 0);
+              const total = Number(line.total ?? (qty * price));
+              return sum + total;
+            }, 0);
+
+            const returnAmt =
+              Number(
+                item.returnGrandTotal ??
+                item.returnTotalAmount ??
+                item.returnRefundAmount ??
+                item.refundAmount ??
+                0
+              ) ||
+              rDetailsTotal ||
+              Number(item.grandTotal ?? item.totalAmount ?? 0);
 
             const refundAmt = Number(
               item.returnRefundAmount ??
@@ -746,7 +754,25 @@ export const fetchSalesAndReturnList = async (): Promise<UnifiedTradeRecord[]> =
         if (rNo && !normalized.returnNo) {
           normalized.returnNo = rNo;
         }
-        normalized.grandTotal = Number(item.returnGrandTotal ?? item.grandTotal ?? item.returnTotalAmount ?? item.totalAmount ?? item.refundAmount ?? 0);
+        const rLinesTotal = returnDetails.reduce((sum: number, line: any) => {
+          const qty = Number(line.returnQuantity ?? line.quantity ?? 1);
+          const price = Number(line.sellPrice ?? line.sell_price ?? line.buyPrice ?? line.buy_price ?? line.unitPrice ?? line.unit_price ?? line.price ?? line.rate ?? 0);
+          const total = Number(line.total ?? (qty * price));
+          return sum + total;
+        }, 0);
+
+        const calculatedReturnAmt =
+          Number(
+            item.returnGrandTotal ??
+            item.returnTotalAmount ??
+            item.returnRefundAmount ??
+            item.refundAmount ??
+            0
+          ) ||
+          rLinesTotal ||
+          Number(item.grandTotal ?? item.totalAmount ?? 0);
+
+        normalized.grandTotal = calculatedReturnAmt;
         normalized.refundAmount = Number(item.returnRefundAmount ?? item.refundAmount ?? normalized.grandTotal);
         normalized.totalAmount = Number(item.returnTotalAmount ?? normalized.grandTotal);
         normalized.returnDate = item.returnDate || item.return_date || item.salesDate || item.saleDate || moment().format("YYYY-MM-DD");

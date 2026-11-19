@@ -15,11 +15,13 @@ import {
   type ReportCompanyMeta,
   REPORT_RGB,
   calculateRevenueSharePct,
+  formatReportDate,
   formatShortReportDate,
   generateAndDownloadCorporatePdf,
   isDateInReportRange,
   parseFlexibleReportDate,
 } from "@/utils/trade-report-helpers";
+import { getCleanOrderNo } from "@/pages/admin/trade/sales/hooks/useSalesQueries";
 import type {
   CollectionReportItem,
   CustomerDueItem,
@@ -1192,20 +1194,41 @@ export function parseDateAndTime(
   fullDateTimeStr: string;
 } {
   const candidates: string[] = [];
+  const isRetRecord = Boolean(
+    rawRecord?.isReturnRecord ||
+    rawRecord?.returnNo ||
+    rawRecord?.salesReturnNo ||
+    rawRecord?.type === "SALES_RETURN" ||
+    rawRecord?.returnDate ||
+    rawRecord?.return_date
+  );
 
   if (rawRecord && typeof rawRecord === "object") {
-    const timeFields = [
-      rawRecord.createdAt,
-      rawRecord.createdDate,
-      rawRecord.addedDate,
-      rawRecord.timestamp,
-      rawRecord.dateTime,
-      rawRecord.collectionDate,
-      rawRecord.salesDate,
-      rawRecord.saleDate,
-      rawRecord.returnDate,
-      rawRecord.date,
-    ];
+    const timeFields = isRetRecord
+      ? [
+          rawRecord.returnDate,
+          rawRecord.return_date,
+          rawRecord.returnDateTime,
+          rawRecord.transactionDate,
+          rawRecord.createdAt,
+          rawRecord.createdDate,
+          rawRecord.addedDate,
+          rawRecord.timestamp,
+          rawRecord.dateTime,
+          rawRecord.date,
+        ]
+      : [
+          rawRecord.createdAt,
+          rawRecord.createdDate,
+          rawRecord.addedDate,
+          rawRecord.timestamp,
+          rawRecord.dateTime,
+          rawRecord.collectionDate,
+          rawRecord.salesDate,
+          rawRecord.saleDate,
+          rawRecord.returnDate,
+          rawRecord.date,
+        ];
     for (const tf of timeFields) {
       if (tf && typeof tf === "string") {
         candidates.push(tf.trim());
@@ -1229,7 +1252,7 @@ export function parseDateAndTime(
     (!selected || (!selected.includes(":") && !selected.includes("T")))
   ) {
     const timeOnly =
-      rawRecord.time || rawRecord.saleTime || rawRecord.collectionTime;
+      rawRecord.time || rawRecord.returnTime || rawRecord.saleTime || rawRecord.collectionTime;
     if (timeOnly && typeof timeOnly === "string" && selected) {
       selected = `${selected} ${timeOnly.trim()}`;
     }
@@ -1238,17 +1261,28 @@ export function parseDateAndTime(
   // If still no time, check if invoiceNo / returnNo / orderNo has an embedded timestamp
   // E.g. #28488-20261118144504860 -> 2026-11-18 14:45:04
   // E.g. #2611181446152012 -> 2026-11-18 14:46:15
+  // E.g. #2611191051201079 -> 2026-11-19 10:51:20
   if (!selected.includes(":") && !selected.includes("T")) {
-    const refString = String(
-      rawRecord?.invoiceNo ||
-        rawRecord?.orderNo ||
-        rawRecord?.returnNo ||
-        rawRecord?.salesReturnNo ||
-        rawRecord?.refNo ||
-        rawRecord?.voucherNo ||
-        dateStr ||
-        ""
-    );
+    const refString = isRetRecord
+      ? String(
+          rawRecord?.returnNo ||
+            rawRecord?.salesReturnNo ||
+            rawRecord?.refNo ||
+            dateStr ||
+            rawRecord?.invoiceNo ||
+            rawRecord?.orderNo ||
+            ""
+        )
+      : String(
+          rawRecord?.invoiceNo ||
+            rawRecord?.orderNo ||
+            rawRecord?.returnNo ||
+            rawRecord?.salesReturnNo ||
+            rawRecord?.refNo ||
+            rawRecord?.voucherNo ||
+            dateStr ||
+            ""
+        );
     const m14 = refString.match(/(20\d{2})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})/);
     if (m14) {
       const [, y, mo, d, h, mi, s] = m14;
@@ -1429,6 +1463,12 @@ export function buildCustomerStatementEntries(
 
   const rawEntries: UnsortedEntry[] = [];
 
+  // Helper to clean reference strings (strip '#', whitespace, lowercase)
+  const cleanRefKey = (k: any): string => {
+    if (!k) return "";
+    return String(k).replace(/^[#\s]+/, "").trim().toLowerCase();
+  };
+
   // Track invoice settlements from Collection Vouchers to merge into single line and avoid 2-line breakdown
   const invoiceVoucherMap = new Map<string, {
     paidAmount: number;
@@ -1453,10 +1493,11 @@ export function buildCustomerStatementEntries(
     let hasAllocations = false;
     if (Array.isArray(c.receiptData?.allocations) && c.receiptData.allocations.length > 0) {
       c.receiptData.allocations.forEach((a) => {
-        const inv = String(a.invoiceNo || "").trim().toLowerCase();
-        if (inv && inv !== "-") {
+        const rawInv = String(a.invoiceNo || "").trim().toLowerCase();
+        const cleanInv = cleanRefKey(a.invoiceNo);
+        if (cleanInv && cleanInv !== "-") {
           hasAllocations = true;
-          const prev = invoiceVoucherMap.get(inv) || {
+          const prev = invoiceVoucherMap.get(cleanInv) || invoiceVoucherMap.get(rawInv) || {
             paidAmount: 0,
             discountAmount: 0,
             voucherNos: [],
@@ -1469,7 +1510,8 @@ export function buildCustomerStatementEntries(
           if (vNo && !prev.voucherNos.includes(vNo)) prev.voucherNos.push(vNo);
           if (mode && !prev.paymentModes.includes(mode)) prev.paymentModes.push(mode);
           prev.voucherIds.add(c.id);
-          invoiceVoucherMap.set(inv, prev);
+          invoiceVoucherMap.set(cleanInv, prev);
+          if (rawInv !== cleanInv) invoiceVoucherMap.set(rawInv, prev);
         }
       });
     }
@@ -1481,8 +1523,9 @@ export function buildCustomerStatementEntries(
         .filter((s) => s && s !== "-");
       if (invs.length > 0) {
         const perInv = colTotal / invs.length;
-        invs.forEach((inv) => {
-          const prev = invoiceVoucherMap.get(inv) || {
+        invs.forEach((rawInv) => {
+          const cleanInv = cleanRefKey(rawInv);
+          const prev = invoiceVoucherMap.get(cleanInv) || invoiceVoucherMap.get(rawInv) || {
             paidAmount: 0,
             discountAmount: 0,
             voucherNos: [],
@@ -1494,39 +1537,85 @@ export function buildCustomerStatementEntries(
           if (vNo && !prev.voucherNos.includes(vNo)) prev.voucherNos.push(vNo);
           if (mode && !prev.paymentModes.includes(mode)) prev.paymentModes.push(mode);
           prev.voucherIds.add(c.id);
-          invoiceVoucherMap.set(inv, prev);
+          invoiceVoucherMap.set(cleanInv, prev);
+          if (rawInv !== cleanInv) invoiceVoucherMap.set(rawInv, prev);
         });
       }
     }
   });
 
   // Add Sales
-  matchedSales.forEach((s, idx) => {
-    const rawDate =
-      s.createdAt ||
-      s.createdDate ||
-      s.salesDate ||
-      s.saleDate ||
-      s.date ||
-      "";
-    if (!isDateInReportRange(rawDate, options?.startDate, options?.endDate)) {
-      return;
-    }
+  // Pre-calculate total return amounts associated with parent sales
+  // so that sales are always displayed at their authentic gross amount
+  // (e.g. 3944 instead of 1444 when net is 1444 + 2500 return).
+  const saleReturnAmountMap = new Map<string, number>();
+  matchedSales.forEach((item) => {
+    const isRet =
+      Boolean(item.isReturnRecord) ||
+      Boolean(item.returnNo && (item.returnGrandTotal || item.refundAmount || item.returnDate)) ||
+      String(item.paymentType || "").toUpperCase().includes("RETURN") ||
+      String(item.status || "").toUpperCase() === "RETURN" ||
+      String(item.status || "").toUpperCase() === "FULL_RETURN";
 
-    const { momentObj, formattedDate, formattedTime, hasTime, fullDateTimeStr } =
-      parseDateAndTime(rawDate, s);
-    const grandTotal = Number(
-      s.grandTotal ?? s.grand_total ?? s.totalAmount ?? s.total_amount ?? 0
-    );
-    const paidAmount = Number(s.paidAmount ?? s.paid_amount ?? 0);
-    const dueAmount = Number(s.dueAmount ?? s.due_amount ?? 0);
+    if (isRet) {
+      const rawLines = [
+        item.returnDetails,
+        item.salesReturnDetails,
+        item.return_details,
+        item.sales_return_details,
+        item.returnedItems,
+        item.returned_items,
+        item.details,
+      ].find((l) => Array.isArray(l) && l.length > 0) || [];
+
+      const linesTotal = rawLines.reduce((sum: number, l: any) => {
+        const qty = Number(l.returnQuantity ?? l.quantity ?? 1);
+        const price = Number(l.sellPrice ?? l.sell_price ?? l.buyPrice ?? l.buy_price ?? l.unitPrice ?? l.unit_price ?? l.price ?? l.rate ?? 0);
+        const total = Number(l.total ?? (qty * price));
+        return sum + total;
+      }, 0);
+
+      const retAmt =
+        Math.abs(
+          Number(
+            item.refundAmount ??
+            item.returnRefundAmount ??
+            item.returnGrandTotal ??
+            item.grandTotal ??
+            item.totalAmount ??
+            item.returnTotalAmount ??
+            item.dueAmount ??
+            0
+          )
+        ) || linesTotal;
+
+      if (retAmt > 0) {
+        const inv = cleanRefKey(item.salesInvoiceNo || item.invoiceNo || item.sales_invoice_no);
+        const ord = cleanRefKey(item.orderNo || item.order_no);
+        const sId = cleanRefKey(item.saleId || item.sale_id);
+        const ref = cleanRefKey(item.refNo || item.referenceNo);
+
+        const noteText = String(item.notes || item.note || item.remarks || item.reason || "");
+        const match = noteText.match(/([0-9]{4,8}-[0-9]{10,25})/);
+        const extractedInv = match ? cleanRefKey(match[1]) : "";
+        const ordMatch = noteText.match(/(?:order|ord)\s*(?:no|number)?\s*[:#]?\s*([A-Za-z0-9_-]+)/i);
+        const extractedOrd = ordMatch && ordMatch[1] ? cleanRefKey(ordMatch[1]) : "";
+
+        const cleanOrd = ord ? getCleanOrderNo(ord) : "";
+
+        [inv, ord, sId, ref, extractedInv, extractedOrd, cleanOrd ? cleanRefKey(cleanOrd) : ""].filter(Boolean).forEach((key) => {
+          if (key && key !== "-") {
+            saleReturnAmountMap.set(key, (saleReturnAmountMap.get(key) || 0) + retAmt);
+          }
+        });
+      }
+    }
+  });
+
+  matchedSales.forEach((s, idx) => {
     const paymentType = String(
       s.paymentType || s.payment_type || ""
     ).toUpperCase();
-    const invNo = String(
-      s.invoiceNo || s.orderNo || s.id || `INV-${idx + 1}`
-    );
-    const invKey = invNo.toLowerCase();
 
     const isExplicitReturn =
       Boolean(s.isReturnRecord) ||
@@ -1534,6 +1623,27 @@ export function buildCustomerStatementEntries(
       paymentType.includes("RETURN") ||
       String(s.status || "").toUpperCase() === "RETURN" ||
       String(s.status || "").toUpperCase() === "FULL_RETURN";
+
+    // For returns, authentic return date takes priority; for sales, sale/creation date takes priority
+    const rawDate = isExplicitReturn
+      ? (s.returnDate || s.return_date || s.transactionDate || s.createdAt || s.createdDate || s.salesDate || s.saleDate || s.date || "")
+      : (s.createdAt || s.createdDate || s.salesDate || s.saleDate || s.date || "");
+
+    if (!isDateInReportRange(rawDate, options?.startDate, options?.endDate)) {
+      return;
+    }
+
+    const { momentObj, formattedDate, formattedTime, hasTime, fullDateTimeStr } =
+      parseDateAndTime(rawDate, s);
+    const paidAmount = Number(s.paidAmount ?? s.paid_amount ?? 0);
+    const dueAmount = Number(s.dueAmount ?? s.due_amount ?? 0);
+    const invNo = String(
+      s.invoiceNo || s.orderNo || s.id || `INV-${idx + 1}`
+    );
+    const invKey = cleanRefKey(invNo);
+    const ordKey = cleanRefKey(s.orderNo);
+    const idKey = cleanRefKey(s.id || s.saleId);
+    const cleanOrdKey = s.orderNo ? cleanRefKey(getCleanOrderNo(s.orderNo, s.invoiceNo, s.id)) : "";
 
     if (isExplicitReturn) {
       const rawReturnLines = [
@@ -1573,6 +1683,10 @@ export function buildCustomerStatementEntries(
           1
         );
         const unitPrice = Number(
+          line.sellPrice ??
+          line.sell_price ??
+          line.buyPrice ??
+          line.buy_price ??
           line.unitPrice ??
           line.unit_price ??
           line.price ??
@@ -1602,19 +1716,29 @@ export function buildCustomerStatementEntries(
             .join(", ")
         : "";
 
-      const returnAmt = Math.abs(
-        Number(
-          s.refundAmount ??
-          s.returnRefundAmount ??
-          s.returnGrandTotal ??
-          s.grandTotal ??
-          s.totalAmount ??
-          0
-        )
+      const parsedLinesTotal = parsedLines.reduce(
+        (sum, p) => sum + (p.total || p.quantity * p.unitPrice),
+        0
       );
+
+      const returnAmt =
+        Math.abs(
+          Number(
+            s.refundAmount ??
+            s.returnRefundAmount ??
+            s.returnGrandTotal ??
+            s.grandTotal ??
+            s.totalAmount ??
+            s.returnTotalAmount ??
+            s.dueAmount ??
+            s.amount ??
+            0
+          )
+        ) || parsedLinesTotal;
 
       const cleanNote = (s.notes && s.notes !== "-" ? s.notes : "") || (s.remark && s.remark !== "-" ? s.remark : "") || (s.reason && s.reason !== "-" ? s.reason : "");
 
+      // Returns are credited to the customer, decreasing balance via the Collection column
       rawEntries.push({
         sortMoment: momentObj,
         priority: 4,
@@ -1639,15 +1763,54 @@ export function buildCustomerStatementEntries(
       return;
     }
 
+    // Associated return amount from separate return records:
+    const returnFromMap = Math.max(
+      saleReturnAmountMap.get(invKey) || 0,
+      ordKey ? saleReturnAmountMap.get(ordKey) || 0 : 0,
+      idKey ? saleReturnAmountMap.get(idKey) || 0 : 0,
+      cleanOrdKey ? saleReturnAmountMap.get(cleanOrdKey) || 0 : 0
+    );
+
+    // Embedded return amount on sale itself:
+    const embeddedReturnAmt = Math.abs(Number(s.returnGrandTotal ?? s.refundAmount ?? s.returnRefundAmount ?? 0));
+    const associatedReturnAmt = Math.max(returnFromMap, embeddedReturnAmt);
+
+    // Calculate line items sum if available:
+    const rawSaleLines = [
+      s.salesDetails,
+      s.saleDetails,
+      s.details,
+      s.items,
+      s.products,
+    ].find((list) => Array.isArray(list) && list.length > 0) || [];
+
+    const lineItemsGross = rawSaleLines.length > 0
+      ? rawSaleLines.reduce((sum: number, line: any) => {
+          const qty = Number(line.quantity ?? line.qty ?? 1);
+          const price = Number(line.sellPrice ?? line.sell_price ?? line.unitPrice ?? line.price ?? 0);
+          const lineTotal = Number(line.total ?? line.totalAmount ?? line.subTotal ?? (qty * price));
+          return sum + (lineTotal || 0);
+        }, 0)
+      : 0;
+
+    const baseGrandTotal = Number(
+      s.grandTotal ?? s.grand_total ?? s.totalAmount ?? s.total_amount ?? 0
+    );
+
+    // Original gross sale: if a return exists, gross sale is baseGrandTotal + associatedReturnAmt,
+    // or lineItemsGross, or s.totalAmount (e.g. 1320 when net is 1300 + 20 return).
+    const effectiveSaleAmount = associatedReturnAmt > 0
+      ? Math.max(baseGrandTotal + associatedReturnAmt, lineItemsGross, Number(s.totalAmount || 0))
+      : Math.max(baseGrandTotal, lineItemsGross);
+
     const rawStatus = String(
       s.paymentStatus || s.payment_status || s.status || ""
     ).toUpperCase();
 
-    // A sale is genuinely a CREDIT sale if it has dueAmount > 0, or paidAmount < grandTotal, or status is DUE / PARTIAL.
-    // Even if method is "CASH" (default form selection), if paidAmount is 0 and dueAmount > 0, it is UNPAID CREDIT!
+    // A sale is genuinely a CREDIT sale if it has dueAmount > 0, or paidAmount < effectiveSaleAmount, or status is DUE / PARTIAL.
     const isCreditAtCreation =
       dueAmount > 0 ||
-      paidAmount < grandTotal ||
+      paidAmount < baseGrandTotal ||
       rawStatus === "DUE" ||
       rawStatus === "PARTIAL";
 
@@ -1655,10 +1818,22 @@ export function buildCustomerStatementEntries(
       (s.notes && s.notes !== "-" ? s.notes : "") ||
       (s.remark && s.remark !== "-" ? s.remark : "");
 
+    const voucherSettlement =
+      invoiceVoucherMap.get(invKey) ||
+      (invNo ? invoiceVoucherMap.get(invNo.toLowerCase()) : undefined) ||
+      (ordKey ? invoiceVoucherMap.get(ordKey) : undefined) ||
+      (cleanOrdKey ? invoiceVoucherMap.get(cleanOrdKey) : undefined);
+
     if (isCreditAtCreation) {
       // Genuinely a CREDIT SALE!
-      const isPartial = paidAmount > 0 && paidAmount < grandTotal;
-      const paidNote = isPartial ? `Paid: ৳${formatMoney(paidAmount)}` : "";
+      // If collection vouchers were created for this invoice (e.g. Voucher #6153),
+      // those vouchers are displayed as their own separate COLLECTION rows in the ledger.
+      // Do NOT double count that collection on the credit sale row!
+      const voucherPaid = voucherSettlement ? voucherSettlement.paidAmount : 0;
+      const unvoucheredPaid = Math.max(0, paidAmount - voucherPaid);
+
+      const isPartial = unvoucheredPaid > 0 && unvoucheredPaid < effectiveSaleAmount;
+      const paidNote = isPartial ? `Paid: ৳${formatMoney(unvoucheredPaid)}` : "";
       const fullNote = cleanNote
         ? paidNote
           ? `${cleanNote} (${paidNote})`
@@ -1679,18 +1854,17 @@ export function buildCustomerStatementEntries(
         description: "Credit Sale",
         note: fullNote,
         paymentMode: isPartial ? "Partial" : "Credit",
-        salesAmount: grandTotal,
-        collectionAmount: paidAmount > 0 ? paidAmount : 0,
+        salesAmount: effectiveSaleAmount,
+        collectionAmount: unvoucheredPaid > 0 ? unvoucheredPaid : 0,
         rawRecord: s,
       });
     } else {
       // Genuinely fully paid Cash Sale (paidAmount >= grandTotal && dueAmount <= 0)
-      const voucherSettlement = invoiceVoucherMap.get(invKey);
       if (voucherSettlement) {
         voucherSettlement.voucherIds.forEach((vId) => {
           voucherConsumedAmount.set(
             vId,
-            (voucherConsumedAmount.get(vId) || 0) + grandTotal
+            (voucherConsumedAmount.get(vId) || 0) + effectiveSaleAmount
           );
         });
       }
@@ -1713,8 +1887,8 @@ export function buildCustomerStatementEntries(
         description: "Sale (Paid)",
         note: vInfo ? (cleanNote ? `${cleanNote} (${vInfo})` : vInfo) : cleanNote,
         paymentMode: "Cash",
-        salesAmount: grandTotal,
-        collectionAmount: grandTotal,
+        salesAmount: effectiveSaleAmount,
+        collectionAmount: effectiveSaleAmount,
         hasVoucherCollection: Boolean(
           voucherSettlement && voucherSettlement.voucherNos.length > 0
         ),
@@ -1725,7 +1899,6 @@ export function buildCustomerStatementEntries(
     }
 
     // Check if parent sale also has an embedded return attached that was not passed as a separate return record:
-    const embeddedReturnAmt = Math.abs(Number(s.returnGrandTotal ?? s.refundAmount ?? s.returnRefundAmount ?? 0));
     const hasEmbeddedReturnLines = Array.isArray(s.salesReturnDetails) && s.salesReturnDetails.length > 0;
     if (!isExplicitReturn && (s.hasReturn || embeddedReturnAmt > 0 || hasEmbeddedReturnLines)) {
       const retNo = String(s.returnNo || s.salesReturnNo || `RET-${invNo}`);
@@ -1741,7 +1914,7 @@ export function buildCustomerStatementEntries(
         const parsedLines = rawReturnLines.map((line: any) => ({
           productName: String(line.productName || line.product_name || line.name || line.item_name || "Product").trim(),
           quantity: Number(line.returnQuantity ?? line.return_quantity ?? line.returnQty ?? line.quantity ?? 1),
-          unitPrice: Number(line.unitPrice ?? line.price ?? 0),
+          unitPrice: Number(line.sellPrice ?? line.sell_price ?? line.buyPrice ?? line.buy_price ?? line.unitPrice ?? line.price ?? 0),
           total: Number(line.total ?? 0),
           unit: String(line.unit || "").trim(),
         }));
@@ -1758,6 +1931,7 @@ export function buildCustomerStatementEntries(
           const retDate = s.returnDate || rawDate;
           const retParsed = parseDateAndTime(retDate, s);
 
+          // Embedded returns are also credited via Collection column
           rawEntries.push({
             sortMoment: retParsed.momentObj,
             priority: 4,
@@ -2015,6 +2189,58 @@ export function buildCustomerStatementEntries(
   };
 }
 
+export function buildStatementDescription(e: CustomerStatementEntry): string {
+  const cleanRef = String(e.refNo || "").replace(/^#+/, "").trim();
+  const hasRef = cleanRef && cleanRef !== "-";
+  const refText = hasRef ? `#${cleanRef}` : "";
+
+  if (e.type === "OPENING") {
+    return "Opening Balance";
+  }
+
+  if (e.type === "SALES_RETURN") {
+    const parts: string[] = [];
+    if (refText) parts.push(refText);
+    if (e.returnItemsSummary) parts.push(`Ret: ${e.returnItemsSummary}`);
+    if (
+      e.note &&
+      !e.note.toLowerCase().includes(e.returnItemsSummary?.toLowerCase() || "___never___") &&
+      e.note !== `Return: ${e.returnItemsSummary}`
+    ) {
+      parts.push(e.note);
+    }
+    return parts.join(" | ") || "Sales Return";
+  }
+
+  if (e.type === "COLLECTION") {
+    const parts: string[] = [];
+    const vNo =
+      e.voucherNos && e.voucherNos.length > 0
+        ? `Voucher: #${e.voucherNos.join(", #")}`
+        : refText
+        ? `Voucher: ${refText}`
+        : "";
+    if (vNo) parts.push(vNo);
+    if (e.note) parts.push(e.note);
+    return parts.join(" | ") || "Customer Collection";
+  }
+
+  // CASH_SALE or CREDIT_SALE
+  const parts: string[] = [];
+  if (refText) parts.push(refText);
+  if (e.voucherNos && e.voucherNos.length > 0) {
+    parts.push(`Voucher: #${e.voucherNos.join(", #")}`);
+  }
+  if (
+    e.note &&
+    e.note !== "Credit Sale" &&
+    !e.note.toLowerCase().includes("voucher: #")
+  ) {
+    parts.push(e.note);
+  }
+  return parts.join(" | ") || (e.type === "CREDIT_SALE" ? "Credit Sale" : "Sale (Paid)");
+}
+
 export async function exportCustomerStatementExcel(
   customer: CustomerCollectionSummary,
   statementEntries: CustomerStatementEntry[],
@@ -2041,18 +2267,11 @@ export async function exportCustomerStatementExcel(
     "Date & Time": e.fullDateTimeStr || e.formattedDate,
     "Type": e.typeLabel,
     "Reference #": e.refNo && e.refNo !== "-" ? `#${e.refNo}` : "-",
-    "Payment Mode": e.paymentMode || "-",
-    "Description / Settled Bills": e.returnItemsSummary
-      ? `Ret: ${e.returnItemsSummary}${e.note ? ` (${e.note})` : ""}`
-      : e.note || e.description,
-    "Sales / Billed (BDT)":
-      e.salesAmount > 0
-        ? e.salesAmount
-        : e.salesAmount < 0
-        ? -Math.abs(e.salesAmount)
-        : "-",
+    "Collection Method": e.paymentMode || "-",
+    "Description / Settled Bills": buildStatementDescription(e),
+    "Sales / Billed (BDT)": e.salesAmount !== 0 ? e.salesAmount : "-",
     "Collection (BDT)": e.collectionAmount > 0 ? e.collectionAmount : "-",
-    "Balance (BDT)": e.runningBalance,
+    "Balance (BDT)": Math.abs(e.runningBalance),
   }));
 
   const totalRow = {
@@ -2060,11 +2279,11 @@ export async function exportCustomerStatementExcel(
     "Date & Time": "-",
     "Type": "-",
     "Reference #": "-",
-    "Payment Mode": "-",
-    "Description / Settled Bills": `Customer: ${customer.customerName} (${customer.customerPhone}) - Closing Due: BDT ${finalBalance}`,
+    "Collection Method": "-",
+    "Description / Settled Bills": `Customer: ${customer.customerName} (${customer.customerPhone}) - Closing Balance: BDT ${formatMoney(Math.abs(finalBalance))}`,
     "Sales / Billed (BDT)": totals.sales,
     "Collection (BDT)": totals.collected,
-    "Balance (BDT)": finalBalance,
+    "Balance (BDT)": Math.abs(finalBalance),
   };
 
   await buildAndDownloadExcel(rows, totalRow, {
@@ -2103,8 +2322,8 @@ export async function downloadCustomerStatementPdf(
   const headers = [
     "SL",
     "Date & Time",
-    "Type / Ref",
-    "Mode",
+    "Type",
+    "Collection Method",
     "Description / Settled Bills",
     "Sales (BDT)",
     "Collection (BDT)",
@@ -2112,68 +2331,121 @@ export async function downloadCustomerStatementPdf(
   ];
 
   const bodyRows = statementEntries.map((e, idx) => {
-    const cleanRef = String(e.refNo || "").replace(/^#+/, "").trim();
-    const typeAndRef =
-      cleanRef && cleanRef !== "-"
-        ? `${e.typeLabel} #${cleanRef}`
-        : e.typeLabel;
+    const desc = buildStatementDescription(e);
 
-    const desc = e.returnItemsSummary
-      ? `Ret: ${e.returnItemsSummary}${e.note ? ` (${e.note})` : ""}`
-      : e.note || e.description;
-
-    const salesVal =
+    const salesCell =
       e.salesAmount > 0
         ? formatMoney(e.salesAmount)
         : e.salesAmount < 0
-        ? `-${formatMoney(Math.abs(e.salesAmount))}`
+        ? {
+            content: `-${formatMoney(Math.abs(e.salesAmount))}`,
+            styles: { textColor: REPORT_RGB.rose, fontStyle: "bold" },
+          }
         : "-";
+
+    const balanceCell =
+      e.runningBalance > 0
+        ? {
+            content: formatMoney(e.runningBalance),
+            styles: { textColor: REPORT_RGB.rose, fontStyle: "bold" },
+          }
+        : e.runningBalance < 0
+        ? {
+            content: formatMoney(Math.abs(e.runningBalance)),
+            styles: { textColor: REPORT_RGB.emerald, fontStyle: "bold" },
+          }
+        : "0";
 
     return [
       idx + 1,
       e.fullDateTimeStr || e.formattedDate,
-      typeAndRef,
+      e.typeLabel,
       e.paymentMode || "-",
       desc,
-      salesVal,
+      salesCell,
       e.collectionAmount > 0 ? formatMoney(e.collectionAmount) : "-",
-      formatMoney(e.runningBalance),
+      balanceCell,
     ];
   });
 
   const finalBalance =
     statementEntries[statementEntries.length - 1]?.runningBalance ?? 0;
 
+  const totalBalanceCell =
+    finalBalance > 0
+      ? {
+          content: formatMoney(finalBalance),
+          styles: { textColor: REPORT_RGB.rose, fontStyle: "bold" },
+        }
+      : finalBalance < 0
+      ? {
+          content: formatMoney(Math.abs(finalBalance)),
+          styles: { textColor: REPORT_RGB.emerald, fontStyle: "bold" },
+        }
+      : "0";
+
+  const totalDescCell =
+    finalBalance > 0
+      ? {
+          content: `Closing Balance: BDT ${formatMoney(finalBalance)}`,
+          styles: { textColor: REPORT_RGB.rose, fontStyle: "bold" },
+        }
+      : finalBalance < 0
+      ? {
+          content: `Closing Balance: BDT ${formatMoney(Math.abs(finalBalance))}`,
+          styles: { textColor: REPORT_RGB.emerald, fontStyle: "bold" },
+        }
+      : {
+          content: `Closing Balance: BDT 0 (Fully Cleared)`,
+          styles: { fontStyle: "bold" },
+        };
+
   bodyRows.push([
     "Total",
     "-",
     "-",
     "-",
-    `Closing Balance: BDT ${formatMoney(finalBalance)}${finalBalance === 0 ? " (Fully Cleared)" : ""}`,
+    totalDescCell,
     formatMoney(totals.sales),
     formatMoney(totals.collected),
-    formatMoney(finalBalance),
+    totalBalanceCell,
   ]);
+
+  const printDate = formatReportDate(new Date().toISOString());
+  const fromStr = meta.startDate ? formatReportDate(meta.startDate) : "ALL";
+  const toStr = meta.endDate ? formatReportDate(meta.endDate) : printDate;
+
+  const customerMetaInfo = [
+    `Customer: ${customer.customerName}`,
+    customer.customerPhone && customer.customerPhone !== "-"
+      ? `Phone: ${customer.customerPhone}`
+      : "",
+  ]
+    .filter(Boolean)
+    .join("   |   ");
+
+  const metaLeftLabel = `From Date: ${fromStr}   To Date: ${toStr}   |   ${customerMetaInfo}`;
 
   await generateAndDownloadCorporatePdf({
     fileName: `Customer_Ledger_${customer.customerName.replace(
       /\s+/g,
       "_"
     )}_${moment().format("YYYY-MM-DD")}.pdf`,
-    reportTitle: `Customer Ledger & Statement - ${customer.customerName}`,
-    metaRightLabel: `Phone: ${customer.customerPhone} | Due: BDT ${formatMoney(customer.currentDue)}`,
+    reportTitle: "Customer Ledger",
+    metaLeftLabel,
+    metaRightLabel: "",
     headers,
     bodyRows,
     orientation: "landscape",
     columnStyles: {
       0: { halign: "center", cellWidth: 10 },
-      1: { halign: "center", cellWidth: 38 },
-      2: { halign: "left", cellWidth: 58 },
-      3: { halign: "center", cellWidth: 16 },
-      4: { halign: "left", cellWidth: 83 },
+      1: { halign: "center", cellWidth: 36 },
+      2: { halign: "center", cellWidth: 31 },
+      3: { halign: "center", cellWidth: 28 },
+      4: { halign: "left", cellWidth: 96 },
       5: { halign: "right", cellWidth: 24 },
       6: { halign: "right", cellWidth: 24 },
-      7: { halign: "right", cellWidth: 24 },
+      7: { halign: "right", cellWidth: 28 },
     },
     meta,
   });
@@ -2374,7 +2646,7 @@ export async function exportCustomerWiseDetailedExcel(
     "Date & Time",
     "Type",
     "Reference #",
-    "Payment Mode",
+    "Collection Method",
     "Description / Settled Bills",
     "Sales / Billed (BDT)",
     "Collection (BDT)",
@@ -2417,15 +2689,8 @@ export async function exportCustomerWiseDetailedExcel(
       totalAllSales += e.salesAmount;
       totalAllCollected += e.collectionAmount;
 
-      const salesVal =
-        e.salesAmount > 0
-          ? e.salesAmount
-          : e.salesAmount < 0
-          ? -Math.abs(e.salesAmount)
-          : "-";
-      const descVal = e.returnItemsSummary
-        ? `Ret: ${e.returnItemsSummary}${e.note ? ` (${e.note})` : ""}`
-        : e.note || e.description;
+      const salesVal = e.salesAmount !== 0 ? e.salesAmount : "-";
+      const descVal = buildStatementDescription(e);
 
       const row = ws2.getRow(s2RowIdx);
       row.height = 19;
@@ -2440,7 +2705,7 @@ export async function exportCustomerWiseDetailedExcel(
         descVal,
         salesVal,
         e.collectionAmount > 0 ? e.collectionAmount : "-",
-        e.runningBalance,
+        Math.abs(e.runningBalance),
       ];
 
       for (let col = 1; col <= 11; col++) {
@@ -2559,7 +2824,7 @@ export async function downloadCustomerWiseDetailedPdf(
     "SL",
     "Customer Name",
     "Date & Time",
-    "Type / Ref",
+    "Type",
     "Description / Settled Bills",
     "Sales (BDT)",
     "Collection (BDT)",
@@ -2587,45 +2852,68 @@ export async function downloadCustomerWiseDetailedPdf(
       totalSales += e.salesAmount;
       totalCollected += e.collectionAmount;
 
-      const cleanRef = String(e.refNo || "").replace(/^#+/, "").trim();
-      const typeAndRef =
-        cleanRef && cleanRef !== "-"
-          ? `${e.typeLabel} #${cleanRef}`
-          : e.typeLabel;
+      const desc = buildStatementDescription(e);
 
-      const desc = e.returnItemsSummary
-        ? `Ret: ${e.returnItemsSummary}${e.note ? ` (${e.note})` : ""}`
-        : e.note || e.description;
-
-      const salesVal =
+      const salesCell =
         e.salesAmount > 0
           ? formatMoney(e.salesAmount)
           : e.salesAmount < 0
-          ? `-${formatMoney(Math.abs(e.salesAmount))}`
+          ? {
+              content: `-${formatMoney(Math.abs(e.salesAmount))}`,
+              styles: { textColor: REPORT_RGB.rose, fontStyle: "bold" },
+            }
           : "-";
+
+      const balanceCell =
+        e.runningBalance > 0
+          ? {
+              content: formatMoney(e.runningBalance),
+              styles: { textColor: REPORT_RGB.rose, fontStyle: "bold" },
+            }
+          : e.runningBalance < 0
+          ? {
+              content: formatMoney(Math.abs(e.runningBalance)),
+              styles: { textColor: REPORT_RGB.emerald, fontStyle: "bold" },
+            }
+          : "0";
 
       bodyRows.push([
         sl++,
         c.customerName,
         e.fullDateTimeStr || e.formattedDate,
-        typeAndRef,
+        e.typeLabel,
         desc,
-        salesVal,
+        salesCell,
         e.collectionAmount > 0 ? formatMoney(e.collectionAmount) : "-",
-        formatMoney(e.runningBalance),
+        balanceCell,
       ]);
     });
   });
+
+  const totalBalanceCell =
+    totalDue > 0
+      ? {
+          content: formatMoney(totalDue),
+          styles: { textColor: REPORT_RGB.rose, fontStyle: "bold" },
+        }
+      : totalDue < 0
+      ? {
+          content: formatMoney(Math.abs(totalDue)),
+          styles: { textColor: REPORT_RGB.emerald, fontStyle: "bold" },
+        }
+      : "0";
 
   bodyRows.push([
     "Total",
     `Total Customers: ${customers.length}`,
     "-",
     "-",
-    `Grand Total Due: BDT ${formatMoney(totalDue)}`,
+    totalDue < 0
+      ? `Grand Total Balance: BDT ${formatMoney(Math.abs(totalDue))}`
+      : `Grand Total Due: BDT ${formatMoney(totalDue)}`,
     formatMoney(totalSales),
     formatMoney(totalCollected),
-    formatMoney(totalDue),
+    totalBalanceCell,
   ]);
 
   await generateAndDownloadCorporatePdf({
@@ -2639,8 +2927,8 @@ export async function downloadCustomerWiseDetailedPdf(
       0: { halign: "center", cellWidth: 10 },
       1: { halign: "left", cellWidth: 36 },
       2: { halign: "center", cellWidth: 36 },
-      3: { halign: "left", cellWidth: 54 },
-      4: { halign: "left", cellWidth: 69 },
+      3: { halign: "center", cellWidth: 30 },
+      4: { halign: "left", cellWidth: 93 },
       5: { halign: "right", cellWidth: 24 },
       6: { halign: "right", cellWidth: 24 },
       7: { halign: "right", cellWidth: 24 },

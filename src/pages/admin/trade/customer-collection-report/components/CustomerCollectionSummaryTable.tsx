@@ -658,13 +658,15 @@ export const CustomerCollectionSummaryTable: React.FC<
                                     <span className="inline-block w-px h-2.5 bg-[var(--ui-border)]" />
                                     <span
                                       className={
-                                        c.currentDue > 0
+                                        (expandedStatementData?.stats?.finalBalance ?? c.currentDue) > 0
                                           ? "text-[var(--ui-danger)] font-bold"
                                           : "text-[var(--ui-success)] font-bold"
                                       }
                                     >
-                                      Remaining Due: ৳ {formatMoney(c.currentDue)}
-                                      {c.currentDue === 0 && (
+                                      {(expandedStatementData?.stats?.finalBalance ?? c.currentDue) < 0
+                                        ? `Advance Balance: ৳ ${formatMoney(Math.abs(expandedStatementData?.stats?.finalBalance ?? c.currentDue))}`
+                                        : `Remaining Due: ৳ ${formatMoney(expandedStatementData?.stats?.finalBalance ?? c.currentDue)}`}
+                                      {(expandedStatementData?.stats?.finalBalance ?? c.currentDue) === 0 && (
                                         <span className="ml-1 text-[10px] font-medium text-[var(--ui-text-muted)]">
                                           (Fully Cleared)
                                         </span>
