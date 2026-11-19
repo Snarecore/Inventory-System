@@ -22,6 +22,7 @@ import {
   normalizeSaleRecord,
   isReturnRecord,
   getCleanOrderNo,
+  getReturnSortTimestamp,
   useDeleteSalesOrderMutation,
 } from "./hooks/useSalesQueries";
 import { useTradeDeleteModal } from "@/hooks/useTradeDeleteModal";
@@ -828,34 +829,43 @@ const Sales: React.FC = () => {
 
   const sortedReturns = useMemo(() => {
     return [...filteredReturns].sort((a, b) => {
-      const timeA = new Date(a.createdAt || a.returnDate || 0).getTime();
-      const timeB = new Date(b.createdAt || b.returnDate || 0).getTime();
-      const idA = Number(a.id || 0);
-      const idB = Number(b.id || 0);
+      const timeA = getReturnSortTimestamp(a);
+      const timeB = getReturnSortTimestamp(b);
+      const numA = Number(String(a.returnNo || a.id || "").replace(/\D/g, "")) || 0;
+      const numB = Number(String(b.returnNo || b.id || "").replace(/\D/g, "")) || 0;
       const amountA = Number(a.refundAmount ?? a.grandTotal ?? 0);
       const amountB = Number(b.refundAmount ?? b.grandTotal ?? 0);
 
       if (sortBy === "oldest") {
-        if (timeA !== timeB) return timeA - timeB;
-        return idA - idB;
+        if (timeA !== timeB && timeA > 0 && timeB > 0) return timeA - timeB;
+        if (numA !== numB) return numA - numB;
+        return 0;
       }
-      if (sortBy === "amount_high" || sortBy === "amount_high_to_low") return amountB - amountA;
-      if (sortBy === "amount_low" || sortBy === "amount_low_to_high") return amountA - amountB;
+      if (sortBy === "amount_high" || sortBy === "amount_high_to_low") {
+        const diff = amountB - amountA;
+        return diff !== 0 ? diff : (timeB - timeA || numB - numA);
+      }
+      if (sortBy === "amount_low" || sortBy === "amount_low_to_high") {
+        const diff = amountA - amountB;
+        return diff !== 0 ? diff : (timeB - timeA || numB - numA);
+      }
       if (sortBy === "customer_a_to_z") {
         const nameA = String(a.customerName || "").trim().toLowerCase();
         const nameB = String(b.customerName || "").trim().toLowerCase();
         const cmp = nameA.localeCompare(nameB);
-        return cmp !== 0 ? cmp : timeB - timeA;
+        return cmp !== 0 ? cmp : (timeB - timeA || numB - numA);
       }
       if (sortBy === "customer_z_to_a") {
         const nameA = String(a.customerName || "").trim().toLowerCase();
         const nameB = String(b.customerName || "").trim().toLowerCase();
         const cmp = nameB.localeCompare(nameA);
-        return cmp !== 0 ? cmp : timeB - timeA;
+        return cmp !== 0 ? cmp : (timeB - timeA || numB - numA);
       }
 
-      if (timeB !== timeA) return timeB - timeA;
-      return idB - idA;
+      // Default: "latest" -> Recent time is #1, then 2nd recent
+      if (timeB !== timeA && timeA > 0 && timeB > 0) return timeB - timeA;
+      if (numB !== numA) return numB - numA;
+      return 0;
     });
   }, [filteredReturns, sortBy]);
 

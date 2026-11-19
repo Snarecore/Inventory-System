@@ -24,7 +24,10 @@ import {
   useDeletePurchaseOrderMutation,
 } from "./hooks/usePurchaseQueries";
 import { useTradeDeleteModal } from "@/hooks/useTradeDeleteModal";
-import { getCleanOrderNo } from "@/pages/admin/trade/sales/hooks/useSalesQueries";
+import {
+  getCleanOrderNo,
+  getReturnSortTimestamp,
+} from "@/pages/admin/trade/sales/hooks/useSalesQueries";
 import { useDebounce } from "@/hooks/useDebounce";
 import { usePermission } from "@/hooks/usePermission";
 
@@ -756,21 +759,30 @@ const Purchases: React.FC = () => {
 
   const sortedReturns = useMemo(() => {
     return [...filteredReturns].sort((a, b) => {
-      const dateA = new Date(a.returnDate || a.createdAt || 0).getTime();
-      const dateB = new Date(b.returnDate || b.createdAt || 0).getTime();
+      const timeA = getReturnSortTimestamp(a);
+      const timeB = getReturnSortTimestamp(b);
+      const numA = Number(String(a.returnNo || a.purchaseReturnNo || a.id || "").replace(/\D/g, "")) || 0;
+      const numB = Number(String(b.returnNo || b.purchaseReturnNo || b.id || "").replace(/\D/g, "")) || 0;
       const amountA = Number(a.refundAmount || a.grandTotal || 0);
       const amountB = Number(b.refundAmount || b.grandTotal || 0);
 
-      if (sortBy === "oldest") return dateA - dateB;
+      if (sortBy === "oldest") {
+        if (timeA !== timeB && timeA > 0 && timeB > 0) return timeA - timeB;
+        if (numA !== numB) return numA - numB;
+        return 0;
+      }
       if (sortBy === "amount_high" || sortBy === "amount_high_to_low") {
         const diff = amountB - amountA;
-        return diff !== 0 ? diff : dateB - dateA;
+        return diff !== 0 ? diff : (timeB - timeA || numB - numA);
       }
       if (sortBy === "amount_low" || sortBy === "amount_low_to_high") {
         const diff = amountA - amountB;
-        return diff !== 0 ? diff : dateB - dateA;
+        return diff !== 0 ? diff : (timeB - timeA || numB - numA);
       }
-      return dateB - dateA; // latest default
+      // Latest default: most recent timestamp is #1, then 2nd recent
+      if (timeB !== timeA && timeA > 0 && timeB > 0) return timeB - timeA;
+      if (numB !== numA) return numB - numA;
+      return 0;
     });
   }, [filteredReturns, sortBy]);
 

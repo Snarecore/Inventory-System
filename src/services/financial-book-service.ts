@@ -114,21 +114,30 @@ export async function fetchFinancialBookHtml(
 
   let html = await res.text();
 
-  // Navigation shim, no-scrollbar style, and height-sync for srcdoc iframe
+  // Navigation shim and clean modern styling for srcdoc iframe
   const shim = `
-<style id="cb-no-scrollbar">
+<style id="cb-report-style">
 html, body {
-  scrollbar-width: none !important;
-  -ms-overflow-style: none !important;
+  margin: 0;
+  padding: 0;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(156, 163, 175, 0.4) transparent;
 }
 ::-webkit-scrollbar {
-  display: none !important;
-  width: 0 !important;
-  height: 0 !important;
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(156, 163, 175, 0.4);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
 }
 body {
   border: none !important;
   outline: none !important;
+  background: transparent !important;
 }
 </style>
 <script>
@@ -142,35 +151,6 @@ Object.defineProperty(window, '__cbNav', {
     }
   }
 });
-
-function postDocHeight() {
-  try {
-    var body = document.body;
-    var html = document.documentElement;
-    var height = Math.max(
-      body ? body.scrollHeight : 0,
-      body ? body.offsetHeight : 0,
-      html ? html.clientHeight : 0,
-      html ? html.scrollHeight : 0,
-      html ? html.offsetHeight : 0
-    );
-    if (height > 200) {
-      window.parent.postMessage({ type: 'CASH_BOI_REPORT_HEIGHT', height: height }, '*');
-    }
-  } catch(e) {}
-}
-
-window.addEventListener('load', postDocHeight);
-window.addEventListener('resize', postDocHeight);
-document.addEventListener('DOMContentLoaded', postDocHeight);
-if (window.ResizeObserver && document.body) {
-  try {
-    new ResizeObserver(postDocHeight).observe(document.body);
-  } catch(e) {}
-}
-setTimeout(postDocHeight, 100);
-setTimeout(postDocHeight, 500);
-setTimeout(postDocHeight, 1500);
 </script>
 `;
 

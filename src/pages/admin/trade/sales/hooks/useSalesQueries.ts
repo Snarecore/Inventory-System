@@ -95,6 +95,72 @@ export const getCleanOrderNo = (
 };
 
 /**
+ * Accurately extracts a sorting timestamp (in ms) from any Sales or Purchase Return record.
+ * Guarantees that the most recently performed return appears at #1 (first row / latest).
+ */
+export const getReturnSortTimestamp = (item: any): number => {
+  if (!item || typeof item !== "object") return 0;
+
+  // 1. Check if return voucher number has an embedded 14-digit or 12-digit timestamp
+  // Backend format: YYMMDDHHmmss (12 digits, e.g. "261119112200...") or YYYYMMDDHHmmss (14 digits)
+  const voucherStrs = [
+    item.returnNo,
+    item.salesReturnNo,
+    item.purchaseReturnNo,
+    item.orderNo,
+    item.id,
+  ]
+    .filter(Boolean)
+    .map(String);
+
+  for (const str of voucherStrs) {
+    // 14 digits: YYYYMMDDHHmmss (e.g. 20261119112200)
+    const match14 = str.match(/(20\d{2})(0[1-9]|1[0-2])(0[1-9]|[12]\d|3[01])([01]\d|2[0-3])([0-5]\d)([0-5]\d)/);
+    if (match14) {
+      const [, y, m, d, hh, mm, ss] = match14;
+      const t = new Date(Number(y), Number(m) - 1, Number(d), Number(hh), Number(mm), Number(ss)).getTime();
+      if (!isNaN(t) && t > 0) return t;
+    }
+
+    // 12 digits: YYMMDDHHmmss (e.g. 261119112200)
+    const match12 = str.match(/\b(2[4-9])(0[1-9]|1[0-2])(0[1-9]|[12]\d|3[01])([01]\d|2[0-3])([0-5]\d)([0-5]\d)/);
+    if (match12) {
+      const [, yy, m, d, hh, mm, ss] = match12;
+      const y = 2000 + Number(yy);
+      const t = new Date(y, Number(m) - 1, Number(d), Number(hh), Number(mm), Number(ss)).getTime();
+      if (!isNaN(t) && t > 0) return t;
+    }
+  }
+
+  // 2. Check full returnDate / transactionDate / createdAt with time component (contains 'T' or ' ' with ':')
+  const dateCandidates = [
+    item.returnDate,
+    item.purchaseReturnDate,
+    item.transactionDate,
+    item.createdAt,
+    item.createdDate,
+    item.created_at,
+  ];
+
+  for (const d of dateCandidates) {
+    if (d && (String(d).includes("T") || (String(d).includes(":") && String(d).includes("-")))) {
+      const t = new Date(d).getTime();
+      if (!isNaN(t) && t > 0) return t;
+    }
+  }
+
+  // 3. Fallback to any date candidate (even date-only YYYY-MM-DD)
+  for (const d of dateCandidates) {
+    if (d) {
+      const t = new Date(d).getTime();
+      if (!isNaN(t) && t > 0) return t;
+    }
+  }
+
+  return 0;
+};
+
+/**
  * Single source of truth for normalizing sale record numeric fields and line items.
  */
 export const normalizeSaleRecord = (item: any): SaleItem => {

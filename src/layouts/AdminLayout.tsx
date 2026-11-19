@@ -40,6 +40,11 @@ export default function AdminLayout() {
 
 	const handleSidebarClick = () => setSidebarClick((v) => !v);
 
+	const isFinancialBook =
+		location.pathname.includes("cash-book") ||
+		location.pathname.includes("bank-book") ||
+		location.pathname.includes("mfs-book");
+
 	return (
 		<div className="relative flex h-screen overflow-hidden">
 			{isBranchModalOpen && (
@@ -68,13 +73,17 @@ export default function AdminLayout() {
 			<div className="flex flex-col flex-1 min-w-0">
 				<Header sidebarClick={sidebarClick} />
 
-				<main className="flex-1 overflow-auto bg-[var(--ui-surface-sunken,#F6F6F6)] mt-12 flex flex-col justify-between">
-					<div className="flex-1">
+				<main
+					className={`flex-1 ${
+						isFinancialBook ? "overflow-hidden" : "overflow-auto"
+					} bg-[var(--ui-surface-sunken,#F6F6F6)] mt-12 flex flex-col justify-between`}
+				>
+					<div className={`flex-1 ${isFinancialBook ? "min-h-0 flex flex-col overflow-hidden" : ""}`}>
 						<ErrorBoundary resetKeys={[location.pathname]}>
 							<Outlet />
 						</ErrorBoundary>
 					</div>
-					<Footer />
+					{!isFinancialBook && <Footer />}
 				</main>
 			</div>
 		</div>
