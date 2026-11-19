@@ -45,6 +45,7 @@ import {
 } from "../utils/customer-collection-report-helpers";
 import CustomerStatementTable from "./CustomerStatementTable";
 import CustomerStatementDrawer from "./CustomerStatementDrawer";
+import InlineCustomerLedgerRow from "./InlineCustomerLedgerRow";
 
 interface CustomerDueReportTableProps {
   dueRows: NormalizedCustomerDueRow[];
@@ -153,30 +154,6 @@ export const CustomerDueReportTable: React.FC<CustomerDueReportTableProps> = ({
     setSortBy("due_desc");
     setCurrentPage(1);
   };
-
-  // Compute statement data for currently expanded row
-  const expandedStatementData = useMemo(() => {
-    if (!expandedCustomerKey) return null;
-    const target = adaptedSummaries.find(
-      (c) => c.customerKey === expandedCustomerKey
-    );
-    if (!target) return null;
-    return buildCustomerStatementEntries(
-      target,
-      collections,
-      salesList,
-      rawPartyData,
-      { startDate, endDate }
-    );
-  }, [
-    expandedCustomerKey,
-    adaptedSummaries,
-    collections,
-    salesList,
-    rawPartyData,
-    startDate,
-    endDate,
-  ]);
 
   return (
     <TableContainer>
@@ -478,74 +455,30 @@ export const CustomerDueReportTable: React.FC<CustomerDueReportTableProps> = ({
                       )}
                     </tr>
 
-                    {/* Inline Collapsible Statement / Invoice Details Section */}
-                    {isExpanded && expandedStatementData && (
-                      <tr className="bg-[var(--ui-surface-muted)]/20 border-b border-[var(--ui-border)]">
-                        <td
-                          colSpan={activeVisibleColumnCount}
-                          className="p-2 sm:p-3 text-left"
-                        >
-                          <div className="flex flex-col gap-2.5 p-3 bg-[var(--ui-surface)] border border-[var(--ui-border)] rounded-xl shadow-xs">
-                            {/* Expanded Description Header */}
-                            <div className="flex flex-wrap items-center justify-between gap-2.5 pb-2.5 border-b border-[var(--ui-border)]">
-                              <div className="flex items-center gap-2.5">
-                                <div className="w-8 h-8 rounded-lg bg-[var(--primary-color-light)] text-[var(--primary-color)] flex items-center justify-center font-bold">
-                                  <FaStore size={14} />
-                                </div>
-                                <div>
-                                  <div className="flex items-center gap-1.5 flex-wrap">
-                                    <span className="font-bold text-xs text-[var(--ui-text)]">
-                                      {d.customerName}
-                                    </span>
-                                    <span className="text-[11px] text-[var(--ui-text-muted)]">
-                                      (Outstanding Due & Invoices)
-                                    </span>
-                                  </div>
-                                  <div className="text-[11px] text-[var(--ui-text-muted)] flex items-center gap-2 mt-0.5 flex-wrap">
-                                    <span>Phone: {d.customerPhone}</span>
-                                    {d.customerAddress && d.customerAddress !== "-" && (
-                                      <>
-                                        <span className="inline-block w-px h-2.5 bg-[var(--ui-border)]" />
-                                        <span>Address: {d.customerAddress}</span>
-                                      </>
-                                    )}
-                                    <span className="inline-block w-px h-2.5 bg-[var(--ui-border)]" />
-                                    <span>Pending Invoices: {d.invoiceCount}</span>
-                                    <span className="inline-block w-px h-2.5 bg-[var(--ui-border)]" />
-                                    <span className="text-[var(--ui-danger)] font-semibold">
-                                      Outstanding Due: ৳ {formatMoney(d.totalDue)}
-                                    </span>
-                                  </div>
-                                </div>
-                              </div>
-
-                              <div className="flex items-center gap-2">
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    const found = adaptedSummaries.find(
-                                      (c) => c.customerKey === d.customerKey
-                                    );
-                                    setSelectedCustomerForDrawer(found || null);
-                                    setIsDrawerOpen(true);
-                                  }}
-                                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg border border-[var(--ui-border)] bg-[var(--ui-surface)] hover:bg-[var(--primary-color-light)] text-[var(--primary-color)] transition-colors cursor-pointer"
-                                >
-                                  <FiMaximize2 size={12} />
-                                  <span>Full View</span>
-                                </button>
-                              </div>
-                            </div>
-
-                            {/* Embedded Statement Table */}
-                            <CustomerStatementTable
-                              entries={expandedStatementData.entries}
-                              stats={expandedStatementData.stats}
-                              onViewReceipt={onViewReceipt}
-                            />
-                          </div>
-                        </td>
-                      </tr>
+                    {/* Inline Collapsible Statement / Customer Ledger Section */}
+                    {isExpanded && (
+                      <InlineCustomerLedgerRow
+                        customer={{
+                          customerId: d.customerId,
+                          customerName: d.customerName,
+                          customerPhone: d.customerPhone,
+                        }}
+                        startDate={startDate}
+                        endDate={endDate}
+                        salesList={salesList}
+                        collections={collections}
+                        rawPartyData={rawPartyData}
+                        companyMeta={companyMeta}
+                        activeVisibleColumnCount={activeVisibleColumnCount}
+                        onViewReceipt={onViewReceipt}
+                        onOpenDrawer={() => {
+                          const found = adaptedSummaries.find(
+                            (c) => c.customerKey === d.customerKey
+                          );
+                          setSelectedCustomerForDrawer(found || null);
+                          setIsDrawerOpen(true);
+                        }}
+                      />
                     )}
                   </React.Fragment>
                 );

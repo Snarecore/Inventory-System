@@ -27,6 +27,8 @@ import type {
   CustomerDueItem,
 } from "@/types/collection.types";
 import type { CollectionReceiptData } from "@/pages/admin/trade/customer-collection/components/CollectionReceiptModal";
+import { mapLedgerToBreakdownEntries } from "@/hooks/useCustomerLedger";
+import type { CustomerLedgerBreakdownItem } from "@/types/customer-ledger.types";
 
 export type CollectionReportTab = "vouchers" | "customers" | "dues";
 
@@ -1797,11 +1799,8 @@ export function buildCustomerStatementEntries(
       s.grandTotal ?? s.grand_total ?? s.totalAmount ?? s.total_amount ?? 0
     );
 
-    // Original gross sale: if a return exists, gross sale is baseGrandTotal + associatedReturnAmt,
-    // or lineItemsGross, or s.totalAmount (e.g. 1320 when net is 1300 + 20 return).
-    const effectiveSaleAmount = associatedReturnAmt > 0
-      ? Math.max(baseGrandTotal + associatedReturnAmt, lineItemsGross, Number(s.totalAmount || 0))
-      : Math.max(baseGrandTotal, lineItemsGross);
+    // Original gross bill amount
+    const effectiveSaleAmount = lineItemsGross > 0 ? lineItemsGross : baseGrandTotal;
 
     const rawStatus = String(
       s.paymentStatus || s.payment_status || s.status || ""
@@ -2242,58 +2241,70 @@ export function buildStatementDescription(e: CustomerStatementEntry): string {
 }
 
 export async function exportCustomerStatementExcel(
-  customer: CustomerCollectionSummary,
-  statementEntries: CustomerStatementEntry[],
-  meta: ReportCompanyMeta
+  customer: CustomerCollectionSummary | any,
+  statementEntries: any[],
+  meta: ReportCompanyMeta,
+  options?: { salesList?: any[]; collections?: any[] }
 ): Promise<number> {
   if (!statementEntries || statementEntries.length === 0) {
     throw new Error("No statement entries to export");
   }
 
-  const totals = statementEntries.reduce(
-    (acc, e) => {
-      acc.sales += e.salesAmount;
-      acc.collected += e.collectionAmount;
-      return acc;
-    },
-    { sales: 0, collected: 0 }
-  );
+  // Ensure items are breakdown items
+  const items: CustomerLedgerBreakdownItem[] =
+    statementEntries[0]?.collectionMethod !== undefined &&
+    statementEntries[0]?.salesAmount !== undefined
+      ? statementEntries
+      : mapLedgerToBreakdownEntries(
+          statementEntries,
+          options?.salesList || [],
+          options?.collections || []
+        );
 
-  const finalBalance =
-    statementEntries[statementEntries.length - 1]?.runningBalance ?? 0;
+  let totalSales = 0;
+  let totalCollected = 0;
 
-  const rows = statementEntries.map((e, idx) => ({
-    "SL": idx + 1,
-    "Date & Time": e.fullDateTimeStr || e.formattedDate,
-    "Type": e.typeLabel,
-    "Reference #": e.refNo && e.refNo !== "-" ? `#${e.refNo}` : "-",
-    "Collection Method": e.paymentMode || "-",
-    "Description / Settled Bills": buildStatementDescription(e),
-    "Sales / Billed (BDT)": e.salesAmount !== 0 ? e.salesAmount : "-",
-    "Collection (BDT)": e.collectionAmount > 0 ? e.collectionAmount : "-",
-    "Balance (BDT)": Math.abs(e.runningBalance),
-  }));
+  const rows = items.map((e, idx) => {
+    const isOpening = e.type.toLowerCase().includes("opening");
+    if (!isOpening) {
+      totalSales += Number(e.salesAmount || 0);
+      totalCollected += Number(e.collectionAmount || 0);
+    }
+
+    return {
+      SL: idx + 1,
+      "Date & Time": e.dateTimeStr || "-",
+      Type: e.type || "-",
+      "Collection Method": e.collectionMethod || "-",
+      "Description / Settled Bills": e.description || "-",
+      "Sales (BDT)": e.salesAmount !== 0 ? e.salesAmount : "-",
+      "Collection (BDT)": e.collectionAmount !== 0 ? e.collectionAmount : "-",
+      "Balance (BDT)": e.balance,
+    };
+  });
+
+  const lastEntry = items[items.length - 1];
+  const finalBalance = Number(lastEntry?.balance ?? 0);
 
   const totalRow = {
-    "SL": "Total",
+    SL: "Total",
     "Date & Time": "-",
-    "Type": "-",
-    "Reference #": "-",
+    Type: "-",
     "Collection Method": "-",
-    "Description / Settled Bills": `Customer: ${customer.customerName} (${customer.customerPhone}) - Closing Balance: BDT ${formatMoney(Math.abs(finalBalance))}`,
-    "Sales / Billed (BDT)": totals.sales,
-    "Collection (BDT)": totals.collected,
-    "Balance (BDT)": Math.abs(finalBalance),
+    "Description / Settled Bills": `Closing Balance: BDT ${formatMoney(finalBalance)}`,
+    "Sales (BDT)": Number(totalSales.toFixed(2)),
+    "Collection (BDT)": Number(totalCollected.toFixed(2)),
+    "Balance (BDT)": Number(finalBalance.toFixed(2)),
   };
 
   await buildAndDownloadExcel(rows, totalRow, {
     ...meta,
-    fileName: `Customer_Statement_${customer.customerName.replace(
+    fileName: `Customer_Ledger_${(customer.customerName || "Customer").replace(
       /\s+/g,
       "_"
     )}_${moment().format("YYYY-MM-DD")}.xlsx`,
-    sheetName: "Customer Statement",
-    reportTitle: `Customer Statement - ${customer.customerName}`,
+    sheetName: "Customer Ledger",
+    reportTitle: `Customer Ledger - ${customer.customerName}`,
     totalLabel: "Closing Balance",
     includeSignatures: true,
   });
@@ -2302,22 +2313,28 @@ export async function exportCustomerStatementExcel(
 }
 
 export async function downloadCustomerStatementPdf(
-  customer: CustomerCollectionSummary,
-  statementEntries: CustomerStatementEntry[],
-  meta: ReportCompanyMeta
+  customer: CustomerCollectionSummary | any,
+  statementEntries: any[],
+  meta: ReportCompanyMeta,
+  options?: { salesList?: any[]; collections?: any[] }
 ): Promise<void> {
   if (!statementEntries || statementEntries.length === 0) {
     throw new Error("No statement entries to download PDF");
   }
 
-  const totals = statementEntries.reduce(
-    (acc, e) => {
-      acc.sales += e.salesAmount;
-      acc.collected += e.collectionAmount;
-      return acc;
-    },
-    { sales: 0, collected: 0 }
-  );
+  // Ensure items are breakdown items
+  const items: CustomerLedgerBreakdownItem[] =
+    statementEntries[0]?.collectionMethod !== undefined &&
+    statementEntries[0]?.salesAmount !== undefined
+      ? statementEntries
+      : mapLedgerToBreakdownEntries(
+          statementEntries,
+          options?.salesList || [],
+          options?.collections || []
+        );
+
+  let totalSales = 0;
+  let totalCollected = 0;
 
   const headers = [
     "SL",
@@ -2330,46 +2347,67 @@ export async function downloadCustomerStatementPdf(
     "Balance (BDT)",
   ];
 
-  const bodyRows = statementEntries.map((e, idx) => {
-    const desc = buildStatementDescription(e);
+  const bodyRows = items.map((e, idx) => {
+    const isOpening = e.type.toLowerCase().includes("opening");
+    if (!isOpening) {
+      totalSales += Number(e.salesAmount || 0);
+      totalCollected += Number(e.collectionAmount || 0);
+    }
+
+    const salesVal = Number(e.salesAmount || 0);
+    const colVal = Number(e.collectionAmount || 0);
+    const balVal = Number(e.balance || 0);
 
     const salesCell =
-      e.salesAmount > 0
-        ? formatMoney(e.salesAmount)
-        : e.salesAmount < 0
+      salesVal > 0
+        ? formatMoney(salesVal)
+        : salesVal < 0
         ? {
-            content: `-${formatMoney(Math.abs(e.salesAmount))}`,
-            styles: { textColor: REPORT_RGB.rose, fontStyle: "bold" },
+            content: `-${formatMoney(Math.abs(salesVal))}`,
+            styles: { textColor: REPORT_RGB.rose },
+          }
+        : "-";
+
+    const collectionCell =
+      colVal > 0
+        ? {
+            content: formatMoney(colVal),
+            styles: { textColor: REPORT_RGB.emerald },
+          }
+        : colVal < 0
+        ? {
+            content: `-${formatMoney(Math.abs(colVal))}`,
+            styles: { textColor: REPORT_RGB.rose },
           }
         : "-";
 
     const balanceCell =
-      e.runningBalance > 0
+      balVal > 0
         ? {
-            content: formatMoney(e.runningBalance),
+            content: formatMoney(balVal),
             styles: { textColor: REPORT_RGB.rose, fontStyle: "bold" },
           }
-        : e.runningBalance < 0
+        : balVal < 0
         ? {
-            content: formatMoney(Math.abs(e.runningBalance)),
+            content: formatMoney(Math.abs(balVal)),
             styles: { textColor: REPORT_RGB.emerald, fontStyle: "bold" },
           }
         : "0";
 
     return [
       idx + 1,
-      e.fullDateTimeStr || e.formattedDate,
-      e.typeLabel,
-      e.paymentMode || "-",
-      desc,
+      e.dateTimeStr || "-",
+      e.type || "-",
+      e.collectionMethod || "-",
+      e.description || "-",
       salesCell,
-      e.collectionAmount > 0 ? formatMoney(e.collectionAmount) : "-",
+      collectionCell,
       balanceCell,
     ];
   });
 
-  const finalBalance =
-    statementEntries[statementEntries.length - 1]?.runningBalance ?? 0;
+  const lastEntry = items[items.length - 1];
+  const finalBalance = Number(lastEntry?.balance ?? 0);
 
   const totalBalanceCell =
     finalBalance > 0
@@ -2384,21 +2422,13 @@ export async function downloadCustomerStatementPdf(
         }
       : "0";
 
-  const totalDescCell =
-    finalBalance > 0
-      ? {
-          content: `Closing Balance: BDT ${formatMoney(finalBalance)}`,
-          styles: { textColor: REPORT_RGB.rose, fontStyle: "bold" },
-        }
-      : finalBalance < 0
-      ? {
-          content: `Closing Balance: BDT ${formatMoney(Math.abs(finalBalance))}`,
-          styles: { textColor: REPORT_RGB.emerald, fontStyle: "bold" },
-        }
-      : {
-          content: `Closing Balance: BDT 0 (Fully Cleared)`,
-          styles: { fontStyle: "bold" },
-        };
+  const totalDescCell = {
+    content: `Closing Balance: BDT ${formatMoney(finalBalance)}`,
+    styles: {
+      textColor: finalBalance > 0 ? REPORT_RGB.rose : REPORT_RGB.emerald,
+      fontStyle: "bold",
+    },
+  };
 
   bodyRows.push([
     "Total",
@@ -2406,8 +2436,8 @@ export async function downloadCustomerStatementPdf(
     "-",
     "-",
     totalDescCell,
-    formatMoney(totals.sales),
-    formatMoney(totals.collected),
+    formatMoney(totalSales),
+    formatMoney(totalCollected),
     totalBalanceCell,
   ]);
 
@@ -2427,7 +2457,7 @@ export async function downloadCustomerStatementPdf(
   const metaLeftLabel = `From Date: ${fromStr}   To Date: ${toStr}   |   ${customerMetaInfo}`;
 
   await generateAndDownloadCorporatePdf({
-    fileName: `Customer_Ledger_${customer.customerName.replace(
+    fileName: `Customer_Ledger_${(customer.customerName || "Customer").replace(
       /\s+/g,
       "_"
     )}_${moment().format("YYYY-MM-DD")}.pdf`,
@@ -2438,14 +2468,14 @@ export async function downloadCustomerStatementPdf(
     bodyRows,
     orientation: "landscape",
     columnStyles: {
-      0: { halign: "center", cellWidth: 10 },
-      1: { halign: "center", cellWidth: 36 },
-      2: { halign: "center", cellWidth: 31 },
-      3: { halign: "center", cellWidth: 28 },
-      4: { halign: "left", cellWidth: 96 },
-      5: { halign: "right", cellWidth: 24 },
-      6: { halign: "right", cellWidth: 24 },
-      7: { halign: "right", cellWidth: 28 },
+      0: { halign: "center", cellWidth: 12 },
+      1: { halign: "center", cellWidth: 34 },
+      2: { halign: "center", cellWidth: 26 },
+      3: { halign: "center", cellWidth: 26 },
+      4: { halign: "left", cellWidth: 77 },
+      5: { halign: "right", cellWidth: 34 },
+      6: { halign: "right", cellWidth: 34 },
+      7: { halign: "right", cellWidth: 34 },
     },
     meta,
   });

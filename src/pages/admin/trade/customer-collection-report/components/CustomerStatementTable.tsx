@@ -1,18 +1,20 @@
-import React from "react";
-import { FiClock, FiEye, FiPackage } from "react-icons/fi";
+import React, { useState } from "react";
+import { FiClock, FiEye, FiPackage, FiChevronDown, FiChevronRight } from "react-icons/fi";
 import { formatMoney } from "@/utils/formatters";
 import type { CollectionReceiptData } from "@/pages/admin/trade/customer-collection/components/CollectionReceiptModal";
-import type { CustomerStatementEntry } from "../utils/customer-collection-report-helpers";
+import type { CustomerLedgerBreakdownItem, CustomerLedgerStats } from "@/types/customer-ledger.types";
 
 interface CustomerStatementTableProps {
-  entries: CustomerStatementEntry[];
-  stats?: {
-    openingBalance: number;
-    totalSales: number;
-    totalCollected: number;
-    totalDiscount: number;
-    finalBalance: number;
-    entryCount: number;
+  entries: CustomerLedgerBreakdownItem[] | any[];
+  stats?: CustomerLedgerStats | {
+    openingBalance?: number;
+    totalSales?: number;
+    totalCollected?: number;
+    totalDiscount?: number;
+    finalBalance?: number;
+    entryCount?: number;
+    totalDebit?: number;
+    totalCredit?: number;
   };
   onViewReceipt?: (receipt: CollectionReceiptData) => void;
   compact?: boolean;
@@ -23,269 +25,343 @@ export const CustomerStatementTable: React.FC<CustomerStatementTableProps> = ({
   stats,
   onViewReceipt,
 }) => {
+  const [expandedProductIdx, setExpandedProductIdx] = useState<number | null>(null);
+
   if (!entries || entries.length === 0) {
     return (
-      <div className="py-6 text-center text-xs text-[var(--ui-text-muted)] bg-[var(--ui-surface)] border border-dashed border-[var(--ui-border)] rounded-lg">
+      <div className="py-8 text-center text-xs text-[var(--ui-text-muted)] bg-[var(--ui-surface)] border border-dashed border-[var(--ui-border)] rounded-lg">
         No transaction records found for this customer.
       </div>
     );
   }
 
-  const getTypeBadge = (type: CustomerStatementEntry["type"], typeLabel: string) => {
-    switch (type) {
-      case "OPENING":
-        return (
-          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 whitespace-nowrap shrink-0">
-            Opening
-          </span>
-        );
-      case "CREDIT_SALE":
-        return (
-          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/25 whitespace-nowrap shrink-0">
-            Credit Sale
-          </span>
-        );
-      case "CASH_SALE":
-        return (
-          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/25 whitespace-nowrap shrink-0">
-            Sale
-          </span>
-        );
-      case "COLLECTION":
-        return (
-          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-[var(--ui-success-light)] text-[var(--ui-success)] border border-[var(--ui-success-border)] whitespace-nowrap shrink-0">
-            Collection
-          </span>
-        );
-      case "SALES_RETURN":
-        return (
-          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-rose-500/10 text-rose-700 dark:text-rose-400 border border-rose-500/25 whitespace-nowrap shrink-0">
-            Return
-          </span>
-        );
-      default:
-        return (
-          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-[var(--ui-surface-muted)] text-[var(--ui-text)] border border-[var(--ui-border)] whitespace-nowrap shrink-0">
-            {typeLabel}
-          </span>
-        );
+  const getTypeBadge = (type: string = "") => {
+    const tLower = type.toLowerCase();
+
+    if (tLower.includes("opening") || tLower.includes("প্রারম্ভিক")) {
+      return (
+        <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9.5px] font-medium bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 whitespace-nowrap">
+          Opening Balance
+        </span>
+      );
     }
+    if (tLower.includes("collection") || tLower.includes("আদায়")) {
+      return (
+        <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9.5px] font-medium bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30 whitespace-nowrap">
+          Collection
+        </span>
+      );
+    }
+    if (tLower.includes("return") || tLower.includes("ফেরত")) {
+      return (
+        <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9.5px] font-medium bg-rose-500/15 text-rose-700 dark:text-rose-400 border border-rose-500/30 whitespace-nowrap">
+          Return
+        </span>
+      );
+    }
+    if (tLower.includes("credit")) {
+      return (
+        <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9.5px] font-medium bg-purple-500/15 text-purple-700 dark:text-purple-400 border border-purple-500/30 whitespace-nowrap">
+          Credit Sale
+        </span>
+      );
+    }
+    if (tLower.includes("sale") || tLower.includes("বিক্রয়")) {
+      return (
+        <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9.5px] font-medium bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-500/30 whitespace-nowrap">
+          Sale
+        </span>
+      );
+    }
+
+    return (
+      <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9.5px] font-medium bg-[var(--ui-surface-muted)] text-[var(--ui-text)] border border-[var(--ui-border)] whitespace-nowrap">
+        {type || "-"}
+      </span>
+    );
   };
+
+  const getMethodBadge = (method: string = "-") => {
+    if (!method || method === "-") {
+      return <span className="text-[var(--ui-text-subtle)]">-</span>;
+    }
+    const mLower = method.toLowerCase();
+    if (mLower === "cash") {
+      return (
+        <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9.5px] font-medium bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
+          Cash
+        </span>
+      );
+    }
+    if (mLower === "credit") {
+      return (
+        <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9.5px] font-medium bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800">
+          Credit
+        </span>
+      );
+    }
+    if (mLower === "partial") {
+      return (
+        <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9.5px] font-medium bg-violet-50 dark:bg-violet-950/40 text-violet-700 dark:text-violet-300 border border-violet-200 dark:border-violet-800">
+          Partial
+        </span>
+      );
+    }
+    if (mLower === "return") {
+      return (
+        <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9.5px] font-medium bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800">
+          Return
+        </span>
+      );
+    }
+    if (mLower === "bank" || mLower.includes("bank")) {
+      return (
+        <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9.5px] font-medium bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800">
+          Bank
+        </span>
+      );
+    }
+    if (mLower === "mfs" || mLower.includes("bkash") || mLower.includes("nagad") || mLower.includes("rocket")) {
+      return (
+        <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9.5px] font-medium bg-pink-50 dark:bg-pink-950/40 text-pink-700 dark:text-pink-300 border border-pink-200 dark:border-pink-800">
+          {method}
+        </span>
+      );
+    }
+    return (
+      <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9.5px] font-medium bg-[var(--ui-surface-muted)] text-[var(--ui-text)] border border-[var(--ui-border)]">
+        {method}
+      </span>
+    );
+  };
+
+  const totalSalesVal = Number(
+    (stats as any)?.totalSales ?? (stats as any)?.totalDebit ?? 0
+  );
+  const totalCollectedVal = Number(
+    (stats as any)?.totalCollected ?? (stats as any)?.totalCredit ?? 0
+  );
+  const finalBalanceVal = Number(stats?.finalBalance ?? entries[entries.length - 1]?.balance ?? 0);
 
   return (
     <div className="w-full overflow-x-auto rounded-lg border border-[var(--ui-border)] bg-[var(--ui-surface)] shadow-xs">
-      <table className="ui-table w-full text-left border-collapse min-w-[760px]">
+      <table className="ui-table w-full text-left border-collapse min-w-[850px]">
         <thead>
-          <tr className="border-b border-[var(--ui-border)] bg-[var(--ui-surface-muted)]/50 text-xs font-semibold text-[var(--ui-text-muted)]">
-            <th className="py-2.5 px-3 text-center w-12 whitespace-nowrap">SL</th>
-            <th className="py-2.5 px-3 text-left w-36 whitespace-nowrap">Date</th>
-            <th className="py-2.5 px-3 text-center w-24 whitespace-nowrap">Type</th>
-            <th className="py-2.5 px-3 text-left whitespace-nowrap">Description</th>
-            <th className="py-2.5 px-3 text-right min-w-[110px] whitespace-nowrap">Sales (৳)</th>
-            <th className="py-2.5 px-3 text-right min-w-[120px] whitespace-nowrap">Collection (৳)</th>
-            <th className="py-2.5 px-3 text-right min-w-[120px] whitespace-nowrap">Balance (৳)</th>
-            {onViewReceipt && <th className="py-2.5 px-3 text-center w-14 whitespace-nowrap">Receipt</th>}
+          <tr className="border-b border-[var(--ui-border)] bg-[var(--ui-surface-muted)]/60 text-[11px] font-semibold text-[var(--ui-text-muted)]">
+            <th className="py-2 px-2.5 text-center w-10 whitespace-nowrap">SL</th>
+            <th className="py-2 px-2.5 text-center w-32 whitespace-nowrap">Date & Time</th>
+            <th className="py-2 px-2.5 text-center min-w-[95px] whitespace-nowrap">Type</th>
+            <th className="py-2 px-2.5 text-center min-w-[90px] whitespace-nowrap">Collection Method</th>
+            <th className="py-2 px-2.5 text-left min-w-[160px] whitespace-nowrap">Description / Settled Bills</th>
+            <th className="py-2 px-2.5 text-right min-w-[95px] whitespace-nowrap">Sales (৳)</th>
+            <th className="py-2 px-2.5 text-right min-w-[95px] whitespace-nowrap">Collection (৳)</th>
+            <th className="py-2 px-2.5 text-right min-w-[105px] whitespace-nowrap">Balance (৳)</th>
+            <th className="py-2 px-2.5 text-center w-12 whitespace-nowrap">Items</th>
+            {onViewReceipt && <th className="py-2 px-2.5 text-center w-12 whitespace-nowrap">Receipt</th>}
           </tr>
         </thead>
-        <tbody className="divide-y divide-[var(--ui-border)] text-xs text-[var(--ui-text)]">
-          {entries.map((item, idx) => {
-            const isOpening = item.type === "OPENING";
+        <tbody className="divide-y divide-[var(--ui-border)] text-[11px] text-[var(--ui-text)]">
+          {entries.map((item: any, idx: number) => {
+            const isOpening = String(item.type || "").toLowerCase().includes("opening");
+            const sales = Number(item.salesAmount ?? 0);
+            const collection = Number(item.collectionAmount ?? 0);
+            const balance = Number(item.balance ?? 0);
+            const products = Array.isArray(item.products) ? item.products : [];
+            const hasProducts = products.length > 0;
+            const isProductExpanded = expandedProductIdx === idx;
+
             return (
-              <tr
-                key={item.id || idx}
-                className={`transition-colors hover:bg-[var(--primary-color-light)]/20 ${
-                  isOpening ? "bg-slate-50/50 dark:bg-slate-900/20 font-medium" : ""
-                }`}
-              >
-                {/* SL */}
-                <td className="py-2.5 px-3 text-center text-[var(--ui-text-muted)] tabular-nums">
-                  {item.sl || idx + 1}
-                </td>
+              <React.Fragment key={item.id || `${item.description}_${idx}`}>
+                <tr
+                  className={`transition-colors hover:bg-[var(--primary-color-light)]/20 ${
+                    isOpening ? "bg-slate-50/50 dark:bg-slate-900/20 font-medium" : ""
+                  } ${isProductExpanded ? "bg-[var(--primary-color-light)]/10" : ""}`}
+                >
+                  {/* SL */}
+                  <td className="py-2 px-2.5 text-center text-[var(--ui-text-muted)] tabular-nums text-[11px]">
+                    {idx + 1}
+                  </td>
 
-                {/* Date */}
-                <td className="py-2.5 px-3 whitespace-nowrap">
-                  <div className="flex items-center gap-1.5">
-                    <span className="font-medium text-[var(--ui-text)] text-xs">
-                      {item.formattedDate}
+                  {/* Date & Time */}
+                  <td className="py-2 px-2.5 text-center whitespace-nowrap">
+                    <span className="font-medium text-[var(--ui-text)] text-[11px]">
+                      {item.dateTimeStr || item.date || "-"}
                     </span>
-                    {item.hasTime && item.formattedTime && (
-                      <span className="text-[10px] text-[var(--ui-text-muted)] flex items-center gap-0.5">
-                        <FiClock size={10} className="shrink-0 text-[var(--ui-text-subtle)]" />
-                        <span>{item.formattedTime}</span>
+                  </td>
+
+                  {/* Type */}
+                  <td className="py-2 px-2.5 text-center whitespace-nowrap">
+                    {getTypeBadge(item.type)}
+                  </td>
+
+                  {/* Collection Method */}
+                  <td className="py-2 px-2.5 text-center whitespace-nowrap">
+                    {getMethodBadge(item.collectionMethod)}
+                  </td>
+
+                  {/* Description / Settled Bills */}
+                  <td className="py-2 px-2.5 whitespace-nowrap max-w-xs truncate text-[var(--ui-text)] font-medium text-[11px]">
+                    <span title={item.description}>{item.description || "-"}</span>
+                  </td>
+
+                  {/* Sales (৳) */}
+                  <td className="py-2 px-2.5 text-right tabular-nums whitespace-nowrap min-w-[95px]">
+                    {sales > 0 ? (
+                      <span className="font-semibold text-[var(--ui-text)] text-[11px]">
+                        ৳ {formatMoney(sales)}
                       </span>
-                    )}
-                  </div>
-                </td>
-
-                {/* Type: Dedicated Column */}
-                <td className="py-2.5 px-3 text-center whitespace-nowrap">
-                  {getTypeBadge(item.type, item.typeLabel)}
-                </td>
-
-                {/* Description: Strictly Single Line with Details & Returned Product Pill */}
-                <td className="py-2.5 px-3 max-w-[420px]">
-                  {isOpening ? (
-                    <span className="text-xs text-[var(--ui-text-muted)] italic">
-                      Opening Balance
-                    </span>
-                  ) : (
-                    <div className="flex items-center gap-1.5 whitespace-nowrap overflow-hidden text-ellipsis">
-                      {item.collectionAmount > 0 &&
-                        item.type !== "COLLECTION" &&
-                        item.type !== "OPENING" &&
-                        item.type !== "SALES_RETURN" && (
-                          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30 whitespace-nowrap shrink-0">
-                            Customer Collection
-                          </span>
-                        )}
-                      {item.refNo &&
-                        item.refNo !== "-" &&
-                        !(item.type === "COLLECTION" && item.voucherNos?.includes(item.refNo)) && (
-                          <span className="font-mono text-xs font-semibold text-[var(--primary-color)] shrink-0">
-                            #{item.refNo}
-                          </span>
-                        )}
-                      {item.voucherNos && item.voucherNos.length > 0 && (
-                        <span
-                          className="inline-flex items-center gap-1 text-[10px] font-medium text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 px-1.5 py-0.5 rounded shrink-0"
-                          title={`Collection Voucher: #${item.voucherNos.join(", #")}`}
-                        >
-                          Voucher: #{item.voucherNos.join(", #")}
-                        </span>
-                      )}
-                      {item.returnItemsSummary && (
-                        <span
-                          className="inline-flex items-center gap-1 text-[11px] font-semibold text-rose-700 dark:text-rose-300 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 px-1.5 py-0.5 rounded shrink-0 max-w-[260px] truncate"
-                          title={`Returned Product: ${item.returnItemsSummary}`}
-                        >
-                          <FiPackage size={11} className="shrink-0 text-rose-500" />
-                          <span className="truncate">{item.returnItemsSummary}</span>
-                        </span>
-                      )}
-                      {item.paymentMode &&
-                        item.paymentMode !== "-" &&
-                        item.type !== "SALES_RETURN" && (
-                          <span className="text-[10px] font-medium text-[var(--ui-text-muted)] bg-[var(--ui-surface-muted)] px-1.5 py-0.5 rounded border border-[var(--ui-border)] shrink-0">
-                            {item.paymentMode}
-                          </span>
-                        )}
-                      {item.note &&
-                        !item.note.toLowerCase().includes(item.returnItemsSummary?.toLowerCase() || "___never___") &&
-                        !item.note.toLowerCase().includes("voucher: #") &&
-                        item.note !== `Return: ${item.returnItemsSummary}` && (
-                          <span
-                            className="text-xs text-[var(--ui-text-muted)] truncate"
-                            title={item.note}
-                          >
-                            {item.note}
-                          </span>
-                        )}
-                    </div>
-                  )}
-                </td>
-
-                {/* Sales (৳) */}
-                <td className="py-2.5 px-3 text-right tabular-nums whitespace-nowrap min-w-[110px]">
-                  {item.salesAmount > 0 ? (
-                    <span className="font-medium text-[var(--ui-text)] text-xs">
-                      ৳ {formatMoney(item.salesAmount)}
-                    </span>
-                  ) : item.salesAmount < 0 ? (
-                    <span
-                      className="font-bold text-rose-600 dark:text-rose-400 text-xs inline-flex items-center justify-end gap-0.5 bg-rose-50/80 dark:bg-rose-950/40 px-1.5 py-0.5 rounded border border-rose-200/60 dark:border-rose-900/40"
-                      title="Returned product amount deducted from balance"
-                    >
-                      <span>-৳ {formatMoney(Math.abs(item.salesAmount))}</span>
-                    </span>
-                  ) : (
-                    <span className="text-[var(--ui-text-subtle)]">-</span>
-                  )}
-                </td>
-
-                {/* Collection (৳) */}
-                <td className="py-2.5 px-3 text-right tabular-nums whitespace-nowrap min-w-[120px]">
-                  {item.collectionAmount > 0 ? (
-                    <span className="font-bold text-[var(--ui-success)] text-xs">
-                      ৳ {formatMoney(item.collectionAmount)}
-                    </span>
-                  ) : (
-                    <span className="text-[var(--ui-text-subtle)]">-</span>
-                  )}
-                </td>
-
-                {/* Balance (৳) */}
-                <td className="py-2.5 px-3 text-right tabular-nums whitespace-nowrap min-w-[120px]">
-                  <span
-                    className={`text-xs tabular-nums ${
-                      item.runningBalance > 0
-                        ? "font-bold text-[var(--ui-danger)]"
-                        : item.runningBalance < 0
-                        ? "font-semibold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-1.5 py-0.5 rounded border border-emerald-200 dark:border-emerald-800"
-                        : "font-semibold text-[var(--ui-text-muted)]"
-                    }`}
-                  >
-                    {item.runningBalance < 0
-                      ? `৳ ${formatMoney(Math.abs(item.runningBalance))}`
-                      : `৳ ${formatMoney(item.runningBalance)}`}
-                  </span>
-                </td>
-
-                {/* Receipt View */}
-                {onViewReceipt && (
-                  <td className="py-2.5 px-3 text-center whitespace-nowrap w-14">
-                    {item.receiptData && item.collectionAmount > 0 ? (
-                      <button
-                        type="button"
-                        onClick={() => onViewReceipt(item.receiptData!)}
-                        className="inline-flex items-center justify-center w-7 h-7 text-[var(--primary-color)] hover:bg-[var(--primary-color-light)] rounded-md transition-colors cursor-pointer"
-                        title="View Collection Receipt"
-                      >
-                        <FiEye size={13} />
-                      </button>
+                    ) : sales < 0 ? (
+                      <span className="font-semibold text-rose-600 dark:text-rose-400 text-[11px]">
+                        -৳ {formatMoney(Math.abs(sales))}
+                      </span>
                     ) : (
-                      <span className="text-[var(--ui-text-subtle)]">—</span>
+                      <span className="text-[var(--ui-text-subtle)]">-</span>
                     )}
                   </td>
+
+                  {/* Collection (৳) */}
+                  <td className="py-2 px-2.5 text-right tabular-nums whitespace-nowrap min-w-[95px]">
+                    {collection > 0 ? (
+                      <span className="font-semibold text-emerald-600 dark:text-emerald-400 text-[11px]">
+                        ৳ {formatMoney(collection)}
+                      </span>
+                    ) : collection < 0 ? (
+                      <span className="font-semibold text-rose-600 dark:text-rose-400 text-[11px]">
+                        -৳ {formatMoney(Math.abs(collection))}
+                      </span>
+                    ) : (
+                      <span className="text-[var(--ui-text-subtle)]">-</span>
+                    )}
+                  </td>
+
+                  {/* Balance (৳) */}
+                  <td className="py-2 px-2.5 text-right tabular-nums whitespace-nowrap min-w-[105px]">
+                    <span
+                      className={`text-[11px] tabular-nums font-semibold ${
+                        balance > 0
+                          ? "text-rose-600 dark:text-rose-400"
+                          : balance < 0
+                          ? "text-emerald-600 dark:text-emerald-400"
+                          : "text-[var(--ui-text-muted)]"
+                      }`}
+                    >
+                      {balance < 0
+                        ? `৳ ${formatMoney(Math.abs(balance))} (Advance)`
+                        : `৳ ${formatMoney(balance)}`}
+                    </span>
+                  </td>
+
+                  {/* Products Button */}
+                  <td className="py-2 px-2.5 text-center whitespace-nowrap w-12">
+                    {hasProducts ? (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setExpandedProductIdx(isProductExpanded ? null : idx)
+                        }
+                        className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9.5px] font-semibold text-[var(--primary-color)] hover:bg-[var(--primary-color-light)] border border-[var(--primary-color-muted)] transition-colors cursor-pointer"
+                        title={isProductExpanded ? "Hide items" : `View ${products.length} products`}
+                      >
+                        <FiPackage size={11} />
+                        <span>{products.length}</span>
+                        {isProductExpanded ? <FiChevronDown size={10} /> : <FiChevronRight size={10} />}
+                      </button>
+                    ) : (
+                      <span className="text-[var(--ui-text-subtle)]">-</span>
+                    )}
+                  </td>
+
+                  {/* Receipt View */}
+                  {onViewReceipt && (
+                    <td className="py-2 px-2.5 text-center whitespace-nowrap w-12">
+                      {item.raw?.receiptData && collection > 0 ? (
+                        <button
+                          type="button"
+                          onClick={() => onViewReceipt(item.raw.receiptData!)}
+                          className="inline-flex items-center justify-center w-6 h-6 text-[var(--primary-color)] hover:bg-[var(--primary-color-light)] rounded-md transition-colors cursor-pointer"
+                          title="View Collection Receipt"
+                        >
+                          <FiEye size={12} />
+                        </button>
+                      ) : (
+                        <span className="text-[var(--ui-text-subtle)]">—</span>
+                      )}
+                    </td>
+                  )}
+                </tr>
+
+                {/* Expanded Products Row */}
+                {isProductExpanded && hasProducts && (
+                  <tr className="bg-[var(--ui-surface-muted)]/30 border-b border-[var(--ui-border)]">
+                    <td colSpan={onViewReceipt ? 10 : 9} className="p-2 sm:p-2.5">
+                      <div className="bg-[var(--ui-surface)] border border-[var(--ui-border)] rounded-lg p-2 shadow-xs">
+                        <div className="text-[11px] font-bold text-[var(--ui-text)] mb-1.5 flex items-center gap-1.5">
+                          <FiPackage className="text-[var(--primary-color)]" size={12} />
+                          <span>Product Details ({products.length} items)</span>
+                        </div>
+                        <div className="overflow-x-auto">
+                          <table className="w-full text-[10.5px] text-left border-collapse">
+                            <thead>
+                              <tr className="border-b border-[var(--ui-border)] text-[var(--ui-text-muted)] font-medium">
+                                <th className="py-1 px-2 text-center w-8">#</th>
+                                <th className="py-1 px-2 text-left">Product Name</th>
+                                <th className="py-1 px-2 text-center">Quantity</th>
+                                <th className="py-1 px-2 text-right">Unit Price</th>
+                                <th className="py-1 px-2 text-right">Total</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-[var(--ui-border)]">
+                              {products.map((p: any, pIdx: number) => {
+                                const pName = p.productName || p.name || `Product ${pIdx + 1}`;
+                                const pQty = Number(p.quantity ?? p.qty ?? 1);
+                                const pPrice = Number(p.price ?? p.unitPrice ?? p.rate ?? 0);
+                                const pTotal = Number(p.total ?? p.subtotal ?? pQty * pPrice);
+
+                                return (
+                                  <tr key={pIdx} className="hover:bg-[var(--ui-surface-muted)]/50">
+                                    <td className="py-1 px-2 text-center text-[var(--ui-text-muted)]">{pIdx + 1}</td>
+                                    <td className="py-1 px-2 font-medium text-[var(--ui-text)]">{pName}</td>
+                                    <td className="py-1 px-2 text-center tabular-nums">{pQty} {p.unit || ""}</td>
+                                    <td className="py-1 px-2 text-right tabular-nums">৳ {formatMoney(pPrice)}</td>
+                                    <td className="py-1 px-2 text-right tabular-nums font-semibold text-[var(--ui-text)]">৳ {formatMoney(pTotal)}</td>
+                                  </tr>
+                                );
+                              })}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    </td>
+                  </tr>
                 )}
-              </tr>
+              </React.Fragment>
             );
           })}
         </tbody>
 
-        {/* Total Summary Footer Row */}
-        {stats && (
-          <tfoot>
-            <tr className="border-t-2 border-[var(--ui-border)] bg-[var(--ui-surface-muted)]/60 text-xs font-semibold text-[var(--ui-text)]">
-              <td colSpan={4} className="py-2.5 px-3 text-right whitespace-nowrap">
-                <span className="text-xs text-[var(--ui-text-muted)] mr-2">
-                  Total Summary ({stats.entryCount} entries) - Closing Balance:
-                </span>
-              </td>
-              <td className="py-2.5 px-3 text-right tabular-nums whitespace-nowrap font-bold text-[var(--ui-text)] min-w-[110px]">
-                ৳ {formatMoney(stats.totalSales)}
-              </td>
-              <td className="py-2.5 px-3 text-right tabular-nums whitespace-nowrap font-bold text-[var(--ui-success)] min-w-[120px]">
-                ৳ {formatMoney(stats.totalCollected)}
-              </td>
-              <td className="py-2.5 px-3 text-right tabular-nums whitespace-nowrap min-w-[120px]">
-                <span
-                  className={`font-bold tabular-nums text-xs ${
-                    stats.finalBalance > 0
-                      ? "text-[var(--ui-danger)]"
-                      : stats.finalBalance < 0
-                      ? "text-emerald-700 dark:text-emerald-400"
-                      : "text-[var(--ui-success)]"
-                  }`}
-                >
-                  {stats.finalBalance < 0
-                    ? `৳ ${formatMoney(Math.abs(stats.finalBalance))}`
-                    : `৳ ${formatMoney(stats.finalBalance)}`}
-                </span>
-              </td>
-              {onViewReceipt && <td className="py-2.5 px-3 w-14"></td>}
-            </tr>
-          </tfoot>
-        )}
+        {/* Total Summary Footer Row matching screenshot */}
+        <tfoot>
+          <tr className="border-t-2 border-[var(--ui-border)] bg-[var(--ui-surface-muted)]/60 text-[11px] font-semibold text-[var(--ui-text)]">
+            <td className="py-2 px-2.5 text-center font-bold">Total</td>
+            <td className="py-2 px-2.5 text-center">-</td>
+            <td className="py-2 px-2.5 text-center">-</td>
+            <td className="py-2 px-2.5 text-center">-</td>
+            <td className="py-2 px-2.5 text-left font-bold text-rose-600 dark:text-rose-400">
+              Closing Balance: BDT {formatMoney(finalBalanceVal)}
+            </td>
+            <td className="py-2 px-2.5 text-right tabular-nums font-bold whitespace-nowrap min-w-[95px]">
+              ৳ {formatMoney(totalSalesVal)}
+            </td>
+            <td className="py-2 px-2.5 text-right tabular-nums font-bold whitespace-nowrap text-emerald-600 dark:text-emerald-400 min-w-[95px]">
+              ৳ {formatMoney(totalCollectedVal)}
+            </td>
+            <td className="py-2 px-2.5 text-right tabular-nums font-bold whitespace-nowrap text-rose-600 dark:text-rose-400 min-w-[105px]">
+              ৳ {formatMoney(finalBalanceVal)}
+            </td>
+            <td className="py-2 px-2.5 w-12"></td>
+            {onViewReceipt && <td className="py-2 px-2.5 w-12"></td>}
+          </tr>
+        </tfoot>
       </table>
     </div>
   );

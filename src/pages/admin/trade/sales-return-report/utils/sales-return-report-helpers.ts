@@ -1876,7 +1876,7 @@ export async function downloadCustomerDetailedReturnPdf(
       "Product Name",
       "Unit",
       "Returned Qty",
-      "Avg / Unit Price (BDT)",
+      "Selling Price (BDT)",
       "Total Amount (BDT)",
       "Return Reasons",
       "Vouchers",
@@ -2067,7 +2067,7 @@ export async function exportCustomerDetailedReturnExcel(
         "Product Name": p.productName,
         Unit: formatUnit(p.unit),
         "Returned Qty": p.totalQuantity,
-        "Avg / Unit Price (BDT)": avgUnitPrice,
+        "Selling Price (BDT)": avgUnitPrice,
         "Total Amount (BDT)": p.totalAmount,
         "Return Reasons":
           p.reasons && p.reasons.length > 0
@@ -2082,7 +2082,7 @@ export async function exportCustomerDetailedReturnExcel(
       "Product Name": `Products: ${products.length} (Customer: ${customer.customerName})`,
       Unit: "-",
       "Returned Qty": totalQty || customer.itemsCount,
-      "Avg / Unit Price (BDT)": "-",
+      "Selling Price (BDT)": "-",
       "Total Amount (BDT)": totalAmt || customer.totalRefund,
       "Return Reasons": `Cash: ${customer.cashRefund} | Due Adj: ${customer.creditAdjust}`,
       Vouchers: customer.returnCount || totalVouchers,
