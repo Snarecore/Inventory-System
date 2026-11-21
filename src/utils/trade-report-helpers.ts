@@ -1430,17 +1430,10 @@ function buildProductTradeColumns(
       pdfCell: (p) => p.productName,
     },
     {
-      key: "unit",
-      excelHeader: "Unit",
-      isLeadingLabel: true,
-      pdfStyle: { halign: "center" },
-      excelValue: (p) => p.unit,
-      pdfCell: (p) => p.unit,
-    },
-    {
       key: "orders",
       excelHeader: labels.excelInvoicesHeader,
       pdfHeader: "Orders",
+      isLeadingLabel: true,
       pdfStyle: { halign: "center" },
       excelValue: (p) => p.invoicesCount,
       pdfCell: (p) => p.invoicesCount,
@@ -1454,6 +1447,13 @@ function buildProductTradeColumns(
       excelTotalValue: (t) => t.totalQuantity,
       pdfCell: (p) => ({ content: p.totalQuantity, styles: { fontStyle: "bold" } }),
       pdfSummaryCell: (t) => ({ content: t.totalQuantity }),
+    },
+    {
+      key: "unit",
+      excelHeader: "Unit",
+      pdfStyle: { halign: "center" },
+      excelValue: (p) => p.unit,
+      pdfCell: (p) => p.unit,
     },
     {
       key: "avgRate",
