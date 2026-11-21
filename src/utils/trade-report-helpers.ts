@@ -593,6 +593,7 @@ async function getLogoForPdf(url?: string): Promise<PdfLogoResult | null> {
 }
 
 export interface CorporatePdfPersonMeta {
+  roleLabel?: string;
   name: string;
   phone?: string;
   address?: string;
@@ -607,7 +608,7 @@ export interface CorporatePdfConfig {
   metaLeftLabel?: string;
   headers: string[];
   bodyRows: RowInput[];
-  columnStyles: { [key: string]: Partial<Styles> };
+  columnStyles?: { [key: string]: Partial<Styles> };
   meta: ReportCompanyMeta;
   fontSize?: number;
   orientation?: "portrait" | "landscape";
@@ -920,8 +921,11 @@ export async function generateAndDownloadCorporatePdf(
     doc.roundedRect(marginX, cardY, usableW, cardH, 1, 1, "FD");
 
     // Person Info (Left)
+    const rolePrefix = config.personInfo.roleLabel
+      ? `${config.personInfo.roleLabel}: `
+      : "Person: ";
     const personParts = [
-      `Person: ${config.personInfo.name}`,
+      `${rolePrefix}${config.personInfo.name}`,
       config.personInfo.phone ? `Phone: ${config.personInfo.phone}` : "",
       config.personInfo.address ? `Address: ${config.personInfo.address}` : "",
     ].filter(Boolean);
@@ -1000,7 +1004,7 @@ export async function generateAndDownloadCorporatePdf(
     },
     columnStyles: config.columnStyles,
     didParseCell: (hookData) => {
-      if (hookData.section === "head") {
+      if (hookData.section === "head" && config.columnStyles) {
         const colStyle = config.columnStyles[String(hookData.column.index)];
         if (colStyle?.halign) {
           hookData.cell.styles.halign = colStyle.halign;
@@ -1134,7 +1138,10 @@ export async function generateAndDownloadCorporatePdf(
     });
   }
 
-  doc.save(config.fileName);
+  const safeFileName = (config.fileName || "Report.pdf")
+    .replace(/[\\/:*?"<>|]/g, "_")
+    .trim();
+  doc.save(safeFileName);
 }
 
 /**

@@ -1335,6 +1335,7 @@ export async function downloadSupplierDetailedReturnPdf(
   }
 
   const commonPersonInfo = {
+    roleLabel: "Supplier",
     name: supplier.supplierName,
     phone: supplier.supplierPhone,
     address: supplier.supplierAddress || "",
@@ -1345,6 +1346,11 @@ export async function downloadSupplierDetailedReturnPdf(
     )} | Total Refund: BDT ${formatMoney(supplier.totalRefund)}`,
     isReceivable: false,
   };
+
+  const safeSupplierName = supplier.supplierName
+    .replace(/[\\/:*?"<>|]/g, "_")
+    .trim()
+    .replace(/\s+/g, "_");
 
   if (activeTab === "products") {
     const products = aggregateSupplierReturnedProducts(records);
@@ -1401,10 +1407,7 @@ export async function downloadSupplierDetailedReturnPdf(
     ]);
 
     await generateAndDownloadCorporatePdf({
-      fileName: `Supplier_Returned_Products_${supplier.supplierName.replace(
-        /\s+/g,
-        "_"
-      )}_${moment().format("YYYY-MM-DD")}.pdf`,
+      fileName: `Supplier_Returned_Products_${safeSupplierName}_${moment().format("YYYY-MM-DD")}.pdf`,
       reportTitle: `Supplier Returned Products Report - ${supplier.supplierName}`,
       personInfo: commonPersonInfo,
       headers,
@@ -1417,7 +1420,7 @@ export async function downloadSupplierDetailedReturnPdf(
         3: { halign: "center", cellWidth: 24 },
         4: { halign: "right", cellWidth: 36 },
         5: { halign: "right", cellWidth: 38 },
-        6: { halign: "left" },
+        6: { halign: "left", cellWidth: 61 },
         7: { halign: "center", cellWidth: 20 },
       },
       meta,
@@ -1475,15 +1478,23 @@ export async function downloadSupplierDetailedReturnPdf(
   ]);
 
   await generateAndDownloadCorporatePdf({
-    fileName: `Supplier_Return_Vouchers_${supplier.supplierName.replace(
-      /\s+/g,
-      "_"
-    )}_${moment().format("YYYY-MM-DD")}.pdf`,
+    fileName: `Supplier_Return_Vouchers_${safeSupplierName}_${moment().format("YYYY-MM-DD")}.pdf`,
     reportTitle: `Supplier Return Vouchers - ${supplier.supplierName}`,
     personInfo: commonPersonInfo,
     headers,
     bodyRows,
     orientation: "landscape",
+    columnStyles: {
+      0: { halign: "center", cellWidth: 12 },
+      1: { halign: "left", cellWidth: 42 },
+      2: { halign: "left", cellWidth: 42 },
+      3: { halign: "center", cellWidth: 26 },
+      4: { halign: "center", cellWidth: 18 },
+      5: { halign: "right", cellWidth: 32 },
+      6: { halign: "right", cellWidth: 32 },
+      7: { halign: "right", cellWidth: 35 },
+      8: { halign: "left", cellWidth: 38 },
+    },
     meta,
   });
 }
@@ -1500,6 +1511,11 @@ export async function exportSupplierDetailedReturnExcel(
   if (records.length === 0) {
     throw new Error("No return records found for this supplier");
   }
+
+  const safeSupplierName = supplier.supplierName
+    .replace(/[\\/:*?"<>|]/g, "_")
+    .trim()
+    .replace(/\s+/g, "_");
 
   if (activeTab === "products") {
     const products = aggregateSupplierReturnedProducts(records);
@@ -1543,10 +1559,9 @@ export async function exportSupplierDetailedReturnExcel(
 
     await buildAndDownloadExcel(rows, totalRow, {
       ...meta,
-      fileName: `Supplier_Returned_Products_${supplier.supplierName.replace(
-        /\s+/g,
-        "_"
-      )}_${moment().format("YYYY-MM-DD")}.xlsx`,
+      fileName: `Supplier_Returned_Products_${safeSupplierName}_${moment().format(
+        "YYYY-MM-DD"
+      )}.xlsx`,
       sheetName: "Returned Products",
       reportTitle: `Supplier Returned Products - ${supplier.supplierName}`,
       totalLabel: "Total Items",
@@ -1594,10 +1609,9 @@ export async function exportSupplierDetailedReturnExcel(
 
   await buildAndDownloadExcel(rows, totalRow, {
     ...meta,
-    fileName: `Supplier_Return_Vouchers_${supplier.supplierName.replace(
-      /\s+/g,
-      "_"
-    )}_${moment().format("YYYY-MM-DD")}.xlsx`,
+    fileName: `Supplier_Return_Vouchers_${safeSupplierName}_${moment().format(
+      "YYYY-MM-DD"
+    )}.xlsx`,
     sheetName: "Return Vouchers",
     reportTitle: `Supplier Return Vouchers - ${supplier.supplierName}`,
     totalLabel: "Total Vouchers",
