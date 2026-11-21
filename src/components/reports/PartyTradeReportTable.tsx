@@ -166,7 +166,7 @@ export const PartyTradeReportTable: React.FC<PartyTradeReportTableProps> = ({
     { key: "orders", label: "Orders" },
     { key: "totalBilled", label: "Gross Billed (৳)" },
     { key: "totalPaid", label: "Total Paid (৳)" },
-    { key: "totalDue", label: "Outstanding Due (৳)" },
+    { key: "totalDue", label: "Outstanding (৳)" },
     { key: "lastDate", label: "Last Order" },
     { key: "status", label: "Status" },
     { key: "actions", label: "Invoices" },
@@ -464,7 +464,7 @@ export const PartyTradeReportTable: React.FC<PartyTradeReportTableProps> = ({
               )}
               {isColVisible("totalDue") && (
                 <TableTh align="right" className="whitespace-nowrap">
-                  Outstanding Due (৳)
+                  Outstanding (৳)
                 </TableTh>
               )}
               {isColVisible("lastDate") && (

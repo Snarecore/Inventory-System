@@ -1295,8 +1295,8 @@ function buildSupplierDueReportColumns(
     },
     {
       key: "totalDue",
-      excelHeader: "Outstanding Due (BDT)",
-      pdfHeader: "Due (BDT)",
+      excelHeader: "Outstanding (BDT)",
+      pdfHeader: "Outstanding (BDT)",
       pdfStyle: { halign: "right", fontStyle: "bold" },
       excelValue: (d) => Number(d.totalDue.toFixed(2)),
       excelTotalValue: (t) => Number(t.totalDue.toFixed(2)),

@@ -1682,7 +1682,8 @@ function buildPartyTradeColumns(
     },
     {
       key: "totalDue",
-      excelHeader: "Outstanding Due (BDT)",
+      excelHeader: "Outstanding (BDT)",
+      pdfHeader: "Outstanding (BDT)",
       pdfStyle: { halign: "right" },
       excelValue: (p) => p.totalDue,
       excelTotalValue: (t) => Number(t.totalDue.toFixed(2)),
