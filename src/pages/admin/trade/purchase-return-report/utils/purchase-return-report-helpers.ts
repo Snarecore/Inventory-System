@@ -695,6 +695,14 @@ function buildPurchaseReturnVoucherColumns(
       pdfCell: (r) => r.supplierPhone || "-",
     },
     {
+      key: "address",
+      excelHeader: "Address",
+      isLeadingLabel: true,
+      pdfStyle: { halign: "left" },
+      excelValue: (r) => r.supplierAddress || "-",
+      pdfCell: (r) => r.supplierAddress || "-",
+    },
+    {
       key: "items",
       excelHeader: "Items",
       pdfStyle: { halign: "center" },
@@ -705,14 +713,6 @@ function buildPurchaseReturnVoucherColumns(
         content: t.sumItems,
         styles: { halign: "center" },
       }),
-    },
-    {
-      key: "reason",
-      excelHeader: "Reason / Remarks",
-      pdfHeader: "Reason",
-      pdfStyle: { halign: "left" },
-      excelValue: (r) => r.reasonSummary,
-      pdfCell: (r) => r.reasonSummary,
     },
     {
       key: "refundMode",
@@ -820,7 +820,6 @@ export async function downloadPurchaseReturnVouchersPdf(
   await generateAndDownloadCorporatePdf({
     fileName: `Purchase_Return_Report_${moment().format("YYYY-MM-DD")}.pdf`,
     reportTitle: "Purchase Return Report",
-    metaRightLabel: `Total Returns: ${records.length}`,
     headers,
     bodyRows,
     columnStyles,
