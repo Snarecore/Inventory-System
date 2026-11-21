@@ -152,7 +152,7 @@ export const CustomerStatementTable: React.FC<CustomerStatementTableProps> = ({
             <th className="py-2 px-2.5 text-center w-32 whitespace-nowrap">Date & Time</th>
             <th className="py-2 px-2.5 text-center min-w-[95px] whitespace-nowrap">Type</th>
             <th className="py-2 px-2.5 text-center min-w-[90px] whitespace-nowrap">Collection Method</th>
-            <th className="py-2 px-2.5 text-left min-w-[160px] whitespace-nowrap">Description / Settled Bills</th>
+            <th className="py-2 px-2.5 text-left min-w-[160px] whitespace-nowrap">Description</th>
             <th className="py-2 px-2.5 text-right min-w-[95px] whitespace-nowrap">Sales (৳)</th>
             <th className="py-2 px-2.5 text-right min-w-[95px] whitespace-nowrap">Collection (৳)</th>
             <th className="py-2 px-2.5 text-right min-w-[105px] whitespace-nowrap">Balance (৳)</th>
@@ -199,7 +199,7 @@ export const CustomerStatementTable: React.FC<CustomerStatementTableProps> = ({
                     {getMethodBadge(item.collectionMethod)}
                   </td>
 
-                  {/* Description / Settled Bills */}
+                  {/* Description */}
                   <td className="py-2 px-2.5 whitespace-nowrap max-w-xs truncate text-[var(--ui-text)] font-medium text-[11px]">
                     <span title={item.description}>{item.description || "-"}</span>
                   </td>

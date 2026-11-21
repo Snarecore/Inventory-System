@@ -126,7 +126,7 @@ export const normalizeCustomerLedger = (raw: any): CustomerLedgerEntry[] => {
 
 /**
  * Converts backend CustomerLedgerEntries into the exact breakdown representation:
- * SL | Date & Time | Type | Collection Method | Description / Settled Bills | Sales (BDT) | Collection (BDT) | Balance (BDT)
+ * SL | Date & Time | Type | Collection Method | Description | Sales (BDT) | Collection (BDT) | Balance (BDT)
  */
 export const mapLedgerToBreakdownEntries = (
   entries: CustomerLedgerEntry[] | any[],
@@ -239,7 +239,7 @@ export const mapLedgerToBreakdownEntries = (
     }
     if (!dateTimeStr) dateTimeStr = "-";
 
-    // 4. Description / Settled Bills
+    // 4. Description
     let description = "Opening Balance";
 
     if (isOpening) {
