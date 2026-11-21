@@ -1,6 +1,7 @@
 import { getData, postData } from "./api-service";
 import apiConfig from "@/config/api.json";
 import { buildAccessUser } from "@/utils/access-user";
+import { validatePaymentRedirectUrl } from "@/utils/payment-redirect";
 import type {
   SmsBundleItem,
   SmsBundlePurchasePayload,
@@ -55,27 +56,11 @@ export async function purchaseSmsBundle(payload: SmsBundlePurchasePayload): Prom
       return { success: false, message: msg, data: res };
     }
 
-    if (!res?.redirectUrl) {
+    const validation = validatePaymentRedirectUrl(res?.redirectUrl);
+    if (!validation.isValid) {
       return {
         success: false,
-        message: res?.errorMessage ?? "Payment gateway link not received. Please try again.",
-        data: res,
-      };
-    }
-
-    try {
-      const parsed = new URL(res.redirectUrl);
-      if (parsed.protocol !== "https:" && parsed.protocol !== "http:") {
-        return {
-          success: false,
-          message: "Invalid payment gateway redirect protocol.",
-          data: res,
-        };
-      }
-    } catch {
-      return {
-        success: false,
-        message: "Invalid payment gateway redirect URL format.",
+        message: validation.message,
         data: res,
       };
     }

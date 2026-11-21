@@ -15,6 +15,7 @@ import {
   formatDateForPayment,
 } from "../utils/package-formatters";
 import { getUserInfo, getStoredUser } from "@/utils/auth-storage";
+import { validatePaymentRedirectUrl } from "@/utils/payment-redirect";
 
 interface SubscribeCheckoutModalProps {
   isOpen: boolean;
@@ -161,7 +162,13 @@ const CheckoutFormContent: React.FC<CheckoutFormProps> = ({
         res.redirectURL || res.RedirectURL || res.redirectUrl || res.checkoutUrl || res.url;
 
       if (redirectUrl) {
-        window.location.replace(redirectUrl);
+        const validation = validatePaymentRedirectUrl(redirectUrl);
+        if (validation.isValid) {
+          window.location.replace(validation.url.toString());
+        } else {
+          setValidationError(validation.message);
+          setIsRedirecting(false);
+        }
       } else {
         setValidationError(
           res.ErrorMessage || res.errorMessage || res.message || "Payment gateway redirect URL not received."
