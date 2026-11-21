@@ -1,8 +1,13 @@
-import React, { useState } from "react";
-import { FiClock, FiEye, FiPackage, FiChevronDown, FiChevronRight } from "react-icons/fi";
+import React from "react";
 import { formatMoney } from "@/utils/formatters";
 import type { CollectionReceiptData } from "@/pages/admin/trade/customer-collection/components/CollectionReceiptModal";
 import type { CustomerLedgerBreakdownItem, CustomerLedgerStats } from "@/types/customer-ledger.types";
+import {
+  Table,
+  TableHead,
+  TableTh,
+  TableBody,
+} from "@/components/table-components/Table";
 
 interface CustomerStatementTableProps {
   entries: CustomerLedgerBreakdownItem[] | any[];
@@ -23,9 +28,7 @@ interface CustomerStatementTableProps {
 export const CustomerStatementTable: React.FC<CustomerStatementTableProps> = ({
   entries,
   stats,
-  onViewReceipt,
 }) => {
-  const [expandedProductIdx, setExpandedProductIdx] = useState<number | null>(null);
 
   if (!entries || entries.length === 0) {
     return (
@@ -145,199 +148,124 @@ export const CustomerStatementTable: React.FC<CustomerStatementTableProps> = ({
 
   return (
     <div className="w-full overflow-x-auto rounded-lg border border-[var(--ui-border)] bg-[var(--ui-surface)] shadow-xs">
-      <table className="ui-table w-full text-left border-collapse min-w-[850px]">
-        <thead>
-          <tr className="border-b border-[var(--ui-border)] bg-[var(--ui-surface-muted)]/60 text-[11px] font-semibold text-[var(--ui-text-muted)]">
-            <th className="py-2 px-2.5 text-center w-10 whitespace-nowrap">SL</th>
-            <th className="py-2 px-2.5 text-center w-32 whitespace-nowrap">Date & Time</th>
-            <th className="py-2 px-2.5 text-center min-w-[95px] whitespace-nowrap">Type</th>
-            <th className="py-2 px-2.5 text-center min-w-[90px] whitespace-nowrap">Collection Method</th>
-            <th className="py-2 px-2.5 text-left min-w-[160px] whitespace-nowrap">Description / Settled Bills</th>
-            <th className="py-2 px-2.5 text-right min-w-[95px] whitespace-nowrap">Sales (৳)</th>
-            <th className="py-2 px-2.5 text-right min-w-[95px] whitespace-nowrap">Collection (৳)</th>
-            <th className="py-2 px-2.5 text-right min-w-[105px] whitespace-nowrap">Balance (৳)</th>
-            <th className="py-2 px-2.5 text-center w-12 whitespace-nowrap">Items</th>
-            {onViewReceipt && <th className="py-2 px-2.5 text-center w-12 whitespace-nowrap">Receipt</th>}
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-[var(--ui-border)] text-[11px] text-[var(--ui-text)]">
+      <Table minWidth={850}>
+        <TableHead>
+          <TableTh align="center" width={48} className="whitespace-nowrap">
+            SL
+          </TableTh>
+          <TableTh align="center" width={135} className="whitespace-nowrap">
+            Date & Time
+          </TableTh>
+          <TableTh align="center" width={100} className="whitespace-nowrap">
+            Type
+          </TableTh>
+          <TableTh align="center" width={115} className="whitespace-nowrap">
+            Collection Method
+          </TableTh>
+          <TableTh align="left" className="whitespace-nowrap min-w-[160px]">
+            Description
+          </TableTh>
+          <TableTh align="right" width={105} className="whitespace-nowrap">
+            Sales (৳)
+          </TableTh>
+          <TableTh align="right" width={105} className="whitespace-nowrap">
+            Collection (৳)
+          </TableTh>
+          <TableTh align="right" width={115} className="whitespace-nowrap">
+            Balance (৳)
+          </TableTh>
+        </TableHead>
+        <TableBody className="text-[11px] text-[var(--ui-text)]">
           {entries.map((item: any, idx: number) => {
             const isOpening = String(item.type || "").toLowerCase().includes("opening");
             const sales = Number(item.salesAmount ?? 0);
             const collection = Number(item.collectionAmount ?? 0);
             const balance = Number(item.balance ?? 0);
-            const products = Array.isArray(item.products) ? item.products : [];
-            const hasProducts = products.length > 0;
-            const isProductExpanded = expandedProductIdx === idx;
 
             return (
-              <React.Fragment key={item.id || `${item.description}_${idx}`}>
-                <tr
-                  className={`transition-colors hover:bg-[var(--primary-color-light)]/20 ${
-                    isOpening ? "bg-slate-50/50 dark:bg-slate-900/20 font-medium" : ""
-                  } ${isProductExpanded ? "bg-[var(--primary-color-light)]/10" : ""}`}
-                >
-                  {/* SL */}
-                  <td className="py-2 px-2.5 text-center text-[var(--ui-text-muted)] tabular-nums text-[11px]">
-                    {idx + 1}
-                  </td>
+              <tr
+                key={item.id || `${item.description}_${idx}`}
+                className={`transition-colors hover:bg-[var(--primary-color-light)]/20 ${
+                  isOpening ? "bg-slate-50/50 dark:bg-slate-900/20 font-medium" : ""
+                }`}
+              >
+                {/* SL */}
+                <td className="py-2 px-2.5 text-center text-[var(--ui-text-muted)] tabular-nums text-[11px]">
+                  {idx + 1}
+                </td>
 
-                  {/* Date & Time */}
-                  <td className="py-2 px-2.5 text-center whitespace-nowrap">
-                    <span className="font-medium text-[var(--ui-text)] text-[11px]">
-                      {item.dateTimeStr || item.date || "-"}
+                {/* Date & Time */}
+                <td className="py-2 px-2.5 text-center whitespace-nowrap">
+                  <span className="font-medium text-[var(--ui-text)] text-[11px]">
+                    {item.dateTimeStr || item.date || "-"}
+                  </span>
+                </td>
+
+                {/* Type */}
+                <td className="py-2 px-2.5 text-center whitespace-nowrap">
+                  {getTypeBadge(item.type)}
+                </td>
+
+                {/* Collection Method */}
+                <td className="py-2 px-2.5 text-center whitespace-nowrap">
+                  {getMethodBadge(item.collectionMethod)}
+                </td>
+
+                {/* Description */}
+                <td className="py-2 px-2.5 whitespace-nowrap max-w-xs truncate text-[var(--ui-text)] font-medium text-[11px]">
+                  <span title={item.description}>{item.description || "-"}</span>
+                </td>
+
+                {/* Sales (৳) */}
+                <td className="py-2 px-2.5 text-right tabular-nums whitespace-nowrap min-w-[95px]">
+                  {sales > 0 ? (
+                    <span className="font-semibold text-[var(--ui-text)] text-[11px]">
+                      ৳ {formatMoney(sales)}
                     </span>
-                  </td>
-
-                  {/* Type */}
-                  <td className="py-2 px-2.5 text-center whitespace-nowrap">
-                    {getTypeBadge(item.type)}
-                  </td>
-
-                  {/* Collection Method */}
-                  <td className="py-2 px-2.5 text-center whitespace-nowrap">
-                    {getMethodBadge(item.collectionMethod)}
-                  </td>
-
-                  {/* Description / Settled Bills */}
-                  <td className="py-2 px-2.5 whitespace-nowrap max-w-xs truncate text-[var(--ui-text)] font-medium text-[11px]">
-                    <span title={item.description}>{item.description || "-"}</span>
-                  </td>
-
-                  {/* Sales (৳) */}
-                  <td className="py-2 px-2.5 text-right tabular-nums whitespace-nowrap min-w-[95px]">
-                    {sales > 0 ? (
-                      <span className="font-semibold text-[var(--ui-text)] text-[11px]">
-                        ৳ {formatMoney(sales)}
-                      </span>
-                    ) : sales < 0 ? (
-                      <span className="font-semibold text-rose-600 dark:text-rose-400 text-[11px]">
-                        -৳ {formatMoney(Math.abs(sales))}
-                      </span>
-                    ) : (
-                      <span className="text-[var(--ui-text-subtle)]">-</span>
-                    )}
-                  </td>
-
-                  {/* Collection (৳) */}
-                  <td className="py-2 px-2.5 text-right tabular-nums whitespace-nowrap min-w-[95px]">
-                    {collection > 0 ? (
-                      <span className="font-semibold text-emerald-600 dark:text-emerald-400 text-[11px]">
-                        ৳ {formatMoney(collection)}
-                      </span>
-                    ) : collection < 0 ? (
-                      <span className="font-semibold text-rose-600 dark:text-rose-400 text-[11px]">
-                        -৳ {formatMoney(Math.abs(collection))}
-                      </span>
-                    ) : (
-                      <span className="text-[var(--ui-text-subtle)]">-</span>
-                    )}
-                  </td>
-
-                  {/* Balance (৳) */}
-                  <td className="py-2 px-2.5 text-right tabular-nums whitespace-nowrap min-w-[105px]">
-                    <span
-                      className={`text-[11px] tabular-nums font-semibold ${
-                        balance > 0
-                          ? "text-rose-600 dark:text-rose-400"
-                          : balance < 0
-                          ? "text-emerald-600 dark:text-emerald-400"
-                          : "text-[var(--ui-text-muted)]"
-                      }`}
-                    >
-                      {balance < 0
-                        ? `৳ ${formatMoney(Math.abs(balance))} (Advance)`
-                        : `৳ ${formatMoney(balance)}`}
+                  ) : sales < 0 ? (
+                    <span className="font-semibold text-rose-600 dark:text-rose-400 text-[11px]">
+                      -৳ {formatMoney(Math.abs(sales))}
                     </span>
-                  </td>
-
-                  {/* Products Button */}
-                  <td className="py-2 px-2.5 text-center whitespace-nowrap w-12">
-                    {hasProducts ? (
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setExpandedProductIdx(isProductExpanded ? null : idx)
-                        }
-                        className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9.5px] font-semibold text-[var(--primary-color)] hover:bg-[var(--primary-color-light)] border border-[var(--primary-color-muted)] transition-colors cursor-pointer"
-                        title={isProductExpanded ? "Hide items" : `View ${products.length} products`}
-                      >
-                        <FiPackage size={11} />
-                        <span>{products.length}</span>
-                        {isProductExpanded ? <FiChevronDown size={10} /> : <FiChevronRight size={10} />}
-                      </button>
-                    ) : (
-                      <span className="text-[var(--ui-text-subtle)]">-</span>
-                    )}
-                  </td>
-
-                  {/* Receipt View */}
-                  {onViewReceipt && (
-                    <td className="py-2 px-2.5 text-center whitespace-nowrap w-12">
-                      {item.raw?.receiptData && collection > 0 ? (
-                        <button
-                          type="button"
-                          onClick={() => onViewReceipt(item.raw.receiptData!)}
-                          className="inline-flex items-center justify-center w-6 h-6 text-[var(--primary-color)] hover:bg-[var(--primary-color-light)] rounded-md transition-colors cursor-pointer"
-                          title="View Collection Receipt"
-                        >
-                          <FiEye size={12} />
-                        </button>
-                      ) : (
-                        <span className="text-[var(--ui-text-subtle)]">—</span>
-                      )}
-                    </td>
+                  ) : (
+                    <span className="text-[var(--ui-text-subtle)]">-</span>
                   )}
-                </tr>
+                </td>
 
-                {/* Expanded Products Row */}
-                {isProductExpanded && hasProducts && (
-                  <tr className="bg-[var(--ui-surface-muted)]/30 border-b border-[var(--ui-border)]">
-                    <td colSpan={onViewReceipt ? 10 : 9} className="p-2 sm:p-2.5">
-                      <div className="bg-[var(--ui-surface)] border border-[var(--ui-border)] rounded-lg p-2 shadow-xs">
-                        <div className="text-[11px] font-bold text-[var(--ui-text)] mb-1.5 flex items-center gap-1.5">
-                          <FiPackage className="text-[var(--primary-color)]" size={12} />
-                          <span>Product Details ({products.length} items)</span>
-                        </div>
-                        <div className="overflow-x-auto">
-                          <table className="w-full text-[10.5px] text-left border-collapse">
-                            <thead>
-                              <tr className="border-b border-[var(--ui-border)] text-[var(--ui-text-muted)] font-medium">
-                                <th className="py-1 px-2 text-center w-8">#</th>
-                                <th className="py-1 px-2 text-left">Product Name</th>
-                                <th className="py-1 px-2 text-center">Quantity</th>
-                                <th className="py-1 px-2 text-right">Unit Price</th>
-                                <th className="py-1 px-2 text-right">Total</th>
-                              </tr>
-                            </thead>
-                            <tbody className="divide-y divide-[var(--ui-border)]">
-                              {products.map((p: any, pIdx: number) => {
-                                const pName = p.productName || p.name || `Product ${pIdx + 1}`;
-                                const pQty = Number(p.quantity ?? p.qty ?? 1);
-                                const pPrice = Number(p.price ?? p.unitPrice ?? p.rate ?? 0);
-                                const pTotal = Number(p.total ?? p.subtotal ?? pQty * pPrice);
+                {/* Collection (৳) */}
+                <td className="py-2 px-2.5 text-right tabular-nums whitespace-nowrap min-w-[95px]">
+                  {collection > 0 ? (
+                    <span className="font-semibold text-emerald-600 dark:text-emerald-400 text-[11px]">
+                      ৳ {formatMoney(collection)}
+                    </span>
+                  ) : collection < 0 ? (
+                    <span className="font-semibold text-rose-600 dark:text-rose-400 text-[11px]">
+                      -৳ {formatMoney(Math.abs(collection))}
+                    </span>
+                  ) : (
+                    <span className="text-[var(--ui-text-subtle)]">-</span>
+                  )}
+                </td>
 
-                                return (
-                                  <tr key={pIdx} className="hover:bg-[var(--ui-surface-muted)]/50">
-                                    <td className="py-1 px-2 text-center text-[var(--ui-text-muted)]">{pIdx + 1}</td>
-                                    <td className="py-1 px-2 font-medium text-[var(--ui-text)]">{pName}</td>
-                                    <td className="py-1 px-2 text-center tabular-nums">{pQty} {p.unit || ""}</td>
-                                    <td className="py-1 px-2 text-right tabular-nums">৳ {formatMoney(pPrice)}</td>
-                                    <td className="py-1 px-2 text-right tabular-nums font-semibold text-[var(--ui-text)]">৳ {formatMoney(pTotal)}</td>
-                                  </tr>
-                                );
-                              })}
-                            </tbody>
-                          </table>
-                        </div>
-                      </div>
-                    </td>
-                  </tr>
-                )}
-              </React.Fragment>
+                {/* Balance (৳) */}
+                <td className="py-2 px-2.5 text-right tabular-nums whitespace-nowrap min-w-[105px]">
+                  <span
+                    className={`text-[11px] tabular-nums font-semibold ${
+                      balance > 0
+                        ? "text-rose-600 dark:text-rose-400"
+                        : balance < 0
+                        ? "text-emerald-600 dark:text-emerald-400"
+                        : "text-[var(--ui-text-muted)]"
+                    }`}
+                  >
+                    {balance < 0
+                      ? `৳ ${formatMoney(Math.abs(balance))} (Advance)`
+                      : `৳ ${formatMoney(balance)}`}
+                  </span>
+                </td>
+              </tr>
             );
           })}
-        </tbody>
+        </TableBody>
 
         {/* Total Summary Footer Row matching screenshot */}
         <tfoot>
@@ -358,11 +286,9 @@ export const CustomerStatementTable: React.FC<CustomerStatementTableProps> = ({
             <td className="py-2 px-2.5 text-right tabular-nums font-bold whitespace-nowrap text-rose-600 dark:text-rose-400 min-w-[105px]">
               ৳ {formatMoney(finalBalanceVal)}
             </td>
-            <td className="py-2 px-2.5 w-12"></td>
-            {onViewReceipt && <td className="py-2 px-2.5 w-12"></td>}
           </tr>
         </tfoot>
-      </table>
+      </Table>
     </div>
   );
 };

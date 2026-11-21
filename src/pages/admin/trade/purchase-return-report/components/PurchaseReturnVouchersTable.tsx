@@ -53,8 +53,8 @@ const AVAILABLE_COLUMNS: ColumnItem[] = [
   { key: "returnDate", label: "Return Date" },
   { key: "supplier", label: "Supplier" },
   { key: "phone", label: "Phone" },
+  { key: "address", label: "Address" },
   { key: "items", label: "Items" },
-  { key: "reason", label: "Reason / Remarks" },
   { key: "refundMode", label: "Refund Mode" },
   { key: "refundAmount", label: "Refund Amount (৳)" },
   { key: "status", label: "Status" },
@@ -322,14 +322,12 @@ export const PurchaseReturnVouchersTable: React.FC<
               {isColVisible("phone") && (
                 <TableTh className="whitespace-nowrap">Phone</TableTh>
               )}
+              {isColVisible("address") && (
+                <TableTh className="whitespace-nowrap">Address</TableTh>
+              )}
               {isColVisible("items") && (
                 <TableTh align="center" className="whitespace-nowrap">
                   Items
-                </TableTh>
-              )}
-              {isColVisible("reason") && (
-                <TableTh className="whitespace-nowrap">
-                  Reason / Remarks
                 </TableTh>
               )}
               {isColVisible("refundMode") && (
@@ -395,15 +393,8 @@ export const PurchaseReturnVouchersTable: React.FC<
                     )}
 
                     {isColVisible("supplier") && (
-                      <td className="py-2.5 px-3 text-left">
-                        <div className="font-semibold text-xs text-[var(--ui-text)]">
-                          {r.supplierName}
-                        </div>
-                        {r.supplierAddress && (
-                          <div className="text-[10px] text-[var(--ui-text-muted)] truncate max-w-[180px]">
-                            {r.supplierAddress}
-                          </div>
-                        )}
+                      <td className="py-2.5 px-3 text-left font-semibold text-xs text-[var(--ui-text)]">
+                        {r.supplierName}
                       </td>
                     )}
 
@@ -413,17 +404,17 @@ export const PurchaseReturnVouchersTable: React.FC<
                       </td>
                     )}
 
+                    {isColVisible("address") && (
+                      <td className="py-2.5 px-3 text-left text-xs text-[var(--ui-text-muted)] max-w-[180px] truncate">
+                        {r.supplierAddress || "-"}
+                      </td>
+                    )}
+
                     {isColVisible("items") && (
                       <td className="py-2.5 px-3 text-center font-medium">
                         <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[11px] font-semibold bg-[var(--ui-surface-muted)] text-[var(--ui-text)]">
                           {r.itemsCount}
                         </span>
-                      </td>
-                    )}
-
-                    {isColVisible("reason") && (
-                      <td className="py-2.5 px-3 text-left text-xs text-[var(--ui-text-muted)] max-w-[200px] truncate">
-                        {r.reasonSummary}
                       </td>
                     )}
 
@@ -480,6 +471,7 @@ export const PurchaseReturnVouchersTable: React.FC<
                       isColVisible("returnDate"),
                       isColVisible("supplier"),
                       isColVisible("phone"),
+                      isColVisible("address"),
                     ].filter(Boolean).length
                   }
                   className="py-2.5 px-3 text-left font-bold"
@@ -493,7 +485,6 @@ export const PurchaseReturnVouchersTable: React.FC<
                   </td>
                 )}
 
-                {isColVisible("reason") && <td></td>}
                 {isColVisible("refundMode") && <td></td>}
 
                 {isColVisible("refundAmount") && (

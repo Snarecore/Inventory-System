@@ -46,6 +46,7 @@ import {
   downloadCustomerWiseDetailedPdf,
 } from "../utils/customer-collection-report-helpers";
 import InlineCustomerLedgerRow from "./InlineCustomerLedgerRow";
+import CustomerStatementDrawer from "./CustomerStatementDrawer";
 import { fetchCustomerLedger } from "@/hooks/useCustomerLedger";
 import { showSuccessToast, showErrorToast } from "@/utils/toast-utils";
 
@@ -151,6 +152,9 @@ export const CustomerCollectionSummaryTable: React.FC<
   };
 
   const [downloadingCustomerKey, setDownloadingCustomerKey] = useState<string | null>(null);
+  const [selectedCustomerForDrawer, setSelectedCustomerForDrawer] =
+    useState<CustomerCollectionSummary | null>(null);
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 
   const handleDownloadSingleCustomerPdf = async (targetCustomer: CustomerCollectionSummary) => {
     if (downloadingCustomerKey) return;
@@ -618,6 +622,10 @@ export const CustomerCollectionSummaryTable: React.FC<
                         companyMeta={companyMeta}
                         activeVisibleColumnCount={activeVisibleColumnCount}
                         onViewReceipt={onViewReceipt}
+                        onOpenDrawer={() => {
+                          setSelectedCustomerForDrawer(c);
+                          setIsDrawerOpen(true);
+                        }}
                       />
                     )}
                   </React.Fragment>
@@ -643,6 +651,25 @@ export const CustomerCollectionSummaryTable: React.FC<
           entityLabel="customers"
         />
       )}
+
+      {/* Full Customer Statement Drawer */}
+      <CustomerStatementDrawer
+        isOpen={isDrawerOpen}
+        onClose={() => {
+          setIsDrawerOpen(false);
+          setSelectedCustomerForDrawer(null);
+        }}
+        selectedCustomer={selectedCustomerForDrawer}
+        customers={summaries}
+        onSelectCustomer={(cust) => setSelectedCustomerForDrawer(cust)}
+        startDate={dateFilterProps.startDate}
+        endDate={dateFilterProps.endDate}
+        salesList={salesList}
+        collections={collections}
+        rawPartyData={rawPartyData}
+        companyMeta={companyMeta}
+        onViewReceipt={onViewReceipt}
+      />
     </TableContainer>
   );
 };

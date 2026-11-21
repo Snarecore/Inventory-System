@@ -1447,31 +1447,17 @@ function buildProductReturnColumns(
     },
     {
       key: "productName",
-      excelHeader: "Product Name",
+      excelHeader: "Product",
+      pdfHeader: "Product",
       isLeadingLabel: true,
       pdfStyle: { halign: "left", fontStyle: "bold" },
       excelValue: (p) => p.productName,
       pdfCell: (p) => ({ content: p.productName, styles: { fontStyle: "bold" } }),
     },
     {
-      key: "unit",
-      excelHeader: "Unit",
-      isLeadingLabel: true,
-      pdfStyle: { halign: "center" },
-      excelValue: (p) => p.unit,
-      pdfCell: (p) => p.unit,
-    },
-    {
-      key: "topReason",
-      excelHeader: "Top Reason",
-      isLeadingLabel: true,
-      pdfStyle: { halign: "left" },
-      excelValue: (p) => p.topReason,
-      pdfCell: (p) => p.topReason,
-    },
-    {
       key: "returnCount",
       excelHeader: "Vouchers",
+      pdfHeader: "Vouchers",
       pdfStyle: { halign: "center" },
       excelValue: (p) => p.returnCount,
       excelTotalValue: (t) => t.totalVouchers,
@@ -1490,6 +1476,14 @@ function buildProductReturnColumns(
       excelTotalValue: (t) => t.totalQuantity,
       pdfCell: (p) => ({ content: p.totalQuantity, styles: { fontStyle: "bold" } }),
       pdfSummaryCell: (t) => ({ content: t.totalQuantity }),
+    },
+    {
+      key: "unit",
+      excelHeader: "Unit",
+      pdfHeader: "Unit",
+      pdfStyle: { halign: "center" },
+      excelValue: (p) => p.unit,
+      pdfCell: (p) => p.unit,
     },
     {
       key: "avgRate",
@@ -1530,6 +1524,14 @@ function buildProductReturnColumns(
       pdfCell: (p) =>
         `${calculateRevenueSharePct(p.totalAmount, grandTotalAmount)}%`,
       pdfSummaryCell: () => ({ content: "100.0%" }),
+    },
+    {
+      key: "topReason",
+      excelHeader: "Top Reason",
+      pdfHeader: "Top Reason",
+      pdfStyle: { halign: "left" },
+      excelValue: (p) => p.topReason,
+      pdfCell: (p) => p.topReason,
     },
   ];
 }
@@ -1854,6 +1856,7 @@ export async function downloadCustomerDetailedReturnPdf(
   }
 
   const commonPersonInfo = {
+    roleLabel: "Customer",
     name: customer.customerName,
     phone: customer.customerPhone,
     address: customer.customerAddress || "",
@@ -1865,6 +1868,11 @@ export async function downloadCustomerDetailedReturnPdf(
     isReceivable: false,
   };
 
+  const safeCustomerName = customer.customerName
+    .replace(/[\\/:*?"<>|]/g, "_")
+    .trim()
+    .replace(/\s+/g, "_");
+
   // Case 1: Returned Products Table (Aggregated by Product, matching the active UI table)
   if (activeTab === "products") {
     const products = aggregateCustomerReturnedProducts(records);
@@ -1874,7 +1882,7 @@ export async function downloadCustomerDetailedReturnPdf(
 
     const headers = [
       "SL",
-      "Product Name",
+      "Product",
       "Unit",
       "Returned Qty",
       "Unit Price (BDT)",
@@ -1924,14 +1932,10 @@ export async function downloadCustomerDetailedReturnPdf(
     ]);
 
     await generateAndDownloadCorporatePdf({
-      fileName: `Customer_Returned_Products_${customer.customerName.replace(
-        /\s+/g,
-        "_"
-      )}_${moment().format("YYYY-MM-DD")}.pdf`,
+      fileName: `Customer_Returned_Products_${safeCustomerName}_${moment().format(
+        "YYYY-MM-DD"
+      )}.pdf`,
       reportTitle: `Customer Returned Products Report - ${customer.customerName}`,
-      metaRightLabel: `Total Items: ${customer.itemsCount} | Total Refund: BDT ${formatMoney(
-        customer.totalRefund
-      )}`,
       personInfo: commonPersonInfo,
       headers,
       bodyRows,
@@ -2005,14 +2009,10 @@ export async function downloadCustomerDetailedReturnPdf(
   ]);
 
   await generateAndDownloadCorporatePdf({
-    fileName: `Customer_Return_Vouchers_${customer.customerName.replace(
-      /\s+/g,
-      "_"
-    )}_${moment().format("YYYY-MM-DD")}.pdf`,
+    fileName: `Customer_Return_Vouchers_${safeCustomerName}_${moment().format(
+      "YYYY-MM-DD"
+    )}.pdf`,
     reportTitle: `Customer Return Vouchers Report - ${customer.customerName}`,
-    metaRightLabel: `Total Returns: ${customer.returnCount} | Total Refund: BDT ${formatMoney(
-      customer.totalRefund
-    )}`,
     personInfo: commonPersonInfo,
     headers,
     bodyRows,
@@ -2046,6 +2046,11 @@ export async function exportCustomerDetailedReturnExcel(
     throw new Error("No return records found for this customer");
   }
 
+  const safeCustomerName = customer.customerName
+    .replace(/[\\/:*?"<>|]/g, "_")
+    .trim()
+    .replace(/\s+/g, "_");
+
   if (activeTab === "products") {
     const products = aggregateCustomerReturnedProducts(records);
     if (products.length === 0) {
@@ -2065,7 +2070,7 @@ export async function exportCustomerDetailedReturnExcel(
 
       return {
         SL: idx + 1,
-        "Product Name": p.productName,
+        Product: p.productName,
         Unit: formatUnit(p.unit),
         "Returned Qty": p.totalQuantity,
         "Unit Price (BDT)": avgUnitPrice,
@@ -2080,7 +2085,7 @@ export async function exportCustomerDetailedReturnExcel(
 
     const totalRow = {
       SL: "Total",
-      "Product Name": `Products: ${products.length} (Customer: ${customer.customerName})`,
+      Product: `Products: ${products.length} (Customer: ${customer.customerName})`,
       Unit: "-",
       "Returned Qty": totalQty || customer.itemsCount,
       "Unit Price (BDT)": "-",
@@ -2091,10 +2096,9 @@ export async function exportCustomerDetailedReturnExcel(
 
     await buildAndDownloadExcel(rows, totalRow, {
       ...meta,
-      fileName: `Customer_Returned_Products_${customer.customerName.replace(
-        /\s+/g,
-        "_"
-      )}_${moment().format("YYYY-MM-DD")}.xlsx`,
+      fileName: `Customer_Returned_Products_${safeCustomerName}_${moment().format(
+        "YYYY-MM-DD"
+      )}.xlsx`,
       sheetName: "Returned Products",
       reportTitle: `Customer Returned Products - ${customer.customerName}`,
       totalLabel: "Total Items",
@@ -2147,10 +2151,9 @@ export async function exportCustomerDetailedReturnExcel(
 
   await buildAndDownloadExcel(rows, totalRow, {
     ...meta,
-    fileName: `Customer_Return_Vouchers_${customer.customerName.replace(
-      /\s+/g,
-      "_"
-    )}_${moment().format("YYYY-MM-DD")}.xlsx`,
+    fileName: `Customer_Return_Vouchers_${safeCustomerName}_${moment().format(
+      "YYYY-MM-DD"
+    )}.xlsx`,
     sheetName: "Return Vouchers",
     reportTitle: `Customer Return Vouchers - ${customer.customerName}`,
     totalLabel: "Total Returns",

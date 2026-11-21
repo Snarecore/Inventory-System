@@ -2,6 +2,12 @@ import React from "react";
 import { FiClock, FiEye } from "react-icons/fi";
 import { formatMoney } from "@/utils/formatters";
 import type { PaymentReceiptData } from "@/types/payment.types";
+import {
+  Table,
+  TableHead,
+  TableTh,
+  TableBody,
+} from "@/components/table-components/Table";
 import type { SupplierStatementEntry } from "../utils/supplier-payment-report-helpers";
 
 interface SupplierStatementTableProps {
@@ -71,31 +77,33 @@ export const SupplierStatementTable: React.FC<SupplierStatementTableProps> = ({
 
   return (
     <div className="w-full overflow-x-auto rounded-lg border border-[var(--ui-border)] bg-[var(--ui-surface)] shadow-xs">
-      <table className="ui-table w-full text-left border-collapse min-w-[700px]">
-        <thead>
-          <tr className="border-b border-[var(--ui-border)] bg-[var(--ui-surface-muted)]/50 text-xs font-semibold text-[var(--ui-text-muted)]">
-            <th className="py-2.5 px-3 text-center w-12 whitespace-nowrap">SL</th>
-            <th className="py-2.5 px-3 text-left w-32 whitespace-nowrap">Date</th>
-            <th className="py-2.5 px-3 text-left whitespace-nowrap">
-              Description
-            </th>
-            <th className="py-2.5 px-3 text-right min-w-[110px] whitespace-nowrap">
-              Bill / Purchase (৳)
-            </th>
-            <th className="py-2.5 px-3 text-right min-w-[120px] whitespace-nowrap">
-              Payment / Return (৳)
-            </th>
-            <th className="py-2.5 px-3 text-right min-w-[120px] whitespace-nowrap">
-              Running Balance (৳)
-            </th>
-            {onViewReceipt && (
-              <th className="py-2.5 px-3 text-center w-14 whitespace-nowrap">
-                Receipt
-              </th>
-            )}
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-[var(--ui-border)] text-xs text-[var(--ui-text)]">
+      <Table minWidth={700}>
+        <TableHead>
+          <TableTh align="center" width={48} className="whitespace-nowrap">
+            SL
+          </TableTh>
+          <TableTh align="left" width={130} className="whitespace-nowrap">
+            Date
+          </TableTh>
+          <TableTh align="left" className="whitespace-nowrap">
+            Description
+          </TableTh>
+          <TableTh align="right" width={130} className="whitespace-nowrap">
+            Bill / Purchase (৳)
+          </TableTh>
+          <TableTh align="right" width={130} className="whitespace-nowrap">
+            Payment / Return (৳)
+          </TableTh>
+          <TableTh align="right" width={130} className="whitespace-nowrap">
+            Running Balance (৳)
+          </TableTh>
+          {onViewReceipt && (
+            <TableTh align="center" width={60} className="whitespace-nowrap">
+              Receipt
+            </TableTh>
+          )}
+        </TableHead>
+        <TableBody className="text-xs text-[var(--ui-text)]">
           {entries.map((item, idx) => {
             const isOpening = item.type === "OPENING_BALANCE";
             return (
@@ -210,8 +218,8 @@ export const SupplierStatementTable: React.FC<SupplierStatementTableProps> = ({
               </tr>
             );
           })}
-        </tbody>
-      </table>
+        </TableBody>
+      </Table>
     </div>
   );
 };

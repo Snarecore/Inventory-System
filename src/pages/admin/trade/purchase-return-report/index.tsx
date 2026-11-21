@@ -142,6 +142,8 @@ const PurchaseReturnReportPage: React.FC = () => {
             records={returnRecords}
             isLoading={isLoading}
             {...datePickerProps}
+            onView={handleView}
+            onPrint={handlePrint}
           />
         )}
       </div>

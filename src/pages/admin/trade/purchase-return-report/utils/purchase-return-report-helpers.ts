@@ -79,12 +79,26 @@ export interface SupplierReturnSummary {
   supplierKey: string;
   supplierName: string;
   supplierPhone: string;
+  supplierAddress?: string;
   returnCount: number;
   itemsCount: number;
   cashRefund: number;
   creditAdjust: number;
   totalRefund: number;
   lastReturnDate: string;
+  records?: NormalizedPurchaseReturnRecord[];
+}
+
+export interface SupplierProductReturnItem {
+  productKey: string;
+  productCode: string;
+  productName: string;
+  unit: string;
+  totalQuantity: number;
+  unitPrice: number;
+  totalAmount: number;
+  reasons: string[];
+  returnCount: number;
 }
 
 function extractRawReturnLines(item: any): any[] {
@@ -605,12 +619,14 @@ export function aggregatePurchaseReturnSuppliers(
         supplierKey: key,
         supplierName: r.supplierName,
         supplierPhone: r.supplierPhone || "-",
+        supplierAddress: r.supplierAddress || "",
         returnCount: 0,
         itemsCount: 0,
         cashRefund: 0,
         creditAdjust: 0,
         totalRefund: 0,
         lastReturnDate: r.returnDate,
+        records: [],
       };
     }
 
@@ -622,12 +638,70 @@ export function aggregatePurchaseReturnSuppliers(
       map[key].cashRefund += r.refundAmount;
     }
     map[key].totalRefund += r.refundAmount;
+    if (r.supplierAddress && !map[key].supplierAddress) {
+      map[key].supplierAddress = r.supplierAddress;
+    }
+    map[key].records!.push(r);
 
     const currentM = parseFlexibleReportDate(r.returnDate);
     const prevM = parseFlexibleReportDate(map[key].lastReturnDate);
     if (currentM && (!prevM || currentM.isAfter(prevM))) {
       map[key].lastReturnDate = r.returnDate;
     }
+  });
+
+  return Object.values(map);
+}
+
+/**
+ * Aggregates all returned products for a specific supplier.
+ */
+export function aggregateSupplierReturnedProducts(
+  records: NormalizedPurchaseReturnRecord[]
+): SupplierProductReturnItem[] {
+  const map: Record<string, SupplierProductReturnItem> = {};
+
+  records.forEach((r) => {
+    const seenProducts = new Set<string>();
+    (r.details || []).forEach((line) => {
+      const pName = String(line.productName || "Returned Product").trim();
+      const pCode = String(line.productCode || "-").trim();
+      const pUnit = line.unit || "Pcs";
+      const key =
+        line.productId && line.productId !== "unknown"
+          ? `${line.productId}_${pName}`
+          : pCode !== "-"
+          ? `code_${pCode}`
+          : `name_${pName.toLowerCase()}`;
+
+      if (!map[key]) {
+        map[key] = {
+          productKey: key,
+          productCode: pCode,
+          productName: pName,
+          unit: pUnit,
+          totalQuantity: 0,
+          unitPrice:
+            line.unitPrice ||
+            (line.quantity > 0 ? line.total / line.quantity : 0),
+          totalAmount: 0,
+          reasons: [],
+          returnCount: 0,
+        };
+      }
+
+      if (!seenProducts.has(key)) {
+        map[key].returnCount += 1;
+        seenProducts.add(key);
+      }
+      map[key].totalQuantity += line.quantity;
+      map[key].totalAmount += line.total;
+
+      const reason = line.reason && line.reason !== "N/A" ? line.reason : "";
+      if (reason && !map[key].reasons.includes(reason)) {
+        map[key].reasons.push(reason);
+      }
+    });
   });
 
   return Object.values(map);
@@ -695,6 +769,14 @@ function buildPurchaseReturnVoucherColumns(
       pdfCell: (r) => r.supplierPhone || "-",
     },
     {
+      key: "address",
+      excelHeader: "Address",
+      isLeadingLabel: true,
+      pdfStyle: { halign: "left" },
+      excelValue: (r) => r.supplierAddress || "-",
+      pdfCell: (r) => r.supplierAddress || "-",
+    },
+    {
       key: "items",
       excelHeader: "Items",
       pdfStyle: { halign: "center" },
@@ -705,14 +787,6 @@ function buildPurchaseReturnVoucherColumns(
         content: t.sumItems,
         styles: { halign: "center" },
       }),
-    },
-    {
-      key: "reason",
-      excelHeader: "Reason / Remarks",
-      pdfHeader: "Reason",
-      pdfStyle: { halign: "left" },
-      excelValue: (r) => r.reasonSummary,
-      pdfCell: (r) => r.reasonSummary,
     },
     {
       key: "refundMode",
@@ -820,7 +894,6 @@ export async function downloadPurchaseReturnVouchersPdf(
   await generateAndDownloadCorporatePdf({
     fileName: `Purchase_Return_Report_${moment().format("YYYY-MM-DD")}.pdf`,
     reportTitle: "Purchase Return Report",
-    metaRightLabel: `Total Returns: ${records.length}`,
     headers,
     bodyRows,
     columnStyles,
@@ -858,25 +931,12 @@ function buildProductReturnColumns(
     },
     {
       key: "productName",
-      excelHeader: "Product Name",
+      excelHeader: "Product",
+      pdfHeader: "Product",
       isLeadingLabel: true,
       pdfStyle: { halign: "left", fontStyle: "bold" },
       excelValue: (p) => p.productName,
       pdfCell: (p) => ({ content: p.productName, styles: { fontStyle: "bold" } }),
-    },
-    {
-      key: "unit",
-      excelHeader: "Unit",
-      pdfStyle: { halign: "center" },
-      excelValue: (p) => p.unit,
-      pdfCell: (p) => p.unit,
-    },
-    {
-      key: "topReason",
-      excelHeader: "Top Reason",
-      pdfStyle: { halign: "left" },
-      excelValue: (p) => p.topReason,
-      pdfCell: (p) => p.topReason,
     },
     {
       key: "returnCount",
@@ -903,6 +963,14 @@ function buildProductReturnColumns(
         content: Number(t.totalQuantity.toFixed(2)),
         styles: { halign: "right", fontStyle: "bold" },
       }),
+    },
+    {
+      key: "unit",
+      excelHeader: "Unit",
+      pdfHeader: "Unit",
+      pdfStyle: { halign: "center" },
+      excelValue: (p) => p.unit,
+      pdfCell: (p) => p.unit,
     },
     {
       key: "avgRate",
@@ -933,12 +1001,20 @@ function buildProductReturnColumns(
     {
       key: "share",
       excelHeader: "Return Share (%)",
-      pdfHeader: "Share",
+      pdfHeader: "Share (%)",
       pdfStyle: { halign: "right" },
       excelValue: (p) =>
         calculateRevenueSharePct(p.totalAmount, grandTotalAmount),
       pdfCell: (p) =>
         `${calculateRevenueSharePct(p.totalAmount, grandTotalAmount)}%`,
+    },
+    {
+      key: "topReason",
+      excelHeader: "Top Reason",
+      pdfHeader: "Top Reason",
+      pdfStyle: { halign: "left" },
+      excelValue: (p) => p.topReason,
+      pdfCell: (p) => p.topReason,
     },
   ];
 }
@@ -1237,10 +1313,307 @@ export async function downloadSupplierPurchaseReturnSummaryPdf(
   await generateAndDownloadCorporatePdf({
     fileName: `Supplier_Purchase_Return_Summary_${moment().format("YYYY-MM-DD")}.pdf`,
     reportTitle: "Supplier-Wise Purchase Return Summary",
-    metaRightLabel: `Total Suppliers: ${suppliers.length}`,
     headers,
     bodyRows,
     columnStyles,
     meta,
+  });
+}
+
+/**
+ * Downloads a detailed Purchase Return PDF for a specific supplier,
+ * exporting the exact table data (Returned Products or Return Vouchers).
+ */
+export async function downloadSupplierDetailedReturnPdf(
+  supplier: SupplierReturnSummary,
+  meta: ReportCompanyMeta,
+  activeTab: "products" | "vouchers" = "products"
+): Promise<void> {
+  const records = supplier.records || [];
+  if (records.length === 0) {
+    throw new Error("No return records found for this supplier");
+  }
+
+  const commonPersonInfo = {
+    roleLabel: "Supplier",
+    name: supplier.supplierName,
+    phone: supplier.supplierPhone,
+    address: supplier.supplierAddress || "",
+    balanceStatement: `Returns: ${supplier.returnCount} | Items: ${supplier.itemsCount} | Cash: BDT ${formatMoney(
+      supplier.cashRefund
+    )} | Due Adjusted: BDT ${formatMoney(
+      supplier.creditAdjust
+    )} | Total Refund: BDT ${formatMoney(supplier.totalRefund)}`,
+    isReceivable: false,
+  };
+
+  const safeSupplierName = supplier.supplierName
+    .replace(/[\\/:*?"<>|]/g, "_")
+    .trim()
+    .replace(/\s+/g, "_");
+
+  if (activeTab === "products") {
+    const products = aggregateSupplierReturnedProducts(records);
+    if (products.length === 0) {
+      throw new Error("No returned products found for this supplier");
+    }
+
+    const headers = [
+      "SL",
+      "Product",
+      "Unit",
+      "Returned Qty",
+      "Unit Price (BDT)",
+      "Total Refund (BDT)",
+      "Reason",
+      "Vouchers",
+    ];
+
+    let totalQty = 0;
+    let totalAmt = 0;
+    let totalVouchers = 0;
+
+    const bodyRows: any[][] = products.map((p, idx) => {
+      const unitPrice =
+        p.totalQuantity > 0 ? p.totalAmount / p.totalQuantity : p.unitPrice;
+      totalQty += p.totalQuantity;
+      totalAmt += p.totalAmount;
+      totalVouchers += p.returnCount;
+
+      const reasonStr =
+        p.reasons && p.reasons.length > 0 ? p.reasons.join(", ") : "-";
+
+      return [
+        idx + 1,
+        p.productName,
+        p.unit,
+        p.totalQuantity,
+        formatMoney(unitPrice),
+        formatMoney(p.totalAmount),
+        reasonStr,
+        p.returnCount,
+      ];
+    });
+
+    bodyRows.push([
+      "Total",
+      `Products: ${products.length}`,
+      "-",
+      totalQty || supplier.itemsCount,
+      "-",
+      formatMoney(totalAmt || supplier.totalRefund),
+      "-",
+      supplier.returnCount || totalVouchers,
+    ]);
+
+    await generateAndDownloadCorporatePdf({
+      fileName: `Supplier_Returned_Products_${safeSupplierName}_${moment().format("YYYY-MM-DD")}.pdf`,
+      reportTitle: `Supplier Returned Products Report - ${supplier.supplierName}`,
+      personInfo: commonPersonInfo,
+      headers,
+      bodyRows,
+      orientation: "landscape",
+      columnStyles: {
+        0: { halign: "center", cellWidth: 12 },
+        1: { halign: "left", cellWidth: 70 },
+        2: { halign: "center", cellWidth: 16 },
+        3: { halign: "center", cellWidth: 24 },
+        4: { halign: "right", cellWidth: 36 },
+        5: { halign: "right", cellWidth: 38 },
+        6: { halign: "left", cellWidth: 61 },
+        7: { halign: "center", cellWidth: 20 },
+      },
+      meta,
+    });
+    return;
+  }
+
+  // Case 2: Vouchers
+  const headers = [
+    "SL",
+    "Return No",
+    "Purchase No",
+    "Return Date",
+    "Items",
+    "Cash Refund (BDT)",
+    "Due Adjust (BDT)",
+    "Total Refund (BDT)",
+    "Reason",
+  ];
+
+  let totalItems = 0;
+  let totalCash = 0;
+  let totalDueAdj = 0;
+  let totalRefund = 0;
+
+  const bodyRows: any[][] = records.map((r, idx) => {
+    totalItems += r.itemsCount;
+    if (r.isCreditAdjust) totalDueAdj += r.refundAmount;
+    else totalCash += r.refundAmount;
+    totalRefund += r.refundAmount;
+
+    return [
+      idx + 1,
+      r.returnNo,
+      r.purchaseInvoiceNo !== "-" ? r.purchaseInvoiceNo : r.orderNo,
+      formatShortReportDate(r.returnDate),
+      r.itemsCount,
+      r.isCreditAdjust ? "-" : formatMoney(r.refundAmount),
+      r.isCreditAdjust ? formatMoney(r.refundAmount) : "-",
+      formatMoney(r.refundAmount),
+      r.reasonSummary || "-",
+    ];
+  });
+
+  bodyRows.push([
+    "Total",
+    `Vouchers: ${records.length}`,
+    "-",
+    "-",
+    totalItems,
+    formatMoney(totalCash),
+    formatMoney(totalDueAdj),
+    formatMoney(totalRefund),
+    "-",
+  ]);
+
+  await generateAndDownloadCorporatePdf({
+    fileName: `Supplier_Return_Vouchers_${safeSupplierName}_${moment().format("YYYY-MM-DD")}.pdf`,
+    reportTitle: `Supplier Return Vouchers - ${supplier.supplierName}`,
+    personInfo: commonPersonInfo,
+    headers,
+    bodyRows,
+    orientation: "landscape",
+    columnStyles: {
+      0: { halign: "center", cellWidth: 12 },
+      1: { halign: "left", cellWidth: 42 },
+      2: { halign: "left", cellWidth: 42 },
+      3: { halign: "center", cellWidth: 26 },
+      4: { halign: "center", cellWidth: 18 },
+      5: { halign: "right", cellWidth: 32 },
+      6: { halign: "right", cellWidth: 32 },
+      7: { halign: "right", cellWidth: 35 },
+      8: { halign: "left", cellWidth: 38 },
+    },
+    meta,
+  });
+}
+
+/**
+ * Exports a detailed Purchase Return Excel for a specific supplier.
+ */
+export async function exportSupplierDetailedReturnExcel(
+  supplier: SupplierReturnSummary,
+  meta: ReportCompanyMeta,
+  activeTab: "products" | "vouchers" = "products"
+): Promise<void> {
+  const records = supplier.records || [];
+  if (records.length === 0) {
+    throw new Error("No return records found for this supplier");
+  }
+
+  const safeSupplierName = supplier.supplierName
+    .replace(/[\\/:*?"<>|]/g, "_")
+    .trim()
+    .replace(/\s+/g, "_");
+
+  if (activeTab === "products") {
+    const products = aggregateSupplierReturnedProducts(records);
+    if (products.length === 0) {
+      throw new Error("No returned products found for this supplier");
+    }
+
+    let totalQty = 0;
+    let totalAmt = 0;
+    let totalVouchers = 0;
+
+    const rows = products.map((p, idx) => {
+      const unitPrice =
+        p.totalQuantity > 0 ? p.totalAmount / p.totalQuantity : p.unitPrice;
+      totalQty += p.totalQuantity;
+      totalAmt += p.totalAmount;
+      totalVouchers += p.returnCount;
+
+      return {
+        SL: idx + 1,
+        Product: p.productName,
+        Unit: p.unit,
+        "Returned Qty": p.totalQuantity,
+        "Unit Price (BDT)": unitPrice,
+        "Total Refund (BDT)": p.totalAmount,
+        Reason: p.reasons.length > 0 ? p.reasons.join(", ") : "-",
+        Vouchers: p.returnCount,
+      };
+    });
+
+    const totalRow = {
+      SL: "Total",
+      Product: `Products: ${products.length} (Supplier: ${supplier.supplierName})`,
+      Unit: "-",
+      "Returned Qty": totalQty || supplier.itemsCount,
+      "Unit Price (BDT)": "-",
+      "Total Refund (BDT)": totalAmt || supplier.totalRefund,
+      Reason: `Cash: ${supplier.cashRefund} | Due Adj: ${supplier.creditAdjust}`,
+      Vouchers: supplier.returnCount || totalVouchers,
+    };
+
+    await buildAndDownloadExcel(rows, totalRow, {
+      ...meta,
+      fileName: `Supplier_Returned_Products_${safeSupplierName}_${moment().format(
+        "YYYY-MM-DD"
+      )}.xlsx`,
+      sheetName: "Returned Products",
+      reportTitle: `Supplier Returned Products - ${supplier.supplierName}`,
+      totalLabel: "Total Items",
+    });
+    return;
+  }
+
+  // Case 2: Vouchers
+  let totalItems = 0;
+  let totalCash = 0;
+  let totalDueAdj = 0;
+  let totalRefund = 0;
+
+  const rows = records.map((r, idx) => {
+    totalItems += r.itemsCount;
+    if (r.isCreditAdjust) totalDueAdj += r.refundAmount;
+    else totalCash += r.refundAmount;
+    totalRefund += r.refundAmount;
+
+    return {
+      SL: idx + 1,
+      "Return No": r.returnNo,
+      "Purchase No":
+        r.purchaseInvoiceNo !== "-" ? r.purchaseInvoiceNo : r.orderNo,
+      "Return Date": formatShortReportDate(r.returnDate),
+      Items: r.itemsCount,
+      "Cash Refund (BDT)": r.isCreditAdjust ? 0 : r.refundAmount,
+      "Due Adjust (BDT)": r.isCreditAdjust ? r.refundAmount : 0,
+      "Total Refund (BDT)": r.refundAmount,
+      Reason: r.reasonSummary || "-",
+    };
+  });
+
+  const totalRow = {
+    SL: "Total",
+    "Return No": `Vouchers: ${records.length} (Supplier: ${supplier.supplierName})`,
+    "Purchase No": "-",
+    "Return Date": "-",
+    Items: totalItems,
+    "Cash Refund (BDT)": totalCash,
+    "Due Adjust (BDT)": totalDueAdj,
+    "Total Refund (BDT)": totalRefund,
+    Reason: "-",
+  };
+
+  await buildAndDownloadExcel(rows, totalRow, {
+    ...meta,
+    fileName: `Supplier_Return_Vouchers_${safeSupplierName}_${moment().format(
+      "YYYY-MM-DD"
+    )}.xlsx`,
+    sheetName: "Return Vouchers",
+    reportTitle: `Supplier Return Vouchers - ${supplier.supplierName}`,
+    totalLabel: "Total Vouchers",
   });
 }

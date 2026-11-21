@@ -73,11 +73,11 @@ const DOMAIN_LABELS: Record<
     emptyDesc: "No line items found in the current transactions set.",
   },
   purchase: {
-    qtyCol: "Qty Purchased",
+    qtyCol: "Quantity",
     amountCol: "Total Cost (৳)",
     highAmountOpt: "Highest Cost",
     lowAmountOpt: "Lowest Cost",
-    highQtyOpt: "Highest Qty Purchased",
+    highQtyOpt: "Highest Quantity",
     emptyTitle: "No Product Purchases Found",
     emptyDesc: "No line items found in the current purchases set.",
   },
@@ -111,10 +111,10 @@ export const ProductTradeReportTable: React.FC<ProductTradeReportTableProps> = (
   const availableColumns: ColumnItem[] = [
     { key: "sl", label: "SL" },
     { key: "productCode", label: "Product Code" },
-    { key: "productName", label: "Product Description" },
-    { key: "unit", label: "Unit" },
+    { key: "productName", label: "Product" },
     { key: "orders", label: "Orders" },
     { key: "quantity", label: labels.qtyCol },
+    { key: "unit", label: "Unit" },
     { key: "avgRate", label: "Unit Price (৳)" },
     { key: "discount", label: "Discounts (৳)" },
     { key: "amount", label: labels.amountCol },
@@ -241,10 +241,10 @@ export const ProductTradeReportTable: React.FC<ProductTradeReportTableProps> = (
             <TableHead>
               {isColVisible("sl") && <TableTh align="center" width={40} className="whitespace-nowrap">SL</TableTh>}
               {isColVisible("productCode") && <TableTh className="w-px whitespace-nowrap">Product Code</TableTh>}
-              {isColVisible("productName") && <TableTh className="whitespace-nowrap">Product Description</TableTh>}
-              {isColVisible("unit") && <TableTh align="center" className="whitespace-nowrap">Unit</TableTh>}
+              {isColVisible("productName") && <TableTh className="whitespace-nowrap">Product</TableTh>}
               {isColVisible("orders") && <TableTh align="center" className="whitespace-nowrap">Orders</TableTh>}
               {isColVisible("quantity") && <TableTh align="right" className="whitespace-nowrap">{labels.qtyCol}</TableTh>}
+              {isColVisible("unit") && <TableTh align="center" className="whitespace-nowrap">Unit</TableTh>}
               {isColVisible("avgRate") && <TableTh align="right" className="whitespace-nowrap">Unit Price (৳)</TableTh>}
               {isColVisible("discount") && <TableTh align="right" className="whitespace-nowrap">Discounts (৳)</TableTh>}
               {isColVisible("amount") && <TableTh align="right" className="whitespace-nowrap">{labels.amountCol}</TableTh>}
@@ -282,11 +282,6 @@ export const ProductTradeReportTable: React.FC<ProductTradeReportTableProps> = (
                         {item.productName}
                       </td>
                     )}
-                    {isColVisible("unit") && (
-                      <td className="py-2.5 px-3 text-center text-[var(--ui-text-muted)] text-xs">
-                        {item.unit}
-                      </td>
-                    )}
                     {isColVisible("orders") && (
                       <td className="py-2.5 px-3 text-center text-xs text-[var(--ui-text)]">
                         {item.invoicesCount}
@@ -295,6 +290,11 @@ export const ProductTradeReportTable: React.FC<ProductTradeReportTableProps> = (
                     {isColVisible("quantity") && (
                       <td className="py-2.5 px-3 text-right font-bold text-xs text-[var(--ui-text)]">
                         {item.totalQuantity}
+                      </td>
+                    )}
+                    {isColVisible("unit") && (
+                      <td className="py-2.5 px-3 text-center text-[var(--ui-text-muted)] text-xs">
+                        {item.unit}
                       </td>
                     )}
                     {isColVisible("avgRate") && (

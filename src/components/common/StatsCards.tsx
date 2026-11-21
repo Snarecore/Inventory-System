@@ -13,12 +13,30 @@ export interface StatCardItem {
 
 export interface StatsCardsProps {
   cards: StatCardItem[];
+  className?: string;
+  gridClassName?: string;
 }
 
-export const StatsCards: React.FC<StatsCardsProps> = ({ cards }) => {
+export const StatsCards: React.FC<StatsCardsProps> = ({
+  cards,
+  className = "",
+  gridClassName,
+}) => {
   const { t } = useTranslation();
+
+  const defaultGrid =
+    cards.length === 5
+      ? "grid-cols-2 sm:grid-cols-3 lg:grid-cols-5"
+      : cards.length === 6
+      ? "grid-cols-2 sm:grid-cols-3 lg:grid-cols-6"
+      : cards.length === 3
+      ? "grid-cols-1 sm:grid-cols-3"
+      : "grid-cols-2 sm:grid-cols-2 lg:grid-cols-4";
+
+  const effectiveGrid = gridClassName || defaultGrid;
+
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 w-full">
+    <div className={`grid ${effectiveGrid} gap-2.5 w-full ${className}`.trim()}>
       {cards.map((card, idx) => {
         const Icon = card.icon;
         return (

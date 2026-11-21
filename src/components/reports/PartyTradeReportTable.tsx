@@ -1,7 +1,6 @@
 import React, { useState, useMemo } from "react";
 import moment from "moment";
 import {
-  FiChevronDown,
   FiChevronRight,
   FiEye,
   FiCopy,
@@ -534,21 +533,8 @@ export const PartyTradeReportTable: React.FC<PartyTradeReportTableProps> = ({
                         </td>
                       )}
                       {isColVisible("orders") && (
-                        <td className="py-2.5 px-3 text-center text-xs">
-                          <button
-                            type="button"
-                            onClick={() => toggleExpand(p.partyName)}
-                            className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-[var(--primary-color-light)] text-[var(--color-primary)] hover:bg-[var(--color-primary)] hover:text-white transition-all cursor-pointer"
-                            title="Click to view invoices"
-                          >
-                            <span>{p.invoicesCount}</span>
-                            <FiChevronDown
-                              size={10}
-                              className={`transition-transform duration-200 ${
-                                isExpanded ? "rotate-180" : ""
-                              }`}
-                            />
-                          </button>
+                        <td className="py-2.5 px-3 text-center text-xs text-[var(--ui-text)] tabular-nums">
+                          {p.invoicesCount}
                         </td>
                       )}
                       {isColVisible("totalBilled") && (

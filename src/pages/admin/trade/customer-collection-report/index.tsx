@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import {
   FaHandHoldingUsd,
   FaMoneyBillWave,
+  FaUniversity,
   FaPercent,
   FaExclamationCircle,
   FaReceipt,
@@ -147,12 +148,20 @@ const CustomerCollectionReportPage: React.FC = () => {
       iconBg: "bg-[var(--ui-success-border)] text-[var(--ui-success)]",
     },
     {
-      title: "Cash vs Bank / MFS",
-      value: `৳ ${formatMoney(kpis.cashCollected)} / ৳ ${formatMoney(kpis.digitalCollected)}`,
+      title: "Cash Collected",
+      value: `৳ ${formatMoney(kpis.cashCollected)}`,
       icon: FaMoneyBillWave,
       color: "text-[var(--primary-color)]",
       bg: "bg-[var(--primary-color-light)]/60 border-[var(--primary-color-muted)]",
       iconBg: "bg-[var(--primary-color-muted)] text-[var(--primary-color)]",
+    },
+    {
+      title: "Bank / MFS Collected",
+      value: `৳ ${formatMoney(kpis.digitalCollected)}`,
+      icon: FaUniversity,
+      color: "text-[var(--ui-info)]",
+      bg: "bg-[var(--ui-info-light)]/60 border-[var(--ui-info-border)]",
+      iconBg: "bg-[var(--ui-info-border)] text-[var(--ui-info)]",
     },
     {
       title: "Collection Discount",
