@@ -1376,7 +1376,6 @@ export async function downloadTradeInvoicesPdf(
   await generateAndDownloadCorporatePdf({
     fileName: `${config.filePrefix}_${moment().format("YYYY-MM-DD")}.pdf`,
     reportTitle: config.reportTitle,
-    metaRightLabel: `Total Invoices: ${records.length}`,
     headers,
     bodyRows,
     columnStyles,
