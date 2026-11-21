@@ -7,6 +7,7 @@ import {
   fetchSmsSendList,
 } from "@/services/sms-service";
 import { showSuccessToast, showErrorToast } from "@/utils/toast-utils";
+import { validatePaymentRedirectUrl } from "@/utils/payment-redirect";
 import type { SmsBundleItem, SmsBalanceData, SmsHistoryItem } from "@/types";
 
 export const SMS_QUERY_KEYS = {
@@ -44,17 +45,13 @@ export function usePurchaseSmsBundle() {
     mutationFn: purchaseSmsBundle,
     onSuccess: (result) => {
       if (result.success && result.data?.redirectUrl) {
-        try {
-          const parsed = new URL(result.data.redirectUrl);
-          if (parsed.protocol === "https:" || parsed.protocol === "http:") {
-            showSuccessToast("Redirecting to payment gateway...");
-            window.location.href = parsed.toString();
-            return;
-          }
-        } catch {
-          // fallthrough
+        const validation = validatePaymentRedirectUrl(result.data.redirectUrl);
+        if (validation.isValid) {
+          showSuccessToast("Redirecting to payment gateway...");
+          window.location.href = validation.url.toString();
+        } else {
+          showErrorToast(validation.message);
         }
-        showErrorToast("Invalid payment gateway link received.");
       } else {
         showErrorToast(result.message ?? "Failed to purchase bundle.");
       }

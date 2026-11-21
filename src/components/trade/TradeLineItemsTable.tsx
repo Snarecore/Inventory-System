@@ -1,5 +1,6 @@
 import React from "react";
 import { FaTrash } from "react-icons/fa";
+import { useTranslation } from "react-i18next";
 import { formatMoney } from "@/utils/formatters";
 import TextInput from "@/components/form/TextInput";
 
@@ -26,14 +27,16 @@ export const TradeLineItemsTable: React.FC<TradeLineItemsTableProps> = ({
   onRequestDelete,
   emptyMessage = "No items added yet. Search and add products above.",
 }) => {
+  const { t } = useTranslation();
+
   return (
     <div className="ui-card overflow-hidden">
       <div className="flex items-center justify-between border-b border-[var(--ui-border)] px-2.5 py-2">
         <h2 className="text-[13px] font-semibold text-[var(--ui-text)]">
-          {title} ({lineItems.length})
+          {t(title)} ({lineItems.length})
         </h2>
         <span className="text-[11px] text-[var(--ui-text-muted)]">
-          Subtotal <span className="ml-1 text-[13px] font-bold tabular-nums text-[var(--ui-text)]">৳ {formatMoney(subtotal)}</span>
+          {t("Subtotal")} <span className="ml-1 text-[13px] font-bold tabular-nums text-[var(--ui-text)]">৳ {formatMoney(subtotal)}</span>
         </span>
       </div>
 
@@ -48,13 +51,13 @@ export const TradeLineItemsTable: React.FC<TradeLineItemsTableProps> = ({
         <table className="ui-table w-full min-w-[720px] text-left border-collapse">
           <thead>
             <tr className="text-[11px] font-semibold [&>th]:sticky [&>th]:top-0 [&>th]:z-10 [&>th]:bg-[var(--table-header-bg,var(--primary-color))] [&>th]:text-[var(--table-header-text,var(--ui-on-accent,#ffffff))] [&>th]:shadow-[inset_0_-1px_0_var(--ui-border)]">
-              <th className="text-center w-10 whitespace-nowrap">SL</th>
-              <th className="w-full min-w-[180px]">Product</th>
-              <th className="text-center w-16 whitespace-nowrap">Unit</th>
-              <th className="text-center w-20 whitespace-nowrap">Stock</th>
-              <th className="text-right w-28 min-w-[100px] whitespace-nowrap">{priceHeader}</th>
-              <th className="text-center w-28 min-w-[110px] whitespace-nowrap">Quantity</th>
-              <th className="text-right w-28 min-w-[100px] whitespace-nowrap">Total (৳)</th>
+              <th className="text-center w-10 whitespace-nowrap">{t("SL")}</th>
+              <th className="w-full min-w-[180px]">{t("Product")}</th>
+              <th className="text-center w-16 whitespace-nowrap">{t("Unit")}</th>
+              <th className="text-center w-20 whitespace-nowrap">{t("Stock")}</th>
+              <th className="text-right w-28 min-w-[100px] whitespace-nowrap">{t(priceHeader)}</th>
+              <th className="text-center w-28 min-w-[110px] whitespace-nowrap">{t("Quantity")}</th>
+              <th className="text-right w-28 min-w-[100px] whitespace-nowrap">{t("Total (৳)")}</th>
               <th className="text-center w-10 whitespace-nowrap"></th>
             </tr>
           </thead>
@@ -183,7 +186,7 @@ export const TradeLineItemsTable: React.FC<TradeLineItemsTableProps> = ({
                     </svg>
                   </span>
                   <span className="block text-[13px] font-medium text-[var(--ui-text-muted)]">
-                    {emptyMessage}
+                    {t(emptyMessage)}
                   </span>
                 </td>
               </tr>

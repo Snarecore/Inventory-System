@@ -1,5 +1,6 @@
 import React from "react";
 import { FaSearch, FaBarcode, FaCheck, FaPlus, FaTimes } from "react-icons/fa";
+import { useTranslation } from "react-i18next";
 import TextInput from "@/components/form/TextInput";
 import type { ProductItem } from "@/types";
 import { formatMoney } from "@/utils/formatters";
@@ -29,6 +30,7 @@ export const TradeProductSearch: React.FC<TradeProductSearchProps> = ({
   addBtnText,
   placeholder,
 }) => {
+  const { t } = useTranslation();
   const {
     searchQuery,
     setSearchQuery,
@@ -65,7 +67,7 @@ export const TradeProductSearch: React.FC<TradeProductSearchProps> = ({
                 <FaSearch className="text-[var(--ui-text-subtle)] text-xs" />
               )
             }
-            placeholder={defaultPlaceholder}
+            placeholder={t(defaultPlaceholder)}
             value={searchQuery}
             onChange={(val) => handleUnifiedChange(val)}
             onKeyDown={handleUnifiedKeyDown}
@@ -87,7 +89,7 @@ export const TradeProductSearch: React.FC<TradeProductSearchProps> = ({
             className="px-3 sm:px-3.5 h-[var(--ui-control-h-sm)] rounded-[var(--ui-radius)] text-[length:var(--ui-font-size-sm)] font-semibold flex items-center gap-1.5 transition-all shadow-[var(--ui-shadow-control)] shrink-0 cursor-pointer bg-[var(--ui-surface-sunken)] hover:bg-[var(--ui-border)] text-[var(--ui-text)] border border-[var(--ui-border-strong)]"
           >
             <FaTimes size={11} className="text-[var(--ui-text-muted)]" />
-            <span>Cancel</span>
+            <span>{t("Cancel")}</span>
           </button>
         ) : (
           <button
@@ -96,8 +98,8 @@ export const TradeProductSearch: React.FC<TradeProductSearchProps> = ({
             className="px-3 sm:px-3.5 h-[var(--ui-control-h-sm)] rounded-[var(--ui-radius)] text-[length:var(--ui-font-size-sm)] font-bold flex items-center gap-1.5 transition-all shadow-[var(--ui-shadow-control)] shrink-0 cursor-pointer bg-[var(--primary-color)] hover:bg-[var(--primary-color-hover)] text-white"
           >
             <FaPlus size={10} className="text-white" />
-            <span className="hidden sm:inline">{defaultAddText}</span>
-            <span className="sm:hidden">Add</span>
+            <span className="hidden sm:inline">{t(defaultAddText)}</span>
+            <span className="sm:hidden">{t("Add")}</span>
           </button>
         )}
       </div>

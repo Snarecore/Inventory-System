@@ -1,5 +1,6 @@
 import apiConfig from "@/config/api.json";
 import { getData, postData } from "./api-service";
+import { validatePaymentRedirectUrl } from "@/utils/payment-redirect";
 import type {
   PricingResponse,
   UserSubscription,
@@ -63,6 +64,19 @@ export async function initiatePackagePayment(
         status: "Error",
         errorMessage: res?.errorMessage || res?.message || "Payment initiation failed.",
       };
+    }
+
+    const redirectUrl =
+      res?.redirectURL || res?.RedirectURL || res?.redirectUrl || res?.checkoutUrl || res?.url;
+
+    if (redirectUrl) {
+      const validation = validatePaymentRedirectUrl(redirectUrl);
+      if (!validation.isValid) {
+        return {
+          status: "Error",
+          errorMessage: validation.message,
+        };
+      }
     }
 
     return res;
