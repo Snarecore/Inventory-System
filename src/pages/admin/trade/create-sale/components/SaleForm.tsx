@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import DeleteModal from "@/components/modal/DeleteModal";
 import ConfirmModal from "@/components/modal/ConfirmModal";
 import PartyModal from "@/pages/admin/people/parties/components/PartyModal";
@@ -64,6 +65,7 @@ export const WALK_IN_CUSTOMER: PartyItem = {
 };
 
 export const CreateSaleForm: React.FC = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
   const { id: routeId } = useParams();
@@ -735,7 +737,7 @@ export const CreateSaleForm: React.FC = () => {
         {/* Invoice No */}
         <div>
           <label className="ui-label block mb-1">
-            Invoice No <span className="text-[var(--ui-danger)]">*</span>
+            {t("Invoice No")} <span className="text-[var(--ui-danger)]">*</span>
           </label>
           <div
             className="w-full h-[var(--ui-control-h-sm)] px-2.5 py-1.5 text-[length:var(--ui-font-size-sm)] border border-[var(--ui-border-strong)] rounded-[var(--ui-radius)] bg-[var(--ui-border)] font-bold text-[var(--ui-text)] flex items-center select-text cursor-default"
@@ -748,7 +750,7 @@ export const CreateSaleForm: React.FC = () => {
         {/* Sales Date */}
         <div>
           <label className="ui-label block mb-1">
-            Sales Date <span className="text-[var(--ui-danger)]">*</span>
+            {t("Sales Date")} <span className="text-[var(--ui-danger)]">*</span>
           </label>
           <DatePicker
             value={salesDate}
@@ -756,7 +758,7 @@ export const CreateSaleForm: React.FC = () => {
             size="md"
             isClearable={false}
             displayFormat="DD MMM, YYYY"
-            placeholder="Select sales date"
+            placeholder={t("Select sales date")}
           />
         </div>
         </div>
@@ -788,26 +790,26 @@ export const CreateSaleForm: React.FC = () => {
         <div className="ui-card flex flex-col gap-2 p-2 sm:p-2.5">
           <div className="flex flex-col gap-2">
             <h3 className="text-[13px] font-semibold text-[var(--ui-text)]">
-              Discounts & Extra Charges
+              {t("Discounts & Extra Charges")}
             </h3>
 
             {/* Overall Invoice Discount (Fixed Amount) */}
             <CurrencyInput
-              label="Overall Discount (৳):"
+              label={t("Overall Discount (৳):")}
               value={discountValue}
               onChange={setDiscountValue}
             />
 
             {/* Invoice VAT (Fixed Amount) */}
             <CurrencyInput
-              label="Invoice VAT (৳):"
+              label={t("Invoice VAT (৳):")}
               value={vatAmount}
               onChange={setVatAmount}
             />
 
             {/* Delivery Charge */}
             <CurrencyInput
-              label="Delivery Charge (৳):"
+              label={t("Delivery Charge (৳):")}
               value={deliveryCharge}
               onChange={setDeliveryCharge}
             />
@@ -879,10 +881,10 @@ export const CreateSaleForm: React.FC = () => {
       {isSaveConfirmModalOpen && (
         <ConfirmModal
           isOpen={isSaveConfirmModalOpen}
-          title={isEditMode ? "Update Sale Invoice?" : "Save Sale Invoice?"}
+          title={isEditMode ? t("Update Sale Invoice?") : t("Save Sale Invoice?")}
           message={`Are you sure you want to ${isEditMode ? "update" : "save"} this sale invoice with total amount ৳${formatMoney(grandTotal)}?`}
-          confirmText={pendingSavePrint ? "Save & Print" : "Save"}
-          cancelText="Cancel"
+          confirmText={pendingSavePrint ? t("Save & Print") : t("Save Sale")}
+          cancelText={t("Cancel")}
           isLoading={isSubmitting}
           onClose={() => {
             if (!isSubmittingRef.current && !isSubmitting) {

@@ -4,6 +4,7 @@ import { FaPrint } from "react-icons/fa";
 import { getUserInfo, getStoredUser } from "@/utils/auth-storage";
 import { formatMoney } from "@/utils/formatters";
 import { useBusinessProfileQuery } from "@/hooks/useBusinessProfile";
+import { useInvoiceProfileSetupQuery } from "@/hooks/useInvoiceProfileSetup";
 import moment from "moment";
 
 export type TradeInvoiceType = "SALE" | "PURCHASE" | "SALES_RETURN" | "PURCHASE_RETURN";
@@ -139,7 +140,20 @@ export const TradeInvoiceModal: React.FC<TradeInvoiceModalProps> = ({
 }) => {
   const printRef = useRef<HTMLDivElement>(null);
   const { data: businessProfile } = useBusinessProfileQuery();
+  const { data: invoiceSetup } = useInvoiceProfileSetupQuery();
   const userInfo = getUserInfo();
+
+  const showLogo = invoiceSetup?.showLogo ?? true;
+  const showBusinessName = invoiceSetup?.showBusinessName ?? true;
+  const showAddress = invoiceSetup?.showAddress ?? true;
+  const showPhone1 = invoiceSetup?.showPhone1 ?? true;
+  const showPhone2 = invoiceSetup?.showPhone2 ?? true;
+  const showEmail = invoiceSetup?.showEmail ?? true;
+  const showWebsite = invoiceSetup?.showWebsite ?? true;
+  const showTradeLicense = invoiceSetup?.showTradeLicenseNo ?? true;
+  const showTin = invoiceSetup?.showTinNo ?? true;
+  const showBin = invoiceSetup?.showBinNo ?? true;
+  const showFooterMessage = invoiceSetup?.showFooterMessage ?? true;
 
   const inv = invoice;
   const isPurchase = inv?.type === "PURCHASE";
@@ -300,18 +314,30 @@ export const TradeInvoiceModal: React.FC<TradeInvoiceModalProps> = ({
           >
             {/* Left: Business Information */}
             <div style={{ flex: 1, maxWidth: "420px" }}>
-              <h1
-                style={{
-                  color: "#01306B",
-                  fontSize: "22px",
-                  fontWeight: 900,
-                  letterSpacing: "-0.5px",
-                  lineHeight: "1.2",
-                  margin: "0 0 4px 0",
-                }}
-              >
-                {businessName}
-              </h1>
+              {showLogo && businessProfile?.businessLogoUrl && (
+                <div style={{ marginBottom: "6px" }}>
+                  <img
+                    src={businessProfile.businessLogoUrl}
+                    alt="Logo"
+                    style={{ maxHeight: "40px", maxWidth: "120px", objectFit: "contain" }}
+                  />
+                </div>
+              )}
+
+              {showBusinessName && (
+                <h1
+                  style={{
+                    color: "#01306B",
+                    fontSize: "22px",
+                    fontWeight: 900,
+                    letterSpacing: "-0.5px",
+                    lineHeight: "1.2",
+                    margin: "0 0 4px 0",
+                  }}
+                >
+                  {businessName}
+                </h1>
+              )}
 
               <div
                 style={{
@@ -320,16 +346,36 @@ export const TradeInvoiceModal: React.FC<TradeInvoiceModalProps> = ({
                   lineHeight: "1.45",
                 }}
               >
-                {businessAddress && <div>{businessAddress}</div>}
-                {(phone1 || phone2) && (
+                {showAddress && businessAddress && <div>{businessAddress}</div>}
+                {(showPhone1 || showPhone2) && (phone1 || phone2) && (
                   <div>
-                    <span style={{ fontWeight: 600 }}>Mobile:</span> {phone1}
-                    {phone2 ? `, ${phone2}` : ""}
+                    <span style={{ fontWeight: 600 }}>Mobile:</span>{" "}
+                    {showPhone1 ? phone1 : ""}
+                    {showPhone1 && showPhone2 && phone1 && phone2 ? ", " : ""}
+                    {showPhone2 ? phone2 : ""}
                   </div>
                 )}
-                {businessEmail && (
+                {showEmail && businessEmail && (
                   <div>
                     <span style={{ fontWeight: 600 }}>Email:</span> {businessEmail}
+                  </div>
+                )}
+                {showWebsite && businessProfile?.website && (
+                  <div>
+                    <span style={{ fontWeight: 600 }}>Web:</span> {businessProfile.website}
+                  </div>
+                )}
+                {(showTradeLicense || showTin || showBin) && (
+                  <div style={{ marginTop: "2px", color: "#64748b", fontSize: "10px" }}>
+                    {showTradeLicense && businessProfile?.tradeLicenseNo && (
+                      <span style={{ marginRight: "8px" }}>TRAD: {businessProfile.tradeLicenseNo}</span>
+                    )}
+                    {showTin && businessProfile?.tinNo && (
+                      <span style={{ marginRight: "8px" }}>TIN: {businessProfile.tinNo}</span>
+                    )}
+                    {showBin && businessProfile?.binNo && (
+                      <span>BIN: {businessProfile.binNo}</span>
+                    )}
                   </div>
                 )}
               </div>
@@ -730,19 +776,21 @@ export const TradeInvoiceModal: React.FC<TradeInvoiceModalProps> = ({
           </div>
 
           {/* Bottom Policy & Thank You Note */}
-          <div
-            style={{
-              borderTop: "1.5px solid #01306B",
-              width: "100%",
-              marginTop: "16px",
-              paddingTop: "6px",
-              textAlign: "center",
-              fontSize: "10.5px",
-              color: "#475569",
-            }}
-          >
-            Goods once sold are not returnable. Thank you, visit again!
-          </div>
+          {showFooterMessage && (
+            <div
+              style={{
+                borderTop: "1.5px solid #01306B",
+                width: "100%",
+                marginTop: "16px",
+                paddingTop: "6px",
+                textAlign: "center",
+                fontSize: "10.5px",
+                color: "#475569",
+              }}
+            >
+              {businessProfile?.description || "Goods once sold are not returnable. Thank you, visit again!"}
+            </div>
+          )}
         </div>
 
         {/* Action Buttons */}

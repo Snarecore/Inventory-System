@@ -29,6 +29,7 @@ const ContactPageCms = lazyWithRetry(() => import('@/pages/admin/settings/contac
 const ShopPageCms = lazyWithRetry(() => import('@/pages/admin/settings/shop-page-cms'))
 const SocialLinks = lazyWithRetry(() => import('@/pages/admin/settings/social-links'))
 const AppearanceSettings = lazyWithRetry(() => import('@/pages/admin/settings/appearance'))
+const InvoiceProfileSetup = lazyWithRetry(() => import('@/pages/admin/settings/invoice-profile'))
 const SmsSettings = lazyWithRetry(() => import('@/pages/admin/settings/sms'))
 const SendSmsPage = lazyWithRetry(() => import('@/pages/admin/sms'))
 const PrivacyPolicy = lazyWithRetry(() => import('@/pages/admin/settings/policy/privacy'))
@@ -518,6 +519,14 @@ export const router = createBrowserRouter([
     element: <Navigate to="/admin/company" replace />,
   },
   {
+    path: '/settings/invoice-profile',
+    element: <Navigate to="/admin/settings/invoice-profile" replace />,
+  },
+  {
+    path: '/settings/invoice-setup',
+    element: <Navigate to="/admin/settings/invoice-profile" replace />,
+  },
+  {
     path: '/settings/sms',
     element: <Navigate to="/admin/settings/sms" replace />,
   },
@@ -931,6 +940,10 @@ export const router = createBrowserRouter([
       {
         path: 'settings/appearance',
         element: withPermission(AppearanceSettings, 'appearance', 'update'),
+      },
+      {
+        path: 'settings/invoice-profile',
+        element: withSuspense(InvoiceProfileSetup),
       },
       {
         path: 'settings/sms',

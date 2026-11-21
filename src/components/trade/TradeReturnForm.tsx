@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import moment from "moment";
 import { FaUndoAlt, FaBoxOpen, FaPrint, FaCalendarAlt, FaSpinner } from "react-icons/fa";
 import Button from "@/components/button/Button";
@@ -41,6 +42,7 @@ import { usePermission } from "@/hooks/usePermission";
 import { fetchSalesAndReturnList, getCleanOrderNo } from "@/pages/admin/trade/sales/hooks/useSalesQueries";
 import { fetchPurchaseAndReturnList } from "@/pages/admin/trade/purchases/hooks/usePurchaseQueries";
 import { useTradeProducts } from "@/hooks/useTradeProducts";
+import TradeInvoiceReturnSelector from "@/components/trade/TradeInvoiceReturnSelector";
 
 export interface TradeReturnLineItem {
   id: string | number;
@@ -70,6 +72,7 @@ const cleanKey = (val: unknown): string =>
   String(val || "").replace(/[^a-zA-Z0-9]/g, "").toUpperCase();
 
 export const TradeReturnForm: React.FC<TradeReturnFormProps> = ({ mode }) => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
   const queryClient = useQueryClient();
@@ -101,7 +104,7 @@ export const TradeReturnForm: React.FC<TradeReturnFormProps> = ({ mode }) => {
   // Return Header Fields
   const [returnDate, setReturnDate] = useState(moment().format("YYYY-MM-DD"));
   const status = "Return";
-  const [returnType, setReturnType] = useState<"FULL" | "PARTIAL">("FULL");
+  const [returnType, setReturnType] = useState<"PARTIAL" | "FULL">("PARTIAL");
   const [note, setNote] = useState("");
 
   // Customer / Supplier Info
@@ -371,7 +374,7 @@ export const TradeReturnForm: React.FC<TradeReturnFormProps> = ({ mode }) => {
       }
 
       setSelectedOrder(order);
-      setReturnType("FULL");
+      setReturnType("PARTIAL");
 
       const inv = isSale
         ? String(order.salesInvoiceNo || order.invoiceNo || order.orderNo || "").trim()
@@ -629,6 +632,19 @@ export const TradeReturnForm: React.FC<TradeReturnFormProps> = ({ mode }) => {
     },
     [getReturnedQuantitiesForOrder, isSale, reasonsList, apiOrdersAndReturnData, isOrderAlreadyReturned, productLookup, getOrderDetails, queryClient]
   );
+
+  const handleClearSelectedOrder = useCallback(() => {
+    setSelectedOrder(null);
+    setLines([]);
+    setInvoiceNo("");
+    setRefOrderOrChallan("");
+    setPartyId(undefined);
+    setPartyName("");
+    setPartyPhone("");
+    setPartyAddress("");
+    lastLoadedOrderKeyRef.current = "";
+    lastEnrichedOrderKeyRef.current = "";
+  }, []);
 
   // Check router location state on mount or route transition
   useEffect(() => {
@@ -1229,7 +1245,7 @@ export const TradeReturnForm: React.FC<TradeReturnFormProps> = ({ mode }) => {
         </div>
       </div>
 
-      {/* Selected Order Summary Card & Return Mode in One Line */}
+      {/* Selected Order Summary Card & Return Mode in One Line, or Invoice Return Search */}
       {selectedOrder ? (
         <div className="bg-[var(--ui-surface)] px-3.5 py-2.5 rounded-lg border border-[var(--ui-border)] shadow-xs flex flex-wrap items-center justify-between gap-3 text-xs">
           <div className="flex flex-wrap items-center gap-x-5 sm:gap-x-7 gap-y-1.5">
@@ -1259,52 +1275,57 @@ export const TradeReturnForm: React.FC<TradeReturnFormProps> = ({ mode }) => {
             </div>
           </div>
 
-          {/* Return Type (Full / Partial) */}
+          {/* Right actions: Return Type (Full / Partial) and Change Invoice Selector */}
           <div className="flex items-center gap-2 whitespace-nowrap">
-            <span className="text-[11px] font-semibold text-[var(--ui-text-muted)]">Return Type:</span>
-            <div className="inline-flex p-0.5 bg-[var(--ui-surface-sunken)] rounded-md border border-[var(--ui-border)]">
-              <button
-                type="button"
-                onClick={() => handleSetReturnMode("FULL")}
-                className={`px-3 py-1 text-xs font-semibold rounded transition-all cursor-pointer ${
-                  returnType === "FULL"
-                    ? "bg-[var(--primary-color)] text-white shadow-xs"
-                    : "text-[var(--ui-text-muted)] hover:text-[var(--ui-text)]"
-                }`}
-              >
-                Full
-              </button>
-              <button
-                type="button"
-                onClick={() => handleSetReturnMode("PARTIAL")}
-                className={`px-3 py-1 text-xs font-semibold rounded transition-all cursor-pointer ${
-                  returnType === "PARTIAL"
-                    ? "bg-[var(--primary-color)] text-white shadow-xs"
-                    : "text-[var(--ui-text-muted)] hover:text-[var(--ui-text)]"
-                }`}
-              >
-                Partial
-              </button>
+            <div className="flex items-center gap-1.5">
+              <span className="text-[11px] font-semibold text-[var(--ui-text-muted)]">Return Type:</span>
+              <div className="inline-flex p-0.5 bg-[var(--ui-surface-sunken)] rounded-md border border-[var(--ui-border)]">
+                <button
+                  type="button"
+                  onClick={() => handleSetReturnMode("PARTIAL")}
+                  className={`px-3 py-1 text-xs font-semibold rounded transition-all cursor-pointer ${
+                    returnType === "PARTIAL"
+                      ? "bg-[var(--primary-color)] text-white shadow-xs"
+                      : "text-[var(--ui-text-muted)] hover:text-[var(--ui-text)]"
+                  }`}
+                >
+                  Partial
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleSetReturnMode("FULL")}
+                  className={`px-3 py-1 text-xs font-semibold rounded transition-all cursor-pointer ${
+                    returnType === "FULL"
+                      ? "bg-[var(--primary-color)] text-white shadow-xs"
+                      : "text-[var(--ui-text-muted)] hover:text-[var(--ui-text)]"
+                  }`}
+                >
+                  Full
+                </button>
+              </div>
             </div>
+
+            <TradeInvoiceReturnSelector
+              mode={mode}
+              orders={apiOrdersAndReturnData}
+              isLoading={isLoadingOrders}
+              selectedOrder={selectedOrder}
+              onSelectOrder={loadOrder}
+              onClearOrder={handleClearSelectedOrder}
+              isOrderAlreadyReturned={isOrderAlreadyReturned}
+            />
           </div>
         </div>
       ) : (
-        <div className="bg-[var(--ui-surface)] p-4 rounded-lg border border-[var(--ui-border)] shadow-xs flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
-          <div>
-            <p className="font-semibold text-[var(--ui-text)]">
-              No {isSale ? "sales" : "purchase"} invoice selected
-            </p>
-            <p className="text-[var(--ui-text-muted)] text-[11px] mt-0.5">
-              Please go back to the {isSale ? "Sales" : "Purchase"} list and click &quot;Return&quot; on an invoice to start.
-            </p>
-          </div>
-          <Button
-            label={`Back to ${isSale ? "Sales" : "Purchases"}`}
-            variant="outline"
-            size="sm"
-            onClick={() => navigate(isSale ? "/admin/sales" : "/admin/purchases")}
-          />
-        </div>
+        <TradeInvoiceReturnSelector
+          mode={mode}
+          orders={apiOrdersAndReturnData}
+          isLoading={isLoadingOrders}
+          selectedOrder={null}
+          onSelectOrder={loadOrder}
+          onClearOrder={handleClearSelectedOrder}
+          isOrderAlreadyReturned={isOrderAlreadyReturned}
+        />
       )}
 
       {/* Main Form Content */}
@@ -1452,9 +1473,9 @@ export const TradeReturnForm: React.FC<TradeReturnFormProps> = ({ mode }) => {
                             <span>Loading items...</span>
                           </div>
                         ) : selectedOrder ? (
-                          "No line items available in this invoice."
+                          t("No line items available in this invoice.")
                         ) : (
-                          `Please select an invoice from the ${isSale ? "Sales" : "Purchase"} list to view items.`
+                          t("Please search and select an invoice above to view and return items.")
                         )}
                       </td>
                     </tr>

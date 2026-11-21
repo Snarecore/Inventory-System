@@ -1,5 +1,6 @@
 import React from "react";
 import { FaUserCircle } from "react-icons/fa";
+import { useTranslation } from "react-i18next";
 import { formatMoney } from "@/utils/formatters";
 
 export interface TradeSettlementSummaryProps {
@@ -37,8 +38,9 @@ export const TradeSettlementSummary: React.FC<TradeSettlementSummaryProps> = ({
   showPartyInfo = true,
   className = "",
 }) => {
+  const { t } = useTranslation();
   const effectiveName = isWalkIn
-    ? walkInName.trim() || "Walk-in Customer"
+    ? walkInName.trim() || t("Walk-in Customer")
     : partyName || "—";
 
   const effectivePhone = isWalkIn
@@ -62,13 +64,13 @@ export const TradeSettlementSummary: React.FC<TradeSettlementSummaryProps> = ({
             )}
             {isWalkIn && (
               <span className="shrink-0 rounded-[var(--ui-radius-sm)] bg-[var(--ui-success-border)] px-1 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-[var(--ui-success-dark)]">
-                Counter
+                {t("Counter")}
               </span>
             )}
           </div>
           {!isWalkIn && previousDue !== undefined && previousDue !== null && previousDue > 0 && (
             <span className="shrink-0 text-[10px] font-semibold tabular-nums text-[var(--ui-danger-dark)]">
-              Previous due {currencySymbol} {formatMoney(previousDue)}
+              {t("Previous due")} {currencySymbol} {formatMoney(previousDue)}
             </span>
           )}
         </div>
@@ -78,7 +80,7 @@ export const TradeSettlementSummary: React.FC<TradeSettlementSummaryProps> = ({
         {/* Total Paid / Paid Amount Card */}
         <div className="bg-[var(--ui-success-light)]/90 px-2.5 py-1.5 rounded-[var(--ui-radius-sm)] border border-[var(--ui-success-border)]/90 flex flex-col justify-center shadow-[var(--ui-shadow-control)] min-h-[46px]">
           <span className="text-[10.5px] font-semibold text-[var(--ui-success-dark)]/85 tracking-wide truncate">
-            {paidLabel}
+            {t(paidLabel)}
           </span>
           <span className="text-xs sm:text-[13px] font-extrabold tabular-nums text-[var(--ui-success-dark)] truncate leading-tight mt-0.5 whitespace-nowrap">
             {currencySymbol} {formatMoney(totalPaid)}
@@ -89,7 +91,7 @@ export const TradeSettlementSummary: React.FC<TradeSettlementSummaryProps> = ({
         {changeReturnAmount > 0 ? (
           <div className="bg-[var(--primary-color-light)]/90 px-2.5 py-1.5 rounded-[var(--ui-radius-sm)] border border-[var(--primary-color-muted)]/90 flex flex-col justify-center shadow-[var(--ui-shadow-control)] min-h-[46px]">
             <span className="text-[10.5px] font-semibold text-[var(--primary-color-dark)]/85 tracking-wide truncate">
-              Change / ফেরত
+              {t("Change / ফেরত")}
             </span>
             <span className="text-xs sm:text-[13px] font-extrabold tabular-nums text-[var(--primary-color-dark)] truncate leading-tight mt-0.5 whitespace-nowrap">
               {currencySymbol} {formatMoney(changeReturnAmount)}
@@ -108,7 +110,7 @@ export const TradeSettlementSummary: React.FC<TradeSettlementSummaryProps> = ({
                 dueAmount > 0 ? "text-[var(--ui-danger-dark)]/85" : "text-[var(--ui-text-muted)]"
               }`}
             >
-              {dueLabel}
+              {t(dueLabel)}
             </span>
             <span
               className={`text-xs sm:text-[13px] font-extrabold tabular-nums truncate leading-tight mt-0.5 whitespace-nowrap ${

@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { FaMoneyBillWave, FaCreditCard, FaMobileAlt, FaWallet } from "react-icons/fa";
+import { useTranslation } from "react-i18next";
 import { formatMoney } from "@/utils/formatters";
 import { showErrorToast } from "@/utils/toast-utils";
 import type { UseTradePaymentReturn, TradePaymentAccount } from "@/hooks/useTradePayment";
@@ -29,6 +30,7 @@ export const TradePaymentSection: React.FC<TradePaymentSectionProps> = ({
   showCashTenderedToggle = true,
   disabled = false,
 }) => {
+  const { t } = useTranslation();
   const [showCashGivenCalc, setShowCashGivenCalc] = useState<boolean>(false);
 
   const {
@@ -58,7 +60,7 @@ export const TradePaymentSection: React.FC<TradePaymentSectionProps> = ({
       <div className="flex items-center justify-between flex-wrap gap-1">
         <span className="flex items-center gap-1.5 text-[13px] font-semibold text-[var(--ui-text)]">
           {headerIcon || <FaWallet size={11} className="text-[var(--ui-text)]" />}
-          {title}
+          {t(title)}
         </span>
 
         {showQuickActions && (
@@ -69,7 +71,7 @@ export const TradePaymentSection: React.FC<TradePaymentSectionProps> = ({
               onClick={handlePayFullCash}
               className="px-1.5 py-0.5 text-[10px] font-bold rounded-[var(--ui-radius-sm)] bg-[var(--ui-success-light)] text-[var(--ui-success-dark)] border border-[var(--ui-success-border)] hover:bg-[var(--ui-success-border)] shadow-[var(--ui-shadow-control)] transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
             >
-              Cash
+              {t("Cash")}
             </button>
             <button
               type="button"
@@ -77,7 +79,7 @@ export const TradePaymentSection: React.FC<TradePaymentSectionProps> = ({
               onClick={handlePayFullBank}
               className="px-1.5 py-0.5 text-[10px] font-bold rounded-[var(--ui-radius-sm)] bg-[var(--primary-color-light)] text-[var(--primary-color-dark)] border border-[var(--primary-color-muted)] hover:bg-[var(--primary-color-muted)] shadow-[var(--ui-shadow-control)] transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
             >
-              {bankLabel === "CARD" ? "Card" : "Bank"}
+              {t(bankLabel === "CARD" ? "Card" : "Bank")}
             </button>
             <button
               type="button"
@@ -85,7 +87,7 @@ export const TradePaymentSection: React.FC<TradePaymentSectionProps> = ({
               onClick={handlePayFullMfs}
               className="px-1.5 py-0.5 text-[10px] font-bold rounded-[var(--ui-radius-sm)] bg-[var(--ui-info-light)] text-[var(--ui-info-dark)] border border-[var(--ui-info-border)] hover:bg-[var(--ui-info-border)] shadow-[var(--ui-shadow-control)] transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
             >
-              MFS
+              {t("MFS")}
             </button>
             <button
               type="button"
@@ -93,7 +95,7 @@ export const TradePaymentSection: React.FC<TradePaymentSectionProps> = ({
               onClick={handlePayFullCredit}
               className="px-1.5 py-0.5 text-[10px] font-bold rounded-[var(--ui-radius-sm)] bg-[var(--ui-danger-light)] text-[var(--ui-danger-dark)] border border-[var(--ui-danger-border)] hover:bg-[var(--ui-danger-border)] shadow-[var(--ui-shadow-control)] transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
             >
-              Credit
+              {t("Credit")}
             </button>
           </div>
         )}
@@ -113,7 +115,7 @@ export const TradePaymentSection: React.FC<TradePaymentSectionProps> = ({
             <div className="w-6 h-6 rounded-[var(--ui-radius-sm)] bg-[var(--ui-success-border)] text-[var(--ui-success-dark)] flex items-center justify-center shrink-0">
               <FaMoneyBillWave size={11} />
             </div>
-            <span className="font-bold text-[11px] text-[var(--ui-text)] tracking-wider">CASH</span>
+            <span className="font-bold text-[11px] text-[var(--ui-text)] tracking-wider">{t("CASH")}</span>
           </div>
 
           <div
@@ -192,7 +194,7 @@ export const TradePaymentSection: React.FC<TradePaymentSectionProps> = ({
               <FaCreditCard size={11} />
             </div>
             <span className="font-bold text-[11px] text-[var(--ui-text)] tracking-wider shrink-0">
-              {bankLabel}
+              {t(bankLabel)}
             </span>
             <select
               disabled={disabled}
@@ -201,7 +203,7 @@ export const TradePaymentSection: React.FC<TradePaymentSectionProps> = ({
               className="ui-control ui-select ui-control-xs w-full max-w-[130px] font-medium truncate sm:max-w-[215px]"
             >
               <option value="" className="text-[var(--ui-text)]">
-                {registeredBankAccounts.length ? `Select ${bankLabel}...` : "No bank registered"}
+                {registeredBankAccounts.length ? t(`Select ${bankLabel}...`) : t("No bank registered")}
               </option>
               {registeredBankAccounts.map((b) => (
                 <option
@@ -266,7 +268,7 @@ export const TradePaymentSection: React.FC<TradePaymentSectionProps> = ({
               className="ui-control ui-select ui-control-xs w-full max-w-[130px] font-medium truncate sm:max-w-[215px]"
             >
               <option value="" className="text-[var(--ui-text)]">
-                {registeredMfsAccounts.length ? "Select MFS..." : "No MFS registered"}
+                {registeredMfsAccounts.length ? t("Select MFS...") : t("No MFS registered")}
               </option>
               {registeredMfsAccounts.map((m) => {
                 const method = m.method || (m as any).provider || (m as any).mfsMethod || "";

@@ -70,3 +70,4 @@ export const employeeListQueryKey = "get-employees";
 export const employeeBranchPermissionsQueryKey = "employee-branch-permissions";
 export const organizationPermissionsQueryKey = "organization-permissions";
 export const branchPermissionsQueryKey = "branch-permissions";
+export const invoiceProfileSetupQueryKey = "invoice-profile-setup";

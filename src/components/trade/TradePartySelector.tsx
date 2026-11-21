@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect, useMemo } from "react";
 import { FaSearch, FaUserPlus, FaWalking, FaTimes } from "react-icons/fa";
 import { FiChevronDown } from "react-icons/fi";
+import { useTranslation } from "react-i18next";
 import TextInput from "@/components/form/TextInput";
 import type { PartyItem } from "@/types";
 import { formatMoney } from "@/utils/formatters";
@@ -47,13 +48,15 @@ export const TradePartySelector: React.FC<TradePartySelectorProps> = ({
   previousDue,
   isLoadingDue = false,
 }) => {
+  const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = useState("");
   const debouncedSearch = useDebounce(searchQuery, 200);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const displayLabel = label || (partyType === "customer" ? "Customer" : "Supplier");
+  const rawLabel = label || (partyType === "customer" ? "Customer" : "Supplier");
+  const displayLabel = t(rawLabel);
   const isWalkIn = Boolean(
     allowWalkIn &&
       selectedParty &&
@@ -136,7 +139,7 @@ export const TradePartySelector: React.FC<TradePartySelectorProps> = ({
               title="Quick 1-click counter / walk-in customer"
             >
               <FaWalking size={10} />
-              <span>Walk-in</span>
+              <span>{t("Walk-in")}</span>
             </button>
           )}
           {onOpenNewPartyModal && (
@@ -145,7 +148,7 @@ export const TradePartySelector: React.FC<TradePartySelectorProps> = ({
               onClick={onOpenNewPartyModal}
               className="text-[11px] font-bold text-[var(--primary-color)] flex items-center gap-1 cursor-pointer"
             >
-              <FaUserPlus size={10} /> + New
+              <FaUserPlus size={10} /> {t("+ New")}
             </button>
           )}
         </div>
@@ -170,7 +173,7 @@ export const TradePartySelector: React.FC<TradePartySelectorProps> = ({
               ref={inputRef}
               type="text"
               data-form-nav="true"
-              placeholder={`Select or search ${displayLabel.toLowerCase()}...`}
+              placeholder={t(partyType === "customer" ? "Select or search customer..." : "Select or search supplier...")}
               value={searchQuery}
               onChange={(e) => {
                 setSearchQuery(e.target.value);
@@ -242,7 +245,7 @@ export const TradePartySelector: React.FC<TradePartySelectorProps> = ({
             {isWalkIn ? (
               <span className="font-bold text-[var(--ui-success-dark)] flex items-center gap-1 truncate">
                 <FaWalking size={12} className="text-[var(--ui-success-dark)] shrink-0" />
-                Walk-in Customer {walkInName ? `(${walkInName})` : "(Counter Sale)"}
+                {t("Walk-in Customer")} {walkInName ? `(${walkInName})` : `(${t("Counter Sale")})`}
               </span>
             ) : (
               <>

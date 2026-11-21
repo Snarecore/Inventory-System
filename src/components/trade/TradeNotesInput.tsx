@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { FiChevronDown } from "react-icons/fi";
+import { useTranslation } from "react-i18next";
 
 export interface TradeNotesInputProps {
   value: string;
@@ -41,6 +42,7 @@ export const TradeNotesInput: React.FC<TradeNotesInputProps> = ({
   className = "",
   rows = 3,
 }) => {
+  const { t } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -77,14 +79,14 @@ export const TradeNotesInput: React.FC<TradeNotesInputProps> = ({
     <div className={`relative flex flex-col ${className}`} ref={containerRef}>
       <div className="h-5 flex items-center justify-between gap-1 mb-1">
         <span className="text-[11px] font-semibold text-[var(--ui-text)] truncate">
-          {label}
+          {t(label)}
         </span>
         <button
           type="button"
           onClick={() => setIsOpen(!isOpen)}
           className="text-[11px] font-semibold text-[var(--ui-text)] bg-[var(--ui-surface-sunken)] hover:bg-[var(--ui-border)] px-1.5 py-0.5 rounded-[var(--ui-radius-sm)] border border-[var(--ui-border-strong)] transition-all flex items-center gap-1 cursor-pointer shadow-[var(--ui-shadow-control)] h-5"
         >
-          <span>+ Presets</span>
+          <span>{t("+ Presets")}</span>
           <FiChevronDown
             size={11}
             className={`transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`}
