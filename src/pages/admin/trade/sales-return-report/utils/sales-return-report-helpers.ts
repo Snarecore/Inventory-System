@@ -1931,9 +1931,6 @@ export async function downloadCustomerDetailedReturnPdf(
         "_"
       )}_${moment().format("YYYY-MM-DD")}.pdf`,
       reportTitle: `Customer Returned Products Report - ${customer.customerName}`,
-      metaRightLabel: `Total Items: ${customer.itemsCount} | Total Refund: BDT ${formatMoney(
-        customer.totalRefund
-      )}`,
       personInfo: commonPersonInfo,
       headers,
       bodyRows,
@@ -2012,9 +2009,6 @@ export async function downloadCustomerDetailedReturnPdf(
       "_"
     )}_${moment().format("YYYY-MM-DD")}.pdf`,
     reportTitle: `Customer Return Vouchers Report - ${customer.customerName}`,
-    metaRightLabel: `Total Returns: ${customer.returnCount} | Total Refund: BDT ${formatMoney(
-      customer.totalRefund
-    )}`,
     personInfo: commonPersonInfo,
     headers,
     bodyRows,
