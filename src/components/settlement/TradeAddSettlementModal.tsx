@@ -205,9 +205,6 @@ export const TradeAddSettlementModal: React.FC<TradeAddSettlementModalProps> = (
           onToggleSelectAll={handleToggleSelectAll}
           isAllSelected={isAllSelected}
           allocations={allocations}
-          isManualMode={isManualMode}
-          onToggleManualMode={handleToggleManualMode}
-          tenderBreakdown={tenderBreakdown}
         />
 
         {/* Multi-tender Payment Entry */}

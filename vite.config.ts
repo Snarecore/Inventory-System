@@ -17,4 +17,28 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src'),
     },
   },
+  server: {
+    host: true,
+    port: 5173,
+    strictPort: false,
+  },
+  optimizeDeps: {
+    include: [
+      'react',
+      'react-dom',
+      'react-dom/client',
+      'react-router-dom',
+      '@tanstack/react-query',
+      'axios',
+      'moment',
+      'clsx',
+      'tailwind-merge',
+      'lucide-react',
+      'jspdf',
+      'jspdf-autotable',
+      'exceljs',
+      'chart.js',
+      'react-chartjs-2',
+    ],
+  },
 })

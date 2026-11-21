@@ -27,7 +27,7 @@ export async function fetchCashClosing(closingDate?: string): Promise<CashClosin
       },
     });
 
-    if (res?.data) {
+    if (res && "data" in res && res.data) {
       return res.data;
     }
 
@@ -62,7 +62,7 @@ async function fetchSingleMonthCashClosingReport(params?: {
       },
     });
 
-    if (res?.data) {
+    if (res && "data" in res && res.data) {
       const rawData = res.data;
       const rawHistory = Array.isArray(rawData.history) ? rawData.history : [];
 
@@ -271,15 +271,16 @@ export async function insertCashClosing(
       },
     });
 
+    const resData = res && "data" in res ? res.data : null;
     const isSuccess =
       res?.status === "Success" ||
       res?.status === "success" ||
-      Boolean(res?.data?.id);
+      Boolean(resData?.id);
 
     return {
       success: isSuccess,
       message: res?.msg || (isSuccess ? "Cash closing saved successfully" : "Failed to save cash closing"),
-      data: res?.data || null,
+      data: resData || null,
     };
   } catch (error: any) {
     console.error("Error saving cash closing:", error);

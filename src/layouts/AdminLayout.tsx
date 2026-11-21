@@ -3,7 +3,8 @@ import Header from "@/components/admin/Header";
 import Footer from "@/components/admin/Footer";
 import { useState, useEffect } from "react";
 import { MdKeyboardDoubleArrowLeft, MdKeyboardDoubleArrowRight } from "react-icons/md";
-import { Outlet } from "react-router-dom";
+import { Outlet, useLocation } from "react-router-dom";
+import { ErrorBoundary } from "@/components/common/ErrorBoundary";
 import BranchSelectModal from "@/components/admin/BranchSelectModal";
 import {
 	isBranchChoicePending,
@@ -15,6 +16,7 @@ import {
 import { syncCurrentEmployeePermissions } from "@/services/employee-service";
 
 export default function AdminLayout() {
+	const location = useLocation();
 	const [sidebarClick, setSidebarClick] = useState(false);
 	const [isBranchModalOpen, setIsBranchModalOpen] = useState(() => isBranchChoicePending());
 
@@ -37,6 +39,11 @@ export default function AdminLayout() {
 	};
 
 	const handleSidebarClick = () => setSidebarClick((v) => !v);
+
+	const isFinancialBook =
+		location.pathname.includes("cash-book") ||
+		location.pathname.includes("bank-book") ||
+		location.pathname.includes("mfs-book");
 
 	return (
 		<div className="relative flex h-screen overflow-hidden">
@@ -66,11 +73,17 @@ export default function AdminLayout() {
 			<div className="flex flex-col flex-1 min-w-0">
 				<Header sidebarClick={sidebarClick} />
 
-				<main className="flex-1 overflow-auto bg-[var(--ui-surface-sunken,#F6F6F6)] mt-12 flex flex-col justify-between">
-					<div className="flex-1">
-						<Outlet />
+				<main
+					className={`flex-1 ${
+						isFinancialBook ? "overflow-hidden" : "overflow-auto"
+					} bg-[var(--ui-surface-sunken,#F6F6F6)] mt-12 flex flex-col justify-between`}
+				>
+					<div className={`flex-1 ${isFinancialBook ? "min-h-0 flex flex-col overflow-hidden" : ""}`}>
+						<ErrorBoundary resetKeys={[location.pathname]}>
+							<Outlet />
+						</ErrorBoundary>
 					</div>
-					<Footer />
+					{!isFinancialBook && <Footer />}
 				</main>
 			</div>
 		</div>

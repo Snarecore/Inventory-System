@@ -8,10 +8,9 @@ import { useFinancialAccounts } from "@/hooks/useFinancialAccounts";
 import { usePaymentMutation } from "@/hooks/usePaymentMutation";
 import { sortInvoicesFIFO } from "@/services/collection-service";
 import DuePurchaseInvoiceAllocationTable from "./DuePurchaseInvoiceAllocationTable";
-import type { PaymentReceiptData } from "./PaymentReceiptModal";
+import type { SupplierDueItem, PaymentReceiptData } from "@/types/payment.types";
 import { formatMoney } from "@/utils/formatters";
 import { showErrorToast, showSuccessToast } from "@/utils/toast-utils";
-import type { SupplierDueItem } from "@/types/payment.types";
 import { usePermission } from "@/hooks/usePermission";
 import { computeFIFOAllocations } from "@/components/settlement/settlement-utils";
 import TradePartyInfoStrip from "@/components/settlement/TradePartyInfoStrip";
@@ -87,7 +86,7 @@ export const AddPaymentModal: React.FC<AddPaymentModalProps> = ({
   useEffect(() => {
     if (!selectedMfsId && registeredMfsAccounts.length > 0) {
       setSelectedMfsId(
-        String(registeredMfsAccounts[0].id || registeredMfsAccounts[0].mfsId || "")
+        String(registeredMfsAccounts[0].id || "")
       );
     }
   }, [registeredMfsAccounts, selectedMfsId]);
@@ -100,7 +99,7 @@ export const AddPaymentModal: React.FC<AddPaymentModalProps> = ({
 
   const selectedMfsObj =
     registeredMfsAccounts.find(
-      (m) => String(m.id || m.mfsId) === String(selectedMfsId)
+      (m) => String(m.id) === String(selectedMfsId)
     ) || null;
 
   // Derived Dues & Selection Calculations (Pure, no useMemo overhead)

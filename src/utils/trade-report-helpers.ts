@@ -8,11 +8,13 @@ import {
   formatReportDate,
   fetchLogoBase64,
 } from "@/utils/excel-export";
+export { formatReportDate };
 import { useBusinessProfileQuery } from "@/hooks/useBusinessProfile";
 import { getFileViewUrl } from "@/services/file-upload-service";
 import { getUserInfo } from "@/utils/auth-storage";
 import { getPurchaseDateString } from "@/pages/admin/trade/purchases/hooks/usePurchaseTableFilter";
-import type { RowInput, Styles } from "jspdf-autotable";
+import { jsPDF } from "jspdf";
+import autoTable, { type RowInput, type Styles } from "jspdf-autotable";
 import {
   buildDynamicExcelPayload,
   buildDynamicPdfPayload,
@@ -63,6 +65,7 @@ export interface ProductTradeSummary {
   totalAmount: number;
   totalDiscount: number;
   invoicesCount: number;
+  unitPrice?: number;
 }
 
 export interface PartyTradeSummary {
@@ -178,7 +181,7 @@ export function useReportCompanyMeta(
   return {
     businessName:
       businessProfile?.businessName ||
-      userInfo?.orgName ||
+      userInfo?.businessName ||
       "Cash Boi Trade Ltd",
     businessAddress: businessProfile?.address || "",
     businessLogoUrl,
@@ -448,7 +451,10 @@ export function aggregateTradeProducts(
           totalAmount: 0,
           totalDiscount: 0,
           invoicesCount: 0,
+          unitPrice: price > 0 ? price : undefined,
         };
+      } else if (!map[key].unitPrice && price > 0) {
+        map[key].unitPrice = price;
       }
 
       map[key].totalQuantity += qty;
@@ -597,7 +603,8 @@ export interface CorporatePdfPersonMeta {
 export interface CorporatePdfConfig {
   fileName: string;
   reportTitle: string;
-  metaRightLabel: string;
+  metaRightLabel?: string;
+  metaLeftLabel?: string;
   headers: string[];
   bodyRows: RowInput[];
   columnStyles: { [key: string]: Partial<Styles> };
@@ -641,7 +648,7 @@ export function renderBengaliLinesToCanvas(
     halign?: "left" | "center" | "right";
     maxAllowedWidthMm?: number;
   }
-): { dataUrl: string; widthMm: number; heightMm: number } | null {
+): { dataUrl: string; widthMm: number; heightMm: number; padXMm?: number; padYMm?: number } | null {
   if (typeof document === "undefined" || !lines || lines.length === 0) {
     return null;
   }
@@ -801,11 +808,6 @@ export async function generateAndDownloadCorporatePdf(
   config: CorporatePdfConfig
 ): Promise<void> {
   await ensureBengaliFontLoaded();
-  const [{ jsPDF }, autoTableMod] = await Promise.all([
-    import("jspdf"),
-    import("jspdf-autotable"),
-  ]);
-  const autoTable = autoTableMod.default || autoTableMod.autoTable;
 
   const orientation =
     config.orientation ||
@@ -877,9 +879,12 @@ export async function generateAndDownloadCorporatePdf(
   const metaFilterY = config.personInfo ? 26 : 27;
 
   // Meta Filter Row
+  const defaultDateRangeStr = `From Date: ${fromStr}   To Date: ${toStr}`;
+  const leftLabel = config.metaLeftLabel || defaultDateRangeStr;
+
   drawPdfTextSmart(
     doc,
-    `From Date: ${fromStr}   To Date: ${toStr}`,
+    leftLabel,
     marginX,
     metaFilterY,
     {
@@ -887,17 +892,21 @@ export async function generateAndDownloadCorporatePdf(
       fontStyle: "bold",
       textColor: [51, 65, 85],
       align: "left",
-      maxAllowedWidthMm: (pageWidth - 2 * marginX) / 2,
+      maxAllowedWidthMm: config.metaRightLabel
+        ? (pageWidth - 2 * marginX) / 2
+        : pageWidth - 2 * marginX,
     }
   );
 
-  drawPdfTextSmart(doc, config.metaRightLabel, rightEdge, metaFilterY, {
-    fontSize: 8.5,
-    fontStyle: "bold",
-    textColor: [51, 65, 85],
-    align: "right",
-    maxAllowedWidthMm: (pageWidth - 2 * marginX) / 2,
-  });
+  if (config.metaRightLabel) {
+    drawPdfTextSmart(doc, config.metaRightLabel, rightEdge, metaFilterY, {
+      fontSize: 8.5,
+      fontStyle: "bold",
+      textColor: [51, 65, 85],
+      align: "right",
+      maxAllowedWidthMm: (pageWidth - 2 * marginX) / 2,
+    });
+  }
 
   if (config.personInfo) {
     const cardY = 28.5;
@@ -1367,7 +1376,6 @@ export async function downloadTradeInvoicesPdf(
   await generateAndDownloadCorporatePdf({
     fileName: `${config.filePrefix}_${moment().format("YYYY-MM-DD")}.pdf`,
     reportTitle: config.reportTitle,
-    metaRightLabel: `Total Invoices: ${records.length}`,
     headers,
     bodyRows,
     columnStyles,
@@ -1449,14 +1457,19 @@ function buildProductTradeColumns(
     },
     {
       key: "avgRate",
-      excelHeader: "Avg Rate (BDT)",
+      excelHeader: "Unit Price (BDT)",
+      pdfHeader: "Unit Price (BDT)",
       pdfStyle: { halign: "right" },
       excelValue: (p) =>
-        p.totalQuantity > 0
+        p.unitPrice ??
+        (p.totalQuantity > 0
           ? Number((p.totalAmount / p.totalQuantity).toFixed(2))
-          : 0,
+          : 0),
       pdfCell: (p) =>
-        formatMoney(p.totalQuantity > 0 ? p.totalAmount / p.totalQuantity : 0),
+        formatMoney(
+          p.unitPrice ??
+            (p.totalQuantity > 0 ? p.totalAmount / p.totalQuantity : 0)
+        ),
     },
     {
       key: "discount",
@@ -1567,7 +1580,6 @@ export async function downloadProductTradePdf(
   await generateAndDownloadCorporatePdf({
     fileName: `${labels.filePrefix}_${moment().format("YYYY-MM-DD")}.pdf`,
     reportTitle: labels.reportTitle,
-    metaRightLabel: `Total Products: ${products.length}`,
     headers,
     bodyRows,
     columnStyles,
@@ -1668,7 +1680,8 @@ function buildPartyTradeColumns(
     },
     {
       key: "totalDue",
-      excelHeader: "Outstanding Due (BDT)",
+      excelHeader: "Outstanding (BDT)",
+      pdfHeader: "Outstanding (BDT)",
       pdfStyle: { halign: "right" },
       excelValue: (p) => p.totalDue,
       excelTotalValue: (t) => Number(t.totalDue.toFixed(2)),
@@ -1703,11 +1716,11 @@ function buildPartyTradeColumns(
       key: "status",
       excelHeader: "Status",
       pdfStyle: { halign: "center" },
-      excelValue: (p) => (p.totalDue > 0 ? "Has Due" : "Settled"),
+      excelValue: (p) => (p.totalDue > 0 ? "Outstanding" : "Paid"),
       pdfCell: (p) => {
         const hasDue = p.totalDue > 0;
         return {
-          content: hasDue ? "Has Due" : "Settled",
+          content: hasDue ? "Outstanding" : "Paid",
           styles: {
             fontStyle: "bold",
             textColor: hasDue ? REPORT_RGB.rose : REPORT_RGB.emerald,
@@ -1784,7 +1797,6 @@ export async function downloadPartyTradePdf(
   await generateAndDownloadCorporatePdf({
     fileName: `${labels.filePrefix}_${moment().format("YYYY-MM-DD")}.pdf`,
     reportTitle: labels.reportTitle,
-    metaRightLabel: `${labels.totalLabel}: ${parties.length}`,
     headers,
     bodyRows,
     columnStyles,

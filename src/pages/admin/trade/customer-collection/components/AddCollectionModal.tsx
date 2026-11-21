@@ -87,7 +87,7 @@ export const AddCollectionModal: React.FC<AddCollectionModalProps> = ({
   useEffect(() => {
     if (!selectedMfsId && registeredMfsAccounts.length > 0) {
       setSelectedMfsId(
-        String(registeredMfsAccounts[0].id || registeredMfsAccounts[0].mfsId || "")
+        String(registeredMfsAccounts[0].id || "")
       );
     }
   }, [registeredMfsAccounts, selectedMfsId]);
@@ -100,7 +100,7 @@ export const AddCollectionModal: React.FC<AddCollectionModalProps> = ({
 
   const selectedMfsObj =
     registeredMfsAccounts.find(
-      (m) => String(m.id || m.mfsId) === String(selectedMfsId)
+      (m) => String(m.id) === String(selectedMfsId)
     ) || null;
 
   // Derived Dues & Selection Calculations (Pure, no useMemo overhead)

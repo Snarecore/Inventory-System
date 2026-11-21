@@ -6,7 +6,7 @@ import Button from "@/components/button/Button";
 import type { LedgerPerson, SaveLedgerPersonPayload, LedgerPersonType } from "@/types";
 import { useSaveLedgerPersonMutation } from "@/hooks/useKhatabook";
 import { sendSmsMessage } from "@/services/sms-service";
-import { getStoredUser } from "@/utils/auth-storage";
+import { getStoredUser, getUserInfo } from "@/utils/auth-storage";
 import { showErrorToast } from "@/utils/toast-utils";
 import {
   FaUser,
@@ -90,7 +90,8 @@ export const PersonFormModal: React.FC<PersonFormModalProps> = ({
       // Send SMS if toggle was on and it's a new person
       if (sendSms && !isEdit && phone.trim()) {
         const user = getStoredUser();
-        const businessName = user?.businessName || user?.name || "Cash Boi";
+        const userInfo = getUserInfo();
+        const businessName = userInfo?.businessName || user?.name || "Cash Boi";
         let smsMsg = "";
         const cleanAmount = Number(openingAmount) || 0;
         if (openingType === "PONA" && cleanAmount > 0) {

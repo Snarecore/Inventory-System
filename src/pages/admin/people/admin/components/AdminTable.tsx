@@ -160,6 +160,7 @@ const AdminTable = ({
                                             : "Approval"
                                 }
                                 options={options}
+                                selectedOption={selectedFilters?.[key] || null}
                                 isOpen={openDropdown === key}
                                 onToggle={() => setOpenDropdown(openDropdown === key ? null : key)}
                                 onSelect={(selected) => {

@@ -11,7 +11,7 @@ import {
 } from "react-icons/fi";
 import { FaCoins, FaSpinner } from "react-icons/fa";
 import { useSendSms } from "@/hooks/useSms";
-import { getStoredUser } from "@/utils/auth-storage";
+import { getUserInfo } from "@/utils/auth-storage";
 import { showErrorToast } from "@/utils/toast-utils";
 import type { PartyItem } from "@/types";
 
@@ -82,8 +82,7 @@ export const PartyMessageModal: React.FC<PartyMessageModalProps> = ({
   const sendSmsMutation = useSendSms();
 
   const businessName = useMemo(() => {
-    const user = getStoredUser();
-    return user?.orgName || user?.businessName || "Cash Boi";
+    return getUserInfo()?.businessName || "Cash Boi";
   }, []);
 
   const partyName = party?.name || "Customer";

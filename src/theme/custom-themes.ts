@@ -11,7 +11,9 @@ export const CUSTOM_PREFIX = 'custom:'
 
 export const isCustomThemeId = (id: string): boolean => id.startsWith(CUSTOM_PREFIX)
 
-export const PALETTE_KEYS: (keyof ThemePalette)[] = [
+export type ThemePaletteColorKey = Exclude<keyof ThemePalette, 'isDark'>
+
+export const PALETTE_KEYS: ThemePaletteColorKey[] = [
   'accent',
   'accentHover',
   'accentLight',
@@ -29,7 +31,7 @@ export const PALETTE_KEYS: (keyof ThemePalette)[] = [
 ]
 
 /** Human labels for the palette editor. */
-export const PALETTE_LABELS: Record<keyof ThemePalette, string> = {
+export const PALETTE_LABELS: Record<ThemePaletteColorKey, string> = {
   accent: 'Accent',
   accentHover: 'Accent (hover)',
   accentLight: 'Accent (light fill)',
@@ -71,8 +73,9 @@ export const sanitizeTheme = (value: unknown): ThemePreset | null => {
   const palette = {} as ThemePalette
   for (const key of PALETTE_KEYS) {
     const raw = rawPalette[key]
+    const fallback = DEFAULTS.palette[key] ?? ''
     palette[key] =
-      typeof raw === 'string' && isValidHex(raw) ? normalizeHex(raw) : DEFAULTS.palette[key]
+      typeof raw === 'string' && isValidHex(raw) ? normalizeHex(raw) : fallback
   }
 
   const rawDefaults = (v.defaults ?? {}) as Partial<ThemePreset['defaults']>

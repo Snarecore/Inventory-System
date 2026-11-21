@@ -5,7 +5,7 @@ import {
 } from "@/hooks/useFormKeyboardNavigation";
 
 export interface FormKeyboardNavProps
-  extends React.HTMLAttributes<HTMLElement>,
+  extends Omit<React.HTMLAttributes<HTMLElement>, "onSubmit">,
     FormKeyboardNavOptions {
   /**
    * The HTML tag to render as the container (e.g. 'form', 'div', 'section').

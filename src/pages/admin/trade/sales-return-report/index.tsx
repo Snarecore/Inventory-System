@@ -140,7 +140,10 @@ const SalesReturnReportPage: React.FC = () => {
         {activeTab === "customers" && (
           <CustomerReturnReportTable
             records={returnRecords}
+            allUnifiedRecords={unifiedRecords}
             isLoading={isLoading}
+            onView={handleView}
+            onPrint={handlePrint}
             {...datePickerProps}
           />
         )}

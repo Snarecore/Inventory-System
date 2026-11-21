@@ -246,7 +246,7 @@ export const MultiTenderFormSection: React.FC<MultiTenderFormSectionProps> = ({
                       const displayName = m.mfsName || (m.method ? `${m.method}${m.name ? ` (${m.name})` : ""}` : m.name || "MFS");
                       const phone = m.mfsPhone || m.phoneNumber || "";
                       return (
-                        <option key={String(m.id || m.mfsId)} value={String(m.id || m.mfsId)}>
+                        <option key={String(m.id)} value={String(m.id)}>
                           {displayName} {phone ? `- ${phone}` : ""}
                         </option>
                       );

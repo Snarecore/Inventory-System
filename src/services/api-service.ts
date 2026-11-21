@@ -1,7 +1,7 @@
 import { GetDataProps, PostDataProps, PatchDataProps, PutDataProps, DeleteDataProps, FormDataProps } from "../models/api-models";
 import { removeStoredUser, getStoredToken } from "../utils/auth-storage";
 
-const rawApiUrl = import.meta.env.VITE_API_BASE_URL;
+const rawApiUrl = (import.meta.env.VITE_API_BASE_URL || "https://itouch.stepserp.com/cash-boi-test/api") as string;
 const apiUrl = rawApiUrl.endsWith("/") ? rawApiUrl : `${rawApiUrl}/`;
 
 /**

@@ -450,8 +450,10 @@ export function extractNormalizedPurchaseReturns(
       mfsReceived: Number(item.mfsReceived ?? 0),
       dueAmount: Number(item.dueAmount ?? 0),
       bankName: item.bankName,
-      mfsName: item.mfsName,
-      returnDetails: details,
+      returnDetails: details.map((d) => ({
+        ...d,
+        buyPrice: d.unitPrice,
+      })),
       itemsCount: details.length,
     };
 
@@ -904,8 +906,8 @@ function buildProductReturnColumns(
     },
     {
       key: "avgRate",
-      excelHeader: "Avg Rate (BDT)",
-      pdfHeader: "Avg Rate",
+      excelHeader: "Unit Price (BDT)",
+      pdfHeader: "Unit Price (BDT)",
       pdfStyle: { halign: "right" },
       excelValue: (p) =>
         Number((p.totalQuantity > 0 ? p.totalAmount / p.totalQuantity : 0).toFixed(2)),

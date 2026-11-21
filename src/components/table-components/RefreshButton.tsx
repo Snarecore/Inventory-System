@@ -2,7 +2,7 @@ import { FaSync } from "react-icons/fa";
 import { useTranslation } from "react-i18next";
 
 interface RefreshButtonProps {
-	onClick: () => void | Promise<void>;
+	onClick: () => void | Promise<unknown>;
 	disabled?: boolean;
 	isLoading?: boolean;
 	isRefreshing?: boolean;

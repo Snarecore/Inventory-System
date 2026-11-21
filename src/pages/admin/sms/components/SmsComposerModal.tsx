@@ -15,7 +15,7 @@ import TextInput from "@/components/form/TextInput";
 import SelectInput from "@/components/form/SelectField";
 import { useSendSms } from "@/hooks/useSms";
 import { useTradeParties } from "@/hooks/useTradeParties";
-import { getStoredUser } from "@/utils/auth-storage";
+import { getUserInfo } from "@/utils/auth-storage";
 import { showErrorToast } from "@/utils/toast-utils";
 
 interface TemplateItem {
@@ -108,8 +108,7 @@ export const SmsComposerModal: React.FC<SmsComposerModalProps> = ({
   const { partyList: customerParties, isLoading: isCustomersLoading } = useTradeParties("CUSTOMER");
   const { partyList: supplierParties, isLoading: isSuppliersLoading } = useTradeParties("SUPPLIER");
 
-  const storedUser = getStoredUser();
-  const businessName = storedUser?.businessName ?? "Cash Boi";
+  const businessName = getUserInfo()?.businessName ?? "Cash Boi";
 
   const isCustomer = recipientMode === "CUSTOMER";
   const isSupplier = recipientMode === "SUPPLIER";

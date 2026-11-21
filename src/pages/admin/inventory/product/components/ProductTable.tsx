@@ -20,6 +20,7 @@ import {
   Search,
   DropdownFilter,
   ColumnVisibilityDropdown,
+  type ColumnItem,
 } from "@/components/common";
 import { showErrorToast } from "@/utils/toast-utils";
 import { useAPI } from "@/hooks/useApi";

@@ -261,7 +261,7 @@ export const StockAdjustmentTable: React.FC<StockAdjustmentTableProps> = ({
                       <td className="py-2.5 px-3 text-left text-xs font-mono font-medium text-[var(--ui-text-muted)] truncate whitespace-nowrap">
                         <span
                           className="bg-[var(--ui-surface-sunken)] px-1.5 py-0.5 rounded border border-[var(--ui-border)] text-[11px] inline-block truncate max-w-[130px]"
-                          title={item.productId || "-"}
+                          title={String(item.productId || "-")}
                         >
                           {item.productId || "-"}
                         </span>

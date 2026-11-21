@@ -22,6 +22,7 @@ import {
   normalizeSaleRecord,
   isReturnRecord,
   getCleanOrderNo,
+  getReturnSortTimestamp,
   useDeleteSalesOrderMutation,
 } from "./hooks/useSalesQueries";
 import { useTradeDeleteModal } from "@/hooks/useTradeDeleteModal";
@@ -185,12 +186,18 @@ const Sales: React.FC = () => {
       );
     };
 
-    // Sort candidates so authentic backend return records come FIRST
+    // Sort candidates so genuine return vouchers with line items come FIRST, before financial tx fallbacks
     const sortedCandidates = [...rawRList].sort((a, b) => {
-      const aIsBackend = isAuthenticBackendNo(a.returnNo);
-      const bIsBackend = isAuthenticBackendNo(b.returnNo);
-      if (aIsBackend && !bIsBackend) return -1;
-      if (!aIsBackend && bIsBackend) return 1;
+      const aHasItems = Array.isArray(a.returnDetails) && a.returnDetails.length > 0;
+      const bHasItems = Array.isArray(b.returnDetails) && b.returnDetails.length > 0;
+      if (aHasItems && !bHasItems) return -1;
+      if (!aHasItems && bHasItems) return 1;
+
+      const aIsFin = String(a.id || "").startsWith("ret_fin_");
+      const bIsFin = String(b.id || "").startsWith("ret_fin_");
+      if (!aIsFin && bIsFin) return -1;
+      if (aIsFin && !bIsFin) return 1;
+
       return 0;
     });
 
@@ -223,7 +230,7 @@ const Sales: React.FC = () => {
       const ordNo = String(cleanOrd || parentOrd || "").trim().toLowerCase();
       const invNo = String(parentInv || "").trim().toLowerCase();
       const refundAmt = Number(item.refundAmount || item.grandTotal || 0).toFixed(2);
-      const isBackend = isAuthenticBackendNo(retNo);
+      const isFinFallback = String(item.id || "").startsWith("ret_fin_");
 
       // Check duplicate return number
       if (retNo) {
@@ -243,8 +250,8 @@ const Sales: React.FC = () => {
         if (seenInvoiceRefundPairs.has(invKey)) return;
       }
 
-      // If this is a synthetic SR- / RET- record, but an authentic backend return already exists for this order/invoice:
-      if (!isBackend) {
+      // If this is a financial tx fallback, drop it if a genuine return voucher already exists for this order/invoice:
+      if (isFinFallback) {
         if (ordNo && ordNo !== "-" && seenOrderRefundPairs.has(ordNo)) return;
         if (invNo && invNo !== "-" && seenInvoiceRefundPairs.has(invNo)) return;
       }
@@ -505,11 +512,11 @@ const Sales: React.FC = () => {
     });
 
     enrichedReturns.forEach((r) => {
-      const key = String(r.customerId ?? r.partyId ?? r.customerName ?? "").trim();
+      const key = String(r.customerId ?? r.customerName ?? "").trim();
       if (key && !custMap.has(key)) {
         custMap.set(key, {
-          id: r.customerId ?? r.partyId,
-          partyId: r.customerId ?? r.partyId,
+          id: r.customerId,
+          partyId: r.customerId,
           name: r.customerName || "Customer",
           partyName: r.customerName || "Customer",
           phone: r.customerPhone || "",
@@ -764,7 +771,7 @@ const Sales: React.FC = () => {
       }
 
       if (dateFilter && dateFilter !== "all") {
-        const rawDate = item.returnDate || item.date || item.createdAt || item.created_at;
+        const rawDate = item.returnDate || item.createdAt || (item as any).salesDate || (item as any).date;
         if (!rawDate) return false;
         const m = moment(rawDate);
         if (!m.isValid()) return false;
@@ -822,34 +829,43 @@ const Sales: React.FC = () => {
 
   const sortedReturns = useMemo(() => {
     return [...filteredReturns].sort((a, b) => {
-      const timeA = new Date(a.createdAt || a.returnDate || 0).getTime();
-      const timeB = new Date(b.createdAt || b.returnDate || 0).getTime();
-      const idA = Number(a.id || 0);
-      const idB = Number(b.id || 0);
+      const timeA = getReturnSortTimestamp(a);
+      const timeB = getReturnSortTimestamp(b);
+      const numA = Number(String(a.returnNo || a.id || "").replace(/\D/g, "")) || 0;
+      const numB = Number(String(b.returnNo || b.id || "").replace(/\D/g, "")) || 0;
       const amountA = Number(a.refundAmount ?? a.grandTotal ?? 0);
       const amountB = Number(b.refundAmount ?? b.grandTotal ?? 0);
 
       if (sortBy === "oldest") {
-        if (timeA !== timeB) return timeA - timeB;
-        return idA - idB;
+        if (timeA !== timeB && timeA > 0 && timeB > 0) return timeA - timeB;
+        if (numA !== numB) return numA - numB;
+        return 0;
       }
-      if (sortBy === "amount_high" || sortBy === "amount_high_to_low") return amountB - amountA;
-      if (sortBy === "amount_low" || sortBy === "amount_low_to_high") return amountA - amountB;
+      if (sortBy === "amount_high" || sortBy === "amount_high_to_low") {
+        const diff = amountB - amountA;
+        return diff !== 0 ? diff : (timeB - timeA || numB - numA);
+      }
+      if (sortBy === "amount_low" || sortBy === "amount_low_to_high") {
+        const diff = amountA - amountB;
+        return diff !== 0 ? diff : (timeB - timeA || numB - numA);
+      }
       if (sortBy === "customer_a_to_z") {
         const nameA = String(a.customerName || "").trim().toLowerCase();
         const nameB = String(b.customerName || "").trim().toLowerCase();
         const cmp = nameA.localeCompare(nameB);
-        return cmp !== 0 ? cmp : timeB - timeA;
+        return cmp !== 0 ? cmp : (timeB - timeA || numB - numA);
       }
       if (sortBy === "customer_z_to_a") {
         const nameA = String(a.customerName || "").trim().toLowerCase();
         const nameB = String(b.customerName || "").trim().toLowerCase();
         const cmp = nameB.localeCompare(nameA);
-        return cmp !== 0 ? cmp : timeB - timeA;
+        return cmp !== 0 ? cmp : (timeB - timeA || numB - numA);
       }
 
-      if (timeB !== timeA) return timeB - timeA;
-      return idB - idA;
+      // Default: "latest" -> Recent time is #1, then 2nd recent
+      if (timeB !== timeA && timeA > 0 && timeB > 0) return timeB - timeA;
+      if (numB !== numA) return numB - numA;
+      return 0;
     });
   }, [filteredReturns, sortBy]);
 
@@ -982,7 +998,7 @@ const Sales: React.FC = () => {
           totalCount={salesStats.totalCount}
           totalAmount={salesStats.totalAmount}
           totalPaid={salesStats.totalPaid}
-          totalDue={salesStats.dueAmount ?? salesStats.totalDue}
+          totalDue={salesStats.totalDue}
         />
       ) : (
         <TradeReturnStats

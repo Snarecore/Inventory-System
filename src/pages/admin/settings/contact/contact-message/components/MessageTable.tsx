@@ -12,13 +12,13 @@ interface ContactMessageDataProps {
 }
 
 interface ContactMessageTableProps {
-    dataList: ContactMessageDataProps[];
-    fetchData: () => void;
+    dataList?: ContactMessageDataProps[];
+    fetchData?: () => void;
     isLoading?: boolean;
     isFetching?: boolean;
 }
 
-const MessageTable = ({ dataList, fetchData, isLoading, isFetching }: ContactMessageTableProps) => {
+const MessageTable = ({ dataList = [], fetchData = () => {}, isLoading, isFetching }: ContactMessageTableProps) => {
 
     const tableHeaders = [
         { key: "sl", label: "Sl" },

@@ -1,10 +1,8 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import {
   FiChevronDown,
   FiChevronRight,
   FiRotateCcw,
-  FiFileText,
-  FiMaximize2,
 } from "react-icons/fi";
 import { FaStore, FaFileExcel, FaFilePdf } from "react-icons/fa";
 import Search from "@/components/table-components/Search";
@@ -47,8 +45,9 @@ import {
   exportCustomerWiseDetailedExcel,
   downloadCustomerWiseDetailedPdf,
 } from "../utils/customer-collection-report-helpers";
-import CustomerStatementTable from "./CustomerStatementTable";
-import CustomerStatementDrawer from "./CustomerStatementDrawer";
+import InlineCustomerLedgerRow from "./InlineCustomerLedgerRow";
+import { fetchCustomerLedger } from "@/hooks/useCustomerLedger";
+import { showSuccessToast, showErrorToast } from "@/utils/toast-utils";
 
 interface CustomerCollectionSummaryTableProps extends ReportDateFilterProps {
   collections: NormalizedCollectionRecord[];
@@ -96,11 +95,8 @@ export const CustomerCollectionSummaryTable: React.FC<
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
 
-  // Expandable row & Drawer states
+  // Expandable row state
   const [expandedCustomerKey, setExpandedCustomerKey] = useState<string | null>(null);
-  const [selectedCustomerForDrawer, setSelectedCustomerForDrawer] =
-    useState<CustomerCollectionSummary | null>(null);
-  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 
   const {
     visibleColumns,
@@ -154,30 +150,105 @@ export const CustomerCollectionSummaryTable: React.FC<
     setCurrentPage(1);
   };
 
-  // Compute statement data for currently expanded row
-  const expandedStatementData = useMemo(() => {
-    if (!expandedCustomerKey) return null;
-    const target = summaries.find((c) => c.customerKey === expandedCustomerKey);
-    if (!target) return null;
-    return buildCustomerStatementEntries(
-      target,
-      collections,
-      salesList,
-      rawPartyData,
-      {
-        startDate: dateFilterProps.startDate,
-        endDate: dateFilterProps.endDate,
+  const [downloadingCustomerKey, setDownloadingCustomerKey] = useState<string | null>(null);
+
+  const handleDownloadSingleCustomerPdf = async (targetCustomer: CustomerCollectionSummary) => {
+    if (downloadingCustomerKey) return;
+    setDownloadingCustomerKey(targetCustomer.customerKey);
+    try {
+      let entries: any[] = [];
+      try {
+        entries = await fetchCustomerLedger({
+          customerId: targetCustomer.customerId,
+          customerPhone: targetCustomer.customerPhone,
+          customerName: targetCustomer.customerName,
+          startDate: dateFilterProps.startDate,
+          endDate: dateFilterProps.endDate,
+          salesList,
+          rawPartyData,
+        });
+      } catch (e) {
+        console.warn("fetchCustomerLedger error, using fallback statement:", e);
       }
-    );
-  }, [
-    expandedCustomerKey,
-    summaries,
-    collections,
-    salesList,
-    rawPartyData,
-    dateFilterProps.startDate,
-    dateFilterProps.endDate,
-  ]);
+
+      if (!entries || entries.length === 0) {
+        const stmt = buildCustomerStatementEntries(
+          targetCustomer,
+          collections,
+          salesList,
+          rawPartyData,
+          {
+            startDate: dateFilterProps.startDate,
+            endDate: dateFilterProps.endDate,
+          }
+        );
+        entries = stmt.entries;
+      }
+
+      await downloadCustomerStatementPdf(
+        targetCustomer,
+        entries,
+        companyMeta,
+        { salesList, collections }
+      );
+      showSuccessToast(`Customer ledger PDF downloaded for ${targetCustomer.customerName}!`);
+    } catch (err: any) {
+      showErrorToast(err?.message || "Failed to download customer ledger PDF");
+    } finally {
+      setDownloadingCustomerKey(null);
+    }
+  };
+
+  const handleExportSingleCustomerExcel = async (targetCustomer: CustomerCollectionSummary) => {
+    try {
+      let entries: any[] = [];
+      try {
+        entries = await fetchCustomerLedger({
+          customerId: targetCustomer.customerId,
+          customerPhone: targetCustomer.customerPhone,
+          customerName: targetCustomer.customerName,
+          startDate: dateFilterProps.startDate,
+          endDate: dateFilterProps.endDate,
+          salesList,
+          rawPartyData,
+        });
+      } catch (e) {
+        console.warn("fetchCustomerLedger error, using fallback statement:", e);
+      }
+
+      if (!entries || entries.length === 0) {
+        const stmt = buildCustomerStatementEntries(
+          targetCustomer,
+          collections,
+          salesList,
+          rawPartyData,
+          {
+            startDate: dateFilterProps.startDate,
+            endDate: dateFilterProps.endDate,
+          }
+        );
+        entries = stmt.entries;
+      }
+
+      const count = await exportCustomerStatementExcel(
+        targetCustomer,
+        entries,
+        companyMeta,
+        { salesList, collections }
+      );
+      showSuccessToast(`Exported ${count} ledger entries for ${targetCustomer.customerName} to Excel!`);
+    } catch (err: any) {
+      showErrorToast(err?.message || "Failed to export customer ledger Excel");
+    }
+  };
+
+  // Auto-expand row when search matches a single customer
+  useEffect(() => {
+    const q = debouncedSearch.trim();
+    if (q.length >= 2 && filtered.length === 1) {
+      setExpandedCustomerKey(filtered[0].customerKey);
+    }
+  }, [debouncedSearch, filtered]);
 
   return (
     <TableContainer>
@@ -245,10 +316,12 @@ export const CustomerCollectionSummaryTable: React.FC<
 
           <ReportExportButtons
             onExportExcel={async () => {
+              const q = debouncedSearch.trim().toLowerCase();
               const targetCustomer =
                 (expandedCustomerKey
                   ? filtered.find((c) => c.customerKey === expandedCustomerKey)
                   : null) ||
+                (q && filtered.length > 0 ? filtered[0] : null) ||
                 (filtered.length === 1 ? filtered[0] : null);
 
               if (targetCustomer) {
@@ -265,7 +338,8 @@ export const CustomerCollectionSummaryTable: React.FC<
                 const count = await exportCustomerStatementExcel(
                   targetCustomer,
                   stmt.entries,
-                  companyMeta
+                  companyMeta,
+                  { salesList, collections }
                 );
                 return `Exported ${count} statement entries for ${targetCustomer.customerName} to Excel!`;
               }
@@ -284,10 +358,12 @@ export const CustomerCollectionSummaryTable: React.FC<
               return `Exported ${count} customer transactions and summary to Excel!`;
             }}
             onDownloadPdf={async () => {
+              const q = debouncedSearch.trim().toLowerCase();
               const targetCustomer =
                 (expandedCustomerKey
                   ? filtered.find((c) => c.customerKey === expandedCustomerKey)
                   : null) ||
+                (q && filtered.length > 0 ? filtered[0] : null) ||
                 (filtered.length === 1 ? filtered[0] : null);
 
               if (targetCustomer) {
@@ -304,9 +380,10 @@ export const CustomerCollectionSummaryTable: React.FC<
                 await downloadCustomerStatementPdf(
                   targetCustomer,
                   stmt.entries,
-                  companyMeta
+                  companyMeta,
+                  { salesList, collections }
                 );
-                return `Customer statement PDF downloaded for ${targetCustomer.customerName}!`;
+                return `Customer ledger PDF downloaded for ${targetCustomer.customerName}!`;
               }
 
               await downloadCustomerWiseDetailedPdf(
@@ -497,140 +574,51 @@ export const CustomerCollectionSummaryTable: React.FC<
                       )}
                       {isColVisible("actions") && (
                         <td className="py-2.5 px-3 text-center whitespace-nowrap">
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setSelectedCustomerForDrawer(c);
-                              setIsDrawerOpen(true);
-                            }}
-                            className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold text-[var(--primary-color)] bg-[var(--primary-color-light)] hover:bg-[var(--primary-color-muted)]/30 rounded-lg transition-colors cursor-pointer"
-                            title="View Detailed Statement"
-                          >
-                            <FiFileText size={12} />
-                            <span>Statement</span>
-                          </button>
+                          <div className="inline-flex items-center gap-1.5 justify-center">
+                            {/* Direct Download Customer Ledger PDF (Icon Only) */}
+                            <button
+                              type="button"
+                              disabled={downloadingCustomerKey === c.customerKey}
+                              onClick={async (e) => {
+                                e.stopPropagation();
+                                await handleDownloadSingleCustomerPdf(c);
+                              }}
+                              className="w-7 h-7 inline-flex items-center justify-center rounded-lg border border-rose-200 bg-rose-50 hover:bg-rose-100 text-rose-600 transition-colors cursor-pointer disabled:opacity-50"
+                              title="Download Customer Ledger PDF"
+                            >
+                              <FaFilePdf size={13} />
+                            </button>
+
+                            {/* Direct Export Customer Ledger Excel (Icon Only) */}
+                            <button
+                              type="button"
+                              onClick={async (e) => {
+                                e.stopPropagation();
+                                await handleExportSingleCustomerExcel(c);
+                              }}
+                              className="w-7 h-7 inline-flex items-center justify-center rounded-lg border border-emerald-200 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 transition-colors cursor-pointer"
+                              title="Export Customer Ledger to Excel"
+                            >
+                              <FaFileExcel size={13} />
+                            </button>
+                          </div>
                         </td>
                       )}
                     </tr>
 
                     {/* Inline Collapsible Description Section */}
-                    {isExpanded && expandedStatementData && (
-                      <tr className="bg-[var(--ui-surface-muted)]/20 border-b border-[var(--ui-border)]">
-                        <td
-                          colSpan={activeVisibleColumnCount}
-                          className="p-2 sm:p-3 text-left"
-                        >
-                          <div className="flex flex-col gap-2.5 p-3 bg-[var(--ui-surface)] border border-[var(--ui-border)] rounded-xl shadow-xs">
-                            {/* Expanded Description Header */}
-                            <div className="flex flex-wrap items-center justify-between gap-2.5 pb-2.5 border-b border-[var(--ui-border)]">
-                              <div className="flex items-center gap-2.5">
-                                <div className="w-8 h-8 rounded-lg bg-[var(--primary-color-light)] text-[var(--primary-color)] flex items-center justify-center font-bold">
-                                  <FaStore size={14} />
-                                </div>
-                                <div>
-                                  <div className="flex items-center gap-1.5 flex-wrap">
-                                    <span className="font-bold text-xs text-[var(--ui-text)]">
-                                      {c.customerName}
-                                    </span>
-                                    <span className="text-[11px] text-[var(--ui-text-muted)]">
-                                      (Statement History)
-                                    </span>
-                                  </div>
-                                  <div className="text-[11px] text-[var(--ui-text-muted)] flex items-center gap-2 mt-0.5 flex-wrap">
-                                    <span>Phone: {c.customerPhone}</span>
-                                    <span className="inline-block w-px h-2.5 bg-[var(--ui-border)]" />
-                                    <span>Vouchers: {c.voucherCount}</span>
-                                    <span className="inline-block w-px h-2.5 bg-[var(--ui-border)]" />
-                                    <span>
-                                      Total Sales:{" "}
-                                      <strong className="text-[var(--ui-text)] font-semibold">
-                                        ৳ {formatMoney(expandedStatementData.stats.totalSales)}
-                                      </strong>
-                                    </span>
-                                    <span className="inline-block w-px h-2.5 bg-[var(--ui-border)]" />
-                                    <span>
-                                      Total Collected:{" "}
-                                      <strong className="text-[var(--ui-success)] font-semibold">
-                                        ৳ {formatMoney(expandedStatementData.stats.totalCollected)}
-                                      </strong>
-                                    </span>
-                                    <span className="inline-block w-px h-2.5 bg-[var(--ui-border)]" />
-                                    <span
-                                      className={
-                                        c.currentDue > 0
-                                          ? "text-[var(--ui-danger)] font-bold"
-                                          : "text-[var(--ui-success)] font-bold"
-                                      }
-                                    >
-                                      Remaining Due: ৳ {formatMoney(c.currentDue)}
-                                      {c.currentDue === 0 && (
-                                        <span className="ml-1 text-[10px] font-medium text-[var(--ui-text-muted)]">
-                                          (Fully Cleared)
-                                        </span>
-                                      )}
-                                    </span>
-                                  </div>
-                                </div>
-                              </div>
-
-                              <div className="flex items-center gap-1.5">
-                                <button
-                                  type="button"
-                                  onClick={async () => {
-                                    await exportCustomerStatementExcel(
-                                      c,
-                                      expandedStatementData.entries,
-                                      companyMeta
-                                    );
-                                  }}
-                                  className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-lg border border-[var(--ui-border)] bg-[var(--ui-surface)] hover:bg-emerald-50 dark:hover:bg-emerald-950/30 text-emerald-600 transition-colors cursor-pointer"
-                                  title="Export This Customer Statement to Excel"
-                                >
-                                  <FaFileExcel size={12} />
-                                  <span>Excel</span>
-                                </button>
-
-                                <button
-                                  type="button"
-                                  onClick={async () => {
-                                    await downloadCustomerStatementPdf(
-                                      c,
-                                      expandedStatementData.entries,
-                                      companyMeta
-                                    );
-                                  }}
-                                  className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-lg border border-[var(--ui-border)] bg-[var(--ui-surface)] hover:bg-rose-50 dark:hover:bg-rose-950/30 text-rose-600 transition-colors cursor-pointer"
-                                  title="Download This Customer Statement PDF"
-                                >
-                                  <FaFilePdf size={12} />
-                                  <span>PDF</span>
-                                </button>
-
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    setSelectedCustomerForDrawer(c);
-                                    setIsDrawerOpen(true);
-                                  }}
-                                  className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-lg border border-[var(--ui-border)] bg-[var(--ui-surface)] hover:bg-[var(--primary-color-light)] text-[var(--primary-color)] transition-colors cursor-pointer"
-                                  title="Open Full Statement Drawer"
-                                >
-                                  <FiMaximize2 size={12} />
-                                  <span>Full View</span>
-                                </button>
-                              </div>
-                            </div>
-
-                            {/* Embedded Statement Table */}
-                            <CustomerStatementTable
-                              entries={expandedStatementData.entries}
-                              stats={expandedStatementData.stats}
-                              onViewReceipt={onViewReceipt}
-                            />
-                          </div>
-                        </td>
-                      </tr>
+                    {isExpanded && (
+                      <InlineCustomerLedgerRow
+                        customer={c}
+                        startDate={dateFilterProps.startDate}
+                        endDate={dateFilterProps.endDate}
+                        salesList={salesList}
+                        collections={collections}
+                        rawPartyData={rawPartyData}
+                        companyMeta={companyMeta}
+                        activeVisibleColumnCount={activeVisibleColumnCount}
+                        onViewReceipt={onViewReceipt}
+                      />
                     )}
                   </React.Fragment>
                 );
@@ -655,22 +643,6 @@ export const CustomerCollectionSummaryTable: React.FC<
           entityLabel="customers"
         />
       )}
-
-      {/* Customer Statement Drawer with Dropdown & Export */}
-      <CustomerStatementDrawer
-        isOpen={isDrawerOpen}
-        onClose={() => {
-          setIsDrawerOpen(false);
-          setSelectedCustomerForDrawer(null);
-        }}
-        selectedCustomer={selectedCustomerForDrawer}
-        allCustomers={summaries}
-        onSelectCustomer={(cust) => setSelectedCustomerForDrawer(cust)}
-        collections={collections}
-        salesList={salesList}
-        rawPartyData={rawPartyData}
-        onViewReceipt={onViewReceipt}
-      />
     </TableContainer>
   );
 };

@@ -319,10 +319,12 @@ export const TradeSettlementHistoryTable = <T extends GenericSettlementHistoryIt
             <DateRangePicker
               startDate={startDate}
               endDate={endDate}
-              onStartDateChange={handleStartDateChange}
-              onEndDateChange={handleEndDateChange}
-              filterPreset={dateFilterPreset}
-              onFilterPresetChange={setDateFilterPreset}
+              onDateChange={(start, end) => {
+                handleStartDateChange(String(start));
+                handleEndDateChange(String(end));
+              }}
+              selectedPreset={dateFilterPreset}
+              onPresetChange={setDateFilterPreset}
               size="sm"
               inputClassName="!h-8 !rounded-lg !py-0"
             />

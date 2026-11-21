@@ -65,7 +65,7 @@ export const getCurrentLanguage = (): SupportedLanguage => {
 
 export const t = (key: string, options?: Record<string, any>): string => {
   if (!key) return "";
-  return i18n.t(key, options);
+  return String(i18n.t(key, options));
 };
 
 export default i18n;

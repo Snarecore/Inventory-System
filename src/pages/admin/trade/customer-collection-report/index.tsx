@@ -14,7 +14,11 @@ import StatsCards, { type StatCardItem } from "@/components/common/StatsCards";
 import { formatMoney } from "@/utils/formatters";
 import { useCollectionReportQuery } from "@/hooks/useCollectionReport";
 import { useCustomersDueQuery } from "@/hooks/useCustomersDue";
-import { useSalesQuery } from "@/pages/admin/trade/sales/hooks/useSalesQueries";
+import {
+  useSalesQuery,
+  useSalesAndReturnsQuery,
+  isReturnRecord,
+} from "@/pages/admin/trade/sales/hooks/useSalesQueries";
 import CollectionReceiptModal, {
   type CollectionReceiptData,
 } from "@/pages/admin/trade/customer-collection/components/CollectionReceiptModal";
@@ -72,18 +76,57 @@ const CustomerCollectionReportPage: React.FC = () => {
     refetchOnWindowFocus: false,
   });
 
+  // 3. Live Sales & Sales Return Queries
   const { data: salesList = [], refetch: refetchSales } = useSalesQuery({
     staleTime: 0,
   });
 
+  const { data: salesAndReturnsList = [], refetch: refetchSalesAndReturns } =
+    useSalesAndReturnsQuery({
+      staleTime: 0,
+    });
+
+  // Unified sales and returns to ensure every return record is available in customer ledger
+  const unifiedSalesAndReturns = useMemo(() => {
+    const list: any[] = [...(Array.isArray(salesList) ? salesList : [])];
+    const seenReturnKeys = new Set<string>();
+
+    list.forEach((item) => {
+      if (item.isReturnRecord || item.returnNo) {
+        const retNo = String(item.returnNo || item.id || "").trim().toLowerCase();
+        if (retNo) seenReturnKeys.add(retNo);
+      }
+    });
+
+    if (Array.isArray(salesAndReturnsList)) {
+      salesAndReturnsList.forEach((item: any) => {
+        if (item.isReturnRecord || isReturnRecord(item)) {
+          const retNo = String(item.returnNo || item.id || "").trim().toLowerCase();
+          if (retNo && !seenReturnKeys.has(retNo)) {
+            seenReturnKeys.add(retNo);
+            list.push(item);
+          }
+        }
+      });
+    }
+
+    return list;
+  }, [salesList, salesAndReturnsList]);
+
   const collections = useMemo(
-    () => normalizeCollectionReportRecords(rawCollections, startDate, endDate),
-    [rawCollections, startDate, endDate]
+    () =>
+      normalizeCollectionReportRecords(
+        rawCollections,
+        startDate,
+        endDate,
+        unifiedSalesAndReturns
+      ),
+    [rawCollections, startDate, endDate, unifiedSalesAndReturns]
   );
 
   const dueRows = useMemo(
-    () => normalizeCustomerDueRows(rawCustomersDue, rawPartyData, salesList),
-    [rawCustomersDue, rawPartyData, salesList]
+    () => normalizeCustomerDueRows(rawCustomersDue, rawPartyData, unifiedSalesAndReturns),
+    [rawCustomersDue, rawPartyData, unifiedSalesAndReturns]
   );
 
   const kpis = useMemo(
@@ -133,6 +176,7 @@ const CustomerCollectionReportPage: React.FC = () => {
     refetchCollections();
     refetchDue();
     refetchSales();
+    refetchSalesAndReturns();
   };
 
   const handleViewReceipt = (receipt: CollectionReceiptData) => {
@@ -210,7 +254,7 @@ const CustomerCollectionReportPage: React.FC = () => {
           <CustomerCollectionSummaryTable
             collections={collections}
             dueRows={dueRows}
-            salesList={salesList}
+            salesList={unifiedSalesAndReturns}
             rawPartyData={rawPartyData}
             isLoading={isLoading}
             onViewReceipt={handleViewReceipt}
@@ -222,7 +266,7 @@ const CustomerCollectionReportPage: React.FC = () => {
           <CustomerDueReportTable
             dueRows={dueRows}
             collections={collections}
-            salesList={salesList}
+            salesList={unifiedSalesAndReturns}
             rawPartyData={rawPartyData}
             isLoading={isDueLoading || isDueFetching}
             onViewReceipt={handleViewReceipt}

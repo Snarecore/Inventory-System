@@ -18,6 +18,9 @@ export interface TextInputProps {
   icon?: React.ReactNode;
   disabled?: boolean;
   step?: string;
+  min?: string | number;
+  max?: string | number;
+  maxLength?: number;
   autoFocus?: boolean;
   size?: "xs" | "sm" | "md" | "lg";
   inputRef?: React.Ref<HTMLInputElement>;
@@ -49,6 +52,7 @@ const InputField: React.FC<TextInputProps> = ({
   step,
   min,
   max,
+  maxLength,
   autoFocus,
   size = "md",
   inputRef,
@@ -119,6 +123,7 @@ const InputField: React.FC<TextInputProps> = ({
           step={step}
           min={min}
           max={max}
+          maxLength={maxLength}
           autoFocus={autoFocus}
           aria-invalid={displayError ? true : undefined}
           aria-describedby={ariaDescribedBy || (displayError && name ? `${name}-error` : undefined)}

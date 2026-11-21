@@ -5,7 +5,9 @@ import { FiChevronDown } from "react-icons/fi";
 
 export interface DatePickerProps {
   value?: string | Date | null;
-  onChange: (dateStr: string, dateObj: Date | null) => void;
+  onChange?: (dateStr: string, dateObj: Date | null) => void;
+  date?: string | Date | null;
+  setDate?: (dateStr: string) => void;
   placeholder?: string;
   className?: string;
   inputClassName?: string;
@@ -25,6 +27,8 @@ export interface DatePickerProps {
 export const DatePicker: React.FC<DatePickerProps> = ({
   value,
   onChange,
+  date,
+  setDate,
   placeholder = "Select date...",
   className = "",
   inputClassName = "",
@@ -42,13 +46,19 @@ export const DatePicker: React.FC<DatePickerProps> = ({
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  const effectiveValue = value !== undefined ? value : date;
+
+  const triggerChange = (dateStr: string, dateObj: Date | null) => {
+    if (onChange) onChange(dateStr, dateObj);
+    if (setDate) setDate(dateStr);
+  };
 
   // Normalized selected date as moment
   const selectedMoment = useMemo(() => {
-    if (!value) return null;
-    const m = moment(value);
+    if (!effectiveValue) return null;
+    const m = moment(effectiveValue);
     return m.isValid() ? m : null;
-  }, [value]);
+  }, [effectiveValue]);
 
   // View state for browsing months/years in calendar
   const [viewDate, setViewDate] = useState<moment.Moment>(() => {
@@ -100,7 +110,7 @@ export const DatePicker: React.FC<DatePickerProps> = ({
 
   // Day selection
   const handleSelectDay = (dayMoment: moment.Moment) => {
-    onChange(dayMoment.format(format), dayMoment.toDate());
+    triggerChange(dayMoment.format(format), dayMoment.toDate());
     setIsOpen(false);
   };
 
@@ -108,7 +118,7 @@ export const DatePicker: React.FC<DatePickerProps> = ({
   const handleSelectToday = (e: React.MouseEvent) => {
     e.stopPropagation();
     const today = moment();
-    onChange(today.format(format), today.toDate());
+    triggerChange(today.format(format), today.toDate());
     setViewDate(today.clone());
     setIsOpen(false);
   };
@@ -116,7 +126,7 @@ export const DatePicker: React.FC<DatePickerProps> = ({
   // Clear button
   const handleClear = (e: React.MouseEvent) => {
     e.stopPropagation();
-    onChange("", null);
+    triggerChange("", null);
     setIsOpen(false);
   };
 

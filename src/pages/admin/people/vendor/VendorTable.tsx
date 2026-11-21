@@ -28,21 +28,21 @@ interface VendorDataProps {
 }
 
 interface VendorTableProps {
-    dataList: VendorDataProps[];
-    fetchData: () => void;
+    dataList?: VendorDataProps[];
+    fetchData?: () => void;
     isLoading?: boolean;
     isFetching?: boolean;
-    pageCount: number;
-    currentPageNumber: number;
-    handlePagination: (paginationData: { selected: number }) => void;
+    pageCount?: number;
+    currentPageNumber?: number;
+    handlePagination?: (paginationData: { selected: number }) => void;
 }
 
 const VendorTable = ({
-    dataList,
-    fetchData,
-    pageCount,
-    currentPageNumber,
-    handlePagination,
+    dataList = [],
+    fetchData = () => {},
+    pageCount = 1,
+    currentPageNumber = 1,
+    handlePagination = () => {},
     isLoading,
     isFetching
 }: VendorTableProps) => {

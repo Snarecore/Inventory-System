@@ -64,7 +64,7 @@ const AVAILABLE_COLUMNS: ColumnItem[] = [
   { key: "address", label: "Address" },
   { key: "invoiceCount", label: "Pending Invoices" },
   { key: "lastPurchaseDate", label: "Last Purchase Date" },
-  { key: "totalDue", label: "Outstanding Due (৳)" },
+  { key: "totalDue", label: "Outstanding (৳)" },
   { key: "actions", label: "History" },
 ];
 
@@ -382,7 +382,7 @@ export const SupplierDueReportTable: React.FC<SupplierDueReportTableProps> = ({
               )}
               {isColVisible("totalDue") && (
                 <TableTh align="right" className="whitespace-nowrap">
-                  Outstanding Due (৳)
+                  Outstanding (৳)
                 </TableTh>
               )}
               {isColVisible("actions") && (

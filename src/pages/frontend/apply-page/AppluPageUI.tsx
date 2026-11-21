@@ -45,7 +45,6 @@ const AppluPageUI = () => {
     
       const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault()
-        console.log("Form submitted:", formData, uploadedFiles)
       }
     
       return (

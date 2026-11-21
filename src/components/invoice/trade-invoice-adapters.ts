@@ -33,7 +33,7 @@ const resolveAttachmentUrl = (raw: any): string | null => {
   if (clean.startsWith("data:") || clean.startsWith("blob:") || clean.startsWith("http://") || clean.startsWith("https://")) {
     return clean;
   }
-  const rawBaseUrl = import.meta.env.VITE_API_BASE_URL;
+  const rawBaseUrl = (import.meta.env.VITE_API_BASE_URL || "") as string;
   const serverHost = rawBaseUrl.replace(/\/api\/?$/, "");
   const path = clean.startsWith("/") ? clean.slice(1) : clean;
   return `${serverHost}/${path}`;

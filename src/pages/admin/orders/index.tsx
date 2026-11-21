@@ -10,8 +10,8 @@ const Orders = () => {
         userId: { label: string; value: string } | null;
         status: { label: string; value: string } | null;
         paymentStatus: { label: string; value: string } | null;
-        startDate: { label: Date; value: Date } | null;
-        endDate: { label: Date; value: Date } | null;
+        startDate: { label: string; value: string } | null;
+        endDate: { label: string; value: string } | null;
     }>({
         userId: null,
         status: null,
@@ -37,13 +37,15 @@ const Orders = () => {
             params.append("paymentStatus", selectedFilters.paymentStatus.value);
         }
         if (selectedFilters.startDate?.value) {
-            const startISO = new Date(selectedFilters.startDate.value.setHours(0, 0, 0, 0)).toISOString();
-            params.append("startDate", startISO);
+            const startDateVal = new Date(selectedFilters.startDate.value);
+            startDateVal.setHours(0, 0, 0, 0);
+            params.append("startDate", startDateVal.toISOString());
         }
     
         if (selectedFilters.endDate?.value) {
-            const endISO = new Date(selectedFilters.endDate.value.setHours(23, 59, 59, 999)).toISOString();
-            params.append("endDate", endISO);
+            const endDateVal = new Date(selectedFilters.endDate.value);
+            endDateVal.setHours(23, 59, 59, 999);
+            params.append("endDate", endDateVal.toISOString());
         }
 
         // return `${apiConfig.order.orderListUrl}?${params.toString()}`;
@@ -84,6 +86,10 @@ const Orders = () => {
                 <div className="grid grid-cols-12 gap-12">
                     <div className="col-span-12">
                         <OrderTable
+                            dataList={[]}
+                            fetchOrderList={() => {}}
+                            pageCount={1}
+                            isLoading={false}
                             currentPageNumber={currentPageNumber}
                             setCurrentPageNumber={setCurrentPageNumber}
                             handlePagination={handlePagination}

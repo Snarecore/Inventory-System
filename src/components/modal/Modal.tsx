@@ -5,7 +5,8 @@ import { useTranslation } from "react-i18next";
 
 interface ModalProps {
 	isOpen: boolean;
-	title: string;
+	title: React.ReactNode;
+	subtitle?: string;
 	onClose: () => void;
 	children: React.ReactNode;
 	footerButtons?: React.ReactNode;
@@ -24,6 +25,7 @@ interface ModalProps {
 const Modal: React.FC<ModalProps> = ({
 	isOpen,
 	title,
+	subtitle,
 	onClose,
 	children,
 	footerButtons,
@@ -64,7 +66,10 @@ const Modal: React.FC<ModalProps> = ({
 		<div className={`ui-modal-backdrop fixed inset-0 flex items-center justify-center bg-[var(--ui-text)]/60 ${zIndex} p-2 sm:p-4 overflow-y-auto`}>
 			<div ref={panelRef} className={`ui-modal-panel bg-[var(--ui-surface)] rounded-xl shadow-2xl ${resolvedWidth} px-3.5 sm:px-5 py-3 sm:py-3.5 flex flex-col relative max-h-[92vh] overflow-y-auto ${className}`}>
 				<div className={`flex justify-between items-center pb-2 border-b border-[var(--ui-border)] ${headerClassName}`}>
-					<h2 className="text-base font-semibold text-[var(--ui-text)]">{typeof title === "string" ? t(title) : title}</h2>
+					<div>
+						<h2 className="text-base font-semibold text-[var(--ui-text)]">{typeof title === "string" ? t(title) : title}</h2>
+						{subtitle && <p className="text-xs text-[var(--ui-text-muted)] mt-0.5">{subtitle}</p>}
+					</div>
 					<button
 						type="button"
 						onClick={onClose}

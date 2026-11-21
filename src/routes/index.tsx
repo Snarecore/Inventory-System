@@ -4,72 +4,74 @@ import AdminLayout from '@/layouts/AdminLayout'
 import { Login } from '@/pages/frontend/Login'
 import { NotFound } from '@/pages/frontend/NotFound'
 import { isSessionValid } from '@/utils/auth-storage'
+import { lazyWithRetry } from '@/utils/lazyWithRetry'
+import { RouteErrorBoundary } from '@/components/common/RouteErrorBoundary'
 
 // Lazy loaded Admin Pages
-const Dashboard = React.lazy(() => import('@/pages/admin/main/admin-dashboard/Dashboard'))
-const Products = React.lazy(() => import('@/pages/admin/inventory/product'))
-const CreateProduct = React.lazy(() => import('@/pages/admin/inventory/create-product'))
-const ProductDetails = React.lazy(() => import('@/pages/admin/inventory/product/components/ProductDetails'))
-const ProductCategory = React.lazy(() => import('@/pages/admin/inventory/category/product-category'))
-const Orders = React.lazy(() => import('@/pages/admin/orders'))
-const Admins = React.lazy(() => import('@/pages/admin/people/admin'))
-const Users = React.lazy(() => import('@/pages/admin/people/user'))
-const Vendors = React.lazy(() => import('@/pages/admin/people/vendor'))
-const Parties = React.lazy(() => import('@/pages/admin/people/parties'))
-const EmployeeEntry = React.lazy(() => import('@/pages/admin/people/employee-entry'))
-const EmployeeList = React.lazy(() => import('@/pages/admin/people/employee/EmployeeList'))
-const RolesAndPermissions = React.lazy(() => import('@/pages/admin/roles/RolesAndPermissions'))
-const HeroSlider = React.lazy(() => import('@/pages/admin/settings/home/hero-slider'))
-const HomePageCms = React.lazy(() => import('@/pages/admin/settings/home/page-cms'))
-const HeaderFooterCms = React.lazy(() => import('@/pages/admin/settings/header-footer-cms'))
-const ContactMessage = React.lazy(() => import('@/pages/admin/settings/contact/contact-message'))
-const ContactPageCms = React.lazy(() => import('@/pages/admin/settings/contact/contact-page-cms'))
-const ShopPageCms = React.lazy(() => import('@/pages/admin/settings/shop-page-cms'))
-const SocialLinks = React.lazy(() => import('@/pages/admin/settings/social-links'))
-const AppearanceSettings = React.lazy(() => import('@/pages/admin/settings/appearance'))
-const SmsSettings = React.lazy(() => import('@/pages/admin/settings/sms'))
-const SendSmsPage = React.lazy(() => import('@/pages/admin/sms'))
-const PrivacyPolicy = React.lazy(() => import('@/pages/admin/settings/policy/privacy'))
-const TermsConditions = React.lazy(() => import('@/pages/admin/settings/policy/terms-condition'))
-const ExchangePolicy = React.lazy(() => import('@/pages/admin/settings/policy/exchange-return/ExchangeForm'))
-const Chat = React.lazy(() => import('@/pages/admin/chat'))
-const PageMeta = React.lazy(() => import('@/pages/admin/seo'))
-const Purchases = React.lazy(() => import('@/pages/admin/trade/purchases'))
-const CreatePurchase = React.lazy(() => import('@/pages/admin/trade/create-purchase'))
-const Sales = React.lazy(() => import('@/pages/admin/trade/sales'))
-const CreateSale = React.lazy(() => import('@/pages/admin/trade/create-sale'))
-const SalesReport = React.lazy(() => import('@/pages/admin/trade/sales-report'))
-const PurchaseReport = React.lazy(() => import('@/pages/admin/trade/purchase-report'))
-const SalesReturnReport = React.lazy(() => import('@/pages/admin/trade/sales-return-report'))
-const CustomerCollectionReport = React.lazy(() => import('@/pages/admin/trade/customer-collection-report'))
-const PurchaseReturnReport = React.lazy(() => import('@/pages/admin/trade/purchase-return-report'))
-const SupplierPaymentReport = React.lazy(() => import('@/pages/admin/trade/supplier-payment-report'))
-const CreateSalesReturn = React.lazy(() => import('@/pages/admin/trade/create-sales-return'))
-const CreatePurchaseReturn = React.lazy(() => import('@/pages/admin/trade/purchase-return/CreatePurchaseReturnPage'))
-const CustomerCollection = React.lazy(() => import('@/pages/admin/trade/customer-collection'))
-const SupplierPayment = React.lazy(() => import('@/pages/admin/trade/supplier-payment'))
-const Company = React.lazy(() => import('@/pages/admin/company'))
-const Profile = React.lazy(() => import('@/pages/admin/profile'))
-const FinancialCategory = React.lazy(() => import('@/pages/admin/finance/category'))
-const BankPage = React.lazy(() => import('@/pages/admin/finance/bank'))
-const CreateBankPage = React.lazy(() => import('@/pages/admin/finance/bank/create-bank'))
-const MfsPage = React.lazy(() => import('@/pages/admin/finance/mfs'))
-const CreateMfsPage = React.lazy(() => import('@/pages/admin/finance/mfs/create-mfs'))
-const ExpensePage = React.lazy(() => import('@/pages/admin/finance/expense'))
-const IncomePage = React.lazy(() => import('@/pages/admin/finance/income'))
-const FundTransferPage = React.lazy(() => import('@/pages/admin/finance/fund-transfer'))
-const KhatabookPage = React.lazy(() => import('@/pages/admin/khatabook'))
-const PersonLedgerPage = React.lazy(() => import('@/pages/admin/khatabook/PersonLedgerPage'))
-const StockAdjustmentPage = React.lazy(() => import('@/pages/admin/inventory/stock-adjustment'))
-const InventoryReport = React.lazy(() => import('@/pages/admin/inventory/inventory-report'))
-const CashClosingPage = React.lazy(() => import('@/pages/admin/finance/cash-closing'))
-const CashClosingReport = React.lazy(() => import('@/pages/admin/finance/cash-closing-report'))
-const KhatabookReportPage = React.lazy(() => import('@/pages/admin/finance/khatabook-report'))
-const OpeningCashBalancePage = React.lazy(() => import('@/pages/admin/finance/opening-cash-balance'))
-const PackagesPage = React.lazy(() => import('@/pages/admin/packages'))
-const BranchList = React.lazy(() => import('@/pages/admin/branch/BranchList'))
-const AddBranch = React.lazy(() => import('@/pages/admin/branch/AddBranch'))
-const FinancialBookPage = React.lazy(() => import('@/pages/admin/finance/financial-book'))
+const Dashboard = lazyWithRetry(() => import('@/pages/admin/main/admin-dashboard/Dashboard'))
+const Products = lazyWithRetry(() => import('@/pages/admin/inventory/product'))
+const CreateProduct = lazyWithRetry(() => import('@/pages/admin/inventory/create-product'))
+const ProductDetails = lazyWithRetry(() => import('@/pages/admin/inventory/product/components/ProductDetails'))
+const ProductCategory = lazyWithRetry(() => import('@/pages/admin/inventory/category/product-category'))
+const Orders = lazyWithRetry(() => import('@/pages/admin/orders'))
+const Admins = lazyWithRetry(() => import('@/pages/admin/people/admin'))
+const Users = lazyWithRetry(() => import('@/pages/admin/people/user'))
+const Vendors = lazyWithRetry(() => import('@/pages/admin/people/vendor'))
+const Parties = lazyWithRetry(() => import('@/pages/admin/people/parties'))
+const EmployeeEntry = lazyWithRetry(() => import('@/pages/admin/people/employee-entry'))
+const EmployeeList = lazyWithRetry(() => import('@/pages/admin/people/employee/EmployeeList'))
+const RolesAndPermissions = lazyWithRetry(() => import('@/pages/admin/roles/RolesAndPermissions'))
+const HeroSlider = lazyWithRetry(() => import('@/pages/admin/settings/home/hero-slider'))
+const HomePageCms = lazyWithRetry(() => import('@/pages/admin/settings/home/page-cms'))
+const HeaderFooterCms = lazyWithRetry(() => import('@/pages/admin/settings/header-footer-cms'))
+const ContactMessage = lazyWithRetry(() => import('@/pages/admin/settings/contact/contact-message'))
+const ContactPageCms = lazyWithRetry(() => import('@/pages/admin/settings/contact/contact-page-cms'))
+const ShopPageCms = lazyWithRetry(() => import('@/pages/admin/settings/shop-page-cms'))
+const SocialLinks = lazyWithRetry(() => import('@/pages/admin/settings/social-links'))
+const AppearanceSettings = lazyWithRetry(() => import('@/pages/admin/settings/appearance'))
+const SmsSettings = lazyWithRetry(() => import('@/pages/admin/settings/sms'))
+const SendSmsPage = lazyWithRetry(() => import('@/pages/admin/sms'))
+const PrivacyPolicy = lazyWithRetry(() => import('@/pages/admin/settings/policy/privacy'))
+const TermsConditions = lazyWithRetry(() => import('@/pages/admin/settings/policy/terms-condition'))
+const ExchangePolicy = lazyWithRetry(() => import('@/pages/admin/settings/policy/exchange-return/ExchangeForm'))
+const Chat = lazyWithRetry(() => import('@/pages/admin/chat'))
+const PageMeta = lazyWithRetry(() => import('@/pages/admin/seo'))
+const Purchases = lazyWithRetry(() => import('@/pages/admin/trade/purchases'))
+const CreatePurchase = lazyWithRetry(() => import('@/pages/admin/trade/create-purchase'))
+const Sales = lazyWithRetry(() => import('@/pages/admin/trade/sales'))
+const CreateSale = lazyWithRetry(() => import('@/pages/admin/trade/create-sale'))
+const SalesReport = lazyWithRetry(() => import('@/pages/admin/trade/sales-report'))
+const PurchaseReport = lazyWithRetry(() => import('@/pages/admin/trade/purchase-report'))
+const SalesReturnReport = lazyWithRetry(() => import('@/pages/admin/trade/sales-return-report'))
+const CustomerCollectionReport = lazyWithRetry(() => import('@/pages/admin/trade/customer-collection-report'))
+const PurchaseReturnReport = lazyWithRetry(() => import('@/pages/admin/trade/purchase-return-report'))
+const SupplierPaymentReport = lazyWithRetry(() => import('@/pages/admin/trade/supplier-payment-report'))
+const CreateSalesReturn = lazyWithRetry(() => import('@/pages/admin/trade/create-sales-return'))
+const CreatePurchaseReturn = lazyWithRetry(() => import('@/pages/admin/trade/purchase-return/CreatePurchaseReturnPage'))
+const CustomerCollection = lazyWithRetry(() => import('@/pages/admin/trade/customer-collection'))
+const SupplierPayment = lazyWithRetry(() => import('@/pages/admin/trade/supplier-payment'))
+const Company = lazyWithRetry(() => import('@/pages/admin/company'))
+const Profile = lazyWithRetry(() => import('@/pages/admin/profile'))
+const FinancialCategory = lazyWithRetry(() => import('@/pages/admin/finance/category'))
+const BankPage = lazyWithRetry(() => import('@/pages/admin/finance/bank'))
+const CreateBankPage = lazyWithRetry(() => import('@/pages/admin/finance/bank/create-bank'))
+const MfsPage = lazyWithRetry(() => import('@/pages/admin/finance/mfs'))
+const CreateMfsPage = lazyWithRetry(() => import('@/pages/admin/finance/mfs/create-mfs'))
+const ExpensePage = lazyWithRetry(() => import('@/pages/admin/finance/expense'))
+const IncomePage = lazyWithRetry(() => import('@/pages/admin/finance/income'))
+const FundTransferPage = lazyWithRetry(() => import('@/pages/admin/finance/fund-transfer'))
+const KhatabookPage = lazyWithRetry(() => import('@/pages/admin/khatabook'))
+const PersonLedgerPage = lazyWithRetry(() => import('@/pages/admin/khatabook/PersonLedgerPage'))
+const StockAdjustmentPage = lazyWithRetry(() => import('@/pages/admin/inventory/stock-adjustment'))
+const InventoryReport = lazyWithRetry(() => import('@/pages/admin/inventory/inventory-report'))
+const CashClosingPage = lazyWithRetry(() => import('@/pages/admin/finance/cash-closing'))
+const CashClosingReport = lazyWithRetry(() => import('@/pages/admin/finance/cash-closing-report'))
+const KhatabookReportPage = lazyWithRetry(() => import('@/pages/admin/finance/khatabook-report'))
+const OpeningCashBalancePage = lazyWithRetry(() => import('@/pages/admin/finance/opening-cash-balance'))
+const PackagesPage = lazyWithRetry(() => import('@/pages/admin/packages'))
+const BranchList = lazyWithRetry(() => import('@/pages/admin/branch/BranchList'))
+const AddBranch = lazyWithRetry(() => import('@/pages/admin/branch/AddBranch'))
+const FinancialBookPage = lazyWithRetry(() => import('@/pages/admin/finance/financial-book'))
 
 const CashBookRoute: React.FC = () => <FinancialBookPage defaultType="cash" />
 const BankBookRoute: React.FC = () => <FinancialBookPage defaultType="bank" />
@@ -128,10 +130,12 @@ export const router = createBrowserRouter([
   {
     path: '/',
     element: <Login />,
+    errorElement: <RouteErrorBoundary />,
   },
   {
     path: '/login',
     element: <Login />,
+    errorElement: <RouteErrorBoundary />,
   },
   {
     path: '/404',
@@ -139,6 +143,7 @@ export const router = createBrowserRouter([
   },
   {
     element: <RequireAuth />,
+    errorElement: <RouteErrorBoundary />,
     children: [
   {
     path: '/customers',
@@ -525,6 +530,7 @@ export const router = createBrowserRouter([
   {
     path: '/admin',
     element: <AdminLayout />,
+    errorElement: <RouteErrorBoundary />,
     children: [
       {
         index: true,
@@ -1012,7 +1018,7 @@ export const router = createBrowserRouter([
       },
       {
         path: '404',
-        element: <NotFound returnTo="/admin" returnLabel="Back to Dashboard" />,
+        element: <NotFound returnTo="/admin" returnLabel="ড্যাশবোর্ডে ফিরে যান" />,
       },
       {
         path: 'not-found',

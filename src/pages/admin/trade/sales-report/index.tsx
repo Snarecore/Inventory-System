@@ -208,6 +208,7 @@ const SalesReportPage: React.FC = () => {
           <CustomerSalesReportTable
             transactions={transactions}
             isLoading={isLoading}
+            onView={handleView}
             {...datePickerProps}
           />
         )}

@@ -108,7 +108,8 @@
         "customersDueUrl": "customers-due",
         "customerInvoicesDueUrl": "customer-invoices-due",
         "insertCollectionUrl": "insert-collection",
-        "collectionReportUrl": "get-collection-report"
+        "collectionReportUrl": "get-collection-report",
+        "customerLedgerUrl": "customer-ledger"
     },
     "payment": {
         "purchasesDueUrl": "purchases-due",

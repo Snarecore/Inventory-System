@@ -17,7 +17,7 @@ import {
 import { useBankInfoListQuery } from "@/hooks/useBankQueries";
 import { useMfsUserListQuery } from "@/hooks/useMfsQueries";
 import { sendSmsMessage } from "@/services/sms-service";
-import { getStoredUser } from "@/utils/auth-storage";
+import { getStoredUser, getUserInfo } from "@/utils/auth-storage";
 import { showErrorToast } from "@/utils/toast-utils";
 import {
   FaMoneyBillWave,
@@ -147,7 +147,8 @@ export const TransactionFormModal: React.FC<TransactionFormModalProps> = ({
     const targetPerson = persons.find((p) => Number(p.id) === Number(personId));
     if (targetPerson?.phone) {
       const user = getStoredUser();
-      const businessName = user?.businessName || user?.name || "Cash Boi";
+      const userInfo = getUserInfo();
+      const businessName = userInfo?.businessName || user?.name || "Cash Boi";
       const typeText = transactionType === "PABO" ? "আদায়/প্রাপ্তি" : "প্রদান/পরিশোধ";
       const tenderText = paymentType === "CASH" ? "ক্যাশ" : paymentType === "BANK" ? "ব্যাংক" : "এমএফএস";
       const smsMsg = `প্রিয় ${targetPerson.name}, ${businessName}-এ ${tenderText} মারফত ৳${amount} লেনদেন (${typeText}) সফলভাবে সম্পন্ন হয়েছে। ধন্যবাদ।`;

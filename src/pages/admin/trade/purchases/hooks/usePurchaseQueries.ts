@@ -210,25 +210,23 @@ export const fetchPurchaseAndReturnList = async (): Promise<UnifiedPurchaseRecor
     ]);
 
     const res: any = purchaseAndReturnRes.status === "fulfilled" ? purchaseAndReturnRes.value : null;
+    const finVal: any = finTxRes.status === "fulfilled" ? finTxRes.value : null;
     const finTxList: any[] =
-      finTxRes.status === "fulfilled"
-        ? (Array.isArray(finTxRes.value?.data)
-            ? finTxRes.value.data
-            : Array.isArray(finTxRes.value?.financialTransactionList)
-            ? finTxRes.value.financialTransactionList
-            : Array.isArray(finTxRes.value)
-            ? finTxRes.value
-            : []
-          ).filter(
+      (Array.isArray(finVal?.data)
+        ? finVal.data
+        : Array.isArray(finVal?.financialTransactionList)
+        ? finVal.financialTransactionList
+        : Array.isArray(finVal)
+        ? finVal
+        : []
+      ).filter(
             (t: any) =>
               t &&
               t.isDeleted !== "Y" &&
               (t.head === "Purchase Return" || String(t.notes || "").toLowerCase().includes("purchase return")) &&
               (!t.notes || !t.notes.includes("Auto Purchase Return")) &&
-              !(t.refNo && t.billRef && String(t.refNo).trim() === String(t.billRef).trim()) &&
-              !(t.refNo && String(t.refNo).startsWith("261111"))
-          )
-        : [];
+              !(t.refNo && t.billRef && String(t.refNo).trim() === String(t.billRef).trim())
+          );
 
 
     const purchases = Array.isArray(res?.data)
@@ -470,7 +468,7 @@ export const fetchPurchaseAndReturnList = async (): Promise<UnifiedPurchaseRecor
         ].some((lines) => Array.isArray(lines) && lines.length > 0);
         const returnDetails =
           explicitReturnDetails ||
-          (!hasSeparatePurchaseLines ? extractLineItems(item) : []);
+          (!hasSeparatePurchaseLines ? extractPurchaseLineItems(item) : []);
 
         normalized = normalizePurchaseRecord(item) as UnifiedPurchaseRecord;
         normalized.isReturnRecord = true;

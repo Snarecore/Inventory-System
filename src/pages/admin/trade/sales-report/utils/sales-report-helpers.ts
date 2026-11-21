@@ -52,16 +52,19 @@ const CUSTOMER_EXPORT_LABELS: PartyExportLabels = {
 export async function exportFilteredInvoicesExcel(
   invoices: SaleItem[],
   meta: ReportCompanyMeta,
-  visibleColumns?: Record<string, boolean>
+  visibleColumns?: Record<string, boolean>,
+  customTitle?: string,
+  customFileName?: string
 ): Promise<number> {
   if (!invoices || invoices.length === 0) {
     throw new Error("No sales records available to export");
   }
   await exportSalesToExcel(invoices, {
     ...meta,
-    fileName: `Sales_Report_${moment().format("YYYY-MM-DD")}.xlsx`,
+    fileName:
+      customFileName || `Sales_Report_${moment().format("YYYY-MM-DD")}.xlsx`,
     sheetName: "Sales Report",
-    reportTitle: "Sales Report",
+    reportTitle: customTitle || "Sales Report",
     visibleColumns,
   });
   return invoices.length;
@@ -70,17 +73,49 @@ export async function exportFilteredInvoicesExcel(
 export async function downloadFilteredInvoicesPdf(
   invoices: SaleItem[],
   meta: ReportCompanyMeta,
-  visibleColumns?: Record<string, boolean>
+  visibleColumns?: Record<string, boolean>,
+  customTitle?: string,
+  customFilePrefix?: string
 ): Promise<void> {
   await downloadTradeInvoicesPdf(invoices, meta, {
     domain: "sale",
-    filePrefix: "Sales_Report",
-    reportTitle: "Sales Report",
+    filePrefix: customFilePrefix || "Sales_Report",
+    reportTitle: customTitle || "Sales Report",
     partyColumnHeader: "Customer Name",
     includeTransport: false,
     emptyErrorMessage: "No sales records available to download PDF",
     visibleColumns,
   });
+}
+
+export async function exportCustomerSalesInvoicesExcel(
+  invoices: SaleItem[],
+  customerName: string,
+  meta: ReportCompanyMeta
+): Promise<number> {
+  const safeName = customerName.replace(/[^a-zA-Z0-9_\-]/g, "_");
+  return exportFilteredInvoicesExcel(
+    invoices,
+    meta,
+    undefined,
+    `Sales Report - ${customerName}`,
+    `Sales_Report_${safeName}_${moment().format("YYYY-MM-DD")}.xlsx`
+  );
+}
+
+export async function downloadCustomerSalesInvoicesPdf(
+  invoices: SaleItem[],
+  customerName: string,
+  meta: ReportCompanyMeta
+): Promise<void> {
+  const safeName = customerName.replace(/[^a-zA-Z0-9_\-]/g, "_");
+  return downloadFilteredInvoicesPdf(
+    invoices,
+    meta,
+    undefined,
+    `Sales Report - ${customerName}`,
+    `Sales_Report_${safeName}`
+  );
 }
 
 export const exportFilteredProductsExcel = (

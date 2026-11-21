@@ -34,7 +34,7 @@ export interface MutationProps {
 }
 
 export interface HandleMutationProps<T> {
-    mutation: UseMutationResult<T, ErrorResponse, { url: string; body: Record<string, unknown> }, unknown>;
+    mutation: UseMutationResult<T, any, any, unknown>;
     url: string;
     body: Record<string, unknown>;
     invalidateQueryKey?: string[];
@@ -127,12 +127,12 @@ export const useAPI = () => {
         mutationFn: ({ url, body }) => postData({ url, body, token: getToken() })
     });
 
-    const patchMutation = useMutation({
-        mutationFn: ({ url, body }: MutationProps) => patchData({ url, body: (body as Record<string, unknown>), token: getToken() })
+    const patchMutation = useMutation<unknown, ErrorResponse, { url: string; body: Record<string, unknown> }>({
+        mutationFn: ({ url, body }: { url: string; body: Record<string, unknown> }) => patchData({ url, body: (body as Record<string, unknown>), token: getToken() })
     });
 
-    const putMutation = useMutation({
-        mutationFn: ({ url, body }: MutationProps) => putData({ url, body: (body as Record<string, unknown>), token: getToken() })
+    const putMutation = useMutation<unknown, ErrorResponse, { url: string; body: Record<string, unknown> }>({
+        mutationFn: ({ url, body }: { url: string; body: Record<string, unknown> }) => putData({ url, body: (body as Record<string, unknown>), token: getToken() })
     });
 
     const postFormMutation = useMutation({

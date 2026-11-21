@@ -67,7 +67,9 @@ const SUPPLIER_EXPORT_LABELS: PartyExportLabels = {
 export async function exportFilteredPurchasesExcel(
   purchases: PurchaseItem[],
   meta: ReportCompanyMeta,
-  visibleColumns?: Record<string, boolean>
+  visibleColumns?: Record<string, boolean>,
+  customTitle?: string,
+  customFileName?: string
 ): Promise<number> {
   if (!purchases || purchases.length === 0) {
     throw new Error("No purchase records available to export");
@@ -135,9 +137,11 @@ export async function exportFilteredPurchasesExcel(
 
   await buildAndDownloadExcel(rows, totalRow, {
     ...meta,
-    fileName: `Purchase_Report_${moment().format("YYYY-MM-DD")}.xlsx`,
+    fileName:
+      customFileName ||
+      `Purchase_Report_${moment().format("YYYY-MM-DD")}.xlsx`,
     sheetName: "Purchase Register",
-    reportTitle: "Purchase Register",
+    reportTitle: customTitle || "Purchase Register",
     totalLabel: "Total Invoices",
     totalSummarySpan,
     includeSignatures: true,
@@ -149,17 +153,49 @@ export async function exportFilteredPurchasesExcel(
 export async function downloadFilteredPurchasesPdf(
   purchases: PurchaseItem[],
   meta: ReportCompanyMeta,
-  visibleColumns?: Record<string, boolean>
+  visibleColumns?: Record<string, boolean>,
+  customTitle?: string,
+  customFilePrefix?: string
 ): Promise<void> {
   await downloadTradeInvoicesPdf(purchases, meta, {
     domain: "purchase",
-    filePrefix: "Purchase_Register",
-    reportTitle: "Purchase Register",
+    filePrefix: customFilePrefix || "Purchase_Register",
+    reportTitle: customTitle || "Purchase Register",
     partyColumnHeader: "Supplier Name",
     includeTransport: true,
     emptyErrorMessage: "No purchase records available to download PDF",
     visibleColumns,
   });
+}
+
+export async function exportSupplierPurchasesExcel(
+  purchases: PurchaseItem[],
+  supplierName: string,
+  meta: ReportCompanyMeta
+): Promise<number> {
+  const safeName = supplierName.replace(/[^a-zA-Z0-9_\-]/g, "_");
+  return exportFilteredPurchasesExcel(
+    purchases,
+    meta,
+    undefined,
+    `Purchase Register - ${supplierName}`,
+    `Purchase_Report_${safeName}_${moment().format("YYYY-MM-DD")}.xlsx`
+  );
+}
+
+export async function downloadSupplierPurchasesPdf(
+  purchases: PurchaseItem[],
+  supplierName: string,
+  meta: ReportCompanyMeta
+): Promise<void> {
+  const safeName = supplierName.replace(/[^a-zA-Z0-9_\-]/g, "_");
+  return downloadFilteredPurchasesPdf(
+    purchases,
+    meta,
+    undefined,
+    `Purchase Register - ${supplierName}`,
+    `Purchase_Register_${safeName}`
+  );
 }
 
 export const exportFilteredPurchaseProductsExcel = (

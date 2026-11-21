@@ -1,7 +1,7 @@
 import React, { useRef, useEffect, useMemo } from "react";
 import Modal from "@/components/modal/Modal";
 import { FaPrint } from "react-icons/fa";
-import { getUserInfo } from "@/utils/auth-storage";
+import { getUserInfo, getStoredUser } from "@/utils/auth-storage";
 import { formatMoney } from "@/utils/formatters";
 import { useBusinessProfileQuery } from "@/hooks/useBusinessProfile";
 import moment from "moment";
@@ -173,14 +173,12 @@ export const TradeInvoiceModal: React.FC<TradeInvoiceModalProps> = ({
     userInfo?.businessName ||
     "Shaha Enterprise";
 
-  const businessAddress =
-    businessProfile?.address ||
-    userInfo?.address ||
-    "";
+  const user = getStoredUser();
+  const businessAddress = businessProfile?.address || "";
 
   const phone1 = businessProfile?.businessPhone1 || userInfo?.phone || userInfo?.phoneNumber || "";
   const phone2 = businessProfile?.businessPhone2 || "";
-  const businessEmail = businessProfile?.businessEmail || userInfo?.email || "";
+  const businessEmail = businessProfile?.businessEmail || user?.email || "";
 
   const handlePrint = () => {
     if (!printRef.current) return;

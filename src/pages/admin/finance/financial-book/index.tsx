@@ -48,9 +48,6 @@ const FinancialBookPage: React.FC<FinancialBookPageProps> = ({ defaultType }) =>
   const [isDownloadingPdf, setIsDownloadingPdf] = useState<boolean>(false);
   const [isDownloadingCsv, setIsDownloadingCsv] = useState<boolean>(false);
 
-  // Dynamic iframe height to avoid inner scrollbar
-  const [iframeHeight, setIframeHeight] = useState<number | null>(null);
-
   // Synchronize when route changes
   useEffect(() => {
     const nextType = getInitialType();
@@ -84,15 +81,11 @@ const FinancialBookPage: React.FC<FinancialBookPageProps> = ({ defaultType }) =>
     refetchOnWindowFocus: false,
   });
 
-  // Handle postMessage navigation & height requests from sandboxed iframe
+  // Handle postMessage navigation requests from sandboxed iframe
   useEffect(() => {
     const handleMessage = (event: MessageEvent) => {
       if (event.data && event.data.type === "CASH_BOI_REPORT_NAVIGATE" && event.data.url) {
         setNavUrl(event.data.url);
-      }
-
-      if (event.data && event.data.type === "CASH_BOI_REPORT_HEIGHT" && typeof event.data.height === "number") {
-        setIframeHeight(Math.max(event.data.height + 30, 600));
       }
     };
 
@@ -140,9 +133,9 @@ const FinancialBookPage: React.FC<FinancialBookPageProps> = ({ defaultType }) =>
   const isBusy = isLoading || isFetching;
 
   return (
-    <div className="flex flex-col gap-2.5 px-3 py-2 sm:px-4 sm:py-2.5 max-w-[1700px] mx-auto w-full">
+    <div className="flex flex-col h-full flex-1 min-h-0 px-3 py-2 sm:px-4 sm:py-2.5 max-w-[1700px] mx-auto w-full overflow-hidden">
       {/* Header Bar - Borderless */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5 pb-1">
+      <div className="flex-shrink-0 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5 pb-1">
         {/* Left: Title without description & branch indicator */}
         <div>
           <PageHeader headerTitle={currentTitle.en} />
@@ -209,8 +202,8 @@ const FinancialBookPage: React.FC<FinancialBookPageProps> = ({ defaultType }) =>
           </div>
         </div>
 
-      {/* Report Content Container - Borderless and clean without scrollbar */}
-      <div className="relative w-full overflow-hidden bg-transparent border-0 shadow-none">
+      {/* Report Content Container - Fills remaining space perfectly with 0 scrollbar on outer page */}
+      <div className="relative flex-1 min-h-0 w-full overflow-hidden bg-transparent border-0 shadow-none">
         {/* Loading Spinner Overlay */}
         {isBusy && (
           <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-[var(--card-bg)]/80 backdrop-blur-xs min-h-[400px]">
@@ -244,14 +237,7 @@ const FinancialBookPage: React.FC<FinancialBookPageProps> = ({ defaultType }) =>
             ref={iframeRef}
             srcDoc={data.html}
             title={t(currentTitle.en)}
-            style={{
-              height: iframeHeight ? `${iframeHeight}px` : "900px",
-              minHeight: "750px",
-              border: "none",
-              outline: "none",
-            }}
-            scrolling="no"
-            className="w-full border-0 block bg-transparent"
+            className="w-full h-full border-0 block bg-transparent"
             sandbox="allow-scripts allow-same-origin allow-popups allow-forms"
           />
         ) : null}

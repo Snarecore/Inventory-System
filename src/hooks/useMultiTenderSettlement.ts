@@ -79,7 +79,7 @@ export const useMultiTenderSettlement = <TInvoice extends GenericDueInvoice>({
   useEffect(() => {
     if (registeredMfsAccounts.length > 0 && !selectedMfsId) {
       const firstMfs = registeredMfsAccounts[0];
-      setSelectedMfsId(String(firstMfs.id || firstMfs.mfsId || ""));
+      setSelectedMfsId(String(firstMfs.id || ""));
     }
   }, [registeredMfsAccounts, selectedMfsId]);
 
@@ -92,7 +92,7 @@ export const useMultiTenderSettlement = <TInvoice extends GenericDueInvoice>({
 
   const selectedMfsObj = useMemo(() => {
     return (
-      registeredMfsAccounts.find((m) => String(m.id || m.mfsId) === String(selectedMfsId)) ||
+      registeredMfsAccounts.find((m) => String(m.id) === String(selectedMfsId)) ||
       null
     );
   }, [registeredMfsAccounts, selectedMfsId]);

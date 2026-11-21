@@ -13,22 +13,24 @@ interface PageMetaDataProps {
 }
 
 interface PageMetaTableProps {
-    dataList: PageMetaDataProps[];
-    fetchData: () => void;
+    dataList?: PageMetaDataProps[];
+    fetchData?: () => void;
     isLoading?: boolean;
     isFetching?: boolean;
-    pageCount: number;
-    currentPageNumber: number;
-    handlePagination: (paginationData: { selected: number }) => void;
+    pageCount?: number;
+    currentPageNumber?: number;
+    handlePagination?: (paginationData: { selected: number }) => void;
     onEdit: (data?: PageMetaDataProps) => void;
 }
 
 const SeoTable = ({
-    dataList,
-    fetchData,
+    dataList = [],
+    fetchData = () => {},
     isLoading,
     isFetching,
-    pageCount, currentPageNumber, handlePagination,
+    pageCount = 1,
+    currentPageNumber = 1,
+    handlePagination = () => {},
     onEdit
 }: PageMetaTableProps) => {
 

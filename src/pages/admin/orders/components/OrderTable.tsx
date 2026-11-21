@@ -29,15 +29,15 @@ interface OrderTableProps {
 		userId: { label: string; value: string } | null;
 		status: { label: string; value: string } | null;
 		paymentStatus: { label: string; value: string } | null;
-		startDate: { label: Date; value: Date } | null;
-		endDate: { label: Date; value: Date } | null;
+		startDate: { label: string; value: string } | null;
+		endDate: { label: string; value: string } | null;
 	};
 	setSelectedFilters: React.Dispatch<React.SetStateAction<{
 		userId: { label: string; value: string } | null;
 		status: { label: string; value: string } | null;
 		paymentStatus: { label: string; value: string } | null;
-		startDate: { label: Date; value: Date } | null;
-		endDate: { label: Date; value: Date } | null;
+		startDate: { label: string; value: string } | null;
+		endDate: { label: string; value: string } | null;
 	}>>;
 }
 
@@ -126,7 +126,7 @@ const OrderTable = ({
 		<div className="bg-[var(--ui-surface)] rounded-xl shadow-xs border border-[var(--ui-border)] flex flex-col relative z-20 overflow-visible">
 			<div className="p-2 sm:p-2.5 border-b border-[var(--ui-border)] flex flex-wrap items-center justify-end gap-2 relative z-40 overflow-visible">
 				<div className="flex flex-wrap items-center gap-2">
-					{(Object.entries(dropdownOptions) as [keyof typeof selectedFilters, any][]).map(([key, options]) => (
+					{(Object.entries(dropdownOptions) as [keyof typeof dropdownOptions, any][]).map(([key, options]) => (
 						<DropdownFilter
 							key={key}
 							title={
@@ -153,8 +153,8 @@ const OrderTable = ({
 						onDateChange={(start, end) => {
 							setSelectedFilters((prev) => ({
 								...prev,
-								startDate: { label: start, value: start },
-								endDate: { label: end, value: end },
+								startDate: { label: String(start), value: String(start) },
+								endDate: { label: String(end), value: String(end) },
 							}));
 							setCurrentPageNumber(1);
 						}}
