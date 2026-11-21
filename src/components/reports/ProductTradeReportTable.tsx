@@ -73,11 +73,11 @@ const DOMAIN_LABELS: Record<
     emptyDesc: "No line items found in the current transactions set.",
   },
   purchase: {
-    qtyCol: "Qty Purchased",
+    qtyCol: "Quantity",
     amountCol: "Total Cost (৳)",
     highAmountOpt: "Highest Cost",
     lowAmountOpt: "Lowest Cost",
-    highQtyOpt: "Highest Qty Purchased",
+    highQtyOpt: "Highest Quantity",
     emptyTitle: "No Product Purchases Found",
     emptyDesc: "No line items found in the current purchases set.",
   },
