@@ -571,7 +571,7 @@ export const CustomerReturnReportTable: React.FC<
                                   }
                                   className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer ${
                                     activeTabForCustomer === "products"
-                                      ? "bg-[#009fe3] text-white shadow-xs"
+                                      ? "bg-[var(--primary-color)] text-white shadow-xs"
                                       : "text-[var(--ui-text-muted)] hover:bg-[var(--ui-border)]/40 hover:text-[var(--ui-text)]"
                                   }`}
                                 >
@@ -587,7 +587,7 @@ export const CustomerReturnReportTable: React.FC<
                                   }
                                   className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer ${
                                     activeTabForCustomer === "vouchers"
-                                      ? "bg-[#009fe3] text-white shadow-xs"
+                                      ? "bg-[var(--primary-color)] text-white shadow-xs"
                                       : "text-[var(--ui-text-muted)] hover:bg-[var(--ui-border)]/40 hover:text-[var(--ui-text)]"
                                   }`}
                                 >
@@ -643,39 +643,37 @@ export const CustomerReturnReportTable: React.FC<
                             {/* TAB 1: Returned Products Table (Row by Row) */}
                             {activeTabForCustomer === "products" && (
                               <div className="w-full overflow-x-auto rounded-lg border border-[var(--ui-border)]">
-                                <table className="w-full min-w-full text-left text-xs border-collapse">
-                                  <thead className="bg-[#009fe3] text-white">
-                                    <tr>
-                                      <th className="py-2.5 px-3 text-center w-12 font-bold whitespace-nowrap">
-                                        SL
-                                      </th>
-                                      <th className="py-2.5 px-3 font-bold">
-                                        Product Name
-                                      </th>
-                                      <th className="py-2.5 px-3 text-center w-20 font-bold whitespace-nowrap">
-                                        Unit
-                                      </th>
-                                      <th className="py-2.5 px-3 text-center w-28 font-bold whitespace-nowrap">
-                                        Returned Qty
-                                      </th>
-                                      <th className="py-2.5 px-3 text-right w-36 font-bold whitespace-nowrap">
-                                        Avg / Unit Price (৳)
-                                      </th>
-                                      <th className="py-2.5 px-3 text-right w-36 font-bold whitespace-nowrap">
-                                        Total Amount (৳)
-                                      </th>
-                                      <th className="py-2.5 px-3 font-bold">
-                                        Return Reasons
-                                      </th>
-                                      <th className="py-2.5 px-3 text-center w-24 font-bold whitespace-nowrap">
-                                        Vouchers
-                                      </th>
-                                    </tr>
-                                  </thead>
-                                  <tbody className="divide-y divide-[var(--ui-border)] bg-[var(--ui-surface)]">
+                                <Table>
+                                  <TableHead>
+                                    <TableTh align="center" width={48} className="whitespace-nowrap">
+                                      SL
+                                    </TableTh>
+                                    <TableTh className="whitespace-nowrap">
+                                      Product Name
+                                    </TableTh>
+                                    <TableTh align="center" width={80} className="whitespace-nowrap">
+                                      Unit
+                                    </TableTh>
+                                    <TableTh align="center" width={110} className="whitespace-nowrap">
+                                      Returned Qty
+                                    </TableTh>
+                                    <TableTh align="right" width={140} className="whitespace-nowrap">
+                                      Unit Price (৳)
+                                    </TableTh>
+                                    <TableTh align="right" width={140} className="whitespace-nowrap">
+                                      Total Amount (৳)
+                                    </TableTh>
+                                    <TableTh className="whitespace-nowrap">
+                                      Return Reasons
+                                    </TableTh>
+                                    <TableTh align="center" width={90} className="whitespace-nowrap">
+                                      Vouchers
+                                    </TableTh>
+                                  </TableHead>
+                                  <TableBody>
                                     {customerProducts.length > 0 ? (
                                       customerProducts.map((p, pIdx) => {
-                                        const avgUnitPrice =
+                                        const unitPrice =
                                           p.totalQuantity > 0
                                             ? p.totalAmount / p.totalQuantity
                                             : p.unitPrice;
@@ -699,7 +697,7 @@ export const CustomerReturnReportTable: React.FC<
                                               {p.totalQuantity}
                                             </td>
                                             <td className="py-2.5 px-3 text-right text-xs text-[var(--ui-text)] tabular-nums whitespace-nowrap">
-                                              ৳ {formatMoney(avgUnitPrice)}
+                                              ৳ {formatMoney(unitPrice)}
                                             </td>
                                             <td className="py-2.5 px-3 text-right text-xs font-bold text-[var(--ui-danger)] tabular-nums whitespace-nowrap">
                                               ৳ {formatMoney(p.totalAmount)}
@@ -725,50 +723,48 @@ export const CustomerReturnReportTable: React.FC<
                                         </td>
                                       </tr>
                                     )}
-                                  </tbody>
-                                </table>
+                                  </TableBody>
+                                </Table>
                               </div>
                             )}
 
                             {/* TAB 2: Return Vouchers Table */}
                             {activeTabForCustomer === "vouchers" && (
                               <div className="w-full overflow-x-auto rounded-lg border border-[var(--ui-border)]">
-                                <table className="w-full min-w-full text-left text-xs border-collapse">
-                                  <thead className="bg-[#009fe3] text-white">
-                                    <tr>
-                                      <th className="py-2 px-2.5 text-center w-12 font-bold">
-                                        SL
-                                      </th>
-                                      <th className="py-2 px-3 font-bold">
-                                        Voucher No
-                                      </th>
-                                      <th className="py-2 px-3 font-bold">
-                                        Order ID
-                                      </th>
-                                      <th className="py-2 px-3 text-center font-bold">
-                                        Return Date
-                                      </th>
-                                      <th className="py-2 px-2.5 text-center font-bold">
-                                        Items
-                                      </th>
-                                      <th className="py-2 px-3 text-right font-bold">
-                                        Cash Refund (৳)
-                                      </th>
-                                      <th className="py-2 px-3 text-right font-bold">
-                                        Due Adjust (৳)
-                                      </th>
-                                      <th className="py-2 px-3 text-right font-bold">
-                                        Total Refund (৳)
-                                      </th>
-                                      <th className="py-2 px-3 font-bold">
-                                        Reason
-                                      </th>
-                                      <th className="py-2 px-2.5 text-center font-bold w-20">
-                                        Actions
-                                      </th>
-                                    </tr>
-                                  </thead>
-                                  <tbody className="divide-y divide-[var(--ui-border)] bg-[var(--ui-surface)]">
+                                <Table>
+                                  <TableHead>
+                                    <TableTh align="center" width={48} className="whitespace-nowrap">
+                                      SL
+                                    </TableTh>
+                                    <TableTh className="whitespace-nowrap">
+                                      Voucher No
+                                    </TableTh>
+                                    <TableTh className="whitespace-nowrap">
+                                      Order ID
+                                    </TableTh>
+                                    <TableTh align="center" className="whitespace-nowrap">
+                                      Return Date
+                                    </TableTh>
+                                    <TableTh align="center" className="whitespace-nowrap">
+                                      Items
+                                    </TableTh>
+                                    <TableTh align="right" className="whitespace-nowrap">
+                                      Cash Refund (৳)
+                                    </TableTh>
+                                    <TableTh align="right" className="whitespace-nowrap">
+                                      Due Adjust (৳)
+                                    </TableTh>
+                                    <TableTh align="right" className="whitespace-nowrap">
+                                      Total Refund (৳)
+                                    </TableTh>
+                                    <TableTh className="whitespace-nowrap">
+                                      Reason
+                                    </TableTh>
+                                    <TableTh align="center" width={80} className="whitespace-nowrap">
+                                      Actions
+                                    </TableTh>
+                                  </TableHead>
+                                  <TableBody>
                                     {(c.records || []).map((r, rIdx) => (
                                       <tr
                                         key={r.returnNo || rIdx}
@@ -831,8 +827,8 @@ export const CustomerReturnReportTable: React.FC<
                                         </td>
                                       </tr>
                                     ))}
-                                  </tbody>
-                                </table>
+                                  </TableBody>
+                                </Table>
                               </div>
                             )}
                           </div>
