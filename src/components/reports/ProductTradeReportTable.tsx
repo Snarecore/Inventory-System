@@ -111,7 +111,7 @@ export const ProductTradeReportTable: React.FC<ProductTradeReportTableProps> = (
   const availableColumns: ColumnItem[] = [
     { key: "sl", label: "SL" },
     { key: "productCode", label: "Product Code" },
-    { key: "productName", label: "Product Description" },
+    { key: "productName", label: "Product" },
     { key: "unit", label: "Unit" },
     { key: "orders", label: "Orders" },
     { key: "quantity", label: labels.qtyCol },
@@ -241,7 +241,7 @@ export const ProductTradeReportTable: React.FC<ProductTradeReportTableProps> = (
             <TableHead>
               {isColVisible("sl") && <TableTh align="center" width={40} className="whitespace-nowrap">SL</TableTh>}
               {isColVisible("productCode") && <TableTh className="w-px whitespace-nowrap">Product Code</TableTh>}
-              {isColVisible("productName") && <TableTh className="whitespace-nowrap">Product Description</TableTh>}
+              {isColVisible("productName") && <TableTh className="whitespace-nowrap">Product</TableTh>}
               {isColVisible("unit") && <TableTh align="center" className="whitespace-nowrap">Unit</TableTh>}
               {isColVisible("orders") && <TableTh align="center" className="whitespace-nowrap">Orders</TableTh>}
               {isColVisible("quantity") && <TableTh align="right" className="whitespace-nowrap">{labels.qtyCol}</TableTh>}

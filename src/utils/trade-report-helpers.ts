@@ -1422,8 +1422,8 @@ function buildProductTradeColumns(
     },
     {
       key: "productName",
-      excelHeader: "Product Name",
-      pdfHeader: "Product Description",
+      excelHeader: "Product",
+      pdfHeader: "Product",
       isLeadingLabel: true,
       pdfStyle: { halign: "left" },
       excelValue: (p) => p.productName,

@@ -41,7 +41,7 @@ interface ProductPurchaseReturnReportTableProps extends ReportDateFilterProps {
 const AVAILABLE_COLUMNS: ColumnItem[] = [
   { key: "sl", label: "SL" },
   { key: "productCode", label: "Product Code" },
-  { key: "productName", label: "Product Description" },
+  { key: "productName", label: "Product" },
   { key: "unit", label: "Unit" },
   { key: "topReason", label: "Top Reason" },
   { key: "returnCount", label: "Vouchers" },
@@ -240,7 +240,7 @@ export const ProductPurchaseReturnReportTable: React.FC<
                 <TableTh className="w-px whitespace-nowrap">Product Code</TableTh>
               )}
               {isColVisible("productName") && (
-                <TableTh className="whitespace-nowrap">Product Description</TableTh>
+                <TableTh className="whitespace-nowrap">Product</TableTh>
               )}
               {isColVisible("unit") && (
                 <TableTh align="center" className="w-px whitespace-nowrap">
