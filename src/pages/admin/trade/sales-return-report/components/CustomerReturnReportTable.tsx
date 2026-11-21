@@ -555,121 +555,139 @@ export const CustomerReturnReportTable: React.FC<
                       )}
                     </tr>
 
-                    {/* Inline Expandable Full Customer Details */}
-                    {isExpanded && (
-                      <tr className="bg-slate-50/60 dark:bg-slate-900/40 border-b border-[var(--ui-border)]">
-                        <td colSpan={visibleTotalColumns} className="p-0 sm:px-1 py-1.5">
-                          <div className="w-full flex flex-col gap-2.5 bg-[var(--ui-surface)] p-2 sm:p-2.5 rounded-lg border border-[var(--ui-border)] shadow-xs">
-                            {/* Sub-Tabs & Action Buttons in a sleek single row */}
-                            <div className="w-full flex flex-wrap items-center justify-between gap-2 border-b border-[var(--ui-border)] pb-1.5">
-                              {/* Sub-Tabs: Returned Products vs Return Vouchers */}
-                              <div className="flex items-center gap-1.5">
-                                <button
-                                  type="button"
-                                  onClick={() =>
-                                    setExpandedTab(c.customerKey, "products")
-                                  }
-                                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer ${
-                                    activeTabForCustomer === "products"
-                                      ? "bg-[var(--primary-color)] text-white shadow-xs"
-                                      : "text-[var(--ui-text-muted)] hover:bg-[var(--ui-border)]/40 hover:text-[var(--ui-text)]"
-                                  }`}
-                                >
-                                  <FiPackage size={13} />
-                                  <span>
-                                    Returned Products ({customerProducts.length})
-                                  </span>
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() =>
-                                    setExpandedTab(c.customerKey, "vouchers")
-                                  }
-                                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer ${
-                                    activeTabForCustomer === "vouchers"
-                                      ? "bg-[var(--primary-color)] text-white shadow-xs"
-                                      : "text-[var(--ui-text-muted)] hover:bg-[var(--ui-border)]/40 hover:text-[var(--ui-text)]"
-                                  }`}
-                                >
-                                  <FiFileText size={13} />
-                                  <span>
-                                    Return Vouchers ({c.returnCount})
-                                  </span>
-                                </button>
+                      {/* Inline Expandable Full Customer Details */}
+                      {isExpanded && (
+                        <tr className="bg-slate-50/60 dark:bg-slate-900/40 border-b border-[var(--ui-border)]">
+                          <td colSpan={visibleTotalColumns} className="p-0 sm:px-1 py-1.5">
+                            <div className="w-full flex flex-col gap-2.5 bg-[var(--ui-surface)] p-2 sm:p-2.5 rounded-lg border border-[var(--ui-border)] shadow-xs">
+                              {/* Header of expanded customer return section with Customer Name */}
+                              <div className="w-full flex flex-wrap items-center justify-between gap-2 border-b border-[var(--ui-border)] pb-2 px-1">
+                                <div className="flex items-center gap-2">
+                                  <div className="w-6 h-6 rounded-md bg-[var(--primary-color)]/10 text-[var(--primary-color)] flex items-center justify-center font-bold text-xs">
+                                    <FiRotateCcw size={11} />
+                                  </div>
+                                  <div>
+                                    <span className="text-xs font-bold text-[var(--ui-text)]">
+                                      Sales Returns for{" "}
+                                      <span className="text-[var(--primary-color)]">
+                                        {c.customerName}
+                                      </span>
+                                    </span>
+                                    <span className="text-[11px] text-[var(--ui-text-muted)] ml-2 font-medium">
+                                      ({customerProducts.length} Products | {c.returnCount} Vouchers)
+                                    </span>
+                                  </div>
+                                </div>
+
+                                <div className="flex items-center gap-2">
+                                  {/* Sub-Tabs: Returned Products vs Return Vouchers */}
+                                  <div className="flex items-center gap-1 bg-[var(--ui-surface-muted)]/60 p-0.5 rounded-lg border border-[var(--ui-border)]">
+                                    <button
+                                      type="button"
+                                      onClick={() =>
+                                        setExpandedTab(c.customerKey, "products")
+                                      }
+                                      className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-md transition-all cursor-pointer ${
+                                        activeTabForCustomer === "products"
+                                          ? "bg-[var(--primary-color)] text-white shadow-xs"
+                                          : "text-[var(--ui-text-muted)] hover:text-[var(--ui-text)]"
+                                      }`}
+                                    >
+                                      <FiPackage size={12} />
+                                      <span>
+                                        Returned Products ({customerProducts.length})
+                                      </span>
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() =>
+                                        setExpandedTab(c.customerKey, "vouchers")
+                                      }
+                                      className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-md transition-all cursor-pointer ${
+                                        activeTabForCustomer === "vouchers"
+                                          ? "bg-[var(--primary-color)] text-white shadow-xs"
+                                          : "text-[var(--ui-text-muted)] hover:text-[var(--ui-text)]"
+                                      }`}
+                                    >
+                                      <FiFileText size={12} />
+                                      <span>
+                                        Return Vouchers ({c.returnCount})
+                                      </span>
+                                    </button>
+                                  </div>
+
+                                  {/* Action Download Buttons for active tab */}
+                                  <div className="flex items-center gap-1 border-l border-[var(--ui-border)] pl-2">
+                                    <button
+                                      type="button"
+                                      onClick={() =>
+                                        handleDownloadSingleCustomerPdf(
+                                          c,
+                                          activeTabForCustomer
+                                        )
+                                      }
+                                      disabled={isExporting}
+                                      className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold text-rose-700 dark:text-rose-300 bg-rose-50 dark:bg-rose-950/40 hover:bg-rose-100 dark:hover:bg-rose-900/60 border border-rose-200 dark:border-rose-800 rounded-md transition-colors cursor-pointer shadow-xs whitespace-nowrap"
+                                      title="Download PDF Report"
+                                    >
+                                      <FaFilePdf
+                                        size={11}
+                                        className="text-rose-600"
+                                      />
+                                      <span>PDF</span>
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() =>
+                                        handleExportSingleCustomerExcel(
+                                          c,
+                                          activeTabForCustomer
+                                        )
+                                      }
+                                      disabled={isExporting}
+                                      className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 border border-emerald-200 dark:border-emerald-800 rounded-md transition-colors cursor-pointer shadow-xs whitespace-nowrap"
+                                      title="Download Excel Report"
+                                    >
+                                      <FaFileExcel
+                                        size={11}
+                                        className="text-emerald-600"
+                                      />
+                                      <span>Excel</span>
+                                    </button>
+                                  </div>
+                                </div>
                               </div>
 
-                              {/* Export Action Buttons */}
-                              <div className="flex items-center gap-1.5 shrink-0">
-                                <button
-                                  type="button"
-                                  onClick={() =>
-                                    handleDownloadSingleCustomerPdf(
-                                      c,
-                                      activeTabForCustomer
-                                    )
-                                  }
-                                  disabled={isExporting}
-                                  className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold text-rose-700 dark:text-rose-300 bg-rose-50 dark:bg-rose-950/40 hover:bg-rose-100 dark:hover:bg-rose-900/60 border border-rose-200 dark:border-rose-800 rounded-md transition-colors cursor-pointer shadow-xs whitespace-nowrap"
-                                  title="Download PDF Report"
-                                >
-                                  <FaFilePdf
-                                    size={11}
-                                    className="text-rose-600"
-                                  />
-                                  <span>PDF</span>
-                                </button>
-
-                                <button
-                                  type="button"
-                                  onClick={() =>
-                                    handleExportSingleCustomerExcel(
-                                      c,
-                                      activeTabForCustomer
-                                    )
-                                  }
-                                  disabled={isExporting}
-                                  className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 border border-emerald-200 dark:border-emerald-800 rounded-md transition-colors cursor-pointer shadow-xs whitespace-nowrap"
-                                  title="Download Excel Report"
-                                >
-                                  <FaFileExcel
-                                    size={11}
-                                    className="text-emerald-600"
-                                  />
-                                  <span>Excel</span>
-                                </button>
-                              </div>
-                            </div>
-
-                            {/* TAB 1: Returned Products Table (Row by Row) */}
-                            {activeTabForCustomer === "products" && (
-                              <div className="w-full overflow-x-auto rounded-lg border border-[var(--ui-border)]">
-                                <Table>
-                                  <TableHead>
-                                    <TableTh align="center" width={48} className="whitespace-nowrap">
-                                      SL
-                                    </TableTh>
-                                    <TableTh className="whitespace-nowrap">
-                                      Product Name
-                                    </TableTh>
-                                    <TableTh align="center" width={80} className="whitespace-nowrap">
-                                      Unit
-                                    </TableTh>
-                                    <TableTh align="center" width={110} className="whitespace-nowrap">
-                                      Returned Qty
-                                    </TableTh>
-                                    <TableTh align="right" width={140} className="whitespace-nowrap">
-                                      Unit Price (৳)
-                                    </TableTh>
-                                    <TableTh align="right" width={140} className="whitespace-nowrap">
-                                      Total Amount (৳)
-                                    </TableTh>
-                                    <TableTh className="whitespace-nowrap">
-                                      Return Reasons
-                                    </TableTh>
-                                    <TableTh align="center" width={90} className="whitespace-nowrap">
-                                      Vouchers
-                                    </TableTh>
-                                  </TableHead>
+                              {/* TAB 1: Returned Products Table (Row by Row) */}
+                              {activeTabForCustomer === "products" && (
+                                <div className="w-full overflow-x-auto rounded-lg border border-[var(--ui-border)]">
+                                  <Table>
+                                    <TableHead>
+                                      <TableTh align="center" width={48} className="whitespace-nowrap">
+                                        SL
+                                      </TableTh>
+                                      <TableTh className="whitespace-nowrap">
+                                        Product
+                                      </TableTh>
+                                      <TableTh align="center" width={80} className="whitespace-nowrap">
+                                        Unit
+                                      </TableTh>
+                                      <TableTh align="center" width={110} className="whitespace-nowrap">
+                                        Returned Qty
+                                      </TableTh>
+                                      <TableTh align="right" width={140} className="whitespace-nowrap">
+                                        Unit Price (৳)
+                                      </TableTh>
+                                      <TableTh align="right" width={140} className="whitespace-nowrap">
+                                        Total Refund (৳)
+                                      </TableTh>
+                                      <TableTh className="whitespace-nowrap">
+                                        Reason
+                                      </TableTh>
+                                      <TableTh align="center" width={90} className="whitespace-nowrap">
+                                        Vouchers
+                                      </TableTh>
+                                    </TableHead>
                                   <TableBody>
                                     {customerProducts.length > 0 ? (
                                       customerProducts.map((p, pIdx) => {
