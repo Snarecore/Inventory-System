@@ -1580,7 +1580,6 @@ export async function downloadProductTradePdf(
   await generateAndDownloadCorporatePdf({
     fileName: `${labels.filePrefix}_${moment().format("YYYY-MM-DD")}.pdf`,
     reportTitle: labels.reportTitle,
-    metaRightLabel: `Total Products: ${products.length}`,
     headers,
     bodyRows,
     columnStyles,
@@ -1798,7 +1797,6 @@ export async function downloadPartyTradePdf(
   await generateAndDownloadCorporatePdf({
     fileName: `${labels.filePrefix}_${moment().format("YYYY-MM-DD")}.pdf`,
     reportTitle: labels.reportTitle,
-    metaRightLabel: `${labels.totalLabel}: ${parties.length}`,
     headers,
     bodyRows,
     columnStyles,
