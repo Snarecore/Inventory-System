@@ -65,6 +65,7 @@ export interface ProductTradeSummary {
   totalAmount: number;
   totalDiscount: number;
   invoicesCount: number;
+  unitPrice?: number;
 }
 
 export interface PartyTradeSummary {
@@ -450,7 +451,10 @@ export function aggregateTradeProducts(
           totalAmount: 0,
           totalDiscount: 0,
           invoicesCount: 0,
+          unitPrice: price > 0 ? price : undefined,
         };
+      } else if (!map[key].unitPrice && price > 0) {
+        map[key].unitPrice = price;
       }
 
       map[key].totalQuantity += qty;
@@ -1454,14 +1458,19 @@ function buildProductTradeColumns(
     },
     {
       key: "avgRate",
-      excelHeader: "Avg Rate (BDT)",
+      excelHeader: "Unit Price (BDT)",
+      pdfHeader: "Unit Price (BDT)",
       pdfStyle: { halign: "right" },
       excelValue: (p) =>
-        p.totalQuantity > 0
+        p.unitPrice ??
+        (p.totalQuantity > 0
           ? Number((p.totalAmount / p.totalQuantity).toFixed(2))
-          : 0,
+          : 0),
       pdfCell: (p) =>
-        formatMoney(p.totalQuantity > 0 ? p.totalAmount / p.totalQuantity : 0),
+        formatMoney(
+          p.unitPrice ??
+            (p.totalQuantity > 0 ? p.totalAmount / p.totalQuantity : 0)
+        ),
     },
     {
       key: "discount",
@@ -1708,11 +1717,11 @@ function buildPartyTradeColumns(
       key: "status",
       excelHeader: "Status",
       pdfStyle: { halign: "center" },
-      excelValue: (p) => (p.totalDue > 0 ? "Has Due" : "Settled"),
+      excelValue: (p) => (p.totalDue > 0 ? "Outstanding" : "Paid"),
       pdfCell: (p) => {
         const hasDue = p.totalDue > 0;
         return {
-          content: hasDue ? "Has Due" : "Settled",
+          content: hasDue ? "Outstanding" : "Paid",
           styles: {
             fontStyle: "bold",
             textColor: hasDue ? REPORT_RGB.rose : REPORT_RGB.emerald,

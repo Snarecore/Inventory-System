@@ -46,7 +46,7 @@ const AVAILABLE_COLUMNS: ColumnItem[] = [
   { key: "topReason", label: "Top Reason" },
   { key: "returnCount", label: "Vouchers" },
   { key: "quantity", label: "Returned Qty" },
-  { key: "avgRate", label: "Avg Rate (৳)" },
+  { key: "avgRate", label: "Unit Price (৳)" },
   { key: "amount", label: "Refund Value (৳)" },
   { key: "share", label: "Return Share" },
 ];
@@ -262,7 +262,7 @@ export const ProductPurchaseReturnReportTable: React.FC<
               )}
               {isColVisible("avgRate") && (
                 <TableTh align="right" className="whitespace-nowrap">
-                  Avg Rate (৳)
+                  Unit Price (৳)
                 </TableTh>
               )}
               {isColVisible("amount") && (

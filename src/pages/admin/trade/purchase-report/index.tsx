@@ -182,6 +182,7 @@ const PurchaseReportPage: React.FC = () => {
           <SupplierPurchaseReportTable
             transactions={transactions}
             isLoading={isLoading}
+            onView={handleView}
             {...datePickerProps}
           />
         )}

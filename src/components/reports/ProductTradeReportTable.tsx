@@ -115,7 +115,7 @@ export const ProductTradeReportTable: React.FC<ProductTradeReportTableProps> = (
     { key: "unit", label: "Unit" },
     { key: "orders", label: "Orders" },
     { key: "quantity", label: labels.qtyCol },
-    { key: "avgRate", label: "Avg Rate (৳)" },
+    { key: "avgRate", label: "Unit Price (৳)" },
     { key: "discount", label: "Discounts (৳)" },
     { key: "amount", label: labels.amountCol },
     { key: "share", label: "Contribution" },
@@ -245,7 +245,7 @@ export const ProductTradeReportTable: React.FC<ProductTradeReportTableProps> = (
               {isColVisible("unit") && <TableTh align="center" className="whitespace-nowrap">Unit</TableTh>}
               {isColVisible("orders") && <TableTh align="center" className="whitespace-nowrap">Orders</TableTh>}
               {isColVisible("quantity") && <TableTh align="right" className="whitespace-nowrap">{labels.qtyCol}</TableTh>}
-              {isColVisible("avgRate") && <TableTh align="right" className="whitespace-nowrap">Avg Rate (৳)</TableTh>}
+              {isColVisible("avgRate") && <TableTh align="right" className="whitespace-nowrap">Unit Price (৳)</TableTh>}
               {isColVisible("discount") && <TableTh align="right" className="whitespace-nowrap">Discounts (৳)</TableTh>}
               {isColVisible("amount") && <TableTh align="right" className="whitespace-nowrap">{labels.amountCol}</TableTh>}
               {isColVisible("share") && <TableTh align="right" className="whitespace-nowrap">Contribution</TableTh>}
@@ -256,10 +256,11 @@ export const ProductTradeReportTable: React.FC<ProductTradeReportTableProps> = (
                   item.totalAmount,
                   grandTotalAmount
                 );
-                const avgPrice =
-                  item.totalQuantity > 0
+                const unitPrice =
+                  item.unitPrice ??
+                  (item.totalQuantity > 0
                     ? Math.round(item.totalAmount / item.totalQuantity)
-                    : 0;
+                    : 0);
 
                 return (
                   <tr
@@ -298,7 +299,7 @@ export const ProductTradeReportTable: React.FC<ProductTradeReportTableProps> = (
                     )}
                     {isColVisible("avgRate") && (
                       <td className="py-2.5 px-3 text-right text-xs text-[var(--ui-text)]">
-                        ৳ {formatMoney(avgPrice)}
+                        ৳ {formatMoney(unitPrice)}
                       </td>
                     )}
                     {isColVisible("discount") && (

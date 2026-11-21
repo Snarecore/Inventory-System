@@ -906,8 +906,8 @@ function buildProductReturnColumns(
     },
     {
       key: "avgRate",
-      excelHeader: "Avg Rate (BDT)",
-      pdfHeader: "Avg Rate",
+      excelHeader: "Unit Price (BDT)",
+      pdfHeader: "Unit Price (BDT)",
       pdfStyle: { halign: "right" },
       excelValue: (p) =>
         Number((p.totalQuantity > 0 ? p.totalAmount / p.totalQuantity : 0).toFixed(2)),
