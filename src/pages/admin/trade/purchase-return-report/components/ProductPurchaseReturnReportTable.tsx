@@ -42,13 +42,13 @@ const AVAILABLE_COLUMNS: ColumnItem[] = [
   { key: "sl", label: "SL" },
   { key: "productCode", label: "Product Code" },
   { key: "productName", label: "Product" },
-  { key: "unit", label: "Unit" },
-  { key: "topReason", label: "Top Reason" },
   { key: "returnCount", label: "Vouchers" },
   { key: "quantity", label: "Returned Qty" },
+  { key: "unit", label: "Unit" },
   { key: "avgRate", label: "Unit Price (৳)" },
   { key: "amount", label: "Refund Value (৳)" },
   { key: "share", label: "Return Share" },
+  { key: "topReason", label: "Top Reason" },
 ];
 
 export const ProductPurchaseReturnReportTable: React.FC<
@@ -242,14 +242,6 @@ export const ProductPurchaseReturnReportTable: React.FC<
               {isColVisible("productName") && (
                 <TableTh className="whitespace-nowrap">Product</TableTh>
               )}
-              {isColVisible("unit") && (
-                <TableTh align="center" className="w-px whitespace-nowrap">
-                  Unit
-                </TableTh>
-              )}
-              {isColVisible("topReason") && (
-                <TableTh className="whitespace-nowrap">Top Reason</TableTh>
-              )}
               {isColVisible("returnCount") && (
                 <TableTh align="center" className="whitespace-nowrap">
                   Vouchers
@@ -258,6 +250,11 @@ export const ProductPurchaseReturnReportTable: React.FC<
               {isColVisible("quantity") && (
                 <TableTh align="right" className="whitespace-nowrap">
                   Returned Qty
+                </TableTh>
+              )}
+              {isColVisible("unit") && (
+                <TableTh align="center" className="w-px whitespace-nowrap">
+                  Unit
                 </TableTh>
               )}
               {isColVisible("avgRate") && (
@@ -274,6 +271,9 @@ export const ProductPurchaseReturnReportTable: React.FC<
                 <TableTh align="right" className="whitespace-nowrap">
                   Return Share
                 </TableTh>
+              )}
+              {isColVisible("topReason") && (
+                <TableTh className="whitespace-nowrap">Top Reason</TableTh>
               )}
             </TableHead>
 
@@ -310,20 +310,6 @@ export const ProductPurchaseReturnReportTable: React.FC<
                       </td>
                     )}
 
-                    {isColVisible("unit") && (
-                      <td className="py-2.5 px-3 text-center text-xs text-[var(--ui-text-muted)]">
-                        {p.unit}
-                      </td>
-                    )}
-
-                    {isColVisible("topReason") && (
-                      <td className="py-2.5 px-3 text-left text-xs text-[var(--ui-text-muted)]">
-                        <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[11px] bg-[var(--ui-surface-muted)] text-[var(--ui-text)]">
-                          {p.topReason}
-                        </span>
-                      </td>
-                    )}
-
                     {isColVisible("returnCount") && (
                       <td className="py-2.5 px-3 text-center font-bold text-xs text-[var(--color-primary)]">
                         {p.returnCount}
@@ -333,6 +319,12 @@ export const ProductPurchaseReturnReportTable: React.FC<
                     {isColVisible("quantity") && (
                       <td className="py-2.5 px-3 text-right font-bold text-xs text-[var(--ui-text)]">
                         {p.totalQuantity}
+                      </td>
+                    )}
+
+                    {isColVisible("unit") && (
+                      <td className="py-2.5 px-3 text-center text-xs text-[var(--ui-text-muted)]">
+                        {p.unit}
                       </td>
                     )}
 
@@ -349,8 +341,16 @@ export const ProductPurchaseReturnReportTable: React.FC<
                     )}
 
                     {isColVisible("share") && (
-                      <td className="py-2.5 px-3 text-right font-semibold text-xs text-[var(--color-primary)]">
+                      <td className="py-2.5 px-3 text-right font-medium text-xs text-[var(--ui-text)]">
                         {sharePct}%
+                      </td>
+                    )}
+
+                    {isColVisible("topReason") && (
+                      <td className="py-2.5 px-3 text-left text-xs text-[var(--ui-text-muted)]">
+                        <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[11px] bg-[var(--ui-surface-muted)] text-[var(--ui-text)]">
+                          {p.topReason}
+                        </span>
                       </td>
                     )}
                   </tr>
@@ -365,8 +365,6 @@ export const ProductPurchaseReturnReportTable: React.FC<
                       isColVisible("sl"),
                       isColVisible("productCode"),
                       isColVisible("productName"),
-                      isColVisible("unit"),
-                      isColVisible("topReason"),
                     ].filter(Boolean).length
                   }
                   className="py-2.5 px-3 text-left font-bold"
@@ -386,6 +384,8 @@ export const ProductPurchaseReturnReportTable: React.FC<
                   </td>
                 )}
 
+                {isColVisible("unit") && <td></td>}
+
                 {isColVisible("avgRate") && <td></td>}
 
                 {isColVisible("amount") && (
@@ -397,6 +397,8 @@ export const ProductPurchaseReturnReportTable: React.FC<
                 {isColVisible("share") && (
                   <td className="py-2.5 px-3 text-right font-bold">100%</td>
                 )}
+
+                {isColVisible("topReason") && <td></td>}
               </tr>
             </TableBody>
           </Table>

@@ -1447,31 +1447,17 @@ function buildProductReturnColumns(
     },
     {
       key: "productName",
-      excelHeader: "Product Name",
+      excelHeader: "Product",
+      pdfHeader: "Product",
       isLeadingLabel: true,
       pdfStyle: { halign: "left", fontStyle: "bold" },
       excelValue: (p) => p.productName,
       pdfCell: (p) => ({ content: p.productName, styles: { fontStyle: "bold" } }),
     },
     {
-      key: "unit",
-      excelHeader: "Unit",
-      isLeadingLabel: true,
-      pdfStyle: { halign: "center" },
-      excelValue: (p) => p.unit,
-      pdfCell: (p) => p.unit,
-    },
-    {
-      key: "topReason",
-      excelHeader: "Top Reason",
-      isLeadingLabel: true,
-      pdfStyle: { halign: "left" },
-      excelValue: (p) => p.topReason,
-      pdfCell: (p) => p.topReason,
-    },
-    {
       key: "returnCount",
       excelHeader: "Vouchers",
+      pdfHeader: "Vouchers",
       pdfStyle: { halign: "center" },
       excelValue: (p) => p.returnCount,
       excelTotalValue: (t) => t.totalVouchers,
@@ -1490,6 +1476,14 @@ function buildProductReturnColumns(
       excelTotalValue: (t) => t.totalQuantity,
       pdfCell: (p) => ({ content: p.totalQuantity, styles: { fontStyle: "bold" } }),
       pdfSummaryCell: (t) => ({ content: t.totalQuantity }),
+    },
+    {
+      key: "unit",
+      excelHeader: "Unit",
+      pdfHeader: "Unit",
+      pdfStyle: { halign: "center" },
+      excelValue: (p) => p.unit,
+      pdfCell: (p) => p.unit,
     },
     {
       key: "avgRate",
@@ -1530,6 +1524,14 @@ function buildProductReturnColumns(
       pdfCell: (p) =>
         `${calculateRevenueSharePct(p.totalAmount, grandTotalAmount)}%`,
       pdfSummaryCell: () => ({ content: "100.0%" }),
+    },
+    {
+      key: "topReason",
+      excelHeader: "Top Reason",
+      pdfHeader: "Top Reason",
+      pdfStyle: { halign: "left" },
+      excelValue: (p) => p.topReason,
+      pdfCell: (p) => p.topReason,
     },
   ];
 }

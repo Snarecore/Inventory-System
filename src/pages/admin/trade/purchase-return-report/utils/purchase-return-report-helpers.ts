@@ -931,25 +931,12 @@ function buildProductReturnColumns(
     },
     {
       key: "productName",
-      excelHeader: "Product Name",
+      excelHeader: "Product",
+      pdfHeader: "Product",
       isLeadingLabel: true,
       pdfStyle: { halign: "left", fontStyle: "bold" },
       excelValue: (p) => p.productName,
       pdfCell: (p) => ({ content: p.productName, styles: { fontStyle: "bold" } }),
-    },
-    {
-      key: "unit",
-      excelHeader: "Unit",
-      pdfStyle: { halign: "center" },
-      excelValue: (p) => p.unit,
-      pdfCell: (p) => p.unit,
-    },
-    {
-      key: "topReason",
-      excelHeader: "Top Reason",
-      pdfStyle: { halign: "left" },
-      excelValue: (p) => p.topReason,
-      pdfCell: (p) => p.topReason,
     },
     {
       key: "returnCount",
@@ -976,6 +963,14 @@ function buildProductReturnColumns(
         content: Number(t.totalQuantity.toFixed(2)),
         styles: { halign: "right", fontStyle: "bold" },
       }),
+    },
+    {
+      key: "unit",
+      excelHeader: "Unit",
+      pdfHeader: "Unit",
+      pdfStyle: { halign: "center" },
+      excelValue: (p) => p.unit,
+      pdfCell: (p) => p.unit,
     },
     {
       key: "avgRate",
@@ -1006,12 +1001,20 @@ function buildProductReturnColumns(
     {
       key: "share",
       excelHeader: "Return Share (%)",
-      pdfHeader: "Share",
+      pdfHeader: "Share (%)",
       pdfStyle: { halign: "right" },
       excelValue: (p) =>
         calculateRevenueSharePct(p.totalAmount, grandTotalAmount),
       pdfCell: (p) =>
         `${calculateRevenueSharePct(p.totalAmount, grandTotalAmount)}%`,
+    },
+    {
+      key: "topReason",
+      excelHeader: "Top Reason",
+      pdfHeader: "Top Reason",
+      pdfStyle: { halign: "left" },
+      excelValue: (p) => p.topReason,
+      pdfCell: (p) => p.topReason,
     },
   ];
 }
