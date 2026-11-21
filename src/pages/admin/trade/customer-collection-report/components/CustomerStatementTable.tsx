@@ -3,6 +3,12 @@ import { FiClock, FiEye, FiPackage, FiChevronDown, FiChevronRight } from "react-
 import { formatMoney } from "@/utils/formatters";
 import type { CollectionReceiptData } from "@/pages/admin/trade/customer-collection/components/CollectionReceiptModal";
 import type { CustomerLedgerBreakdownItem, CustomerLedgerStats } from "@/types/customer-ledger.types";
+import {
+  Table,
+  TableHead,
+  TableTh,
+  TableBody,
+} from "@/components/table-components/Table";
 
 interface CustomerStatementTableProps {
   entries: CustomerLedgerBreakdownItem[] | any[];
@@ -145,22 +151,42 @@ export const CustomerStatementTable: React.FC<CustomerStatementTableProps> = ({
 
   return (
     <div className="w-full overflow-x-auto rounded-lg border border-[var(--ui-border)] bg-[var(--ui-surface)] shadow-xs">
-      <table className="ui-table w-full text-left border-collapse min-w-[850px]">
-        <thead>
-          <tr className="border-b border-[var(--ui-border)] bg-[var(--ui-surface-muted)]/60 text-[11px] font-semibold text-[var(--ui-text-muted)]">
-            <th className="py-2 px-2.5 text-center w-10 whitespace-nowrap">SL</th>
-            <th className="py-2 px-2.5 text-center w-32 whitespace-nowrap">Date & Time</th>
-            <th className="py-2 px-2.5 text-center min-w-[95px] whitespace-nowrap">Type</th>
-            <th className="py-2 px-2.5 text-center min-w-[90px] whitespace-nowrap">Collection Method</th>
-            <th className="py-2 px-2.5 text-left min-w-[160px] whitespace-nowrap">Description</th>
-            <th className="py-2 px-2.5 text-right min-w-[95px] whitespace-nowrap">Sales (৳)</th>
-            <th className="py-2 px-2.5 text-right min-w-[95px] whitespace-nowrap">Collection (৳)</th>
-            <th className="py-2 px-2.5 text-right min-w-[105px] whitespace-nowrap">Balance (৳)</th>
-            <th className="py-2 px-2.5 text-center w-12 whitespace-nowrap">Items</th>
-            {onViewReceipt && <th className="py-2 px-2.5 text-center w-12 whitespace-nowrap">Receipt</th>}
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-[var(--ui-border)] text-[11px] text-[var(--ui-text)]">
+      <Table minWidth={850}>
+        <TableHead>
+          <TableTh align="center" width={48} className="whitespace-nowrap">
+            SL
+          </TableTh>
+          <TableTh align="center" width={135} className="whitespace-nowrap">
+            Date & Time
+          </TableTh>
+          <TableTh align="center" width={100} className="whitespace-nowrap">
+            Type
+          </TableTh>
+          <TableTh align="center" width={115} className="whitespace-nowrap">
+            Collection Method
+          </TableTh>
+          <TableTh align="left" className="whitespace-nowrap min-w-[160px]">
+            Description
+          </TableTh>
+          <TableTh align="right" width={105} className="whitespace-nowrap">
+            Sales (৳)
+          </TableTh>
+          <TableTh align="right" width={105} className="whitespace-nowrap">
+            Collection (৳)
+          </TableTh>
+          <TableTh align="right" width={115} className="whitespace-nowrap">
+            Balance (৳)
+          </TableTh>
+          <TableTh align="center" width={60} className="whitespace-nowrap">
+            Items
+          </TableTh>
+          {onViewReceipt && (
+            <TableTh align="center" width={60} className="whitespace-nowrap">
+              Receipt
+            </TableTh>
+          )}
+        </TableHead>
+        <TableBody className="text-[11px] text-[var(--ui-text)]">
           {entries.map((item: any, idx: number) => {
             const isOpening = String(item.type || "").toLowerCase().includes("opening");
             const sales = Number(item.salesAmount ?? 0);
@@ -337,7 +363,7 @@ export const CustomerStatementTable: React.FC<CustomerStatementTableProps> = ({
               </React.Fragment>
             );
           })}
-        </tbody>
+        </TableBody>
 
         {/* Total Summary Footer Row matching screenshot */}
         <tfoot>
@@ -362,7 +388,7 @@ export const CustomerStatementTable: React.FC<CustomerStatementTableProps> = ({
             {onViewReceipt && <td className="py-2 px-2.5 w-12"></td>}
           </tr>
         </tfoot>
-      </table>
+      </Table>
     </div>
   );
 };
