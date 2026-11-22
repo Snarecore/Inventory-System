@@ -88,8 +88,8 @@ export const TradeProductSearch: React.FC<TradeProductSearchProps> = ({
             }}
             className="px-3 sm:px-3.5 h-[var(--ui-control-h-sm)] rounded-[var(--ui-radius)] text-[length:var(--ui-font-size-sm)] font-semibold flex items-center gap-1.5 transition-all shadow-[var(--ui-shadow-control)] shrink-0 cursor-pointer bg-[var(--ui-surface-sunken)] hover:bg-[var(--ui-border)] text-[var(--ui-text)] border border-[var(--ui-border-strong)]"
           >
-            <FaTimes size={11} className="text-[var(--ui-text-muted)]" />
-            <span>{t("Cancel")}</span>
+            <FaCheck size={11} className="text-emerald-600 dark:text-emerald-400" />
+            <span>{t("Okay")}</span>
           </button>
         ) : (
           <button

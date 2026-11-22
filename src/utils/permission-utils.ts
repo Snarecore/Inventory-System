@@ -1065,6 +1065,9 @@ export function getSidebarItemModule(item: {
   if (path.includes("packages") || name.includes("package")) {
     return { module: "subscription_packages", action: "read" };
   }
+  if (path.includes("referral") || name.includes("referral")) {
+    return { module: "subscription_packages", action: "read" };
+  }
   if (path.includes("company") || name.includes("business profile")) {
     return { module: "business_profile", action: "update" };
   }
@@ -1118,8 +1121,12 @@ export function canAccessMenuItem(
     return false;
   }
 
-  // Dashboard is always viewable for any staff with active session access
-  if (mapping.module === "dashboard") {
+  // Dashboard and Referral Profile are always viewable for any staff with active session access
+  if (
+    mapping.module === "dashboard" ||
+    (item.path && item.path.includes("referral")) ||
+    (item.name && item.name.toLowerCase().includes("referral"))
+  ) {
     return true;
   }
 

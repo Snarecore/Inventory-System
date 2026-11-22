@@ -16,6 +16,8 @@ import {
 } from "../utils/package-formatters";
 import { getUserInfo, getStoredUser } from "@/utils/auth-storage";
 import { validatePaymentRedirectUrl } from "@/utils/payment-redirect";
+import { useReferralBalanceQuery, useCheckoutDebitFromWalletMutation } from "@/hooks/useReferralQueries";
+import { formatTaka } from "@/services/referral-service";
 
 interface SubscribeCheckoutModalProps {
   isOpen: boolean;
@@ -92,6 +94,15 @@ const CheckoutFormContent: React.FC<CheckoutFormProps> = ({
   const [validationError, setValidationError] = useState<string | null>(null);
   const [isRedirecting, setIsRedirecting] = useState(false);
 
+  const { data: walletBalance } = useReferralBalanceQuery(userId);
+  const checkoutDebitMutation = useCheckoutDebitFromWalletMutation();
+  const [payWithWallet, setPayWithWallet] = useState(false);
+  const [walletSuccess, setWalletSuccess] = useState(false);
+
+  const spendablePoisha = walletBalance?.spendablePoisha ?? 0;
+  const packagePoisha = (pkg.total ?? 0) * 100;
+  const hasEnoughWalletBalance = spendablePoisha >= packagePoisha && packagePoisha > 0;
+
   const initiatePaymentMutation = useInitiatePackagePaymentMutation();
   const totalAmount = pkg.total ?? 0;
   const cycleMonths = cycle.months || 1;
@@ -130,6 +141,26 @@ const CheckoutFormContent: React.FC<CheckoutFormProps> = ({
 
     if (!fullName.trim()) {
       setValidationError("Please enter customer or organization name.");
+      return;
+    }
+
+    if (payWithWallet) {
+      if (!hasEnoughWalletBalance) {
+        setValidationError("Insufficient referral commission balance to purchase this package.");
+        return;
+      }
+      try {
+        setIsRedirecting(true);
+        await checkoutDebitMutation.mutateAsync({
+          userId: Number(userId),
+          amountPoisha: packagePoisha,
+        });
+        setWalletSuccess(true);
+        setIsRedirecting(false);
+      } catch (err: any) {
+        setValidationError(err?.message || "Failed to process commission wallet debit.");
+        setIsRedirecting(false);
+      }
       return;
     }
 
@@ -186,6 +217,31 @@ const CheckoutFormContent: React.FC<CheckoutFormProps> = ({
     }
   };
 
+  if (walletSuccess) {
+    return (
+      <div className="py-8 px-4 flex flex-col items-center justify-center text-center space-y-3">
+        <div className="w-14 h-14 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center">
+          <FaCheckCircle size={28} />
+        </div>
+        <h3 className="text-base font-bold text-gray-900">
+          Payment Successful via Referral Wallet!
+        </h3>
+        <p className="text-xs text-gray-500 max-w-sm">
+          {formatPackageMoney(totalAmount)} has been deducted from your commission wallet. Your package {pkg.name} ({cycle.label}) is now activated.
+        </p>
+        <button
+          onClick={() => {
+            onClose();
+            window.location.reload();
+          }}
+          className="mt-2 px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold cursor-pointer"
+        >
+          Done
+        </button>
+      </div>
+    );
+  }
+
   if (isRedirecting) {
     return (
       <div className="py-10 px-4 flex flex-col items-center justify-center text-center space-y-3">
@@ -193,10 +249,10 @@ const CheckoutFormContent: React.FC<CheckoutFormProps> = ({
           <FaSpinner size={24} />
         </div>
         <h3 className="text-sm font-bold text-[var(--ui-text)]">
-          Redirecting to Payment Gateway...
+          {payWithWallet ? "Processing Commission Debit..." : "Redirecting to Payment Gateway..."}
         </h3>
         <p className="text-xs text-[var(--ui-text-muted)] max-w-xs">
-          Please wait while we transfer you to the secure checkout page. Do not refresh or close this window.
+          Please wait while we process your request. Do not refresh or close this window.
         </p>
       </div>
     );
@@ -304,6 +360,59 @@ const CheckoutFormContent: React.FC<CheckoutFormProps> = ({
         </div>
       </div>
 
+      {/* Payment Method Selector */}
+      <div className="p-3 rounded-xl border border-[var(--ui-border)] bg-[var(--ui-surface)] space-y-2">
+        <label className="text-xs font-bold text-[var(--ui-text)] block">
+          Payment Method
+        </label>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+          <label
+            className={`p-2.5 rounded-lg border flex items-center gap-2 cursor-pointer transition-all ${
+              !payWithWallet
+                ? "border-blue-500 bg-blue-50/40 text-blue-900 font-semibold shadow-2xs"
+                : "border-[var(--ui-border)] text-[var(--ui-text)] hover:bg-[var(--ui-surface-sunken)]"
+            }`}
+          >
+            <input
+              type="radio"
+              name="paymentMethod"
+              checked={!payWithWallet}
+              onChange={() => setPayWithWallet(false)}
+              className="cursor-pointer"
+            />
+            <span>Online Gateway (EPS / bKash / Card)</span>
+          </label>
+
+          <label
+            className={`p-2.5 rounded-lg border flex items-center justify-between gap-2 cursor-pointer transition-all ${
+              payWithWallet
+                ? "border-emerald-500 bg-emerald-50/40 text-emerald-900 font-semibold shadow-2xs"
+                : "border-[var(--ui-border)] text-[var(--ui-text)] hover:bg-[var(--ui-surface-sunken)]"
+            } ${!hasEnoughWalletBalance ? "opacity-60" : ""}`}
+          >
+            <div className="flex items-center gap-2 min-w-0">
+              <input
+                type="radio"
+                name="paymentMethod"
+                checked={payWithWallet}
+                disabled={!hasEnoughWalletBalance}
+                onChange={() => setPayWithWallet(true)}
+                className="cursor-pointer"
+              />
+              <span className="truncate">Referral Wallet Balance</span>
+            </div>
+            <span className="text-[11px] font-mono font-bold text-emerald-600 shrink-0">
+              {formatTaka(spendablePoisha)}
+            </span>
+          </label>
+        </div>
+        {!hasEnoughWalletBalance && spendablePoisha > 0 && (
+          <p className="text-[11px] text-[var(--ui-text-muted)]">
+            * Referral wallet balance ({formatTaka(spendablePoisha)}) is less than package total ({formatPackageMoney(totalAmount)}).
+          </p>
+        )}
+      </div>
+
       {/* Footer Buttons */}
       <div className="pt-2.5 border-t border-[var(--ui-border)] flex items-center justify-end gap-2">
         <Button
@@ -311,21 +420,23 @@ const CheckoutFormContent: React.FC<CheckoutFormProps> = ({
           variant="outline"
           size="sm"
           onClick={onClose}
-          disabled={initiatePaymentMutation.isPending}
+          disabled={initiatePaymentMutation.isPending || checkoutDebitMutation.isPending}
           buttonClass="!bg-[var(--ui-surface)] hover:!bg-[var(--ui-surface-sunken)] !border-[var(--ui-border)] !text-[var(--ui-text)] font-medium !rounded-lg !py-1.5 !px-3.5 text-xs cursor-pointer"
         />
         <Button
           label={
-            initiatePaymentMutation.isPending
-              ? "Redirecting..."
+            checkoutDebitMutation.isPending || initiatePaymentMutation.isPending
+              ? "Processing..."
+              : payWithWallet
+              ? `Pay with Wallet (${formatPackageMoney(totalAmount)})`
               : `Proceed to Payment (${formatPackageMoney(totalAmount)})`
           }
           type="submit"
           size="sm"
-          color="var(--primary-color)"
-          hoverColor="var(--primary-color-hover)"
-          isLoading={initiatePaymentMutation.isPending}
-          disabled={initiatePaymentMutation.isPending}
+          color={payWithWallet ? "#059669" : "var(--primary-color)"}
+          hoverColor={payWithWallet ? "#047857" : "var(--primary-color-hover)"}
+          isLoading={initiatePaymentMutation.isPending || checkoutDebitMutation.isPending}
+          disabled={initiatePaymentMutation.isPending || checkoutDebitMutation.isPending}
           buttonClass="font-semibold !rounded-lg !py-1.5 !px-4 text-xs text-white cursor-pointer shadow-xs"
         />
       </div>
