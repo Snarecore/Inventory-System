@@ -153,7 +153,8 @@ export function isSameSupplier(
 
   const cleanPhone = (p?: any) => {
     const digits = String(p ?? "").replace(/\D/g, "");
-    return digits.length >= 10 ? digits.slice(-10) : "";
+    if (!digits) return "";
+    return digits.length >= 8 ? digits.slice(-8) : digits;
   };
 
   const targetPhone = cleanPhone(target.supplierPhone);
@@ -547,19 +548,35 @@ export function buildSupplierStatementEntries(
   }
 ): SupplierStatementResult {
   let partyList: any[] = [];
-  if (Array.isArray(rawPartyData)) partyList = rawPartyData;
-  else if (rawPartyData && typeof rawPartyData === "object") {
+  if (Array.isArray(rawPartyData)) {
+    partyList = rawPartyData;
+  } else if (rawPartyData && typeof rawPartyData === "object") {
     partyList =
       rawPartyData.supplierList ||
       rawPartyData.partyList ||
       rawPartyData.partyInfoList ||
+      rawPartyData.partiesList ||
+      rawPartyData.partyListDetails ||
       rawPartyData.data ||
       [];
+    if (!partyList.length && rawPartyData.data && typeof rawPartyData.data === "object") {
+      partyList =
+        rawPartyData.data.supplierList ||
+        rawPartyData.data.partyList ||
+        rawPartyData.data.partyInfoList ||
+        rawPartyData.data.partiesList ||
+        rawPartyData.data.data ||
+        [];
+    }
   }
 
   const matchedParty = partyList.find((p) => isSameSupplier(p, supplier));
   const explicitOpeningBalance = Number(
-    matchedParty?.openingBalance ?? matchedParty?.balance ?? 0
+    matchedParty?.openingBalance ??
+      matchedParty?.opening_balance ??
+      (supplier as any)?.openingBalance ??
+      (supplier as any)?.opening_balance ??
+      (matchedParty?.balance !== undefined ? matchedParty.balance : 0)
   );
 
   const matchedPayments = allPayments.filter((p) =>
@@ -730,32 +747,122 @@ export function buildSupplierStatementEntries(
     return a.priority - b.priority;
   });
 
-  // Calculate Running Balance
-  // Running balance for supplier = Cumulative Bills - Cumulative Payments - Cumulative Returns - Cumulative Discounts
-  let currentBalance = explicitOpeningBalance;
+  const knownDue = Number(
+    supplier.currentDue ??
+      (supplier as any).totalDue ??
+      (supplier as any).dueAmount ??
+      0
+  );
+
+  let openingBalance = Math.max(0, explicitOpeningBalance);
+
+  // Check if transactions fall within the optional date range
+  const hasDateFilter = Boolean(options?.startDate || options?.endDate);
+  const startMoment = options?.startDate
+    ? parseFlexibleReportDate(options.startDate)?.startOf("day")
+    : null;
+
+  // Separate prior activity from in-range activity
+  let priorPurchases = 0;
+  let priorPayments = 0;
+  let priorDiscounts = 0;
+  let priorReturns = 0;
+
+  const inRangeEntries: UnsortedEntry[] = [];
+
+  rawEntries.forEach((entry) => {
+    if (startMoment && entry.sortMoment.isBefore(startMoment)) {
+      if (entry.type === "PURCHASE") {
+        priorPurchases += entry.billAmount;
+      } else if (entry.type === "PAYMENT") {
+        priorPayments += entry.paymentAmount;
+        priorDiscounts += entry.discountAmount || 0;
+      } else if (entry.type === "PURCHASE_RETURN") {
+        priorReturns += entry.paymentAmount;
+      }
+    } else if (
+      !hasDateFilter ||
+      isDateInReportRange(entry.rawDate, options?.startDate, options?.endDate)
+    ) {
+      inRangeEntries.push(entry);
+    }
+  });
+
+  if (startMoment) {
+    if (priorPayments === 0 && priorPurchases > 0 && explicitOpeningBalance > 0) {
+      openingBalance = explicitOpeningBalance;
+    } else {
+      const computedPrior =
+        explicitOpeningBalance +
+        priorPurchases -
+        priorPayments -
+        priorDiscounts -
+        priorReturns;
+      openingBalance = Math.max(0, computedPrior);
+    }
+  }
+
+  // If opening balance computed as 0, but supplier is known to have outstanding due:
+  if (openingBalance === 0 && knownDue > 0 && inRangeEntries.length === 0) {
+    openingBalance = knownDue;
+  }
+
+  // Smart Fallback: If date range produces 0 transactions, but the supplier HAS purchases in rawEntries,
+  // use all rawEntries so the user can inspect their actual invoices/purchases.
+  let activeEntries = inRangeEntries;
+  if (hasDateFilter && inRangeEntries.length === 0 && rawEntries.length > 0) {
+    activeEntries = rawEntries;
+    openingBalance = Math.max(0, explicitOpeningBalance);
+  }
+
+  // Always create an Opening Balance entry (SL 1)
+  const openingDateStr =
+    options?.startDate ||
+    activeEntries[0]?.rawDate ||
+    moment().startOf("month").format("YYYY-MM-DD");
+
+  const openingEntry: SupplierStatementEntry = {
+    sl: 1,
+    rawDate: openingDateStr,
+    dateStr: formatShortReportDate(openingDateStr),
+    timeStr: "",
+    hasTime: false,
+    type: "OPENING",
+    typeLabel: "Opening Balance",
+    refNo: "-",
+    description: "Opening Balance",
+    note: "",
+    paymentMode: "-",
+    billAmount: 0,
+    paymentAmount: 0,
+    discountAmount: 0,
+    runningBalance: openingBalance,
+  };
+
+  let running = openingBalance;
   let totalPurchases = 0;
   let totalPayments = 0;
   let totalReturns = 0;
   let totalDiscounts = 0;
 
-  const entries: SupplierStatementEntry[] = rawEntries.map((item, idx) => {
+  const transactionEntries: SupplierStatementEntry[] = activeEntries.map((item, idx) => {
     if (item.type === "PURCHASE") {
       totalPurchases += item.billAmount;
-      currentBalance += item.billAmount;
+      running += item.billAmount;
     } else if (item.type === "PURCHASE_RETURN") {
       totalReturns += item.paymentAmount;
-      currentBalance -= item.paymentAmount;
+      running -= item.paymentAmount;
     } else if (item.type === "PAYMENT") {
       totalPayments += item.paymentAmount;
-      currentBalance -= item.paymentAmount;
+      running -= item.paymentAmount;
       if (item.discountAmount) {
         totalDiscounts += item.discountAmount;
-        currentBalance -= item.discountAmount;
+        running -= item.discountAmount;
       }
     }
 
     return {
-      sl: idx + 1,
+      sl: idx + 2,
       rawDate: item.rawDate,
       dateStr: item.dateStr,
       timeStr: item.timeStr,
@@ -769,29 +876,30 @@ export function buildSupplierStatementEntries(
       billAmount: item.billAmount,
       paymentAmount: item.paymentAmount,
       discountAmount: item.discountAmount,
-      runningBalance: currentBalance,
+      runningBalance: running,
       receiptData: item.receiptData,
       rawRecord: item.rawRecord,
     };
   });
 
-  // Optional date filtering
-  let finalEntries = entries;
-  if (options?.startDate || options?.endDate) {
-    finalEntries = entries.filter((e) =>
-      isDateInReportRange(e.rawDate, options.startDate, options.endDate)
-    );
+  const finalEntries = [openingEntry, ...transactionEntries];
+
+  // If there are no transaction entries and running is 0 but supplier has known due:
+  if (transactionEntries.length === 0 && running === 0 && knownDue > 0) {
+    openingBalance = knownDue;
+    running = knownDue;
+    openingEntry.runningBalance = knownDue;
   }
 
   return {
     supplier,
     entries: finalEntries,
-    openingBalance: explicitOpeningBalance,
+    openingBalance,
     totalPurchases,
     totalPayments,
     totalReturns,
     totalDiscounts,
-    closingBalance: currentBalance,
+    closingBalance: running,
   };
 }
 
@@ -1395,89 +1503,77 @@ export async function downloadSupplierDueReportPdf(
 // ============================================================================
 
 export async function exportSupplierStatementExcel(
-  statement: SupplierStatementResult,
-  meta: ReportCompanyMeta
+  statementOrSupplier: SupplierStatementResult | any,
+  entriesOrMeta?: any,
+  metaOrOptions?: any,
+  _options?: any
 ): Promise<number> {
-  const { supplier, entries } = statement;
-  if (!entries || entries.length === 0) {
+  let supplier: any;
+  let rawEntries: any[];
+  let meta: ReportCompanyMeta;
+
+  if (statementOrSupplier && Array.isArray(statementOrSupplier.entries)) {
+    supplier = statementOrSupplier.supplier || {};
+    rawEntries = statementOrSupplier.entries;
+    meta = entriesOrMeta as ReportCompanyMeta;
+  } else {
+    supplier = statementOrSupplier || {};
+    rawEntries = Array.isArray(entriesOrMeta) ? entriesOrMeta : [];
+    meta = metaOrOptions as ReportCompanyMeta;
+  }
+
+  if (!rawEntries || rawEntries.length === 0) {
     throw new Error("No statement records available for this supplier");
   }
 
-  const columns: ExportColumnDef<
-    SupplierStatementEntry,
-    { totalBills: number; totalPayments: number; closingBalance: number }
-  >[] = [
-    {
-      key: "sl",
-      excelHeader: "SL",
-      isLeadingLabel: true,
-      excelValue: (_, idx) => idx + 1,
-    },
-    {
-      key: "date",
-      excelHeader: "Date",
-      isLeadingLabel: true,
-      excelValue: (e) => e.dateStr,
-    },
-    {
-      key: "type",
-      excelHeader: "Transaction Type",
-      isLeadingLabel: true,
-      excelValue: (e) => e.typeLabel,
-    },
-    {
-      key: "refNo",
-      excelHeader: "Ref / Voucher No",
-      isLeadingLabel: true,
-      excelValue: (e) => e.refNo,
-    },
-    {
-      key: "description",
-      excelHeader: "Description",
-      isLeadingLabel: true,
-      excelValue: (e) => e.description,
-    },
-    {
-      key: "billAmount",
-      excelHeader: "Purchase Bill (BDT)",
-      excelValue: (e) => (e.billAmount > 0 ? Number(e.billAmount.toFixed(2)) : 0),
-      excelTotalValue: (t) => Number(t.totalBills.toFixed(2)),
-    },
-    {
-      key: "paymentAmount",
-      excelHeader: "Payment / Return (BDT)",
-      excelValue: (e) =>
-        e.paymentAmount > 0 ? Number(e.paymentAmount.toFixed(2)) : 0,
-      excelTotalValue: (t) => Number(t.totalPayments.toFixed(2)),
-    },
-    {
-      key: "runningBalance",
-      excelHeader: "Running Balance (BDT)",
-      excelValue: (e) => Number(e.runningBalance.toFixed(2)),
-      excelTotalValue: (t) => Number(t.closingBalance.toFixed(2)),
-    },
-  ];
+  let totalBills = 0;
+  let totalPayments = 0;
 
-  const totals = {
-    totalBills: statement.totalPurchases,
-    totalPayments: statement.totalPayments + statement.totalReturns,
-    closingBalance: statement.closingBalance,
+  const rows = rawEntries.map((e: any, idx: number) => {
+    const isOpening = String(e.type || e.typeLabel || "").toLowerCase().includes("opening");
+    const bill = Number(e.billAmount ?? e.debit ?? 0);
+    const payment = Number(e.paymentAmount ?? e.credit ?? 0);
+    const balance = Number(e.balance ?? e.runningBalance ?? 0);
+
+    if (!isOpening) {
+      totalBills += bill;
+      totalPayments += payment;
+    }
+
+    return {
+      SL: idx + 1,
+      "Date & Time": e.dateTimeStr || e.dateStr || e.date || "-",
+      Type: e.type || e.typeLabel || "-",
+      "Payment Method": e.paymentMethod || e.paymentMode || "-",
+      Description: e.description || "-",
+      "Purchase (BDT)": bill !== 0 ? bill : "-",
+      "Payment (BDT)": payment !== 0 ? payment : "-",
+      "Balance (BDT)": balance,
+    };
+  });
+
+  const lastEntry = rawEntries[rawEntries.length - 1];
+  const finalBalance = Number(lastEntry?.balance ?? lastEntry?.runningBalance ?? 0);
+
+  const totalRow = {
+    SL: "Total",
+    "Date & Time": "-",
+    Type: "-",
+    "Payment Method": "-",
+    Description: `Closing Balance: BDT ${formatMoney(finalBalance)}`,
+    "Purchase (BDT)": Number(totalBills.toFixed(2)),
+    "Payment (BDT)": Number(totalPayments.toFixed(2)),
+    "Balance (BDT)": Number(finalBalance.toFixed(2)),
   };
 
-  const { rows, totalRow, totalSummarySpan } = buildDynamicExcelPayload(
-    entries,
-    columns,
-    totals,
-    `TOTAL LEDGER SUMMARY`
-  );
+  const supplierName = String(supplier.supplierName || supplier.name || "Supplier").trim();
 
   await buildAndDownloadExcel(rows, totalRow, {
     ...meta,
-    fileName: `Supplier_Statement_${supplier.supplierName.replace(/\s+/g, "_")}_${moment().format("YYYY-MM-DD")}.xlsx`,
-    sheetName: "Supplier Statement",
-    reportTitle: `Supplier Statement: ${supplier.supplierName} (${supplier.supplierPhone})`,
+    fileName: `Purchase_Ledger_${supplierName.replace(/\s+/g, "_")}_${moment().format("YYYY-MM-DD")}.xlsx`,
+    sheetName: "Purchase Ledger",
+    reportTitle: `Purchase Ledger - ${supplierName}`,
     totalLabel: "Closing Balance",
-    totalSummarySpan,
     includeSignatures: true,
   });
 
@@ -1485,125 +1581,158 @@ export async function exportSupplierStatementExcel(
 }
 
 export async function downloadSupplierStatementPdf(
-  statement: SupplierStatementResult,
-  meta: ReportCompanyMeta
+  statementOrSupplier: SupplierStatementResult | any,
+  entriesOrMeta?: any,
+  metaOrOptions?: any,
+  _options?: any
 ): Promise<void> {
-  const { supplier, entries } = statement;
-  if (!entries || entries.length === 0) {
+  let supplier: any;
+  let rawEntries: any[];
+  let meta: ReportCompanyMeta;
+
+  if (statementOrSupplier && Array.isArray(statementOrSupplier.entries)) {
+    supplier = statementOrSupplier.supplier || {};
+    rawEntries = statementOrSupplier.entries;
+    meta = entriesOrMeta as ReportCompanyMeta;
+  } else {
+    supplier = statementOrSupplier || {};
+    rawEntries = Array.isArray(entriesOrMeta) ? entriesOrMeta : [];
+    meta = metaOrOptions as ReportCompanyMeta;
+  }
+
+  if (!rawEntries || rawEntries.length === 0) {
     throw new Error("No statement records available for this supplier");
   }
 
-  const themeRgb = argbToRgbTuple(resolveThemeArgb());
-  const columns: ExportColumnDef<
-    SupplierStatementEntry,
-    { totalBills: number; totalPayments: number; closingBalance: number }
-  >[] = [
-    {
-      key: "sl",
-      excelHeader: "SL",
-      pdfHeader: "SL",
-      isLeadingLabel: true,
-      pdfStyle: { halign: "center", cellWidth: 10 },
-      excelValue: (_, idx) => idx + 1,
-      pdfCell: (_, idx) => idx + 1,
-    },
-    {
-      key: "date",
-      excelHeader: "Date",
-      pdfHeader: "Date",
-      isLeadingLabel: true,
-      pdfStyle: { halign: "center" },
-      excelValue: (e) => e.dateStr,
-      pdfCell: (e) => e.dateStr,
-    },
-    {
-      key: "type",
-      excelHeader: "Type",
-      pdfHeader: "Type",
-      isLeadingLabel: true,
-      pdfStyle: { halign: "left" },
-      excelValue: (e) => e.typeLabel,
-      pdfCell: (e) => e.typeLabel,
-    },
-    {
-      key: "refNo",
-      excelHeader: "Ref / Voucher",
-      pdfHeader: "Ref / Voucher",
-      isLeadingLabel: true,
-      pdfStyle: { halign: "left", fontStyle: "bold" },
-      excelValue: (e) => e.refNo,
-      pdfCell: (e) => ({ content: e.refNo, styles: { fontStyle: "bold" } }),
-    },
-    {
-      key: "description",
-      excelHeader: "Description",
-      pdfHeader: "Description",
-      isLeadingLabel: true,
-      pdfStyle: { halign: "left" },
-      excelValue: (e) => e.description,
-      pdfCell: (e) => e.description,
-    },
-    {
-      key: "billAmount",
-      excelHeader: "Bill (BDT)",
-      pdfHeader: "Bill (BDT)",
-      pdfStyle: { halign: "right" },
-      excelValue: (e) => e.billAmount,
-      excelTotalValue: (t) => t.totalBills,
-      pdfCell: (e) => (e.billAmount > 0 ? formatMoney(e.billAmount) : "-"),
-      pdfSummaryCell: (t) => ({ content: formatMoney(t.totalBills) }),
-    },
-    {
-      key: "paymentAmount",
-      excelHeader: "Payment (BDT)",
-      pdfHeader: "Payment (BDT)",
-      pdfStyle: { halign: "right" },
-      excelValue: (e) => e.paymentAmount,
-      excelTotalValue: (t) => t.totalPayments,
-      pdfCell: (e) => (e.paymentAmount > 0 ? formatMoney(e.paymentAmount) : "-"),
-      pdfSummaryCell: (t) => ({ content: formatMoney(t.totalPayments) }),
-    },
-    {
-      key: "runningBalance",
-      excelHeader: "Balance (BDT)",
-      pdfHeader: "Balance (BDT)",
-      pdfStyle: { halign: "right", fontStyle: "bold" },
-      excelValue: (e) => e.runningBalance,
-      excelTotalValue: (t) => t.closingBalance,
-      pdfCell: (e) => ({
-        content: formatMoney(e.runningBalance),
-        styles: {
-          fontStyle: "bold",
-          textColor: e.runningBalance > 0 ? REPORT_RGB.rose : REPORT_RGB.emerald,
-        },
-      }),
-      pdfSummaryCell: (t) => ({
-        content: formatMoney(t.closingBalance),
-        styles: { textColor: themeRgb },
-      }),
-    },
+  let totalBills = 0;
+  let totalPayments = 0;
+
+  const headers = [
+    "SL",
+    "Date & Time",
+    "Type",
+    "Payment Method",
+    "Description",
+    "Purchase (BDT)",
+    "Payment (BDT)",
+    "Balance (BDT)",
   ];
 
-  const totals = {
-    totalBills: statement.totalPurchases,
-    totalPayments: statement.totalPayments + statement.totalReturns,
-    closingBalance: statement.closingBalance,
+  const bodyRows = rawEntries.map((e: any, idx: number) => {
+    const isOpening = String(e.type || e.typeLabel || "").toLowerCase().includes("opening");
+    const bill = Number(e.billAmount ?? e.debit ?? 0);
+    const payment = Number(e.paymentAmount ?? e.credit ?? 0);
+    const balance = Number(e.balance ?? e.runningBalance ?? 0);
+
+    if (!isOpening) {
+      totalBills += bill;
+      totalPayments += payment;
+    }
+
+    const billCell =
+      bill > 0
+        ? formatMoney(bill)
+        : bill < 0
+        ? {
+            content: `-${formatMoney(Math.abs(bill))}`,
+            styles: { textColor: REPORT_RGB.rose },
+          }
+        : "-";
+
+    const paymentCell =
+      payment > 0
+        ? {
+            content: formatMoney(payment),
+            styles: { textColor: REPORT_RGB.emerald },
+          }
+        : payment < 0
+        ? {
+            content: `-${formatMoney(Math.abs(payment))}`,
+            styles: { textColor: REPORT_RGB.rose },
+          }
+        : "-";
+
+    const balanceCell =
+      balance > 0
+        ? {
+            content: formatMoney(balance),
+            styles: { textColor: REPORT_RGB.rose, fontStyle: "bold" },
+          }
+        : balance < 0
+        ? {
+            content: formatMoney(Math.abs(balance)),
+            styles: { textColor: REPORT_RGB.emerald, fontStyle: "bold" },
+          }
+        : "0";
+
+    return [
+      idx + 1,
+      e.dateTimeStr || e.dateStr || e.date || "-",
+      e.type || e.typeLabel || "-",
+      e.paymentMethod || e.paymentMode || "-",
+      e.description || "-",
+      billCell,
+      paymentCell,
+      balanceCell,
+    ];
+  });
+
+  const lastEntry = rawEntries[rawEntries.length - 1];
+  const finalBalance = Number(lastEntry?.balance ?? lastEntry?.runningBalance ?? 0);
+
+  const totalBalanceCell =
+    finalBalance > 0
+      ? {
+          content: formatMoney(finalBalance),
+          styles: { textColor: REPORT_RGB.rose, fontStyle: "bold" },
+        }
+      : finalBalance < 0
+      ? {
+          content: formatMoney(Math.abs(finalBalance)),
+          styles: { textColor: REPORT_RGB.emerald, fontStyle: "bold" },
+        }
+      : "0";
+
+  const totalDescCell = {
+    content: `Closing Balance: BDT ${formatMoney(finalBalance)}`,
+    styles: {
+      textColor: finalBalance > 0 ? REPORT_RGB.rose : REPORT_RGB.emerald,
+      fontStyle: "bold",
+    },
   };
 
-  const { headers, bodyRows, columnStyles } = buildDynamicPdfPayload(
-    entries,
-    columns,
-    totals,
-    `TOTAL LEDGER SUMMARY`
-  );
+  bodyRows.push([
+    "Total",
+    "-",
+    "-",
+    "-",
+    totalDescCell,
+    formatMoney(totalBills),
+    formatMoney(totalPayments),
+    totalBalanceCell,
+  ]);
+
+  const supplierName = String(supplier.supplierName || supplier.name || "Supplier").trim();
+  const phone = supplier.supplierPhone || supplier.phone || "N/A";
 
   await generateAndDownloadCorporatePdf({
-    fileName: `Supplier_Statement_${supplier.supplierName.replace(/\s+/g, "_")}_${moment().format("YYYY-MM-DD")}.pdf`,
-    reportTitle: `Supplier Statement: ${supplier.supplierName}`,
-    metaRightLabel: `Phone: ${supplier.supplierPhone || "N/A"} | Net Due: ৳ ${formatMoney(statement.closingBalance)}`,
+    fileName: `Purchase_Ledger_${supplierName.replace(/\s+/g, "_")}_${moment().format("YYYY-MM-DD")}.pdf`,
+    reportTitle: `Purchase Ledger - ${supplierName}`,
+    metaRightLabel: `Phone: ${phone} | Net Due: ৳ ${formatMoney(finalBalance)}`,
     headers,
     bodyRows,
-    columnStyles,
+    orientation: "landscape",
+    columnStyles: {
+      0: { halign: "center", cellWidth: 12 },
+      1: { halign: "center", cellWidth: 34 },
+      2: { halign: "center", cellWidth: 26 },
+      3: { halign: "center", cellWidth: 26 },
+      4: { halign: "left", cellWidth: 77 },
+      5: { halign: "right", cellWidth: 34 },
+      6: { halign: "right", cellWidth: 34 },
+      7: { halign: "right", cellWidth: 34 },
+    },
     meta,
   });
 }
+

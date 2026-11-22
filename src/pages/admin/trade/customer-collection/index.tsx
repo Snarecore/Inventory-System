@@ -8,7 +8,6 @@ import { partyListQueryKey } from "@/config/query-key";
 import apiConfig from "@/config/api.json";
 import { postData } from "@/services/api-service";
 import { buildAccessUser } from "@/utils/access-user";
-import CollectionStatsCards from "./components/CollectionStatsCards";
 import CustomerDueTable from "./components/CustomerDueTable";
 import CollectionHistoryTable from "./components/CollectionHistoryTable";
 import AddCollectionModal from "./components/AddCollectionModal";
@@ -146,27 +145,6 @@ export const CustomerCollection: React.FC = () => {
   const [receiptData, setReceiptData] = useState<CollectionReceiptData | null>(null);
   const [isReceiptModalOpen, setIsReceiptModalOpen] = useState<boolean>(false);
 
-  // 4. Compute High-Performance Aggregated Statistics
-  const stats = useMemo(() => {
-    let totalDue = 0;
-    let maxDue = 0;
-
-    customers.forEach((c) => {
-      const due = Number(c.totalDue || 0);
-      totalDue += due;
-      if (due > maxDue) maxDue = due;
-    });
-
-    const avgDue = customers.length > 0 ? totalDue / customers.length : 0;
-
-    return {
-      totalDue,
-      totalCustomers: customers.length,
-      avgDue,
-      maxDue,
-    };
-  }, [customers]);
-
   const handleRefresh = () => {
     refetch();
     refetchSales();
@@ -236,16 +214,6 @@ export const CustomerCollection: React.FC = () => {
           />
         </div>
       </div>
-
-      {/* KPI Stats */}
-      {activeTab === "dues" && (
-        <CollectionStatsCards
-          totalDue={stats.totalDue}
-          totalCustomers={stats.totalCustomers}
-          avgDue={stats.avgDue}
-          maxDue={stats.maxDue}
-        />
-      )}
 
       {/* Main Content View */}
       {activeTab === "dues" ? (
