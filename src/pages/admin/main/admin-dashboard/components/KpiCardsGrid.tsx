@@ -60,30 +60,38 @@ export const KpiCardsGrid: React.FC<KpiCardsGridProps> = ({ data }) => {
         </div>
       </MotionDiv>
 
-      {/* 3. Total Receivable - Midnight Navy */}
+      {/* 3. Total Receivable - Midnight Navy (Navigates to Customer Collection) */}
       <MotionDiv>
-        <div className="px-4 py-4 rounded-md bg-[#1b2850] text-white shadow-sm hover:shadow-md transition-all duration-300">
+        <div
+          onClick={() => navigate('/admin/customer-collection')}
+          className="px-4 py-4 rounded-md bg-[#1b2850] text-white shadow-sm hover:shadow-md transition-all duration-300 cursor-pointer group hover:brightness-105 active:scale-[0.99]"
+          title="Click to view Customer Collection & Receivables"
+        >
           <div className="flex items-center justify-between">
             <div>
               <p className="text-[24px] font-bold">{formatCurrency(data.totalReceivable)}</p>
               <p className="text-sm">Total Receivable</p>
             </div>
-            <div className="text-5xl hover:scale-120 transition-all ease-in duration-300">
+            <div className="text-5xl group-hover:scale-120 transition-all ease-in duration-300">
               <FaStore />
             </div>
           </div>
         </div>
       </MotionDiv>
 
-      {/* 4. Total Payable - Emerald Green */}
+      {/* 4. Total Payable - Emerald Green (Navigates to Supplier Payment) */}
       <MotionDiv>
-        <div className="px-4 py-4 rounded-md bg-[#28c76f] text-white shadow-sm hover:shadow-md transition-all duration-300">
+        <div
+          onClick={() => navigate('/admin/supplier-payment')}
+          className="px-4 py-4 rounded-md bg-[#28c76f] text-white shadow-sm hover:shadow-md transition-all duration-300 cursor-pointer group hover:brightness-105 active:scale-[0.99]"
+          title="Click to view Supplier Payment & Payables"
+        >
           <div className="flex items-center justify-between">
             <div>
               <p className="text-[24px] font-bold">{formatCurrency(data.totalPayable)}</p>
               <p className="text-sm">Total Payable</p>
             </div>
-            <div className="text-5xl hover:scale-120 transition-all ease-in duration-300">
+            <div className="text-5xl group-hover:scale-120 transition-all ease-in duration-300">
               <FaUserFriends />
             </div>
           </div>
