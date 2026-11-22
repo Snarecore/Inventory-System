@@ -22,6 +22,7 @@ import {
 } from "@/utils/report-export-columns";
 import { ensureFontLoaded } from "@/theme/fonts";
 import { getCleanOrderNo } from "@/pages/admin/trade/sales/hooks/useSalesQueries";
+import { openPdfPreview } from "@/services/pdf-preview-service";
 
 export type TradeDomain = "sale" | "purchase";
 export type TradeReportTab = "invoices" | "products" | "parties";
@@ -613,6 +614,7 @@ export interface CorporatePdfConfig {
   fontSize?: number;
   orientation?: "portrait" | "landscape";
   personInfo?: CorporatePdfPersonMeta;
+  skipPreview?: boolean;
 }
 
 /**
@@ -803,11 +805,11 @@ export function drawPdfTextSmart(
 }
 
 /**
- * Unified landscape corporate PDF report generator with logo, metadata, theme colors, signatures & pagination
+ * Builds the jsPDF doc object for a corporate report
  */
-export async function generateAndDownloadCorporatePdf(
+export async function buildCorporatePdfDoc(
   config: CorporatePdfConfig
-): Promise<void> {
+): Promise<{ doc: jsPDF; fileName: string }> {
   await ensureBengaliFontLoaded();
 
   const orientation =
@@ -1141,7 +1143,30 @@ export async function generateAndDownloadCorporatePdf(
   const safeFileName = (config.fileName || "Report.pdf")
     .replace(/[\\/:*?"<>|]/g, "_")
     .trim();
-  doc.save(safeFileName);
+  return { doc, fileName: safeFileName };
+}
+
+/**
+ * Unified landscape corporate PDF report generator with logo, metadata, theme colors, signatures & pagination.
+ * By default, opens an interactive PDF preview modal so users can review the report before downloading.
+ */
+export async function generateAndDownloadCorporatePdf(
+  config: CorporatePdfConfig
+): Promise<void> {
+  const { doc, fileName } = await buildCorporatePdfDoc(config);
+
+  if (config.skipPreview) {
+    doc.save(fileName);
+    return;
+  }
+
+  openPdfPreview({
+    doc,
+    fileName,
+    title: config.reportTitle,
+    subtitle: config.metaLeftLabel || config.metaRightLabel,
+    successMessage: `${config.reportTitle} PDF downloaded successfully!`,
+  });
 }
 
 /**

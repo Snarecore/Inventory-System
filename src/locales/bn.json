@@ -559,6 +559,21 @@
   "Warranty card issued": "ওয়ারেন্টি কার্ড প্রদান করা হয়েছে",
   "Goods received in good condition": "পণ্য সঠিক অবস্থায় গ্রহণ করা হয়েছে",
   "Challan verified with physical stock": "শারীরিক স্টকের সাথে চালান যাচাই করা হয়েছে",
-  "Standard order delivered": "সাধারণ অর্ডার ডেলিভারি হয়েছে",
-  "Packaging and seal verified": "প্যাকেজিং ও সিল যাচাই করা হয়েছে"
+  "Packaging and seal verified": "প্যাকেজিং ও সিল যাচাই করা হয়েছে",
+  "Order Serial Settings": "অর্ডার সিরিয়াল সেটিংস",
+  "Configure starting sequence serial numbers for Sales and Purchase orders": "বিক্রয় এবং ক্রয় অর্ডারের জন্য প্রারম্ভিক সিরিয়াল নম্বর কনফিগার করুন",
+  "Sales Invoice Serial": "বিক্রয় ইনভয়েস সিরিয়াল",
+  "Purchase Invoice Serial": "ক্রয় ইনভয়েস সিরিয়াল",
+  "Applies to customer sales & POS": "কাস্টমার বিক্রয়, অর্ডার এবং পিওএস রশিদে প্রযোজ্য",
+  "Applies to purchases & vendor bills": "ক্রয়, ভাউচার এবং ভেন্ডর বিলে প্রযোজ্য",
+  "Next Order No": "পরবর্তী অর্ডার নং",
+  "New Start Number": "নতুন শুরুর নম্বর",
+  "Last Number": "সর্বশেষ নম্বর",
+  "Save Sales Serial": "বিক্রয় সিরিয়াল সংরক্ষণ",
+  "Save Purchase Serial": "ক্রয় সিরিয়াল সংরক্ষণ",
+  "Next orders will start from this number": "সেভ করার পর থেকে এই নম্বর অনুযায়ী পরবর্তী অর্ডার শুরু হবে",
+  "Enter new starting number": "নতুন শুরুর নম্বর লিখুন (যেমনঃ 000050)",
+  "Optional": "ঐচ্ছিক",
+  "Currently Running": "বর্তমানে চলমান",
+  "Ready to Save": "সেভের জন্য প্রস্তুত"
 }

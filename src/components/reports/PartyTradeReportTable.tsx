@@ -666,9 +666,6 @@ export const PartyTradeReportTable: React.FC<PartyTradeReportTableProps> = ({
                                           p.partyName,
                                           companyMeta
                                         );
-                                        showSuccessToast(
-                                          `Downloaded ${labels.invoicePluralLabel.toLowerCase()} PDF for ${p.partyName}!`
-                                        );
                                       } catch (e: any) {
                                         console.error(e);
                                       }

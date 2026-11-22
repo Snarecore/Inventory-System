@@ -496,3 +496,5 @@ export interface NormalizedPinVerificationResult {
 export * from './customer-ledger.types';
 export * from './purchase-ledger.types';
 export * from './invoice-profile.types';
+
+export * from './order-serial.types';

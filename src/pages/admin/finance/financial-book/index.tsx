@@ -102,7 +102,6 @@ const FinancialBookPage: React.FC<FinancialBookPageProps> = ({ defaultType }) =>
         { lang, branchId: activeBranchId ? Number(activeBranchId) : undefined },
         navUrl || undefined
       );
-      showSuccessToast(lang === "bn" ? "PDF সফলভাবে ডাউনলোড হয়েছে" : "PDF downloaded successfully");
     } catch (err: any) {
       console.error("PDF download failed:", err);
       showErrorToast(err?.message || (lang === "bn" ? "PDF ডাউনলোড করতে সমস্যা হয়েছে।" : "Failed to download PDF."));

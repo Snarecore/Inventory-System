@@ -198,7 +198,6 @@ export const SupplierPaymentSummaryTable: React.FC<
         }
       );
       await downloadSupplierStatementPdf(stmt, companyMeta);
-      showSuccessToast(`Purchase ledger PDF downloaded for ${s.supplierName}!`);
     } catch (err: any) {
       showErrorToast(err?.message || "Failed to download purchase ledger PDF");
     } finally {

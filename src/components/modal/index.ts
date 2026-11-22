@@ -5,3 +5,4 @@ export { default as Modal } from "./Modal";
 export { default as OrderDeleteModal } from "./OrderDeleteModal";
 export { default as PinVerificationModal, PinVerificationModal as NamedPinVerificationModal } from "./PinVerificationModal";
 export { default as AttachmentLightboxModal } from "./AttachmentLightboxModal";
+export { default as PdfPreviewModal, PdfPreviewModal as NamedPdfPreviewModal } from "./PdfPreviewModal";

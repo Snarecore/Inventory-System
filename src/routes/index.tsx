@@ -30,6 +30,7 @@ const ShopPageCms = lazyWithRetry(() => import('@/pages/admin/settings/shop-page
 const SocialLinks = lazyWithRetry(() => import('@/pages/admin/settings/social-links'))
 const AppearanceSettings = lazyWithRetry(() => import('@/pages/admin/settings/appearance'))
 const InvoiceProfileSetup = lazyWithRetry(() => import('@/pages/admin/settings/invoice-profile'))
+const OrderSerialSettings = lazyWithRetry(() => import('@/pages/admin/settings/order-serial'))
 const SmsSettings = lazyWithRetry(() => import('@/pages/admin/settings/sms'))
 const SendSmsPage = lazyWithRetry(() => import('@/pages/admin/sms'))
 const PrivacyPolicy = lazyWithRetry(() => import('@/pages/admin/settings/policy/privacy'))
@@ -527,6 +528,10 @@ export const router = createBrowserRouter([
     element: <Navigate to="/admin/settings/invoice-profile" replace />,
   },
   {
+    path: '/settings/order-serial',
+    element: <Navigate to="/admin/settings/order-serial" replace />,
+  },
+  {
     path: '/settings/sms',
     element: <Navigate to="/admin/settings/sms" replace />,
   },
@@ -944,6 +949,10 @@ export const router = createBrowserRouter([
       {
         path: 'settings/invoice-profile',
         element: withSuspense(InvoiceProfileSetup),
+      },
+      {
+        path: 'settings/order-serial',
+        element: withSuspense(OrderSerialSettings),
       },
       {
         path: 'settings/sms',

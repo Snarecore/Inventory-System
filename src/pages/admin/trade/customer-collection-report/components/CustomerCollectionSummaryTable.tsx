@@ -195,7 +195,6 @@ export const CustomerCollectionSummaryTable: React.FC<
         companyMeta,
         { salesList, collections }
       );
-      showSuccessToast(`Customer ledger PDF downloaded for ${targetCustomer.customerName}!`);
     } catch (err: any) {
       showErrorToast(err?.message || "Failed to download customer ledger PDF");
     } finally {
