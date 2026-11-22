@@ -1,7 +1,5 @@
-import React, { useState } from "react";
-import { FiEye, FiPackage, FiChevronDown, FiChevronRight } from "react-icons/fi";
+import React from "react";
 import { formatMoney } from "@/utils/formatters";
-import type { PaymentReceiptData } from "@/types/payment.types";
 import type {
   PurchaseLedgerBreakdownItem,
   PurchaseLedgerStats,
@@ -28,16 +26,12 @@ interface SupplierStatementTableProps {
     totalDebit?: number;
     totalCredit?: number;
   };
-  onViewReceipt?: (receipt: PaymentReceiptData) => void;
-  compact?: boolean;
 }
 
 export const SupplierStatementTable: React.FC<SupplierStatementTableProps> = ({
   entries,
   stats,
-  onViewReceipt,
 }) => {
-  const [expandedProductRowIdx, setExpandedProductRowIdx] = useState<number | null>(null);
 
   if (!entries || entries.length === 0) {
     return (
@@ -189,14 +183,6 @@ export const SupplierStatementTable: React.FC<SupplierStatementTableProps> = ({
           <TableTh align="right" width={115} className="whitespace-nowrap">
             Balance (৳)
           </TableTh>
-          <TableTh align="center" width={70} className="whitespace-nowrap">
-            Items
-          </TableTh>
-          {onViewReceipt && (
-            <TableTh align="center" width={60} className="whitespace-nowrap">
-              Receipt
-            </TableTh>
-          )}
         </TableHead>
         <TableBody className="text-[11px] text-[var(--ui-text)]">
           {entries.map((item: any, idx: number) => {
@@ -204,20 +190,6 @@ export const SupplierStatementTable: React.FC<SupplierStatementTableProps> = ({
             const bill = Number(item.billAmount ?? item.debit ?? 0);
             const payment = Number(item.paymentAmount ?? item.credit ?? 0);
             const balance = Number(item.balance ?? item.runningBalance ?? 0);
-
-            const products: any[] = Array.isArray(item.products)
-              ? item.products
-              : Array.isArray(item.rawRecord?.items)
-              ? item.rawRecord.items
-              : Array.isArray(item.rawRecord?.products)
-              ? item.rawRecord.products
-              : [];
-
-            const isProductExpanded = expandedProductRowIdx === idx;
-            const hasProducts = products.length > 0;
-
-            const receiptData = item.receiptData || item.rawRecord?.receiptData || item.raw?.receiptData;
-
             return (
               <React.Fragment key={item.id || item.sl || idx}>
                 <tr
@@ -298,90 +270,7 @@ export const SupplierStatementTable: React.FC<SupplierStatementTableProps> = ({
                         : `৳ ${formatMoney(balance)}`}
                     </span>
                   </td>
-
-                  {/* Products Column */}
-                  <td className="py-2 px-2.5 text-center whitespace-nowrap">
-                    {hasProducts ? (
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setExpandedProductRowIdx(isProductExpanded ? null : idx)
-                        }
-                        className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-semibold text-[var(--primary-color)] bg-[var(--primary-color-light)] hover:bg-[var(--primary-color)]/20 rounded transition-colors cursor-pointer"
-                        title={isProductExpanded ? "Hide items" : `View ${products.length} products`}
-                      >
-                        <FiPackage size={11} />
-                        <span>{products.length}</span>
-                        {isProductExpanded ? <FiChevronDown size={10} /> : <FiChevronRight size={10} />}
-                      </button>
-                    ) : (
-                      <span className="text-[var(--ui-text-subtle)]">-</span>
-                    )}
-                  </td>
-
-                  {/* Receipt Modal Trigger */}
-                  {onViewReceipt && (
-                    <td className="py-2 px-2.5 text-center whitespace-nowrap w-12">
-                      {receiptData ? (
-                        <button
-                          type="button"
-                          onClick={() => onViewReceipt(receiptData)}
-                          className="inline-flex items-center justify-center w-6 h-6 text-[var(--primary-color)] hover:bg-[var(--primary-color-light)] rounded-md transition-colors cursor-pointer"
-                          title="View Payment Receipt"
-                        >
-                          <FiEye size={12} />
-                        </button>
-                      ) : (
-                        <span className="text-[var(--ui-text-subtle)]">—</span>
-                      )}
-                    </td>
-                  )}
                 </tr>
-
-                {/* Expanded Products Row */}
-                {isProductExpanded && hasProducts && (
-                  <tr className="bg-[var(--ui-surface-muted)]/30 border-b border-[var(--ui-border)]">
-                    <td colSpan={onViewReceipt ? 10 : 9} className="p-2 sm:p-2.5">
-                      <div className="bg-[var(--ui-surface)] border border-[var(--ui-border)] rounded-lg p-2 shadow-xs">
-                        <div className="text-[11px] font-bold text-[var(--ui-text)] mb-1.5 flex items-center gap-1.5">
-                          <FiPackage className="text-[var(--primary-color)]" size={12} />
-                          <span>Product Details ({products.length} items)</span>
-                        </div>
-                        <div className="overflow-x-auto">
-                          <table className="w-full text-[10.5px] text-left border-collapse">
-                            <thead>
-                              <tr className="border-b border-[var(--ui-border)] text-[var(--ui-text-muted)] font-medium">
-                                <th className="py-1 px-2 text-center w-8">#</th>
-                                <th className="py-1 px-2 text-left">Product Name</th>
-                                <th className="py-1 px-2 text-center">Quantity</th>
-                                <th className="py-1 px-2 text-right">Unit Price</th>
-                                <th className="py-1 px-2 text-right">Total</th>
-                              </tr>
-                            </thead>
-                            <tbody className="divide-y divide-[var(--ui-border)]">
-                              {products.map((p: any, pIdx: number) => {
-                                const pName = p.productName || p.name || `Product ${pIdx + 1}`;
-                                const pQty = Number(p.quantity ?? p.qty ?? 1);
-                                const pPrice = Number(p.price ?? p.unitPrice ?? p.purchasePrice ?? p.rate ?? 0);
-                                const pTotal = Number(p.total ?? p.subtotal ?? pQty * pPrice);
-
-                                return (
-                                  <tr key={pIdx} className="hover:bg-[var(--ui-surface-muted)]/50">
-                                    <td className="py-1 px-2 text-center text-[var(--ui-text-muted)]">{pIdx + 1}</td>
-                                    <td className="py-1 px-2 font-medium text-[var(--ui-text)]">{pName}</td>
-                                    <td className="py-1 px-2 text-center tabular-nums">{pQty} {p.unit || ""}</td>
-                                    <td className="py-1 px-2 text-right tabular-nums">৳ {formatMoney(pPrice)}</td>
-                                    <td className="py-1 px-2 text-right tabular-nums font-semibold text-[var(--ui-text)]">৳ {formatMoney(pTotal)}</td>
-                                  </tr>
-                                );
-                              })}
-                            </tbody>
-                          </table>
-                        </div>
-                      </div>
-                    </td>
-                  </tr>
-                )}
               </React.Fragment>
             );
           })}
@@ -406,8 +295,6 @@ export const SupplierStatementTable: React.FC<SupplierStatementTableProps> = ({
             <td className="py-2 px-2.5 text-right tabular-nums font-bold whitespace-nowrap text-rose-600 dark:text-rose-400 min-w-[105px]">
               ৳ {formatMoney(finalBalanceVal)}
             </td>
-            <td className="py-2 px-2.5 text-center">-</td>
-            {onViewReceipt && <td className="py-2 px-2.5 text-center">-</td>}
           </tr>
         </tfoot>
       </Table>

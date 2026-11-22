@@ -3,7 +3,6 @@ import {
   FiChevronDown,
   FiChevronRight,
   FiRotateCcw,
-  FiFileText,
 } from "react-icons/fi";
 import { FaFileExcel, FaFilePdf } from "react-icons/fa";
 import Search from "@/components/table-components/Search";
@@ -575,20 +574,6 @@ export const SupplierPaymentSummaryTable: React.FC<
                               title="Export Purchase Ledger to Excel"
                             >
                               <FaFileExcel size={13} />
-                            </button>
-
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setSelectedSupplierForDrawer(s);
-                                setIsDrawerOpen(true);
-                              }}
-                              className="inline-flex items-center gap-1 px-2 py-1 text-xs font-semibold text-[var(--primary-color)] bg-[var(--primary-color-light)] hover:bg-[var(--primary-color-muted)]/30 rounded-lg transition-colors cursor-pointer"
-                              title="View Detailed Statement"
-                            >
-                              <FiFileText size={12} />
-                              <span>Statement</span>
                             </button>
                           </div>
                         </td>
