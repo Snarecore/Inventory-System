@@ -99,7 +99,7 @@ export const TradeNotesInput: React.FC<TradeNotesInputProps> = ({
           rows={rows}
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          placeholder={placeholder}
+          placeholder={t(placeholder)}
           className="ui-control ui-control-multiline ui-control-sm h-[84px] resize-none font-medium leading-relaxed w-full"
         />
 
@@ -107,9 +107,9 @@ export const TradeNotesInput: React.FC<TradeNotesInputProps> = ({
           <div className="absolute right-0 bottom-full mb-1.5 w-full bg-[var(--ui-surface)] rounded-[var(--ui-radius-lg)] shadow-[var(--ui-shadow-popover)] border border-[var(--ui-border)] z-40 overflow-hidden divide-y divide-[var(--ui-border)]">
             <div className="px-3 py-1.5 bg-[var(--ui-surface-muted)] flex items-center justify-between">
               <span className="text-[11px] font-semibold text-[var(--ui-text)]">
-                Choose a preset:
+                {t("Choose a preset:")}
               </span>
-              <span className="text-[10px] text-[var(--ui-text-subtle)]">Click to add</span>
+              <span className="text-[10px] text-[var(--ui-text-subtle)]">{t("Click to add")}</span>
             </div>
 
             <div className="flex flex-col py-1 divide-y divide-[var(--ui-border)] max-h-48 overflow-y-auto">
@@ -117,12 +117,12 @@ export const TradeNotesInput: React.FC<TradeNotesInputProps> = ({
                 <button
                   key={preset}
                   type="button"
-                  onClick={() => handleSelectPreset(preset)}
+                  onClick={() => handleSelectPreset(t(preset))}
                   className="px-3 py-2 text-[11px] text-left text-[var(--ui-text)] hover:bg-[var(--primary-color-light)] hover:text-[var(--primary-color)] font-medium transition-colors flex items-center justify-between cursor-pointer group"
                 >
-                  <span className="truncate">{preset}</span>
+                  <span className="truncate">{t(preset)}</span>
                   <span className="text-[10px] text-[var(--ui-text-subtle)] group-hover:text-[var(--primary-color)] font-semibold shrink-0 ml-2">
-                    + Add
+                    {t("+ Add")}
                   </span>
                 </button>
               ))}

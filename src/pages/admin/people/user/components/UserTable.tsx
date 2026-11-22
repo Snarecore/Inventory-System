@@ -1,6 +1,5 @@
 import EmptyState from "@/components/empty-state/EmptyState";
 import DeleteModal from "@/components/modal/DeleteModal";
-import Modal from "@/components/modal/Modal";
 import Pagination from "@/components/pagination";
 import DropdownFilter from "@/components/table-components/DropdownFilter";
 import Search from "@/components/table-components/Search";
@@ -22,67 +21,112 @@ type SelectedFilters = Record<FilterKey, OptionT | null>;
 
 interface UserTableProps {
   dataList?: UserDataProps[];
-  fetchData?: () => void;
   isLoading?: boolean;
-  isFetching?: boolean;
   pageCount?: number;
   currentPageNumber?: number;
   handlePagination?: (paginationData: { selected: number }) => void;
+  onEdit?: (user: UserDataProps) => void;
   setCurrentPageNumber?: React.Dispatch<React.SetStateAction<number>>;
   searchQuery?: string;
   setSearchQuery?: (query: string) => void;
   selectedFilters?: SelectedFilters;
   setSelectedFilters?: React.Dispatch<React.SetStateAction<SelectedFilters>>;
-  refreshKey?: number;
 }
+
+interface UserCardProps {
+  user: UserDataProps;
+  isMenuOpen: boolean;
+  onMenuToggle: (id: string) => void;
+  onEdit: (user: UserDataProps) => void;
+  onDelete: (user: UserDataProps) => void;
+}
+
+const UserCard = ({
+  user,
+  isMenuOpen,
+  onMenuToggle,
+  onEdit,
+  onDelete,
+}: UserCardProps) => (
+  <div className="relative rounded-xl border border-[var(--color-primary-light)] bg p-6 shadow-lg">
+    <div className="flex items-center justify-between gap-3">
+      <div className="flex min-w-0 items-center gap-3">
+        <img
+          src={user.featuredImage || "/avatar.png"}
+          alt={user.name}
+          className="h-12 w-12 rounded-full border border-[var(--color-primary)] object-cover shadow"
+        />
+        <div className="min-w-0">
+          <p className="truncate font-semibold">{user.name}</p>
+          <p className="truncate text-sm text-[var(--ui-text-muted)]">
+            {user.email}
+          </p>
+        </div>
+      </div>
+
+      <div className="relative">
+        <button
+          onClick={() => onMenuToggle(user.id)}
+          className="cursor-pointer rounded-full p-1 text-[var(--color-primary)] transition-colors"
+          title="More actions"
+          type="button"
+        >
+          <HiDotsHorizontal size={20} />
+        </button>
+
+        {isMenuOpen && (
+          <div className="absolute right-0 top-8 z-10 w-32 space-y-2 rounded-lg border border-[var(--ui-border)] bg-[var(--ui-surface)] p-2 shadow-lg">
+            <button
+              type="button"
+              className="flex w-full items-center gap-2 rounded-full bg-[var(--primary-color-light)] px-4 py-2 text-xs font-semibold text-[var(--primary-color-dark)]"
+              onClick={() => onEdit(user)}
+            >
+              <FaPen size={10} />
+              Edit
+            </button>
+            <button
+              type="button"
+              className="flex w-full items-center gap-2 rounded-full bg-[var(--color-primary-light)] px-4 py-2 text-xs font-semibold text-[var(--color-primary)]"
+              onClick={() => onDelete(user)}
+            >
+              <FaTrash size={10} />
+              Delete
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+
+    <div className="mt-4 flex flex-row flex-wrap items-center justify-between gap-2 border-t border-[var(--ui-border)] pt-4">
+      <span className="text-sm font-medium tracking-wide">
+        {user.phone || "-"}
+      </span>
+      <button
+        type="button"
+        className="rounded-full border border-[var(--color-primary)] bg-[var(--ui-surface)] px-3 py-1 text-xs font-medium text-[var(--color-primary)] shadow-sm"
+      >
+        See Details
+      </button>
+    </div>
+  </div>
+);
 
 const UserTable = ({
   dataList,
-  fetchData,
-  handlePagination,
   isLoading,
-  isFetching,
+  handlePagination,
   pageCount,
   currentPageNumber,
+  onEdit,
   setCurrentPageNumber,
   searchQuery,
   setSearchQuery,
   selectedFilters,
   setSelectedFilters,
 }: UserTableProps) => {
-  const tableHeaders = [
-    { key: "sl", label: "Sl" },
-    { key: "name", label: "Name" },
-    { key: "email", label: "Email" },
-    { key: "phone", label: "Phone" },
-    { key: "action", label: "Action" },
-  ];
-
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedUserList, setSelectedUserList] =
-    useState<UserDataProps | null>(null);
-
-  const openModal = () => {
-    // setSelectedUserList(data);
-    setIsModalOpen(true);
-  };
-
-  const openDeleteModal = (data: UserDataProps) => {
-    setSelectedUserList(data);
-    setIsDeleteModalOpen(true);
-  };
-
-  const closeDeleteModal = () => {
-    setIsDeleteModalOpen(false);
-    setSelectedUserList(null);
-  };
-
-  const handleDelete = async () => {
-    if (!selectedUserList) return;
-    alert("successful");
-  };
-
+  const [selectedUser, setSelectedUser] = useState<UserDataProps | null>(null);
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [openDropdown, setOpenDropdown] = useState<FilterKey | null>(null);
 
   const dropdownOptions = useMemo<Record<FilterKey, OptionT[]>>(
@@ -113,66 +157,25 @@ const UserTable = ({
     []
   );
 
+  const openDeleteModal = (user: UserDataProps) => {
+    setOpenMenuId(null);
+    setSelectedUser(user);
+    setIsDeleteModalOpen(true);
+  };
+
+  const closeDeleteModal = () => {
+    setIsDeleteModalOpen(false);
+    setSelectedUser(null);
+  };
+
+  const handleDelete = () => {
+    closeDeleteModal();
+  };
+
   return (
     <div className="bg-[var(--ui-surface)] rounded-lg border border-[var(--ui-border)]">
-      {/* <div className="mt-4 w-full overflow-x-auto">
-                <table className="w-full text-left border-collapse min-w-[900px]">
-                    <thead className="bg-[var(--ui-surface-sunken)]">
-                        <tr className="text-[var(--ui-text-muted)] text-sm border-b border-[var(--ui-border)]">
-                            {tableHeaders.map(({ key, label }) => (
-                                <th key={key} className="px-6 py-4 text-left text-[var(--ui-text)]">
-                                    {label}
-                                </th>
-                            ))}
-                        </tr>
-                    </thead>
-                    <tbody className="bg-[var(--ui-surface)] divide-y divide-[var(--ui-border)] rounded-lg">
-                        {dataList?.length > 0 ? (
-                            dataList?.map((data, index) => (
-                                <tr
-                                    key={data.id}
-                                    className="border-b border-[var(--ui-border)] text-[var(--ui-text)] hover:bg-[var(--ui-surface-muted)] transition duration-300"
-                                >
-                                    <td className="px-6 py-4 font-medium text-[var(--ui-text)]">
-                                        {index + 1}
-                                    </td>
-                                    <td className="px-6 py-4 font-medium text-[var(--ui-text)]">
-                                        {data.name}
-                                    </td>
-                                    <td className="px-6 py-4 font-medium text-[var(--ui-text)]">
-                                        {data.email}
-                                    </td>
-                                    <td className="px-6 py-4 font-medium text-[var(--ui-text)]">
-                                        {data.phone}
-                                    </td>
-                                    
-                                    <td className="px-6 py-4">
-                                        <div className="flex items-center gap-2">
-                                            <button
-                                                onClick={() => openDeleteModal(data)}
-                                                className="border border-[var(--ui-border-strong)] text-[var(--ui-text)] hover:text-[var(--color-primary)] hover:bg-[var(--ui-border)] cursor-pointer p-2 rounded-md transition duration-300">
-                                                <FiTrash2 />
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
-                            ))
-                        ) : (
-                            <tr>
-                                <td
-                                    colSpan={tableHeaders.length}
-                                    className="px-6 py-4 text-center italic"
-                                >
-                                    <EmptyState title="No admin available" description="Can't find any admin? Invest more to the developers!" />
-                                </td>
-                            </tr>
-                        )}
-                    </tbody>
-                </table>
-            </div> */}
-
       <div className="space-y-4 border-b border-[var(--ui-border)] px-4">
-        <div className="pt-4 pb-4 flex sm:flex-row flex-col gap-4 justify-between flex-wrap">
+        <div className="flex flex-col gap-4 py-4 sm:flex-row sm:flex-wrap sm:justify-between">
           <Search
             searchQuery={searchQuery || ""}
             onSearchChange={(value) => {
@@ -180,7 +183,7 @@ const UserTable = ({
               setCurrentPageNumber?.(1);
             }}
           />
-          <div className="flex sm:flex-row flex-col gap-2">
+          <div className="flex flex-col gap-2 sm:flex-row">
             {(Object.entries(dropdownOptions) as [FilterKey, OptionT[]][]).map(
               ([key, options]) => (
                 <DropdownFilter
@@ -199,8 +202,8 @@ const UserTable = ({
                     setOpenDropdown(openDropdown === key ? null : key)
                   }
                   onSelect={(selected) => {
-                    setSelectedFilters?.((prev) => ({
-                      ...prev,
+                    setSelectedFilters?.((previous) => ({
+                      ...previous,
                       [key]: selected,
                     }));
                     setCurrentPageNumber?.(1);
@@ -209,517 +212,58 @@ const UserTable = ({
                 />
               )
             )}
-            {/* <RefreshButton onClick={handleRefreshButton} /> */}
           </div>
         </div>
       </div>
 
-      <div className="p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 2xl:grid-cols-3 gap-4">
-        <div className="p-6 bg rounded-xl shadow-lg border border-[var(--color-primary-light)] relative">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between w-full gap-2">
-            <div className="flex items-center justify-between w-full sm:w-auto">
-              <img
-                src="/avatar.png"
-                alt="User Avatar"
-                className="w-12 h-12 rounded-full border border-[var(--color-primary)] shadow"
-              />
-
-              <div className="relative sm:hidden">
-                <button
-                  onClick={() => setIsModalOpen(!isModalOpen)}
-                  className="p-1 rounded-full text-[var(--color-primary)] transition-colors duration-200 cursor-pointer"
-                  title="More actions"
-                >
-                  <HiDotsHorizontal size={20} />
-                </button>
-
-                {isModalOpen && (
-                  <div className="absolute right-0 top-8 w-32 bg-[var(--ui-surface)] border border-[var(--ui-border)] rounded-lg shadow-lg z-10 p-2 space-y-2">
-                    <button
-                      className="w-full text-left px-4 py-2 text-xs flex items-center gap-2 bg-[var(--primary-color-light)] text-[var(--primary-color-dark)] font-semibold rounded-full cursor-pointer"
-                      onClick={() => {
-                        setIsModalOpen(false);
-                        alert("Edit clicked");
-                      }}
-                    >
-                      <FaPen size={10} />
-                      Edit
-                    </button>
-                    <button
-                      className="w-full text-left px-4 py-2 text-xs flex items-center gap-2 bg-[var(--color-primary-light)] text-[var(--color-primary)] font-semibold rounded-full cursor-pointer"
-                      onClick={() => {
-                        setIsModalOpen(false);
-                        alert("Delete clicked");
-                      }}
-                    >
-                      <FaTrash size={10} />
-                      Delete
-                    </button>
-                  </div>
-                )}
-              </div>
-            </div>
-
-
-            <div className="mt-2 sm:mt-0 sm:flex sm:items-center sm:gap-2 sm:flex-1">
-              <div>
-                <p className="font-semibold">Majba</p>
-                <p className="text-sm text-[var(--ui-text-muted)]">Junior Developer</p>
-              </div>
-
-
-              <div className="relative hidden sm:block ml-auto">
-                <button
-                  onClick={() => setIsModalOpen(!isModalOpen)}
-                  className="p-1 rounded-full text-[var(--color-primary)] transition-colors duration-200 cursor-pointer"
-                  title="More actions"
-                >
-                  <HiDotsHorizontal size={20} />
-                </button>
-
-                {isModalOpen && (
-                  <div className="absolute right-0 top-8 w-32 bg-[var(--ui-surface)] border border-[var(--ui-border)] rounded-lg shadow-lg z-10 p-2 space-y-2">
-                    <button
-                      className="w-full text-left px-4 py-2 text-xs flex items-center gap-2 bg-[var(--primary-color-light)] text-[var(--primary-color-dark)] font-semibold rounded-full cursor-pointer"
-                      onClick={() => {
-                        setIsModalOpen(false);
-                        alert("Edit clicked");
-                      }}
-                    >
-                      <FaPen size={10} />
-                      Edit
-                    </button>
-                    <button
-                      className="w-full text-left px-4 py-2 text-xs flex items-center gap-2 bg-[var(--color-primary-light)] text-[var(--color-primary)] font-semibold rounded-full cursor-pointer"
-                      onClick={() => {
-                        setIsModalOpen(false);
-                        alert("Delete clicked");
-                      }}
-                    >
-                      <FaTrash size={10} />
-                      Delete
-                    </button>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-
-
-          {/* <div className="flex flex-col sm:flex-row items-center justify-between mb-2">
-            <img
-              src="/avatar.png"
-              alt="User Avatar"
-              className="w-12 h-12 rounded-full border-1 border-[var(--color-primary)] shadow"
-            />
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xl font-bold leading-tight">
-                  Majba
-                </p>
-                <span className="inline-block bg-[var(--color-primary-light)] text-[var(--color-primary)] text-xs rounded-full px-3 py-1 mt-1 shadow-sm">
-                  Junior Developer
-                </span>
-              </div>
-
-              <div className="">
-                <button
-                  onClick={() => setIsModalOpen(!isModalOpen)}
-                  className="p-1 rounded-full text-[var(--color-primary)] border transition-colors duration-200 cursor-pointer self-start"
-                  title="More actions"
-                >
-                  <HiDotsHorizontal size={20} />
-                </button>
-                {isModalOpen && (
-                  <div className="absolute right-0 top-8 w-32 bg-[var(--ui-surface)] border border-[var(--ui-border)] rounded-lg shadow-lg z-10 p-2 space-y-2">
-                    <button
-                      className="w-full text-left px-4 py-2 text-xs transition-colors flex items-center gap-2 bg-[var(--color-primary-light)] rounded-full cursor-pointer"
-                      onClick={() => {
-                        setIsModalOpen(false);
-                        alert("Edit clicked");
-                      }}
-                    >
-                      <span>
-                        <FaPen size={10} />
-                      </span>
-                      Edit
-                    </button>
-                    <button
-                      className="w-full text-left px-4 py-2 text-xs transition-colors flex items-center gap-2 bg-[var(--color-primary-light)] rounded-full cursor-pointer"
-                      onClick={() => {
-                        setIsModalOpen(false);
-                        alert("Delete clicked");
-                      }}
-                    >
-                      <span>
-                        <FaTrash size={10} />
-                      </span>
-                      Delete
-                    </button>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div> */}
-
-          <div className="flex flex-row flex-wrap items-center justify-between gap-2 mt-4 mb-2">
-            <div className="text-sm font-medium tracking-wide">
-              +880 1646745401
-            </div>
-            <div className="text-sm font-medium tracking-wide">
-              majba@gmail.com
-            </div>
-          </div>
-          <div className="flex items-center justify-between mt-4">
-            <div className="text-sm font-medium tracking-wide">
-              <span>09-09-2025</span>
-            </div>
-            <div className="bg-[var(--ui-surface)] border border-[var(--color-primary)] text-[var(--color-primary)] text-xs px-3 py-1 rounded-full shadow-sm font-medium cursor-pointer">
-              See Details
-            </div>
-          </div>
+      {isLoading ? (
+        <div className="p-6 text-center text-[var(--ui-text-muted)]">
+          Loading users...
         </div>
-
-        <div className="p-6 bg rounded-xl shadow-lg border border-[var(--color-primary-light)] relative">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between w-full gap-2">
-            <div className="flex items-center justify-between w-full sm:w-auto">
-              <img
-                src="/avatar.png"
-                alt="User Avatar"
-                className="w-12 h-12 rounded-full border border-[var(--color-primary)] shadow"
-              />
-
-              <div className="relative sm:hidden">
-                <button
-                  onClick={() => setIsModalOpen(!isModalOpen)}
-                  className="p-1 rounded-full text-[var(--color-primary)] transition-colors duration-200 cursor-pointer"
-                  title="More actions"
-                >
-                  <HiDotsHorizontal size={20} />
-                </button>
-
-                {isModalOpen && (
-                  <div className="absolute right-0 top-8 w-32 bg-[var(--ui-surface)] border border-[var(--ui-border)] rounded-lg shadow-lg z-10 p-2 space-y-2">
-                    <button
-                      className="w-full text-left px-4 py-2 text-xs flex items-center gap-2 bg-[var(--primary-color-light)] text-[var(--primary-color-dark)] font-semibold rounded-full cursor-pointer"
-                      onClick={() => {
-                        setIsModalOpen(false);
-                        alert("Edit clicked");
-                      }}
-                    >
-                      <FaPen size={10} />
-                      Edit
-                    </button>
-                    <button
-                      className="w-full text-left px-4 py-2 text-xs flex items-center gap-2 bg-[var(--color-primary-light)] text-[var(--color-primary)] font-semibold rounded-full cursor-pointer"
-                      onClick={() => {
-                        setIsModalOpen(false);
-                        alert("Delete clicked");
-                      }}
-                    >
-                      <FaTrash size={10} />
-                      Delete
-                    </button>
-                  </div>
-                )}
-              </div>
-            </div>
-
-
-            <div className="mt-2 sm:mt-0 sm:flex sm:items-center sm:gap-2 sm:flex-1">
-              <div>
-                <p className="font-semibold">Majba</p>
-                <p className="text-sm text-[var(--ui-text-muted)]">Junior Developer</p>
-              </div>
-
-
-              <div className="relative hidden sm:block ml-auto">
-                <button
-                  onClick={() => setIsModalOpen(!isModalOpen)}
-                  className="p-1 rounded-full text-[var(--color-primary)] transition-colors duration-200 cursor-pointer"
-                  title="More actions"
-                >
-                  <HiDotsHorizontal size={20} />
-                </button>
-
-                {isModalOpen && (
-                  <div className="absolute right-0 top-8 w-32 bg-[var(--ui-surface)] border border-[var(--ui-border)] rounded-lg shadow-lg z-10 p-2 space-y-2">
-                    <button
-                      className="w-full text-left px-4 py-2 text-xs flex items-center gap-2 bg-[var(--primary-color-light)] text-[var(--primary-color-dark)] font-semibold rounded-full cursor-pointer"
-                      onClick={() => {
-                        setIsModalOpen(false);
-                        alert("Edit clicked");
-                      }}
-                    >
-                      <FaPen size={10} />
-                      Edit
-                    </button>
-                    <button
-                      className="w-full text-left px-4 py-2 text-xs flex items-center gap-2 bg-[var(--color-primary-light)] text-[var(--color-primary)] font-semibold rounded-full cursor-pointer"
-                      onClick={() => {
-                        setIsModalOpen(false);
-                        alert("Delete clicked");
-                      }}
-                    >
-                      <FaTrash size={10} />
-                      Delete
-                    </button>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-
-
-          {/* <div className="flex flex-col sm:flex-row items-center justify-between mb-2">
-            <img
-              src="/avatar.png"
-              alt="User Avatar"
-              className="w-12 h-12 rounded-full border-1 border-[var(--color-primary)] shadow"
+      ) : dataList?.length ? (
+        <div className="grid grid-cols-1 gap-4 p-6 md:grid-cols-2 2xl:grid-cols-3">
+          {dataList.map((user) => (
+            <UserCard
+              key={user.id}
+              user={user}
+              isMenuOpen={openMenuId === user.id}
+              onMenuToggle={(id) => setOpenMenuId((current) => (current === id ? null : id))}
+              onEdit={(user) => {
+                setOpenMenuId(null);
+                onEdit?.(user);
+              }}
+              onDelete={openDeleteModal}
             />
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xl font-bold leading-tight">
-                  Majba
-                </p>
-                <span className="inline-block bg-[var(--color-primary-light)] text-[var(--color-primary)] text-xs rounded-full px-3 py-1 mt-1 shadow-sm">
-                  Junior Developer
-                </span>
-              </div>
-
-              <div className="">
-                <button
-                  onClick={() => setIsModalOpen(!isModalOpen)}
-                  className="p-1 rounded-full text-[var(--color-primary)] border transition-colors duration-200 cursor-pointer self-start"
-                  title="More actions"
-                >
-                  <HiDotsHorizontal size={20} />
-                </button>
-                {isModalOpen && (
-                  <div className="absolute right-0 top-8 w-32 bg-[var(--ui-surface)] border border-[var(--ui-border)] rounded-lg shadow-lg z-10 p-2 space-y-2">
-                    <button
-                      className="w-full text-left px-4 py-2 text-xs transition-colors flex items-center gap-2 bg-[var(--color-primary-light)] rounded-full cursor-pointer"
-                      onClick={() => {
-                        setIsModalOpen(false);
-                        alert("Edit clicked");
-                      }}
-                    >
-                      <span>
-                        <FaPen size={10} />
-                      </span>
-                      Edit
-                    </button>
-                    <button
-                      className="w-full text-left px-4 py-2 text-xs transition-colors flex items-center gap-2 bg-[var(--color-primary-light)] rounded-full cursor-pointer"
-                      onClick={() => {
-                        setIsModalOpen(false);
-                        alert("Delete clicked");
-                      }}
-                    >
-                      <span>
-                        <FaTrash size={10} />
-                      </span>
-                      Delete
-                    </button>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div> */}
-
-          <div className="flex flex-row flex-wrap items-center justify-between gap-2 mt-4 mb-2">
-            <div className="text-sm font-medium tracking-wide">
-              +880 1646745401
-            </div>
-            <div className="text-sm font-medium tracking-wide">
-              majba@gmail.com
-            </div>
-          </div>
-          <div className="flex items-center justify-between mt-4">
-            <div className="text-sm font-medium tracking-wide">
-              <span>09-09-2025</span>
-            </div>
-            <div className="bg-[var(--ui-surface)] border border-[var(--color-primary)] text-[var(--color-primary)] text-xs px-3 py-1 rounded-full shadow-sm font-medium cursor-pointer">
-              See Details
-            </div>
-          </div>
+          ))}
         </div>
-
-        <div className="p-6 bg rounded-xl shadow-lg border border-[var(--color-primary-light)] relative">
-          <div className="flex items-center mb-2">
-            <img
-              src="/avatar.png"
-              alt="User Avatar"
-              className="w-12 h-12 rounded-full border-1 border-[var(--color-primary)] shadow"
-            />
-            <div className="flex items-center justify-between gap-2 ml-3 flex-1">
-              <div>
-                <p className="text-xl font-bold leading-tight">
-                  Majba
-                </p>
-                <span className="inline-block bg-[var(--color-primary-light)] text-[var(--color-primary)] text-xs rounded-full px-3 py-1 mt-1 shadow-sm">
-                  Junior Developer
-                </span>
-              </div>
-              <div className="relative">
-                <button
-                  onClick={() => setIsModalOpen(!isModalOpen)}
-                  className="p-1 rounded-full text-[var(--color-primary)] border transition-colors duration-200 cursor-pointer self-start"
-                  title="More actions"
-                >
-                  <HiDotsHorizontal size={20} />
-                </button>
-                {isModalOpen && (
-                  <div className="absolute right-0 top-8 w-32 bg-[var(--ui-surface)] border border-[var(--ui-border)] rounded-lg shadow-lg z-10 p-2 space-y-2">
-                    <button
-                      className="w-full text-left px-4 py-2 text-xs transition-colors flex items-center gap-2 bg-[var(--color-primary-light)] rounded-full cursor-pointer"
-                      onClick={() => {
-                        setIsModalOpen(false);
-                        alert("Edit clicked");
-                      }}
-                    >
-                      <span>
-                        <FaPen size={10} />
-                      </span>
-                      Edit
-                    </button>
-                    <button
-                      className="w-full text-left px-4 py-2 text-xs transition-colors flex items-center gap-2 bg-[var(--color-primary-light)] rounded-full cursor-pointer"
-                      onClick={() => {
-                        setIsModalOpen(false);
-                        alert("Delete clicked");
-                      }}
-                    >
-                      <span>
-                        <FaTrash size={10} />
-                      </span>
-                      Delete
-                    </button>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-
-          <div className="flex flex-row flex-wrap items-center justify-between gap-6 mt-6 mb-2">
-            <div className="text-sm font-medium tracking-wide">
-              +880 1646745401
-            </div>
-            <div className="text-sm font-medium tracking-wide">
-              majba@gmail.com
-            </div>
-          </div>
-          <div className="flex items-center justify-between mt-4">
-            <div className="text-sm font-medium tracking-wide">
-              <span>09-09-2025</span>
-            </div>
-            <div className="bg-[var(--ui-surface)] border border-[var(--color-primary)] text-[var(--color-primary)] text-xs px-3 py-1 rounded-full shadow-sm font-medium cursor-pointer">
-              See Details
-            </div>
-          </div>
+      ) : (
+        <div className="p-6">
+          <EmptyState
+            title="No users available"
+            description="No users match the current filters."
+          />
         </div>
+      )}
 
-        <div className="p-6 bg rounded-xl shadow-lg border border-[var(--color-primary-light)] relative">
-          <div className="flex items-center mb-2">
-            <img
-              src="/avatar.png"
-              alt="User Avatar"
-              className="w-12 h-12 rounded-full border-1 border-[var(--color-primary)] shadow"
-            />
-            <div className="flex items-center justify-between gap-2 ml-3 flex-1">
-              <div>
-                <p className="text-xl font-bold leading-tight">
-                  Majba
-                </p>
-                <span className="inline-block bg-[var(--color-primary-light)] text-[var(--color-primary)] text-xs rounded-full px-3 py-1 mt-1 shadow-sm">
-                  Junior Developer
-                </span>
-              </div>
-              <div className="relative">
-                <button
-                  onClick={() => setIsModalOpen(!isModalOpen)}
-                  className="p-1 rounded-full text-[var(--color-primary)] border transition-colors duration-200 cursor-pointer self-start"
-                  title="More actions"
-                >
-                  <HiDotsHorizontal size={20} />
-                </button>
-                {isModalOpen && (
-                  <div className="absolute right-0 top-8 w-32 bg-[var(--ui-surface)] border border-[var(--ui-border)] rounded-lg shadow-lg z-10 p-2 space-y-2">
-                    <button
-                      className="w-full text-left px-4 py-2 text-xs transition-colors flex items-center gap-2 bg-[var(--color-primary-light)] rounded-full cursor-pointer"
-                      onClick={() => {
-                        setIsModalOpen(false);
-                        alert("Edit clicked");
-                      }}
-                    >
-                      <span>
-                        <FaPen size={10} />
-                      </span>
-                      Edit
-                    </button>
-                    <button
-                      className="w-full text-left px-4 py-2 text-xs transition-colors flex items-center gap-2 bg-[var(--color-primary-light)] rounded-full cursor-pointer"
-                      onClick={() => {
-                        setIsModalOpen(false);
-                        alert("Delete clicked");
-                      }}
-                    >
-                      <span>
-                        <FaTrash size={10} />
-                      </span>
-                      Delete
-                    </button>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-
-          <div className="flex flex-row flex-wrap items-center justify-between gap-6 mt-6 mb-2">
-            <div className="text-sm font-medium tracking-wide">
-              +880 1646745401
-            </div>
-            <div className="text-sm font-medium tracking-wide">
-              majba@gmail.com
-            </div>
-          </div>
-          <div className="flex items-center justify-between mt-4">
-            <div className="text-sm font-medium tracking-wide">
-              <span>09-09-2025</span>
-            </div>
-            <div className="bg-[var(--ui-surface)] border border-[var(--color-primary)] text-[var(--color-primary)] text-xs px-3 py-1 rounded-full shadow-sm font-medium cursor-pointer">
-              See Details
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {selectedUserList && (
+      {selectedUser && (
         <DeleteModal
           isOpen={isDeleteModalOpen}
           title="Delete?"
-          message={`Are you sure you want to delete?`}
+          message={`Are you sure you want to delete ${selectedUser.name}?`}
           onClose={closeDeleteModal}
           onDelete={handleDelete}
         />
       )}
-      {/* {pageCount > 1 && (
-				<div className="flex justify-center">
-					<Pagination
-						pageCount={pageCount}
-						currentPageNumber={currentPageNumber}
-						handlePagination={handlePagination}
-					/>
-				</div>
-			)} */}
 
-      <div className="flex justify-center">
-        <Pagination
-          pageCount={10}
-          currentPageNumber={currentPageNumber!}
-          handlePagination={handlePagination!}
-        />
-      </div>
+      {(pageCount ?? 10) > 1 && handlePagination && currentPageNumber ? (
+        <div className="flex justify-center p-4">
+          <Pagination
+            pageCount={pageCount ?? 10}
+            currentPageNumber={currentPageNumber}
+            handlePagination={handlePagination}
+          />
+        </div>
+      ) : null}
     </div>
   );
 };

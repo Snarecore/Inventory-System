@@ -152,7 +152,9 @@ export const mapLedgerToBreakdownEntries = (
 
     const cleanRef = String(item.refNo || "").replace(/^#+/, "").trim();
     const cleanOrder = String(item.orderNo || "").replace(/^#+/, "").trim();
-    const targetRef = cleanRef || cleanOrder;
+    const validRef = cleanRef && cleanRef !== "-" ? cleanRef : "";
+    const validOrder = cleanOrder && cleanOrder !== "-" ? cleanOrder : "";
+    const targetRef = validRef || validOrder;
 
     // Look up matched sale from salesList
     const matchedSale = !isOpening && !isReturn && !isCollection
@@ -281,13 +283,14 @@ export const mapLedgerToBreakdownEntries = (
         const refPart = targetRef ? `#${targetRef}` : "";
         const vPart = matchedSale.voucherNo ? `Voucher: #${matchedSale.voucherNo}` : "";
         description = [refPart, vPart].filter(Boolean).join(" | ") || refPart || "Sale";
-      } else if (cleanRef && cleanOrder && cleanRef !== cleanOrder) {
-        description = `#${cleanRef} | Order: #${cleanOrder}`;
-      } else if (targetRef && targetRef !== "-") {
-        description = `#${targetRef}`;
+      } else if (validRef) {
+        description = `#${validRef}`;
+      } else if (validOrder) {
+        description = `#${validOrder}`;
       } else {
         description = isPureCreditSale || isPartialSale ? "Credit Sale" : "Sale";
       }
+      description = description.replace(/\s*\|\s*Order:\s*#-?/gi, "").trim();
     }
 
     // 5. Sales (BDT) - Directly from API Debit

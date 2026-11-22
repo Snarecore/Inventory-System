@@ -88,6 +88,7 @@ const Users = () => {
             currentPageNumber={currentPageNumber}
             setCurrentPageNumber={setCurrentPageNumber}
             handlePagination={handlePagination}
+            onEdit={openModal}
             searchQuery={searchQuery}
             setSearchQuery={setSearchQuery}
             selectedFilters={selectedFilters}

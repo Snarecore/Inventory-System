@@ -32,6 +32,7 @@ import {
   formatShortReportDate,
 } from "@/utils/trade-report-helpers";
 import type { PaymentReceiptData } from "@/types/payment.types";
+import { showSuccessToast, showErrorToast } from "@/utils/toast-utils";
 import {
   type NormalizedSupplierDueRow,
   type SupplierPaymentSummary,
@@ -42,7 +43,7 @@ import {
   exportSupplierStatementExcel,
   downloadSupplierStatementPdf,
 } from "../utils/supplier-payment-report-helpers";
-import SupplierStatementTable from "./SupplierStatementTable";
+import InlinePurchaseLedgerRow from "./InlinePurchaseLedgerRow";
 import SupplierStatementDrawer from "./SupplierStatementDrawer";
 
 interface SupplierDueReportTableProps {
@@ -165,31 +166,70 @@ export const SupplierDueReportTable: React.FC<SupplierDueReportTableProps> = ({
     setCurrentPage(1);
   };
 
-  // Compute statement data for currently expanded row
-  const expandedStatementData = useMemo(() => {
-    if (!expandedSupplierKey) return null;
-    const target = adaptedSummaries.find(
-      (s) => s.supplierKey === expandedSupplierKey
-    );
-    if (!target) return null;
-    return buildSupplierStatementEntries(
-      target,
-      payments,
-      purchasesList,
-      returnRecords,
-      rawPartyData,
-      { startDate, endDate }
-    );
-  }, [
-    expandedSupplierKey,
-    adaptedSummaries,
-    payments,
-    purchasesList,
-    returnRecords,
-    rawPartyData,
-    startDate,
-    endDate,
-  ]);
+  const [downloadingSupplierKey, setDownloadingSupplierKey] = useState<string | null>(null);
+
+  const handleDownloadSingleSupplierPdf = async (d: NormalizedSupplierDueRow) => {
+    try {
+      setDownloadingSupplierKey(d.supplierKey);
+      const stmt = buildSupplierStatementEntries(
+        {
+          supplierKey: d.supplierKey,
+          supplierId: d.supplierId,
+          supplierName: d.supplierName,
+          supplierPhone: d.supplierPhone,
+          voucherCount: 0,
+          billsSettled: 0,
+          cashPaid: 0,
+          digitalPaid: 0,
+          totalDiscount: 0,
+          totalPaid: 0,
+          currentDue: d.totalDue,
+          lastPaymentDate: "",
+        },
+        payments,
+        purchasesList,
+        returnRecords,
+        rawPartyData,
+        { startDate, endDate }
+      );
+      await downloadSupplierStatementPdf(stmt, companyMeta);
+      showSuccessToast(`Purchase ledger PDF downloaded for ${d.supplierName}!`);
+    } catch (err: any) {
+      showErrorToast(err?.message || "Failed to download purchase ledger PDF");
+    } finally {
+      setDownloadingSupplierKey(null);
+    }
+  };
+
+  const handleExportSingleSupplierExcel = async (d: NormalizedSupplierDueRow) => {
+    try {
+      const stmt = buildSupplierStatementEntries(
+        {
+          supplierKey: d.supplierKey,
+          supplierId: d.supplierId,
+          supplierName: d.supplierName,
+          supplierPhone: d.supplierPhone,
+          voucherCount: 0,
+          billsSettled: 0,
+          cashPaid: 0,
+          digitalPaid: 0,
+          totalDiscount: 0,
+          totalPaid: 0,
+          currentDue: d.totalDue,
+          lastPaymentDate: "",
+        },
+        payments,
+        purchasesList,
+        returnRecords,
+        rawPartyData,
+        { startDate, endDate }
+      );
+      await exportSupplierStatementExcel(stmt, companyMeta);
+      showSuccessToast(`Purchase ledger Excel exported for ${d.supplierName}!`);
+    } catch (err: any) {
+      showErrorToast(err?.message || "Failed to export purchase ledger Excel");
+    }
+  };
 
   const handleOpenDrawer = (d: NormalizedSupplierDueRow) => {
     const summary: SupplierPaymentSummary = {
@@ -486,142 +526,69 @@ export const SupplierDueReportTable: React.FC<SupplierDueReportTableProps> = ({
                       )}
                       {isColVisible("actions") && (
                         <td className="py-2.5 px-3 text-center whitespace-nowrap">
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleOpenDrawer(d);
-                            }}
-                            className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold text-[var(--primary-color)] bg-[var(--primary-color-light)] hover:bg-[var(--primary-color-muted)]/30 rounded-lg transition-colors cursor-pointer"
-                            title="View Detailed Statement"
-                          >
-                            <FiFileText size={12} />
-                            <span>Statement</span>
-                          </button>
+                          <div className="inline-flex items-center gap-1.5 justify-center">
+                            {/* Direct Download Purchase Ledger PDF (Icon Only) */}
+                            <button
+                              type="button"
+                              disabled={downloadingSupplierKey === d.supplierKey}
+                              onClick={async (e) => {
+                                e.stopPropagation();
+                                await handleDownloadSingleSupplierPdf(d);
+                              }}
+                              className="w-7 h-7 inline-flex items-center justify-center rounded-lg border border-rose-200 bg-rose-50 hover:bg-rose-100 text-rose-600 transition-colors cursor-pointer disabled:opacity-50"
+                              title="Download Purchase Ledger PDF"
+                            >
+                              <FaFilePdf size={13} />
+                            </button>
+
+                            {/* Direct Export Purchase Ledger Excel (Icon Only) */}
+                            <button
+                              type="button"
+                              onClick={async (e) => {
+                                e.stopPropagation();
+                                await handleExportSingleSupplierExcel(d);
+                              }}
+                              className="w-7 h-7 inline-flex items-center justify-center rounded-lg border border-emerald-200 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 transition-colors cursor-pointer"
+                              title="Export Purchase Ledger to Excel"
+                            >
+                              <FaFileExcel size={13} />
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleOpenDrawer(d);
+                              }}
+                              className="inline-flex items-center gap-1 px-2 py-1 text-xs font-semibold text-[var(--primary-color)] bg-[var(--primary-color-light)] hover:bg-[var(--primary-color-muted)]/30 rounded-lg transition-colors cursor-pointer"
+                              title="View Detailed Statement"
+                            >
+                              <FiFileText size={12} />
+                              <span>Statement</span>
+                            </button>
+                          </div>
                         </td>
                       )}
                     </tr>
 
-                    {/* Inline Collapsible Statement Ledger */}
-                    {isExpanded && expandedStatementData && (
-                      <tr className="bg-[var(--ui-surface-muted)]/20 border-b border-[var(--ui-border)]">
-                        <td
-                          colSpan={activeVisibleColumnCount}
-                          className="p-2 sm:p-3 text-left"
-                        >
-                          <div className="flex flex-col gap-2.5 p-3 bg-[var(--ui-surface)] border border-[var(--ui-border)] rounded-xl shadow-xs">
-                            {/* Expanded Header */}
-                            <div className="flex flex-wrap items-center justify-between gap-2.5 pb-2.5 border-b border-[var(--ui-border)]">
-                              <div className="flex items-center gap-2.5">
-                                <div className="w-8 h-8 rounded-lg bg-[var(--primary-color-light)] text-[var(--primary-color)] flex items-center justify-center font-bold">
-                                  <FaStore size={14} />
-                                </div>
-                                <div>
-                                  <div className="flex items-center gap-1.5 flex-wrap">
-                                    <span className="font-bold text-xs text-[var(--ui-text)]">
-                                      {d.supplierName}
-                                    </span>
-                                    <span className="text-[11px] text-[var(--ui-text-muted)]">
-                                      (Statement History)
-                                    </span>
-                                  </div>
-                                  <div className="text-[11px] text-[var(--ui-text-muted)] flex items-center gap-2 mt-0.5 flex-wrap">
-                                    <span>Phone: {d.supplierPhone}</span>
-                                    <span className="inline-block w-px h-2.5 bg-[var(--ui-border)]" />
-                                    <span>Pending Invoices: {d.invoiceCount}</span>
-                                    <span className="inline-block w-px h-2.5 bg-[var(--ui-border)]" />
-                                    <span>
-                                      Total Purchases:{" "}
-                                      <strong className="text-[var(--ui-text)] font-semibold">
-                                        ৳{" "}
-                                        {formatMoney(
-                                          expandedStatementData.totalPurchases
-                                        )}
-                                      </strong>
-                                    </span>
-                                    <span className="inline-block w-px h-2.5 bg-[var(--ui-border)]" />
-                                    <span>
-                                      Total Paid:{" "}
-                                      <strong className="text-emerald-600 dark:text-emerald-400 font-semibold">
-                                        ৳{" "}
-                                        {formatMoney(
-                                          expandedStatementData.totalPayments
-                                        )}
-                                      </strong>
-                                    </span>
-                                    <span className="inline-block w-px h-2.5 bg-[var(--ui-border)]" />
-                                    <span className="text-rose-600 dark:text-rose-400 font-bold">
-                                      Outstanding Due: ৳ {formatMoney(d.totalDue)}
-                                    </span>
-                                  </div>
-                                </div>
-                              </div>
-
-                              <div className="flex items-center gap-1.5">
-                                <button
-                                  type="button"
-                                  onClick={async () => {
-                                    await exportSupplierStatementExcel(
-                                      expandedStatementData,
-                                      companyMeta
-                                    );
-                                  }}
-                                  className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-lg border border-[var(--ui-border)] bg-[var(--ui-surface)] hover:bg-emerald-50 dark:hover:bg-emerald-950/30 text-emerald-600 transition-colors cursor-pointer"
-                                  title="Export This Supplier Statement to Excel"
-                                >
-                                  <FaFileExcel size={12} />
-                                  <span>Excel</span>
-                                </button>
-
-                                <button
-                                  type="button"
-                                  onClick={async () => {
-                                    await downloadSupplierStatementPdf(
-                                      expandedStatementData,
-                                      companyMeta
-                                    );
-                                  }}
-                                  className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-lg border border-[var(--ui-border)] bg-[var(--ui-surface)] hover:bg-rose-50 dark:hover:bg-rose-950/30 text-rose-600 transition-colors cursor-pointer"
-                                  title="Download This Supplier Statement PDF"
-                                >
-                                  <FaFilePdf size={12} />
-                                  <span>PDF</span>
-                                </button>
-
-                                <button
-                                  type="button"
-                                  onClick={() => handleOpenDrawer(d)}
-                                  className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-lg border border-[var(--ui-border)] bg-[var(--ui-surface)] hover:bg-[var(--primary-color-light)] text-[var(--primary-color)] transition-colors cursor-pointer"
-                                  title="Open Full Statement Drawer"
-                                >
-                                  <FiMaximize2 size={12} />
-                                  <span>Full View</span>
-                                </button>
-                              </div>
-                            </div>
-
-                            {/* Embedded Statement Table */}
-                            <SupplierStatementTable
-                              entries={expandedStatementData.entries}
-                              stats={{
-                                openingBalance:
-                                  expandedStatementData.openingBalance,
-                                totalPurchases:
-                                  expandedStatementData.totalPurchases,
-                                totalPayments:
-                                  expandedStatementData.totalPayments,
-                                totalReturns:
-                                  expandedStatementData.totalReturns,
-                                totalDiscounts:
-                                  expandedStatementData.totalDiscounts,
-                                closingBalance:
-                                  expandedStatementData.closingBalance,
-                              }}
-                              onViewReceipt={onViewReceipt}
-                            />
-                          </div>
-                        </td>
-                      </tr>
+                    {/* Inline Collapsible Statement / Purchase Ledger Section */}
+                    {isExpanded && (
+                      <InlinePurchaseLedgerRow
+                        supplier={{
+                          ...d,
+                          currentDue: d.totalDue,
+                        }}
+                        startDate={startDate}
+                        endDate={endDate}
+                        purchasesList={purchasesList}
+                        payments={payments}
+                        returnRecords={returnRecords}
+                        rawPartyData={rawPartyData}
+                        companyMeta={companyMeta}
+                        activeVisibleColumnCount={activeVisibleColumnCount}
+                        onViewReceipt={onViewReceipt}
+                        onOpenDrawer={() => handleOpenDrawer(d)}
+                      />
                     )}
                   </React.Fragment>
                 );

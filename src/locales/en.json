@@ -513,5 +513,18 @@
   "Back to Sales": "Back to Sales",
   "Back to Purchases": "Back to Purchases",
   "No line items available in this invoice.": "No line items available in this invoice.",
-  "Please search and select an invoice above to view and return items.": "Please search and select an invoice above to view and return items."
+  "Please search and select an invoice above to view and return items.": "Please search and select an invoice above to view and return items.",
+  "Type notes or click '+ Presets' to add...": "Type notes or click '+ Presets' to add...",
+  "Choose a preset:": "Choose a preset:",
+  "Click to add": "Click to add",
+  "+ Add": "+ Add",
+  "Goods delivered in good condition": "Goods delivered in good condition",
+  "Cash received on delivery": "Cash received on delivery",
+  "Full payment cleared": "Full payment cleared",
+  "Standard order completed": "Standard order completed",
+  "Warranty card issued": "Warranty card issued",
+  "Goods received in good condition": "Goods received in good condition",
+  "Challan verified with physical stock": "Challan verified with physical stock",
+  "Standard order delivered": "Standard order delivered",
+  "Packaging and seal verified": "Packaging and seal verified"
 }

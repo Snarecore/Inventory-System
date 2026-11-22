@@ -547,5 +547,18 @@
   "Back to Sales": "বিক্রয় তালিকায় ফিরুন",
   "Back to Purchases": "ক্রয় তালিকায় ফিরুন",
   "No line items available in this invoice.": "এই ইনভয়েসে কোনো আইটেম নেই।",
-  "Please search and select an invoice above to view and return items.": "আইটেম দেখতে ও ফেরত তৈরি করতে উপরে ইনভয়েস সার্চ করে নির্বাচন করুন।"
+  "Please search and select an invoice above to view and return items.": "আইটেম দেখতে ও ফেরত তৈরি করতে উপরে ইনভয়েস সার্চ করে নির্বাচন করুন।",
+  "Type notes or click '+ Presets' to add...": "নোট লিখুন অথবা '+ প্রিসেট' ক্লিক করুন...",
+  "Choose a preset:": "একটি প্রিসেট বেছে নিন:",
+  "Click to add": "যোগ করতে ক্লিক করুন",
+  "+ Add": "+ যোগ করুন",
+  "Goods delivered in good condition": "পণ্য সঠিক অবস্থায় ডেলিভারি করা হয়েছে",
+  "Cash received on delivery": "ক্যাশ অন ডেলিভারি পাওয়া গেছে",
+  "Full payment cleared": "সম্পূর্ণ পেমেন্ট পরিশোধিত",
+  "Standard order completed": "সাধারণ অর্ডার সম্পন্ন হয়েছে",
+  "Warranty card issued": "ওয়ারেন্টি কার্ড প্রদান করা হয়েছে",
+  "Goods received in good condition": "পণ্য সঠিক অবস্থায় গ্রহণ করা হয়েছে",
+  "Challan verified with physical stock": "শারীরিক স্টকের সাথে চালান যাচাই করা হয়েছে",
+  "Standard order delivered": "সাধারণ অর্ডার ডেলিভারি হয়েছে",
+  "Packaging and seal verified": "প্যাকেজিং ও সিল যাচাই করা হয়েছে"
 }
