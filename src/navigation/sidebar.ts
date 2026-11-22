@@ -319,6 +319,7 @@ export const menu = [
 				subItems: [
 					{ id: 110, name: "Business Profile", path: "/admin/company", permissionKey: "settings.business_profile.view" },
 					{ id: 1105, name: "Invoice Setup", path: "/admin/settings/invoice-profile", permissionKey: "settings.view" },
+					{ id: 1106, name: "Order Serial Settings", path: "/admin/settings/order-serial", permissionKey: "settings.view" },
 					{ id: 109, name: "Branch Management", path: "/admin/branches", permissionKey: "settings.view" },
 					{ id: 125, name: "Role Management", path: "/admin/settings/roles", permissionKey: "settings.view" },
 					{ id: 124, name: "Appearance", path: "/admin/settings/appearance", permissionKey: "settings.view" },

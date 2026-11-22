@@ -525,6 +525,21 @@
   "Warranty card issued": "Warranty card issued",
   "Goods received in good condition": "Goods received in good condition",
   "Challan verified with physical stock": "Challan verified with physical stock",
-  "Standard order delivered": "Standard order delivered",
-  "Packaging and seal verified": "Packaging and seal verified"
+  "Packaging and seal verified": "Packaging and seal verified",
+  "Order Serial Settings": "Order Serial Settings",
+  "Configure starting sequence serial numbers for Sales and Purchase orders": "Configure starting sequence serial numbers for Sales and Purchase orders",
+  "Sales Invoice Serial": "Sales Invoice Serial",
+  "Purchase Invoice Serial": "Purchase Invoice Serial",
+  "Applies to customer sales & POS": "Applies to customer sales, orders and POS receipts",
+  "Applies to purchases & vendor bills": "Applies to purchases, vouchers and vendor bills",
+  "Next Order No": "Next Order No",
+  "New Start Number": "New Start Number",
+  "Last Number": "Last Number",
+  "Save Sales Serial": "Save Sales Serial",
+  "Save Purchase Serial": "Save Purchase Serial",
+  "Next orders will start from this number": "Next orders will start from this number once saved",
+  "Enter new starting number": "Enter starting number (e.g. 000050)",
+  "Optional": "Optional",
+  "Currently Running": "Currently Running",
+  "Ready to Save": "Ready to Save"
 }

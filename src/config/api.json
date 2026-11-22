@@ -125,6 +125,10 @@
         "invoiceProfileSetupUrl": "invoice-profile-setup",
         "invoiceProfileSetupSaveUrl": "invoice-profile-setup-save"
     },
+    "orderSerial": {
+        "getOrderSerialSettingsUrl": "get-order-serial-settings",
+        "updateOrderSerialSettingsUrl": "update-order-serial-settings"
+    },
     "category": {
         "getCategoryListUrl": "get-category-list",
         "insertCategoryUrl": "insert-category-info",
