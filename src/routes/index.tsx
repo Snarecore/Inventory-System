@@ -71,6 +71,7 @@ const CashClosingReport = lazyWithRetry(() => import('@/pages/admin/finance/cash
 const KhatabookReportPage = lazyWithRetry(() => import('@/pages/admin/finance/khatabook-report'))
 const OpeningCashBalancePage = lazyWithRetry(() => import('@/pages/admin/finance/opening-cash-balance'))
 const PackagesPage = lazyWithRetry(() => import('@/pages/admin/packages'))
+const ReferralDashboard = lazyWithRetry(() => import('@/pages/admin/settings/referral'))
 const BranchList = lazyWithRetry(() => import('@/pages/admin/branch/BranchList'))
 const AddBranch = lazyWithRetry(() => import('@/pages/admin/branch/AddBranch'))
 const FinancialBookPage = lazyWithRetry(() => import('@/pages/admin/finance/financial-book'))
@@ -170,6 +171,10 @@ export const router = createBrowserRouter([
   {
     path: '/packages',
     element: <Navigate to="/admin/packages" replace />,
+  },
+  {
+    path: '/referral',
+    element: <Navigate to="/admin/settings/referral" replace />,
   },
   {
     path: '/branches',
@@ -538,6 +543,14 @@ export const router = createBrowserRouter([
   {
     path: '/settings/roles',
     element: <Navigate to="/admin/settings/roles" replace />,
+  },
+  {
+    path: '/settings/referral',
+    element: <Navigate to="/admin/settings/referral" replace />,
+  },
+  {
+    path: '/settings/referral-profile',
+    element: <Navigate to="/admin/settings/referral" replace />,
   },
 
   // Admin Protected / Management Routes
@@ -963,6 +976,14 @@ export const router = createBrowserRouter([
         element: withPermission(RolesAndPermissions, 'role_management'),
       },
       {
+        path: 'settings/referral',
+        element: withSuspense(ReferralDashboard),
+      },
+      {
+        path: 'settings/referral-profile',
+        element: <Navigate to="/admin/settings/referral" replace />,
+      },
+      {
         path: 'sms',
         element: withPermission(SendSmsPage, 'sms'),
       },
@@ -1009,6 +1030,10 @@ export const router = createBrowserRouter([
       {
         path: 'packages',
         element: withPermission(PackagesPage, 'subscription_packages'),
+      },
+      {
+        path: 'referral',
+        element: <Navigate to="/admin/settings/referral" replace />,
       },
       {
         path: 'pricing',

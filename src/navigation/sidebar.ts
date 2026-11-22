@@ -325,6 +325,7 @@ export const menu = [
 					{ id: 124, name: "Appearance", path: "/admin/settings/appearance", permissionKey: "settings.view" },
 					{ id: 127, name: "Website CMS", title: "Website CMS", path: "/admin/home-page-cms", permissionKey: "settings.view" },
 					{ id: 126, name: "Subscription Packages", title: "Subscription Packages", path: "/admin/packages", permissionKey: "settings.view" },
+					{ id: 1265, name: "Referral Profile", title: "Referral Profile", path: "/admin/settings/referral", permissionKey: "settings.view" },
 					{ id: 118, name: "System Settings", title: "System Settings", path: "/settings/system", permissionKey: "settings.system.view" },
 					{ id: 119, name: "Payment Methods", path: "/settings/payment-methods", permissionKey: "settings.payment_methods.view" },
 					{ id: 120, name: "Tax / VAT", path: "/settings/tax", permissionKey: "settings.tax.view" },

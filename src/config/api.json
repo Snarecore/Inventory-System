@@ -189,5 +189,18 @@
         "getEmployeeBranchPermissionsUrl": "employee",
         "getOrganizationPermissionsUrl": "organization",
         "getBranchPermissionsUrl": "branch"
+    },
+    "referral": {
+        "generateCodeUrl": "generate-code",
+        "attributeUrl": "attribute",
+        "walletBalanceUrl": "wallet/balance",
+        "walletCheckoutDebitUrl": "wallet/checkout-debit",
+        "payoutAccountUrl": "payout-account",
+        "withdrawalsUrl": "withdrawals",
+        "summaryUrl": "summary",
+        "meUrl": "me",
+        "earningsUrl": "earnings",
+        "walletTransactionsUrl": "wallet/transactions",
+        "configUrl": "config"
     }
 }
