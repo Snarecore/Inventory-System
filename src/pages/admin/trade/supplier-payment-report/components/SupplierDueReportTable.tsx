@@ -191,7 +191,6 @@ export const SupplierDueReportTable: React.FC<SupplierDueReportTableProps> = ({
         { startDate, endDate }
       );
       await downloadSupplierStatementPdf(stmt, companyMeta);
-      showSuccessToast(`Purchase ledger PDF downloaded for ${d.supplierName}!`);
     } catch (err: any) {
       showErrorToast(err?.message || "Failed to download purchase ledger PDF");
     } finally {

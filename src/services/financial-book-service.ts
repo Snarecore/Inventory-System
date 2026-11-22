@@ -2,6 +2,7 @@ import moment from "moment";
 import apiConfig from "@/config/api.json";
 import { buildAccessUser } from "@/utils/access-user";
 import { getStoredToken } from "@/utils/auth-storage";
+import { openPdfPreview } from "@/services/pdf-preview-service";
 
 export type FinancialBookType = "cash" | "bank" | "mfs";
 
@@ -221,6 +222,17 @@ export async function downloadFinancialBookFile(
     const mimeType = format === "pdf" ? "application/pdf" : "text/csv;charset=utf-8;";
     const fileBlob = new Blob([blob], { type: mimeType });
     const blobUrl = window.URL.createObjectURL(fileBlob);
+
+    if (format === "pdf") {
+      openPdfPreview({
+        blob: fileBlob,
+        blobUrl,
+        fileName: filename,
+        title: `${type.toUpperCase()} Book Report`,
+        successMessage: `${type.toUpperCase()} Book report PDF downloaded successfully!`,
+      });
+      return;
+    }
 
     const a = document.createElement("a");
     a.style.position = "fixed";

@@ -174,7 +174,6 @@ export const InlineCustomerLedgerRow: React.FC<InlineCustomerLedgerRowProps> = (
                       companyMeta,
                       { salesList, collections }
                     );
-                    showSuccessToast("Customer statement PDF downloaded successfully");
                   } catch (err: any) {
                     showErrorToast(err?.message || "Failed to download PDF");
                   } finally {

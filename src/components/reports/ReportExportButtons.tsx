@@ -25,7 +25,7 @@ export const ReportExportButtons: React.FC<ReportExportButtonsProps> = ({
     setBusyType(type);
     try {
       const successMsg = await action();
-      if (successMsg) {
+      if (successMsg && type !== "pdf") {
         showSuccessToast(successMsg);
       }
     } catch (e: any) {
@@ -50,13 +50,13 @@ export const ReportExportButtons: React.FC<ReportExportButtonsProps> = ({
 
       <button
         type="button"
-        onClick={() => runExport("pdf", onDownloadPdf, "PDF download failed")}
+        onClick={() => runExport("pdf", onDownloadPdf, "PDF preview failed")}
         disabled={busyType !== null}
-        title="Download PDF Report"
+        title="Preview and Download PDF Report"
         className="flex items-center justify-center gap-1.5 px-3 h-8 text-[11px] sm:text-xs font-semibold text-white bg-[var(--primary-color)] hover:bg-[var(--primary-color-hover)] rounded-lg transition-all shadow-xs cursor-pointer active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed whitespace-nowrap"
       >
         <FaFilePdf className="text-white shrink-0" size={12} />
-        <span>{busyType === "pdf" ? "Downloading..." : "Download PDF"}</span>
+        <span>{busyType === "pdf" ? "Loading Preview..." : "Download PDF"}</span>
       </button>
     </div>
   );
