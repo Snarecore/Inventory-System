@@ -9,7 +9,7 @@ import { TopSaleItemsWidget } from './components/TopSaleItemsWidget';
 import { useCashBalanceQuery } from '@/hooks/useCashBalance';
 import { useFinancialAccounts } from '@/hooks/useFinancialAccounts';
 import { useSalesQuery } from '@/pages/admin/trade/sales/hooks/useSalesQueries';
-import { useFinancialTransactionsQuery } from '@/hooks/useFinanceQueries';
+import { usePurchasesQuery } from '@/pages/admin/trade/purchases/hooks/usePurchaseQueries';
 import { useCustomersDueQuery } from '@/hooks/useCustomersDue';
 import { usePurchasesDueQuery } from '@/hooks/usePurchasesDue';
 import { useKhatabookDashboardQuery } from '@/hooks/useKhatabook';
@@ -39,14 +39,12 @@ const AdminDashboard: React.FC = () => {
     isRefetching: isRefetchingSales,
   } = useSalesQuery();
 
-  // 4. Financial Transactions Query (for Today's Expense)
+  // 4. Purchases Query (for Today's Purchase)
   const {
-    data: expenses = [],
-    refetch: refetchExpenses,
-    isRefetching: isRefetchingExpenses,
-  } = useFinancialTransactionsQuery({
-    type: "EXPENSE",
-  });
+    data: purchaseList = [],
+    refetch: refetchPurchases,
+    isRefetching: isRefetchingPurchases,
+  } = usePurchasesQuery();
 
   // 5. Customers Due Query (for Total Receivable)
   const {
@@ -74,7 +72,7 @@ const AdminDashboard: React.FC = () => {
     bankQuery.isRefetching ||
     mfsQuery.isRefetching ||
     isRefetchingSales ||
-    isRefetchingExpenses ||
+    isRefetchingPurchases ||
     isRefetchingDue ||
     isRefetchingPurchasesDue ||
     isFetchingKhatabook;
@@ -85,7 +83,7 @@ const AdminDashboard: React.FC = () => {
       bankQuery.refetch(),
       mfsQuery.refetch(),
       refetchSales(),
-      refetchExpenses(),
+      refetchPurchases(),
       refetchCustomersDue(),
       refetchPurchasesDue(),
       refetchKhatabook(),
@@ -93,6 +91,19 @@ const AdminDashboard: React.FC = () => {
   };
 
   const kpiData = useMemo(() => {
+    const isDateToday = (rawDate: any): boolean => {
+      if (!rawDate) return false;
+      const d = String(rawDate).trim();
+      if (!d) return false;
+      const todayIso = moment().format('YYYY-MM-DD');
+      if (d.startsWith(todayIso)) return true;
+      const m = moment(d);
+      if (m.isValid() && m.isSame(moment(), 'day')) return true;
+      const mCustom = moment(d, ['DD-MM-YYYY', 'DD/MM/YYYY', 'YYYY/MM/DD'], true);
+      if (mCustom.isValid() && mCustom.isSame(moment(), 'day')) return true;
+      return false;
+    };
+
     // 1. Active Bank Accounts total balance
     const liveBank = registeredBankAccounts
       .filter((b) => String(b.status || '').toLowerCase() === 'active')
@@ -121,21 +132,28 @@ const AdminDashboard: React.FC = () => {
       ? liveMfs
       : 0;
 
-    // 3. Today's Sale: Sum of completed sales created today
+    // 3. Today's Sale: Sum of completed sales created/recorded today
     const todaysSale = (salesList || []).reduce((sum, s) => {
       if (s.isReturnRecord) return sum;
       const date = s.salesDate || s.saleDate || s.sales_date || s.date || s.createdAt || s.createdDate;
-      if (date && moment(date).isSame(moment(), 'day')) {
+      if (isDateToday(date)) {
         return sum + (Number(s.grandTotal ?? s.totalAmount ?? s.paidAmount ?? 0) || 0);
       }
       return sum;
     }, 0);
 
-    // 4. Today's Expense: Sum of financial expense entries recorded today
-    const todaysExpense = (expenses || []).reduce((sum, e) => {
-      const date = e.transactionDate || e.date || e.createdAt || e.createdDate;
-      if (date && moment(date).isSame(moment(), 'day')) {
-        return sum + (Number(e.amount ?? 0) || 0);
+    // 4. Today's Purchase: Sum of purchases created/recorded today
+    const todaysPurchase = (purchaseList || []).reduce((sum, p) => {
+      if (p.isReturnRecord) return sum;
+      const date =
+        p.purchaseDate ||
+        (p as any).purchasesDate ||
+        (p as any).purchase_date ||
+        (p as any).date ||
+        p.createdAt ||
+        (p as any).createdDate;
+      if (isDateToday(date)) {
+        return sum + (Number(p.grandTotal ?? p.totalAmount ?? p.paidAmount ?? 0) || 0);
       }
       return sum;
     }, 0);
@@ -164,7 +182,8 @@ const AdminDashboard: React.FC = () => {
 
     return {
       todaysSale,
-      todaysExpense,
+      todaysPurchase,
+      todaysExpense: todaysPurchase,
       customerDue,
       supplierDue,
       denaPawnaDena,
@@ -185,7 +204,7 @@ const AdminDashboard: React.FC = () => {
     bankQuery.isSuccess,
     mfsQuery.isSuccess,
     salesList,
-    expenses,
+    purchaseList,
     customersDue,
     purchasesDue,
     khatabookKpi?.totalDena,

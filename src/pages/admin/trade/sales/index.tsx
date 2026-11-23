@@ -28,6 +28,7 @@ import {
 import { useTradeDeleteModal } from "@/hooks/useTradeDeleteModal";
 import { useDebounce } from "@/hooks/useDebounce";
 import { usePermission } from "@/hooks/usePermission";
+import { showErrorToast } from "@/utils/toast-utils";
 
 const Sales: React.FC = () => {
   const { t } = useTranslation();
@@ -928,6 +929,39 @@ const Sales: React.FC = () => {
   };
 
   const handleEditSale = (sale: SaleItem) => {
+    const invoiceKey = String(sale.invoiceNo || sale.salesInvoiceNo || "").trim().toLowerCase();
+    const orderKey = String(sale.orderNo || "").trim().toLowerCase();
+    const cleanOrderKey = getCleanOrderNo(sale.orderNo, sale.invoiceNo || sale.salesInvoiceNo, sale.id)?.toLowerCase();
+    const saleIdKey = sale.id ? String(sale.id).trim().toLowerCase() : "";
+
+    const statusUpper = String(sale.status || "").trim().toUpperCase();
+    const returnTypeUpper = String((sale as any).returnType || (sale as any).return_type || "").trim().toUpperCase();
+    const isStatusReturn =
+      statusUpper === "RETURN" ||
+      statusUpper === "RETURNED" ||
+      statusUpper === "FULL_RETURN" ||
+      statusUpper === "FULL RETURN" ||
+      statusUpper === "PARTIAL_RETURN" ||
+      statusUpper === "PARTIAL RETURN" ||
+      returnTypeUpper === "FULL" ||
+      returnTypeUpper === "RETURN";
+
+    const isReturned =
+      Boolean(sale.hasReturn) ||
+      isStatusReturn ||
+      Boolean(
+        returnedInvoiceSet &&
+          ((invoiceKey && invoiceKey !== "-" && returnedInvoiceSet.has(invoiceKey)) ||
+            (orderKey && orderKey !== "-" && returnedInvoiceSet.has(orderKey)) ||
+            (cleanOrderKey && cleanOrderKey !== "-" && returnedInvoiceSet.has(cleanOrderKey)) ||
+            (saleIdKey && saleIdKey !== "-" && returnedInvoiceSet.has(saleIdKey)))
+      );
+
+    if (isReturned) {
+      showErrorToast("Returned sales cannot be edited / ফেরত হওয়া সেল এডিট করা যাবে না");
+      return;
+    }
+
     navigate(`/admin/edit-sale/${sale.id || sale.saleId || sale.invoiceNo}`, {
       state: { editData: sale },
     });

@@ -1,6 +1,7 @@
 export interface DashboardKpiData {
   todaysSale: number;
-  todaysExpense: number;
+  todaysPurchase?: number;
+  todaysExpense?: number;
   customerDue: number;
   supplierDue: number;
   denaPawnaDena?: number;

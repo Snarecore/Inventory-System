@@ -661,6 +661,8 @@ export const SaleTable: React.FC<SaleTableProps> = ({
                           returnTitle="Return Sale / পণ্য ফেরত"
                           isReturnDisabled={isAlreadyReturned}
                           returnDisabledTitle="This sale has already been returned"
+                          isEditDisabled={isAlreadyReturned}
+                          editDisabledTitle="Returned sale cannot be edited / ফেরত হওয়া সেল এডিট করা যাবে না"
                         />
                       </td>
                     )}

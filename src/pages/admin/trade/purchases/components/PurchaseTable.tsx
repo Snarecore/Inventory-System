@@ -504,12 +504,28 @@ export const PurchaseTable: React.FC<PurchaseTableProps> = ({
                   const invKey = String(purchase.invoiceNo || (purchase as any).purchaseInvoiceNo || "").trim().toLowerCase();
                   const ordKey = String(purchase.orderNo || "").trim().toLowerCase();
                   const chnKey = String(purchase.challanNo || "").trim().toLowerCase();
+                  const purIdKey = purchase.id ? String(purchase.id).trim().toLowerCase() : "";
+
+                  const pStatusUpper = String(purchase.status || "").trim().toUpperCase();
+                  const pReturnTypeUpper = String((purchase as any).returnType || (purchase as any).return_type || "").trim().toUpperCase();
+                  const isStatusReturn =
+                    pStatusUpper === "RETURN" ||
+                    pStatusUpper === "RETURNED" ||
+                    pStatusUpper === "FULL_RETURN" ||
+                    pStatusUpper === "FULL RETURN" ||
+                    pStatusUpper === "PARTIAL_RETURN" ||
+                    pStatusUpper === "PARTIAL RETURN" ||
+                    pReturnTypeUpper === "FULL" ||
+                    pReturnTypeUpper === "RETURN";
+
                   const isAlreadyReturned = Boolean(
                     purchase.hasReturn ||
+                    isStatusReturn ||
                     (returnedInvoiceSet && (
                       (invKey && invKey !== "-" && returnedInvoiceSet.has(invKey)) ||
                       (ordKey && ordKey !== "-" && returnedInvoiceSet.has(ordKey)) ||
-                      (chnKey && chnKey !== "-" && returnedInvoiceSet.has(chnKey))
+                      (chnKey && chnKey !== "-" && returnedInvoiceSet.has(chnKey)) ||
+                      (purIdKey && purIdKey !== "-" && returnedInvoiceSet.has(purIdKey))
                     ))
                   );
 
@@ -650,6 +666,8 @@ export const PurchaseTable: React.FC<PurchaseTableProps> = ({
                             }
                             isReturnDisabled={isAlreadyReturned}
                             returnDisabledTitle="Already Returned"
+                            isEditDisabled={isAlreadyReturned}
+                            editDisabledTitle="Returned purchase cannot be edited / ফেরত হওয়া পারচেজ এডিট করা যাবে না"
                           />
                         </td>
                       )}

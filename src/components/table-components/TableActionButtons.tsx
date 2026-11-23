@@ -12,6 +12,8 @@ export interface TableActionButtonsProps {
   onMessage?: () => void;
   isReturnDisabled?: boolean;
   returnDisabledTitle?: string;
+  isEditDisabled?: boolean;
+  editDisabledTitle?: string;
   viewTitle?: string;
   editTitle?: string;
   printTitle?: string;
@@ -31,6 +33,8 @@ export const TableActionButtons: React.FC<TableActionButtonsProps> = ({
   onMessage,
   isReturnDisabled = false,
   returnDisabledTitle = "Already Returned",
+  isEditDisabled = false,
+  editDisabledTitle = "Cannot edit returned item",
   viewTitle = "View Invoice",
   editTitle = "Edit",
   printTitle = "Print Invoice",
@@ -54,14 +58,23 @@ export const TableActionButtons: React.FC<TableActionButtonsProps> = ({
         </button>
       )}
       {onEdit && (
-        <button
-          type="button"
-          onClick={onEdit}
-          title={t(editTitle)}
-          className="p-1 rounded text-[var(--ui-warning)] hover:bg-[var(--ui-warning-border)] transition-colors cursor-pointer"
-        >
-          <FiEdit size={13.5} />
-        </button>
+        isEditDisabled ? (
+          <span
+            title={t(editDisabledTitle)}
+            className="p-1 rounded text-[var(--ui-text-subtle)] cursor-not-allowed inline-flex items-center"
+          >
+            <FiEdit size={13.5} />
+          </span>
+        ) : (
+          <button
+            type="button"
+            onClick={onEdit}
+            title={t(editTitle)}
+            className="p-1 rounded text-[var(--ui-warning)] hover:bg-[var(--ui-warning-border)] transition-colors cursor-pointer"
+          >
+            <FiEdit size={13.5} />
+          </button>
+        )
       )}
       {onMessage && (
         <button

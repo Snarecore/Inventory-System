@@ -30,6 +30,7 @@ import {
 } from "@/pages/admin/trade/sales/hooks/useSalesQueries";
 import { useDebounce } from "@/hooks/useDebounce";
 import { usePermission } from "@/hooks/usePermission";
+import { showErrorToast } from "@/utils/toast-utils";
 
 const Purchases: React.FC = () => {
   const navigate = useNavigate();
@@ -847,6 +848,39 @@ const Purchases: React.FC = () => {
   };
 
   const handleEditPurchase = (purchase: PurchaseItem) => {
+    const invKey = String(purchase.invoiceNo || (purchase as any).purchaseInvoiceNo || "").trim().toLowerCase();
+    const ordKey = String(purchase.orderNo || "").trim().toLowerCase();
+    const chnKey = String(purchase.challanNo || "").trim().toLowerCase();
+    const purIdKey = purchase.id ? String(purchase.id).trim().toLowerCase() : "";
+
+    const pStatusUpper = String(purchase.status || "").trim().toUpperCase();
+    const pReturnTypeUpper = String((purchase as any).returnType || (purchase as any).return_type || "").trim().toUpperCase();
+    const isStatusReturn =
+      pStatusUpper === "RETURN" ||
+      pStatusUpper === "RETURNED" ||
+      pStatusUpper === "FULL_RETURN" ||
+      pStatusUpper === "FULL RETURN" ||
+      pStatusUpper === "PARTIAL_RETURN" ||
+      pStatusUpper === "PARTIAL RETURN" ||
+      pReturnTypeUpper === "FULL" ||
+      pReturnTypeUpper === "RETURN";
+
+    const isReturned = Boolean(
+      purchase.hasReturn ||
+      isStatusReturn ||
+      (returnedInvoiceSet && (
+        (invKey && invKey !== "-" && returnedInvoiceSet.has(invKey)) ||
+        (ordKey && ordKey !== "-" && returnedInvoiceSet.has(ordKey)) ||
+        (chnKey && chnKey !== "-" && returnedInvoiceSet.has(chnKey)) ||
+        (purIdKey && purIdKey !== "-" && returnedInvoiceSet.has(purIdKey))
+      ))
+    );
+
+    if (isReturned) {
+      showErrorToast("Returned purchases cannot be edited / ফেরত হওয়া পারচেজ এডিট করা যাবে না");
+      return;
+    }
+
     const id = purchase.id || purchase.purchaseId || purchase.invoiceNo;
     navigate(`/admin/edit-purchase/${id}`, {
       state: { editData: purchase },

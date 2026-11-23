@@ -39,9 +39,13 @@ export const KpiCardsGrid: React.FC<KpiCardsGridProps> = ({ data }) => {
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2 sm:gap-2.5 w-full">
-      {/* 1. Today's Sale */}
+      {/* 1. Today's Sale (Navigates to Sales) */}
       <MotionDiv>
-        <div className="px-3 py-2.5 sm:px-3.5 sm:py-3 rounded-md bg-[var(--color-primary)] text-white shadow-xs hover:shadow-md transition-all duration-300 h-full">
+        <div
+          onClick={() => navigate('/admin/sales')}
+          className="px-3 py-2.5 sm:px-3.5 sm:py-3 rounded-md bg-[var(--color-primary)] text-white shadow-xs hover:shadow-md transition-all duration-300 cursor-pointer group hover:brightness-105 active:scale-[0.99] h-full"
+          title={`Today's Sale: ${formatCurrency(data.todaysSale)} | Click to view Sales`}
+        >
           <div className="flex items-center justify-between gap-1.5">
             <div className="min-w-0 flex-1">
               <p className="text-[19px] sm:text-[21px] xl:text-[22px] font-bold truncate tracking-tight">
@@ -51,26 +55,30 @@ export const KpiCardsGrid: React.FC<KpiCardsGridProps> = ({ data }) => {
                 {t("Today's Sale", "Today's Sale")}
               </p>
             </div>
-            <div className="text-3xl sm:text-4xl shrink-0 opacity-80 hover:scale-110 transition-all ease-in duration-300">
+            <div className="text-3xl sm:text-4xl shrink-0 opacity-80 group-hover:scale-110 transition-all ease-in duration-300">
               <IoCubeOutline />
             </div>
           </div>
         </div>
       </MotionDiv>
 
-      {/* 2. Today's Expense */}
+      {/* 2. Today's Purchase (Navigates to Purchases) */}
       <MotionDiv>
-        <div className="px-3 py-2.5 sm:px-3.5 sm:py-3 rounded-md bg-[#009fe3] text-white shadow-xs hover:shadow-md transition-all duration-300 h-full">
+        <div
+          onClick={() => navigate('/admin/purchases')}
+          className="px-3 py-2.5 sm:px-3.5 sm:py-3 rounded-md bg-[#009fe3] text-white shadow-xs hover:shadow-md transition-all duration-300 cursor-pointer group hover:brightness-105 active:scale-[0.99] h-full"
+          title={`Today's Purchase: ${formatCurrency(data.todaysPurchase ?? data.todaysExpense ?? 0)} | Click to view Purchases`}
+        >
           <div className="flex items-center justify-between gap-1.5">
             <div className="min-w-0 flex-1">
               <p className="text-[19px] sm:text-[21px] xl:text-[22px] font-bold truncate tracking-tight">
-                {formatCurrency(data.todaysExpense)}
+                {formatCurrency(data.todaysPurchase ?? data.todaysExpense ?? 0)}
               </p>
               <p className="text-xs sm:text-[13px] font-medium truncate opacity-90">
-                {t("Today's Expense", "Today's Expense")}
+                {t("Today's Purchase", "Today's Purchase")}
               </p>
             </div>
-            <div className="text-3xl sm:text-4xl shrink-0 opacity-80 hover:scale-110 transition-all ease-in duration-300">
+            <div className="text-3xl sm:text-4xl shrink-0 opacity-80 group-hover:scale-110 transition-all ease-in duration-300">
               <FiShoppingCart />
             </div>
           </div>

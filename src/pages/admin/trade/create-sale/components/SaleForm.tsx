@@ -22,6 +22,9 @@ import {
   bankInfoListQueryKey,
   mfsUserListQueryKey,
   dashboardQueryKey,
+  financialTransactionQueryKey,
+  financeDashboardQueryKey,
+  productQueryKey,
 } from "@/config/query-key";
 import { buildAccessUser } from "@/utils/access-user";
 import { getBusinessCode } from "@/utils/auth-storage";
@@ -365,6 +368,7 @@ export const CreateSaleForm: React.FC = () => {
             originalQty: q,
           };
         });
+
         setLineItems(loaded);
       }
     }
@@ -621,8 +625,9 @@ export const CreateSaleForm: React.FC = () => {
         const res: any = (result.data as any)?.data !== undefined ? (result.data as any).data : result.data;
         const savedId = res?.id || res?.saleId || editId || invoiceNo;
 
-        // Post financial transaction INCOME to update cash/bank balances
-        if (totalPaid > 0) {
+        // Post financial transaction INCOME to update cash/bank balances ONLY for fresh sale creation.
+        // In Edit mode, the backend updates the sale and recalibrates all balances and stock automatically.
+        if (!isEditMode && totalPaid > 0) {
           try {
             const tenders: TradeTender[] = [
               { amount: numCash, leg: cashLeg() },
@@ -647,6 +652,22 @@ export const CreateSaleForm: React.FC = () => {
             console.error("Sale saved, but financial ledger posting encountered an error:", ledgerErr);
           }
         }
+
+        // Invalidate all related caches actively so UI immediately displays fresh calculations from backend
+        await Promise.all([
+          queryClient.invalidateQueries({ queryKey: [salesListQueryKey], refetchType: "all" }),
+          queryClient.invalidateQueries({ queryKey: [productListQueryKey], refetchType: "all" }),
+          queryClient.invalidateQueries({ queryKey: [productQueryKey], refetchType: "all" }),
+          queryClient.invalidateQueries({ queryKey: [cashBalanceQueryKey], refetchType: "all" }),
+          queryClient.invalidateQueries({ queryKey: [bankInfoListQueryKey], refetchType: "all" }),
+          queryClient.invalidateQueries({ queryKey: [mfsUserListQueryKey], refetchType: "all" }),
+          queryClient.invalidateQueries({ queryKey: [dashboardQueryKey], refetchType: "all" }),
+          queryClient.invalidateQueries({ queryKey: [financeDashboardQueryKey], refetchType: "all" }),
+          queryClient.invalidateQueries({ queryKey: [financialTransactionQueryKey], refetchType: "all" }),
+          queryClient.invalidateQueries({ queryKey: [customersDueQueryKey], refetchType: "all" }),
+          queryClient.invalidateQueries({ queryKey: [customerInvoicesDueQueryKey], refetchType: "all" }),
+          queryClient.invalidateQueries({ queryKey: [collectionReportQueryKey], refetchType: "all" }),
+        ]);
 
         setShouldAutoPrint(shouldPrint);
         setSavedSaleForInvoice({

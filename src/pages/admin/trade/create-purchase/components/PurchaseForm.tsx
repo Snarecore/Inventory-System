@@ -23,6 +23,11 @@ import {
   bankInfoListQueryKey,
   mfsUserListQueryKey,
   dashboardQueryKey,
+  financialTransactionQueryKey,
+  financeDashboardQueryKey,
+  productQueryKey,
+  purchasesDueQueryKey,
+  purchasesInvoicesDueQueryKey,
 } from "@/config/query-key";
 import { buildAccessUser } from "@/utils/access-user";
 import { getBusinessCode } from "@/utils/auth-storage";
@@ -456,6 +461,11 @@ const CreatePurchaseForm: React.FC = () => {
     mfsAmount,
     selectedBankId,
     selectedMfsId,
+    bankName,
+    accountNo,
+    bankRef,
+    mfsName,
+    mfsPhone,
     numCash,
     numBank,
     numMfs,
@@ -611,6 +621,16 @@ const CreatePurchaseForm: React.FC = () => {
         dueAmount,
         paymentType,
         status,
+        cashReceived: numCash,
+        cardReceived: numBank,
+        mfsReceived: numMfs,
+        bankId: numBank > 0 ? selectedBankId : null,
+        bankName: numBank > 0 ? (bankName || null) : null,
+        accountNo: numBank > 0 ? (accountNo || null) : null,
+        bankAccountName: numBank > 0 ? (bankRef || null) : null,
+        mfsId: numMfs > 0 ? selectedMfsId : null,
+        mfsName: numMfs > 0 ? (mfsName || null) : null,
+        mfsPhone: numMfs > 0 ? (mfsPhone || null) : null,
         note: notes.trim(),
         vat: totalVat,
         addedBy: accessUser.phone || "",
@@ -691,8 +711,9 @@ const CreatePurchaseForm: React.FC = () => {
         const res: any = (result.data as any)?.data !== undefined ? (result.data as any).data : result.data;
         const savedId = res?.id || res?.purchaseId || editId || invoiceNo;
 
-        // Post financial transaction EXPENSE to update cash/bank balances
-        if (totalPaid > 0) {
+        // Post financial transaction EXPENSE to update cash/bank balances ONLY for fresh purchase creation.
+        // In Edit mode, the backend updates the purchase and recalibrates all balances and stock automatically.
+        if (!isEditMode && totalPaid > 0) {
           try {
             const selectedBankObj = registeredBankAccounts.find(
               (b) => String(b.bankId ?? b.id) === String(selectedBankId)
@@ -724,6 +745,21 @@ const CreatePurchaseForm: React.FC = () => {
             console.error("Purchase saved, but financial ledger posting encountered an error:", ledgerErr);
           }
         }
+
+        // Invalidate all related caches actively so UI immediately displays fresh calculations from backend
+        await Promise.all([
+          queryClient.invalidateQueries({ queryKey: [purchaseListQueryKey], refetchType: "all" }),
+          queryClient.invalidateQueries({ queryKey: [productListQueryKey], refetchType: "all" }),
+          queryClient.invalidateQueries({ queryKey: [productQueryKey], refetchType: "all" }),
+          queryClient.invalidateQueries({ queryKey: [cashBalanceQueryKey], refetchType: "all" }),
+          queryClient.invalidateQueries({ queryKey: [bankInfoListQueryKey], refetchType: "all" }),
+          queryClient.invalidateQueries({ queryKey: [mfsUserListQueryKey], refetchType: "all" }),
+          queryClient.invalidateQueries({ queryKey: [dashboardQueryKey], refetchType: "all" }),
+          queryClient.invalidateQueries({ queryKey: [financeDashboardQueryKey], refetchType: "all" }),
+          queryClient.invalidateQueries({ queryKey: [financialTransactionQueryKey], refetchType: "all" }),
+          queryClient.invalidateQueries({ queryKey: [purchasesDueQueryKey], refetchType: "all" }),
+          queryClient.invalidateQueries({ queryKey: [purchasesInvoicesDueQueryKey], refetchType: "all" }),
+        ]);
 
         const savedItem: any = {
           ...purchasePayload,
