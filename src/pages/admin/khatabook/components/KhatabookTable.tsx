@@ -54,8 +54,8 @@ export const KhatabookTable: React.FC<KhatabookTableProps> = ({
 
   const balanceOptions = [
     { label: "All Balances", value: "" },
-    { label: "Receivable (Pabo)", value: "PABO" },
-    { label: "Payable (Dibo)", value: "DIBO" },
+    { label: "Pawna (Receivable)", value: "PAWNA" },
+    { label: "Dena (Payable)", value: "DENA" },
     { label: "Settled (Zero)", value: "SETTLED" },
   ];
 
@@ -76,8 +76,8 @@ export const KhatabookTable: React.FC<KhatabookTableProps> = ({
       const status = (p.status || "Active").toLowerCase();
 
       // Filter by balance
-      if (balanceFilter === "PABO" && net <= 0) continue;
-      if (balanceFilter === "DIBO" && net >= 0) continue;
+      if ((balanceFilter === "PAWNA" || balanceFilter === "PABO") && net <= 0) continue;
+      if ((balanceFilter === "DENA" || balanceFilter === "DIBO") && net >= 0) continue;
       if (balanceFilter === "SETTLED" && net !== 0) continue;
 
       // Filter by status
@@ -121,8 +121,8 @@ export const KhatabookTable: React.FC<KhatabookTableProps> = ({
         "Phone Number": p.phone,
         "Address": p.address || "-",
         "Status": p.status || "Active",
-        "Receivable (BDT)": pabo,
-        "Payable (BDT)": dibo,
+        "Pawna (Receivable)": dibo,
+        "Dena (Payable)": pabo,
         "Net Balance (BDT)": net,
         "Transactions Count": p.transactionCount ?? 0,
       };
@@ -134,9 +134,9 @@ export const KhatabookTable: React.FC<KhatabookTableProps> = ({
       "Phone Number": "-",
       "Address": "-",
       "Status": "-",
-      "Receivable (BDT)": sumPabo,
-      "Payable (BDT)": sumDibo,
-      "Net Balance (BDT)": sumPabo - sumDibo,
+      "Pawna (Receivable)": sumDibo,
+      "Dena (Payable)": sumPabo,
+      "Net Balance (BDT)": sumDibo - sumPabo,
       "Transactions Count": "-",
     };
 
@@ -223,9 +223,9 @@ export const KhatabookTable: React.FC<KhatabookTableProps> = ({
               <TableTh width="16%">Person Name</TableTh>
               <TableTh width="12%">Contact Info</TableTh>
               <TableTh width="15%">Address</TableTh>
-              <TableTh width="12%" align="right">Receivable (Pabo)</TableTh>
-              <TableTh width="12%" align="right">Payable (Dibo)</TableTh>
-              <TableTh width="12%" align="right">Net Balance</TableTh>
+              <TableTh width="12%" align="right">{t("Pawna (Receivable)", "Pawna (Receivable)")}</TableTh>
+              <TableTh width="12%" align="right">{t("Dena (Payable)", "Dena (Payable)")}</TableTh>
+              <TableTh width="12%" align="right">{t("Net Balance", "Net Balance")}</TableTh>
               <TableTh width="6%" align="center">Status</TableTh>
               <TableTh width="11%" align="right">Actions</TableTh>
             </TableHead>
@@ -287,14 +287,14 @@ export const KhatabookTable: React.FC<KhatabookTableProps> = ({
                         </span>
                       </td>
 
-                      {/* Receivable (Pabo) */}
+                      {/* Pawna (Receivable) */}
                       <td className="py-1 px-2 text-right font-normal text-xs text-[var(--ui-success)] whitespace-nowrap">
-                        ৳{pabo.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                        ৳{dibo.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
                       </td>
 
-                      {/* Payable (Dibo) */}
+                      {/* Dena (Payable) */}
                       <td className="py-1 px-2 text-right font-normal text-xs text-[var(--ui-danger)] whitespace-nowrap">
-                        ৳{dibo.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                        ৳{pabo.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
                       </td>
 
                       {/* Net Balance */}

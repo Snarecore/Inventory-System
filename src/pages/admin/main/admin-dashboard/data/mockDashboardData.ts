@@ -11,6 +11,12 @@ import {
 export const mockKpiData: DashboardKpiData = {
   todaysSale: 148500,
   todaysExpense: 32400,
+  customerDue: 350000,
+  supplierDue: 180000,
+  denaPawnaDena: 135000,
+  denaPawnaPawna: 35000,
+  denaPawnaPabo: 135000,
+  denaPawnaDibo: 35000,
   totalReceivable: 485000,
   totalPayable: 215000,
   cashBalance: 96450,

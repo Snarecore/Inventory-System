@@ -126,15 +126,15 @@ export const KhatabookPage: React.FC = () => {
 
       {/* KPI Summary Cards - Compact & aligned with design system */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 w-full">
-        {/* 1. Total Receivable (Pabo) - Emerald */}
+        {/* 1. Total Pawna (Receivable) - Emerald */}
         <MotionDiv delay={0.05}>
           <div className="p-2 sm:p-2.5 rounded-lg border bg-[var(--ui-success-light)]/60 border-[var(--ui-success-border)] hover:border-[var(--ui-success-border)] flex items-center justify-between gap-2 transition-all shadow-xs h-full">
             <div className="flex flex-col min-w-0">
               <span className="text-[11px] font-semibold text-[var(--ui-text-muted)] truncate">
-                {t("Receivable (Pabo)")}
+                {t("Pawna (Receivable)", "Pawna (Receivable)")}
               </span>
               <span className="text-sm sm:text-base font-bold truncate mt-0.5 text-[var(--ui-success)]">
-                ৳ {formatMoney(kpi.totalPabo)}
+                ৳ {formatMoney(kpi.totalPawna ?? kpi.totalPabo)}
               </span>
             </div>
             <div className="p-1.5 rounded-md shrink-0 bg-[var(--ui-success-border)] text-[var(--ui-success)]">
@@ -143,15 +143,15 @@ export const KhatabookPage: React.FC = () => {
           </div>
         </MotionDiv>
 
-        {/* 2. Total Payable (Dibo) - Danger / Rose */}
+        {/* 2. Total Dena (Payable) - Danger / Rose */}
         <MotionDiv delay={0.1}>
           <div className="p-2 sm:p-2.5 rounded-lg border bg-[var(--ui-danger-light)]/60 border-[var(--ui-danger-border)] hover:border-[var(--ui-danger-border)] flex items-center justify-between gap-2 transition-all shadow-xs h-full">
             <div className="flex flex-col min-w-0">
               <span className="text-[11px] font-semibold text-[var(--ui-text-muted)] truncate">
-                {t("Payable (Dibo)")}
+                {t("Dena (Payable)", "Dena (Payable)")}
               </span>
               <span className="text-sm sm:text-base font-bold truncate mt-0.5 text-[var(--ui-danger)]">
-                ৳ {formatMoney(kpi.totalDibo)}
+                ৳ {formatMoney(kpi.totalDena ?? kpi.totalDibo)}
               </span>
             </div>
             <div className="p-1.5 rounded-md shrink-0 bg-[var(--ui-danger-border)] text-[var(--ui-danger)]">
@@ -170,7 +170,7 @@ export const KhatabookPage: React.FC = () => {
               <span className="text-sm sm:text-base font-bold truncate mt-0.5 text-[var(--primary-color)]">
                 ৳ {formatMoney(Math.abs(kpi.netBalance))}{" "}
                 <span className="text-[10px] font-normal">
-                  {kpi.netBalance > 0 ? ` (${t("Pabo")})` : kpi.netBalance < 0 ? ` (${t("Dibo")})` : ""}
+                  {kpi.netBalance > 0 ? ` (${t("Pawna", "Pawna")})` : kpi.netBalance < 0 ? ` (${t("Dena", "Dena")})` : ""}
                 </span>
               </span>
             </div>

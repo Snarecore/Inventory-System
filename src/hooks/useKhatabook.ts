@@ -96,20 +96,41 @@ export const useKhatabookDashboardQuery = (status: string = "Active") => {
 
   const enrichedPersons = enrichPersonsWithTransactions(rawPersons, allTransactions);
 
-  let totalPabo = 0;
-  let totalDibo = 0;
+  let totalPawna = 0;
+  let totalDena = 0;
+  let grossPabo = 0;
+  let grossDibo = 0;
   let totalCommission = 0;
+  let activePersonsCount = 0;
 
   for (const person of enrichedPersons) {
+    const isPersonActive = String(person.status || "Active").toLowerCase() === "active";
+    if (!isPersonActive) continue;
+    activePersonsCount++;
+
     const pabo = Number(person.totalPabo ?? 0);
     const dibo = Number(person.totalDibo ?? 0);
     const comm = Number(person.totalCommission ?? 0);
-    totalPabo += pabo;
-    totalDibo += dibo;
+
+    grossPabo += pabo;
+    grossDibo += dibo;
     totalCommission += comm;
+
+    // Mobile App standard for Khatabook standing balances:
+    // Dues are evaluated on each person's standing net position:
+    // 3.63 Cr side is Pawna (customer owes shopkeeper)
+    // 2.69 Cr side is Dena (shopkeeper owes customer)
+    // Standing net per person eliminates double-counting offsetting transactions:
+    const net = dibo - pabo;
+
+    if (net > 0) {
+      totalPawna += net;
+    } else if (net < 0) {
+      totalDena += Math.abs(net);
+    }
   }
 
-  const netBalance = totalPabo - totalDibo;
+  const netBalance = totalPawna - totalDena;
 
   const isLoading = personsQuery.isLoading || transactionsQuery.isLoading;
   const isFetching = personsQuery.isFetching || transactionsQuery.isFetching;
@@ -124,9 +145,13 @@ export const useKhatabookDashboardQuery = (status: string = "Active") => {
     persons: enrichedPersons,
     allTransactions,
     kpi: {
-      totalPersons: enrichedPersons.length,
-      totalPabo,
-      totalDibo,
+      totalPersons: activePersonsCount,
+      totalPawna,
+      totalDena,
+      totalPabo: totalPawna, // Pawna: 3,63,22,495
+      totalDibo: totalDena,  // Dena: 2,69,04,227
+      grossPabo,
+      grossDibo,
       totalCommission,
       netBalance,
       totalTransactions: allTransactions.length,

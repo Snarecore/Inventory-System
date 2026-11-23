@@ -22,11 +22,7 @@ const AdminDashboard: React.FC = () => {
     data: liveCashBalance,
     refetch: refetchCash,
     isRefetching: isRefetchingCash,
-  } = useCashBalanceQuery({
-    staleTime: 0,
-    refetchOnMount: "always",
-    refetchOnWindowFocus: true,
-  });
+  } = useCashBalanceQuery();
 
   // 2. Financial Accounts Query (Bank & MFS Wallets)
   const {
@@ -34,29 +30,14 @@ const AdminDashboard: React.FC = () => {
     registeredMfsAccounts,
     bankQuery,
     mfsQuery,
-  } = useFinancialAccounts({
-    bankOptions: {
-      staleTime: 0,
-      refetchOnMount: "always",
-      refetchOnWindowFocus: true,
-    },
-    mfsOptions: {
-      staleTime: 0,
-      refetchOnMount: "always",
-      refetchOnWindowFocus: true,
-    },
-  });
+  } = useFinancialAccounts();
 
   // 3. Sales Query (for Today's Sale)
   const {
     data: salesList = [],
     refetch: refetchSales,
     isRefetching: isRefetchingSales,
-  } = useSalesQuery({
-    staleTime: 0,
-    refetchOnMount: "always",
-    refetchOnWindowFocus: true,
-  });
+  } = useSalesQuery();
 
   // 4. Financial Transactions Query (for Today's Expense)
   const {
@@ -72,22 +53,14 @@ const AdminDashboard: React.FC = () => {
     data: customersDue = [],
     refetch: refetchCustomersDue,
     isRefetching: isRefetchingDue,
-  } = useCustomersDueQuery({
-    staleTime: 0,
-    refetchOnMount: "always",
-    refetchOnWindowFocus: true,
-  });
+  } = useCustomersDueQuery();
 
   // 6. Purchases Due Query (for Total Payable)
   const {
     data: purchasesDue = [],
     refetch: refetchPurchasesDue,
     isRefetching: isRefetchingPurchasesDue,
-  } = usePurchasesDueQuery({
-    staleTime: 0,
-    refetchOnMount: "always",
-    refetchOnWindowFocus: true,
-  });
+  } = usePurchasesDueQuery();
 
   // 7. Khatabook Dashboard Query (for person ledger dues)
   const {
@@ -167,25 +140,37 @@ const AdminDashboard: React.FC = () => {
       return sum;
     }, 0);
 
-    // 5. Total Receivable: Outstanding dues from trade customers + Khatabook Pabo
-    const tradeCustomerDue = (customersDue || []).reduce(
+    // 5. Customer Due: Outstanding dues from trade customers
+    const customerDue = (customersDue || []).reduce(
       (sum, c) => sum + (Number(c.totalDue ?? c.dueAmount ?? 0) || 0),
       0
     );
-    const khatabookPabo = Number(khatabookKpi?.totalPabo || 0);
-    const totalReceivable = tradeCustomerDue + khatabookPabo;
 
-    // 6. Total Payable: Outstanding dues to suppliers + Khatabook Dibo
-    const tradeSupplierDue = (purchasesDue || []).reduce(
+    // 6. Supplier Due: Outstanding dues to trade suppliers
+    const supplierDue = (purchasesDue || []).reduce(
       (sum, s) => sum + (Number(s.totalDue ?? s.dueAmount ?? 0) || 0),
       0
     );
-    const khatabookDibo = Number(khatabookKpi?.totalDibo || 0);
-    const totalPayable = tradeSupplierDue + khatabookDibo;
+
+    // 7. Dena Pawna: Outstanding ledger dues matching Mobile App
+    // Mobile App "দেনা" (Dena) = 2.69 Cr
+    // Mobile App "পাওনা" (Pawna) = 3.63 Cr
+    const denaPawnaDena = Number(khatabookKpi?.totalDena ?? 0);
+    const denaPawnaPawna = Number(khatabookKpi?.totalPawna ?? 0);
+
+    // 8. Overall Total Receivable & Total Payable
+    const totalReceivable = customerDue + denaPawnaPawna;
+    const totalPayable = supplierDue + denaPawnaDena;
 
     return {
       todaysSale,
       todaysExpense,
+      customerDue,
+      supplierDue,
+      denaPawnaDena,
+      denaPawnaPawna,
+      denaPawnaPabo: denaPawnaDena,
+      denaPawnaDibo: denaPawnaPawna,
       totalReceivable,
       totalPayable,
       cashBalance: computedCash,
@@ -203,6 +188,8 @@ const AdminDashboard: React.FC = () => {
     expenses,
     customersDue,
     purchasesDue,
+    khatabookKpi?.totalDena,
+    khatabookKpi?.totalPawna,
     khatabookKpi?.totalPabo,
     khatabookKpi?.totalDibo,
   ]);

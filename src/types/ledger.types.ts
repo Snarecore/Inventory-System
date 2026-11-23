@@ -28,6 +28,8 @@ export interface LedgerPerson {
   totalDibo?: number;
   totalCommission?: number;
   netBalance?: number;
+  openingPona?: number;
+  openingDena?: number;
   transactionCount?: number;
   lastTransactionDate?: string | null;
 }

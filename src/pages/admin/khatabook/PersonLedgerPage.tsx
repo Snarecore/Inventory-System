@@ -106,21 +106,30 @@ export const PersonLedgerPage: React.FC = () => {
     },
   });
 
+  // Helper to identify Pawna vs Dena transaction matching Mobile App standard
+  const getTxnClassification = (transactionType?: string) => {
+    const isPawna = transactionType === "DIBO" || transactionType === "Opening Balance PABO";
+    const isDena = transactionType === "PABO" || transactionType === "Opening Balance DIBO";
+    const isOpening = transactionType?.startsWith("Opening Balance");
+
+    return { isOpening, isPawna, isDena };
+  };
+
   // Tab counts for status tabs
   const tabCounts = useMemo(() => {
-    let pabo = 0;
-    let dibo = 0;
+    let pawna = 0;
+    let dena = 0;
     let opening = 0;
     for (const txn of rawTransactions) {
-      const typeUpper = (txn.transactionType || "").toUpperCase();
-      if (typeUpper.includes("OPENING")) opening++;
-      else if (typeUpper.includes("PABO")) pabo++;
-      else if (typeUpper.includes("DIBO")) dibo++;
+      const { isOpening, isPawna, isDena } = getTxnClassification(txn.transactionType);
+      if (isOpening) opening++;
+      if (isPawna) pawna++;
+      else if (isDena) dena++;
     }
     return {
       all: rawTransactions.length,
-      pabo,
-      dibo,
+      pawna,
+      dena,
       opening,
     };
   }, [rawTransactions]);
@@ -138,14 +147,12 @@ export const PersonLedgerPage: React.FC = () => {
   const transactionsWithBalance = useMemo(() => {
     let runningBalance = 0;
     return chronologicalTransactions.map((txn) => {
-      const typeUpper = (txn.transactionType || "").toUpperCase();
-      const isPabo = typeUpper.includes("PABO");
-      const isDibo = typeUpper.includes("DIBO");
+      const { isPawna, isDena } = getTxnClassification(txn.transactionType);
       const amt = Number(txn.amount) || 0;
 
-      if (isPabo) {
+      if (isPawna) {
         runningBalance += amt;
-      } else if (isDibo) {
+      } else if (isDena) {
         runningBalance -= amt;
       }
 
@@ -160,10 +167,10 @@ export const PersonLedgerPage: React.FC = () => {
     return [...transactionsWithBalance]
       .reverse() // Reverse chronological: newest first
       .filter((txn) => {
-        const typeUpper = (txn.transactionType || "").toUpperCase();
-        if (typeFilter === "PABO") return typeUpper.includes("PABO");
-        if (typeFilter === "DIBO") return typeUpper.includes("DIBO");
-        if (typeFilter === "OPENING") return typeUpper.includes("OPENING");
+        const { isOpening, isPawna, isDena } = getTxnClassification(txn.transactionType);
+        if (typeFilter === "PAWNA" || typeFilter === "DIBO") return isPawna;
+        if (typeFilter === "DENA" || typeFilter === "PABO") return isDena;
+        if (typeFilter === "OPENING") return isOpening;
         return true;
       });
   }, [transactionsWithBalance, typeFilter]);
@@ -176,33 +183,30 @@ export const PersonLedgerPage: React.FC = () => {
   const paginatedTransactions = filteredTransactions.slice(startIndex, startIndex + pageSize);
 
   // Aggregate stats
-  const { totalPabo, totalDibo, totalCommission, netBalance } = useMemo(() => {
-    let pabo = 0;
-    let dibo = 0;
+  const { totalPawna, totalDena, totalPabo, totalDibo, totalCommission, netBalance } = useMemo(() => {
     let comm = 0;
     for (const txn of rawTransactions) {
-      const amt = Number(txn.amount) || 0;
-      const typeUpper = (txn.transactionType || "").toUpperCase();
-      if (typeUpper.includes("PABO")) pabo += amt;
-      else if (typeUpper.includes("DIBO")) dibo += amt;
       if (txn.commission) comm += Number(txn.commission);
     }
+    const pabo = person?.totalPabo != null ? Number(person.totalPabo) : 0;
+    const dibo = person?.totalDibo != null ? Number(person.totalDibo) : 0;
+    const net = dibo - pabo;
+
     return {
+      totalPawna: dibo,
+      totalDena: pabo,
       totalPabo: pabo,
       totalDibo: dibo,
-      totalCommission: comm,
-      netBalance: pabo - dibo,
+      totalCommission: comm || Number(person?.totalCommission ?? 0),
+      netBalance: net,
     };
-  }, [rawTransactions]);
+  }, [rawTransactions, person]);
 
   const handleExportExcel = () => {
     if (!person || filteredTransactions.length === 0) return;
 
     const rows = filteredTransactions.map((txn, idx) => {
-      const typeUpper = (txn.transactionType || "").toUpperCase();
-      const isPabo = typeUpper.includes("PABO");
-      const isDibo = typeUpper.includes("DIBO");
-      const isOpening = typeUpper.includes("OPENING");
+      const { isOpening, isPawna, isDena } = getTxnClassification(txn.transactionType);
       const amt = Number(txn.amount) || 0;
 
       const dateStr = txn.createdAt || txn.createdDate || txn.transactionDate || "";
@@ -224,8 +228,8 @@ export const PersonLedgerPage: React.FC = () => {
         "Reference": txn.refNo || "-",
         "Tender": (txn.paymentType || "CASH").toUpperCase(),
         "Transaction Type": txn.transactionType || "-",
-        "Receivable (BDT)": isPabo ? amt : 0,
-        "Payable (BDT)": isDibo ? amt : 0,
+        "Pawna (Receivable)": isPawna ? amt : 0,
+        "Dena (Payable)": isDena ? amt : 0,
         "Commission (BDT)": txn.commission ? Number(txn.commission) : 0,
         "Running Balance (BDT)": txn.runningBalance,
       };
@@ -238,8 +242,8 @@ export const PersonLedgerPage: React.FC = () => {
       "Reference": "-",
       "Tender": "-",
       "Transaction Type": "-",
-      "Receivable (BDT)": totalPabo,
-      "Payable (BDT)": totalDibo,
+      "Pawna (Receivable)": totalPawna,
+      "Dena (Payable)": totalDena,
       "Commission (BDT)": totalCommission > 0 ? totalCommission : "-",
       "Running Balance (BDT)": netBalance,
     };
@@ -392,14 +396,14 @@ export const PersonLedgerPage: React.FC = () => {
               totalCommission > 0 ? "lg:grid-cols-4" : "lg:grid-cols-3"
             } gap-2 sm:gap-2.5`}
           >
-            {/* Card 1: Receivable (Pabo) */}
+            {/* Card 1: Pawna (Receivable) */}
             <div className="p-2 sm:px-3 sm:py-2 rounded-lg border bg-[var(--ui-success-light)]/60 border-[var(--ui-success-border)] flex items-center justify-between gap-3 shadow-2xs sm:min-w-[145px]">
               <div className="flex flex-col min-w-0">
                 <span className="text-[11px] font-semibold text-[var(--ui-success-dark)] truncate">
-                  {t("Receivable (Pabo)")}
+                  {t("Pawna (Receivable)", "Pawna (Receivable)")}
                 </span>
                 <span className="text-sm sm:text-base font-extrabold text-[var(--ui-success)] mt-0.5 truncate">
-                  ৳ {formatMoney(totalPabo)}
+                  ৳ {formatMoney(totalPawna)}
                 </span>
               </div>
               <div className="p-1.5 rounded-md bg-[var(--ui-success-border)] text-[var(--ui-success)] shrink-0">
@@ -407,14 +411,14 @@ export const PersonLedgerPage: React.FC = () => {
               </div>
             </div>
 
-            {/* Card 2: Payable (Dibo) */}
+            {/* Card 2: Dena (Payable) */}
             <div className="p-2 sm:px-3 sm:py-2 rounded-lg border bg-[var(--ui-danger-light)]/60 border-[var(--ui-danger-border)] flex items-center justify-between gap-3 shadow-2xs sm:min-w-[145px]">
               <div className="flex flex-col min-w-0">
                 <span className="text-[11px] font-semibold text-[var(--ui-danger-dark)] truncate">
-                  {t("Payable (Dibo)")}
+                  {t("Dena (Payable)", "Dena (Payable)")}
                 </span>
                 <span className="text-sm sm:text-base font-extrabold text-[var(--ui-danger)] mt-0.5 truncate">
-                  ৳ {formatMoney(totalDibo)}
+                  ৳ {formatMoney(totalDena)}
                 </span>
               </div>
               <div className="p-1.5 rounded-md bg-[var(--ui-danger-border)] text-[var(--ui-danger)] shrink-0">
@@ -443,9 +447,9 @@ export const PersonLedgerPage: React.FC = () => {
                   }`}
                 >
                   {netBalance > 0
-                    ? t("Net Receivable")
+                    ? t("Net Pawna", "Net Pawna")
                     : netBalance < 0
-                    ? t("Net Payable")
+                    ? t("Net Dena", "Net Dena")
                     : t("Settled (Balance)")}
                 </span>
                 <span
@@ -502,8 +506,8 @@ export const PersonLedgerPage: React.FC = () => {
             <div className="inline-flex items-center rounded-lg border border-[var(--ui-border)] p-0.5 bg-[var(--ui-surface-sunken)] h-8 self-start sm:self-auto overflow-x-auto scrollbar-none">
               {[
                 { id: "ALL", label: t("All"), count: tabCounts.all },
-                { id: "PABO", label: t("Receivable"), count: tabCounts.pabo },
-                { id: "DIBO", label: t("Payable"), count: tabCounts.dibo },
+                { id: "PAWNA", label: t("Pawna (Receivable)"), count: tabCounts.pawna },
+                { id: "DENA", label: t("Dena (Payable)"), count: tabCounts.dena },
                 { id: "OPENING", label: t("Opening"), count: tabCounts.opening },
               ].map((tab) => {
                 const active = typeFilter === tab.id;
@@ -583,8 +587,8 @@ export const PersonLedgerPage: React.FC = () => {
                 <TableTh width="15%">{t("Date & Time")}</TableTh>
                 <TableTh width="20%">{t("Description & Ref")}</TableTh>
                 <TableTh width="10%">{t("Method")}</TableTh>
-                <TableTh width="12%" align="right">{t("Receivable (+)")}</TableTh>
-                <TableTh width="12%" align="right">{t("Payable (-)")}</TableTh>
+                <TableTh width="12%" align="right">{t("Pawna (Receivable)")}</TableTh>
+                <TableTh width="12%" align="right">{t("Dena (Payable)")}</TableTh>
                 <TableTh width="11%" align="right">{t("Commission")}</TableTh>
                 <TableTh width="11%" align="right">{t("Balance")}</TableTh>
                 <TableTh width="5%" align="right">{t("Actions")}</TableTh>
@@ -609,10 +613,7 @@ export const PersonLedgerPage: React.FC = () => {
                   </tr>
                 ) : (
                   paginatedTransactions.map((txn, idx) => {
-                    const typeUpper = (txn.transactionType || "").toUpperCase();
-                    const isPabo = typeUpper.includes("PABO");
-                    const isDibo = typeUpper.includes("DIBO");
-                    const isOpening = typeUpper.includes("OPENING");
+                    const { isOpening, isPawna, isDena } = getTxnClassification(txn.transactionType);
                     const amt = Number(txn.amount) || 0;
 
                     const dateStr = txn.createdAt || txn.createdDate || txn.transactionDate || "";
@@ -683,14 +684,14 @@ export const PersonLedgerPage: React.FC = () => {
                           })()}
                         </td>
 
-                        {/* Receivable (Pabo) */}
+                        {/* Pawna (Receivable) */}
                         <td className="py-1 px-2.5 whitespace-nowrap text-right font-bold text-xs text-[var(--ui-success)]">
-                          {isPabo ? `৳${amt.toLocaleString("en-IN", { minimumFractionDigits: 2 })}` : "-"}
+                          {isPawna ? `৳${amt.toLocaleString("en-IN", { minimumFractionDigits: 2 })}` : "-"}
                         </td>
 
-                        {/* Payable (Dibo) */}
+                        {/* Dena (Payable) */}
                         <td className="py-1 px-2.5 whitespace-nowrap text-right font-bold text-xs text-[var(--ui-danger)]">
-                          {isDibo ? `৳${amt.toLocaleString("en-IN", { minimumFractionDigits: 2 })}` : "-"}
+                          {isDena ? `৳${amt.toLocaleString("en-IN", { minimumFractionDigits: 2 })}` : "-"}
                         </td>
 
                         {/* Commission */}

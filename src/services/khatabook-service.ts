@@ -93,40 +93,34 @@ export const fetchLedgerPersonList = async (
     rawList = res.list;
   }
 
-  const data: LedgerPerson[] = rawList.map((item: any) => {
-    const rawOpeningBal = Number(item.openingBalance ?? item.opening_balance ?? 0);
-    const openingPona = Number(
-      item.openingPona ?? item.opening_pona ?? (rawOpeningBal > 0 ? rawOpeningBal : 0)
-    );
-    const openingDena = Number(
-      item.openingDena ?? item.opening_dena ?? (rawOpeningBal < 0 ? Math.abs(rawOpeningBal) : 0)
-    );
-    const serverPabo = Number(item.totalPabo ?? item.total_pabo ?? openingPona);
-    const serverDibo = Number(item.totalDibo ?? item.total_dibo ?? openingDena);
-    const serverNet = item.netBalance != null ? Number(item.netBalance) : (serverPabo - serverDibo);
-
-    return {
-      id: Number(item.id ?? item.personId ?? item.person_id),
-      name: item.name || item.personName || item.person_name || "Unknown",
-      phone: item.phone || item.mobile || item.phoneNumber || item.phone_number || "",
-      address: item.address || "",
-      email: item.email || "",
-      type: item.type || "PERSON",
-      tag: item.tag || "",
-      isSync: item.isSync ?? 0,
-      addedBy: item.addedBy || "",
-      updatedBy: item.updatedBy || null,
-      createdAt: item.createdAt || item.createdDate || "",
-      updatedAt: item.updatedAt || "",
-      lastSyncedAt: item.lastSyncedAt || null,
-      status: item.status || "Active",
-      totalPabo: serverPabo,
-      totalDibo: serverDibo,
-      netBalance: serverNet,
-      transactionCount: Number(item.transactionCount ?? item.transaction_count ?? 0),
-      lastTransactionDate: item.lastTransactionDate || null,
-    };
+  const activePersons = rawList.filter((item: any) => {
+    if (!item || item.isDeleted === "Y") return false;
+    const itemStatus = String(item.status || "Active").trim().toLowerCase();
+    if (itemStatus === "deleted") return false;
+    return true;
   });
+
+  const data: LedgerPerson[] = activePersons.map((item: any) => ({
+    id: Number(item.id),
+    name: item.name || "Unknown",
+    phone: item.phone || "",
+    address: item.address || "",
+    email: item.email || "",
+    type: item.type || "PERSON",
+    tag: item.tag || "",
+    isSync: item.isSync ?? 0,
+    addedBy: item.addedBy || "",
+    updatedBy: item.updatedBy || null,
+    createdAt: item.createdAt || "",
+    updatedAt: item.updatedAt || "",
+    lastSyncedAt: item.lastSyncedAt || null,
+    status: item.status || "Active",
+    totalPabo: 0,
+    totalDibo: 0,
+    netBalance: 0,
+    transactionCount: 0,
+    lastTransactionDate: null,
+  }));
 
   return {
     status: res?.status || "Success",
@@ -278,7 +272,12 @@ export const fetchLedgerTransactionList = async (
     rawList = res.list;
   }
 
-  const data: LedgerTransaction[] = rawList.map((item: any) => ({
+  const activeTxns = rawList.filter((item: any) => {
+    if (!item || item.isDeleted === "Y") return false;
+    return true;
+  });
+
+  const data: LedgerTransaction[] = activeTxns.map((item: any) => ({
     id: Number(item.id),
     personId: Number(item.personId),
     personName: item.personName || "",
@@ -428,28 +427,34 @@ export const deleteLedgerTransaction = async (
  * - Net Balance = totalPabo - totalDibo
  */
 export const calculatePersonBalances = (transactions: LedgerTransaction[]) => {
-  let totalPabo = 0;
   let totalDibo = 0;
+  let totalPabo = 0;
   let totalCommission = 0;
   let lastDate: string | null = null;
 
   for (const txn of transactions) {
-    const typeUpper = (txn.transactionType || "").toUpperCase();
-    const isPabo = typeUpper.includes("PABO");
-    const isDibo = typeUpper.includes("DIBO");
-    const amount = Number(txn.amount) || 0;
+    if ((txn as any)?.isDeleted === "Y") continue;
 
-    if (isPabo) {
-      totalPabo += amount;
-    } else if (isDibo) {
+    const amount = Number(txn.amount) || 0;
+    const type = txn.transactionType;
+
+    // Actual transactionType values from Backend:
+    // 1. DIBO (Pawna / পাওনা)
+    // 2. Opening Balance PABO (Pawna / পাওনা)
+    if (type === "DIBO" || type === "Opening Balance PABO") {
       totalDibo += amount;
+    }
+    // 3. PABO (Dena / দেনা)
+    // 4. Opening Balance DIBO (Dena / দেনা)
+    else if (type === "PABO" || type === "Opening Balance DIBO") {
+      totalPabo += amount;
     }
 
     if (txn.commission != null && Number(txn.commission) > 0) {
       totalCommission += Number(txn.commission);
     }
 
-    const tDate = txn.createdAt || txn.createdDate || txn.transactionDate;
+    const tDate = txn.createdAt;
     if (tDate && (!lastDate || new Date(tDate).getTime() > new Date(lastDate).getTime())) {
       lastDate = tDate;
     }
@@ -459,7 +464,7 @@ export const calculatePersonBalances = (transactions: LedgerTransaction[]) => {
     totalPabo,
     totalDibo,
     totalCommission,
-    netBalance: totalPabo - totalDibo,
+    netBalance: totalDibo - totalPabo,
     count: transactions.length,
     lastTransactionDate: lastDate,
   };
@@ -476,6 +481,8 @@ export const enrichPersonsWithTransactions = (
   const txnMap = new Map<number, LedgerTransaction[]>();
 
   for (const txn of allTransactions) {
+    if ((txn as any)?.isDeleted === "Y") continue;
+
     const pId = Number(txn.personId);
     if (!txnMap.has(pId)) {
       txnMap.set(pId, []);
@@ -485,17 +492,6 @@ export const enrichPersonsWithTransactions = (
 
   return persons.map((person) => {
     const pTxns = txnMap.get(Number(person.id)) || [];
-    if (pTxns.length === 0) {
-      return {
-        ...person,
-        totalPabo: person.totalPabo ?? 0,
-        totalDibo: person.totalDibo ?? 0,
-        totalCommission: person.totalCommission ?? 0,
-        netBalance: person.netBalance ?? 0,
-        transactionCount: person.transactionCount ?? 0,
-      };
-    }
-
     const balances = calculatePersonBalances(pTxns);
 
     return {
