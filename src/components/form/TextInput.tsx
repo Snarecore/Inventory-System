@@ -24,6 +24,7 @@ export interface TextInputProps {
   autoFocus?: boolean;
   size?: "xs" | "sm" | "md" | "lg";
   inputRef?: React.Ref<HTMLInputElement>;
+  onClick?: React.MouseEventHandler<HTMLInputElement>;
   onFocus?: React.FocusEventHandler<HTMLInputElement>;
   onBlur?: React.FocusEventHandler<HTMLInputElement>;
   onPaste?: React.ClipboardEventHandler<HTMLInputElement>;
@@ -56,6 +57,7 @@ const InputField: React.FC<TextInputProps> = ({
   autoFocus,
   size = "md",
   inputRef,
+  onClick,
   onFocus,
   onBlur,
   onPaste,
@@ -127,6 +129,7 @@ const InputField: React.FC<TextInputProps> = ({
           autoFocus={autoFocus}
           aria-invalid={displayError ? true : undefined}
           aria-describedby={ariaDescribedBy || (displayError && name ? `${name}-error` : undefined)}
+          onClick={onClick}
           onFocus={onFocus}
           onBlur={onBlur}
           onPaste={onPaste}

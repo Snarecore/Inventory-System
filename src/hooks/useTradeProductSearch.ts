@@ -37,22 +37,30 @@ export const useTradeProductSearch = ({
 
   // Filtered Products for Search Dropdown (Instant O(N) in-memory filter)
   const filteredProducts = useMemo(() => {
-    if (!debouncedSearch.trim()) {
+    const q = searchQuery.toLowerCase().trim();
+    if (!q) {
       return typeof maxResults === "number" && maxResults > 0
         ? allProducts.slice(0, maxResults)
         : allProducts;
     }
-    const q = debouncedSearch.toLowerCase().trim();
     const matched = allProducts.filter((p) => {
-      const name = (p.name || "").toLowerCase();
-      const code = (p.productCode || p.pcode || "").toLowerCase();
-      const barcode = (p.barcode || "").toLowerCase();
-      return name.includes(q) || code.includes(q) || barcode.includes(q);
+      const name = String(p.name || p.productName || (p as any).product_name || "").toLowerCase();
+      const code = String(p.productCode || p.pcode || (p as any).product_code || "").toLowerCase();
+      const barcode = String(p.barcode || "").toLowerCase();
+      const sku = String((p as any).sku || "").toLowerCase();
+      const category = String(p.category || (p as any).categoryName || "").toLowerCase();
+      return (
+        name.includes(q) ||
+        code.includes(q) ||
+        barcode.includes(q) ||
+        sku.includes(q) ||
+        category.includes(q)
+      );
     });
     return typeof maxResults === "number" && maxResults > 0
       ? matched.slice(0, maxResults)
       : matched;
-  }, [allProducts, debouncedSearch, maxResults]);
+  }, [allProducts, searchQuery, maxResults]);
 
   // Find Product STRICTLY By barcode or pcode
   const findProductByBarcode = useCallback(
@@ -62,8 +70,22 @@ export const useTradeProductSearch = ({
 
       return allProducts.find((p) => {
         const barcode = String(p.barcode || "").trim().toLowerCase();
-        const pcode = String(p.pcode || p.productCode || "").trim().toLowerCase();
+        const pcode = String(p.pcode || p.productCode || (p as any).product_code || "").trim().toLowerCase();
         return Boolean((barcode && barcode === code) || (pcode && pcode === code));
+      });
+    },
+    [allProducts]
+  );
+
+  // Find Product strictly by exact name
+  const findProductByName = useCallback(
+    (query: string): ProductItem | undefined => {
+      const name = query.trim().toLowerCase();
+      if (!name) return undefined;
+
+      return allProducts.find((p) => {
+        const pName = String(p.name || p.productName || (p as any).product_name || "").trim().toLowerCase();
+        return pName === name;
       });
     },
     [allProducts]
@@ -209,11 +231,12 @@ export const useTradeProductSearch = ({
         }
       }
 
-      // Otherwise just update the query. The list is deliberately NOT opened
-      // here -- focusing or typing in the field should not drop a panel over
-      // the screen. Only the "Add Product" button opens it; if it is already
-      // open, typing filters it live.
       setSearchQuery(val);
+
+      // Auto-open dropdown when user types so matching products appear immediately!
+      if (trimmed.length > 0) {
+        setIsDropdownOpen(true);
+      }
     },
     [findProductByBarcode, processBarcodeMatch]
   );
@@ -221,22 +244,59 @@ export const useTradeProductSearch = ({
   const handleUnifiedKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLInputElement>) => {
       if (e.key !== "Enter") return;
-      const code = searchQuery.trim();
-      if (!code) return;
+      e.preventDefault();
 
-      // Prefer an exact code match, then fall back to search behaviour so a
-      // typed partial name still resolves the way it always did.
-      if (findProductByBarcode(code)) {
-        e.preventDefault();
-        if (processBarcodeMatch(code)) {
+      const q = searchQuery.trim().toLowerCase();
+      if (!q) return;
+
+      // 1. Exact barcode or product code match
+      if (findProductByBarcode(q)) {
+        if (processBarcodeMatch(q)) {
           setSearchQuery("");
           setIsDropdownOpen(false);
           return;
         }
       }
-      handleKeyDownSearch(e);
+
+      // 2. Exact product name match
+      const exactNameMatch = findProductByName(q);
+      if (exactNameMatch) {
+        const stock = Number(exactNameMatch.quantity ?? exactNameMatch.stock ?? 0);
+        if (mode === "sale" && stock <= 0) {
+          showErrorToast(`Product "${exactNameMatch.name || "Product"}" is out of stock (Stock: 0)`);
+          return;
+        }
+        onAddProduct(exactNameMatch);
+        setSearchQuery("");
+        setIsDropdownOpen(false);
+        return;
+      }
+
+      // 3. Matched product from filtered products list
+      if (filteredProducts.length > 0) {
+        const target = filteredProducts[0];
+        const stock = Number(target.quantity ?? target.stock ?? 0);
+        if (mode === "sale" && stock <= 0) {
+          showErrorToast(`Product "${target.name || "Product"}" is out of stock (Stock: 0)`);
+          return;
+        }
+        onAddProduct(target);
+        setSearchQuery("");
+        setIsDropdownOpen(false);
+        return;
+      }
+
+      showErrorToast(`Product "${searchQuery}" not found`);
     },
-    [searchQuery, findProductByBarcode, processBarcodeMatch, handleKeyDownSearch]
+    [
+      searchQuery,
+      findProductByBarcode,
+      findProductByName,
+      processBarcodeMatch,
+      filteredProducts,
+      mode,
+      onAddProduct,
+    ]
   );
 
   const handleUnifiedPaste = useCallback(
@@ -247,7 +307,10 @@ export const useTradeProductSearch = ({
         e.preventDefault();
         setSearchQuery("");
         setIsDropdownOpen(false);
+        return;
       }
+      setSearchQuery(pasted);
+      setIsDropdownOpen(true);
     },
     [findProductByBarcode, processBarcodeMatch]
   );

@@ -40,12 +40,12 @@ export const useTradeProducts = () => {
       .map((p: any) => ({
         ...p,
         id: p.id ?? p.pcode,
-        name: p.name || "Product",
-        productCode: p.pcode || "",
-        pcode: p.pcode || "",
-        buyPrice: Number(p.buyPrice ?? 0),
-        sellPrice: Number(p.sellPrice ?? 0),
-        quantity: Number(p.quantity ?? 0),
+        name: p.name || p.productName || p.product_name || "Product",
+        productCode: p.pcode || p.productCode || p.product_code || "",
+        pcode: p.pcode || p.productCode || p.product_code || "",
+        buyPrice: Number(p.buyPrice ?? p.buy_price ?? 0),
+        sellPrice: Number(p.sellPrice ?? p.sell_price ?? 0),
+        quantity: Number(p.quantity ?? p.stock ?? p.qty ?? 0),
         unit: p.secondary_unit || p.secondaryUnit || p.unit || "pcs",
       }));
   }, [rawProductData]);

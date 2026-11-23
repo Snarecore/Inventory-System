@@ -69,7 +69,15 @@ export const TradeProductSearch: React.FC<TradeProductSearchProps> = ({
             }
             placeholder={t(defaultPlaceholder)}
             value={searchQuery}
-            onChange={(val) => handleUnifiedChange(val)}
+            onChange={(val: any) =>
+              handleUnifiedChange(typeof val === "string" ? val : val?.target?.value || "")
+            }
+            onClick={() => setIsDropdownOpen(true)}
+            onFocus={() => {
+              if (searchQuery.trim().length > 0) {
+                setIsDropdownOpen(true);
+              }
+            }}
             onKeyDown={handleUnifiedKeyDown}
             onPaste={handleUnifiedPaste}
             autoFocus
@@ -108,8 +116,8 @@ export const TradeProductSearch: React.FC<TradeProductSearchProps> = ({
       {isDropdownOpen && (
         <div className="absolute left-2.5 right-2.5 mt-1 bg-[var(--ui-surface)] rounded-[var(--ui-radius)] shadow-[var(--ui-shadow-popover)] border border-[var(--ui-border)] max-h-80 sm:max-h-96 overflow-y-auto z-20 divide-y divide-[var(--ui-border)]">
           {/* Header */}
-          <div className="px-3 py-1.5 bg-[var(--ui-surface-muted)] border-b border-[var(--ui-border)] flex items-center justify-between text-[10px] font-semibold text-[var(--ui-text-muted)] uppercase tracking-wider sticky top-0 z-10">
-            <span>Select Product ({filteredProducts.length})</span>
+          <div className="px-3 py-1.5 bg-[var(--ui-surface-muted)] border-b border-[var(--ui-border)] flex items-center justify-between text-[11px] font-semibold text-[var(--ui-text-muted)] sticky top-0 z-10">
+            <span>Product ({filteredProducts.length})</span>
             <div className="flex items-center gap-6 pr-2">
               <span>Stock</span>
               <span>{mode === "purchase" ? "Buy Rate" : "Sale Rate"}</span>
@@ -228,7 +236,7 @@ export const TradeProductSearch: React.FC<TradeProductSearchProps> = ({
                   >
                     {/* Current / Available Stock */}
                     <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-[var(--ui-radius-sm)] bg-[var(--ui-surface-sunken)] border border-[var(--ui-border)]">
-                      <span className="text-[10px] font-semibold text-[var(--ui-text-muted)] uppercase tracking-wider">
+                      <span className="text-[10px] font-semibold text-[var(--ui-text-muted)]">
                         Stock:
                       </span>
                       <span className="text-xs font-bold text-[var(--ui-text)]">
@@ -343,7 +351,7 @@ export const TradeProductSearch: React.FC<TradeProductSearchProps> = ({
                         }`}
                       >
                         <span
-                          className={`text-[10px] font-semibold uppercase tracking-wider ${
+                          className={`text-[10px] font-semibold ${
                             mode === "purchase"
                               ? "text-[var(--ui-warning-dark)]"
                               : "text-[var(--ui-success-dark)]"
