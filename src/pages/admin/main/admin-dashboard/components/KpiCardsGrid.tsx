@@ -85,12 +85,12 @@ export const KpiCardsGrid: React.FC<KpiCardsGridProps> = ({ data }) => {
         </div>
       </MotionDiv>
 
-      {/* 3. Customer Due (Navigates to Customer Collection) */}
+      {/* 3. Accounts Receivable (Navigates to Customer Collection) */}
       <MotionDiv>
         <div
           onClick={() => navigate('/admin/customer-collection')}
           className="px-3 py-2.5 sm:px-3.5 sm:py-3 rounded-md bg-[#1b2850] text-white shadow-xs hover:shadow-md transition-all duration-300 cursor-pointer group hover:brightness-105 active:scale-[0.99] h-full"
-          title={`Customer Outstanding Due: ${formatCurrency(data.customerDue)} | Total Receivable: ${formatCurrency(data.totalReceivable)}`}
+          title={`Accounts Receivable: ${formatCurrency(data.customerDue)} | Total Receivable: ${formatCurrency(data.totalReceivable)}`}
         >
           <div className="flex items-center justify-between gap-1.5">
             <div className="min-w-0 flex-1">
@@ -98,7 +98,7 @@ export const KpiCardsGrid: React.FC<KpiCardsGridProps> = ({ data }) => {
                 {formatCurrency(data.customerDue)}
               </p>
               <p className="text-xs sm:text-[13px] font-medium truncate opacity-90">
-                {t("Customer Due", "Customer Due")}
+                {t("Accounts Receivable", "Accounts Receivable")}
               </p>
             </div>
             <div className="text-3xl sm:text-4xl shrink-0 opacity-80 group-hover:scale-110 transition-all ease-in duration-300">
@@ -108,12 +108,12 @@ export const KpiCardsGrid: React.FC<KpiCardsGridProps> = ({ data }) => {
         </div>
       </MotionDiv>
 
-      {/* 4. Supplier Due (Navigates to Supplier Payment) */}
+      {/* 4. Accounts Payable (Navigates to Supplier Payment) */}
       <MotionDiv>
         <div
           onClick={() => navigate('/admin/supplier-payment')}
           className="px-3 py-2.5 sm:px-3.5 sm:py-3 rounded-md bg-[#e11d48] text-white shadow-xs hover:shadow-md transition-all duration-300 cursor-pointer group hover:brightness-105 active:scale-[0.99] h-full"
-          title={`Supplier Outstanding Due: ${formatCurrency(data.supplierDue)} | Total Payable: ${formatCurrency(data.totalPayable)}`}
+          title={`Accounts Payable: ${formatCurrency(data.supplierDue)} | Total Payable: ${formatCurrency(data.totalPayable)}`}
         >
           <div className="flex items-center justify-between gap-1.5">
             <div className="min-w-0 flex-1">
@@ -121,7 +121,7 @@ export const KpiCardsGrid: React.FC<KpiCardsGridProps> = ({ data }) => {
                 {formatCurrency(data.supplierDue)}
               </p>
               <p className="text-xs sm:text-[13px] font-medium truncate opacity-90">
-                {t("Supplier Due", "Supplier Due")}
+                {t("Accounts Payable", "Accounts Payable")}
               </p>
             </div>
             <div className="text-3xl sm:text-4xl shrink-0 opacity-80 group-hover:scale-110 transition-all ease-in duration-300">
