@@ -81,7 +81,7 @@ export const AssetAnalysisChart: React.FC<AssetAnalysisChartProps> = ({ data: pr
       tooltip: {
         callbacks: {
           label: function (context: any) {
-            return ` ৳${Number(context.raw).toLocaleString('en-IN')}`;
+            return ` ৳${Math.round(Number(context.raw)).toLocaleString('en-IN')}`;
           },
         },
         displayColors: false,
@@ -95,7 +95,7 @@ export const AssetAnalysisChart: React.FC<AssetAnalysisChartProps> = ({ data: pr
 
   const legendItems = currentAnalysis.breakdown.map((item, idx) => ({
     label: item.category,
-    value: item.amount,
+    value: Math.round(Number(item.amount) || 0),
     color: chartColors[idx % chartColors.length],
   }));
 
@@ -150,7 +150,7 @@ export const AssetAnalysisChart: React.FC<AssetAnalysisChartProps> = ({ data: pr
               <span className="w-2 h-2 rounded-full inline-block bg-black"></span>
               Total Assets
             </p>
-            <p className="font-semibold text-black">৳{currentAnalysis.totalAsset.toLocaleString('en-IN')}</p>
+            <p className="font-semibold text-black">৳{Math.round(Number(currentAnalysis.totalAsset) || 0).toLocaleString('en-IN')}</p>
           </div>
 
           <div className="flex items-center justify-between px-3 py-1.5">
@@ -159,7 +159,7 @@ export const AssetAnalysisChart: React.FC<AssetAnalysisChartProps> = ({ data: pr
               Liquid Assets (Cash + Bank + MFS)
             </p>
             <p className="font-semibold text-black">
-              ৳{liquidAssets.toLocaleString('en-IN')}
+              ৳{Math.round(liquidAssets).toLocaleString('en-IN')}
             </p>
           </div>
         </div>

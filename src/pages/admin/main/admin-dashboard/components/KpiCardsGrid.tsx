@@ -24,9 +24,9 @@ export const KpiCardsGrid: React.FC<KpiCardsGridProps> = ({ data }) => {
   const navigate = useNavigate();
 
   const formatCurrency = (val: number) => {
-    const num = Number(val || 0);
-    return `৳${num.toLocaleString('en-IN', {
-      maximumFractionDigits: 2,
+    const rounded = Math.round(Number(val || 0));
+    return `৳${rounded.toLocaleString('en-IN', {
+      maximumFractionDigits: 0,
     })}`;
   };
 
