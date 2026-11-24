@@ -7,15 +7,45 @@ import {
   Legend,
 } from 'chart.js';
 import { FiGrid } from 'react-icons/fi';
-import { mockAssetAnalysis } from '../data/mockDashboardData';
+import { AssetAnalysisData } from '../types/dashboard.types';
 
 ChartJS.register(ArcElement, Tooltip, Legend);
 
-export const AssetAnalysisChart: React.FC = () => {
-  const chartColors = ['#28c76f', '#1b2850', '#009fe3', '#FE9F43'];
+interface AssetAnalysisChartProps {
+  data?: AssetAnalysisData;
+}
 
-  const chartData = mockAssetAnalysis.breakdown.map((item) => item.amount);
-  const chartLabels = mockAssetAnalysis.breakdown.map((item) => item.category);
+export const AssetAnalysisChart: React.FC<AssetAnalysisChartProps> = ({ data: propData }) => {
+  const defaultColors = ['#28c76f', '#009fe3', '#1b2850', '#ff9f43', '#7367f0'];
+
+  const emptyAnalysis: AssetAnalysisData = {
+    totalAsset: 0,
+    breakdown: [
+      { category: 'Bank Balance', amount: 0, color: '#28c76f' },
+      { category: 'Stock / Inventory', amount: 0, color: '#009fe3' },
+      { category: 'Accounts Receivable', amount: 0, color: '#1b2850' },
+      { category: 'Cash in Hand', amount: 0, color: '#ff9f43' },
+      { category: 'MFS Balance', amount: 0, color: '#7367f0' },
+    ],
+  };
+
+  const rawAnalysis =
+    propData && Array.isArray(propData.breakdown) && propData.breakdown.length > 0
+      ? propData
+      : emptyAnalysis;
+
+  // Guarantee strictly only the 5 asset categories from the endpoint specification
+  const currentAnalysis = {
+    ...rawAnalysis,
+    breakdown: (rawAnalysis.breakdown || []).slice(0, 5),
+  };
+
+  const chartColors = currentAnalysis.breakdown.map(
+    (item, idx) => item.color || defaultColors[idx % defaultColors.length]
+  );
+
+  const chartData = currentAnalysis.breakdown.map((item) => item.amount);
+  const chartLabels = currentAnalysis.breakdown.map((item) => item.category);
 
   const data = {
     labels: chartLabels,
@@ -63,11 +93,18 @@ export const AssetAnalysisChart: React.FC = () => {
     },
   };
 
-  const legendItems = mockAssetAnalysis.breakdown.map((item, idx) => ({
+  const legendItems = currentAnalysis.breakdown.map((item, idx) => ({
     label: item.category,
     value: item.amount,
     color: chartColors[idx % chartColors.length],
   }));
+
+  const liquidAssets = currentAnalysis.breakdown
+    .filter((item) => {
+      const cat = String(item.category || '').toLowerCase();
+      return cat.includes('bank') || cat.includes('cash') || cat.includes('mfs');
+    })
+    .reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
 
   return (
     <div className="w-full h-full bg-white p-4 rounded-2xl shadow-sm flex flex-col justify-between">
@@ -113,16 +150,16 @@ export const AssetAnalysisChart: React.FC = () => {
               <span className="w-2 h-2 rounded-full inline-block bg-black"></span>
               Total Assets
             </p>
-            <p className="font-semibold text-black">৳{mockAssetAnalysis.totalAsset.toLocaleString('en-IN')}</p>
+            <p className="font-semibold text-black">৳{currentAnalysis.totalAsset.toLocaleString('en-IN')}</p>
           </div>
 
           <div className="flex items-center justify-between px-3 py-1.5">
             <p className="flex items-center gap-2 text-gray-600">
               <span className="w-2 h-2 rounded-full inline-block bg-[#28c76f]"></span>
-              Liquid Assets (Cash + Bank)
+              Liquid Assets (Cash + Bank + MFS)
             </p>
             <p className="font-semibold text-black">
-              ৳{(mockAssetAnalysis.breakdown[0].amount + mockAssetAnalysis.breakdown[3].amount).toLocaleString('en-IN')}
+              ৳{liquidAssets.toLocaleString('en-IN')}
             </p>
           </div>
         </div>
@@ -132,3 +169,4 @@ export const AssetAnalysisChart: React.FC = () => {
 };
 
 export default AssetAnalysisChart;
+

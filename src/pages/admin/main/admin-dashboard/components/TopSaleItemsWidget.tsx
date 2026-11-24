@@ -1,8 +1,17 @@
 import React from 'react';
 import { FiGrid } from 'react-icons/fi';
-import { mockTopSaleItems } from '../data/mockDashboardData';
+import { TopSaleItem } from '../types/dashboard.types';
 
-export const TopSaleItemsWidget: React.FC = () => {
+interface TopSaleItemsWidgetProps {
+  data?: TopSaleItem[];
+}
+
+export const TopSaleItemsWidget: React.FC<TopSaleItemsWidgetProps> = ({ data: propData }) => {
+  const items =
+    propData && Array.isArray(propData) && propData.length > 0
+      ? propData
+      : [];
+
   return (
     <div className="w-full bg-white p-4 rounded-2xl shadow-sm flex flex-col h-full">
       <div>
@@ -10,7 +19,9 @@ export const TopSaleItemsWidget: React.FC = () => {
           <span className="bg-[#e6f4fe] text-[#009fe3] p-1.5 rounded-full">
             <FiGrid size={18} />
           </span>
-          <p className="text-xl font-bold">Top 5 Sale Items</p>
+          <p className="text-xl font-bold">
+            {items.length > 0 ? `Top ${items.length} Sale Items` : 'Top Sale Items'}
+          </p>
         </div>
 
         <div className="border-b border-gray-200 mb-3"></div>
@@ -18,8 +29,13 @@ export const TopSaleItemsWidget: React.FC = () => {
 
       {/* Item List evenly distributed vertically */}
       <div className="flex flex-col justify-between flex-1 py-1 gap-3">
-        {mockTopSaleItems.map((item, index) => (
-          <div key={item.id} className="space-y-2">
+        {items.length === 0 ? (
+          <div className="flex-1 flex items-center justify-center text-xs text-gray-400 py-6">
+            No sale items recorded yet.
+          </div>
+        ) : (
+          items.map((item, index) => (
+          <div key={`${item.id}-${index}`} className="space-y-2">
             <div className="flex items-center justify-between text-xs">
               <div className="flex items-center gap-2">
                 <div>
@@ -56,7 +72,7 @@ export const TopSaleItemsWidget: React.FC = () => {
               ></div>
             </div>
           </div>
-        ))}
+        )))}
       </div>
     </div>
   );

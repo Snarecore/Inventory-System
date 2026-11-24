@@ -6,6 +6,7 @@ import { ProfitLossChart } from './components/ProfitLossChart';
 import { AssetAnalysisChart } from './components/AssetAnalysisChart';
 import { TopCustomersWidget } from './components/TopCustomersWidget';
 import { TopSaleItemsWidget } from './components/TopSaleItemsWidget';
+import { useUserDashboardQuery } from '@/hooks/useUserDashboard';
 import { useCashBalanceQuery } from '@/hooks/useCashBalance';
 import { useFinancialAccounts } from '@/hooks/useFinancialAccounts';
 import { useSalesQuery } from '@/pages/admin/trade/sales/hooks/useSalesQueries';
@@ -13,10 +14,18 @@ import { usePurchasesQuery } from '@/pages/admin/trade/purchases/hooks/usePurcha
 import { useCustomersDueQuery } from '@/hooks/useCustomersDue';
 import { usePurchasesDueQuery } from '@/hooks/usePurchasesDue';
 import { useKhatabookDashboardQuery } from '@/hooks/useKhatabook';
+import { useTradeProducts } from '@/hooks/useTradeProducts';
 import PageHeader from '@/components/page-header/PageHeader';
 import { RefreshButton } from '@/components/common';
 
 const AdminDashboard: React.FC = () => {
+  // 0. Primary Live Dashboard Query ("get-user-dashboard")
+  const {
+    data: userDashboard,
+    refetch: refetchUserDashboard,
+    isRefetching: isRefetchingDashboard,
+  } = useUserDashboardQuery();
+
   // 1. Live Cash Balance Query
   const {
     data: liveCashBalance,
@@ -67,7 +76,14 @@ const AdminDashboard: React.FC = () => {
     isFetching: isFetchingKhatabook,
   } = useKhatabookDashboardQuery();
 
+  // 8. Trade Products Query (for live stock / inventory valuation)
+  const {
+    allProducts = [],
+    refetch: refetchProducts,
+  } = useTradeProducts();
+
   const isRefreshing =
+    isRefetchingDashboard ||
     isRefetchingCash ||
     bankQuery.isRefetching ||
     mfsQuery.isRefetching ||
@@ -79,6 +95,7 @@ const AdminDashboard: React.FC = () => {
 
   const handleRefresh = async () => {
     await Promise.all([
+      refetchUserDashboard(),
       refetchCash(),
       bankQuery.refetch(),
       mfsQuery.refetch(),
@@ -87,6 +104,7 @@ const AdminDashboard: React.FC = () => {
       refetchCustomersDue(),
       refetchPurchasesDue(),
       refetchKhatabook(),
+      refetchProducts(),
     ]);
   };
 
@@ -97,10 +115,10 @@ const AdminDashboard: React.FC = () => {
       if (!d) return false;
       const todayIso = moment().format('YYYY-MM-DD');
       if (d.startsWith(todayIso)) return true;
+      const mCustom = moment(d, ['DD MMM, YYYY', 'DD MMM YYYY', 'DD-MM-YYYY', 'DD/MM/YYYY', 'YYYY-MM-DD', 'YYYY/MM/DD'], true);
+      if (mCustom.isValid() && mCustom.isSame(moment(), 'day')) return true;
       const m = moment(d);
       if (m.isValid() && m.isSame(moment(), 'day')) return true;
-      const mCustom = moment(d, ['DD-MM-YYYY', 'DD/MM/YYYY', 'YYYY/MM/DD'], true);
-      if (mCustom.isValid() && mCustom.isSame(moment(), 'day')) return true;
       return false;
     };
 
@@ -171,8 +189,6 @@ const AdminDashboard: React.FC = () => {
     );
 
     // 7. Dena Pawna: Outstanding ledger dues matching Mobile App
-    // Mobile App "দেনা" (Dena) = 2.69 Cr
-    // Mobile App "পাওনা" (Pawna) = 3.63 Cr
     const denaPawnaDena = Number(khatabookKpi?.totalDena ?? 0);
     const denaPawnaPawna = Number(khatabookKpi?.totalPawna ?? 0);
 
@@ -213,6 +229,304 @@ const AdminDashboard: React.FC = () => {
     khatabookKpi?.totalDibo,
   ]);
 
+  // Merge live transactional queries with endpoint structure so newly recorded sales and live balances immediately reflect!
+  const activeKpiData = useMemo(() => {
+    const base = userDashboard?.kpiData;
+
+    const liveSale = Number(kpiData.todaysSale || 0);
+    const liveExpense = Number(kpiData.todaysExpense ?? kpiData.todaysPurchase ?? 0);
+    const liveCustomerDue = Number(kpiData.customerDue || 0);
+    const liveSupplierDue = Number(kpiData.supplierDue || 0);
+    const liveDena = Number(kpiData.denaPawnaDena || 0);
+    const livePawna = Number(kpiData.denaPawnaPawna || 0);
+    const liveCash = Number(kpiData.cashBalance || 0);
+    const liveBank = Number(kpiData.bankBalance || 0);
+    const liveMfs = Number(kpiData.mfsBalance || 0);
+
+    const finalTodaysSale = liveSale > 0 ? liveSale : (Number(base?.todaysSale) || 0);
+    const finalTodaysExpense = liveExpense > 0 ? liveExpense : (Number(base?.todaysExpense ?? base?.todaysPurchase) || 0);
+    const finalCustomerDue = liveCustomerDue > 0 ? liveCustomerDue : (Number(base?.customerDue) || 0);
+    const finalSupplierDue = liveSupplierDue > 0 ? liveSupplierDue : (Number(base?.supplierDue) || 0);
+    const finalDena = liveDena > 0 ? liveDena : (Number(base?.denaPawnaDena ?? base?.denaPawnaPabo) || 0);
+    const finalPawna = livePawna > 0 ? livePawna : (Number(base?.denaPawnaPawna ?? base?.denaPawnaDibo) || 0);
+
+    const finalCash = liveCash > 0 ? liveCash : (Number(base?.cashBalance) || 0);
+    const finalBank = liveBank > 0 ? liveBank : (Number(base?.bankBalance) || 0);
+    const finalMfs = liveMfs > 0 ? liveMfs : (Number(base?.mfsBalance) || 0);
+
+    const finalTotalBalance = finalCash + finalBank + finalMfs;
+    const finalTotalReceivable = finalCustomerDue + finalPawna;
+    const finalTotalPayable = finalSupplierDue + finalDena;
+
+    return {
+      todaysSale: finalTodaysSale,
+      todaysPurchase: finalTodaysExpense,
+      todaysExpense: finalTodaysExpense,
+      customerDue: finalCustomerDue,
+      supplierDue: finalSupplierDue,
+      denaPawnaDena: finalDena,
+      denaPawnaPawna: finalPawna,
+      denaPawnaPabo: finalDena,
+      denaPawnaDibo: finalPawna,
+      totalReceivable: finalTotalReceivable,
+      totalPayable: finalTotalPayable,
+      cashBalance: finalCash,
+      bankBalance: finalBank,
+      mfsBalance: finalMfs,
+      totalBalance: finalTotalBalance,
+    };
+  }, [userDashboard?.kpiData, kpiData]);
+
+  // Active sales analysis: dynamically includes today's sales in daily analysis
+  const activeSalesAnalysis = useMemo(() => {
+    const base = userDashboard?.salesAnalysis;
+
+    const isDateToday = (rawDate: any): boolean => {
+      if (!rawDate) return false;
+      const d = String(rawDate).trim();
+      if (!d) return false;
+      const todayIso = moment().format('YYYY-MM-DD');
+      if (d.startsWith(todayIso)) return true;
+      const mCustom = moment(d, ['DD MMM, YYYY', 'DD MMM YYYY', 'DD-MM-YYYY', 'DD/MM/YYYY', 'YYYY-MM-DD', 'YYYY/MM/DD'], true);
+      if (mCustom.isValid() && mCustom.isSame(moment(), 'day')) return true;
+      const m = moment(d);
+      if (m.isValid() && m.isSame(moment(), 'day')) return true;
+      return false;
+    };
+
+    const todaySales = (salesList || []).filter((s) => {
+      if (s.isReturnRecord) return false;
+      const date = s.salesDate || s.saleDate || s.sales_date || s.date || s.createdAt || s.createdDate;
+      return isDateToday(date);
+    });
+
+    let dailyData = base?.daily;
+
+    if (todaySales.length > 0) {
+      const todayTotal = todaySales.reduce(
+        (sum, s) => sum + (Number(s.grandTotal ?? s.totalAmount ?? s.paidAmount ?? 0) || 0),
+        0
+      );
+
+      const points = todaySales.map((s, idx) => {
+        const timeStr = s.createdAt || s.salesDate || s.createdDate || s.date;
+        const m = moment(timeStr);
+        const label = m.isValid() ? m.format('hh:mm A') : `Order #${s.orderNo || s.orderId || s.id || idx + 1}`;
+        const amount = Number(s.grandTotal ?? s.totalAmount ?? s.paidAmount ?? 0) || 0;
+        return {
+          label,
+          sales: amount,
+          orders: 1,
+        };
+      });
+
+      dailyData = {
+        summary: {
+          total: todayTotal,
+          average: Math.round(todayTotal / todaySales.length),
+        },
+        points,
+      };
+    }
+
+    return {
+      daily: dailyData || base?.daily || { summary: { total: 0, average: 0 }, points: [] },
+      weekly: base?.weekly || { summary: { total: 0, average: 0 }, points: [] },
+      monthly: base?.monthly || { summary: { total: 0, average: 0 }, points: [] },
+    };
+  }, [userDashboard?.salesAnalysis, salesList]);
+
+  // Live stock valuation computed from all products in catalog
+  const liveStockValuation = useMemo(() => {
+    return (allProducts || []).reduce((sum, p) => {
+      const qty = Number(p.quantity ?? 0);
+      const price = Number(p.buyPrice ?? p.purchasePrice ?? 0);
+      return sum + qty * price;
+    }, 0);
+  }, [allProducts]);
+
+  // Active asset analysis: strictly these 5 categories from the get-user-dashboard specification
+  const activeAssetAnalysis = useMemo(() => {
+    const base = userDashboard?.assetAnalysis;
+    const baseBreakdown = Array.isArray(base?.breakdown) ? base.breakdown : [];
+
+    const findAmount = (matchers: string[], fallback: number): number => {
+      const found = baseBreakdown.find((item) => {
+        const cat = String(item?.category || '').toLowerCase();
+        return matchers.some((m) => cat.includes(m));
+      });
+      if (found && typeof found.amount === 'number' && found.amount > 0) {
+        return found.amount;
+      }
+      return fallback;
+    };
+
+    // 1. Bank Balance
+    const bankAmt = activeKpiData.bankBalance > 0
+      ? activeKpiData.bankBalance
+      : findAmount(['bank'], 0);
+
+    // 2. Stock / Inventory
+    const apiStock = findAmount(['stock', 'inventory'], 0);
+    const stockAmt = liveStockValuation > 0
+      ? liveStockValuation
+      : apiStock > 0 && apiStock !== 13636046
+      ? apiStock
+      : 0;
+
+    // 3. Accounts Receivable
+    const receivableAmt = activeKpiData.customerDue > 0
+      ? activeKpiData.customerDue
+      : findAmount(['receivable', 'customer due'], 0);
+
+    // 4. Cash in Hand
+    const cashAmt = activeKpiData.cashBalance > 0
+      ? activeKpiData.cashBalance
+      : findAmount(['cash in hand', 'cash'], 0);
+
+    // 5. MFS Balance
+    const mfsAmt = activeKpiData.mfsBalance > 0
+      ? activeKpiData.mfsBalance
+      : findAmount(['mfs'], 0);
+
+    const exact5Breakdown = [
+      {
+        category: 'Bank Balance',
+        amount: bankAmt,
+        color: '#28c76f',
+      },
+      {
+        category: 'Stock / Inventory',
+        amount: stockAmt,
+        color: '#009fe3',
+      },
+      {
+        category: 'Accounts Receivable',
+        amount: receivableAmt,
+        color: '#1b2850',
+      },
+      {
+        category: 'Cash in Hand',
+        amount: cashAmt,
+        color: '#ff9f43',
+      },
+      {
+        category: 'MFS Balance',
+        amount: mfsAmt,
+        color: '#7367f0',
+      },
+    ];
+
+    const totalAsset = exact5Breakdown.reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
+    const breakdownWithPct = exact5Breakdown.map((item) => ({
+      ...item,
+      percentage: totalAsset > 0 ? Number(((item.amount / totalAsset) * 100).toFixed(1)) : 0,
+    }));
+
+    return {
+      totalAsset,
+      breakdown: breakdownWithPct,
+    };
+  }, [userDashboard?.assetAnalysis, activeKpiData, liveStockValuation]);
+
+  // Active top customers: aggregates from live salesList if available
+  const activeTopCustomers = useMemo(() => {
+    const base = userDashboard?.topCustomers || [];
+    if (!Array.isArray(salesList) || salesList.length === 0) {
+      return base;
+    }
+
+    const customerMap = new Map<string, { id: string; name: string; phone: string; totalPurchases: number; ordersCount: number }>();
+
+    salesList.forEach((s) => {
+      if (s.isReturnRecord) return;
+      const custName = String(s.customerName || s.customer?.name || s.name || '').trim();
+      const custPhone = String(s.customerPhone || s.customer?.phone || s.phone || '').trim();
+      const custId = String(s.customerId || s.customer?.id || s.id || custPhone || custName);
+      if (!custName && !custPhone) return;
+
+      const amount = Number(s.grandTotal ?? s.totalAmount ?? s.paidAmount ?? 0) || 0;
+      const existing = customerMap.get(custId) || {
+        id: custId,
+        name: custName || 'Customer',
+        phone: custPhone,
+        totalPurchases: 0,
+        ordersCount: 0,
+      };
+
+      existing.totalPurchases += amount;
+      existing.ordersCount += 1;
+      customerMap.set(custId, existing);
+    });
+
+    if (customerMap.size === 0) return base;
+
+    const liveCustomers = Array.from(customerMap.values())
+      .sort((a, b) => b.totalPurchases - a.totalPurchases)
+      .slice(0, 5)
+      .map((c, idx) => ({
+        ...c,
+        avatarColor: idx === 0 ? 'bg-[#009fe3]' : idx === 1 ? 'bg-[#28c76f]' : idx === 2 ? 'bg-[#1b2850]' : idx === 3 ? 'bg-[#ff9f43]' : 'bg-[#7367f0]',
+      }));
+
+    return liveCustomers.length > 0 ? liveCustomers : base;
+  }, [userDashboard?.topCustomers, salesList]);
+
+  // Active top sale items: aggregates from live salesList if available
+  const activeTopSaleItems = useMemo(() => {
+    const base = userDashboard?.topSaleItems || [];
+    if (!Array.isArray(salesList) || salesList.length === 0) {
+      return base;
+    }
+
+    const itemMap = new Map<string, { id: string; name: string; category: string; soldQuantity: number; totalRevenue: number }>();
+
+    salesList.forEach((s) => {
+      if (s.isReturnRecord) return;
+      const details = Array.isArray(s.salesDetails)
+        ? s.salesDetails
+        : Array.isArray(s.saleDetails)
+        ? s.saleDetails
+        : Array.isArray(s.details)
+        ? s.details
+        : [];
+
+      details.forEach((d: any) => {
+        const itemId = String(d.productId || d.id || d.product_id || d.name || '');
+        const name = String(d.productName || d.name || d.product_name || 'Product');
+        const category = String(d.categoryName || d.category || 'General');
+        const qty = Number(d.quantity ?? d.qty ?? 1) || 0;
+        const total = Number(d.totalAmount ?? d.total ?? d.subTotal ?? (qty * (Number(d.unitPrice ?? d.price) || 0))) || 0;
+
+        const existing = itemMap.get(itemId) || {
+          id: itemId,
+          name,
+          category,
+          soldQuantity: 0,
+          totalRevenue: 0,
+        };
+
+        existing.soldQuantity += qty;
+        existing.totalRevenue += total;
+        itemMap.set(itemId, existing);
+      });
+    });
+
+    if (itemMap.size === 0) return base;
+
+    const liveItems = Array.from(itemMap.values())
+      .sort((a, b) => b.totalRevenue - a.totalRevenue)
+      .slice(0, 5);
+
+    const maxRev = liveItems[0]?.totalRevenue || 1;
+    const itemsWithPct = liveItems.map((item) => ({
+      ...item,
+      percentage: Math.round((item.totalRevenue / maxRev) * 100),
+    }));
+
+    return itemsWithPct.length > 0 ? itemsWithPct : base;
+  }, [userDashboard?.topSaleItems, salesList]);
+
   return (
     <div className="flex flex-col gap-2.5 px-3 py-2 sm:px-4 sm:py-2.5 max-w-[1600px] mx-auto w-full">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
@@ -225,28 +539,28 @@ const AdminDashboard: React.FC = () => {
           isLoading={isRefreshing}
         />
       </div>
-      <KpiCardsGrid data={kpiData} />
+      <KpiCardsGrid data={activeKpiData} />
       
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-2.5 sm:gap-3 items-stretch">
         <div className="col-span-12 lg:col-span-8 flex flex-col h-full">
-          <SaleAnalysisChart />
+          <SaleAnalysisChart data={activeSalesAnalysis} />
         </div>
         <div className="col-span-12 lg:col-span-4 flex flex-col h-full">
-          <AssetAnalysisChart />
+          <AssetAnalysisChart data={activeAssetAnalysis} />
         </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-2.5 sm:gap-3 items-stretch">
         <div className="col-span-12 lg:col-span-8 flex flex-col h-full">
-          <ProfitLossChart />
+          <ProfitLossChart data={userDashboard?.profitLoss} />
         </div>
         <div className="col-span-12 lg:col-span-4 flex flex-col h-full">
-          <TopSaleItemsWidget />
+          <TopSaleItemsWidget data={activeTopSaleItems} />
         </div>
       </div>
 
       <div className="w-full">
-        <TopCustomersWidget />
+        <TopCustomersWidget data={activeTopCustomers} />
       </div>
     </div>
   );

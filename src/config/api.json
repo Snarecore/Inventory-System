@@ -39,7 +39,8 @@
         "verifyPinUrl": "authorization-verify-pin"
     },
     "dashboard": {
-        "adminDashboardUrl": "site/admin-dashboard"
+        "adminDashboardUrl": "site/admin-dashboard",
+        "getUserDashboardUrl": "get-user-dashboard"
     },
     "people": {
         "user": "user",

@@ -9,25 +9,34 @@ import {
 } from 'chart.js';
 import { Bar } from 'react-chartjs-2';
 import { FiGrid, FiCalendar } from 'react-icons/fi';
-import { mockProfitLossData } from '../data/mockDashboardData';
+import { MonthlyProfitLoss } from '../types/dashboard.types';
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Tooltip, Legend);
 
-export const ProfitLossChart: React.FC = () => {
+interface ProfitLossChartProps {
+  data?: MonthlyProfitLoss[];
+}
+
+export const ProfitLossChart: React.FC<ProfitLossChartProps> = ({ data: propData }) => {
   // 'all' or specific month name like 'Mar 2026'
   const [selectedMonth, setSelectedMonth] = useState<string>('all');
 
+  const currentList =
+    propData && Array.isArray(propData) && propData.length > 0
+      ? propData
+      : [];
+
   const isAllMonths = selectedMonth === 'all';
   const currentMonthData = useMemo(() => {
-    return mockProfitLossData.find((d) => d.month === selectedMonth);
-  }, [selectedMonth]);
+    return currentList.find((d) => d.month === selectedMonth);
+  }, [selectedMonth, currentList]);
 
   // Labels & datasets based on selection
   const { labels, incomeData, expenseData, totalIncome, totalExpense, totalNetProfit } = useMemo(() => {
     if (isAllMonths) {
-      const lbls = mockProfitLossData.map((d) => d.month);
-      const inc = mockProfitLossData.map((d) => d.income);
-      const exp = mockProfitLossData.map((d) => d.expense);
+      const lbls = currentList.map((d) => d.month);
+      const inc = currentList.map((d) => d.income);
+      const exp = currentList.map((d) => d.expense);
       const tInc = inc.reduce((acc, v) => acc + v, 0);
       const tExp = exp.reduce((acc, v) => acc + v, 0);
       return {
@@ -39,9 +48,9 @@ export const ProfitLossChart: React.FC = () => {
         totalNetProfit: tInc - tExp,
       };
     } else if (currentMonthData) {
-      const lbls = currentMonthData.weeks.map((w) => w.week);
-      const inc = currentMonthData.weeks.map((w) => w.income);
-      const exp = currentMonthData.weeks.map((w) => w.expense);
+      const lbls = (currentMonthData.weeks || []).map((w) => w.week);
+      const inc = (currentMonthData.weeks || []).map((w) => w.income);
+      const exp = (currentMonthData.weeks || []).map((w) => w.expense);
       return {
         labels: lbls,
         incomeData: inc,
@@ -59,7 +68,7 @@ export const ProfitLossChart: React.FC = () => {
       totalExpense: 0,
       totalNetProfit: 0,
     };
-  }, [isAllMonths, currentMonthData]);
+  }, [isAllMonths, currentMonthData, currentList]);
 
   const profitMargin = totalIncome > 0 ? ((totalNetProfit / totalIncome) * 100).toFixed(1) : '0';
 
@@ -188,8 +197,8 @@ export const ProfitLossChart: React.FC = () => {
                 aria-label="Filter profit & loss by month"
                 className="pl-7 pr-8 py-1.5 bg-[#f0f4f8] text-gray-700 font-semibold text-xs rounded-lg border border-transparent hover:border-gray-300 focus:outline-none focus:border-[#009fe3] cursor-pointer transition-all appearance-none"
               >
-                <option value="all">All (Last 6 Months)</option>
-                {mockProfitLossData.map((d) => (
+                <option value="all">All ({currentList.length} Months)</option>
+                {currentList.map((d) => (
                   <option key={d.month} value={d.month}>
                     {d.month}
                   </option>

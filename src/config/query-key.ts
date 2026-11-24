@@ -12,6 +12,7 @@ export const orderQueryKey = "orders";
 export const orderDetailQueryKey = "order-detail";
 export const loginQueryKey = "login";
 export const dashboardQueryKey = "admin-dashboard";
+export const userDashboardQueryKey = "get-user-dashboard";
 export const userQueryKey = "user";
 export const adminQueryKey = "admin";
 export const vendorQueryKey = "vendor";

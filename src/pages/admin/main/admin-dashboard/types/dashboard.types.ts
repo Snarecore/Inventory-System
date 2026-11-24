@@ -24,6 +24,18 @@ export interface SalesDataPoint {
   orders: number;
 }
 
+export interface SalesAnalysisSummary {
+  total: number;
+  average: number;
+}
+
+export interface SalesTimeframeData {
+  summary: SalesAnalysisSummary;
+  points: SalesDataPoint[];
+}
+
+export type SalesAnalysisData = Record<SalesTimeframe, SalesTimeframeData>;
+
 export interface WeeklyBreakdown {
   week: string;
   income: number;
@@ -45,7 +57,7 @@ export interface TopCustomer {
   phone: string;
   totalPurchases: number;
   ordersCount: number;
-  avatarColor: string;
+  avatarColor?: string;
 }
 
 export interface TopSaleItem {
@@ -60,11 +72,28 @@ export interface TopSaleItem {
 export interface AssetCategory {
   category: string;
   amount: number;
-  color: string;
-  percentage: number;
+  color?: string;
+  percentage?: number;
 }
 
 export interface AssetAnalysisData {
   totalAsset: number;
   breakdown: AssetCategory[];
 }
+
+export interface UserDashboardData {
+  kpiData: DashboardKpiData;
+  salesAnalysis: Record<SalesTimeframe, SalesTimeframeData>;
+  assetAnalysis: AssetAnalysisData;
+  profitLoss: MonthlyProfitLoss[];
+  topCustomers: TopCustomer[];
+  topSaleItems: TopSaleItem[];
+}
+
+export interface UserDashboardApiResponse {
+  status: string;
+  msg?: string;
+  message?: string;
+  data: UserDashboardData;
+}
+

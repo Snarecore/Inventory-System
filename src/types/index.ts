@@ -499,3 +499,4 @@ export * from './invoice-profile.types';
 
 export * from './order-serial.types';
 export * from './referral.types';
+export * from '@/pages/admin/main/admin-dashboard/types/dashboard.types';

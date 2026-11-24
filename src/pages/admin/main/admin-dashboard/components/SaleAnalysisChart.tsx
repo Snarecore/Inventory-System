@@ -11,8 +11,7 @@ import {
 } from 'chart.js';
 import { Line } from 'react-chartjs-2';
 import { FiGrid } from 'react-icons/fi';
-import { SalesTimeframe } from '../types/dashboard.types';
-import { mockSalesData } from '../data/mockDashboardData';
+import { SalesTimeframe, SalesTimeframeData } from '../types/dashboard.types';
 
 ChartJS.register(LineElement, PointElement, CategoryScale, LinearScale, Filler, Tooltip, Legend);
 
@@ -36,15 +35,24 @@ const hoverLine = {
   },
 };
 
-export const SaleAnalysisChart: React.FC = () => {
+interface SaleAnalysisChartProps {
+  data?: Record<SalesTimeframe, SalesTimeframeData>;
+}
+
+export const SaleAnalysisChart: React.FC<SaleAnalysisChartProps> = ({ data: propData }) => {
   const chartRef = useRef(null);
   const [timeframe, setTimeframe] = useState<SalesTimeframe>('daily');
 
-  const currentData = mockSalesData[timeframe];
-  const labels = currentData.points.map((p) => p.label);
-  const values = currentData.points.map((p) => p.sales);
-  const totalSales = currentData.summary.total;
-  const totalOrders = currentData.points.reduce((acc, p) => acc + p.orders, 0);
+  const currentData = propData?.[timeframe] ?? {
+    summary: { total: 0, average: 0 },
+    points: [],
+  };
+
+  const hasPoints = Array.isArray(currentData.points) && currentData.points.length > 0;
+  const labels = hasPoints ? currentData.points.map((p) => p.label) : ['No Data'];
+  const values = hasPoints ? currentData.points.map((p) => p.sales) : [0];
+  const totalSales = currentData.summary?.total ?? 0;
+  const totalOrders = (currentData.points || []).reduce((acc, p) => acc + (p.orders || 0), 0);
 
   const data = useMemo(
     () => ({
@@ -121,7 +129,7 @@ export const SaleAnalysisChart: React.FC = () => {
               return `৳${num}`;
             },
           },
-          suggestedMax: Math.max(...values) * 1.15,
+          suggestedMax: Math.max(100, ...(values.length ? values : [0])) * 1.15,
         },
       },
     }),
@@ -183,7 +191,16 @@ export const SaleAnalysisChart: React.FC = () => {
       </div>
 
       <div className="relative w-full h-[260px] flex-1 min-h-[240px]">
-        <Line ref={chartRef} data={data} options={options} plugins={[hoverLine]} />
+        {hasPoints ? (
+          <Line ref={chartRef} data={data} options={options} plugins={[hoverLine]} />
+        ) : (
+          <div className="w-full h-full flex flex-col items-center justify-center border border-dashed border-gray-200 rounded-xl text-gray-400 p-6">
+            <p className="text-sm font-semibold text-gray-600">No {timeframe} sales points recorded</p>
+            <p className="text-xs text-gray-400 mt-1">
+              Select &ldquo;Weekly&rdquo; or &ldquo;Monthly&rdquo; above to view sales analytics
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );
