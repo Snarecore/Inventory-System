@@ -131,7 +131,29 @@ export const KpiCardsGrid: React.FC<KpiCardsGridProps> = ({ data }) => {
         </div>
       </MotionDiv>
 
-      {/* 5. Cash Balance */}
+      {/* 5. Total Balance - Sum of Cash + Bank + MFS */}
+      <MotionDiv>
+        <div
+          className="px-3 py-2.5 sm:px-3.5 sm:py-3 rounded-md bg-[#0d9488] text-white shadow-xs hover:shadow-md transition-all duration-300 h-full"
+          title={`Total Fund Balance (Cash + Bank + MFS): ${formatCurrency(totalFunds)}`}
+        >
+          <div className="flex items-center justify-between gap-1.5">
+            <div className="min-w-0 flex-1">
+              <p className="text-[19px] sm:text-[21px] xl:text-[22px] font-bold truncate tracking-tight">
+                {formatCurrency(totalFunds)}
+              </p>
+              <p className="text-xs sm:text-[13px] font-medium truncate opacity-90">
+                {t("Total Balance", "Total Balance")}
+              </p>
+            </div>
+            <div className="text-3xl sm:text-4xl shrink-0 opacity-80 hover:scale-110 transition-all ease-in duration-300">
+              <FaWallet />
+            </div>
+          </div>
+        </div>
+      </MotionDiv>
+
+      {/* 6. Cash Balance */}
       <MotionDiv>
         <div className="px-3 py-2.5 sm:px-3.5 sm:py-3 rounded-md bg-[#FE9F43] text-white shadow-xs hover:shadow-md transition-all duration-300 h-full">
           <div className="flex items-center justify-between gap-1.5">
@@ -150,53 +172,7 @@ export const KpiCardsGrid: React.FC<KpiCardsGridProps> = ({ data }) => {
         </div>
       </MotionDiv>
 
-      {/* 6. Dena Pawna (Dena) (Navigates to Dena Pawna / Khatabook) */}
-      <MotionDiv>
-        <div
-          onClick={() => navigate('/admin/khatabook')}
-          className="px-3 py-2.5 sm:px-3.5 sm:py-3 rounded-md bg-[#d97706] text-white shadow-xs hover:shadow-md transition-all duration-300 cursor-pointer group hover:brightness-105 active:scale-[0.99] h-full"
-          title={`Dena Pawna (Dena): ${formatCurrency(data.denaPawnaDena ?? data.denaPawnaPabo ?? 0)} | Click to view Dena Pawna`}
-        >
-          <div className="flex items-center justify-between gap-1.5">
-            <div className="min-w-0 flex-1">
-              <p className="text-[19px] sm:text-[21px] xl:text-[22px] font-bold truncate tracking-tight">
-                {formatCurrency(data.denaPawnaDena ?? data.denaPawnaPabo ?? 0)}
-              </p>
-              <p className="text-xs sm:text-[13px] font-medium truncate opacity-90">
-                {t("Dena Pawna (Dena)", "Dena Pawna (Dena)")}
-              </p>
-            </div>
-            <div className="text-3xl sm:text-4xl shrink-0 opacity-80 group-hover:scale-110 transition-all ease-in duration-300">
-              <FaMoneyBillWave />
-            </div>
-          </div>
-        </div>
-      </MotionDiv>
-
-      {/* 7. Dena Pawna (Pawna) (Navigates to Dena Pawna / Khatabook) */}
-      <MotionDiv>
-        <div
-          onClick={() => navigate('/admin/khatabook')}
-          className="px-3 py-2.5 sm:px-3.5 sm:py-3 rounded-md bg-[#059669] text-white shadow-xs hover:shadow-md transition-all duration-300 cursor-pointer group hover:brightness-105 active:scale-[0.99] h-full"
-          title={`Dena Pawna (Pawna): ${formatCurrency(data.denaPawnaPawna ?? data.denaPawnaDibo ?? 0)} | Click to view Dena Pawna`}
-        >
-          <div className="flex items-center justify-between gap-1.5">
-            <div className="min-w-0 flex-1">
-              <p className="text-[19px] sm:text-[21px] xl:text-[22px] font-bold truncate tracking-tight">
-                {formatCurrency(data.denaPawnaPawna ?? data.denaPawnaDibo ?? 0)}
-              </p>
-              <p className="text-xs sm:text-[13px] font-medium truncate opacity-90">
-                {t("Dena Pawna (Pawna)", "Dena Pawna (Pawna)")}
-              </p>
-            </div>
-            <div className="text-3xl sm:text-4xl shrink-0 opacity-80 group-hover:scale-110 transition-all ease-in duration-300">
-              <FaHandHoldingUsd />
-            </div>
-          </div>
-        </div>
-      </MotionDiv>
-
-      {/* 8. Bank Balance (Navigates to Bank list) */}
+      {/* 7. Bank Balance (Navigates to Bank list) */}
       <MotionDiv>
         <div
           onClick={() => navigate('/admin/banks')}
@@ -219,7 +195,7 @@ export const KpiCardsGrid: React.FC<KpiCardsGridProps> = ({ data }) => {
         </div>
       </MotionDiv>
 
-      {/* 9. MFS Balance (Navigates to MFS list) */}
+      {/* 8. MFS Balance (Navigates to MFS list) */}
       <MotionDiv>
         <div
           onClick={() => navigate('/admin/mfs')}
@@ -242,23 +218,47 @@ export const KpiCardsGrid: React.FC<KpiCardsGridProps> = ({ data }) => {
         </div>
       </MotionDiv>
 
-      {/* 10. Total Balance - Sum of Cash + Bank + MFS */}
+      {/* 9. Dena Pawna (Dena) (Navigates to Dena Pawna / Khatabook) */}
       <MotionDiv>
         <div
-          className="px-3 py-2.5 sm:px-3.5 sm:py-3 rounded-md bg-[#0d9488] text-white shadow-xs hover:shadow-md transition-all duration-300 h-full"
-          title={`Total Fund Balance (Cash + Bank + MFS): ${formatCurrency(totalFunds)}`}
+          onClick={() => navigate('/admin/khatabook')}
+          className="px-3 py-2.5 sm:px-3.5 sm:py-3 rounded-md bg-[#d97706] text-white shadow-xs hover:shadow-md transition-all duration-300 cursor-pointer group hover:brightness-105 active:scale-[0.99] h-full"
+          title={`Dena Pawna (Dena): ${formatCurrency(data.denaPawnaDena ?? data.denaPawnaPabo ?? 0)} | Click to view Dena Pawna`}
         >
           <div className="flex items-center justify-between gap-1.5">
             <div className="min-w-0 flex-1">
               <p className="text-[19px] sm:text-[21px] xl:text-[22px] font-bold truncate tracking-tight">
-                {formatCurrency(totalFunds)}
+                {formatCurrency(data.denaPawnaDena ?? data.denaPawnaPabo ?? 0)}
               </p>
               <p className="text-xs sm:text-[13px] font-medium truncate opacity-90">
-                {t("Total Balance", "Total Balance")}
+                {t("Dena Pawna (Dena)", "Dena Pawna (Dena)")}
               </p>
             </div>
-            <div className="text-3xl sm:text-4xl shrink-0 opacity-80 hover:scale-110 transition-all ease-in duration-300">
-              <FaWallet />
+            <div className="text-3xl sm:text-4xl shrink-0 opacity-80 group-hover:scale-110 transition-all ease-in duration-300">
+              <FaMoneyBillWave />
+            </div>
+          </div>
+        </div>
+      </MotionDiv>
+
+      {/* 10. Dena Pawna (Pawna) (Navigates to Dena Pawna / Khatabook) */}
+      <MotionDiv>
+        <div
+          onClick={() => navigate('/admin/khatabook')}
+          className="px-3 py-2.5 sm:px-3.5 sm:py-3 rounded-md bg-[#059669] text-white shadow-xs hover:shadow-md transition-all duration-300 cursor-pointer group hover:brightness-105 active:scale-[0.99] h-full"
+          title={`Dena Pawna (Pawna): ${formatCurrency(data.denaPawnaPawna ?? data.denaPawnaDibo ?? 0)} | Click to view Dena Pawna`}
+        >
+          <div className="flex items-center justify-between gap-1.5">
+            <div className="min-w-0 flex-1">
+              <p className="text-[19px] sm:text-[21px] xl:text-[22px] font-bold truncate tracking-tight">
+                {formatCurrency(data.denaPawnaPawna ?? data.denaPawnaDibo ?? 0)}
+              </p>
+              <p className="text-xs sm:text-[13px] font-medium truncate opacity-90">
+                {t("Dena Pawna (Pawna)", "Dena Pawna (Pawna)")}
+              </p>
+            </div>
+            <div className="text-3xl sm:text-4xl shrink-0 opacity-80 group-hover:scale-110 transition-all ease-in duration-300">
+              <FaHandHoldingUsd />
             </div>
           </div>
         </div>
