@@ -1,11 +1,20 @@
 import React from "react";
-import { FaMoneyBillWave, FaCreditCard, FaMobileAlt, FaWallet, FaLock } from "react-icons/fa";
+import {
+  FaMoneyBillWave,
+  FaCreditCard,
+  FaMobileAlt,
+  FaWallet,
+  FaCheckCircle,
+  FaFileInvoiceDollar,
+} from "react-icons/fa";
 import { formatMoney } from "@/utils/formatters";
-import type { UseTradeRefundReturn } from "@/hooks/useTradeRefund";
+import type { UseTradeRefundReturn, RefundAdjustmentTarget } from "@/hooks/useTradeRefund";
 import type { TradePaymentAccount } from "@/hooks/useTradePayment";
 
 export interface TradeRefundSectionProps {
   refund?: UseTradeRefundReturn;
+  adjustmentTarget?: RefundAdjustmentTarget;
+  onSelectAdjustmentTarget?: (target: RefundAdjustmentTarget) => void;
   refundCash?: string | number;
   refundBank?: string | number;
   refundMfs?: string | number;
@@ -18,6 +27,8 @@ export interface TradeRefundSectionProps {
   refundDifference?: number;
   refundAmount?: number;
   origDueAmount?: number;
+  origCashPaid?: number;
+  origPaidAmount?: number;
   title?: string;
   paidLabel?: string;
   dueLabel?: string;
@@ -39,6 +50,11 @@ export const TradeRefundSection: React.FC<TradeRefundSectionProps> = ({
   dueLabel = "Outstanding",
   ...flatProps
 }) => {
+  const adjustmentTarget: RefundAdjustmentTarget =
+    refund?.adjustmentTarget ?? flatProps.adjustmentTarget ?? "due";
+  const onSelectAdjustmentTarget =
+    refund?.handleSelectAdjustmentTarget ?? flatProps.onSelectAdjustmentTarget;
+
   const numRefundCash = Number(refund?.numRefundCash ?? flatProps.refundCash ?? 0);
   const numRefundBank = Number(refund?.numRefundBank ?? flatProps.refundBank ?? 0);
   const numRefundMfs = Number(refund?.numRefundMfs ?? flatProps.refundMfs ?? 0);
@@ -48,6 +64,10 @@ export const TradeRefundSection: React.FC<TradeRefundSectionProps> = ({
   const selectedRefundMfsId = String(refund?.selectedRefundMfsId ?? flatProps.selectedRefundMfsId ?? "");
 
   const origDueAmount = Number(refund?.origDueAmount ?? flatProps.origDueAmount ?? 0);
+  const origCashPaid = Number(refund?.origCashPaid ?? flatProps.origCashPaid ?? 0);
+  const origPaidAmount = Number(refund?.origPaidAmount ?? flatProps.origPaidAmount ?? origCashPaid);
+  const hasDueAndCash = origDueAmount > 0 && (origCashPaid > 0 || origPaidAmount > 0);
+
   const totalRefundAllocated = Number(
     refund?.totalRefundAllocated ??
       flatProps.totalRefundAllocated ??
@@ -61,19 +81,74 @@ export const TradeRefundSection: React.FC<TradeRefundSectionProps> = ({
 
   return (
     <>
-      {/* Header & View-Only Status */}
+      {/* Header & Status */}
       <div className="flex items-center justify-between flex-wrap gap-1">
         <span className="text-[11px] font-bold text-[var(--ui-text)] tracking-wider flex items-center gap-1.5">
-          <FaWallet size={11} className="text-[var(--ui-text)]" />
+          <FaWallet size={11} className="text-[var(--primary-color)]" />
           {title}
         </span>
         <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-[var(--ui-surface-sunken)] text-[var(--ui-text)] border border-[var(--ui-border)] select-none">
-          <FaLock size={8} className="text-[var(--ui-text)]" />
-          Auto-filled (View Only)
+          <FaWallet size={8} className="text-[var(--primary-color)]" />
+          Auto-allocated
         </span>
       </div>
 
-      {/* Payment Breakdown Cards - Display Only */}
+      {/* 2 Adjustment Options: Adjust Outstanding vs Adjust Cash */}
+      {(hasDueAndCash || origDueAmount > 0) && (
+        <div className="grid grid-cols-2 gap-2">
+          {/* Option 1: Adjust Outstanding */}
+          <button
+            type="button"
+            onClick={() => onSelectAdjustmentTarget?.("due")}
+            className={`p-2 rounded-md border text-left transition-all cursor-pointer flex flex-col justify-between relative group ${
+              adjustmentTarget === "due"
+                ? "border-[#e11d48] bg-[#e11d48]/10 shadow-xs ring-2 ring-[#e11d48]"
+                : "border-[var(--ui-border)] bg-[var(--ui-surface)] hover:bg-[var(--ui-surface-muted)] hover:border-[#e11d48]/50 opacity-90"
+            }`}
+          >
+            <div className="flex items-center justify-between gap-1 w-full">
+              <span className="text-xs font-bold text-[#e11d48] flex items-center gap-1.5">
+                <FaFileInvoiceDollar size={13} />
+                Adjust Outstanding
+              </span>
+              {adjustmentTarget === "due" && (
+                <FaCheckCircle size={13} className="text-[#e11d48] shrink-0" />
+              )}
+            </div>
+            <div className="mt-1 flex items-center justify-between text-[10.5px] text-[var(--ui-text-muted)]">
+              <span>Due:</span>
+              <strong className="text-[#e11d48] font-bold">৳{formatMoney(origDueAmount)}</strong>
+            </div>
+          </button>
+
+          {/* Option 2: Adjust Cash */}
+          <button
+            type="button"
+            onClick={() => onSelectAdjustmentTarget?.("cash")}
+            className={`p-2 rounded-md border text-left transition-all cursor-pointer flex flex-col justify-between relative group ${
+              adjustmentTarget === "cash"
+                ? "border-[#10b981] bg-[#10b981]/10 shadow-xs ring-2 ring-[#10b981]"
+                : "border-[var(--ui-border)] bg-[var(--ui-surface)] hover:bg-[var(--ui-surface-muted)] hover:border-[#10b981]/50 opacity-90"
+            }`}
+          >
+            <div className="flex items-center justify-between gap-1 w-full">
+              <span className="text-xs font-bold text-[#059669] flex items-center gap-1.5">
+                <FaMoneyBillWave size={13} />
+                Adjust Cash
+              </span>
+              {adjustmentTarget === "cash" && (
+                <FaCheckCircle size={13} className="text-[#059669] shrink-0" />
+              )}
+            </div>
+            <div className="mt-1 flex items-center justify-between text-[10.5px] text-[var(--ui-text-muted)]">
+              <span>Paid:</span>
+              <strong className="text-[#059669] font-bold">৳{formatMoney(origCashPaid || origPaidAmount)}</strong>
+            </div>
+          </button>
+        </div>
+      )}
+
+      {/* Payment Breakdown Cards */}
       <div className="flex flex-col gap-1.5">
         {/* 1. Cash Card */}
         <div
@@ -107,13 +182,12 @@ export const TradeRefundSection: React.FC<TradeRefundSectionProps> = ({
               {numRefundCash > 0 ? "৳" : "—"}
             </span>
             <input
-              type="text"
-              readOnly
-              disabled
-              tabIndex={-1}
-              placeholder="N/A"
-              value={numRefundCash > 0 ? numRefundCash.toString() : "N/A"}
-              className="w-full text-right px-1.5 text-xs font-normal text-[var(--ui-text)] outline-none bg-transparent cursor-not-allowed select-none h-full placeholder:text-[var(--ui-text)]"
+              type="number"
+              min={0}
+              placeholder="0"
+              value={numRefundCash > 0 ? numRefundCash.toString() : ""}
+              onChange={(e) => flatProps.onRefundCashChange?.(e.target.value)}
+              className="w-full text-right px-1.5 text-xs font-semibold text-[var(--ui-text)] outline-none bg-transparent h-full placeholder:text-[var(--ui-text-muted)]"
             />
           </div>
         </div>
@@ -274,13 +348,13 @@ export const TradeRefundSection: React.FC<TradeRefundSectionProps> = ({
                 {numRefundDue > 0 ? "৳" : "—"}
               </span>
               <input
-                type="text"
-                readOnly
-                disabled
-                tabIndex={-1}
-                placeholder="N/A"
-                value={numRefundDue > 0 ? numRefundDue.toString() : "N/A"}
-                className="w-full text-right px-1.5 text-xs font-normal text-[var(--ui-text)] outline-none bg-transparent cursor-not-allowed select-none h-full placeholder:text-[var(--ui-text)]"
+                type="number"
+                min={0}
+                max={origDueAmount > 0 ? origDueAmount : undefined}
+                placeholder="0"
+                value={numRefundDue > 0 ? numRefundDue.toString() : ""}
+                onChange={(e) => flatProps.onRefundDueChange?.(e.target.value)}
+                className="w-full text-right px-1.5 text-xs font-semibold text-[var(--ui-text)] outline-none bg-transparent h-full placeholder:text-[var(--ui-text-muted)]"
               />
             </div>
           </div>

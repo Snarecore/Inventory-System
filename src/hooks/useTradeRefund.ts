@@ -1,5 +1,7 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import type { TradePaymentAccount } from "./useTradePayment";
+
+export type RefundAdjustmentTarget = "due" | "cash";
 
 export interface UseTradeRefundOptions {
   selectedRecord?: any;
@@ -9,6 +11,7 @@ export interface UseTradeRefundOptions {
   registeredMfsAccounts?: TradePaymentAccount[];
   priority?: "cash_first" | "due_first";
   autoSyncCash?: boolean;
+  defaultAdjustmentTarget?: RefundAdjustmentTarget;
 }
 
 export const useTradeRefund = ({
@@ -19,7 +22,11 @@ export const useTradeRefund = ({
   registeredMfsAccounts = [],
   priority = "cash_first",
   autoSyncCash = false,
+  defaultAdjustmentTarget,
 }: UseTradeRefundOptions) => {
+  const [adjustmentTarget, setAdjustmentTarget] = useState<RefundAdjustmentTarget>(() => {
+    return defaultAdjustmentTarget || (priority === "due_first" ? "due" : "due");
+  });
   const [refundCashAmount, setRefundCashAmount] = useState<string>("");
   const [refundBankAmount, setRefundBankAmount] = useState<string>("");
   const [refundMfsAmount, setRefundMfsAmount] = useState<string>("");
@@ -75,6 +82,31 @@ export const useTradeRefund = ({
     return { origCashPaid: c, origBankPaid: b, origMfsPaid: m };
   }, [selectedRecord, origPaidAmount, origPaymentMode]);
 
+  // Auto-set default adjustment target when a record is selected
+  const prevRecordIdRef = useRef<any>(null);
+  useEffect(() => {
+    if (!selectedRecord) {
+      prevRecordIdRef.current = null;
+      return;
+    }
+    const currentId =
+      selectedRecord?.id ||
+      selectedRecord?.saleId ||
+      selectedRecord?.purchaseId ||
+      selectedRecord?.orderNo ||
+      selectedRecord?.invoiceNo;
+
+    if (prevRecordIdRef.current !== currentId) {
+      prevRecordIdRef.current = currentId;
+      // If the invoice has an outstanding due amount, default to adjusting due; otherwise cash
+      if (origDueAmount > 0) {
+        setAdjustmentTarget("due");
+      } else {
+        setAdjustmentTarget("cash");
+      }
+    }
+  }, [selectedRecord, origDueAmount]);
+
   // Auto-distribute refund
   useEffect(() => {
     if (!selectedRecord || refundAmount <= 0) {
@@ -93,7 +125,7 @@ export const useTradeRefund = ({
       return;
     }
 
-    // Reuse the original tender split only when the refund covers the full invoice total.
+    // Reuse the original tender split only when the refund covers the full invoice total
     if (
       returnMode === "FULL" &&
       Math.abs(refundAmount - origGrandTotal) < 0.01
@@ -115,13 +147,13 @@ export const useTradeRefund = ({
     let allocMfs = 0;
     let allocDue = 0;
 
-    if (priority === "due_first") {
-      // 1. Due adjust first (Purchase Return)
+    if (adjustmentTarget === "due") {
+      // 1. Adjust from Outstanding / Due first
       if (origDueAmount > 0) {
         allocDue = Math.min(remaining, origDueAmount);
         remaining = Number((remaining - allocDue).toFixed(2));
       }
-      // 2. Cash
+      // 2. Remainder to Cash paid
       if (remaining > 0 && origCashPaid > 0) {
         allocCash = Math.min(remaining, origCashPaid);
         remaining = Number((remaining - allocCash).toFixed(2));
@@ -136,11 +168,21 @@ export const useTradeRefund = ({
         allocMfs = Math.min(remaining, origMfsPaid);
         remaining = Number((remaining - allocMfs).toFixed(2));
       }
+      // 5. Excess beyond original allocations
+      if (remaining > 0) {
+        allocCash = Number((allocCash + remaining).toFixed(2));
+        remaining = 0;
+      }
     } else {
-      // Cash first (Sales Return)
-      // 1. Cash
-      if (origCashPaid > 0) {
-        allocCash = Math.min(remaining, origCashPaid);
+      // 1. Refund in Cash first
+      const availableCash =
+        origCashPaid > 0
+          ? origCashPaid
+          : origPaidAmount > 0
+          ? origPaidAmount
+          : remaining;
+      if (availableCash > 0) {
+        allocCash = Math.min(remaining, availableCash);
         remaining = Number((remaining - allocCash).toFixed(2));
       }
       // 2. Bank
@@ -158,9 +200,10 @@ export const useTradeRefund = ({
         allocDue = Math.min(remaining, origDueAmount);
         remaining = Number((remaining - allocDue).toFixed(2));
       }
-      // Fallback
-      if (allocCash === 0 && allocBank === 0 && allocMfs === 0 && allocDue === 0) {
-        allocCash = remaining;
+      // 5. Excess beyond original allocations
+      if (remaining > 0) {
+        allocCash = Number((allocCash + remaining).toFixed(2));
+        remaining = 0;
       }
     }
 
@@ -182,8 +225,9 @@ export const useTradeRefund = ({
     origMfsPaid,
     origDueAmount,
     origGrandTotal,
-    priority,
+    adjustmentTarget,
     autoSyncCash,
+    origPaidAmount,
   ]);
 
   // Sync bank / mfs dropdown selection
@@ -250,12 +294,17 @@ export const useTradeRefund = ({
     selectedRefundMfsId,
     setSelectedRefundMfsId,
     handleSelectRefundMfs: setSelectedRefundMfsId,
+    adjustmentTarget,
+    setAdjustmentTarget,
+    handleSelectAdjustmentTarget: setAdjustmentTarget,
+    hasDueAndCash: origDueAmount > 0 && (origCashPaid > 0 || origPaidAmount > 0),
     origPaymentMode,
     origGrandTotal,
     origDueAmount,
     origCashPaid,
     origBankPaid,
     origMfsPaid,
+    origPaidAmount,
     numRefundCash,
     numRefundBank,
     numRefundMfs,
