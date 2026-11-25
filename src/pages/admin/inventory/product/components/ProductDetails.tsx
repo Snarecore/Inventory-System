@@ -26,7 +26,6 @@ const ProductDetails = () => {
             });
             return response;
         },
-        staleTime: 0,
         refetchOnWindowFocus: false,
     });
 

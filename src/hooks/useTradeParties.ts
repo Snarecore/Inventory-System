@@ -28,7 +28,6 @@ export const useTradeParties = (partyType: TradePartyType) => {
         return null;
       }
     },
-    staleTime: 0,
     refetchOnWindowFocus: false,
   });
 

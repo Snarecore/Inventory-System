@@ -13,8 +13,7 @@ export const useUserDashboardQuery = (
   return useQuery<UserDashboardData, Error>({
     queryKey: [userDashboardQueryKey],
     queryFn: fetchUserDashboard,
-    staleTime: 60 * 1000,
-    refetchOnWindowFocus: false,
+    refetchOnWindowFocus: true,
     ...options,
   });
 };

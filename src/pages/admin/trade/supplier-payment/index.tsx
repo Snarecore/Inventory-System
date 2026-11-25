@@ -38,7 +38,6 @@ export const SupplierPayment: React.FC = () => {
       });
       return res;
     },
-    staleTime: 0,
     refetchOnWindowFocus: false,
   });
 
@@ -72,7 +71,6 @@ export const SupplierPayment: React.FC = () => {
     refetch: refetchPurchases,
     isFetching: isPurchasesFetching,
   } = usePurchasesQuery({
-    staleTime: 0,
   });
 
   const purchasesDueCountMap = useMemo(() => {

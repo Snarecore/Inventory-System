@@ -124,7 +124,6 @@ export const usePaymentReportQuery = (
       filters?.endDate || "all",
     ],
     queryFn: () => fetchPaymentReport(filters),
-    staleTime: 0,
     refetchOnWindowFocus: false,
     ...options,
   });

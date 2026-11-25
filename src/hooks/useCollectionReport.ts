@@ -113,7 +113,6 @@ export const useCollectionReportQuery = (
   return useQuery({
     queryKey: [collectionReportQueryKey, filters?.startDate, filters?.endDate],
     queryFn: () => fetchCollectionReport(filters),
-    staleTime: 0,
     refetchOnMount: "always",
     refetchOnWindowFocus: false,
     ...options,

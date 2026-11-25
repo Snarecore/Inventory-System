@@ -200,7 +200,6 @@ const CreatePurchaseForm: React.FC = () => {
         return null;
       }
     },
-    staleTime: 0,
     refetchOnWindowFocus: false,
   });
 

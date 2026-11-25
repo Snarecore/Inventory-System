@@ -39,7 +39,6 @@ export const CustomerCollection: React.FC = () => {
       });
       return res;
     },
-    staleTime: 0,
     refetchOnWindowFocus: false,
   });
 
@@ -73,7 +72,6 @@ export const CustomerCollection: React.FC = () => {
     refetch: refetchSales,
     isFetching: isSalesFetching,
   } = useSalesQuery({
-    staleTime: 0,
   });
 
   const salesDueCountMap = useMemo(() => {

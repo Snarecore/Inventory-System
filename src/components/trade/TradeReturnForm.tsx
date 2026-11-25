@@ -160,7 +160,6 @@ export const TradeReturnForm: React.FC<TradeReturnFormProps> = ({ mode }) => {
       const existing = queryClient.getQueryData(isSale ? [salesAndReturnQueryKey] : [purchaseAndReturnQueryKey]);
       return Array.isArray(existing) && existing.length > 0 ? (existing as any[]) : undefined;
     },
-    staleTime: 0,
     refetchOnWindowFocus: false,
   });
 

@@ -49,8 +49,7 @@ export const useCashBalanceQuery = (
   return useQuery({
     queryKey: [cashBalanceQueryKey],
     queryFn: fetchCashBalance,
-    staleTime: 0,
-    refetchOnWindowFocus: false,
+    refetchOnWindowFocus: true,
     ...options,
   });
 };

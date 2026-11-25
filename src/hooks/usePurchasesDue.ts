@@ -71,7 +71,6 @@ export const usePurchasesDueQuery = (
   return useQuery({
     queryKey: [purchasesDueQueryKey],
     queryFn: fetchPurchasesDue,
-    staleTime: 0,
     refetchOnWindowFocus: false,
     ...options,
   });

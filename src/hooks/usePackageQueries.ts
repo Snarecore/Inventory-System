@@ -1,4 +1,5 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
+import { GLOBAL_STALE_TIME } from "@/api/query-client";
 import { pricingQueryKey, userSubscriptionQueryKey } from "@/config/query-key";
 import {
   fetchPricing,
@@ -19,7 +20,7 @@ export function usePricingQuery(type: PlanType = "BUSINESS") {
   return useQuery<PricingResponse>({
     queryKey: [pricingQueryKey, type],
     queryFn: () => fetchPricing(type),
-    staleTime: 5 * 60 * 1000, // 5 minutes in-memory cache
+    staleTime: GLOBAL_STALE_TIME, // 5 minutes in-memory cache
     refetchOnWindowFocus: false,
   });
 }

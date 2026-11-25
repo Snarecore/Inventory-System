@@ -97,7 +97,6 @@ const CreateProductForm = () => {
             const res = await getData<any>({ url: categoriesUrl });
             return res;
         },
-        staleTime: 0,
         refetchOnWindowFocus: false,
     });
 
@@ -108,7 +107,6 @@ const CreateProductForm = () => {
             const res = await getData<any>({ url: unitsUrl });
             return res;
         },
-        staleTime: 0,
         refetchOnWindowFocus: false,
     });
 
@@ -126,7 +124,6 @@ const CreateProductForm = () => {
                 return null;
             }
         },
-        staleTime: 0,
         refetchOnWindowFocus: false,
     });
 

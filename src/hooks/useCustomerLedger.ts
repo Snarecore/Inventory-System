@@ -445,7 +445,6 @@ export const useCustomerLedgerQuery = (
     queryKey,
     queryFn: () => fetchCustomerLedger({ ...params, customerId: resolvedId }),
     enabled: isEnabled && (options?.enabled ?? true),
-    staleTime: 0,
     refetchOnMount: "always",
     refetchOnWindowFocus: false,
     ...options,

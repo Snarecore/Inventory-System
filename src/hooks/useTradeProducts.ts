@@ -25,7 +25,6 @@ export const useTradeProducts = () => {
         return null;
       }
     },
-    staleTime: 0,
     refetchOnMount: "always",
   });
 

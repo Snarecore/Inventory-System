@@ -537,7 +537,6 @@ export const usePurchaseLedgerQuery = (
     queryKey,
     queryFn: () => fetchPurchaseLedger({ ...params, supplierId: resolvedId }),
     enabled: isEnabled && (options?.enabled ?? true),
-    staleTime: 0,
     refetchOnMount: "always",
     refetchOnWindowFocus: false,
     ...options,

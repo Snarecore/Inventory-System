@@ -10,6 +10,8 @@ import {
   mfsUserListQueryKey,
   financialTransactionQueryKey,
   dashboardQueryKey,
+  userDashboardQueryKey,
+  financeDashboardQueryKey,
 } from "@/config/query-key";
 
 /**
@@ -27,6 +29,8 @@ export const useFinancialLedger = () => {
         const promises: Promise<any>[] = [
           queryClient.invalidateQueries({ queryKey: [financialTransactionQueryKey] }),
           queryClient.invalidateQueries({ queryKey: [dashboardQueryKey] }),
+          queryClient.invalidateQueries({ queryKey: [userDashboardQueryKey] }),
+          queryClient.invalidateQueries({ queryKey: [financeDashboardQueryKey] }),
         ];
 
         const hasCash = params.tenders.some(

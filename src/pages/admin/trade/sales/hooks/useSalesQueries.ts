@@ -6,12 +6,11 @@ import {
   productListQueryKey,
   customersDueQueryKey,
   customerInvoicesDueQueryKey,
-  cashBalanceQueryKey,
-  dashboardQueryKey,
 } from "@/config/query-key";
 import apiConfig from "@/config/api.json";
 import { postData } from "@/services/api-service";
 import { buildAccessUser } from "@/utils/access-user";
+import { invalidateFinancialBalances } from "@/utils/invalidate-balances";
 
 import {
   checkSalesDelete,
@@ -1124,7 +1123,6 @@ export const useSalesQuery = <TData = SaleItem[]>(
   return useQuery({
     queryKey: [salesListQueryKey],
     queryFn: fetchSalesList,
-    staleTime: 0,
     ...options,
   });
 };
@@ -1139,7 +1137,6 @@ export const useSalesAndReturnsQuery = <TData = UnifiedTradeRecord[]>(
   return useQuery({
     queryKey: [salesAndReturnQueryKey],
     queryFn: fetchSalesAndReturnList,
-    staleTime: 0,
     ...options,
   });
 };
@@ -1246,8 +1243,7 @@ export const useDeleteSalesOrderMutation = (options?: {
       queryClient.invalidateQueries({ queryKey: [productListQueryKey], refetchType: "all" });
       queryClient.invalidateQueries({ queryKey: [customersDueQueryKey] });
       queryClient.invalidateQueries({ queryKey: [customerInvoicesDueQueryKey] });
-      queryClient.invalidateQueries({ queryKey: [cashBalanceQueryKey] });
-      queryClient.invalidateQueries({ queryKey: [dashboardQueryKey] });
+      invalidateFinancialBalances();
       options?.onSuccess?.(data);
     },
     onError: (error) => {

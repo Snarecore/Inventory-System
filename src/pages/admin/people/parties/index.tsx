@@ -71,7 +71,6 @@ const Parties: React.FC = () => {
       });
       return response;
     },
-    staleTime: 0,
     refetchOnWindowFocus: false,
   });
 

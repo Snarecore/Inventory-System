@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { GLOBAL_STALE_TIME } from "@/api/query-client";
 import {
   fetchSmsBundles,
   purchaseSmsBundle,
@@ -20,7 +21,7 @@ export function useSmsBundles() {
   return useQuery<SmsBundleItem[]>({
     queryKey: SMS_QUERY_KEYS.bundles,
     queryFn: fetchSmsBundles,
-    staleTime: 5 * 60 * 1000,
+    staleTime: GLOBAL_STALE_TIME,
   });
 }
 
@@ -36,7 +37,6 @@ export function useSmsSendList() {
   return useQuery<SmsHistoryItem[]>({
     queryKey: SMS_QUERY_KEYS.sendList,
     queryFn: fetchSmsSendList,
-    staleTime: 30 * 1000,
   });
 }
 

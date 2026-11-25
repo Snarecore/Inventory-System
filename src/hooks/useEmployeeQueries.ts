@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient, type UseQueryOptions } from "@tanstack/react-query";
+import { GLOBAL_STALE_TIME } from "@/api/query-client";
 import {
   employeeListQueryKey,
   employeeBranchPermissionsQueryKey,
@@ -45,7 +46,7 @@ export const useEmployeeListQuery = (
   return useQuery<EmployeeItem[], Error>({
     queryKey: [employeeListQueryKey, organizationId],
     queryFn: () => getEmployeeList(organizationId),
-    staleTime: 5 * 60 * 1000,
+    staleTime: GLOBAL_STALE_TIME,
     ...options,
   });
 };
@@ -134,7 +135,7 @@ export const useEmployeeBranchPermissionsQuery = (
     queryKey: [employeeBranchPermissionsQueryKey, employeeId],
     queryFn: () => getEmployeeBranchPermissions(employeeId),
     enabled: Boolean(employeeId),
-    staleTime: 5 * 60 * 1000,
+    staleTime: GLOBAL_STALE_TIME,
     ...options,
   });
 };

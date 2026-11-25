@@ -52,7 +52,6 @@ const InventoryReportPage: React.FC = () => {
         url: productListUrl,
         body: { accessUser: buildAccessUser() },
       }),
-    staleTime: 0,
     refetchOnWindowFocus: false,
   });
 

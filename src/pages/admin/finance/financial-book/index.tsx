@@ -77,7 +77,6 @@ const FinancialBookPage: React.FC<FinancialBookPageProps> = ({ defaultType }) =>
         navUrl || undefined
       );
     },
-    staleTime: 0,
     refetchOnWindowFocus: false,
   });
 

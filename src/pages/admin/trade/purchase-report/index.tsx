@@ -68,7 +68,6 @@ const PurchaseReportPage: React.FC = () => {
         orderPrefix: "PO",
       });
     },
-    staleTime: 0,
   });
 
   const transactions: PurchaseItem[] = Array.isArray(liveReportData)

@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { GLOBAL_STALE_TIME } from "@/api/query-client";
 import {
   referralConfigQueryKey,
   referralSummaryQueryKey,
@@ -47,7 +48,7 @@ export function useReferralConfigQuery() {
   return useQuery<ReferralConfig>({
     queryKey: [referralConfigQueryKey],
     queryFn: () => fetchReferralConfig(),
-    staleTime: 5 * 60 * 1000,
+    staleTime: GLOBAL_STALE_TIME,
     refetchOnWindowFocus: false,
   });
 }
@@ -60,7 +61,6 @@ export function useReferralSummaryQuery(userId?: string | number | null) {
     queryKey: [referralSummaryQueryKey, userId],
     queryFn: () => fetchReferralSummary(userId as number | string),
     enabled: Boolean(userId),
-    staleTime: 30 * 1000,
     refetchOnWindowFocus: false,
   });
 }
@@ -73,7 +73,6 @@ export function useReferralMeQuery(userId?: string | number | null) {
     queryKey: [referralMeQueryKey, userId],
     queryFn: () => fetchReferralMe(userId as number | string),
     enabled: Boolean(userId),
-    staleTime: 30 * 1000,
     refetchOnWindowFocus: false,
   });
 }
@@ -116,7 +115,6 @@ export function useReferralWithdrawalsQuery(
     queryKey: [referralWithdrawalsQueryKey, userId, page, size],
     queryFn: () => fetchWithdrawals(userId as number | string, page, size),
     enabled: Boolean(userId),
-    staleTime: 30 * 1000,
     refetchOnWindowFocus: false,
   });
 }
@@ -144,7 +142,6 @@ export function useReferralEarningsQuery(
     ],
     queryFn: () => fetchEarnings(userId as number | string, options),
     enabled: Boolean(userId),
-    staleTime: 30 * 1000,
     refetchOnWindowFocus: false,
   });
 }
@@ -161,7 +158,6 @@ export function useReferralTransactionsQuery(
     queryKey: [referralTransactionsQueryKey, userId, page, size],
     queryFn: () => fetchWalletTransactions(userId as number | string, page, size),
     enabled: Boolean(userId),
-    staleTime: 30 * 1000,
     refetchOnWindowFocus: false,
   });
 }

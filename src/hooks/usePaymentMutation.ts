@@ -13,6 +13,8 @@ import {
   mfsUserListQueryKey,
   purchaseListQueryKey,
   dashboardQueryKey,
+  userDashboardQueryKey,
+  financeDashboardQueryKey,
   partyListQueryKey,
 } from "@/config/query-key";
 import { showSuccessToast, showErrorToast } from "@/utils/toast-utils";
@@ -218,6 +220,8 @@ export const usePaymentMutation = () => {
         queryClient.invalidateQueries({ queryKey: [mfsUserListQueryKey] });
       }
       queryClient.invalidateQueries({ queryKey: [dashboardQueryKey] });
+      queryClient.invalidateQueries({ queryKey: [userDashboardQueryKey] });
+      queryClient.invalidateQueries({ queryKey: [financeDashboardQueryKey] });
       queryClient.invalidateQueries({ queryKey: [partyListQueryKey] });
 
       const discText =

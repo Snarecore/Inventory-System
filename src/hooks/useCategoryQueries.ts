@@ -19,7 +19,6 @@ export const useCategoryListQuery = (params?: FetchCategoryListParams) => {
   return useQuery<CategoryListResponse>({
     queryKey: [categoryListQueryKey, params?.type, params?.startDate, params?.endDate],
     queryFn: () => fetchCategoryList(params),
-    staleTime: 0,
     refetchOnWindowFocus: false,
   });
 };

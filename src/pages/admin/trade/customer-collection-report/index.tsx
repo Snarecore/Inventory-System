@@ -73,18 +73,15 @@ const CustomerCollectionReportPage: React.FC = () => {
         url: apiConfig.party.partyListUrl,
         body: { accessUser: buildAccessUser() },
       }),
-    staleTime: 0,
     refetchOnWindowFocus: false,
   });
 
   // 3. Live Sales & Sales Return Queries
   const { data: salesList = [], refetch: refetchSales } = useSalesQuery({
-    staleTime: 0,
   });
 
   const { data: salesAndReturnsList = [], refetch: refetchSalesAndReturns } =
     useSalesAndReturnsQuery({
-      staleTime: 0,
     });
 
   // Unified sales and returns to ensure every return record is available in customer ledger

@@ -23,7 +23,6 @@ export const useStockAdjustmentReportQuery = (
   return useQuery({
     queryKey: [stockAdjustmentReportQueryKey, params?.fromDate, params?.toDate],
     queryFn: () => fetchStockAdjustmentReport(params),
-    staleTime: 0,
     refetchOnWindowFocus: false,
     enabled: options?.enabled ?? true,
   });

@@ -23,7 +23,6 @@ export function useCashClosingQuery(closingDate?: string) {
   return useQuery<CashClosingData | null>({
     queryKey: [cashClosingQueryKey, targetDate],
     queryFn: () => fetchCashClosing(targetDate),
-    staleTime: 0,
     refetchOnWindowFocus: false,
   });
 }
@@ -59,7 +58,6 @@ export function useCashClosingReportQuery(params?: {
           ? { startDate: params?.startDate, endDate: params?.endDate }
           : { month: currentMonth, year: currentYear }
       ),
-    staleTime: 0,
     refetchOnWindowFocus: false,
   });
 }

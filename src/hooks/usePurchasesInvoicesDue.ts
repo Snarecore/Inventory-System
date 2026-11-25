@@ -83,7 +83,6 @@ export const usePurchasesInvoicesDueQuery = (
     queryKey: [purchasesInvoicesDueQueryKey, String(supplierId || "")],
     queryFn: () => fetchPurchasesInvoicesDue(supplierId!),
     enabled: Boolean(supplierId),
-    staleTime: 0,
     refetchOnWindowFocus: false,
     ...options,
   });

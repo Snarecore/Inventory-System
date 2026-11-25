@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient, type UseQueryOptions } from "@tanstack/react-query";
+import { GLOBAL_STALE_TIME } from "@/api/query-client";
 import { branchListQueryKey } from "@/config/query-key";
 import {
   getBranchList,
@@ -47,7 +48,7 @@ export function useBranchListQuery(
     queryKey: [branchListQueryKey, orgId],
     queryFn: () => getBranchList(orgId),
     enabled: (options?.enabled !== false) && orgId > 0,
-    staleTime: 5 * 60 * 1000,
+    staleTime: GLOBAL_STALE_TIME,
     ...options,
   });
 }

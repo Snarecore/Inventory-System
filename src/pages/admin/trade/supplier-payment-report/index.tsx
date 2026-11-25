@@ -71,13 +71,11 @@ const SupplierPaymentReportPage: React.FC = () => {
         url: apiConfig.party.partyListUrl,
         body: { accessUser: buildAccessUser() },
       }),
-    staleTime: 0,
     refetchOnWindowFocus: false,
   });
 
   // 4. Purchases and Returns Queries for Ledger & Invoices
   const { data: purchasesList = [], refetch: refetchPurchases } = usePurchasesQuery({
-    staleTime: 0,
   });
 
   const { data: unifiedPurchaseRecords = [], refetch: refetchUnified } =

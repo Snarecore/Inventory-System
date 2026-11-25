@@ -90,7 +90,6 @@ const SalesReportPage: React.FC = () => {
         orderPrefix: "SO",
       });
     },
-    staleTime: 0,
   });
 
   // Effective transactions data (pure live API)

@@ -49,7 +49,6 @@ const Products = () => {
             });
             return response;
         },
-        staleTime: 0,
         refetchOnMount: "always",
         refetchOnWindowFocus: false,
     });
