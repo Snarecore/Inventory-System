@@ -173,9 +173,9 @@ export const TradeInvoiceModal: React.FC<TradeInvoiceModalProps> = ({
   // Pure English document title
   const docTitle =
     inv?.type === "SALE"
-      ? "CASH MEMO"
+      ? "Invoice"
       : inv?.type === "PURCHASE"
-      ? "PURCHASE MEMO"
+      ? "Material Receiving Report (MRR)"
       : inv?.type === "SALES_RETURN"
       ? "SALES RETURN MEMO"
       : "PURCHASE RETURN MEMO";
@@ -380,9 +380,9 @@ export const TradeInvoiceModal: React.FC<TradeInvoiceModalProps> = ({
               {showBusinessName && (
                 <h1
                   style={{
-                    color: "#0f172a",
+                    color: "#000",
                     fontSize: "19px",
-                    fontWeight: 700,
+                    fontWeight: 400,
                     letterSpacing: "-0.2px",
                     lineHeight: "1.15",
                     margin: 0,
@@ -392,11 +392,11 @@ export const TradeInvoiceModal: React.FC<TradeInvoiceModalProps> = ({
                 </h1>
               )}
               {showAddress && businessAddress && (
-                <div style={{ fontSize: "10.5px", color: "#334155", marginTop: "1.5px", lineHeight: "1.3" }}>
+                <div style={{ fontSize: "10.5px", color: "#000", marginTop: "1.5px", lineHeight: "1.3" }}>
                   {businessAddress}
                 </div>
               )}
-              <div style={{ fontSize: "10px", color: "#475569", marginTop: "1.5px", lineHeight: "1.35" }}>
+              <div style={{ fontSize: "10px", color: "#000", marginTop: "1.5px", lineHeight: "1.35" }}>
                 {(showPhone1 || showPhone2) && (phone1 || phone2) && (
                   <div>
                     Phone: {showPhone1 ? phone1 : ""}
@@ -435,7 +435,6 @@ export const TradeInvoiceModal: React.FC<TradeInvoiceModalProps> = ({
                 textDecoration: "underline",
                 textUnderlineOffset: "3px",
                 letterSpacing: "0.4px",
-                textTransform: "uppercase",
               }}
             >
               {docTitle}
@@ -462,37 +461,39 @@ export const TradeInvoiceModal: React.FC<TradeInvoiceModalProps> = ({
                 padding: "4px 10px",
                 fontSize: "10.5px",
                 lineHeight: "1.25",
+                color: "#000",
+                fontWeight: 400,
               }}
             >
               <table style={{ width: "100%", borderCollapse: "collapse" }}>
                 <tbody>
                   <tr>
-                    <td style={{ width: "96px", fontWeight: 600, padding: "1px 0", verticalAlign: "top", color: "#334155" }}>
+                    <td style={{ width: "96px", fontWeight: 400, padding: "1px 0", verticalAlign: "top", color: "#000" }}>
                       {isPurchase ? "Supplier Name" : "Customer Name"}
                     </td>
                     <td style={{ width: "10px", padding: "1px 0", verticalAlign: "top" }}>:</td>
-                    <td style={{ fontWeight: 600, padding: "1px 0", color: "#0f172a" }}>
+                    <td style={{ fontWeight: 400, padding: "1px 0", color: "#000" }}>
                       {inv.partyName || "Walk-in Customer"}
                     </td>
                   </tr>
                   {inv.partyAddress && (
                     <tr>
-                      <td style={{ fontWeight: 500, padding: "1px 0", verticalAlign: "top", color: "#475569" }}>Address</td>
+                      <td style={{ fontWeight: 400, padding: "1px 0", verticalAlign: "top", color: "#000" }}>Address</td>
                       <td style={{ padding: "1px 0", verticalAlign: "top" }}>:</td>
-                      <td style={{ padding: "1px 0", color: "#0f172a" }}>{inv.partyAddress}</td>
+                      <td style={{ padding: "1px 0", color: "#000" }}>{inv.partyAddress}</td>
                     </tr>
                   )}
                   <tr>
-                    <td style={{ fontWeight: 500, padding: "1px 0", verticalAlign: "top", color: "#475569" }}>Phone No.</td>
+                    <td style={{ fontWeight: 400, padding: "1px 0", verticalAlign: "top", color: "#000" }}>Phone No.</td>
                     <td style={{ padding: "1px 0", verticalAlign: "top" }}>:</td>
-                    <td style={{ padding: "1px 0", fontFamily: "monospace", color: "#0f172a" }}>
+                    <td style={{ padding: "1px 0", fontFamily: "monospace", color: "#000" }}>
                       {inv.partyPhone || "N/A"}
                     </td>
                   </tr>
                   <tr>
-                    <td style={{ fontWeight: 500, padding: "1px 0", verticalAlign: "top", color: "#475569" }}>Party Type</td>
+                    <td style={{ fontWeight: 400, padding: "1px 0", verticalAlign: "top", color: "#000" }}>Party Type</td>
                     <td style={{ padding: "1px 0", verticalAlign: "top" }}>:</td>
-                    <td style={{ padding: "1px 0", color: "#0f172a" }}>{partyRoleLabel}</td>
+                    <td style={{ padding: "1px 0", color: "#000" }}>{partyRoleLabel}</td>
                   </tr>
                 </tbody>
               </table>
@@ -506,14 +507,16 @@ export const TradeInvoiceModal: React.FC<TradeInvoiceModalProps> = ({
                 padding: "4px 10px",
                 fontSize: "10.5px",
                 lineHeight: "1.25",
+                color: "#000",
+                fontWeight: 400,
               }}
             >
               <table style={{ width: "100%", borderCollapse: "collapse" }}>
                 <tbody>
                   <tr>
-                    <td style={{ width: "84px", fontWeight: 500, padding: "1px 0", color: "#475569" }}>Pay Mode</td>
+                    <td style={{ width: "84px", fontWeight: 400, padding: "1px 0", color: "#000" }}>Pay Mode</td>
                     <td style={{ width: "10px", padding: "1px 0" }}>:</td>
-                    <td style={{ padding: "1px 0", color: "#0f172a", fontWeight: 600 }}>
+                    <td style={{ padding: "1px 0", color: "#000", fontWeight: 400 }}>
                       {(() => {
                         const raw = String(inv.paymentMethod || "").trim().toUpperCase();
                         if (raw.includes("MULTI")) return "MULTI";
@@ -523,41 +526,43 @@ export const TradeInvoiceModal: React.FC<TradeInvoiceModalProps> = ({
                     </td>
                   </tr>
                   <tr>
-                    <td style={{ fontWeight: 500, padding: "1px 0", color: "#475569" }}>Invoice No</td>
+                    <td style={{ fontWeight: 400, padding: "1px 0", color: "#000" }}>Invoice No</td>
                     <td style={{ padding: "1px 0" }}>:</td>
-                    <td style={{ fontWeight: 600, fontFamily: "monospace", padding: "1px 0", color: "#0f172a" }}>
+                    <td style={{ fontWeight: 400, fontFamily: "monospace", padding: "1px 0", color: "#000" }}>
                       {inv.invoiceNo}
                     </td>
                   </tr>
                   <tr>
-                    <td style={{ fontWeight: 500, padding: "1px 0", color: "#475569" }}>Invoice Date</td>
+                    <td style={{ fontWeight: 400, padding: "1px 0", color: "#000" }}>Invoice Date</td>
                     <td style={{ padding: "1px 0" }}>:</td>
-                    <td style={{ padding: "1px 0", fontFamily: "monospace", color: "#0f172a" }}>
+                    <td style={{ padding: "1px 0", fontFamily: "monospace", color: "#000" }}>
                       {inv.date ? moment(inv.date).format("DD-MMM-YYYY").toUpperCase() : moment().format("DD-MMM-YYYY").toUpperCase()}
                     </td>
                   </tr>
-                  <tr>
-                    <td style={{ fontWeight: 500, padding: "1.5px 0", color: "#475569" }}>Status</td>
-                    <td style={{ padding: "1.5px 0" }}>:</td>
-                    <td style={{ padding: "1.5px 0" }}>
-                      <span
-                        style={{
-                          display: "inline-block",
-                          fontWeight: 700,
-                          fontSize: "9px",
-                          letterSpacing: "0.5px",
-                          color: paymentStatus.color,
-                          backgroundColor: paymentStatus.bg,
-                          border: `1px solid ${paymentStatus.border}`,
-                          borderRadius: "4px",
-                          padding: "1px 7px",
-                          lineHeight: "1.25",
-                        }}
-                      >
-                        {paymentStatus.label}
-                      </span>
-                    </td>
-                  </tr>
+                  {isReturn && (
+                    <tr>
+                      <td style={{ fontWeight: 500, padding: "1.5px 0", color: "#475569" }}>Status</td>
+                      <td style={{ padding: "1.5px 0" }}>:</td>
+                      <td style={{ padding: "1.5px 0" }}>
+                        <span
+                          style={{
+                            display: "inline-block",
+                            fontWeight: 700,
+                            fontSize: "9px",
+                            letterSpacing: "0.5px",
+                            color: paymentStatus.color,
+                            backgroundColor: paymentStatus.bg,
+                            border: `1px solid ${paymentStatus.border}`,
+                            borderRadius: "4px",
+                            padding: "1px 7px",
+                            lineHeight: "1.25",
+                          }}
+                        >
+                          {paymentStatus.label}
+                        </span>
+                      </td>
+                    </tr>
+                  )}
                   {inv.challanNo && (
                     <tr>
                       <td style={{ fontWeight: 500, padding: "1px 0", color: "#475569" }}>Challan No</td>
@@ -591,32 +596,32 @@ export const TradeInvoiceModal: React.FC<TradeInvoiceModalProps> = ({
               }}
             >
               <thead>
-                <tr style={{ backgroundColor: "#f8fafc", color: "#1e293b", fontWeight: 500 }}>
-                  <th style={{ border: "1px solid #64748b", padding: "5px 6px", textAlign: "center", width: "42px", fontWeight: 500, whiteSpace: "nowrap" }}>
+                <tr style={{ backgroundColor: "#f8fafc", color: "#000", fontWeight: 400 }}>
+                <th style={{ border: "1px solid #64748b", padding: "5px 6px", textAlign: "center", width: "42px", fontWeight: 400, whiteSpace: "nowrap" }}>
                     SL No
                   </th>
-                  <th style={{ border: "1px solid #64748b", padding: "5px 6px", textAlign: "center", width: "68px", fontWeight: 500 }}>
+                  <th style={{ border: "1px solid #64748b", padding: "5px 6px", textAlign: "center", width: "68px", fontWeight: 400 }}>
                     Code
                   </th>
-                  <th style={{ border: "1px solid #64748b", padding: "5px 8px", textAlign: "left", fontWeight: 500 }}>
+                  <th style={{ border: "1px solid #64748b", padding: "5px 8px", textAlign: "left", fontWeight: 400 }}>
                     Product Name
                   </th>
-                  <th style={{ border: "1px solid #64748b", padding: "5px 6px", textAlign: "center", width: "48px", fontWeight: 500 }}>
+                  <th style={{ border: "1px solid #64748b", padding: "5px 6px", textAlign: "center", width: "48px", fontWeight: 400 }}>
                     Qty
                   </th>
-                  <th style={{ border: "1px solid #64748b", padding: "5px 6px", textAlign: "center", width: "52px", fontWeight: 500 }}>
+                  <th style={{ border: "1px solid #64748b", padding: "5px 6px", textAlign: "center", width: "52px", fontWeight: 400 }}>
                     Unit
                   </th>
-                  <th style={{ border: "1px solid #64748b", padding: "5px 6px", textAlign: "right", width: "70px", fontWeight: 500, whiteSpace: "nowrap" }}>
-                    {isPurchase ? "Purchase Price" : "Sell Price"}
+                  <th style={{ border: "1px solid #64748b", padding: "5px 6px", textAlign: "right", width: "70px", fontWeight: 400, whiteSpace: "nowrap" }}>
+                    Unit Price
                   </th>
-                  <th style={{ border: "1px solid #64748b", padding: "5px 6px", textAlign: "right", width: "58px", fontWeight: 500 }}>
+                  <th style={{ border: "1px solid #64748b", padding: "5px 6px", textAlign: "right", width: "58px", fontWeight: 400 }}>
                     Discount
                   </th>
-                  <th style={{ border: "1px solid #64748b", padding: "5px 6px", textAlign: "right", width: "54px", fontWeight: 500 }}>
+                  <th style={{ border: "1px solid #64748b", padding: "5px 6px", textAlign: "right", width: "54px", fontWeight: 400 }}>
                     VAT
                   </th>
-                  <th style={{ border: "1px solid #64748b", padding: "5px 8px", textAlign: "right", width: "82px", fontWeight: 500, whiteSpace: "nowrap" }}>
+                  <th style={{ border: "1px solid #64748b", padding: "5px 8px", textAlign: "right", width: "82px", fontWeight: 400, whiteSpace: "nowrap" }}>
                     Amount
                   </th>
                 </tr>
@@ -768,15 +773,15 @@ export const TradeInvoiceModal: React.FC<TradeInvoiceModalProps> = ({
               {(Number(inv.cashAmount || 0) > 0 ||
                 Number(inv.bankAmount || 0) > 0 ||
                 Number(inv.mfsAmount || 0) > 0) && (
-                <div style={{ fontSize: "10px", color: "#334155", marginBottom: "5px", display: "flex", flexWrap: "wrap", gap: "4px 12px" }}>
+                <div style={{ fontSize: "10px", color: "#000", marginBottom: "5px", display: "flex", flexDirection: "column", gap: "2px" }}>
                   {Number(inv.cashAmount || 0) > 0 && (
-                    <span>Cash: <span style={{ fontWeight: 600 }}>{formatMoney(Number(inv.cashAmount))}</span></span>
+                    <div>Cash: {formatMoney(Number(inv.cashAmount))}</div>
                   )}
                   {Number(inv.bankAmount || 0) > 0 && (
-                    <span>Bank{inv.bankName ? ` (${inv.bankName})` : ""}: <span style={{ fontWeight: 600 }}>{formatMoney(Number(inv.bankAmount))}</span></span>
+                    <div>Bank{inv.accountNo ? ` (${inv.accountNo})` : ""}: {formatMoney(Number(inv.bankAmount))}</div>
                   )}
                   {Number(inv.mfsAmount || 0) > 0 && (
-                    <span>MFS{inv.mfsName ? ` (${inv.mfsName})` : ""}: <span style={{ fontWeight: 600 }}>{formatMoney(Number(inv.mfsAmount))}</span></span>
+                    <div>MFS{inv.mfsPhone ? ` (${inv.mfsPhone})` : ""}: {formatMoney(Number(inv.mfsAmount))}</div>
                   )}
                 </div>
               )}
