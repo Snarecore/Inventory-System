@@ -1,3 +1,4 @@
+export { default as CategoryDrawerModal } from "./CategoryDrawerModal";
 export { default as ConfirmModal } from "./ConfirmModal";
 export { default as DeleteModal } from "./DeleteModal";
 export { default as DrawerModal } from "./DrawerModal";

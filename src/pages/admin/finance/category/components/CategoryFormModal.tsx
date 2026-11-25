@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { DrawerModal, Button, TextInput as InputField } from "@/components/common";
+import { CategoryDrawerModal, type CategoryDrawerStatus } from "@/components/common";
 import {
   useInsertCategoryMutation,
   useUpdateCategoryMutation,
@@ -9,8 +9,7 @@ import {
 import { isCategoryAdmin, normalizeCategoryType } from "@/services/category-service";
 import type { CategoryItem, CategoryStatus, CategoryType } from "@/types";
 import { showErrorToast } from "@/utils/toast-utils";
-import { FaLayerGroup, FaArrowDown, FaArrowUp, FaCheckCircle, FaTimesCircle } from "react-icons/fa";
-import { usePermission } from "@/hooks/usePermission";
+import { FaLayerGroup, FaArrowDown, FaArrowUp } from "react-icons/fa";
 
 interface CategoryFormModalProps {
   isOpen: boolean;
@@ -39,6 +38,16 @@ const TYPE_OPTIONS: {
   },
 ];
 
+const getInitialCategoryType = (category?: CategoryItem | null): CategoryType =>
+  category && normalizeCategoryType(String(category.type || "")) === "Income"
+    ? "Income"
+    : "Expense";
+
+const getInitialStatus = (category?: CategoryItem | null): CategoryDrawerStatus =>
+  category?.status && String(category.status).toLowerCase() === "inactive"
+    ? "Inactive"
+    : "Active";
+
 export const CategoryFormModal: React.FC<CategoryFormModalProps> = ({
   isOpen,
   onClose,
@@ -46,41 +55,25 @@ export const CategoryFormModal: React.FC<CategoryFormModalProps> = ({
   existingCategories = [],
 }) => {
   const { t } = useTranslation();
-  const { canCreate, canUpdate } = usePermission();
   const [prevCategoryToEdit, setPrevCategoryToEdit] = useState(categoryToEdit);
-  const [categoryName, setCategoryName] = useState(categoryToEdit?.categoryName || "");
-  const [categoryType, setCategoryType] = useState<CategoryType>(
-    categoryToEdit && normalizeCategoryType(String(categoryToEdit.type || "")) === "Income"
-      ? "Income"
-      : "Expense"
+  const [prevIsOpen, setPrevIsOpen] = useState(isOpen);
+  const [categoryType, setCategoryType] = useState<CategoryType>(() =>
+    getInitialCategoryType(categoryToEdit)
   );
-  const [status, setStatus] = useState<CategoryStatus>(
-    (categoryToEdit?.status && String(categoryToEdit.status).toLowerCase() === "inactive")
-      ? "Inactive"
-      : "Active"
-  );
-  const [nameError, setNameError] = useState("");
 
-  if (categoryToEdit !== prevCategoryToEdit) {
+  if (categoryToEdit !== prevCategoryToEdit || isOpen !== prevIsOpen) {
     setPrevCategoryToEdit(categoryToEdit);
-    setCategoryName(categoryToEdit?.categoryName || "");
-    setCategoryType(
-      categoryToEdit && normalizeCategoryType(String(categoryToEdit.type || "")) === "Income"
-        ? "Income"
-        : "Expense"
-    );
-    setStatus(
-      (categoryToEdit?.status && String(categoryToEdit.status).toLowerCase() === "inactive")
-        ? "Inactive"
-        : "Active"
-    );
-    setNameError("");
+    setPrevIsOpen(isOpen);
+    setCategoryType(isOpen ? getInitialCategoryType(categoryToEdit) : "Expense");
   }
 
   const isEditing = Boolean(categoryToEdit);
 
   const insertMutation = useInsertCategoryMutation({
-    onSuccess: () => onClose(),
+    onSuccess: () => {
+      setCategoryType("Expense");
+      onClose();
+    },
   });
 
   const updateMutation = useUpdateCategoryMutation({
@@ -91,45 +84,25 @@ export const CategoryFormModal: React.FC<CategoryFormModalProps> = ({
 
   const isSaving = insertMutation.isPending || updateMutation.isPending || statusMutation.isPending;
 
-  const handleNameChange = (val: string) => {
-    setCategoryName(val);
-    if (nameError) setNameError("");
-  };
-
-  const handleSubmit = (e?: React.FormEvent) => {
-    if (e) e.preventDefault();
-    if (isSaving) return;
-
-    if (isEditing && !canUpdate("category_finance")) {
-      showErrorToast("You do not have permission to update categories.");
-      return;
-    }
-    if (!isEditing && !canCreate("category_finance")) {
-      showErrorToast("You do not have permission to create categories.");
-      return;
-    }
-
-    const trimmedName = categoryName.trim();
-    if (!trimmedName) {
-      setNameError(t("Category name is required"));
-      showErrorToast(t("Please enter a category name"));
-      return;
-    }
-
-    // Check duplicate name
+  const validateName = (trimmedName: string) => {
     const isDuplicate = existingCategories.some(
       (item) =>
         (item.categoryName || "").trim().toLowerCase() === trimmedName.toLowerCase() &&
+        normalizeCategoryType(String(item.type || "")) === categoryType &&
         item.categoryId !== categoryToEdit?.categoryId
     );
+    return isDuplicate
+      ? `Category "${trimmedName}" already exists in ${categoryType}`
+      : null;
+  };
 
-    if (isDuplicate) {
-      const err = `Category "${trimmedName}" already exists`;
-      setNameError(err);
-      showErrorToast(err);
-      return;
-    }
-
+  const handleSubmitCategory = ({
+    name,
+    status,
+  }: {
+    name: string;
+    status: CategoryDrawerStatus;
+  }) => {
     if (isEditing && categoryToEdit) {
       if (isCategoryAdmin(categoryToEdit)) {
         showErrorToast("Default system category cannot be edited");
@@ -137,13 +110,12 @@ export const CategoryFormModal: React.FC<CategoryFormModalProps> = ({
       }
       updateMutation.mutate({
         categoryId: categoryToEdit.categoryId,
-        categoryName: trimmedName,
+        categoryName: name,
         categoryType,
         openingBalance: 0,
       });
 
-      const currentStatus: CategoryStatus =
-        String(categoryToEdit.status || "").toLowerCase() === "inactive" ? "Inactive" : "Active";
+      const currentStatus: CategoryStatus = getInitialStatus(categoryToEdit);
       if (status !== currentStatus) {
         statusMutation.mutate({
           categoryId: categoryToEdit.categoryId,
@@ -152,7 +124,7 @@ export const CategoryFormModal: React.FC<CategoryFormModalProps> = ({
       }
     } else {
       insertMutation.mutate({
-        categoryName: trimmedName,
+        categoryName: name,
         categoryType,
         openingBalance: 0,
         transactionDate: new Date().toISOString(),
@@ -161,47 +133,25 @@ export const CategoryFormModal: React.FC<CategoryFormModalProps> = ({
   };
 
   return (
-    <DrawerModal
+    <CategoryDrawerModal
       isOpen={isOpen}
       onClose={onClose}
+      isEditing={isEditing}
+      contentKey={categoryToEdit ? `edit-${categoryToEdit.categoryId}` : "create"}
       title={isEditing ? t("Edit Category") : t("Add New Category")}
       icon={<FaLayerGroup size={14} />}
+      permissionModule="category_finance"
+      initialName={categoryToEdit?.categoryName || ""}
+      initialStatus={getInitialStatus(categoryToEdit)}
+      namePlaceholder={t("e.g. Office Rent, Electricity, Tea/Snacks")}
+      isSaving={isSaving}
+      submitLabel={isEditing ? t("Update Category") : t("Save Category")}
+      onSubmitCategory={handleSubmitCategory}
+      validateName={validateName}
+      createPermissionMessage="You do not have permission to create categories."
+      updatePermissionMessage="You do not have permission to update categories."
       maxWidth="max-w-[320px]"
-      contentKey={categoryToEdit ? `edit-${categoryToEdit.categoryId}` : "create"}
-      onSubmit={handleSubmit}
-      footerButtons={
-        <>
-          <Button
-            label={t("Cancel")}
-            onClick={onClose}
-            variant="outline"
-            disabled={isSaving}
-            buttonClass="!bg-white hover:!bg-gray-50 !border-gray-300 !text-gray-700 shadow-2xs font-medium !rounded-md !py-[0.4rem] !px-4 text-xs sm:text-sm"
-          />
-          <Button
-            label={isEditing ? t("Update Category") : t("Save Category")}
-            type="submit"
-            color="var(--color-primary)"
-            hoverColor="var(--color-primary-hover)"
-            isLoading={isSaving}
-            disabled={isSaving || (isEditing ? !canUpdate("category_finance") : !canCreate("category_finance"))}
-          />
-        </>
-      }
     >
-      {/* Category Name */}
-      <div>
-        <InputField
-          label={t("Category Name")}
-          placeholder={t("e.g. Office Rent, Electricity, Tea/Snacks")}
-          value={categoryName}
-          onChange={handleNameChange}
-          error={nameError}
-          required
-          autoFocus
-        />
-      </div>
-
       {/* Category Type */}
       <div>
         <label className="block text-xs font-semibold text-gray-800 mb-1.5">
@@ -229,43 +179,7 @@ export const CategoryFormModal: React.FC<CategoryFormModalProps> = ({
           })}
         </div>
       </div>
-
-      {/* Status Toggle - Only visible when editing */}
-      {isEditing && (
-        <div>
-          <label className="block text-xs font-semibold text-gray-800 mb-1.5">
-            {t("Status")}
-          </label>
-          <div className="grid grid-cols-2 gap-2">
-            <button
-              type="button"
-              onClick={() => setStatus("Active")}
-              className={`flex items-center justify-center gap-1.5 py-2 px-2 rounded-lg border text-xs font-semibold transition-all cursor-pointer ${
-                status === "Active"
-                  ? "border-emerald-400 bg-emerald-50 text-emerald-700 ring-1 ring-emerald-400"
-                  : "border-gray-200 bg-gray-50/60 text-gray-600 hover:border-gray-300 hover:bg-gray-100"
-              }`}
-            >
-              <FaCheckCircle className="text-xs shrink-0 text-emerald-600" />
-              <span>{t("Active")}</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setStatus("Inactive")}
-              className={`flex items-center justify-center gap-1.5 py-2 px-2 rounded-lg border text-xs font-semibold transition-all cursor-pointer ${
-                status === "Inactive"
-                  ? "border-rose-400 bg-rose-50 text-rose-700 ring-1 ring-rose-400"
-                  : "border-gray-200 bg-gray-50/60 text-gray-600 hover:border-gray-300 hover:bg-gray-100"
-              }`}
-            >
-              <FaTimesCircle className="text-xs shrink-0 text-rose-600" />
-              <span>{t("Inactive")}</span>
-            </button>
-          </div>
-        </div>
-      )}
-    </DrawerModal>
+    </CategoryDrawerModal>
   );
 };
 
