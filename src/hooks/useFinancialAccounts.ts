@@ -62,6 +62,9 @@ export const extractMfsAccounts = (raw: any): MfsUserItem[] => {
     const name = m.name || m.accountName || "";
     const phone = m.phoneNumber || m.phone || m.mfsPhone || "";
     const mfsName = method ? `${method}${name && name !== "-" ? ` (${name})` : ""}` : name || "MFS";
+    const opening = Number(m.openingBalance ?? m.opening_balance ?? 0);
+    const current = Number(m.currentBalance ?? m.current_balance ?? m.balance ?? m.amount ?? opening);
+    const rawStatus = m.status !== undefined && m.status !== null ? String(m.status).trim() : "Active";
     return {
       id,
       mfsId: id,
@@ -71,9 +74,9 @@ export const extractMfsAccounts = (raw: any): MfsUserItem[] => {
       mfsPhone: phone,
       method,
       mfsName,
-      openingBalance: Number(m.openingBalance ?? 0),
-      currentBalance: Number(m.currentBalance ?? m.balance ?? 0),
-      status: m.status ? String(m.status).trim() : "Inactive",
+      openingBalance: opening,
+      currentBalance: current,
+      status: rawStatus || "Active",
     };
   });
 };
@@ -112,6 +115,11 @@ export interface UseFinancialAccountsOptions {
   mfsOptions?: Omit<UseQueryOptions<any>, "queryKey" | "queryFn">;
 }
 
+export const isAccountActive = (acc: { status?: string | number | null } | null | undefined): boolean => {
+  const s = String(acc?.status ?? "").toLowerCase().trim();
+  return s === "active" || s === "1" || s === "y" || s === "true" || !s;
+};
+
   // Composite hook that provides normalized Bank and MFS accounts with shared caching.
 
 export const useFinancialAccounts = (options?: UseFinancialAccountsOptions) => {
@@ -126,9 +134,21 @@ export const useFinancialAccounts = (options?: UseFinancialAccountsOptions) => {
     return extractMfsAccounts(mfsQuery.data);
   }, [mfsQuery.data]);
 
+  const activeBankAccounts = useMemo(
+    () => registeredBankAccounts.filter(isAccountActive),
+    [registeredBankAccounts]
+  );
+
+  const activeMfsAccounts = useMemo(
+    () => registeredMfsAccounts.filter(isAccountActive),
+    [registeredMfsAccounts]
+  );
+
   return {
     registeredBankAccounts,
     registeredMfsAccounts,
+    activeBankAccounts,
+    activeMfsAccounts,
     bankQuery,
     mfsQuery,
     isLoading: bankQuery.isLoading || mfsQuery.isLoading,

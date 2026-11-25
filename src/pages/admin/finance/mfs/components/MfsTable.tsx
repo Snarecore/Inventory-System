@@ -23,8 +23,6 @@ import { exportMfsAccountsToExcel } from "@/utils/excel-export";
 import { showSuccessToast, showErrorToast } from "@/utils/toast-utils";
 import { useUpdateMfsUserStatusMutation } from "@/hooks/useMfsQueries";
 import { useDebounce } from "@/hooks/useDebounce";
-import { methodMeta } from "@/services/mfs-service";
-import MfsLogo from "./MfsLogo";
 import { AccountStatusBadge, AccountStatusTabs } from "@/pages/admin/finance/components";
 import { FiChevronDown } from "react-icons/fi";
 import { usePermission } from "@/hooks/usePermission";
@@ -35,7 +33,7 @@ interface MfsTableProps {
   onAddNew: () => void;
 }
 
-type SortKey = "method" | "name" | "phoneNumber" | "currentBalance" | "status";
+type SortKey = "method" | "name" | "phoneNumber" | "openingBalance" | "currentBalance" | "status";
 
 export const MfsTable: React.FC<MfsTableProps> = ({ mfsAccounts, isLoading, onAddNew }) => {
   const { canCreate, canUpdate } = usePermission();
@@ -81,8 +79,8 @@ export const MfsTable: React.FC<MfsTableProps> = ({ mfsAccounts, isLoading, onAd
 
   const sorted = [...filtered].sort((a, b) => {
     const factor = sortDir === "asc" ? 1 : -1;
-    if (sortKey === "currentBalance") {
-      return (Number(a.currentBalance || 0) - Number(b.currentBalance || 0)) * factor;
+    if (sortKey === "currentBalance" || sortKey === "openingBalance") {
+      return (Number(a[sortKey] || 0) - Number(b[sortKey] || 0)) * factor;
     }
     const valA = String(a[sortKey] || "").toLowerCase();
     const valB = String(b[sortKey] || "").toLowerCase();
@@ -158,7 +156,7 @@ export const MfsTable: React.FC<MfsTableProps> = ({ mfsAccounts, isLoading, onAd
                 setSearchQuery(value);
                 setCurrentPage(1);
               }}
-              placeholder="Search wallet, provider, phone..."
+              placeholder="Search provider, account name, number..."
             />
           </div>
 
@@ -172,7 +170,7 @@ export const MfsTable: React.FC<MfsTableProps> = ({ mfsAccounts, isLoading, onAd
               totalCount={mfsAccounts.length}
               activeCount={activeCount}
               inactiveCount={inactiveCount}
-              allLabel="All Wallets"
+              allLabel="All Accounts"
             />
             <ExcelExportButton onClick={handleExport} title="Download MFS Accounts Excel Report" />
           </div>
@@ -182,15 +180,16 @@ export const MfsTable: React.FC<MfsTableProps> = ({ mfsAccounts, isLoading, onAd
       <TableScroll>
         {isLoading && mfsAccounts.length === 0 ? (
           <div className="p-3">
-            <TableSkeleton columnCount={7} rowCount={6} />
+            <TableSkeleton columnCount={8} rowCount={6} />
           </div>
         ) : (
           <Table minWidth={850}>
             <TableHead>
               <TableTh width={50} align="center">SL</TableTh>
-              <TableTh width={180}>{renderSort("Provider", "method")}</TableTh>
+              <TableTh width={180}>{renderSort("MFS Provider", "method")}</TableTh>
               <TableTh width={220}>{renderSort("Account Name", "name")}</TableTh>
-              <TableTh width={180}>{renderSort("Phone Number", "phoneNumber")}</TableTh>
+              <TableTh width={180}>{renderSort("Phone / Account No", "phoneNumber")}</TableTh>
+              <TableTh width={140} align="right">{renderSort("Opening Balance", "openingBalance", "right")}</TableTh>
               <TableTh width={150} align="right">{renderSort("Current Balance", "currentBalance", "right")}</TableTh>
               <TableTh width={110} align="center">{renderSort("Status", "status", "center")}</TableTh>
               <TableTh width={80} align="center">Action</TableTh>
@@ -198,8 +197,6 @@ export const MfsTable: React.FC<MfsTableProps> = ({ mfsAccounts, isLoading, onAd
             <TableBody>
               {rows.length > 0 ? (
                 rows.map((item, idx) => {
-                  const brand = methodMeta(item.method);
-
                   return (
                     <TableRow key={item.id || idx}>
                       <TableCell align="center" className="text-black font-normal">
@@ -207,21 +204,26 @@ export const MfsTable: React.FC<MfsTableProps> = ({ mfsAccounts, isLoading, onAd
                       </TableCell>
 
                       <TableCell>
-                        <div className="flex items-center gap-2">
-                          <MfsLogo method={item.method} size={26} />
-                          <span className="font-bold text-xs text-gray-900">{brand.label}</span>
-                        </div>
+                        <span className="text-black block truncate text-xs font-semibold">
+                          {item.method || item.mfsName || "MFS"}
+                        </span>
                       </TableCell>
 
                       <TableCell>
-                        <span className="font-semibold text-xs text-gray-900 block truncate">
+                        <span className="font-medium text-black truncate block">
                           {item.name || "N/A"}
                         </span>
                       </TableCell>
 
                       <TableCell>
-                        <span className="text-xs text-gray-900 font-medium">
+                        <span className="text-xs text-black font-medium truncate block">
                           {item.phoneNumber || "N/A"}
+                        </span>
+                      </TableCell>
+
+                      <TableCell align="right">
+                        <span className="text-gray-700 text-xs font-semibold">
+                          ৳ {formatMoney(item.openingBalance)}
                         </span>
                       </TableCell>
 
@@ -250,7 +252,7 @@ export const MfsTable: React.FC<MfsTableProps> = ({ mfsAccounts, isLoading, onAd
                 })
               ) : (
                 <tr>
-                  <td colSpan={7} className="py-12 text-center">
+                  <td colSpan={8} className="py-12 text-center">
                     <EmptyState
                       title="No MFS accounts found"
                       description="There are no Mobile Financial Service accounts registered yet or matching your search."

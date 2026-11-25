@@ -183,7 +183,7 @@ export const useTradePayment = ({
     (mfsId: string) => {
       setSelectedMfsId(mfsId);
       const found = registeredMfsAccounts.find(
-        (m) => String(m.id) === String(mfsId)
+        (m) => String(m.id ?? m.mfsId ?? "") === String(mfsId)
       );
       if (found) {
         setMfsName(found.name || found.method || "MFS");
@@ -208,14 +208,19 @@ export const useTradePayment = ({
     setMfsAmount("");
   }, [grandTotal]);
 
+  const isAccountActive = (acc: TradePaymentAccount) => {
+    const s = String((acc as any)?.status ?? "").toLowerCase().trim();
+    return s === "active" || s === "1" || s === "y" || s === "true" || !s;
+  };
+
   const handlePayFullBank = useCallback(() => {
     if (!selectedBankId) {
-      if (registeredBankAccounts.length > 0) {
-        const firstBank = registeredBankAccounts[0];
+      const firstBank = registeredBankAccounts.find(isAccountActive);
+      if (firstBank) {
         const bId = String(firstBank.bankId ?? firstBank.id ?? "");
         handleSelectBank(bId);
       } else {
-        showErrorToast("Please select / register a bank account first");
+        showErrorToast("Please select / register an active bank account first");
         return;
       }
     }
@@ -226,12 +231,12 @@ export const useTradePayment = ({
 
   const handlePayFullMfs = useCallback(() => {
     if (!selectedMfsId) {
-      if (registeredMfsAccounts.length > 0) {
-        const firstMfs = registeredMfsAccounts[0];
-        const mId = String(firstMfs.id ?? "");
+      const firstMfs = registeredMfsAccounts.find(isAccountActive);
+      if (firstMfs) {
+        const mId = String(firstMfs.id ?? firstMfs.mfsId ?? "");
         handleSelectMfs(mId);
       } else {
-        showErrorToast("Please select / register an MFS account first");
+        showErrorToast("Please select / register an active MFS account first");
         return;
       }
     }

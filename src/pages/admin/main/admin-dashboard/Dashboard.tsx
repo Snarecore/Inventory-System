@@ -124,7 +124,10 @@ const AdminDashboard: React.FC = () => {
 
     // 1. Active Bank Accounts total balance
     const liveBank = registeredBankAccounts
-      .filter((b) => String(b.status || '').toLowerCase() === 'active')
+      .filter((b) => {
+        const s = String(b.status || '').toLowerCase().trim();
+        return s === 'active' || s === '1' || s === 'y' || s === 'true' || !s;
+      })
       .reduce(
         (sum, b) => sum + (Number(b.currentBalance ?? b.openingBalance ?? 0) || 0),
         0
@@ -132,7 +135,10 @@ const AdminDashboard: React.FC = () => {
 
     // 2. Active MFS Accounts total balance
     const liveMfs = registeredMfsAccounts
-      .filter((m) => String(m.status || '').toLowerCase() === 'active')
+      .filter((m) => {
+        const s = String(m.status || '').toLowerCase().trim();
+        return s === 'active' || s === '1' || s === 'y' || s === 'true' || !s;
+      })
       .reduce(
         (sum, m) => sum + (Number(m.currentBalance ?? m.openingBalance ?? 0) || 0),
         0
@@ -250,9 +256,15 @@ const AdminDashboard: React.FC = () => {
     const finalDena = liveDena > 0 ? liveDena : (Number(base?.denaPawnaDena ?? base?.denaPawnaPabo) || 0);
     const finalPawna = livePawna > 0 ? livePawna : (Number(base?.denaPawnaPawna ?? base?.denaPawnaDibo) || 0);
 
-    const finalCash = liveCash > 0 ? liveCash : (Number(base?.cashBalance) || 0);
-    const finalBank = liveBank > 0 ? liveBank : (Number(base?.bankBalance) || 0);
-    const finalMfs = liveMfs > 0 ? liveMfs : (Number(base?.mfsBalance) || 0);
+    const backendCash = typeof liveCashBalance === 'number'
+      ? liveCashBalance
+      : (Number(base?.cashBalance) || 0);
+    const backendBank = Number(base?.bankBalance) || 0;
+    const backendMfs = Number(base?.mfsBalance) || 0;
+
+    const finalCash = backendCash;
+    const finalBank = liveBank > 0 ? liveBank : (backendBank !== 0 ? backendBank : liveBank);
+    const finalMfs = liveMfs > 0 ? liveMfs : (backendMfs !== 0 ? backendMfs : liveMfs);
 
     const finalTotalBalance = finalCash + finalBank + finalMfs;
     const finalTotalReceivable = finalCustomerDue + finalPawna;

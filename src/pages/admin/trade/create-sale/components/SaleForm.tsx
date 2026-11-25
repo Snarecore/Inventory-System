@@ -22,6 +22,7 @@ import {
   bankInfoListQueryKey,
   mfsUserListQueryKey,
   dashboardQueryKey,
+  userDashboardQueryKey,
   financialTransactionQueryKey,
   financeDashboardQueryKey,
   productQueryKey,
@@ -47,7 +48,7 @@ import TradeNotesInput from "@/components/trade/TradeNotesInput";
 import { useSalesQuery } from "@/pages/admin/trade/sales/hooks/useSalesQueries";
 import { useFinancialLedger } from "@/hooks/useFinancialLedger";
 import { useCustomerInvoicesDue } from "@/hooks/useCustomerInvoicesDue";
-import { cashLeg, bankLeg, mfsLeg, type TradeTender } from "@/services/financial-ledger-service";
+import { cashLeg, bankLeg, mfsLeg, type TradeTender, postSingleFinancialTransaction, yearmonthOf } from "@/services/financial-ledger-service";
 import { useTradeProducts } from "@/hooks/useTradeProducts";
 import { useTradeParties } from "@/hooks/useTradeParties";
 import { useTradeLineItems, type TradeLineItem } from "@/hooks/useTradeLineItems";
@@ -72,6 +73,7 @@ export const CreateSaleForm: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { id: routeId } = useParams();
+  const editId = routeId;
   const queryClient = useQueryClient();
   const { postMutation, handleApiMutation } = useAPI();
   const { recordTradeLedger } = useFinancialLedger();
@@ -146,6 +148,20 @@ export const CreateSaleForm: React.FC = () => {
     allProducts,
   });
 
+  // Track original payment tenders when editing an invoice to post financial balance deltas
+  const originalTendersRef = useRef<{
+    cash: number;
+    bank: number;
+    bankId: string;
+    mfs: number;
+    mfsId: string;
+  }>({ cash: 0, bank: 0, bankId: "", mfs: 0, mfsId: "" });
+  const isPaymentHydratedRef = useRef(false);
+
+  useEffect(() => {
+    isPaymentHydratedRef.current = false;
+  }, [routeId]);
+
   // 3. Fetch Registered Bank and MFS Accounts (Shared cache with 5-minute staleTime)
   const { registeredBankAccounts, registeredMfsAccounts } = useFinancialAccounts();
 
@@ -200,20 +216,37 @@ export const CreateSaleForm: React.FC = () => {
       // Split payments directly from backend data
       const cash = data.cashReceived ?? (data.paymentType === "CASH" && !data.bankId && !data.mfsId ? data.paidAmount : "");
       const bank = data.cardReceived ?? (data.bankId ? data.paidAmount : "");
-      const mfs = data.mfsReceived ?? (data.mfsId ? data.paidAmount : "");
+      const mfs = data.mfsReceived ?? (data.mfsId ? data.paidAmount : (String(data.paymentType || "").toUpperCase() === "MFS" ? data.paidAmount : ""));
+
+      const initCash = cash !== "" && cash !== null && Number(cash) > 0 ? String(cash) : "";
+      const initBank = bank !== "" && bank !== null && Number(bank) > 0 ? String(bank) : "";
+      const initMfs = mfs !== "" && mfs !== null && Number(mfs) > 0 ? String(mfs) : "";
+      const initBankId = data.bankId ? String(data.bankId) : "";
+      const initMfsId = data.mfsId ? String(data.mfsId) : "";
 
       initializePayment({
-        cashAmount: cash !== "" && cash !== null && Number(cash) > 0 ? String(cash) : "",
-        bankAmount: bank !== "" && bank !== null && Number(bank) > 0 ? String(bank) : "",
-        mfsAmount: mfs !== "" && mfs !== null && Number(mfs) > 0 ? String(mfs) : "",
-        selectedBankId: data.bankId ? String(data.bankId) : "",
+        cashAmount: initCash,
+        bankAmount: initBank,
+        mfsAmount: initMfs,
+        selectedBankId: initBankId,
         bankName: data.bankName || "",
         accountNo: data.accountNo || "",
         bankRef: data.bankAccountName || "",
-        selectedMfsId: data.mfsId ? String(data.mfsId) : "",
+        selectedMfsId: initMfsId,
         mfsName: data.mfsName || "bKash",
         mfsPhone: data.mfsPhone || "",
       });
+
+      if (!isPaymentHydratedRef.current) {
+        originalTendersRef.current = {
+          cash: Number(initCash || 0),
+          bank: Number(initBank || 0),
+          bankId: initBankId,
+          mfs: Number(initMfs || 0),
+          mfsId: initMfsId,
+        };
+        isPaymentHydratedRef.current = true;
+      }
 
       // Customer
       const custId = data.customerId !== undefined && data.customerId !== null ? Number(data.customerId) : undefined;
@@ -530,7 +563,21 @@ export const CreateSaleForm: React.FC = () => {
       }));
 
       const selectedMfsObj = numMfs > 0
-        ? registeredMfsAccounts.find((m) => String(m.id) === String(selectedMfsId))
+        ? (registeredMfsAccounts.find(
+            (m) =>
+              String(m.id ?? "").trim() === String(selectedMfsId).trim() ||
+              String(m.mfsId ?? "").trim() === String(selectedMfsId).trim() ||
+              String(m.phoneNumber ?? m.phone ?? "").trim() === String(selectedMfsId).trim()
+          ) || {
+            id: selectedMfsId,
+            mfsId: selectedMfsId,
+            method: mfsName || "MFS",
+            name: mfsName || "",
+            phoneNumber: mfsPhone || "",
+            phone: mfsPhone || "",
+            currentBalance: 0,
+            status: "Active",
+          })
         : null;
 
       const selectedBankObj = numBank > 0
@@ -561,9 +608,10 @@ export const CreateSaleForm: React.FC = () => {
         cardReceived: numBank,
         posName: null,
         mfsReceived: numMfs,
-        mfsId: numMfs > 0 ? selectedMfsId : null,
-        mfsName: numMfs > 0 ? (mfsName || null) : null,
-        mfsPhone: numMfs > 0 ? (mfsPhone || null) : null,
+        mfsId: numMfs > 0 ? (selectedMfsObj?.id ?? selectedMfsId) : null,
+        mfsName: numMfs > 0 ? (selectedMfsObj?.name || mfsName || selectedMfsObj?.method || "MFS") : null,
+        mfsMethod: numMfs > 0 ? (selectedMfsObj?.method || mfsName || "MFS") : null,
+        mfsPhone: numMfs > 0 ? (selectedMfsObj?.phoneNumber || mfsPhone || null) : null,
         customerPaid: Number(cashGiven) || (numCash > 0 ? numCash : totalPaid),
         returnAmount: changeReturnAmount,
         bankId: numBank > 0 ? selectedBankId : null,
@@ -612,10 +660,6 @@ export const CreateSaleForm: React.FC = () => {
           customersDueQueryKey,
           customerInvoicesDueQueryKey,
           collectionReportQueryKey,
-          cashBalanceQueryKey,
-          bankInfoListQueryKey,
-          mfsUserListQueryKey,
-          dashboardQueryKey,
         ],
         showSuccessMessage: true,
         showErrorMessage: true,
@@ -625,8 +669,8 @@ export const CreateSaleForm: React.FC = () => {
         const res: any = (result.data as any)?.data !== undefined ? (result.data as any).data : result.data;
         const savedId = res?.id || res?.saleId || editId || invoiceNo;
 
-        // Post financial transaction INCOME to update cash/bank balances ONLY for fresh sale creation.
-        // In Edit mode, the backend updates the sale and recalibrates all balances and stock automatically.
+        // Post financial transaction INCOME to update cash/bank/mfs balances for fresh sale creation.
+        // In Edit mode, post delta adjustment transactions to calibrate balances when payments change.
         if (!isEditMode && totalPaid > 0) {
           try {
             const tenders: TradeTender[] = [
@@ -651,6 +695,198 @@ export const CreateSaleForm: React.FC = () => {
           } catch (ledgerErr) {
             console.error("Sale saved, but financial ledger posting encountered an error:", ledgerErr);
           }
+        } else if (isEditMode) {
+          try {
+            const orig = originalTendersRef.current;
+            const when = salesDate ? new Date(salesDate) : new Date();
+            const validWhen = isNaN(when.getTime()) ? new Date() : when;
+            const ym = yearmonthOf(validWhen);
+            const isoDate = validWhen.toISOString();
+            const cleanInvoiceNo = invoiceNo.trim();
+            const cleanPartyId = finalCustomerId && finalCustomerId !== 0 ? String(finalCustomerId) : "";
+            const productSummary = lineItems.map((li) => li.productName).filter(Boolean).join(", ");
+
+            // 1. CASH adjustment
+            const cashDiff = Number((numCash - orig.cash).toFixed(2));
+            if (cashDiff !== 0) {
+              await postSingleFinancialTransaction({
+                type: cashDiff > 0 ? "INCOME" : "EXPENSE",
+                amount: Math.abs(cashDiff),
+                collectionAmount: Math.abs(cashDiff),
+                dueAmount: 0,
+                categoryId: cleanPartyId,
+                accountType: "CASH",
+                account: "Cash",
+                accountNumber: null,
+                bill_ref: `${cleanInvoiceNo}-adj-cash-${Date.now()}`,
+                refNo: cleanInvoiceNo,
+                head: "Sales (Edit Adjustment)",
+                items: productSummary,
+                notes: `Sale edit payment adjustment: Cash ${cashDiff > 0 ? "+" : ""}${cashDiff}`,
+                transactionDate: isoDate,
+                yearmonth: ym,
+              });
+            }
+
+            // 2. BANK adjustment
+            const origBankObj = registeredBankAccounts.find(
+              (b) => String(b.bankId ?? b.id) === String(orig.bankId)
+            );
+            const isSameBankAccount = String(orig.bankId || "") === String(selectedBankId || "");
+
+            if (isSameBankAccount) {
+              const bankDiff = Number((numBank - orig.bank).toFixed(2));
+              if (bankDiff !== 0) {
+                const leg = bankLeg(selectedBankObj || origBankObj);
+                await postSingleFinancialTransaction({
+                  type: bankDiff > 0 ? "INCOME" : "EXPENSE",
+                  amount: Math.abs(bankDiff),
+                  collectionAmount: Math.abs(bankDiff),
+                  dueAmount: 0,
+                  categoryId: cleanPartyId,
+                  accountType: leg.accountType,
+                  account: leg.account,
+                  accountNumber: leg.accountNumber,
+                  bill_ref: `${cleanInvoiceNo}-adj-bank-${Date.now()}`,
+                  refNo: cleanInvoiceNo,
+                  head: "Sales (Edit Adjustment)",
+                  items: productSummary,
+                  notes: `Sale edit payment adjustment: Bank ${bankDiff > 0 ? "+" : ""}${bankDiff}`,
+                  transactionDate: isoDate,
+                  yearmonth: ym,
+                });
+              }
+            } else {
+              // Bank account changed: reverse original from old bank, credit new to selected bank
+              if (orig.bank > 0) {
+                const oldLeg = bankLeg(origBankObj);
+                await postSingleFinancialTransaction({
+                  type: "EXPENSE",
+                  amount: orig.bank,
+                  collectionAmount: orig.bank,
+                  dueAmount: 0,
+                  categoryId: cleanPartyId,
+                  accountType: oldLeg.accountType,
+                  account: oldLeg.account,
+                  accountNumber: oldLeg.accountNumber,
+                  bill_ref: `${cleanInvoiceNo}-adj-bank-rev-${Date.now()}`,
+                  refNo: cleanInvoiceNo,
+                  head: "Sales (Edit Adjustment)",
+                  items: productSummary,
+                  notes: `Sale edit payment adjustment: Reverse previous bank payment (${orig.bank})`,
+                  transactionDate: isoDate,
+                  yearmonth: ym,
+                });
+              }
+              if (numBank > 0) {
+                const newLeg = bankLeg(selectedBankObj);
+                await postSingleFinancialTransaction({
+                  type: "INCOME",
+                  amount: numBank,
+                  collectionAmount: numBank,
+                  dueAmount: 0,
+                  categoryId: cleanPartyId,
+                  accountType: newLeg.accountType,
+                  account: newLeg.account,
+                  accountNumber: newLeg.accountNumber,
+                  bill_ref: `${cleanInvoiceNo}-adj-bank-new-${Date.now()}`,
+                  refNo: cleanInvoiceNo,
+                  head: "Sales (Edit Adjustment)",
+                  items: productSummary,
+                  notes: `Sale edit payment adjustment: New bank payment (+${numBank})`,
+                  transactionDate: isoDate,
+                  yearmonth: ym,
+                });
+              }
+            }
+
+            // 3. MFS adjustment
+            const origMfsObj = registeredMfsAccounts.find(
+              (m) =>
+                String(m.id ?? "").trim() === String(orig.mfsId).trim() ||
+                String(m.mfsId ?? "").trim() === String(orig.mfsId).trim() ||
+                String(m.phoneNumber ?? m.phone ?? "").trim() === String(orig.mfsId).trim()
+            );
+            const isSameMfsAccount = String(orig.mfsId || "").trim() === String(selectedMfsId || "").trim();
+
+            const postMfsAdjustment = async (
+              txType: "INCOME" | "EXPENSE",
+              amt: number,
+              wallet: any,
+              billSuffix: string,
+              noteText: string
+            ) => {
+              const leg = mfsLeg(wallet);
+              const res = await postSingleFinancialTransaction({
+                type: txType,
+                amount: amt,
+                collectionAmount: amt,
+                dueAmount: 0,
+                categoryId: cleanPartyId,
+                accountType: leg.accountType,
+                account: leg.account,
+                accountNumber: leg.accountNumber,
+                phoneNumber: wallet?.phoneNumber || wallet?.phone || leg.accountNumber,
+                phone: wallet?.phoneNumber || wallet?.phone || leg.accountNumber,
+                mfsId: wallet?.id || wallet?.mfsId,
+                bill_ref: `${cleanInvoiceNo}-${billSuffix}-${Date.now()}`,
+                refNo: cleanInvoiceNo,
+                head: "Sales (Edit Adjustment)",
+                items: productSummary,
+                notes: noteText,
+                transactionDate: isoDate,
+                yearmonth: ym,
+              });
+              if (!res.ok) {
+                console.error("MFS edit ledger adjustment failed:", res.msg);
+              }
+            };
+
+            if (isSameMfsAccount) {
+              const mfsDiff = Number((numMfs - orig.mfs).toFixed(2));
+              if (mfsDiff !== 0) {
+                const targetWallet = selectedMfsObj || origMfsObj;
+                await postMfsAdjustment(
+                  mfsDiff > 0 ? "INCOME" : "EXPENSE",
+                  Math.abs(mfsDiff),
+                  targetWallet,
+                  "adj-mfs",
+                  `Sale edit payment adjustment: MFS ${mfsDiff > 0 ? "+" : ""}${mfsDiff}`
+                );
+              }
+            } else {
+              // MFS account changed: reverse original from old MFS, credit new to selected MFS
+              if (orig.mfs > 0) {
+                await postMfsAdjustment(
+                  "EXPENSE",
+                  orig.mfs,
+                  origMfsObj,
+                  "adj-mfs-rev",
+                  `Sale edit payment adjustment: Reverse previous MFS payment (${orig.mfs})`
+                );
+              }
+              if (numMfs > 0) {
+                await postMfsAdjustment(
+                  "INCOME",
+                  numMfs,
+                  selectedMfsObj,
+                  "adj-mfs-new",
+                  `Sale edit payment adjustment: New MFS payment (+${numMfs})`
+                );
+              }
+            }
+
+            // Update originalTendersRef with new values in case user submits again without navigating away
+            originalTendersRef.current = {
+              cash: numCash,
+              bank: numBank,
+              bankId: selectedBankId,
+              mfs: numMfs,
+              mfsId: selectedMfsId,
+            };
+          } catch (ledgerErr) {
+            console.error("Sale edit adjustment error:", ledgerErr);
+          }
         }
 
         // Invalidate all related caches actively so UI immediately displays fresh calculations from backend
@@ -662,6 +898,7 @@ export const CreateSaleForm: React.FC = () => {
           queryClient.invalidateQueries({ queryKey: [bankInfoListQueryKey], refetchType: "all" }),
           queryClient.invalidateQueries({ queryKey: [mfsUserListQueryKey], refetchType: "all" }),
           queryClient.invalidateQueries({ queryKey: [dashboardQueryKey], refetchType: "all" }),
+          queryClient.invalidateQueries({ queryKey: [userDashboardQueryKey], refetchType: "all" }),
           queryClient.invalidateQueries({ queryKey: [financeDashboardQueryKey], refetchType: "all" }),
           queryClient.invalidateQueries({ queryKey: [financialTransactionQueryKey], refetchType: "all" }),
           queryClient.invalidateQueries({ queryKey: [customersDueQueryKey], refetchType: "all" }),

@@ -75,6 +75,7 @@
         "updateBankAccountUrl": "update-bank-account"
     },
     "mfs": {
+        "mfsListUrl": "get-mfs-list",
         "mfsUserListUrl": "mfs-user-list",
         "insertMfsUserUrl": "insert-mfs-user",
         "updateMfsUserUrl": "mfs-user-update",

@@ -89,15 +89,20 @@ export const bankLeg = (bank: BankAccountItem | any): TenderLeg => ({
  * MFS (bKash / Nagad / Rocket) leg builder
  */
 export const mfsLeg = (wallet: MfsAccountItem | any): TenderLeg => {
-  const method = wallet?.method || "MFS";
-  const holder = wallet?.phoneNumber || wallet?.name || "";
+  const method = wallet?.method || wallet?.mfsMethod || wallet?.mfsName || "MFS";
+  const phone = wallet?.phoneNumber || wallet?.phone || wallet?.mobileNo || wallet?.mfsPhone || "";
+  const holder = phone || wallet?.name || "";
   const nameLabel = [method, holder].filter(Boolean).join(" - ") || "MFS";
-  const numericId = wallet?.id != null ? String(wallet.id) : null;
+  const numericId = wallet?.id != null ? String(wallet.id) : (wallet?.mfsId != null ? String(wallet.mfsId) : null);
+
+  // In backend ledger, MFS account resolution primarily matches the MFS account record ID,
+  // with fallback to mobile phone number.
+  const resolvedAccNo = numericId || phone || null;
 
   return {
     accountType: "MFS",
     account: nameLabel,
-    accountNumber: numericId,
+    accountNumber: resolvedAccNo,
   };
 };
 
@@ -105,18 +110,46 @@ export const mfsLeg = (wallet: MfsAccountItem | any): TenderLeg => {
  * Posts a single row to financial ledger.
  */
 export const postSingleFinancialTransaction = async (
-  payload: Omit<FinancialTransactionPayload, "accessUser" | "osType">
+  payload: Omit<FinancialTransactionPayload, "accessUser" | "osType"> & Record<string, any>
 ): Promise<FinancialTransactionResult> => {
   const endpoint = apiConfig.finance?.insertFinancialTransactionUrl;
-  const billRef = payload.bill_ref || `${Date.now()}${Math.floor(100 + Math.random() * 900)}`;
+  const billRef = payload.bill_ref || (payload as any).billRef || `${Date.now()}${Math.floor(100 + Math.random() * 900)}`;
 
   try {
-    const fullPayload: FinancialTransactionPayload = {
+    const fullPayload: any = {
       ...payload,
       bill_ref: billRef,
+      billRef: billRef,
+      account_number: payload.accountNumber,
+      accountNumber: payload.accountNumber,
+      accountNo: payload.accountNumber,
+      paymentType: payload.accountType,
+      payment_type: payload.accountType,
+      account_type: payload.accountType,
+      date: payload.transactionDate,
+      transaction_date: payload.transactionDate,
       accessUser: buildAccessUser(),
       osType: "WEB",
     };
+
+    if (payload.accountType === "MFS") {
+      const legAny = payload as any;
+      const phone = legAny.phoneNumber || legAny.phone || legAny.mobileNo || legAny.mfsPhone || "";
+      const mfsId = legAny.mfsId || legAny.id || legAny.mfsUserId || payload.accountNumber;
+      if (phone) {
+        fullPayload.phoneNumber = phone;
+        fullPayload.phone = phone;
+        fullPayload.mobileNo = phone;
+        fullPayload.mfsPhone = phone;
+      }
+      if (mfsId) {
+        fullPayload.mfsId = mfsId;
+        fullPayload.mfsUserId = mfsId;
+        fullPayload.accountNumber = String(mfsId);
+        fullPayload.account_number = String(mfsId);
+        fullPayload.accountNo = String(mfsId);
+      }
+    }
 
     const res: any = await postData({
       url: endpoint,

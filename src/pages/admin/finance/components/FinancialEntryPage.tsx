@@ -163,7 +163,7 @@ export const FinancialEntryPage: React.FC<FinancialEntryPageProps> = ({ mode }) 
 
   const amountNum = Number(amount || 0);
   const afterBalance = isExpense ? sourceBalance - amountNum : sourceBalance + amountNum;
-  const isOverBalance = isExpense && amountNum > 0 && sourceBalance > 0 && amountNum > sourceBalance;
+  const isOverBalance = isExpense && amountNum > 0 && amountNum > sourceBalance;
   const isFutureDate = date > todayStr;
 
   // Categories list & frequent chips
@@ -231,6 +231,9 @@ export const FinancialEntryPage: React.FC<FinancialEntryPageProps> = ({ mode }) 
 
     if (!amountNum || amountNum <= 0) {
       newErrors.amount = "Please enter a valid amount greater than 0";
+    } else if (isExpense && amountNum > sourceBalance) {
+      newErrors.amount = `Expense amount exceeds available balance in ${paymentMethod} (৳ ${formatMoney(sourceBalance)})`;
+      showErrorToast(`Insufficient balance in ${paymentMethod}. Available balance: ৳ ${formatMoney(sourceBalance)}.`);
     }
     if (!selectedCategory) {
       newErrors.category = `Please select an ${config.categoryType.toLowerCase()} category`;
@@ -406,7 +409,7 @@ export const FinancialEntryPage: React.FC<FinancialEntryPageProps> = ({ mode }) 
                     if (errors.amount) setErrors((prev) => ({ ...prev, amount: "" }));
                   }}
                   placeholder="0.00"
-                  error={errors.amount}
+                  error={errors.amount || (isOverBalance ? `Exceeds available balance (৳ ${formatMoney(sourceBalance)})` : undefined)}
                   icon={<span className="text-gray-700 font-bold text-xs select-none">৳</span>}
                   inputClass="font-bold [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                 />
@@ -541,12 +544,17 @@ export const FinancialEntryPage: React.FC<FinancialEntryPageProps> = ({ mode }) 
 
             {/* Insufficient Balance Alert (Expense only) */}
             {isOverBalance && (
-              <div className="p-2.5 rounded-xl bg-amber-50/90 border border-amber-200 text-amber-900 text-xs flex items-start gap-2">
-                <FaExclamationTriangle className="text-amber-500 text-sm mt-0.5 shrink-0" />
+              <div className="p-3 rounded-xl bg-rose-50 border border-rose-300 text-rose-900 text-xs flex items-start gap-2.5 shadow-2xs">
+                <FaExclamationTriangle className="text-rose-600 text-base mt-0.5 shrink-0" />
                 <div className="leading-relaxed">
-                  <b>Insufficient Balance Warning:</b> This expense of <b>৳ {formatMoney(amountNum)}</b> exceeds the
-                  available balance in {paymentMethod} (৳ {formatMoney(sourceBalance)}).
-                  The standing balance will turn negative upon recording.
+                  <div className="font-bold text-rose-800 text-[13px] mb-0.5">
+                    Insufficient Balance Warning (অপর্যাপ্ত ব্যালেন্স)
+                  </div>
+                  This expense of <b>৳ {formatMoney(amountNum)}</b> exceeds the available balance in{" "}
+                  <b>{paymentMethod}</b> (<b>৳ {formatMoney(sourceBalance)}</b>).
+                  <span className="block mt-1 font-semibold text-rose-700">
+                    Expense amount cannot exceed available balance. Please reduce the amount or select an account with sufficient balance to save.
+                  </span>
                 </div>
               </div>
             )}
@@ -583,6 +591,11 @@ export const FinancialEntryPage: React.FC<FinancialEntryPageProps> = ({ mode }) 
                       >
                         ৳ {formatMoney(afterBalance)}
                       </b>
+                      {isOverBalance && (
+                        <span className="ml-1 text-rose-600 font-bold text-[10.5px] uppercase">
+                          [Exceeds Balance]
+                        </span>
+                      )}
                       )
                     </span>
                   </div>
@@ -612,10 +625,17 @@ export const FinancialEntryPage: React.FC<FinancialEntryPageProps> = ({ mode }) 
                   type="submit"
                   size="sm"
                   isLoading={insertMutation.isPending}
-                  disabled={insertMutation.isPending || !canCreate(isExpense ? "expense" : "income")}
-                  color="var(--color-primary)"
-                  hoverColor="var(--color-primary-hover)"
-                  buttonClass="!text-xs !py-1.5 !px-3 !rounded-lg font-semibold shadow-2xs !text-white"
+                  disabled={
+                    insertMutation.isPending ||
+                    !canCreate(isExpense ? "expense" : "income") ||
+                    isOverBalance
+                  }
+                  color={isOverBalance ? "var(--color-gray-400, #9ca3af)" : "var(--color-primary)"}
+                  hoverColor={isOverBalance ? "var(--color-gray-400, #9ca3af)" : "var(--color-primary-hover)"}
+                  buttonClass={`!text-xs !py-1.5 !px-3 !rounded-lg font-semibold shadow-2xs !text-white ${
+                    isOverBalance ? "!bg-gray-400 !cursor-not-allowed opacity-60 pointer-events-none" : ""
+                  }`}
+                  title={isOverBalance ? "Expense amount exceeds available balance" : undefined}
                 />
               </div>
             </div>

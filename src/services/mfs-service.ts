@@ -18,6 +18,20 @@ export interface MfsMethodMeta {
   logo: string;
 }
 
+export const MFS_PROVIDER_OPTIONS = [
+  { label: "bKash", value: "bKash" },
+  { label: "Nagad", value: "Nagad" },
+  { label: "Rocket", value: "Rocket" },
+  { label: "Upay", value: "Upay" },
+  { label: "Cellfin", value: "Cellfin" },
+  { label: "SureCash", value: "SureCash" },
+  { label: "Tap", value: "Tap" },
+  { label: "MCash", value: "MCash" },
+  { label: "MyCash", value: "MyCash" },
+  { label: "Islamic Wallet", value: "Islamic Wallet" },
+  { label: "Other / Custom", value: "Other" },
+];
+
 export const MFS_METHODS: MfsMethodMeta[] = [
   { value: "Bkash", label: "bKash", tint: "#e2136e", soft: "#fde7f1", logo: "/mfs/bkash.png" },
   { value: "Nagad", label: "Nagad", tint: "#ec1c24", soft: "#fee6e7", logo: "/mfs/nagad.png" },
@@ -57,7 +71,7 @@ export const describeMfsSaveError = (rawMsg?: string, phone?: string): string =>
  */
 export const fetchMfsUserList = async (): Promise<MfsUserListResponse> => {
   const accessUser = buildAccessUser();
-  const url = apiConfig.mfs?.mfsUserListUrl;
+  const url = apiConfig.mfs?.mfsUserListUrl || (apiConfig.mfs as any)?.mfsListUrl || "mfs-user-list";
 
   const res: any = await postData<MfsUserListResponse>({ url, body: { accessUser } });
 
@@ -67,10 +81,14 @@ export const fetchMfsUserList = async (): Promise<MfsUserListResponse> => {
 
   const rawList = Array.isArray(res?.mfsUsers)
     ? res.mfsUsers
+    : Array.isArray(res?.mfsList)
+    ? res.mfsList
     : Array.isArray(res?.data)
     ? res.data
     : Array.isArray(res?.data?.mfsUsers)
     ? res.data.mfsUsers
+    : Array.isArray(res?.data?.mfsList)
+    ? res.data.mfsList
     : [];
 
   const mfsUsers: MfsUserItem[] = rawList.map((item: any) => {
@@ -79,6 +97,9 @@ export const fetchMfsUserList = async (): Promise<MfsUserListResponse> => {
     const phone = item.phoneNumber || item.phone || item.mobileNumber || "";
     const method = item.method || item.mfsMethod || item.provider || "";
     const mfsName = method ? `${method}${name && name !== "-" ? ` (${name})` : ""}` : name || "MFS";
+    const opening = Number(item.openingBalance ?? item.opening_balance ?? 0);
+    const current = Number(item.currentBalance ?? item.current_balance ?? item.balance ?? item.amount ?? opening);
+    const rawStatus = item.status !== undefined && item.status !== null ? String(item.status).trim() : "Active";
     return {
       id,
       name: name || "-",
@@ -86,9 +107,9 @@ export const fetchMfsUserList = async (): Promise<MfsUserListResponse> => {
       method,
       mfsName,
       mfsPhone: phone,
-      openingBalance: Number(item.openingBalance ?? 0),
-      currentBalance: Number(item.currentBalance ?? item.balance ?? 0),
-      status: item.status ? String(item.status).trim() : "Inactive",
+      openingBalance: opening,
+      currentBalance: current,
+      status: rawStatus || "Active",
     };
   });
 

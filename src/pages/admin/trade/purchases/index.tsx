@@ -294,19 +294,33 @@ const Purchases: React.FC = () => {
     const registerPurchase = (p: PurchaseItem) => {
       if (!p) return;
       const cleanOrd = getCleanOrderNo(p.orderNo, p.invoiceNo || (p as any).purchaseInvoiceNo, p.id || (p as any).purchaseId);
+      const isBusinessCode = String(p.id).trim() === "28488" || String(p.orderNo).trim() === "28488";
+      const cleanKey = (val: unknown): string =>
+        String(val || "")
+          .replace(/[^a-zA-Z0-9]/g, "")
+          .toUpperCase();
+
       const aliases = [
         cleanOrd ? `ord_${cleanOrd.toLowerCase()}` : null,
-        p.orderNo ? `ord_${String(p.orderNo).trim().toLowerCase()}` : null,
+        p.orderNo && !isBusinessCode ? `ord_${String(p.orderNo).trim().toLowerCase()}` : null,
         p.invoiceNo ? `inv_${String(p.invoiceNo).trim().toLowerCase()}` : null,
         (p as any).purchaseInvoiceNo ? `inv_${String((p as any).purchaseInvoiceNo).trim().toLowerCase()}` : null,
         p.challanNo ? `chn_${String(p.challanNo).trim().toLowerCase()}` : null,
-        p.id ? `id_${String(p.id).trim().toLowerCase()}` : null,
+        p.id && !isBusinessCode ? `id_${String(p.id).trim().toLowerCase()}` : null,
       ].filter(Boolean) as string[];
 
       let existingIdx = -1;
       for (const a of aliases) {
         if (aliasToIdx.has(a)) {
-          existingIdx = aliasToIdx.get(a)!;
+          const candidateIdx = aliasToIdx.get(a)!;
+          const candidate = purchaseList[candidateIdx];
+          const candInv = candidate?.purchaseInvoiceNo || candidate?.invoiceNo;
+          const itemInv = p?.purchaseInvoiceNo || p?.invoiceNo;
+          if (candInv && itemInv && cleanKey(candInv) !== cleanKey(itemInv)) {
+            // Distinct invoices must NEVER overwrite each other
+            continue;
+          }
+          existingIdx = candidateIdx;
           break;
         }
       }

@@ -49,13 +49,16 @@ export interface UnifiedPurchaseRecord extends PurchaseItem {
 export const extractPurchaseLineItems = (item: any): any[] => {
   const raw =
     (Array.isArray(item?.purchaseDetails) && item.purchaseDetails.length > 0 ? item.purchaseDetails : null) ||
+    (Array.isArray(item?.purchasesDetails) && item.purchasesDetails.length > 0 ? item.purchasesDetails : null) ||
     (Array.isArray(item?.details) && item.details.length > 0 ? item.details : null) ||
     [];
   return raw.map((d: any) => ({
     ...d,
+    purchaseDetailId: d.purchaseDetailId ?? d.purchase_detail_id ?? d.detailId ?? d.id,
+    detailId: d.detailId ?? d.purchaseDetailId ?? d.purchase_detail_id ?? d.id,
     productId: d.productId ?? d.product_id ?? d.id,
-    productCode: d.productCode ?? d.pcode ?? "",
-    productName: d.productName ?? d.name ?? "",
+    productCode: d.productCode ?? d.product_code ?? d.pcode ?? d.code ?? "",
+    productName: d.productName ?? d.name ?? "Product",
   }));
 };
 
@@ -268,12 +271,13 @@ export const fetchPurchaseAndReturnList = async (): Promise<UnifiedPurchaseRecor
       const pId = item.id || item.purchaseId || item.purchase_id;
       const cleanOrd = getCleanOrderNo(ordNo, invNo, pId);
 
+      const isBusinessCode = String(pId).trim() === "28488" || String(ordNo).trim() === "28488";
       return [
         cleanOrd ? `pur_ord_${cleanOrd.toLowerCase()}` : null,
-        ordNo ? `pur_ord_${String(ordNo).trim().toLowerCase()}` : null,
+        ordNo && !isBusinessCode ? `pur_ord_${String(ordNo).trim().toLowerCase()}` : null,
         invNo ? `pur_inv_${String(invNo).trim().toLowerCase()}` : null,
         chnNo ? `pur_chn_${String(chnNo).trim().toLowerCase()}` : null,
-        pId ? `pur_id_${String(pId).trim().toLowerCase()}` : null,
+        pId && !isBusinessCode ? `pur_id_${String(pId).trim().toLowerCase()}` : null,
       ].filter(Boolean) as string[];
     };
 
@@ -294,7 +298,15 @@ export const fetchPurchaseAndReturnList = async (): Promise<UnifiedPurchaseRecor
       let existingIdx = -1;
       for (const a of aliases) {
         if (aliasToPurIdx.has(a)) {
-          existingIdx = aliasToPurIdx.get(a)!;
+          const candidateIdx = aliasToPurIdx.get(a)!;
+          const candidate = unifiedList[candidateIdx];
+          const candInv = candidate?.purchaseInvoiceNo || candidate?.invoiceNo;
+          const itemInv = item?.purchaseInvoiceNo || item?.invoiceNo;
+          if (candInv && itemInv && cleanKey(candInv) !== cleanKey(itemInv)) {
+            // Distinct purchase invoices must never overwrite each other
+            continue;
+          }
+          existingIdx = candidateIdx;
           break;
         }
       }

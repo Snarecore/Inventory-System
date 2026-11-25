@@ -43,8 +43,8 @@ export const AddPaymentModal: React.FC<AddPaymentModalProps> = ({
 
   // 2. Fetch Bank & MFS Accounts
   const {
-    registeredBankAccounts,
-    registeredMfsAccounts,
+    activeBankAccounts: registeredBankAccounts,
+    activeMfsAccounts: registeredMfsAccounts,
     isLoading: isAccountsLoading,
   } = useFinancialAccounts();
 

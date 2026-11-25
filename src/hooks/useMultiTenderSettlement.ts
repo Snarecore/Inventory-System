@@ -32,8 +32,11 @@ export const useMultiTenderSettlement = <TInvoice extends GenericDueInvoice>({
   invoices = [],
   initialDate,
 }: UseMultiTenderSettlementOptions<TInvoice>) => {
-  const { registeredBankAccounts, registeredMfsAccounts, isLoading: isAccountsLoading } =
-    useFinancialAccounts();
+  const {
+    activeBankAccounts: registeredBankAccounts,
+    activeMfsAccounts: registeredMfsAccounts,
+    isLoading: isAccountsLoading,
+  } = useFinancialAccounts();
 
   // Multi-Tender Form States
   const [cashAmountInput, setCashAmountInput] = useState<string>("");

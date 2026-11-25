@@ -54,6 +54,14 @@ export const TradePaymentSection: React.FC<TradePaymentSectionProps> = ({
     handlePayFullCredit,
   } = payment;
 
+  const isAccountActive = (acc: TradePaymentAccount) => {
+    const s = String((acc as any)?.status ?? "").toLowerCase().trim();
+    return s === "active" || s === "1" || s === "y" || s === "true" || !s;
+  };
+
+  const visibleBankAccounts = registeredBankAccounts.filter(isAccountActive);
+  const visibleMfsAccounts = registeredMfsAccounts.filter(isAccountActive);
+
   return (
     <div className="space-y-1.5">
       {/* Header and Quick Payment Presets */}
@@ -203,9 +211,9 @@ export const TradePaymentSection: React.FC<TradePaymentSectionProps> = ({
               className="ui-control ui-select ui-control-xs w-full max-w-[130px] font-medium truncate sm:max-w-[215px]"
             >
               <option value="" className="text-[var(--ui-text)]">
-                {registeredBankAccounts.length ? t(`Select ${bankLabel}...`) : t("No bank registered")}
+                {visibleBankAccounts.length ? t(`Select ${bankLabel}...`) : t("No active bank registered")}
               </option>
-              {registeredBankAccounts.map((b) => (
+              {visibleBankAccounts.map((b) => (
                 <option
                   key={b.id}
                   value={b.id}
@@ -213,6 +221,7 @@ export const TradePaymentSection: React.FC<TradePaymentSectionProps> = ({
                 >
                   {b.bankName}
                   {b.accountNo ? ` – ${b.accountNo}` : ""}
+                  {!isAccountActive(b) ? " (Inactive)" : ""}
                 </option>
               ))}
             </select>
@@ -268,9 +277,9 @@ export const TradePaymentSection: React.FC<TradePaymentSectionProps> = ({
               className="ui-control ui-select ui-control-xs w-full max-w-[130px] font-medium truncate sm:max-w-[215px]"
             >
               <option value="" className="text-[var(--ui-text)]">
-                {registeredMfsAccounts.length ? t("Select MFS...") : t("No MFS registered")}
+                {visibleMfsAccounts.length ? t("Select MFS...") : t("No active MFS registered")}
               </option>
-              {registeredMfsAccounts.map((m) => {
+              {visibleMfsAccounts.map((m) => {
                 const method = m.method || (m as any).provider || (m as any).mfsMethod || "";
                 const name = m.name || (m as any).accountName || "";
                 const phone = m.mfsPhone || m.phoneNumber || (m as any).phone || (m as any).mobileNumber || "";
@@ -283,6 +292,7 @@ export const TradePaymentSection: React.FC<TradePaymentSectionProps> = ({
                   >
                     {displayName}
                     {phone ? ` – ${phone}` : ""}
+                    {!isAccountActive(m) ? " (Inactive)" : ""}
                   </option>
                 );
               })}

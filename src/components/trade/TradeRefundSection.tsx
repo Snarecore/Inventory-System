@@ -94,59 +94,57 @@ export const TradeRefundSection: React.FC<TradeRefundSectionProps> = ({
       </div>
 
       {/* 2 Adjustment Options: Adjust Outstanding vs Adjust Cash */}
-      {(hasDueAndCash || origDueAmount > 0) && (
-        <div className="grid grid-cols-2 gap-2">
-          {/* Option 1: Adjust Outstanding */}
-          <button
-            type="button"
-            onClick={() => onSelectAdjustmentTarget?.("due")}
-            className={`p-2 rounded-md border text-left transition-all cursor-pointer flex flex-col justify-between relative group ${
-              adjustmentTarget === "due"
-                ? "border-[#e11d48] bg-[#e11d48]/10 shadow-xs ring-2 ring-[#e11d48]"
-                : "border-[var(--ui-border)] bg-[var(--ui-surface)] hover:bg-[var(--ui-surface-muted)] hover:border-[#e11d48]/50 opacity-90"
-            }`}
-          >
-            <div className="flex items-center justify-between gap-1 w-full">
-              <span className="text-xs font-bold text-[#e11d48] flex items-center gap-1.5">
-                <FaFileInvoiceDollar size={13} />
-                Adjust Outstanding
-              </span>
-              {adjustmentTarget === "due" && (
-                <FaCheckCircle size={13} className="text-[#e11d48] shrink-0" />
-              )}
-            </div>
-            <div className="mt-1 flex items-center justify-between text-[10.5px] text-[var(--ui-text-muted)]">
-              <span>Due:</span>
-              <strong className="text-[#e11d48] font-bold">৳{formatMoney(origDueAmount)}</strong>
-            </div>
-          </button>
+      <div className="grid grid-cols-2 gap-2">
+        {/* Option 1: Adjust Outstanding */}
+        <button
+          type="button"
+          onClick={() => onSelectAdjustmentTarget?.("due")}
+          className={`p-2 rounded-md border text-left transition-all cursor-pointer flex flex-col justify-between relative group ${
+            adjustmentTarget === "due"
+              ? "border-[#e11d48] bg-[#e11d48]/10 shadow-xs ring-2 ring-[#e11d48]"
+              : "border-[var(--ui-border)] bg-[var(--ui-surface)] hover:bg-[var(--ui-surface-muted)] hover:border-[#e11d48]/50 opacity-90"
+          }`}
+        >
+          <div className="flex items-center justify-between gap-1 w-full">
+            <span className="text-xs font-bold text-[#e11d48] flex items-center gap-1.5">
+              <FaFileInvoiceDollar size={13} />
+              Adjust Outstanding
+            </span>
+            {adjustmentTarget === "due" && (
+              <FaCheckCircle size={13} className="text-[#e11d48] shrink-0" />
+            )}
+          </div>
+          <div className="mt-1 flex items-center justify-between text-[10.5px] text-[var(--ui-text-muted)]">
+            <span>Due:</span>
+            <strong className="text-[#e11d48] font-bold">৳{formatMoney(origDueAmount)}</strong>
+          </div>
+        </button>
 
-          {/* Option 2: Adjust Cash */}
-          <button
-            type="button"
-            onClick={() => onSelectAdjustmentTarget?.("cash")}
-            className={`p-2 rounded-md border text-left transition-all cursor-pointer flex flex-col justify-between relative group ${
-              adjustmentTarget === "cash"
-                ? "border-[#10b981] bg-[#10b981]/10 shadow-xs ring-2 ring-[#10b981]"
-                : "border-[var(--ui-border)] bg-[var(--ui-surface)] hover:bg-[var(--ui-surface-muted)] hover:border-[#10b981]/50 opacity-90"
-            }`}
-          >
-            <div className="flex items-center justify-between gap-1 w-full">
-              <span className="text-xs font-bold text-[#059669] flex items-center gap-1.5">
-                <FaMoneyBillWave size={13} />
-                Adjust Cash
-              </span>
-              {adjustmentTarget === "cash" && (
-                <FaCheckCircle size={13} className="text-[#059669] shrink-0" />
-              )}
-            </div>
-            <div className="mt-1 flex items-center justify-between text-[10.5px] text-[var(--ui-text-muted)]">
-              <span>Paid:</span>
-              <strong className="text-[#059669] font-bold">৳{formatMoney(origCashPaid || origPaidAmount)}</strong>
-            </div>
-          </button>
-        </div>
-      )}
+        {/* Option 2: Adjust Cash */}
+        <button
+          type="button"
+          onClick={() => onSelectAdjustmentTarget?.("cash")}
+          className={`p-2 rounded-md border text-left transition-all cursor-pointer flex flex-col justify-between relative group ${
+            adjustmentTarget === "cash"
+              ? "border-[#10b981] bg-[#10b981]/10 shadow-xs ring-2 ring-[#10b981]"
+              : "border-[var(--ui-border)] bg-[var(--ui-surface)] hover:bg-[var(--ui-surface-muted)] hover:border-[#10b981]/50 opacity-90"
+          }`}
+        >
+          <div className="flex items-center justify-between gap-1 w-full">
+            <span className="text-xs font-bold text-[#059669] flex items-center gap-1.5">
+              <FaMoneyBillWave size={13} />
+              Adjust Cash
+            </span>
+            {adjustmentTarget === "cash" && (
+              <FaCheckCircle size={13} className="text-[#059669] shrink-0" />
+            )}
+          </div>
+          <div className="mt-1 flex items-center justify-between text-[10.5px] text-[var(--ui-text-muted)]">
+            <span>Paid:</span>
+            <strong className="text-[#059669] font-bold">৳{formatMoney(origCashPaid || origPaidAmount)}</strong>
+          </div>
+        </button>
+      </div>
 
       {/* Payment Breakdown Cards */}
       <div className="flex flex-col gap-1.5">
@@ -308,57 +306,55 @@ export const TradeRefundSection: React.FC<TradeRefundSectionProps> = ({
           </div>
         </div>
 
-        {/* 4. Due / Credit Adjustment Row (if applicable) */}
-        {(origDueAmount > 0 || numRefundDue > 0) && (
-          <div
-            className={`px-2.5 py-1 rounded-md border transition-all flex items-center justify-between gap-1.5 shadow-2xs select-none ${
-              numRefundDue > 0
-                ? "border-[var(--ui-danger-border)] bg-[var(--ui-danger-light)]/30"
-                : "border-[var(--ui-border)] bg-[var(--ui-surface-muted)]/40 opacity-70"
-            }`}
-          >
-            <div className="flex items-center gap-1.5 min-w-0">
-              <div
-                className={`w-6 h-6 rounded flex items-center justify-center shrink-0 font-bold text-[11px] ${
-                  numRefundDue > 0
-                    ? "bg-[var(--ui-danger-border)] text-[var(--ui-danger-dark)]"
-                    : "bg-[var(--ui-surface-sunken)] text-[var(--ui-text)]"
-                }`}
-              >
-                ৳
-              </div>
-              <div>
-                <span className="font-bold text-[11px] text-[var(--ui-text)] tracking-wider block leading-tight">
-                  DUE ADJUST
-                </span>
-                <span className="text-[9.5px] text-[var(--ui-text)] font-normal block leading-none">
-                  Max: ৳{formatMoney(origDueAmount)}
-                </span>
-              </div>
-            </div>
-
+        {/* 4. Due / Credit Adjustment Row */}
+        <div
+          className={`px-2.5 py-1 rounded-md border transition-all flex items-center justify-between gap-1.5 shadow-2xs select-none ${
+            numRefundDue > 0
+              ? "border-[var(--ui-danger-border)] bg-[var(--ui-danger-light)]/30"
+              : "border-[var(--ui-border)] bg-[var(--ui-surface-muted)]/40 opacity-70"
+          }`}
+        >
+          <div className="flex items-center gap-1.5 min-w-0">
             <div
-              className={`flex items-center h-6.5 rounded border overflow-hidden w-28 sm:w-34 shrink-0 transition-colors shadow-2xs ${
+              className={`w-6 h-6 rounded flex items-center justify-center shrink-0 font-bold text-[11px] ${
                 numRefundDue > 0
-                  ? "border-[var(--ui-danger)] bg-[var(--ui-surface)]"
-                  : "border-[var(--ui-border)] bg-[var(--ui-surface-sunken)]/70"
+                  ? "bg-[var(--ui-danger-border)] text-[var(--ui-danger-dark)]"
+                  : "bg-[var(--ui-surface-sunken)] text-[var(--ui-text)]"
               }`}
             >
-              <span className="text-[11px] text-[var(--ui-text)] font-normal px-1.5 bg-[var(--ui-surface-muted)] h-full flex items-center border-r border-[var(--ui-border)] select-none">
-                {numRefundDue > 0 ? "৳" : "—"}
+              ৳
+            </div>
+            <div>
+              <span className="font-bold text-[11px] text-[var(--ui-text)] tracking-wider block leading-tight">
+                DUE ADJUST
               </span>
-              <input
-                type="number"
-                min={0}
-                max={origDueAmount > 0 ? origDueAmount : undefined}
-                placeholder="0"
-                value={numRefundDue > 0 ? numRefundDue.toString() : ""}
-                onChange={(e) => flatProps.onRefundDueChange?.(e.target.value)}
-                className="w-full text-right px-1.5 text-xs font-semibold text-[var(--ui-text)] outline-none bg-transparent h-full placeholder:text-[var(--ui-text-muted)]"
-              />
+              <span className="text-[9.5px] text-[var(--ui-text)] font-normal block leading-none">
+                Max: ৳{formatMoney(origDueAmount > 0 ? origDueAmount : refundAmount)}
+              </span>
             </div>
           </div>
-        )}
+
+          <div
+            className={`flex items-center h-6.5 rounded border overflow-hidden w-28 sm:w-34 shrink-0 transition-colors shadow-2xs ${
+              numRefundDue > 0
+                ? "border-[var(--ui-danger)] bg-[var(--ui-surface)]"
+                : "border-[var(--ui-border)] bg-[var(--ui-surface-sunken)]/70"
+            }`}
+          >
+            <span className="text-[11px] text-[var(--ui-text)] font-normal px-1.5 bg-[var(--ui-surface-muted)] h-full flex items-center border-r border-[var(--ui-border)] select-none">
+              {numRefundDue > 0 ? "৳" : "—"}
+            </span>
+            <input
+              type="number"
+              min={0}
+              max={origDueAmount > 0 ? origDueAmount : refundAmount || undefined}
+              placeholder="0"
+              value={numRefundDue > 0 ? numRefundDue.toString() : ""}
+              onChange={(e) => flatProps.onRefundDueChange?.(e.target.value)}
+              className="w-full text-right px-1.5 text-xs font-semibold text-[var(--ui-text)] outline-none bg-transparent h-full placeholder:text-[var(--ui-text-muted)]"
+            />
+          </div>
+        </div>
       </div>
 
       {/* Financial Settlement Summary Ribbon */}

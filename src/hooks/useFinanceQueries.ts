@@ -5,6 +5,7 @@ import {
   bankInfoListQueryKey,
   mfsUserListQueryKey,
   dashboardQueryKey,
+  userDashboardQueryKey,
   financialTransactionQueryKey,
   financeDashboardQueryKey,
 } from "@/config/query-key";
@@ -80,6 +81,7 @@ export const useInsertFinancialTransactionMutation = (options?: {
 
         queryClient.invalidateQueries({ queryKey: [financialTransactionQueryKey] });
         queryClient.invalidateQueries({ queryKey: [dashboardQueryKey] });
+        queryClient.invalidateQueries({ queryKey: [userDashboardQueryKey] });
         queryClient.invalidateQueries({ queryKey: [financeDashboardQueryKey] });
 
         const actionLabel =

@@ -44,8 +44,8 @@ export const AddCollectionModal: React.FC<AddCollectionModalProps> = ({
 
   // 2. Fetch Bank & MFS Accounts
   const {
-    registeredBankAccounts,
-    registeredMfsAccounts,
+    activeBankAccounts: registeredBankAccounts,
+    activeMfsAccounts: registeredMfsAccounts,
     isLoading: isAccountsLoading,
   } = useFinancialAccounts();
 

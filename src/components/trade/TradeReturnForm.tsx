@@ -25,6 +25,7 @@ import {
   cashBalanceQueryKey,
   bankInfoListQueryKey,
   mfsUserListQueryKey,
+  userDashboardQueryKey,
   financialTransactionQueryKey,
 } from "@/config/query-key";
 import { useFinancialAccounts } from "@/hooks/useFinancialAccounts";
@@ -38,6 +39,9 @@ import TradeRefundSection from "@/components/trade/TradeRefundSection";
 import TradeInvoiceModal from "@/components/invoice/TradeInvoiceModal";
 import { normalizeSalesReturnInvoice, normalizePurchaseReturnInvoice } from "@/components/invoice/trade-invoice-adapters";
 import { usePermission } from "@/hooks/usePermission";
+import { useFinancialLedger } from "@/hooks/useFinancialLedger";
+import { cashLeg, bankLeg, mfsLeg, type TradeTender } from "@/services/financial-ledger-service";
+import { updateMfsUser } from "@/services/mfs-service";
 
 import { fetchSalesAndReturnList, getCleanOrderNo } from "@/pages/admin/trade/sales/hooks/useSalesQueries";
 import { fetchPurchaseAndReturnList } from "@/pages/admin/trade/purchases/hooks/usePurchaseQueries";
@@ -77,6 +81,7 @@ export const TradeReturnForm: React.FC<TradeReturnFormProps> = ({ mode }) => {
   const location = useLocation();
   const queryClient = useQueryClient();
   const { allProducts = [] } = useTradeProducts();
+  const { recordTradeLedger } = useFinancialLedger();
 
   const productLookup = useMemo(() => {
     const codeMap = new Map<string, number | string>();
@@ -129,7 +134,10 @@ export const TradeReturnForm: React.FC<TradeReturnFormProps> = ({ mode }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Financial Accounts
-  const { registeredBankAccounts, registeredMfsAccounts } = useFinancialAccounts();
+  const {
+    activeBankAccounts: registeredBankAccounts,
+    activeMfsAccounts: registeredMfsAccounts,
+  } = useFinancialAccounts();
 
   // Load candidate orders list
   const accessUser = buildAccessUser();
@@ -350,7 +358,7 @@ export const TradeReturnForm: React.FC<TradeReturnFormProps> = ({ mode }) => {
       if (!record || typeof record !== "object") return [];
       const candidates = isSale
         ? [record.salesDetails, record.saleDetails, record.details]
-        : [record.purchaseDetails, record.details];
+        : [record.purchaseDetails, record.purchasesDetails, record.details];
       return candidates.find((details) => Array.isArray(details) && details.length > 0) || [];
     },
     [isSale]
@@ -437,10 +445,9 @@ export const TradeReturnForm: React.FC<TradeReturnFormProps> = ({ mode }) => {
           const cleanInv = cleanKey(inv);
           const cleanRef = cleanKey(ref);
 
-          const matchInv = Boolean(cleanInv && candidateInv && candidateInv === cleanInv);
-          const matchRef = Boolean(cleanRef && candidateRef && candidateRef === cleanRef);
-          const matchId = Boolean(candidateId && orderId && candidateId === orderId);
-          return matchInv || matchRef || matchId;
+          if (cleanInv && candidateInv) return candidateInv === cleanInv;
+          if (cleanRef && candidateRef) return candidateRef === cleanRef;
+          return Boolean(candidateId && orderId && candidateId === orderId);
         });
       }
 
@@ -485,118 +492,31 @@ export const TradeReturnForm: React.FC<TradeReturnFormProps> = ({ mode }) => {
 
       const activeRawDetails = rawDetails.filter((d: any) => !isReturnOrInactiveLine(d));
 
-      // 2. Group by product key to detect and deduplicate duplicate product lines
-      const getProductKey = (item: any, idx: number) => {
+      const newLines: TradeReturnLineItem[] = activeRawDetails.map((item: any, idx: number) => {
         const rawPId = item.productId ?? item.product_id;
-        const pId = rawPId && !isNaN(Number(rawPId)) && Number(rawPId) > 0 ? String(rawPId).trim() : "";
-        const pCode = cleanKey(item.productCode || item.pcode);
-        const pName = String(item.productName || item.name || "").trim().toLowerCase();
+        const pCodeRaw = item.productCode ?? item.product_code ?? item.pcode ?? item.code ?? "";
+        const pNameRaw = item.productName ?? item.product_name ?? item.name ?? "Product";
 
-        const lookupId =
-          (pCode && productLookup.codeMap.get(pCode.toLowerCase())) ||
-          (pName && productLookup.nameMap.get(pName.toLowerCase()));
-
-        const effectiveId = pId || (lookupId ? String(lookupId).trim() : "");
-        if (effectiveId) return `id_${effectiveId}`;
-        if (pCode) return `code_${pCode}`;
-        if (pName && pName !== "product" && pName !== "item") return `name_${pName}`;
-        return `row_${idx}`;
-      };
-
-      const groupedLines = new Map<string, any[]>();
-      activeRawDetails.forEach((item: any, idx: number) => {
-        const key = getProductKey(item, idx);
-        if (!groupedLines.has(key)) {
-          groupedLines.set(key, []);
-        }
-        groupedLines.get(key)!.push(item);
-      });
-
-      const orderGrandTotal = Number(order.grandTotal ?? order.totalAmount ?? 0);
-      const consolidatedItems: any[] = [];
-
-      groupedLines.forEach((groupItems) => {
-        if (groupItems.length === 1) {
-          consolidatedItems.push(groupItems[0]);
-          return;
-        }
-
-        // Multiple entries for the same product in this invoice
-        const parsedItems = groupItems.map((item) => {
-          const price = Number(isSale ? (item.sellPrice || item.rate || 0) : (item.buyPrice || item.purchasePrice || item.rate || 0));
-          const qty = Math.max(0, Number(item.quantity ?? item.qty ?? 0));
-          const lineTotal = Number(item.total ?? (price * qty));
-          return { item, price, qty, lineTotal };
+        // Match against authoritative product catalog to guarantee valid productId and productCode
+        const matchedProduct = allProducts.find((p) => {
+          if (rawPId && String(p.id) === String(rawPId)) return true;
+          if (pCodeRaw && String(p.productCode || p.pcode).toLowerCase() === String(pCodeRaw).toLowerCase()) return true;
+          if (pNameRaw && String(p.name).toLowerCase() === String(pNameRaw).toLowerCase()) return true;
+          return false;
         });
 
-        const totalGroupSum = parsedItems.reduce((acc, it) => acc + it.lineTotal, 0);
-
-        // If the sum of all lines is within orderGrandTotal, they are legitimate separate batches: consolidate
-        if (orderGrandTotal > 0 && totalGroupSum <= orderGrandTotal + 1.0) {
-          const base = groupItems[0];
-          const totalQty = parsedItems.reduce((acc, it) => acc + it.qty, 0);
-          const totalDiscount = groupItems.reduce((acc, it) => acc + Number(it.discount || 0), 0);
-          const totalVat = groupItems.reduce((acc, it) => acc + Number(it.vat || 0), 0);
-          const avgPrice = totalQty > 0 ? totalGroupSum / totalQty : parsedItems[0].price;
-
-          consolidatedItems.push({
-            ...base,
-            quantity: totalQty,
-            ...(isSale ? { sellPrice: avgPrice } : { buyPrice: avgPrice }),
-            discount: totalDiscount,
-            vat: totalVat,
-            total: totalGroupSum,
-          });
-          return;
-        }
-
-        // Otherwise, duplicate/orphaned records exist (e.g. 50 pcs and 25 pcs on a 250 taka invoice).
-        // Check for an exact line total match against orderGrandTotal
-        const exactMatch = parsedItems.find(
-          (it) => orderGrandTotal > 0 && Math.abs(it.lineTotal - orderGrandTotal) <= 0.05
-        );
-        if (exactMatch) {
-          consolidatedItems.push(exactMatch.item);
-          return;
-        }
-
-        // Filter out lines that alone exceed orderGrandTotal (cannot belong to this invoice)
-        const reasonableItems = orderGrandTotal > 0
-          ? parsedItems.filter((it) => it.lineTotal <= orderGrandTotal + 1.0)
-          : parsedItems;
-
-        if (reasonableItems.length > 0) {
-          // Select the latest updated item
-          consolidatedItems.push(reasonableItems[reasonableItems.length - 1].item);
-        } else {
-          // Fallback: pick the last item in group
-          consolidatedItems.push(groupItems[groupItems.length - 1]);
-        }
-      });
-
-      const newLines: TradeReturnLineItem[] = consolidatedItems.map((item: any, idx: number) => {
-        const pCode = String(item.productCode || item.pcode || "").trim();
-        const pName = String(item.productName || item.name || "Product").trim();
-
-        // Resolve authentic numeric productId
-        let resolvedProductId = item.productId ?? item.product_id;
-        if (!resolvedProductId || isNaN(Number(resolvedProductId))) {
-          const matchedId =
-            (pCode && productLookup.codeMap.get(pCode.toLowerCase())) ||
-            (pName && productLookup.nameMap.get(pName.toLowerCase()));
-
-          if (matchedId && !isNaN(Number(matchedId))) {
-            resolvedProductId = Number(matchedId);
-          }
-        }
-
-        const pId = String(resolvedProductId || pCode || `p_${idx}`).trim();
-        const unit = String(item.unit || item.secondary_unit || item.secondaryUnit || "pcs");
+        const effectiveProductId = rawPId ?? matchedProduct?.id ?? item.id;
+        const effectiveProductCode = (pCodeRaw ? String(pCodeRaw).trim() : "") || (matchedProduct?.productCode || matchedProduct?.pcode || "");
+        const effectiveProductName = pNameRaw || matchedProduct?.name || "Product";
+        const pId = effectiveProductId !== undefined && effectiveProductId !== null ? String(effectiveProductId).trim() : `line_${idx}`;
+        const pCode = String(effectiveProductCode || "").trim();
+        const pName = String(effectiveProductName || "Product").trim();
+        const unit = String(item.unit || item.secondary_unit || item.secondaryUnit || matchedProduct?.unit || "pcs");
         const price = Number(isSale ? (item.sellPrice || item.rate || 0) : (item.buyPrice || item.purchasePrice || item.rate || 0));
         const quantityValue = Number(item.quantity ?? item.qty ?? 0);
         const originalQty = Number.isFinite(quantityValue) ? Math.max(0, quantityValue) : 0;
 
-        const returnedValue = Number(item.returnedQuantity ?? item.returnQuantity ?? 0);
+        const returnedValue = Number(item.returnedQuantity ?? item.returnQuantity ?? item.alreadyReturnedQty ?? 0);
         const directReturned = Number.isFinite(returnedValue) ? Math.max(0, returnedValue) : 0;
         const mapReturned =
           (pId && returnedQtyMap[`id_${pId}`]) ||
@@ -607,11 +527,26 @@ export const TradeReturnForm: React.FC<TradeReturnFormProps> = ({ mode }) => {
         const alreadyReturned = Math.max(directReturned, mapReturned);
         const availableQty = Math.max(0, originalQty - alreadyReturned);
 
+        const purchaseDetId =
+          item.purchaseDetailId ??
+          item.purchase_detail_id ??
+          item.detailId ??
+          item.detail_id ??
+          item.id;
+
+        const salesDetId =
+          item.salesDetailId ??
+          item.sales_detail_id ??
+          item.detailId ??
+          item.detail_id ??
+          item.id;
+
         return {
-          id: pId || `line_${idx}`,
-          productId: resolvedProductId || pId,
-          purchaseDetailId: item.purchaseDetailId || item.detailId || (item.productId || item.product_id ? item.id : undefined),
-          detailId: item.purchaseDetailId || item.detailId || item.id,
+          id: pId,
+          productId: effectiveProductId ?? pId,
+          purchaseDetailId: purchaseDetId,
+          salesDetailId: salesDetId,
+          detailId: purchaseDetId || salesDetId,
           productCode: pCode,
           productName: pName,
           unit,
@@ -778,6 +713,11 @@ export const TradeReturnForm: React.FC<TradeReturnFormProps> = ({ mode }) => {
     handleRefundDueChange,
     handleSelectRefundBank,
     handleSelectRefundMfs,
+    adjustmentTarget,
+    handleSelectAdjustmentTarget,
+    origDueAmount,
+    origCashPaid,
+    origPaidAmount,
   } = tradeRefund;
 
   // Toggle mode helpers
@@ -922,40 +862,26 @@ export const TradeReturnForm: React.FC<TradeReturnFormProps> = ({ mode }) => {
       const finalNote = note.trim() || (invoiceNo ? `Return from ${invoiceNo}` : "");
 
       const returnDetailsPayload = activeLines.map((l: any) => {
-        let finalProdId = l.productId;
-        if (!finalProdId || isNaN(Number(finalProdId)) || String(finalProdId).startsWith("PC")) {
-          const matchedId =
-            (l.productCode && productLookup.codeMap.get(String(l.productCode).trim().toLowerCase())) ||
-            (l.productName && productLookup.nameMap.get(String(l.productName).trim().toLowerCase()));
-          if (matchedId && !isNaN(Number(matchedId))) {
-            finalProdId = Number(matchedId);
-          }
-        }
-
-        const numericProdId = !isNaN(Number(finalProdId)) ? Number(finalProdId) : finalProdId;
         const linePrice = Number(l.sellPrice || 0);
         const lineQty = Number(l.quantity || 0);
         const lineTotal = Number((lineQty * linePrice).toFixed(2));
+        const numericProdId = !isNaN(Number(l.productId)) ? Number(l.productId) : l.productId;
 
         return {
+          ...(l.purchaseDetailId ? { purchaseDetailId: l.purchaseDetailId } : {}),
+          ...(isSale && l.salesDetailId ? { salesDetailId: l.salesDetailId } : {}),
           productId: numericProdId,
-          product_id: numericProdId,
-          productCode: l.productCode,
-          product_code: l.productCode,
+          productCode: l.productCode || "",
           productName: l.productName,
-          product_name: l.productName,
           unit: l.unit || "pcs",
           quantity: lineQty,
           returnQuantity: lineQty,
-          return_quantity: lineQty,
-          ...(isSale
-            ? { sellPrice: linePrice, sell_price: linePrice }
-            : { buyPrice: linePrice, buy_price: linePrice, sellPrice: linePrice, sell_price: linePrice }),
+          buyPrice: linePrice,
+          sellPrice: linePrice,
           discount: l.discount || 0,
           vat: l.vat || 0,
           total: lineTotal,
           returnReason: l.returnReason || reasonsList[0]?.value || (isSale ? "wrong_order" : "damaged_product"),
-          return_reason: l.returnReason || reasonsList[0]?.value || (isSale ? "wrong_order" : "damaged_product"),
         };
       });
 
@@ -982,27 +908,18 @@ export const TradeReturnForm: React.FC<TradeReturnFormProps> = ({ mode }) => {
       const payload: Record<string, any> = withBranchScope({
         accessUser: buildAccessUser(),
         returnDate,
-        return_date: returnDate,
         returnType,
-        return_type: returnType,
         totalAmount: Number(totals.subtotal.toFixed(2)),
-        total_amount: Number(totals.subtotal.toFixed(2)),
         discount: Number(totals.discount.toFixed(2)),
         vat: Number(totals.vat.toFixed(2)),
         deliveryCharge: 0,
-        delivery_charge: 0,
         grandTotal: Number(totals.grandTotal.toFixed(2)),
-        grand_total: Number(totals.grandTotal.toFixed(2)),
         returnGrandTotal: Number(totals.grandTotal.toFixed(2)),
-        return_grand_total: Number(totals.grandTotal.toFixed(2)),
-        returnTotalAmount: Number(totals.grandTotal.toFixed(2)),
-        return_total_amount: Number(totals.grandTotal.toFixed(2)),
         refundAmount: Number(totals.refundAmount.toFixed(2)),
-        refund_amount: Number(totals.refundAmount.toFixed(2)),
         paymentType: effectivePaymentType,
-        payment_type: effectivePaymentType,
         status: status || "Return",
         note: finalNote,
+        remarks: finalNote,
         refNo: `${isSale ? "SR" : "PR"}-${Date.now()}`,
         osType: "WEB",
         cashReceived: numRefundCash,
@@ -1010,45 +927,42 @@ export const TradeReturnForm: React.FC<TradeReturnFormProps> = ({ mode }) => {
         mfsReceived: numRefundMfs,
         dueAmount: numRefundDue,
         bankId: numRefundBank > 0 ? selectedRefundBankId : null,
-        bankName: numRefundBank > 0 ? matchedBank?.bankName || null : null,
-        accountNo: numRefundBank > 0 ? matchedBank?.accountNo || null : null,
+        bankName: numRefundBank > 0 ? (matchedBank?.bankName || null) : null,
+        accountNo: numRefundBank > 0 ? (matchedBank?.accountNo || null) : null,
         mfsId: numRefundMfs > 0 ? selectedRefundMfsId : null,
-        mfsName: numRefundMfs > 0 ? matchedMfs?.mfsName || null : null,
-        mfsPhone: numRefundMfs > 0 ? matchedMfs?.mfsPhone || null : null,
+        mfsName: numRefundMfs > 0 ? (matchedMfs?.mfsName || null) : null,
+        mfsPhone: numRefundMfs > 0 ? (matchedMfs?.mfsPhone || null) : null,
         returnDetails: returnDetailsPayload,
-        return_details: returnDetailsPayload,
-        salesReturnDetails: returnDetailsPayload,
+        ...(isSale
+          ? { salesReturnDetails: returnDetailsPayload }
+          : { purchaseReturnDetails: returnDetailsPayload }),
       });
 
       if (isSale) {
         payload.invoiceNo = invoiceNo || selectedOrder?.orderNo || "";
-        payload.salesInvoiceNo = invoiceNo || selectedOrder?.orderNo || "";
+        payload.salesInvoiceNo = payload.invoiceNo;
         payload.orderNo = selectedOrder?.orderNo || invoiceNo || "";
         const numericSaleId = selectedOrder?.id || selectedOrder?.saleId || selectedOrder?.sale_id;
         payload.saleId = numericSaleId ? (isNaN(Number(numericSaleId)) ? numericSaleId : Number(numericSaleId)) : null;
-        payload.sale_id = payload.saleId;
-        payload.customerId = partyId ?? selectedOrder?.customerId ?? selectedOrder?.customer_id ?? 0;
-        payload.customer_id = payload.customerId;
-        payload.customerName = partyName || selectedOrder?.customerName || selectedOrder?.customer_name || "Customer";
-        payload.customerPhone = partyPhone || selectedOrder?.customerPhone || selectedOrder?.customer_phone || "";
-        payload.customerAddress = partyAddress || selectedOrder?.customerAddress || selectedOrder?.customer_address || "";
+        payload.customerId = partyId ?? selectedOrder?.customerId ?? 0;
+        payload.customerName = partyName || selectedOrder?.customerName || "Customer";
+        payload.customerPhone = partyPhone || selectedOrder?.customerPhone || "";
+        payload.customerAddress = partyAddress || selectedOrder?.customerAddress || "";
       } else {
-        payload.invoiceNo = invoiceNo || selectedOrder?.purchaseInvoiceNo || selectedOrder?.challanNo || "";
-        payload.purchaseInvoiceNo = invoiceNo || selectedOrder?.purchaseInvoiceNo || selectedOrder?.challanNo || "";
-        payload.challanNo = selectedOrder?.challanNo || invoiceNo || "";
-        if (selectedOrder?.orderNo) {
-          payload.orderNo = selectedOrder.orderNo;
-        }
-        payload.supplierId = partyId ?? selectedOrder?.supplierId ?? selectedOrder?.partyId ?? 0;
-        payload.supplierName = partyName || selectedOrder?.supplierName || selectedOrder?.partyName || "Supplier";
-        payload.supplierPhone = partyPhone || selectedOrder?.supplierPhone || selectedOrder?.partyPhone || "";
-        payload.supplierAddress = partyAddress || selectedOrder?.supplierAddress || selectedOrder?.partyAddress || "";
+        const rawCleanInv = String(invoiceNo || selectedOrder?.purchaseInvoiceNo || selectedOrder?.invoiceNo || selectedOrder?.challanNo || "").trim().replace(/^#/, "");
+        payload.invoiceNo = rawCleanInv;
+        payload.purchaseInvoiceNo = rawCleanInv;
+        payload.challanNo = selectedOrder?.challanNo || rawCleanInv;
 
-        // If authentic numeric purchaseId exists, supply it; never send fabricated order strings as purchaseId or orderNo
         const rawPurId = selectedOrder?.purchaseId || selectedOrder?.purchase_id || selectedOrder?.id;
-        if (typeof rawPurId === "number" || (typeof rawPurId === "string" && /^\d+$/.test(rawPurId.trim()))) {
+        if (rawPurId && !isNaN(Number(rawPurId)) && Number(rawPurId) !== 28488) {
           payload.purchaseId = Number(rawPurId);
         }
+
+        payload.supplierId = partyId ?? selectedOrder?.supplierId ?? 0;
+        payload.supplierName = partyName || selectedOrder?.supplierName || "Supplier";
+        payload.supplierPhone = partyPhone || selectedOrder?.supplierPhone || "";
+        payload.supplierAddress = partyAddress || selectedOrder?.supplierAddress || "";
       }
 
       const endpoint = isSale
@@ -1150,7 +1064,77 @@ export const TradeReturnForm: React.FC<TradeReturnFormProps> = ({ mode }) => {
         createdItem.supplierAddress = partyAddress;
       }
 
+      // Post financial transaction to update Cash/Bank balances:
+      // - Sales Return: Money is refunded to customer -> EXPENSE (Cash decreases)
+      // - Purchase Return: Money is refunded by supplier -> INCOME (Cash increases)
+      // If 100% Adjusted Outstanding (Due Adjust), totalRefundMoney is 0, so no cash movement occurs.
+      const totalRefundMoney = numRefundCash + numRefundBank + numRefundMfs;
+      if (totalRefundMoney > 0) {
+        try {
+          const selectedBankObj = registeredBankAccounts.find(
+            (b) => String(b.bankId ?? b.id) === String(selectedRefundBankId)
+          );
+          const selectedMfsObj = numRefundMfs > 0
+            ? (registeredMfsAccounts.find(
+                (m) =>
+                  String(m.id ?? "").trim() === String(selectedRefundMfsId).trim() ||
+                  String(m.mfsId ?? "").trim() === String(selectedRefundMfsId).trim() ||
+                  String(m.phoneNumber ?? m.phone ?? "").trim() === String(selectedRefundMfsId).trim()
+              ) || {
+                id: selectedRefundMfsId,
+                mfsId: selectedRefundMfsId,
+                method: "MFS",
+                name: "MFS",
+                phoneNumber: "",
+                phone: "",
+                currentBalance: 0,
+                status: "Active",
+              })
+            : null;
 
+          const tenders: TradeTender[] = [
+            { amount: numRefundCash, leg: cashLeg() },
+            { amount: numRefundBank, leg: bankLeg(selectedBankObj) },
+            { amount: numRefundMfs, leg: mfsLeg(selectedMfsObj) },
+          ].filter((t) => t.amount > 0);
+
+          const productSummary = activeLines.map((li) => li.productName).filter(Boolean).join(", ");
+
+          await recordTradeLedger({
+            tradeType: isSale ? "EXPENSE" : "INCOME",
+            tenders,
+            invoiceNo: invoiceNo ? String(invoiceNo).trim() : String(generatedReturnNo),
+            refNo: String(generatedReturnNo),
+            partyId: partyId || (isSale ? selectedOrder?.customerId : selectedOrder?.supplierId) || "",
+            head: isSale ? "Sales Return" : "Purchase Return",
+            itemsSummary: productSummary,
+            notes: finalNote.trim(),
+            date: returnDate,
+            totalDue: numRefundDue,
+          });
+
+          if (numRefundMfs > 0 && selectedMfsObj?.id) {
+            try {
+              const cur = Number(selectedMfsObj.currentBalance ?? selectedMfsObj.openingBalance ?? 0);
+              const delta = isSale ? -numRefundMfs : numRefundMfs;
+              const newBal = Math.max(0, Number((cur + delta).toFixed(2)));
+              await updateMfsUser({
+                id: selectedMfsObj.id,
+                name: selectedMfsObj.name || "MFS",
+                phoneNumber: selectedMfsObj.phoneNumber || "",
+                method: selectedMfsObj.method || "Bkash",
+                openingBalance: Number(selectedMfsObj.openingBalance || 0),
+                currentBalance: newBal,
+                status: selectedMfsObj.status || "Active",
+              });
+            } catch (mfsUpErr) {
+              console.warn("MFS return balance sync warning:", mfsUpErr);
+            }
+          }
+        } catch (ledgerErr) {
+          console.error(`${mode} return saved, but financial ledger posting encountered an error:`, ledgerErr);
+        }
+      }
 
       setHasJustSubmitted(true);
 
@@ -1170,6 +1154,7 @@ export const TradeReturnForm: React.FC<TradeReturnFormProps> = ({ mode }) => {
       queryClient.invalidateQueries({ queryKey: [productListQueryKey], refetchType: "all" });
       queryClient.invalidateQueries({ queryKey: [productQueryKey], refetchType: "all" });
       queryClient.invalidateQueries({ queryKey: [dashboardQueryKey], refetchType: "all" });
+      queryClient.invalidateQueries({ queryKey: [userDashboardQueryKey], refetchType: "all" });
 
       // Invalidate live balance and transaction queries actively for real-time UI synchronization
       await Promise.all([
@@ -1536,6 +1521,11 @@ export const TradeReturnForm: React.FC<TradeReturnFormProps> = ({ mode }) => {
             <div className="pt-2 border-t border-[var(--ui-border)]">
               <TradeRefundSection
                 refund={tradeRefund}
+                adjustmentTarget={adjustmentTarget}
+                onSelectAdjustmentTarget={handleSelectAdjustmentTarget}
+                origDueAmount={origDueAmount}
+                origCashPaid={origCashPaid}
+                origPaidAmount={origPaidAmount}
                 refundAmount={totals.refundAmount}
                 refundCash={refundCash}
                 refundBank={refundBank}

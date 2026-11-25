@@ -98,14 +98,17 @@ export const useTradeRefund = ({
 
     if (prevRecordIdRef.current !== currentId) {
       prevRecordIdRef.current = currentId;
-      // If the invoice has an outstanding due amount, default to adjusting due; otherwise cash
-      if (origDueAmount > 0) {
+      // If defaultAdjustmentTarget is explicitly provided, use it;
+      // otherwise, if priority is due_first or invoice has due, default to due; otherwise cash
+      if (defaultAdjustmentTarget) {
+        setAdjustmentTarget(defaultAdjustmentTarget);
+      } else if (priority === "due_first" || origDueAmount > 0) {
         setAdjustmentTarget("due");
       } else {
         setAdjustmentTarget("cash");
       }
     }
-  }, [selectedRecord, origDueAmount]);
+  }, [selectedRecord, origDueAmount, priority, defaultAdjustmentTarget]);
 
   // Auto-distribute refund
   useEffect(() => {
@@ -125,22 +128,6 @@ export const useTradeRefund = ({
       return;
     }
 
-    // Reuse the original tender split only when the refund covers the full invoice total
-    if (
-      returnMode === "FULL" &&
-      Math.abs(refundAmount - origGrandTotal) < 0.01
-    ) {
-      const nextCash = origCashPaid > 0 ? String(origCashPaid) : "";
-      const nextBank = origBankPaid > 0 ? String(origBankPaid) : "";
-      const nextMfs = origMfsPaid > 0 ? String(origMfsPaid) : "";
-      const nextDue = origDueAmount > 0 ? String(origDueAmount) : "";
-      setRefundCashAmount((prev) => (prev !== nextCash ? nextCash : prev));
-      setRefundBankAmount((prev) => (prev !== nextBank ? nextBank : prev));
-      setRefundMfsAmount((prev) => (prev !== nextMfs ? nextMfs : prev));
-      setRefundDueAmount((prev) => (prev !== nextDue ? nextDue : prev));
-      return;
-    }
-
     let remaining = refundAmount;
     let allocCash = 0;
     let allocBank = 0;
@@ -152,6 +139,10 @@ export const useTradeRefund = ({
       if (origDueAmount > 0) {
         allocDue = Math.min(remaining, origDueAmount);
         remaining = Number((remaining - allocDue).toFixed(2));
+      } else {
+        // If invoice due is 0, user still explicitly chooses to adjust against general supplier/customer due
+        allocDue = remaining;
+        remaining = 0;
       }
       // 2. Remainder to Cash paid
       if (remaining > 0 && origCashPaid > 0) {
@@ -170,7 +161,7 @@ export const useTradeRefund = ({
       }
       // 5. Excess beyond original allocations
       if (remaining > 0) {
-        allocCash = Number((allocCash + remaining).toFixed(2));
+        allocDue = Number((allocDue + remaining).toFixed(2));
         remaining = 0;
       }
     } else {
