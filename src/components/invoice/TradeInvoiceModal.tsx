@@ -645,12 +645,6 @@ export const TradeInvoiceModal: React.FC<TradeInvoiceModalProps> = ({
                         </td>
                         <td style={{ border: "1px solid #64748b", padding: "4px 8px", textAlign: "left" }}>
                           <div style={{ fontWeight: 400 }}>{item.productName}</div>
-                          {(item.returnReason || item.returnRemarks) && (
-                            <div style={{ fontSize: "9.5px", color: "#475569", marginTop: "1px" }}>
-                              {item.returnReason && <span>Reason: {item.returnReason}</span>}
-                              {item.returnRemarks && <span> ({item.returnRemarks})</span>}
-                            </div>
-                          )}
                         </td>
                         <td style={{ border: "1px solid #64748b", padding: "4px 6px", textAlign: "center", fontVariantNumeric: "tabular-nums" }}>
                           {qty}
