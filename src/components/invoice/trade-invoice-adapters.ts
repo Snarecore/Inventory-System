@@ -116,6 +116,19 @@ export const normalizeSaleInvoice = (sale: any): TradeInvoiceData => {
     paidAmount: paid,
     dueAmount: due,
     previousDue,
+    previousDueInvoices: Array.isArray(s.previousDueInvoices)
+      ? s.previousDueInvoices
+          .filter((d: any) => d && Number(d.dueAmount ?? 0) > 0)
+          .map((d: any, idx: number) => ({
+            id: d.id ?? idx,
+            invoiceNo: getCleanOrderNo(d.orderNo, d.invoiceNo, d.id) || d.invoiceNo || d.orderNo || "-",
+            date: d.salesDate || d.saleDate || d.date || d.createdAt || null,
+            payMode: d.paymentType || d.payment_type || d.payMode || "Credit",
+            invoiceAmount: Number(d.grandTotal ?? d.totalAmount ?? d.invoiceAmount ?? 0),
+            paidAmount: Number(d.paidAmount ?? 0),
+            dueAmount: Number(d.dueAmount ?? 0),
+          }))
+      : undefined,
     totalDueWithCurrent: Number(due + previousDue),
     notes: s.note || s.notes || "",
   };
