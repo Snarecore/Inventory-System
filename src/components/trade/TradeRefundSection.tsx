@@ -66,7 +66,15 @@ export const TradeRefundSection: React.FC<TradeRefundSectionProps> = ({
   const origDueAmount = Number(refund?.origDueAmount ?? flatProps.origDueAmount ?? 0);
   const origCashPaid = Number(refund?.origCashPaid ?? flatProps.origCashPaid ?? 0);
   const origPaidAmount = Number(refund?.origPaidAmount ?? flatProps.origPaidAmount ?? origCashPaid);
-  const hasDueAndCash = origDueAmount > 0 && (origCashPaid > 0 || origPaidAmount > 0);
+  const origTotalPaid = Number(refund?.origTotalPaid ?? origPaidAmount);
+  const isFullCredit = refund?.isFullCredit ?? (origTotalPaid <= 0 && origDueAmount > 0);
+  const maxCashRefund =
+    refund?.maxCashRefund ??
+    (isFullCredit ? 0 : origDueAmount > 0 ? (origCashPaid > 0 ? origCashPaid : origTotalPaid) : undefined);
+  const isCashRefundExceeded =
+    refund?.isCashRefundExceeded ??
+    ((isFullCredit && numRefundCash + numRefundBank + numRefundMfs > 0.001) ||
+      (origDueAmount > 0 && maxCashRefund !== undefined && numRefundCash > maxCashRefund + 0.001));
 
   const totalRefundAllocated = Number(
     refund?.totalRefundAllocated ??
@@ -123,11 +131,17 @@ export const TradeRefundSection: React.FC<TradeRefundSectionProps> = ({
         {/* Option 2: Adjust Cash */}
         <button
           type="button"
-          onClick={() => onSelectAdjustmentTarget?.("cash")}
-          className={`p-2 rounded-md border text-left transition-all cursor-pointer flex flex-col justify-between relative group ${
-            adjustmentTarget === "cash"
-              ? "border-[#10b981] bg-[#10b981]/10 shadow-xs ring-2 ring-[#10b981]"
-              : "border-[var(--ui-border)] bg-[var(--ui-surface)] hover:bg-[var(--ui-surface-muted)] hover:border-[#10b981]/50 opacity-90"
+          disabled={isFullCredit}
+          title={isFullCredit ? "Full credit order — cannot switch to cash refund" : undefined}
+          onClick={() => {
+            if (!isFullCredit) onSelectAdjustmentTarget?.("cash");
+          }}
+          className={`p-2 rounded-md border text-left transition-all flex flex-col justify-between relative group ${
+            isFullCredit
+              ? "border-[var(--ui-border)] bg-[var(--ui-surface-sunken)] opacity-50 cursor-not-allowed"
+              : adjustmentTarget === "cash"
+              ? "border-[#10b981] bg-[#10b981]/10 shadow-xs ring-2 ring-[#10b981] cursor-pointer"
+              : "border-[var(--ui-border)] bg-[var(--ui-surface)] hover:bg-[var(--ui-surface-muted)] hover:border-[#10b981]/50 opacity-90 cursor-pointer"
           }`}
         >
           <div className="flex items-center justify-between gap-1 w-full">
@@ -135,12 +149,12 @@ export const TradeRefundSection: React.FC<TradeRefundSectionProps> = ({
               <FaMoneyBillWave size={13} />
               Adjust Cash
             </span>
-            {adjustmentTarget === "cash" && (
+            {adjustmentTarget === "cash" && !isFullCredit && (
               <FaCheckCircle size={13} className="text-[#059669] shrink-0" />
             )}
           </div>
           <div className="mt-1 flex items-center justify-between text-[10.5px] text-[var(--ui-text-muted)]">
-            <span>Paid:</span>
+            <span>{isFullCredit ? "Credit only" : "Paid:"}</span>
             <strong className="text-[#059669] font-bold">৳{formatMoney(origCashPaid || origPaidAmount)}</strong>
           </div>
         </button>
@@ -151,7 +165,9 @@ export const TradeRefundSection: React.FC<TradeRefundSectionProps> = ({
         {/* 1. Cash Card */}
         <div
           className={`px-2.5 py-1 rounded-md border transition-all flex items-center justify-between gap-1.5 shadow-2xs select-none ${
-            numRefundCash > 0
+            isCashRefundExceeded
+              ? "border-[var(--ui-danger)] bg-[var(--ui-danger-light)]/30"
+              : numRefundCash > 0
               ? "border-[var(--ui-success-border)] bg-[var(--ui-success-light)]/30"
               : "border-[var(--ui-border)] bg-[var(--ui-surface-muted)]/40 opacity-70"
           }`}
@@ -159,19 +175,36 @@ export const TradeRefundSection: React.FC<TradeRefundSectionProps> = ({
           <div className="flex items-center gap-1.5 min-w-0">
             <div
               className={`w-6 h-6 rounded flex items-center justify-center shrink-0 ${
-                numRefundCash > 0
+                isCashRefundExceeded
+                  ? "bg-[var(--ui-danger-border)] text-[var(--ui-danger-dark)]"
+                  : numRefundCash > 0
                   ? "bg-[var(--ui-success-border)] text-[var(--ui-success-dark)]"
                   : "bg-[var(--ui-surface-sunken)] text-[var(--ui-text)]"
               }`}
             >
               <FaMoneyBillWave size={11} />
             </div>
-            <span className="font-bold text-[11px] text-[var(--ui-text)] tracking-wider">CASH</span>
+            <div>
+              <span className="font-bold text-[11px] text-[var(--ui-text)] tracking-wider block leading-tight">
+                CASH
+              </span>
+              {origDueAmount > 0 && maxCashRefund !== undefined && (
+                <span
+                  className={`text-[9.5px] font-normal block leading-none ${
+                    isCashRefundExceeded ? "text-[var(--ui-danger)] font-semibold" : "text-[var(--ui-text)]"
+                  }`}
+                >
+                  Max: ৳{formatMoney(maxCashRefund)}
+                </span>
+              )}
+            </div>
           </div>
 
           <div
             className={`flex items-center h-6.5 rounded border overflow-hidden w-28 sm:w-34 shrink-0 transition-colors shadow-2xs ${
-              numRefundCash > 0
+              isCashRefundExceeded
+                ? "border-[var(--ui-danger)] bg-[var(--ui-surface)]"
+                : numRefundCash > 0
                 ? "border-[var(--ui-success)] bg-[var(--ui-surface)]"
                 : "border-[var(--ui-border)] bg-[var(--ui-surface-sunken)]/70"
             }`}
@@ -182,13 +215,29 @@ export const TradeRefundSection: React.FC<TradeRefundSectionProps> = ({
             <input
               type="number"
               min={0}
+              max={maxCashRefund}
+              disabled={isFullCredit || maxCashRefund === 0}
+              readOnly={isFullCredit || maxCashRefund === 0}
               placeholder="0"
               value={numRefundCash > 0 ? numRefundCash.toString() : ""}
-              onChange={(e) => flatProps.onRefundCashChange?.(e.target.value)}
-              className="w-full text-right px-1.5 text-xs font-semibold text-[var(--ui-text)] outline-none bg-transparent h-full placeholder:text-[var(--ui-text-muted)]"
+              onChange={(e) => {
+                if (!isFullCredit && maxCashRefund !== 0) {
+                  flatProps.onRefundCashChange?.(e.target.value);
+                }
+              }}
+              className={`w-full text-right px-1.5 text-xs font-semibold text-[var(--ui-text)] outline-none bg-transparent h-full placeholder:text-[var(--ui-text-muted)] ${
+                isFullCredit || maxCashRefund === 0 ? "cursor-not-allowed opacity-60" : ""
+              }`}
             />
           </div>
         </div>
+        {isCashRefundExceeded && (
+          <p className="text-[10.5px] font-medium text-[var(--ui-danger)] px-1 leading-tight">
+            {isFullCredit
+              ? "Full credit order cannot be refunded in cash."
+              : `Cash refund cannot exceed the paid amount (৳${formatMoney(maxCashRefund ?? origTotalPaid)}).`}
+          </p>
+        )}
 
         {/* 2. Bank Card */}
         <div

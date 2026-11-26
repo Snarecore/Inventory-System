@@ -82,6 +82,25 @@ export const useTradeRefund = ({
     return { origCashPaid: c, origBankPaid: b, origMfsPaid: m };
   }, [selectedRecord, origPaidAmount, origPaymentMode]);
 
+  const origTotalPaid = useMemo(() => {
+    const splitSum = origCashPaid + origBankPaid + origMfsPaid;
+    return Math.max(origPaidAmount, splitSum);
+  }, [origPaidAmount, origCashPaid, origBankPaid, origMfsPaid]);
+
+  const isFullCredit = Boolean(selectedRecord) && origTotalPaid <= 0 && origDueAmount > 0;
+  const hasDueAndCash = origDueAmount > 0 && origTotalPaid > 0;
+
+  const maxCashRefund = useMemo(() => {
+    if (!selectedRecord) return undefined;
+    if (isFullCredit) return 0;
+    if (origDueAmount > 0) {
+      return origCashPaid > 0
+        ? origCashPaid
+        : Math.max(0, Number((origTotalPaid - origBankPaid - origMfsPaid).toFixed(2)));
+    }
+    return undefined;
+  }, [selectedRecord, isFullCredit, origDueAmount, origCashPaid, origTotalPaid, origBankPaid, origMfsPaid]);
+
   // Auto-set default adjustment target when a record is selected
   const prevRecordIdRef = useRef<any>(null);
   useEffect(() => {
@@ -98,17 +117,20 @@ export const useTradeRefund = ({
 
     if (prevRecordIdRef.current !== currentId) {
       prevRecordIdRef.current = currentId;
-      // If defaultAdjustmentTarget is explicitly provided, use it;
-      // otherwise, if priority is due_first or invoice has due, default to due; otherwise cash
-      if (defaultAdjustmentTarget) {
+      // Full credit orders must always adjust against outstanding due
+      if (isFullCredit) {
+        setAdjustmentTarget("due");
+      } else if (defaultAdjustmentTarget) {
         setAdjustmentTarget(defaultAdjustmentTarget);
       } else if (priority === "due_first" || origDueAmount > 0) {
         setAdjustmentTarget("due");
       } else {
         setAdjustmentTarget("cash");
       }
+    } else if (isFullCredit && adjustmentTarget === "cash") {
+      setAdjustmentTarget("due");
     }
-  }, [selectedRecord, origDueAmount, priority, defaultAdjustmentTarget]);
+  }, [selectedRecord, origDueAmount, priority, defaultAdjustmentTarget, isFullCredit, adjustmentTarget]);
 
   // Auto-distribute refund
   useEffect(() => {
@@ -165,12 +187,14 @@ export const useTradeRefund = ({
         remaining = 0;
       }
     } else {
-      // 1. Refund in Cash first
+      // 1. Refund in Cash first (never exceed paid cash when order has due)
       const availableCash =
         origCashPaid > 0
           ? origCashPaid
-          : origPaidAmount > 0
-          ? origPaidAmount
+          : origTotalPaid > 0 && origBankPaid === 0 && origMfsPaid === 0
+          ? origTotalPaid
+          : origDueAmount > 0
+          ? 0
           : remaining;
       if (availableCash > 0) {
         allocCash = Math.min(remaining, availableCash);
@@ -193,7 +217,11 @@ export const useTradeRefund = ({
       }
       // 5. Excess beyond original allocations
       if (remaining > 0) {
-        allocCash = Number((allocCash + remaining).toFixed(2));
+        if (origDueAmount > 0) {
+          allocDue = Number((allocDue + remaining).toFixed(2));
+        } else {
+          allocCash = Number((allocCash + remaining).toFixed(2));
+        }
         remaining = 0;
       }
     }
@@ -251,7 +279,21 @@ export const useTradeRefund = ({
   const numRefundDue = Number(refundDueAmount) || 0;
 
   const totalRefundAllocated = numRefundCash + numRefundBank + numRefundMfs + numRefundDue;
+  const totalCashBankMfsRefund = numRefundCash + numRefundBank + numRefundMfs;
   const refundDifference = Number((refundAmount - totalRefundAllocated).toFixed(2));
+
+  const isCashRefundExceeded =
+    Boolean(selectedRecord) &&
+    ((isFullCredit && totalCashBankMfsRefund > 0.001) ||
+      totalCashBankMfsRefund > origTotalPaid + 0.001 ||
+      (origDueAmount > 0 && numRefundCash > (maxCashRefund ?? 0) + 0.001));
+
+  const handleSelectAdjustmentTarget = (target: RefundAdjustmentTarget) => {
+    if (target === "cash" && isFullCredit) {
+      return;
+    }
+    setAdjustmentTarget(target);
+  };
 
   const resetRefund = () => {
     setRefundCashAmount("");
@@ -287,8 +329,12 @@ export const useTradeRefund = ({
     handleSelectRefundMfs: setSelectedRefundMfsId,
     adjustmentTarget,
     setAdjustmentTarget,
-    handleSelectAdjustmentTarget: setAdjustmentTarget,
-    hasDueAndCash: origDueAmount > 0 && (origCashPaid > 0 || origPaidAmount > 0),
+    handleSelectAdjustmentTarget,
+    hasDueAndCash,
+    isFullCredit,
+    maxCashRefund,
+    isCashRefundExceeded,
+    origTotalPaid,
     origPaymentMode,
     origGrandTotal,
     origDueAmount,
@@ -301,6 +347,7 @@ export const useTradeRefund = ({
     numRefundMfs,
     numRefundDue,
     totalRefundAllocated,
+    totalCashBankMfsRefund,
     refundDifference,
     resetRefund,
   };

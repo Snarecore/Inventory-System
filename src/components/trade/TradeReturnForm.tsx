@@ -717,6 +717,11 @@ export const TradeReturnForm: React.FC<TradeReturnFormProps> = ({ mode }) => {
     origDueAmount,
     origCashPaid,
     origPaidAmount,
+    origTotalPaid,
+    isFullCredit,
+    maxCashRefund,
+    isCashRefundExceeded,
+    totalCashBankMfsRefund,
   } = tradeRefund;
 
   // Toggle mode helpers
@@ -837,6 +842,20 @@ export const TradeReturnForm: React.FC<TradeReturnFormProps> = ({ mode }) => {
     const activeLines = lines.filter((l) => l.isSelected && l.quantity > 0);
     if (activeLines.length === 0) {
       showErrorToast("Please select at least one item with a valid return quantity.");
+      return;
+    }
+
+    if (isFullCredit && totalCashBankMfsRefund > 0.001) {
+      showErrorToast(
+        `This ${isSale ? "sale" : "purchase"} was made on full credit, so it cannot be refunded in cash. Please adjust against outstanding due.`
+      );
+      return;
+    }
+
+    if (isCashRefundExceeded) {
+      showErrorToast(
+        `Cash refund cannot exceed the exact paid amount (৳${formatMoney(maxCashRefund ?? origTotalPaid)}).`
+      );
       return;
     }
 
@@ -1216,7 +1235,7 @@ export const TradeReturnForm: React.FC<TradeReturnFormProps> = ({ mode }) => {
             size="sm"
             color="var(--primary-color)"
             onClick={() => handlePreSubmit(false)}
-            disabled={!selectedOrder || lines.filter((l) => l.isSelected && l.quantity > 0).length === 0}
+            disabled={!selectedOrder || lines.filter((l) => l.isSelected && l.quantity > 0).length === 0 || isCashRefundExceeded}
           />
           <Button
             label="Save & Print"
@@ -1224,7 +1243,7 @@ export const TradeReturnForm: React.FC<TradeReturnFormProps> = ({ mode }) => {
             color="var(--primary-color)"
             icon={<FaPrint size={12} />}
             onClick={() => handlePreSubmit(true)}
-            disabled={!selectedOrder || lines.filter((l) => l.isSelected && l.quantity > 0).length === 0}
+            disabled={!selectedOrder || lines.filter((l) => l.isSelected && l.quantity > 0).length === 0 || isCashRefundExceeded}
           />
         </div>
       </div>
@@ -1555,7 +1574,7 @@ export const TradeReturnForm: React.FC<TradeReturnFormProps> = ({ mode }) => {
               className="w-full justify-center !px-2 text-xs font-semibold whitespace-nowrap truncate"
               title={`Confirm & Save ${isSale ? "Sales" : "Purchase"} Return`}
               onClick={() => handlePreSubmit(false)}
-              disabled={!canCreateReturn || !selectedOrder || lines.filter((l) => l.isSelected && l.quantity > 0).length === 0}
+              disabled={!canCreateReturn || !selectedOrder || lines.filter((l) => l.isSelected && l.quantity > 0).length === 0 || isCashRefundExceeded}
             />
             <Button
               label="Save & Print"
@@ -1565,7 +1584,7 @@ export const TradeReturnForm: React.FC<TradeReturnFormProps> = ({ mode }) => {
               className="w-full justify-center !px-2 text-xs font-semibold whitespace-nowrap truncate"
               title="Save & Print Receipt"
               onClick={() => handlePreSubmit(true)}
-              disabled={!canCreateReturn || !selectedOrder || lines.filter((l) => l.isSelected && l.quantity > 0).length === 0}
+              disabled={!canCreateReturn || !selectedOrder || lines.filter((l) => l.isSelected && l.quantity > 0).length === 0 || isCashRefundExceeded}
             />
           </div>
         </div>
