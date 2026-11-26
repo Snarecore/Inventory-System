@@ -568,7 +568,7 @@ const AdminDashboard: React.FC = () => {
 
     const liveItems = Array.from(itemMap.values())
       .sort((a, b) => b.totalRevenue - a.totalRevenue)
-      .slice(0, 5);
+      .slice(0, 7);
 
     const maxRev = liveItems[0]?.totalRevenue || 1;
     const itemsWithPct = liveItems.map((item) => ({

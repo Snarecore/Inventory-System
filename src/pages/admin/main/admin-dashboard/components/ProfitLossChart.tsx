@@ -221,35 +221,35 @@ export const ProfitLossChart: React.FC<ProfitLossChartProps> = ({ data: propData
           </div>
         </div>
 
-        <div className="border-b border-gray-200 mb-3"></div>
+        <div className="border-b border-gray-200 mb-2"></div>
 
         {/* Dynamic Metric Stat Boxes */}
-        <div className="flex flex-wrap gap-4 mb-3">
-          <div className="text-sm border border-gray-200 rounded-lg p-2.5 flex-1 min-w-36">
+        <div className="flex flex-wrap gap-3 mb-2">
+          <div className="text-sm border border-gray-200 rounded-lg px-2.5 py-1.5 flex-1 min-w-36">
             <div className="flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-[#009fe3]"></span>
               <span className="text-xs text-gray-600">
                 {isAllMonths ? '6M Total Income' : 'Monthly Income'}
               </span>
             </div>
-            <p className="font-bold text-lg text-black mt-1">
+            <p className="font-bold text-lg text-black mt-0.5 leading-tight">
               ৳{totalIncome.toLocaleString('en-IN')}
             </p>
           </div>
 
-          <div className="text-sm border border-gray-200 rounded-lg p-2.5 flex-1 min-w-36">
+          <div className="text-sm border border-gray-200 rounded-lg px-2.5 py-1.5 flex-1 min-w-36">
             <div className="flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-[#bfe7f7]"></span>
               <span className="text-xs text-gray-600">
                 {isAllMonths ? '6M Total Expense' : 'Monthly Expense'}
               </span>
             </div>
-            <p className="font-bold text-lg text-black mt-1">
+            <p className="font-bold text-lg text-black mt-0.5 leading-tight">
               ৳{totalExpense.toLocaleString('en-IN')}
             </p>
           </div>
 
-          <div className="text-sm border border-gray-200 rounded-lg p-2.5 flex-1 min-w-36">
+          <div className="text-sm border border-gray-200 rounded-lg px-2.5 py-1.5 flex-1 min-w-36">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <span
@@ -262,7 +262,7 @@ export const ProfitLossChart: React.FC<ProfitLossChartProps> = ({ data: propData
                 </span>
               </div>
               <span
-                className={`text-[11px] font-bold px-1.5 py-0.5 rounded border ${
+                className={`text-[11px] font-bold px-1.5 py-0 rounded border leading-tight ${
                   totalNetProfit >= 0
                     ? 'text-[#28c76f] bg-green-50 border-green-200'
                     : 'text-[#ea5455] bg-red-50 border-red-200'
@@ -272,7 +272,7 @@ export const ProfitLossChart: React.FC<ProfitLossChartProps> = ({ data: propData
               </span>
             </div>
             <p
-              className={`font-bold text-lg mt-1 ${
+              className={`font-bold text-lg mt-0.5 leading-tight ${
                 totalNetProfit >= 0 ? 'text-[#28c76f]' : 'text-[#ea5455]'
               }`}
             >

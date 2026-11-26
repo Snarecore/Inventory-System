@@ -24,18 +24,18 @@ export const TopSaleItemsWidget: React.FC<TopSaleItemsWidgetProps> = ({ data: pr
           </p>
         </div>
 
-        <div className="border-b border-gray-200 mb-3"></div>
+        <div className="border-b border-gray-200 mb-2"></div>
       </div>
 
-      {/* Item List evenly distributed vertically */}
-      <div className="flex flex-col justify-between flex-1 py-1 gap-3">
+      {/* Item List */}
+      <div className="flex flex-col flex-1 gap-2">
         {items.length === 0 ? (
           <div className="flex-1 flex items-center justify-center text-xs text-gray-400 py-6">
             No sale items recorded yet.
           </div>
         ) : (
           items.map((item, index) => (
-          <div key={`${item.id}-${index}`} className="space-y-2">
+          <div key={`${item.id}-${index}`} className="space-y-1">
             <div className="flex items-center justify-between text-xs">
               <div className="flex items-center gap-2">
                 <div>
@@ -58,16 +58,15 @@ export const TopSaleItemsWidget: React.FC<TopSaleItemsWidgetProps> = ({ data: pr
                 className="h-full rounded-full transition-all duration-500"
                 style={{
                   width: `${item.percentage}%`,
-                  backgroundColor:
-                    index === 0
-                      ? '#009fe3'
-                      : index === 1
-                      ? '#1b2850'
-                      : index === 2
-                      ? '#28c76f'
-                      : index === 3
-                      ? '#FE9F43'
-                      : '#7367f0',
+                  backgroundColor: [
+                    '#009fe3',
+                    '#1b2850',
+                    '#28c76f',
+                    '#FE9F43',
+                    '#7367f0',
+                    '#00cfe8',
+                    '#ea5455',
+                  ][index % 7],
                 }}
               ></div>
             </div>
