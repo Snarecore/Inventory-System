@@ -8,11 +8,12 @@ import type { UserDashboardData } from '@/pages/admin/main/admin-dashboard/types
  * Provides real-time KPI data, sales trends, asset breakdown, P&L, top customers, and top sale items.
  */
 export const useUserDashboardQuery = (
+  dateRange?: { fromDate?: string; toDate?: string },
   options?: Omit<UseQueryOptions<UserDashboardData, Error>, 'queryKey' | 'queryFn'>
 ) => {
   return useQuery<UserDashboardData, Error>({
-    queryKey: [userDashboardQueryKey],
-    queryFn: fetchUserDashboard,
+    queryKey: [userDashboardQueryKey, dateRange?.fromDate ?? '', dateRange?.toDate ?? ''],
+    queryFn: () => fetchUserDashboard(dateRange),
     refetchOnWindowFocus: true,
     ...options,
   });

@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useCallback } from 'react';
 import moment from 'moment';
 import { KpiCardsGrid } from './components/KpiCardsGrid';
 import { SaleAnalysisChart } from './components/SaleAnalysisChart';
@@ -17,14 +17,66 @@ import { useKhatabookDashboardQuery } from '@/hooks/useKhatabook';
 import { useTradeProducts } from '@/hooks/useTradeProducts';
 import PageHeader from '@/components/page-header/PageHeader';
 import { RefreshButton } from '@/components/common';
+import DateRangePicker from '@/components/date-range-picker/DateRangePicker';
+
+const DATE_PARSE_FORMATS = [
+  'DD MMM, YYYY',
+  'DD MMM YYYY',
+  'DD-MM-YYYY',
+  'DD/MM/YYYY',
+  'YYYY-MM-DD',
+  'YYYY/MM/DD',
+];
+
+const parseRawDate = (rawDate: unknown): moment.Moment | null => {
+  if (!rawDate) return null;
+  const d = String(rawDate).trim();
+  if (!d) return null;
+  const mCustom = moment(d, DATE_PARSE_FORMATS, true);
+  if (mCustom.isValid()) return mCustom;
+  const m = moment(d);
+  return m.isValid() ? m : null;
+};
 
 const AdminDashboard: React.FC = () => {
+  const [startDate, setStartDate] = useState<string>('');
+  const [endDate, setEndDate] = useState<string>('');
+  const [datePreset, setDatePreset] = useState<string>('all');
+
+  const apiDateRange = useMemo(() => {
+    if (!startDate && !endDate) return undefined;
+    return {
+      fromDate: startDate ? moment(startDate, 'YYYY-MM-DD').format('DD-MM-YYYY') : undefined,
+      toDate: endDate ? moment(endDate, 'YYYY-MM-DD').format('DD-MM-YYYY') : undefined,
+    };
+  }, [startDate, endDate]);
+
+  const hasDateFilter = Boolean(startDate || endDate);
+
+  const isDateInSelectedRange = useCallback(
+    (rawDate: unknown, fallbackToToday = true): boolean => {
+      const parsed = parseRawDate(rawDate);
+      if (!parsed) return false;
+      if (!startDate && !endDate) {
+        return fallbackToToday ? parsed.isSame(moment(), 'day') : true;
+      }
+      if (startDate && parsed.isBefore(moment(startDate, 'YYYY-MM-DD'), 'day')) {
+        return false;
+      }
+      if (endDate && parsed.isAfter(moment(endDate, 'YYYY-MM-DD'), 'day')) {
+        return false;
+      }
+      return true;
+    },
+    [startDate, endDate]
+  );
+
   // 0. Primary Live Dashboard Query ("get-user-dashboard")
   const {
     data: userDashboard,
     refetch: refetchUserDashboard,
     isRefetching: isRefetchingDashboard,
-  } = useUserDashboardQuery();
+  } = useUserDashboardQuery(apiDateRange);
 
   // 1. Live Cash Balance Query
   const {
@@ -109,19 +161,6 @@ const AdminDashboard: React.FC = () => {
   };
 
   const kpiData = useMemo(() => {
-    const isDateToday = (rawDate: any): boolean => {
-      if (!rawDate) return false;
-      const d = String(rawDate).trim();
-      if (!d) return false;
-      const todayIso = moment().format('YYYY-MM-DD');
-      if (d.startsWith(todayIso)) return true;
-      const mCustom = moment(d, ['DD MMM, YYYY', 'DD MMM YYYY', 'DD-MM-YYYY', 'DD/MM/YYYY', 'YYYY-MM-DD', 'YYYY/MM/DD'], true);
-      if (mCustom.isValid() && mCustom.isSame(moment(), 'day')) return true;
-      const m = moment(d);
-      if (m.isValid() && m.isSame(moment(), 'day')) return true;
-      return false;
-    };
-
     // 1. Active Bank Accounts total balance
     const liveBank = registeredBankAccounts
       .filter((b) => {
@@ -156,17 +195,17 @@ const AdminDashboard: React.FC = () => {
       ? liveMfs
       : 0;
 
-    // 3. Today's Sale: Sum of completed sales created/recorded today
+    // 3. Sale total (for selected date range, or today by default)
     const todaysSale = (salesList || []).reduce((sum, s) => {
       if (s.isReturnRecord) return sum;
       const date = s.salesDate || s.saleDate || s.sales_date || s.date || s.createdAt || s.createdDate;
-      if (isDateToday(date)) {
+      if (isDateInSelectedRange(date, true)) {
         return sum + (Number(s.grandTotal ?? s.totalAmount ?? s.paidAmount ?? 0) || 0);
       }
       return sum;
     }, 0);
 
-    // 4. Today's Purchase: Sum of purchases created/recorded today
+    // 4. Purchase total (for selected date range, or today by default)
     const todaysPurchase = (purchaseList || []).reduce((sum, p) => {
       if (p.isReturnRecord) return sum;
       const date =
@@ -176,7 +215,7 @@ const AdminDashboard: React.FC = () => {
         (p as any).date ||
         p.createdAt ||
         (p as any).createdDate;
-      if (isDateToday(date)) {
+      if (isDateInSelectedRange(date, true)) {
         return sum + (Number(p.grandTotal ?? p.totalAmount ?? p.paidAmount ?? 0) || 0);
       }
       return sum;
@@ -233,6 +272,7 @@ const AdminDashboard: React.FC = () => {
     khatabookKpi?.totalPawna,
     khatabookKpi?.totalPabo,
     khatabookKpi?.totalDibo,
+    isDateInSelectedRange,
   ]);
 
   // Merge live transactional queries with endpoint structure so newly recorded sales and live balances immediately reflect!
@@ -289,41 +329,33 @@ const AdminDashboard: React.FC = () => {
     };
   }, [userDashboard?.kpiData, kpiData]);
 
-  // Active sales analysis: dynamically includes today's sales in daily analysis
+  // Active sales analysis: dynamically includes today's sales or selected range sales in daily analysis
   const activeSalesAnalysis = useMemo(() => {
     const base = userDashboard?.salesAnalysis;
 
-    const isDateToday = (rawDate: any): boolean => {
-      if (!rawDate) return false;
-      const d = String(rawDate).trim();
-      if (!d) return false;
-      const todayIso = moment().format('YYYY-MM-DD');
-      if (d.startsWith(todayIso)) return true;
-      const mCustom = moment(d, ['DD MMM, YYYY', 'DD MMM YYYY', 'DD-MM-YYYY', 'DD/MM/YYYY', 'YYYY-MM-DD', 'YYYY/MM/DD'], true);
-      if (mCustom.isValid() && mCustom.isSame(moment(), 'day')) return true;
-      const m = moment(d);
-      if (m.isValid() && m.isSame(moment(), 'day')) return true;
-      return false;
-    };
-
-    const todaySales = (salesList || []).filter((s) => {
+    const filteredSales = (salesList || []).filter((s) => {
       if (s.isReturnRecord) return false;
       const date = s.salesDate || s.saleDate || s.sales_date || s.date || s.createdAt || s.createdDate;
-      return isDateToday(date);
+      return isDateInSelectedRange(date, true);
     });
 
     let dailyData = base?.daily;
+    const hasApiDaily = Boolean(base?.daily?.points?.length);
 
-    if (todaySales.length > 0) {
-      const todayTotal = todaySales.reduce(
+    if ((!hasDateFilter || !hasApiDaily) && filteredSales.length > 0) {
+      const filteredTotal = filteredSales.reduce(
         (sum, s) => sum + (Number(s.grandTotal ?? s.totalAmount ?? s.paidAmount ?? 0) || 0),
         0
       );
 
-      const points = todaySales.map((s, idx) => {
+      const points = filteredSales.map((s, idx) => {
         const timeStr = s.createdAt || s.salesDate || s.createdDate || s.date;
         const m = moment(timeStr);
-        const label = m.isValid() ? m.format('hh:mm A') : `Order #${s.orderNo || s.orderId || s.id || idx + 1}`;
+        const label = hasDateFilter && m.isValid()
+          ? m.format('DD MMM')
+          : m.isValid()
+          ? m.format('hh:mm A')
+          : `Order #${s.orderNo || s.orderId || s.id || idx + 1}`;
         const amount = Number(s.grandTotal ?? s.totalAmount ?? s.paidAmount ?? 0) || 0;
         return {
           label,
@@ -334,8 +366,8 @@ const AdminDashboard: React.FC = () => {
 
       dailyData = {
         summary: {
-          total: todayTotal,
-          average: Math.round(todayTotal / todaySales.length),
+          total: filteredTotal,
+          average: Math.round(filteredTotal / filteredSales.length),
         },
         points,
       };
@@ -346,7 +378,7 @@ const AdminDashboard: React.FC = () => {
       weekly: base?.weekly || { summary: { total: 0, average: 0 }, points: [] },
       monthly: base?.monthly || { summary: { total: 0, average: 0 }, points: [] },
     };
-  }, [userDashboard?.salesAnalysis, salesList]);
+  }, [userDashboard?.salesAnalysis, salesList, isDateInSelectedRange, hasDateFilter]);
 
   // Live stock valuation computed from all products in catalog
   const liveStockValuation = useMemo(() => {
@@ -452,6 +484,10 @@ const AdminDashboard: React.FC = () => {
 
     salesList.forEach((s) => {
       if (s.isReturnRecord) return;
+      if (hasDateFilter) {
+        const date = s.salesDate || s.saleDate || s.sales_date || s.date || s.createdAt || s.createdDate;
+        if (!isDateInSelectedRange(date, false)) return;
+      }
       const custName = String(s.customerName || s.customer?.name || s.name || '').trim();
       const custPhone = String(s.customerPhone || s.customer?.phone || s.phone || '').trim();
       const custId = String(s.customerId || s.customer?.id || s.id || custPhone || custName);
@@ -482,7 +518,7 @@ const AdminDashboard: React.FC = () => {
       }));
 
     return liveCustomers.length > 0 ? liveCustomers : base;
-  }, [userDashboard?.topCustomers, salesList]);
+  }, [userDashboard?.topCustomers, salesList, hasDateFilter, isDateInSelectedRange]);
 
   // Active top sale items: aggregates from live salesList if available
   const activeTopSaleItems = useMemo(() => {
@@ -495,6 +531,10 @@ const AdminDashboard: React.FC = () => {
 
     salesList.forEach((s) => {
       if (s.isReturnRecord) return;
+      if (hasDateFilter) {
+        const date = s.salesDate || s.saleDate || s.sales_date || s.date || s.createdAt || s.createdDate;
+        if (!isDateInSelectedRange(date, false)) return;
+      }
       const details = Array.isArray(s.salesDetails)
         ? s.salesDetails
         : Array.isArray(s.saleDetails)
@@ -537,7 +577,7 @@ const AdminDashboard: React.FC = () => {
     }));
 
     return itemsWithPct.length > 0 ? itemsWithPct : base;
-  }, [userDashboard?.topSaleItems, salesList]);
+  }, [userDashboard?.topSaleItems, salesList, hasDateFilter, isDateInSelectedRange]);
 
   return (
     <div className="flex flex-col gap-2.5 px-3 py-2 sm:px-4 sm:py-2.5 max-w-[1600px] mx-auto w-full">
@@ -546,10 +586,28 @@ const AdminDashboard: React.FC = () => {
           headerTitle="Dashboard"
           headerDescription="Overview of business performance and standing balances"
         />
-        <RefreshButton
-          onClick={handleRefresh}
-          isLoading={isRefreshing}
-        />
+        <div className="flex items-center gap-2 self-start sm:self-auto">
+          <div className="w-48 sm:w-52 shrink-0 z-40">
+            <DateRangePicker
+              startDate={startDate}
+              endDate={endDate}
+              selectedPreset={datePreset}
+              onPresetChange={setDatePreset}
+              onChange={(range) => {
+                setStartDate(range.startDate);
+                setEndDate(range.endDate);
+              }}
+              align="right"
+              size="sm"
+              placeholder="Select date range..."
+              inputClassName="!h-8 !rounded-lg !py-0"
+            />
+          </div>
+          <RefreshButton
+            onClick={handleRefresh}
+            isLoading={isRefreshing}
+          />
+        </div>
       </div>
       <KpiCardsGrid data={activeKpiData} />
       
