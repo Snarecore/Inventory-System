@@ -12,12 +12,12 @@ export interface FormKeyboardNavOptions {
    */
   autoFocusDelay?: number;
   /**
-   * Whether all 4 arrow keys (ArrowDown, ArrowUp, ArrowLeft, ArrowRight) navigate between form fields.
-   * Defaults to true.
+   * @deprecated Arrow key field navigation has been removed to avoid conflicts with native input/dropdown editing.
    */
   enableArrowKeys?: boolean;
   /**
-   * Whether Enter key advances to the next field instead of triggering premature form submit.
+   * Whether Enter key advances to the next field (and Shift+Enter moves to the previous field)
+   * instead of triggering premature form submit.
    * Defaults to true.
    */
   enableEnterNavigation?: boolean;
@@ -95,9 +95,8 @@ function focusField(el: HTMLElement) {
 }
 
 /**
- * Enterprise-grade keyboard navigation hook for forms, modals, drawers, and CMS panels.
- * Controls fluid navigation across all 4 arrow keys (ArrowDown, ArrowUp, ArrowLeft, ArrowRight)
- * and guarantees immediate cursor/focus placement on the first field (especially Select fields).
+ * Keyboard navigation hook for forms, modals, drawers, and layouts.
+ * Moves focus forward on Enter and backward on Shift+Enter between interactive fields.
  */
 export function useFormKeyboardNavigation<T extends HTMLElement = HTMLElement>(
   containerRef: React.RefObject<T | null>,
@@ -106,7 +105,6 @@ export function useFormKeyboardNavigation<T extends HTMLElement = HTMLElement>(
   const {
     autoFocusFirst = true,
     autoFocusDelay = 60,
-    enableArrowKeys = true,
     enableEnterNavigation = true,
     customSelector,
     isActive = true,
@@ -211,25 +209,20 @@ export function useFormKeyboardNavigation<T extends HTMLElement = HTMLElement>(
     };
   }, [isActive, autoFocusFirst, autoFocusDelay, selector, containerRef]);
 
-  // 2. All 4 Arrow keys (Up, Down, Left, Right) and Enter keyboard navigation
+  // 2. Enter / Shift+Enter keyboard navigation (runs on document bubble phase so React child onKeyDown runs first)
   useEffect(() => {
-    if (!isActive || (!enableArrowKeys && !enableEnterNavigation)) return;
-
-    const container = containerRef.current;
-    if (!container) return;
+    if (!isActive || !enableEnterNavigation) return;
 
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Ignore modified keys (Ctrl, Alt, Meta) to preserve native system shortcuts
-      if (e.ctrlKey || e.altKey || e.metaKey) return;
+      const container = containerRef.current;
+      if (!container) return;
 
-      const key = e.key;
-      const isArrowDown = enableArrowKeys && key === "ArrowDown";
-      const isArrowUp = enableArrowKeys && key === "ArrowUp";
-      const isArrowRight = enableArrowKeys && key === "ArrowRight";
-      const isArrowLeft = enableArrowKeys && key === "ArrowLeft";
-      const isEnter = enableEnterNavigation && key === "Enter";
-
-      if (!isArrowDown && !isArrowUp && !isArrowRight && !isArrowLeft && !isEnter) return;
+      if (e.key !== "Enter") return;
+      // Ignore modified keys (Ctrl, Alt, Meta), IME composition, or already-handled events
+      if (e.ctrlKey || e.altKey || e.metaKey || e.isComposing || e.defaultPrevented) return;
+      if ((e as KeyboardEvent & { __formKeyboardNavHandled?: boolean }).__formKeyboardNavHandled) {
+        return;
+      }
 
       const activeEl = document.activeElement as HTMLElement | null;
       if (!activeEl || !container.contains(activeEl)) return;
@@ -240,7 +233,6 @@ export function useFormKeyboardNavigation<T extends HTMLElement = HTMLElement>(
         activeEl.isContentEditable ||
         Boolean(activeEl.closest(".ql-editor"))
       ) {
-        // Let user navigate text and lines naturally inside textarea
         return;
       }
 
@@ -250,77 +242,18 @@ export function useFormKeyboardNavigation<T extends HTMLElement = HTMLElement>(
         Boolean(activeEl.closest('[aria-expanded="true"]')) ||
         Boolean(activeEl.closest('[role="listbox"]'));
       if (isComboboxExpanded) {
-        // Let the dropdown component handle option selection with arrow keys
-        if (isArrowDown || isArrowUp) {
-          return;
-        }
-      }
-
-      // Special Case 3: Native <select> element (when opened)
-      if (activeEl.tagName === "SELECT" && (isArrowDown || isArrowUp)) {
         return;
       }
 
-      // Special Case 4: Submit button on Enter: trigger submit naturally
+      // Special Case 3: Buttons, links, and submit/reset controls should activate naturally on Enter
       if (
-        (activeEl.tagName === "BUTTON" || activeEl.getAttribute("type") === "submit") &&
-        isEnter
+        activeEl.tagName === "BUTTON" ||
+        activeEl.tagName === "A" ||
+        activeEl.getAttribute("role") === "button" ||
+        (activeEl instanceof HTMLInputElement &&
+          ["submit", "button", "reset"].includes(activeEl.type.toLowerCase()))
       ) {
         return;
-      }
-
-      // Special Case 5: Caret-aware ArrowLeft / ArrowRight inside text inputs
-      if (isArrowLeft || isArrowRight) {
-        if (activeEl instanceof HTMLInputElement) {
-          const inputType = activeEl.type.toLowerCase();
-          const isTextInput = ![
-            "checkbox",
-            "radio",
-            "button",
-            "submit",
-            "reset",
-            "file",
-          ].includes(inputType);
-
-          if (isTextInput) {
-            const val = activeEl.value ?? "";
-            let selStart: number | null = null;
-            let selEnd: number | null = null;
-
-            try {
-              selStart = activeEl.selectionStart;
-              selEnd = activeEl.selectionEnd;
-            } catch {
-              // Some browsers throw on selectionStart for specific input types
-              selStart = null;
-              selEnd = null;
-            }
-
-            if (isArrowLeft) {
-              // Only move to previous field if caret is at the beginning or all text is selected
-              const isAtStart =
-                val.length === 0 ||
-                selStart === 0 ||
-                (selStart === 0 && selEnd === val.length);
-              if (!isAtStart && selStart !== null) {
-                // Let native caret move left inside text
-                return;
-              }
-            }
-
-            if (isArrowRight) {
-              // Only move to next field if caret is at the end or all text is selected
-              const isAtEnd =
-                val.length === 0 ||
-                selEnd === val.length ||
-                (selStart === 0 && selEnd === val.length);
-              if (!isAtEnd && selEnd !== null) {
-                // Let native caret move right inside text
-                return;
-              }
-            }
-          }
-        }
       }
 
       // Get list of all interactive elements in DOM tree order
@@ -333,39 +266,24 @@ export function useFormKeyboardNavigation<T extends HTMLElement = HTMLElement>(
       const currentIndex = focusableList.indexOf(activeEl);
       if (currentIndex === -1) return;
 
-      const isForward =
-        isArrowDown ||
-        isArrowRight ||
-        (isEnter && !e.shiftKey);
+      const isBackward = e.shiftKey;
 
-      const isBackward =
-        isArrowUp ||
-        isArrowLeft ||
-        (isEnter && e.shiftKey);
-
-      // Navigate Forward
-      if (isForward) {
+      if (!isBackward) {
         if (currentIndex < focusableList.length - 1) {
           e.preventDefault();
-          const nextTarget = focusableList[currentIndex + 1];
-          focusField(nextTarget);
+          (e as KeyboardEvent & { __formKeyboardNavHandled?: boolean }).__formKeyboardNavHandled = true;
+          focusField(focusableList[currentIndex + 1]);
         }
-        // If on the last field and pressing Enter, allow natural form submit if inside a form
-      }
-
-      // Navigate Backward
-      else if (isBackward) {
-        if (currentIndex > 0) {
-          e.preventDefault();
-          const prevTarget = focusableList[currentIndex - 1];
-          focusField(prevTarget);
-        }
+      } else if (currentIndex > 0) {
+        e.preventDefault();
+        (e as KeyboardEvent & { __formKeyboardNavHandled?: boolean }).__formKeyboardNavHandled = true;
+        focusField(focusableList[currentIndex - 1]);
       }
     };
 
-    container.addEventListener("keydown", handleKeyDown);
+    document.addEventListener("keydown", handleKeyDown);
     return () => {
-      container.removeEventListener("keydown", handleKeyDown);
+      document.removeEventListener("keydown", handleKeyDown);
     };
-  }, [isActive, enableArrowKeys, enableEnterNavigation, selector, containerRef]);
+  }, [isActive, enableEnterNavigation, selector, containerRef]);
 }

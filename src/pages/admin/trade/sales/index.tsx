@@ -559,14 +559,13 @@ const Sales: React.FC = () => {
       if (statusFilter !== "all" && statusFilter !== "") {
         const paidAmount = Number(sale.paidAmount || 0);
         const dueAmount = Number(sale.dueAmount || 0);
-        const s = String(sale.status || "").toUpperCase();
 
-        if (statusFilter === "PAID") {
-          if (s !== "PAID" && dueAmount > 0) return false;
+        if (statusFilter === "COMPLETED" || statusFilter === "PAID") {
+          if (dueAmount > 0) return false;
         } else if (statusFilter === "PARTIAL") {
-          if (s !== "PARTIAL" && !(dueAmount > 0 && paidAmount > 0)) return false;
-        } else if (statusFilter === "DUE") {
-          if (s !== "PENDING" && s !== "DUE" && !(dueAmount > 0 && paidAmount === 0)) return false;
+          if (!(dueAmount > 0 && paidAmount > 0)) return false;
+        } else if (statusFilter === "PENDING" || statusFilter === "DUE") {
+          if (!(dueAmount > 0 && paidAmount === 0)) return false;
         }
       }
 
@@ -916,12 +915,6 @@ const Sales: React.FC = () => {
   };
 
   // Actions - Sales
-  const handleViewSale = (sale: SaleItem) => {
-    setSelectedSaleForInvoice(sale);
-    setAutoPrintSaleModal(false);
-    setIsSaleInvoiceModalOpen(true);
-  };
-
   const handlePrintSale = (sale: SaleItem) => {
     setSelectedSaleForInvoice(sale);
     setAutoPrintSaleModal(true);
@@ -969,12 +962,6 @@ const Sales: React.FC = () => {
 
 
   // Actions - Returns
-  const handleViewReturn = (item: SalesReturnItem) => {
-    setSelectedReturnForInvoice(item);
-    setAutoPrintReturnModal(false);
-    setIsReturnInvoiceModalOpen(true);
-  };
-
   const handlePrintReturn = (item: SalesReturnItem) => {
     setSelectedReturnForInvoice(item);
     setAutoPrintReturnModal(true);
@@ -1113,7 +1100,6 @@ const Sales: React.FC = () => {
           setSortBy={setSortBy}
           returnedInvoiceSet={returnedInvoiceSet}
           onEdit={handleEditSale}
-          onView={handleViewSale}
           onPrint={handlePrintSale}
           onDelete={handleDeleteSale}
         />
@@ -1146,7 +1132,6 @@ const Sales: React.FC = () => {
           sortBy={sortBy}
           setSortBy={setSortBy}
           onResetFilters={handleResetFilters}
-          onView={handleViewReturn}
           onPrint={handlePrintReturn}
         />
       )}

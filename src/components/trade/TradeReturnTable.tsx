@@ -57,7 +57,6 @@ export interface TradeReturnTableProps<T = any> {
   sortBy?: string;
   setSortBy?: (sort: string) => void;
   onResetFilters?: () => void;
-  onView: (item: T) => void;
   onPrint: (item: T) => void;
   onExportExcel?: (items: T[]) => void;
   getReasonLabel?: (code?: string | null) => string;
@@ -93,7 +92,6 @@ export function TradeReturnTable<T extends Record<string, any>>({
   sortBy = "latest",
   setSortBy,
   onResetFilters,
-  onView,
   onPrint,
   onExportExcel,
   getReasonLabel: customGetReasonLabel,
@@ -582,11 +580,7 @@ export function TradeReturnTable<T extends Record<string, any>>({
                       {isColVisible("orderId") && (
                         <td className="py-2.5 px-3 text-[var(--ui-text)] text-xs font-normal whitespace-nowrap">
                           <div className="flex items-center gap-1.5 group/ord">
-                            <span
-                              onClick={() => onView(item)}
-                              title="Click to view voucher"
-                              className="cursor-pointer hover:text-[var(--primary-color)] transition-colors"
-                            >
+                            <span>
                               {displayOrderId || "-"}
                             </span>
                             {Boolean(displayOrderId) && (
@@ -650,9 +644,8 @@ export function TradeReturnTable<T extends Record<string, any>>({
                         <td className="py-2.5 px-3 text-center text-[var(--ui-text)] text-xs font-normal w-44 min-w-[150px] max-w-[180px]">
                           {item.note || item.remarks ? (
                             <div
-                              className="inline-flex items-center justify-center px-1.5 py-0.5 rounded-md bg-[var(--ui-surface-sunken)] hover:bg-[var(--ui-border)]/80 border border-[var(--ui-border)] text-[var(--ui-text)] text-xs font-normal max-w-[160px] transition-colors cursor-pointer"
+                              className="inline-flex items-center justify-center px-1.5 py-0.5 rounded-md bg-[var(--ui-surface-sunken)] border border-[var(--ui-border)] text-[var(--ui-text)] text-xs font-normal max-w-[160px]"
                               title={item.note || item.remarks}
-                              onClick={() => onView(item)}
                             >
                               <span className="truncate">{item.note || item.remarks}</span>
                             </div>
@@ -691,9 +684,7 @@ export function TradeReturnTable<T extends Record<string, any>>({
                       {isColVisible("actions") && (
                         <td className="py-2 px-3 text-center w-24 whitespace-nowrap">
                           <TableActionButtons
-                            onView={() => onView(item)}
                             onPrint={() => onPrint(item)}
-                            viewTitle="View Return Slip"
                             printTitle="Print Return Slip"
                           />
                         </td>
@@ -718,13 +709,6 @@ export function TradeReturnTable<T extends Record<string, any>>({
                                 <span className="font-bold text-[var(--ui-text)] text-xs tabular-nums">
                                   ৳ {formatMoney(refund)}
                                 </span>
-                                <button
-                                  type="button"
-                                  onClick={() => onView(item)}
-                                  className="ml-1 text-xs text-[var(--primary-color)] hover:underline font-medium cursor-pointer"
-                                >
-                                  View Full Slip
-                                </button>
                               </div>
                             </div>
 

@@ -1,11 +1,12 @@
 import Sidebar from "@/components/admin/Sidebar";
 import Header from "@/components/admin/Header";
 import Footer from "@/components/admin/Footer";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { MdKeyboardDoubleArrowLeft, MdKeyboardDoubleArrowRight } from "react-icons/md";
 import { Outlet, useLocation } from "react-router-dom";
 import { ErrorBoundary } from "@/components/common/ErrorBoundary";
 import BranchSelectModal from "@/components/admin/BranchSelectModal";
+import { useFormKeyboardNavigation } from "@/hooks/useFormKeyboardNavigation";
 import {
 	isBranchChoicePending,
 	isUserAdmin,
@@ -17,8 +18,14 @@ import { syncCurrentEmployeePermissions } from "@/services/employee-service";
 
 export default function AdminLayout() {
 	const location = useLocation();
+	const mainRef = useRef<HTMLElement>(null);
 	const [sidebarClick, setSidebarClick] = useState(false);
 	const [isBranchModalOpen, setIsBranchModalOpen] = useState(() => isBranchChoicePending());
+
+	useFormKeyboardNavigation(mainRef, {
+		autoFocusFirst: false,
+		enableEnterNavigation: true,
+	});
 
 	useEffect(() => {
 		if (!isUserAdmin()) {
@@ -74,6 +81,7 @@ export default function AdminLayout() {
 				<Header sidebarClick={sidebarClick} />
 
 				<main
+					ref={mainRef}
 					className={`flex-1 ${
 						isFinancialBook ? "overflow-hidden" : "overflow-auto"
 					} bg-[var(--ui-surface-sunken,#F6F6F6)] mt-12 flex flex-col justify-between`}

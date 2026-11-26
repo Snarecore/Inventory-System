@@ -147,14 +147,13 @@ export const usePurchaseTableFilter = ({
       if (statusFilter && statusFilter !== "all") {
         const paidAmount = Number(purchase.paidAmount ?? 0);
         const dueAmount = Number(purchase.dueAmount ?? 0);
-        const s = String(purchase.status || "").toUpperCase();
 
-        if (statusFilter === "PAID") {
-          if (dueAmount > 0 || s === "DUE" || s === "PARTIAL") return false;
+        if (statusFilter === "COMPLETED" || statusFilter === "PAID") {
+          if (dueAmount > 0) return false;
         } else if (statusFilter === "PARTIAL") {
-          if (dueAmount <= 0 || paidAmount <= 0) return false;
-        } else if (statusFilter === "DUE") {
-          if (paidAmount > 0 && dueAmount <= 0) return false;
+          if (!(dueAmount > 0 && paidAmount > 0)) return false;
+        } else if (statusFilter === "PENDING" || statusFilter === "DUE") {
+          if (!(dueAmount > 0 && paidAmount === 0)) return false;
         }
       }
 

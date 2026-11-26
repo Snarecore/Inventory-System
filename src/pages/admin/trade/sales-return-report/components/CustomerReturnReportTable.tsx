@@ -3,7 +3,6 @@ import {
   FiChevronDown,
   FiChevronRight,
   FiRotateCcw,
-  FiEye,
   FiPackage,
   FiUser,
   FiPrinter,
@@ -55,7 +54,6 @@ interface CustomerReturnReportTableProps extends ReportDateFilterProps {
   records: NormalizedSalesReturnRecord[];
   allUnifiedRecords?: any[];
   isLoading?: boolean;
-  onView?: (item: SalesReturnItem) => void;
   onPrint?: (item: SalesReturnItem) => void;
 }
 
@@ -78,7 +76,6 @@ export const CustomerReturnReportTable: React.FC<
   records,
   allUnifiedRecords = [],
   isLoading,
-  onView,
   onPrint,
   ...dateFilterProps
 }) => {
@@ -534,7 +531,6 @@ export const CustomerReturnReportTable: React.FC<
                               }`}
                               title="Toggle returned products & vouchers breakdown"
                             >
-                              <FiEye size={12} />
                               <span>{isExpanded ? "Close" : "Details"}</span>
                             </button>
                             <button
@@ -821,16 +817,6 @@ export const CustomerReturnReportTable: React.FC<
                                         </td>
                                         <td className="py-2.5 px-2.5 text-center whitespace-nowrap">
                                           <div className="flex items-center justify-center gap-1.5">
-                                            {onView && (
-                                              <button
-                                                type="button"
-                                                onClick={() => onView(r.raw)}
-                                                className="p-1 rounded text-[var(--primary-color)] hover:bg-[var(--primary-color-light)] transition-colors cursor-pointer"
-                                                title="View Voucher Invoice"
-                                              >
-                                                <FiEye size={13} />
-                                              </button>
-                                            )}
                                             {onPrint && (
                                               <button
                                                 type="button"

@@ -45,12 +45,6 @@ const PurchaseReturnReportPage: React.FC = () => {
     [returnRecords]
   );
 
-  const handleView = (item: PurchaseReturnItem) => {
-    setSelectedReturn(item);
-    setIsAutoPrint(false);
-    setIsVoucherModalOpen(true);
-  };
-
   const handlePrint = (item: PurchaseReturnItem) => {
     setSelectedReturn(item);
     setIsAutoPrint(true);
@@ -124,7 +118,6 @@ const PurchaseReturnReportPage: React.FC = () => {
             records={returnRecords}
             isLoading={isLoading}
             {...datePickerProps}
-            onView={handleView}
             onPrint={handlePrint}
           />
         )}
@@ -142,7 +135,6 @@ const PurchaseReturnReportPage: React.FC = () => {
             records={returnRecords}
             isLoading={isLoading}
             {...datePickerProps}
-            onView={handleView}
             onPrint={handlePrint}
           />
         )}

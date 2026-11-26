@@ -54,7 +54,7 @@ export interface TradeRecordMetrics {
   itemsCount: number;
   isFullyPaid: boolean;
   isPartial: boolean;
-  status: "PAID" | "PARTIAL" | "DUE";
+  status: "COMPLETED" | "PARTIAL" | "PENDING";
 }
 
 export interface ProductTradeSummary {
@@ -258,7 +258,7 @@ export function extractTradeRecordMetrics(
 
   const isFullyPaid = due <= 0 && grandTotal > 0;
   const isPartial = due > 0 && paid > 0;
-  const status = isFullyPaid ? "PAID" : isPartial ? "PARTIAL" : "DUE";
+  const status = isFullyPaid ? "COMPLETED" : isPartial ? "PARTIAL" : "PENDING";
 
   const partyId = String(
     isPurchase
@@ -1384,7 +1384,7 @@ export async function downloadTradeInvoicesPdf(
       excelValue: (r) => r.m.status,
       pdfCell: (r) => {
         const statusColor =
-          r.m.status === "PAID"
+          r.m.status === "COMPLETED"
             ? REPORT_RGB.emerald
             : r.m.status === "PARTIAL"
             ? REPORT_RGB.amber

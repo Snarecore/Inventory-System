@@ -32,7 +32,6 @@ export interface SalesReturnTableProps {
   sortBy?: string;
   setSortBy?: (sort: string) => void;
   onResetFilters?: () => void;
-  onView: (item: SalesReturnItem) => void;
   onPrint: (item: SalesReturnItem) => void;
 }
 
@@ -64,7 +63,6 @@ export const SalesReturnTable: React.FC<SalesReturnTableProps> = ({
   sortBy,
   setSortBy,
   onResetFilters,
-  onView,
   onPrint,
 }) => {
   const handleExport = (dataToExport: SalesReturnItem[]) => {
@@ -108,7 +106,6 @@ export const SalesReturnTable: React.FC<SalesReturnTableProps> = ({
       sortBy={sortBy}
       setSortBy={setSortBy}
       onResetFilters={onResetFilters}
-      onView={onView}
       onPrint={onPrint}
       onExportExcel={handleExport}
     />

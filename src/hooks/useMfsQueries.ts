@@ -94,7 +94,6 @@ export const useInsertMfsUserMutation = (
     onSettled: async (data, error, variables, context) => {
       await queryClient.invalidateQueries({
         queryKey: [mfsUserListQueryKey],
-        refetchType: "all",
       });
       options?.onSettled?.(data, error, variables, context);
     },
@@ -161,7 +160,6 @@ export const useUpdateMfsUserMutation = (
     onSettled: async (data, error, variables, context) => {
       await queryClient.invalidateQueries({
         queryKey: [mfsUserListQueryKey],
-        refetchType: "all",
       });
       options?.onSettled?.(data, error, variables, context);
     },
@@ -224,7 +222,6 @@ export const useUpdateMfsUserStatusMutation = (
     onSettled: async (data, error, variables, context) => {
       await queryClient.invalidateQueries({
         queryKey: [mfsUserListQueryKey],
-        refetchType: "all",
       });
       options?.onSettled?.(data, error, variables, context);
     },

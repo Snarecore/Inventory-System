@@ -1240,7 +1240,7 @@ export const useDeleteSalesOrderMutation = (options?: {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: [salesListQueryKey] });
       queryClient.invalidateQueries({ queryKey: [salesAndReturnQueryKey] });
-      queryClient.invalidateQueries({ queryKey: [productListQueryKey], refetchType: "all" });
+      queryClient.invalidateQueries({ queryKey: [productListQueryKey] });
       queryClient.invalidateQueries({ queryKey: [customersDueQueryKey] });
       queryClient.invalidateQueries({ queryKey: [customerInvoicesDueQueryKey] });
       invalidateFinancialBalances();

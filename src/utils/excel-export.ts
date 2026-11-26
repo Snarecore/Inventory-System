@@ -926,9 +926,9 @@ export async function exportPurchasesToExcel(
     sumDue += dueAmount;
     sumItems += itemsCount;
 
-    let status = "PAID";
+    let status = "COMPLETED";
     if (dueAmount > 0 && paidAmount > 0) status = "PARTIAL";
-    else if (dueAmount > 0 && paidAmount === 0) status = "DUE";
+    else if (dueAmount > 0 && paidAmount === 0) status = "PENDING";
 
     return {
       SL: index + 1,
@@ -1028,7 +1028,7 @@ export async function exportSalesToExcel(
         : Number(item.itemsCount || getItemsCount(item) || 1);
 
     const status =
-      due <= 0 && gt > 0 ? "PAID" : due > 0 && paid > 0 ? "PARTIAL" : "DUE";
+      due <= 0 && gt > 0 ? "COMPLETED" : due > 0 && paid > 0 ? "PARTIAL" : "PENDING";
 
     const dateStr =
       item.salesDate || item.date

@@ -80,12 +80,6 @@ const PurchaseReportPage: React.FC = () => {
     "purchase"
   );
 
-  const handleView = (item: PurchaseItem) => {
-    setSelectedPurchase(item);
-    setIsAutoPrint(false);
-    setIsInvoiceModalOpen(true);
-  };
-
   const handlePrint = (item: PurchaseItem) => {
     setSelectedPurchase(item);
     setIsAutoPrint(true);
@@ -164,7 +158,6 @@ const PurchaseReportPage: React.FC = () => {
             transactions={transactions}
             isLoading={isLoading}
             {...datePickerProps}
-            onView={handleView}
             onPrint={handlePrint}
           />
         )}
@@ -181,7 +174,6 @@ const PurchaseReportPage: React.FC = () => {
           <SupplierPurchaseReportTable
             transactions={transactions}
             isLoading={isLoading}
-            onView={handleView}
             {...datePickerProps}
           />
         )}

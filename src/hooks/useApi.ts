@@ -300,7 +300,6 @@ export const useAPI = () => {
                                     queryClient.invalidateQueries({
                                         queryKey: Array.isArray(singleKey) ? singleKey : [singleKey],
                                         exact: false,
-                                        refetchType: "all",
                                     })
                                 )
                         );
@@ -335,7 +334,6 @@ export const useAPI = () => {
                                 queryClient.invalidateQueries({
                                     queryKey: Array.isArray(singleKey) ? singleKey : [singleKey],
                                     exact: false,
-                                    refetchType: "all",
                                 })
                             )
                     );

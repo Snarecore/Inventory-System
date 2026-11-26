@@ -194,15 +194,27 @@ export const TradeInvoiceModal: React.FC<TradeInvoiceModalProps> = ({
   const due = Number(inv?.dueAmount ?? 0);
   const grandTotal = Number(inv?.grandTotal ?? 0);
   const paid = Number(inv?.paidAmount ?? 0);
-  const previousDue = Number(inv?.previousDue ?? 0);
+  const currentInvNoKey = String(inv?.invoiceNo ?? "").trim().toLowerCase();
+  const filteredPreviousDueInvoices = useMemo(() => {
+    if (!Array.isArray(inv?.previousDueInvoices)) return [];
+    return inv.previousDueInvoices.filter((dInv) => {
+      if (!dInv || Number(dInv.dueAmount ?? 0) <= 0) return false;
+      const dNo = String(dInv.invoiceNo ?? "").trim().toLowerCase();
+      if (currentInvNoKey && dNo && dNo === currentInvNoKey) return false;
+      return true;
+    });
+  }, [inv?.previousDueInvoices, currentInvNoKey]);
+  const previousDue = Array.isArray(inv?.previousDueInvoices)
+    ? filteredPreviousDueInvoices.reduce((s, d) => s + Number(d.dueAmount || 0), 0)
+    : Number(inv?.previousDue ?? 0);
   const totalDue = due + previousDue;
 
   const paymentStatus =
     due <= 0
-      ? { label: isReturn ? "REFUNDED" : "PAID", color: "#047857", bg: "#ecfdf5", border: "#a7f3d0" }
+      ? { label: isReturn ? "REFUNDED" : "COMPLETED", color: "#047857", bg: "#ecfdf5", border: "#a7f3d0" }
       : paid > 0
       ? { label: "PARTIAL", color: "#b45309", bg: "#fffbeb", border: "#fde68a" }
-      : { label: "UNPAID", color: "#b91c1c", bg: "#fef2f2", border: "#fecaca" };
+      : { label: "PENDING", color: "#b91c1c", bg: "#fef2f2", border: "#fecaca" };
 
   // Words representation
   const wordsAmount = useMemo(() => {
@@ -223,11 +235,42 @@ export const TradeInvoiceModal: React.FC<TradeInvoiceModalProps> = ({
   const businessEmail = businessProfile?.businessEmail || user?.email || "";
 
   const handlePrint = () => {
-    if (!printRef.current) return;
+    const invoiceElement = printRef.current;
+    if (!invoiceElement) return;
 
     const printWindow = window.open("", "_blank", "width=880,height=960");
     if (!printWindow) {
-      window.print();
+      const printStyle = document.createElement("style");
+      printStyle.media = "print";
+      printStyle.textContent = `
+        @page {
+          size: A4 portrait;
+          margin: 8mm 10mm;
+        }
+        body * {
+          visibility: hidden !important;
+        }
+        .trade-invoice-print-target,
+        .trade-invoice-print-target * {
+          visibility: visible !important;
+        }
+        .trade-invoice-print-target {
+          position: fixed !important;
+          top: 0 !important;
+          left: 0 !important;
+          width: 100% !important;
+          border: none !important;
+          border-radius: 0 !important;
+          box-shadow: none !important;
+        }
+      `;
+      document.head.appendChild(printStyle);
+      try {
+        window.print();
+      } finally {
+        printStyle.remove();
+        if (autoPrint) onClose();
+      }
       return;
     }
 
@@ -299,8 +342,8 @@ export const TradeInvoiceModal: React.FC<TradeInvoiceModalProps> = ({
 
     // Safely clone DOM node to avoid HTML injection
     const container = doc.getElementById("print-root");
-    if (container && printRef.current) {
-      container.appendChild(printRef.current.cloneNode(true));
+    if (container) {
+      container.appendChild(invoiceElement.cloneNode(true));
     }
 
     printWindow.focus();
@@ -314,6 +357,7 @@ export const TradeInvoiceModal: React.FC<TradeInvoiceModalProps> = ({
     printWindow.onafterprint = () => {
       printWindow.close();
     };
+    if (autoPrint) onClose();
   };
 
   useEffect(() => {
@@ -327,18 +371,12 @@ export const TradeInvoiceModal: React.FC<TradeInvoiceModalProps> = ({
 
   if (!isOpen || !inv) return null;
 
-  return (
-    <Modal
-      isOpen={isOpen}
-      onClose={onClose}
-      title={modalTitle}
-      maxWidth="w-full max-w-[760px]"
-    >
-      <div className="space-y-4">
+  const invoiceContent = (
+    <div className="space-y-4">
         {/* Printable Paper A4 Area - Pure English Design with Strict Inline Flex Layouts */}
         <div
           ref={printRef}
-          className="bg-white text-black font-sans border border-slate-300 rounded-sm shadow-xs"
+          className="trade-invoice-print-target bg-white text-black font-sans border border-slate-300 rounded-sm shadow-xs"
           style={{
             backgroundColor: "#ffffff",
             color: "#000000",
@@ -869,7 +907,7 @@ export const TradeInvoiceModal: React.FC<TradeInvoiceModalProps> = ({
           </div>
 
           {/* 6. Outstanding Details Table (Only shown when there are previous outstanding invoices) */}
-          {((inv.previousDueInvoices && inv.previousDueInvoices.length > 0) || previousDue > 0) && (
+          {(filteredPreviousDueInvoices.length > 0 || previousDue > 0) && (
             <div style={{ marginTop: "8px", marginBottom: "10px" }}>
               <div style={{ fontSize: "10.5px", fontWeight: 500, marginBottom: "4px", color: "#0f172a" }}>
                 <span style={{ textDecoration: "underline" }}>Outstanding Details</span> :
@@ -908,8 +946,8 @@ export const TradeInvoiceModal: React.FC<TradeInvoiceModalProps> = ({
                   </tr>
                 </thead>
                 <tbody>
-                  {inv.previousDueInvoices && inv.previousDueInvoices.length > 0 ? (
-                    inv.previousDueInvoices.map((dInv, idx) => (
+                  {filteredPreviousDueInvoices.length > 0 ? (
+                    filteredPreviousDueInvoices.map((dInv, idx) => (
                       <tr key={dInv.id ?? dInv.invoiceNo ?? idx}>
                         <td style={{ border: "1px solid #64748b", padding: "4px 6px", textAlign: "center", fontVariantNumeric: "tabular-nums" }}>
                           {idx + 1}
@@ -962,8 +1000,8 @@ export const TradeInvoiceModal: React.FC<TradeInvoiceModalProps> = ({
                 Total Outstanding Amount :{" "}
                 <span style={{ fontFamily: "monospace" }}>
                   {formatMoney(
-                    inv.previousDueInvoices && inv.previousDueInvoices.length > 0
-                      ? inv.previousDueInvoices.reduce((s, d) => s + Number(d.dueAmount || 0), 0)
+                    filteredPreviousDueInvoices.length > 0
+                      ? filteredPreviousDueInvoices.reduce((s, d) => s + Number(d.dueAmount || 0), 0)
                       : previousDue
                   )}
                 </span>
@@ -1031,26 +1069,56 @@ export const TradeInvoiceModal: React.FC<TradeInvoiceModalProps> = ({
           </div>
         </div>
 
-        {/* Action Buttons */}
-        <div className="flex justify-end gap-2 pt-2 border-t border-gray-200">
-          <button
-            type="button"
-            onClick={onClose}
-            className="px-4 py-1.5 text-xs font-semibold text-gray-700 bg-gray-100 hover:bg-gray-200 border border-gray-300 rounded transition-colors cursor-pointer"
-          >
-            Close
-          </button>
-          <button
-            type="button"
-            onClick={handlePrint}
-            style={{ backgroundColor: "#01306B" }}
-            className="px-5 py-1.5 text-xs font-bold text-white hover:opacity-95 border border-transparent rounded transition-all cursor-pointer flex items-center gap-1.5 shadow-sm active:scale-95"
-          >
-            <FaPrint className="text-xs" />
-            <span>Print Invoice</span>
-          </button>
-        </div>
+        {!autoPrint && (
+          <div className="flex justify-end gap-2 pt-2 border-t border-gray-200">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-1.5 text-xs font-semibold text-gray-700 bg-gray-100 hover:bg-gray-200 border border-gray-300 rounded transition-colors cursor-pointer"
+            >
+              Close
+            </button>
+            <button
+              type="button"
+              onClick={handlePrint}
+              style={{ backgroundColor: "#01306B" }}
+              className="px-5 py-1.5 text-xs font-bold text-white hover:opacity-95 border border-transparent rounded transition-all cursor-pointer flex items-center gap-1.5 shadow-sm active:scale-95"
+            >
+              <FaPrint className="text-xs" />
+              <span>Print Invoice</span>
+            </button>
+          </div>
+        )}
+    </div>
+  );
+
+  if (autoPrint) {
+    return (
+      <div
+        aria-hidden="true"
+        style={{
+          position: "fixed",
+          top: 0,
+          left: "-10000px",
+          width: "760px",
+          padding: "14px 20px",
+          boxSizing: "border-box",
+          pointerEvents: "none",
+        }}
+      >
+        {invoiceContent}
       </div>
+    );
+  }
+
+  return (
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title={modalTitle}
+      maxWidth="w-full max-w-[760px]"
+    >
+      {invoiceContent}
     </Modal>
   );
 };

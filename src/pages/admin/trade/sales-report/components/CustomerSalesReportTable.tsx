@@ -12,12 +12,11 @@ import {
 interface CustomerSalesReportTableProps extends ReportDateFilterProps {
   transactions: SaleItem[];
   isLoading?: boolean;
-  onView?: (item: SaleItem) => void;
 }
 
 export const CustomerSalesReportTable: React.FC<
   CustomerSalesReportTableProps
-> = ({ transactions, isLoading, onView, ...dateFilterProps }) => (
+> = ({ transactions, isLoading, ...dateFilterProps }) => (
   <PartyTradeReportTable
     domain="sale"
     transactions={transactions}
@@ -27,7 +26,6 @@ export const CustomerSalesReportTable: React.FC<
     onDownloadPdf={downloadFilteredCustomersPdf}
     onExportPartyInvoicesExcel={exportCustomerSalesInvoicesExcel}
     onDownloadPartyInvoicesPdf={downloadCustomerSalesInvoicesPdf}
-    onViewInvoice={onView}
     excelSuccessText={(count) => `Exported ${count} customers to Excel!`}
     pdfSuccessText="Customer sales register PDF downloaded!"
   />

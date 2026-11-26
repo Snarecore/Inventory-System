@@ -49,8 +49,14 @@ import TradeActionButtons from "@/components/trade/TradeActionButtons";
 import TradeFormHeader from "@/components/trade/TradeFormHeader";
 import TradeNotesInput from "@/components/trade/TradeNotesInput";
 import { usePurchasesQuery } from "@/pages/admin/trade/purchases/hooks/usePurchaseQueries";
-import { useFinancialLedger } from "@/hooks/useFinancialLedger";
-import { cashLeg, bankLeg, mfsLeg, type TradeTender, postSingleFinancialTransaction, yearmonthOf } from "@/services/financial-ledger-service";
+import {
+  cashLeg,
+  bankLeg,
+  mfsLeg,
+  postTradeFinancialEntries,
+  postTradeEditAdjustments,
+  type TradeTenderSnapshot,
+} from "@/services/financial-ledger-service";
 import type { PurchaseItem, ProductItem, PartyItem, PurchaseChallanSettings } from "@/types";
 import { useTradeParties } from "@/hooks/useTradeParties";
 import { useTradeProducts } from "@/hooks/useTradeProducts";
@@ -84,7 +90,6 @@ const CreatePurchaseForm: React.FC = () => {
   const editId = routeId;
   const queryClient = useQueryClient();
   const { postMutation, handleApiMutation } = useAPI();
-  const { recordTradeLedger } = useFinancialLedger();
 
   const stateEditData: PurchaseItem | undefined = (location.state as any)?.editData;
   const isEditMode = Boolean(routeId || stateEditData);
@@ -169,13 +174,13 @@ const CreatePurchaseForm: React.FC = () => {
   }, [isEditMode, invoiceNo, businessCode]);
 
   // Track original payment tenders when editing an invoice to post financial balance deltas
-  const originalTendersRef = useRef<{
-    cash: number;
-    bank: number;
-    bankId: string;
-    mfs: number;
-    mfsId: string;
-  }>({ cash: 0, bank: 0, bankId: "", mfs: 0, mfsId: "" });
+  const originalTendersRef = useRef<TradeTenderSnapshot>({
+    cash: 0,
+    bank: 0,
+    bankId: "",
+    mfs: 0,
+    mfsId: "",
+  });
   const isPaymentHydratedRef = useRef(false);
 
   useEffect(() => {
@@ -486,6 +491,7 @@ const CreatePurchaseForm: React.FC = () => {
     grandTotal,
     registeredBankAccounts,
     registeredMfsAccounts,
+    autoSyncCashWithTotal: !isEditMode,
   });
 
   const {
@@ -608,8 +614,8 @@ const CreatePurchaseForm: React.FC = () => {
 
       // Backend expects "CASH" (when any payment is made) or "CREDIT" (when 100% due)
       const paymentType = totalPaid > 0 ? "CASH" : "CREDIT";
-      // Backend status is strictly "PAID" or "PENDING" in ALL CAPS
-      const status = totalPaid >= grandTotal && grandTotal > 0 ? "PAID" : "PENDING";
+      // Backend status is strictly "COMPLETED", "PARTIAL", or "PENDING" in ALL CAPS
+      const status = dueAmount <= 0 ? "COMPLETED" : totalPaid > 0 ? "PARTIAL" : "PENDING";
 
       const purchaseDetailsPayload = lineItems.map((item) => {
         const p = Number(item.buyPrice) || 0;
@@ -727,11 +733,6 @@ const CreatePurchaseForm: React.FC = () => {
         mutation,
         url: targetUrl,
         body: purchasePayload,
-        invalidateQueryKey: [
-          purchaseListQueryKey,
-          productListQueryKey,
-          purchaseAndReturnQueryKey,
-        ],
         showSuccessMessage: true,
         showErrorMessage: true,
       });
@@ -740,320 +741,76 @@ const CreatePurchaseForm: React.FC = () => {
         const res: any = (result.data as any)?.data !== undefined ? (result.data as any).data : result.data;
         const savedId = res?.id || res?.purchaseId || editId || invoiceNo;
 
-        // Post financial transaction EXPENSE to update cash/bank balances for fresh purchase creation.
-        // In Edit mode, post delta adjustment transactions to calibrate balances when payments change.
-        if (!isEditMode && totalPaid > 0) {
-          try {
-            const selectedBankObj = registeredBankAccounts.find(
-              (b) => String(b.bankId ?? b.id) === String(selectedBankId)
-            );
-            const selectedMfsObj = numMfs > 0
-              ? (registeredMfsAccounts.find(
-                  (m) =>
-                    String(m.id ?? "").trim() === String(selectedMfsId).trim() ||
-                    String(m.mfsId ?? "").trim() === String(selectedMfsId).trim() ||
-                    String(m.phoneNumber ?? m.phone ?? "").trim() === String(selectedMfsId).trim()
-                ) || {
-                  id: selectedMfsId,
-                  mfsId: selectedMfsId,
-                  method: mfsName || "MFS",
-                  name: mfsName || "",
-                  phoneNumber: mfsPhone || "",
-                  phone: mfsPhone || "",
-                  currentBalance: 0,
-                  status: "Active",
-                })
-              : null;
-
-            const tenders: TradeTender[] = [
-              { amount: numCash, leg: cashLeg() },
-              { amount: numBank, leg: bankLeg(selectedBankObj) },
-              { amount: numMfs, leg: mfsLeg(selectedMfsObj) },
-            ].filter((t) => t.amount > 0);
-
-            const productSummary = lineItems.map((li) => li.productName).filter(Boolean).join(", ");
-
-            await recordTradeLedger({
+        const productSummary = lineItems.map((i) => `${i.productName} x${i.quantity}`).join(", ");
+        try {
+          if (!isEditMode && totalPaid > 0) {
+            await postTradeFinancialEntries({
               tradeType: "EXPENSE",
-              tenders,
-              invoiceNo: invoiceNo.trim(),
-              partyId: selectedSupplier?.id || "",
+              tenders: [
+                { amount: numCash, leg: cashLeg() },
+                { amount: numBank, leg: bankLeg(selectedBankObj) },
+                { amount: numMfs, leg: mfsLeg(selectedMfsObj) },
+              ],
+              invoiceNo: purchasePayload.invoiceNo,
+              refNo: purchasePayload.invoiceNo,
+              partyId: supplierId,
               head: "Purchase",
               itemsSummary: productSummary,
               notes: notes.trim(),
               date: purchaseDate,
               totalDue: dueAmount,
             });
-          } catch (ledgerErr) {
-            console.error("Purchase saved, but financial ledger posting encountered an error:", ledgerErr);
+          } else if (isEditMode) {
+            originalTendersRef.current = await postTradeEditAdjustments({
+              tradeType: "EXPENSE",
+              original: originalTendersRef.current,
+              current: {
+                cash: numCash,
+                bank: numBank,
+                bankId: selectedBankId,
+                mfs: numMfs,
+                mfsId: selectedMfsId,
+              },
+              registeredBankAccounts,
+              registeredMfsAccounts,
+              invoiceNo: purchasePayload.invoiceNo,
+              partyId: supplierId,
+              itemsSummary: productSummary,
+              date: purchaseDate,
+            });
           }
-        } else if (isEditMode) {
-          try {
-            const orig = originalTendersRef.current;
-            const when = purchaseDate ? new Date(purchaseDate) : new Date();
-            const validWhen = isNaN(when.getTime()) ? new Date() : when;
-            const ym = yearmonthOf(validWhen);
-            const isoDate = validWhen.toISOString();
-            const cleanInvoiceNo = invoiceNo.trim();
-            const cleanSupplierId = selectedSupplier?.id ? String(selectedSupplier.id) : "";
-            const productSummary = lineItems.map((li) => li.productName).filter(Boolean).join(", ");
-
-            // 1. CASH adjustment: For purchase, paying more cash is EXPENSE; paying less cash is INCOME (refund/credit)
-            const cashDiff = Number((numCash - orig.cash).toFixed(2));
-            if (cashDiff !== 0) {
-              await postSingleFinancialTransaction({
-                type: cashDiff > 0 ? "EXPENSE" : "INCOME",
-                amount: Math.abs(cashDiff),
-                collectionAmount: Math.abs(cashDiff),
-                dueAmount: 0,
-                categoryId: cleanSupplierId,
-                accountType: "CASH",
-                account: "Cash",
-                accountNumber: null,
-                bill_ref: `${cleanInvoiceNo}-adj-cash-${Date.now()}`,
-                refNo: cleanInvoiceNo,
-                head: "Purchase (Edit Adjustment)",
-                items: productSummary,
-                notes: `Purchase edit payment adjustment: Cash ${cashDiff > 0 ? "+" : ""}${cashDiff}`,
-                transactionDate: isoDate,
-                yearmonth: ym,
-              });
-            }
-
-            // 2. BANK adjustment
-            const origBankObj = registeredBankAccounts.find(
-              (b) => String(b.bankId ?? b.id) === String(orig.bankId)
-            );
-            const selectedBankObj = registeredBankAccounts.find(
-              (b) => String(b.bankId ?? b.id) === String(selectedBankId)
-            );
-            const isSameBankAccount = String(orig.bankId || "") === String(selectedBankId || "");
-
-            if (isSameBankAccount) {
-              const bankDiff = Number((numBank - orig.bank).toFixed(2));
-              if (bankDiff !== 0) {
-                const leg = bankLeg(selectedBankObj || origBankObj);
-                await postSingleFinancialTransaction({
-                  type: bankDiff > 0 ? "EXPENSE" : "INCOME",
-                  amount: Math.abs(bankDiff),
-                  collectionAmount: Math.abs(bankDiff),
-                  dueAmount: 0,
-                  categoryId: cleanSupplierId,
-                  accountType: leg.accountType,
-                  account: leg.account,
-                  accountNumber: leg.accountNumber,
-                  bill_ref: `${cleanInvoiceNo}-adj-bank-${Date.now()}`,
-                  refNo: cleanInvoiceNo,
-                  head: "Purchase (Edit Adjustment)",
-                  items: productSummary,
-                  notes: `Purchase edit payment adjustment: Bank ${bankDiff > 0 ? "+" : ""}${bankDiff}`,
-                  transactionDate: isoDate,
-                  yearmonth: ym,
-                });
-              }
-            } else {
-              // Bank account changed: reverse original from old bank (INCOME), pay new from selected bank (EXPENSE)
-              if (orig.bank > 0) {
-                const oldLeg = bankLeg(origBankObj);
-                await postSingleFinancialTransaction({
-                  type: "INCOME",
-                  amount: orig.bank,
-                  collectionAmount: orig.bank,
-                  dueAmount: 0,
-                  categoryId: cleanSupplierId,
-                  accountType: oldLeg.accountType,
-                  account: oldLeg.account,
-                  accountNumber: oldLeg.accountNumber,
-                  bill_ref: `${cleanInvoiceNo}-adj-bank-rev-${Date.now()}`,
-                  refNo: cleanInvoiceNo,
-                  head: "Purchase (Edit Adjustment)",
-                  items: productSummary,
-                  notes: `Purchase edit payment adjustment: Reverse previous bank payment (${orig.bank})`,
-                  transactionDate: isoDate,
-                  yearmonth: ym,
-                });
-              }
-              if (numBank > 0) {
-                const newLeg = bankLeg(selectedBankObj);
-                await postSingleFinancialTransaction({
-                  type: "EXPENSE",
-                  amount: numBank,
-                  collectionAmount: numBank,
-                  dueAmount: 0,
-                  categoryId: cleanSupplierId,
-                  accountType: newLeg.accountType,
-                  account: newLeg.account,
-                  accountNumber: newLeg.accountNumber,
-                  bill_ref: `${cleanInvoiceNo}-adj-bank-new-${Date.now()}`,
-                  refNo: cleanInvoiceNo,
-                  head: "Purchase (Edit Adjustment)",
-                  items: productSummary,
-                  notes: `Purchase edit payment adjustment: New bank payment (+${numBank})`,
-                  transactionDate: isoDate,
-                  yearmonth: ym,
-                });
-              }
-            }
-
-            // 3. MFS adjustment
-            const origMfsObj = registeredMfsAccounts.find(
-              (m) =>
-                String(m.id ?? "").trim() === String(orig.mfsId).trim() ||
-                String(m.mfsId ?? "").trim() === String(orig.mfsId).trim() ||
-                String(m.phoneNumber ?? m.phone ?? "").trim() === String(orig.mfsId).trim()
-            );
-            const isSameMfsAccount = String(orig.mfsId || "").trim() === String(selectedMfsId || "").trim();
-
-            const postMfsAdjustment = async (
-              txType: "INCOME" | "EXPENSE",
-              amt: number,
-              wallet: any,
-              billSuffix: string,
-              noteText: string
-            ) => {
-              const leg = mfsLeg(wallet);
-              const res = await postSingleFinancialTransaction({
-                type: txType,
-                amount: amt,
-                collectionAmount: amt,
-                dueAmount: 0,
-                categoryId: cleanSupplierId,
-                accountType: leg.accountType,
-                account: leg.account,
-                accountNumber: leg.accountNumber,
-                phoneNumber: wallet?.phoneNumber || wallet?.phone || leg.accountNumber,
-                phone: wallet?.phoneNumber || wallet?.phone || leg.accountNumber,
-                mfsId: wallet?.id || wallet?.mfsId,
-                bill_ref: `${cleanInvoiceNo}-${billSuffix}-${Date.now()}`,
-                refNo: cleanInvoiceNo,
-                head: "Purchase (Edit Adjustment)",
-                items: productSummary,
-                notes: noteText,
-                transactionDate: isoDate,
-                yearmonth: ym,
-              });
-              if (!res.ok) {
-                console.error("Purchase MFS edit ledger adjustment failed:", res.msg);
-              }
-            };
-
-            if (isSameMfsAccount) {
-              const mfsDiff = Number((numMfs - orig.mfs).toFixed(2));
-              if (mfsDiff !== 0) {
-                const targetWallet = selectedMfsObj || origMfsObj;
-                await postMfsAdjustment(
-                  mfsDiff > 0 ? "EXPENSE" : "INCOME",
-                  Math.abs(mfsDiff),
-                  targetWallet,
-                  "adj-mfs",
-                  `Purchase edit payment adjustment: MFS ${mfsDiff > 0 ? "+" : ""}${mfsDiff}`
-                );
-              }
-            } else {
-              // MFS account changed: reverse original from old MFS (INCOME), pay new from selected MFS (EXPENSE)
-              if (orig.mfs > 0) {
-                await postMfsAdjustment(
-                  "INCOME",
-                  orig.mfs,
-                  origMfsObj,
-                  "adj-mfs-rev",
-                  `Purchase edit payment adjustment: Reverse previous MFS payment (${orig.mfs})`
-                );
-              }
-              if (numMfs > 0) {
-                await postMfsAdjustment(
-                  "EXPENSE",
-                  numMfs,
-                  selectedMfsObj,
-                  "adj-mfs-new",
-                  `Purchase edit payment adjustment: New MFS payment (+${numMfs})`
-                );
-              }
-            }
-
-            // Update originalTendersRef with new values in case user submits again without navigating away
-            originalTendersRef.current = {
-              cash: numCash,
-              bank: numBank,
-              bankId: selectedBankId,
-              mfs: numMfs,
-              mfsId: selectedMfsId,
-            };
-          } catch (ledgerErr) {
-            console.error("Purchase edit adjustment error:", ledgerErr);
-          }
+        } catch (ledgerErr) {
+          console.error("Purchase financial ledger sync error:", ledgerErr);
         }
 
-        // Invalidate all related caches actively so UI immediately displays fresh calculations from backend
+        // Mark related caches stale so UI displays fresh calculations from backend.
         await Promise.all([
-          queryClient.invalidateQueries({ queryKey: [purchaseListQueryKey], refetchType: "all" }),
-          queryClient.invalidateQueries({ queryKey: [productListQueryKey], refetchType: "all" }),
-          queryClient.invalidateQueries({ queryKey: [productQueryKey], refetchType: "all" }),
-          queryClient.invalidateQueries({ queryKey: [cashBalanceQueryKey], refetchType: "all" }),
-          queryClient.invalidateQueries({ queryKey: [bankInfoListQueryKey], refetchType: "all" }),
-          queryClient.invalidateQueries({ queryKey: [mfsUserListQueryKey], refetchType: "all" }),
-          queryClient.invalidateQueries({ queryKey: [dashboardQueryKey], refetchType: "all" }),
-          queryClient.invalidateQueries({ queryKey: [userDashboardQueryKey], refetchType: "all" }),
-          queryClient.invalidateQueries({ queryKey: [financeDashboardQueryKey], refetchType: "all" }),
-          queryClient.invalidateQueries({ queryKey: [financialTransactionQueryKey], refetchType: "all" }),
-          queryClient.invalidateQueries({ queryKey: [purchasesDueQueryKey], refetchType: "all" }),
-          queryClient.invalidateQueries({ queryKey: [purchasesInvoicesDueQueryKey], refetchType: "all" }),
+          queryClient.invalidateQueries({ queryKey: [purchaseListQueryKey] }),
+          queryClient.invalidateQueries({ queryKey: [purchaseAndReturnQueryKey] }),
+          queryClient.invalidateQueries({ queryKey: [productListQueryKey] }),
+          queryClient.invalidateQueries({ queryKey: [productQueryKey] }),
+          queryClient.invalidateQueries({ queryKey: [purchasesDueQueryKey] }),
+          queryClient.invalidateQueries({ queryKey: [purchasesInvoicesDueQueryKey] }),
+          queryClient.invalidateQueries({ queryKey: [cashBalanceQueryKey] }),
+          queryClient.invalidateQueries({ queryKey: [bankInfoListQueryKey] }),
+          queryClient.invalidateQueries({ queryKey: [mfsUserListQueryKey] }),
+          queryClient.invalidateQueries({ queryKey: [dashboardQueryKey] }),
+          queryClient.invalidateQueries({ queryKey: [userDashboardQueryKey] }),
+          queryClient.invalidateQueries({ queryKey: [financeDashboardQueryKey] }),
+          queryClient.invalidateQueries({ queryKey: [financialTransactionQueryKey] }),
         ]);
 
-        const savedItem: any = {
-          ...purchasePayload,
-          id: savedId,
-          attachments: attachment || purchasePayload.attachments,
-          attachment: attachment || purchasePayload.attachments,
-          createdAt: new Date().toISOString(),
-        };
-
-        queryClient.setQueryData([purchaseListQueryKey], (oldData: any) => {
-          if (!oldData) return { status: "Success", purchaseList: [savedItem] };
-          if (Array.isArray(oldData)) {
-            if (isEditMode) {
-              return oldData.map((item: any) => {
-                const itemId = String(item.id ?? item.purchaseId ?? item.invoiceNo ?? "");
-                const targetId = String(savedItem.id ?? savedItem.purchaseId ?? savedItem.invoiceNo ?? "");
-                return itemId === targetId || String(item.invoiceNo) === String(savedItem.invoiceNo) ? { ...item, ...savedItem } : item;
-              });
-            }
-            return [savedItem, ...oldData];
-          }
-          if (oldData && typeof oldData === "object") {
-            const listKey = Array.isArray(oldData.purchaseList)
-              ? "purchaseList"
-              : Array.isArray(oldData.purchaseInfoList)
-              ? "purchaseInfoList"
-              : Array.isArray(oldData.purchasesList)
-              ? "purchasesList"
-              : Array.isArray(oldData.data)
-              ? "data"
-              : "purchaseList";
-            const currentList = Array.isArray(oldData[listKey]) ? oldData[listKey] : [];
-            const updatedList = isEditMode
-              ? currentList.map((item: any) => {
-                  const itemId = String(item.id ?? item.purchaseId ?? item.invoiceNo ?? "");
-                  const targetId = String(savedItem.id ?? savedItem.purchaseId ?? savedItem.invoiceNo ?? "");
-                  return itemId === targetId || String(item.invoiceNo) === String(savedItem.invoiceNo) ? { ...item, ...savedItem } : item;
-                })
-              : [savedItem, ...currentList];
-            return {
-              ...oldData,
-              [listKey]: updatedList,
-            };
-          }
-          return oldData;
-        });
-
-        // Always open Invoice Modal after save so user can view/print invoice
-        setShouldAutoPrint(shouldPrint);
-        setSavedPurchaseForPrint({
-          ...purchasePayload,
-          id: savedId,
-          attachments: attachment || purchasePayload.attachments,
-        });
-        setIsPrintModalOpen(true);
+        if (shouldPrint) {
+          setShouldAutoPrint(true);
+          setSavedPurchaseForPrint({
+            ...purchasePayload,
+            id: savedId,
+            attachments: attachment || purchasePayload.attachments,
+          });
+          setIsPrintModalOpen(true);
+        } else {
+          navigate("/admin/purchases");
+        }
       } else {
         // If save failed or duplicate invoice collided, generate a fresh invoice number in create mode
         if (!isEditMode && businessCode) {

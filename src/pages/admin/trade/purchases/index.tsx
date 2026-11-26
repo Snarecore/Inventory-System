@@ -532,14 +532,13 @@ const Purchases: React.FC = () => {
       if (statusFilter !== "all" && statusFilter !== "") {
         const paidAmount = Number(purchase.paidAmount || 0);
         const dueAmount = Number(purchase.dueAmount || 0);
-        const s = String(purchase.status || "").toUpperCase();
 
-        if (statusFilter === "PAID") {
-          if (s !== "PAID" && dueAmount > 0) return false;
+        if (statusFilter === "COMPLETED" || statusFilter === "PAID") {
+          if (dueAmount > 0) return false;
         } else if (statusFilter === "PARTIAL") {
-          if (s !== "PARTIAL" && !(dueAmount > 0 && paidAmount > 0)) return false;
-        } else if (statusFilter === "DUE") {
-          if (s !== "PENDING" && s !== "DUE" && !(dueAmount > 0 && paidAmount === 0)) return false;
+          if (!(dueAmount > 0 && paidAmount > 0)) return false;
+        } else if (statusFilter === "PENDING" || statusFilter === "DUE") {
+          if (!(dueAmount > 0 && paidAmount === 0)) return false;
         }
       }
 
@@ -851,11 +850,6 @@ const Purchases: React.FC = () => {
   };
 
   // Actions - Purchases
-  const handleViewPurchase = (purchase: PurchaseItem) => {
-    setSelectedPurchaseForInvoice(purchase);
-    setIsPurchaseInvoiceModalOpen(true);
-  };
-
   const handlePrintPurchase = (purchase: PurchaseItem) => {
     setSelectedPurchaseForInvoice(purchase);
     setIsPurchaseInvoiceModalOpen(true);
@@ -903,12 +897,6 @@ const Purchases: React.FC = () => {
 
 
   // Actions - Returns
-  const handleViewReturn = (item: PurchaseReturnItem) => {
-    setSelectedReturnForInvoice(item);
-    setAutoPrintReturnModal(false);
-    setIsReturnInvoiceModalOpen(true);
-  };
-
   const handlePrintReturn = (item: PurchaseReturnItem) => {
     setSelectedReturnForInvoice(item);
     setAutoPrintReturnModal(true);
@@ -1060,7 +1048,6 @@ const Purchases: React.FC = () => {
           setSortBy={setSortBy}
           returnedInvoiceSet={returnedInvoiceSet}
           onEdit={handleEditPurchase}
-          onView={handleViewPurchase}
           onPrint={handlePrintPurchase}
           onDelete={handleDeletePurchase}
         />
@@ -1092,7 +1079,6 @@ const Purchases: React.FC = () => {
           sortBy={sortBy}
           setSortBy={setSortBy}
           onResetFilters={handleResetFilters}
-          onView={handleViewReturn}
           onPrint={handlePrintReturn}
         />
       )}
@@ -1105,6 +1091,7 @@ const Purchases: React.FC = () => {
           setSelectedPurchaseForInvoice(null);
         }}
         purchase={selectedPurchaseForInvoice}
+        autoPrint
       />
 
       {/* View / Print Return Invoice Modal */}

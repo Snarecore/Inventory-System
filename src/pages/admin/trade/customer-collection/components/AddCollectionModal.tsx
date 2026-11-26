@@ -10,7 +10,7 @@ import { sortInvoicesFIFO } from "@/services/collection-service";
 import DueInvoiceAllocationTable from "./DueInvoiceAllocationTable";
 import type { CollectionReceiptData } from "./CollectionReceiptModal";
 import { formatMoney } from "@/utils/formatters";
-import { showErrorToast, showSuccessToast } from "@/utils/toast-utils";
+import { showErrorToast } from "@/utils/toast-utils";
 import type { CustomerDueItem } from "@/types/collection.types";
 import { usePermission } from "@/hooks/usePermission";
 import { computeFIFOAllocations } from "@/components/settlement/settlement-utils";
@@ -226,8 +226,6 @@ export const AddCollectionModal: React.FC<AddCollectionModalProps> = ({
       });
 
       if (result.success) {
-        showSuccessToast(result.msg || "Collection recorded successfully!");
-
         if (onSuccess) {
           const receiptData: CollectionReceiptData = {
             receiptNo: `REC-${Date.now().toString().slice(-6)}`,
@@ -286,24 +284,25 @@ export const AddCollectionModal: React.FC<AddCollectionModalProps> = ({
       bodyClassName="!mt-1"
     >
       <form onSubmit={handleSubmit} className="space-y-2">
-        {/* Customer Information Strip */}
-        <TradePartyInfoStrip
-          name={customer.customerName}
-          phone={customer.customerPhone}
-          totalDue={effectiveTotalDue}
-          partyType="customer"
-        />
+        {/* Customer Information Strip & Collection Amount in one row */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 items-center">
+          <TradePartyInfoStrip
+            name={customer.customerName}
+            phone={customer.customerPhone}
+            totalDue={effectiveTotalDue}
+            partyType="customer"
+          />
 
-        {/* Amount Input & Quick Chips & Progress Meter */}
-        <TradeQuickAmountSection
-          label="Collection Amount"
-          placeholder="Enter collection amount (e.g. 500)"
-          amountInput={amountInput}
-          onAmountChange={setAmountInput}
-          effectiveTotalDue={effectiveTotalDue}
-          allocatedAmount={allocatedAmount}
-          allocatedPct={allocatedPct}
-        />
+          <TradeQuickAmountSection
+            label="Collection Amount"
+            placeholder="Enter collection amount (e.g. 500)"
+            amountInput={amountInput}
+            onAmountChange={setAmountInput}
+            effectiveTotalDue={effectiveTotalDue}
+            allocatedAmount={allocatedAmount}
+            allocatedPct={allocatedPct}
+          />
+        </div>
 
         {/* Due Invoices Allocation Table */}
         <DueInvoiceAllocationTable

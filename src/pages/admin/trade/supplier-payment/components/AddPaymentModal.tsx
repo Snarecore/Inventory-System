@@ -10,7 +10,7 @@ import { sortInvoicesFIFO } from "@/services/collection-service";
 import DuePurchaseInvoiceAllocationTable from "./DuePurchaseInvoiceAllocationTable";
 import type { SupplierDueItem, PaymentReceiptData } from "@/types/payment.types";
 import { formatMoney } from "@/utils/formatters";
-import { showErrorToast, showSuccessToast } from "@/utils/toast-utils";
+import { showErrorToast } from "@/utils/toast-utils";
 import { usePermission } from "@/hooks/usePermission";
 import { computeFIFOAllocations } from "@/components/settlement/settlement-utils";
 import TradePartyInfoStrip from "@/components/settlement/TradePartyInfoStrip";
@@ -225,8 +225,6 @@ export const AddPaymentModal: React.FC<AddPaymentModalProps> = ({
       });
 
       if (result.success) {
-        showSuccessToast(result.msg || "Payment recorded successfully!");
-
         if (onSuccess) {
           const receiptData: PaymentReceiptData = {
             receiptNo: `PAY-${Date.now().toString().slice(-6)}`,
@@ -285,24 +283,25 @@ export const AddPaymentModal: React.FC<AddPaymentModalProps> = ({
       bodyClassName="!mt-1"
     >
       <form onSubmit={handleSubmit} className="space-y-2">
-        {/* Supplier Information Strip */}
-        <TradePartyInfoStrip
-          name={supplier.supplierName}
-          phone={supplier.supplierPhone}
-          totalDue={effectiveTotalDue}
-          partyType="supplier"
-        />
+        {/* Supplier Information Strip & Payment Amount in one row */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 items-center">
+          <TradePartyInfoStrip
+            name={supplier.supplierName}
+            phone={supplier.supplierPhone}
+            totalDue={effectiveTotalDue}
+            partyType="supplier"
+          />
 
-        {/* Amount Input & Quick Chips & Progress Meter */}
-        <TradeQuickAmountSection
-          label="Payment Amount"
-          placeholder="Enter payment amount (e.g. 500)"
-          amountInput={amountInput}
-          onAmountChange={setAmountInput}
-          effectiveTotalDue={effectiveTotalDue}
-          allocatedAmount={allocatedAmount}
-          allocatedPct={allocatedPct}
-        />
+          <TradeQuickAmountSection
+            label="Payment Amount"
+            placeholder="Enter payment amount (e.g. 500)"
+            amountInput={amountInput}
+            onAmountChange={setAmountInput}
+            effectiveTotalDue={effectiveTotalDue}
+            allocatedAmount={allocatedAmount}
+            allocatedPct={allocatedPct}
+          />
+        </div>
 
         {/* Due Purchase Bills Allocation Table */}
         <DuePurchaseInvoiceAllocationTable

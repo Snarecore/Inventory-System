@@ -102,12 +102,6 @@ const SalesReportPage: React.FC = () => {
     totalDue,
   } = computeTradeKpiTotals(transactions, "sale");
 
-  const handleView = (item: SaleItem) => {
-    setSelectedInvoice(item);
-    setIsAutoPrint(false);
-    setIsInvoiceModalOpen(true);
-  };
-
   const handlePrint = (item: SaleItem) => {
     setSelectedInvoice(item);
     setIsAutoPrint(true);
@@ -190,7 +184,6 @@ const SalesReportPage: React.FC = () => {
             transactions={transactions}
             isLoading={isLoading}
             {...datePickerProps}
-            onView={handleView}
             onPrint={handlePrint}
           />
         )}
@@ -207,7 +200,6 @@ const SalesReportPage: React.FC = () => {
           <CustomerSalesReportTable
             transactions={transactions}
             isLoading={isLoading}
-            onView={handleView}
             {...datePickerProps}
           />
         )}

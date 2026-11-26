@@ -3,7 +3,6 @@ import {
   FiChevronDown,
   FiChevronRight,
   FiRotateCcw,
-  FiEye,
   FiPackage,
   FiFileText,
   FiPrinter,
@@ -51,7 +50,6 @@ import { showSuccessToast, showErrorToast } from "@/utils/toast-utils";
 interface SupplierReturnReportTableProps extends ReportDateFilterProps {
   records: NormalizedPurchaseReturnRecord[];
   isLoading?: boolean;
-  onView?: (item: PurchaseReturnItem) => void;
   onPrint?: (item: PurchaseReturnItem) => void;
 }
 
@@ -70,7 +68,7 @@ const AVAILABLE_COLUMNS: ColumnItem[] = [
 
 export const SupplierReturnReportTable: React.FC<
   SupplierReturnReportTableProps
-> = ({ records, isLoading, onView, onPrint, ...dateFilterProps }) => {
+> = ({ records, isLoading, onPrint, ...dateFilterProps }) => {
   const companyMeta = useReportCompanyMeta(
     dateFilterProps.startDate,
     dateFilterProps.endDate
@@ -523,7 +521,6 @@ export const SupplierReturnReportTable: React.FC<
                               }`}
                               title="Toggle returned products & vouchers breakdown"
                             >
-                              <FiEye size={12} />
                               <span>{isExpanded ? "Close" : "Details"}</span>
                             </button>
                             <button
@@ -809,16 +806,6 @@ export const SupplierReturnReportTable: React.FC<
                                         </td>
                                         <td className="py-2.5 px-2.5 text-center whitespace-nowrap">
                                           <div className="flex items-center justify-center gap-1.5">
-                                            {onView && (
-                                              <button
-                                                type="button"
-                                                onClick={() => onView(r.raw)}
-                                                className="p-1 rounded text-[var(--primary-color)] hover:bg-[var(--primary-color-light)] transition-colors cursor-pointer"
-                                                title="View Voucher Invoice"
-                                              >
-                                                <FiEye size={13} />
-                                              </button>
-                                            )}
                                             {onPrint && (
                                               <button
                                                 type="button"

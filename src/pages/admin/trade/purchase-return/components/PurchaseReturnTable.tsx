@@ -31,7 +31,6 @@ export interface PurchaseReturnTableProps {
   sortBy?: string;
   setSortBy?: (sort: string) => void;
   onResetFilters?: () => void;
-  onView: (item: PurchaseReturnItem) => void;
   onPrint: (item: PurchaseReturnItem) => void;
 }
 
@@ -62,7 +61,6 @@ export const PurchaseReturnTable: React.FC<PurchaseReturnTableProps> = ({
   sortBy,
   setSortBy,
   onResetFilters,
-  onView,
   onPrint,
 }) => {
   const handleExport = (dataToExport: PurchaseReturnItem[]) => {
@@ -105,7 +103,6 @@ export const PurchaseReturnTable: React.FC<PurchaseReturnTableProps> = ({
       sortBy={sortBy}
       setSortBy={setSortBy}
       onResetFilters={onResetFilters}
-      onView={onView}
       onPrint={onPrint}
       onExportExcel={handleExport}
     />

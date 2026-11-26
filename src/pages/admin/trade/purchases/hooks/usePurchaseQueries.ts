@@ -812,7 +812,7 @@ export const useDeletePurchaseOrderMutation = (options?: {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: [purchaseListQueryKey] });
       queryClient.invalidateQueries({ queryKey: [purchaseAndReturnQueryKey] });
-      queryClient.invalidateQueries({ queryKey: [productListQueryKey], refetchType: "all" });
+      queryClient.invalidateQueries({ queryKey: [productListQueryKey] });
       queryClient.invalidateQueries({ queryKey: [purchasesDueQueryKey] });
       queryClient.invalidateQueries({ queryKey: [purchasesInvoicesDueQueryKey] });
       invalidateFinancialBalances();

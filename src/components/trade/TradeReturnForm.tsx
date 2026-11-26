@@ -1150,10 +1150,10 @@ export const TradeReturnForm: React.FC<TradeReturnFormProps> = ({ mode }) => {
         queryClient.invalidateQueries({ queryKey: [purchasesDueQueryKey] });
         queryClient.invalidateQueries({ queryKey: [purchasesInvoicesDueQueryKey] });
       }
-      queryClient.invalidateQueries({ queryKey: [productListQueryKey], refetchType: "all" });
-      queryClient.invalidateQueries({ queryKey: [productQueryKey], refetchType: "all" });
-      queryClient.invalidateQueries({ queryKey: [dashboardQueryKey], refetchType: "all" });
-      queryClient.invalidateQueries({ queryKey: [userDashboardQueryKey], refetchType: "all" });
+      queryClient.invalidateQueries({ queryKey: [productListQueryKey] });
+      queryClient.invalidateQueries({ queryKey: [productQueryKey] });
+      queryClient.invalidateQueries({ queryKey: [dashboardQueryKey] });
+      queryClient.invalidateQueries({ queryKey: [userDashboardQueryKey] });
 
       // Invalidate live balance and transaction queries actively for real-time UI synchronization
       await Promise.all([

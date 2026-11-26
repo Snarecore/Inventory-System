@@ -81,7 +81,38 @@ export const normalizeSaleInvoice = (sale: any): TradeInvoiceData => {
   const grandTotal = Number(s.grandTotal ?? s.grand_total ?? (subtotal - discount + vat + delivery));
   const paid = Number(s.paidAmount ?? s.paid_amount ?? s.cashReceived ?? 0);
   const due = Number(s.dueAmount ?? s.due_amount ?? Math.max(0, grandTotal - paid));
-  const previousDue = Number(s.previousDue ?? s.previous_due ?? 0);
+  const currentInvoiceNo = getCleanOrderNo(s.orderNo, s.invoiceNo, s.id) || s.invoiceNo || "";
+
+  const currentKeys = new Set<string>(
+    [currentInvoiceNo, s.invoiceNo, s.orderNo, s.id]
+      .map((v) => String(v ?? "").trim().toLowerCase())
+      .filter(Boolean)
+  );
+
+  const filteredPreviousDueInvoices = Array.isArray(s.previousDueInvoices)
+    ? s.previousDueInvoices
+        .filter((d: any) => {
+          if (!d || Number(d.dueAmount ?? 0) <= 0) return false;
+          const dClean = getCleanOrderNo(d.orderNo, d.invoiceNo, d.id);
+          const dKeys = [dClean, d.invoiceNo, d.orderNo, d.id]
+            .map((v) => String(v ?? "").trim().toLowerCase())
+            .filter(Boolean);
+          return !dKeys.some((k) => currentKeys.has(k));
+        })
+        .map((d: any, idx: number) => ({
+          id: d.id ?? idx,
+          invoiceNo: getCleanOrderNo(d.orderNo, d.invoiceNo, d.id) || d.invoiceNo || d.orderNo || "-",
+          date: d.salesDate || d.saleDate || d.date || d.createdAt || null,
+          payMode: d.paymentType || d.payment_type || d.payMode || "Credit",
+          invoiceAmount: Number(d.grandTotal ?? d.totalAmount ?? d.invoiceAmount ?? 0),
+          paidAmount: Number(d.paidAmount ?? 0),
+          dueAmount: Number(d.dueAmount ?? 0),
+        }))
+    : undefined;
+
+  const previousDue = Array.isArray(filteredPreviousDueInvoices)
+    ? filteredPreviousDueInvoices.reduce((sum, d) => sum + Number(d.dueAmount || 0), 0)
+    : Number(s.previousDue ?? s.previous_due ?? 0);
 
   const isMulti =
     s.invType === "MULTI" ||
@@ -90,7 +121,7 @@ export const normalizeSaleInvoice = (sale: any): TradeInvoiceData => {
   return {
     type: "SALE",
     invoiceTitle: "Sales Invoice Details",
-    invoiceNo: getCleanOrderNo(s.orderNo, s.invoiceNo, s.id) || s.invoiceNo || "",
+    invoiceNo: currentInvoiceNo,
     date: s.salesDate || s.saleDate || s.date || s.createdAt,
     status: s.status,
     partyTypeTitle: "Customer Information",
@@ -116,19 +147,7 @@ export const normalizeSaleInvoice = (sale: any): TradeInvoiceData => {
     paidAmount: paid,
     dueAmount: due,
     previousDue,
-    previousDueInvoices: Array.isArray(s.previousDueInvoices)
-      ? s.previousDueInvoices
-          .filter((d: any) => d && Number(d.dueAmount ?? 0) > 0)
-          .map((d: any, idx: number) => ({
-            id: d.id ?? idx,
-            invoiceNo: getCleanOrderNo(d.orderNo, d.invoiceNo, d.id) || d.invoiceNo || d.orderNo || "-",
-            date: d.salesDate || d.saleDate || d.date || d.createdAt || null,
-            payMode: d.paymentType || d.payment_type || d.payMode || "Credit",
-            invoiceAmount: Number(d.grandTotal ?? d.totalAmount ?? d.invoiceAmount ?? 0),
-            paidAmount: Number(d.paidAmount ?? 0),
-            dueAmount: Number(d.dueAmount ?? 0),
-          }))
-      : undefined,
+    previousDueInvoices: filteredPreviousDueInvoices,
     totalDueWithCurrent: Number(due + previousDue),
     notes: s.note || s.notes || "",
   };

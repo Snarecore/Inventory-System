@@ -10,6 +10,7 @@ export interface TenderLeg {
   accountType: FinancialAccountType;
   account: string;
   accountNumber: string | null;
+  phoneNumber?: string;
 }
 
 export interface TradeTender {
@@ -103,6 +104,7 @@ export const mfsLeg = (wallet: MfsAccountItem | any): TenderLeg => {
     accountType: "MFS",
     account: nameLabel,
     accountNumber: resolvedAccNo,
+    ...(phone ? { phoneNumber: String(phone) } : {}),
   };
 };
 
@@ -231,6 +233,7 @@ export const postTradeFinancialEntries = async ({
       accountType: tender.leg.accountType,
       account: tender.leg.account,
       accountNumber: tender.leg.accountNumber,
+      ...(tender.leg.phoneNumber ? { phoneNumber: tender.leg.phoneNumber } : {}),
       head: ledgerHead,
       items: itemsSummary,
       bill_ref: billRef,
@@ -245,6 +248,153 @@ export const postTradeFinancialEntries = async ({
 
   const allSucceeded = results.every((r) => r.ok);
   return { allSucceeded, results };
+};
+
+export interface TradeTenderSnapshot {
+  cash: number;
+  bank: number;
+  bankId: string;
+  mfs: number;
+  mfsId: string;
+}
+
+export interface PostTradeEditAdjustmentsParams {
+  tradeType: "INCOME" | "EXPENSE";
+  original: TradeTenderSnapshot;
+  current: TradeTenderSnapshot;
+  registeredBankAccounts: BankAccountItem[];
+  registeredMfsAccounts: MfsAccountItem[];
+  invoiceNo: string;
+  partyId?: string | number | null;
+  itemsSummary?: string;
+  date?: string | Date;
+  head?: string;
+}
+
+/**
+ * Posts delta financial ledger adjustments when an existing Sale (INCOME) or Purchase (EXPENSE)
+ * is edited and its Cash, Bank, or MFS tender amounts/accounts change.
+ */
+export const postTradeEditAdjustments = async ({
+  tradeType,
+  original,
+  current,
+  registeredBankAccounts,
+  registeredMfsAccounts,
+  invoiceNo,
+  partyId,
+  itemsSummary = "",
+  date,
+  head,
+}: PostTradeEditAdjustmentsParams): Promise<TradeTenderSnapshot> => {
+  const reverseType: "INCOME" | "EXPENSE" = tradeType === "INCOME" ? "EXPENSE" : "INCOME";
+  const label = tradeType === "INCOME" ? "Sale" : "Purchase";
+  const ledgerHead = head || `${label}s (Edit Adjustment)`;
+  const cleanInvoiceNo = String(invoiceNo || "").trim();
+  const cleanPartyId = String(partyId ?? 0);
+
+  const parsedDate = date ? new Date(date) : new Date();
+  const validDate = isNaN(parsedDate.getTime()) ? new Date() : parsedDate;
+  const isoDate = validDate.toISOString().split("T")[0];
+  const ym = yearmonthOf(validDate);
+
+  const postAdj = async (
+    txType: "INCOME" | "EXPENSE",
+    amt: number,
+    leg: TenderLeg,
+    billSuffix: string,
+    noteText: string
+  ) => {
+    const res = await postSingleFinancialTransaction({
+      type: txType,
+      amount: amt,
+      collectionAmount: amt,
+      dueAmount: 0,
+      categoryId: cleanPartyId,
+      accountType: leg.accountType,
+      account: leg.account,
+      accountNumber: leg.accountNumber,
+      ...(leg.phoneNumber ? { phoneNumber: leg.phoneNumber, phone: leg.phoneNumber } : {}),
+      bill_ref: `${cleanInvoiceNo}-${billSuffix}-${Date.now()}`,
+      refNo: cleanInvoiceNo,
+      head: ledgerHead,
+      items: itemsSummary,
+      notes: noteText,
+      transactionDate: isoDate,
+      yearmonth: ym,
+    });
+    if (!res.ok) {
+      console.error(`${label} edit ${leg.accountType} ledger adjustment failed:`, res.msg);
+    }
+  };
+
+  const postAccountDelta = async (
+    key: "cash" | "bank" | "mfs",
+    oldAmt: number,
+    newAmt: number,
+    oldAccId: string,
+    newAccId: string,
+    resolveLeg: (accId: string) => TenderLeg
+  ) => {
+    const isSameAccount = key === "cash" || String(oldAccId || "").trim() === String(newAccId || "").trim();
+    const title = key === "cash" ? "Cash" : key === "bank" ? "Bank" : "MFS";
+
+    if (isSameAccount) {
+      const diff = Number((newAmt - oldAmt).toFixed(2));
+      if (diff !== 0) {
+        const txType = diff > 0 ? tradeType : reverseType;
+        await postAdj(
+          txType,
+          Math.abs(diff),
+          resolveLeg(newAccId || oldAccId),
+          `adj-${key}`,
+          `${label} edit payment adjustment: ${title} ${diff > 0 ? "+" : ""}${diff}`
+        );
+      }
+      return;
+    }
+
+    if (oldAmt > 0) {
+      await postAdj(
+        reverseType,
+        oldAmt,
+        resolveLeg(oldAccId),
+        `adj-${key}-rev`,
+        `${label} edit payment adjustment: Reverse previous ${title} payment (${oldAmt})`
+      );
+    }
+    if (newAmt > 0) {
+      await postAdj(
+        tradeType,
+        newAmt,
+        resolveLeg(newAccId),
+        `adj-${key}-new`,
+        `${label} edit payment adjustment: New ${title} payment (+${newAmt})`
+      );
+    }
+  };
+
+  const findBank = (id: string) =>
+    registeredBankAccounts.find((b) => String(b.bankId ?? b.id) === String(id));
+  const findMfs = (id: string) => {
+    const target = String(id || "").trim();
+    return registeredMfsAccounts.find(
+      (m) =>
+        String(m.id ?? "").trim() === target ||
+        String(m.mfsId ?? "").trim() === target ||
+        String(m.phoneNumber ?? m.phone ?? "").trim() === target
+    );
+  };
+
+  await postAccountDelta("cash", original.cash, current.cash, "", "", () => cashLeg());
+  await postAccountDelta("bank", original.bank, current.bank, original.bankId, current.bankId, (id) =>
+    bankLeg(findBank(id))
+  );
+  await postAccountDelta("mfs", original.mfs, current.mfs, original.mfsId, current.mfsId, (id) =>
+    mfsLeg(findMfs(id))
+  );
+
+  return { ...current };
 };
 
 export interface FinanceDashboardParams {

@@ -2,7 +2,6 @@ import React, { useState, useMemo } from "react";
 import moment from "moment";
 import {
   FiChevronRight,
-  FiEye,
   FiCopy,
   FiCheck,
   FiRotateCcw,
@@ -73,7 +72,6 @@ interface PartyTradeReportTableProps extends ReportDateFilterProps {
     partyName: string,
     meta: ReportCompanyMeta
   ) => Promise<void>;
-  onViewInvoice?: (invoice: any) => void;
   excelSuccessText: (count: number) => string;
   pdfSuccessText: string;
 }
@@ -141,7 +139,6 @@ export const PartyTradeReportTable: React.FC<PartyTradeReportTableProps> = ({
   onDownloadPdf,
   onExportPartyInvoicesExcel,
   onDownloadPartyInvoicesPdf,
-  onViewInvoice,
   excelSuccessText,
   pdfSuccessText,
 }) => {
@@ -588,7 +585,6 @@ export const PartyTradeReportTable: React.FC<PartyTradeReportTableProps> = ({
                             className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-[var(--color-primary)] bg-[var(--primary-color-light)]/60 hover:bg-[var(--color-primary)] hover:text-white rounded-md transition-colors cursor-pointer"
                             title="View Invoices"
                           >
-                            <FiEye size={12} />
                             <span>{isExpanded ? "Hide" : "Invoices"}</span>
                           </button>
                         </td>
@@ -695,11 +691,6 @@ export const PartyTradeReportTable: React.FC<PartyTradeReportTableProps> = ({
                                   <TableTh align="right" className="whitespace-nowrap">Due</TableTh>
                                   <TableTh align="center" className="whitespace-nowrap">Method</TableTh>
                                   <TableTh align="center" className="whitespace-nowrap">Status</TableTh>
-                                  {onViewInvoice && (
-                                    <TableTh align="center" width={50} className="whitespace-nowrap">
-                                      Action
-                                    </TableTh>
-                                  )}
                                 </TableHead>
                                 <TableBody>
                                   {partyInvoices.map((inv: any, iIdx: number) => {
@@ -775,18 +766,6 @@ export const PartyTradeReportTable: React.FC<PartyTradeReportTableProps> = ({
                                             {isDue ? "Outstanding" : "Paid"}
                                           </span>
                                         </td>
-                                        {onViewInvoice && (
-                                          <td className="py-2.5 px-3 text-center text-xs whitespace-nowrap">
-                                            <button
-                                              type="button"
-                                              onClick={() => onViewInvoice(inv)}
-                                              className="p-1 rounded text-[var(--color-primary)] hover:bg-[var(--primary-color-light)] transition-colors cursor-pointer"
-                                              title="View Invoice"
-                                            >
-                                              <FiEye size={13} />
-                                            </button>
-                                          </td>
-                                        )}
                                       </tr>
                                     );
                                   })}

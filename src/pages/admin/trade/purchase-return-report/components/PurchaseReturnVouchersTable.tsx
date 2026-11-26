@@ -42,7 +42,6 @@ import {
 interface PurchaseReturnVouchersTableProps extends ReportDateFilterProps {
   records: NormalizedPurchaseReturnRecord[];
   isLoading?: boolean;
-  onView: (item: PurchaseReturnItem) => void;
   onPrint: (item: PurchaseReturnItem) => void;
 }
 
@@ -63,7 +62,7 @@ const AVAILABLE_COLUMNS: ColumnItem[] = [
 
 export const PurchaseReturnVouchersTable: React.FC<
   PurchaseReturnVouchersTableProps
-> = ({ records, isLoading, onView, onPrint, ...dateFilterProps }) => {
+> = ({ records, isLoading, onPrint, ...dateFilterProps }) => {
   const companyMeta = useReportCompanyMeta(
     dateFilterProps.startDate,
     dateFilterProps.endDate
@@ -367,14 +366,8 @@ export const PurchaseReturnVouchersTable: React.FC<
                     )}
 
                     {isColVisible("returnNo") && (
-                      <td className="py-2.5 px-3 text-xs font-semibold text-[var(--primary-color)] whitespace-nowrap">
-                        <span
-                          onClick={() => onView(r.raw)}
-                          className="cursor-pointer hover:underline"
-                          title="View Return Voucher"
-                        >
-                          {r.returnNo}
-                        </span>
+                      <td className="py-2.5 px-3 text-xs font-semibold text-[var(--ui-text)] whitespace-nowrap">
+                        {r.returnNo}
                       </td>
                     )}
 
@@ -449,9 +442,7 @@ export const PurchaseReturnVouchersTable: React.FC<
                     {isColVisible("actions") && (
                       <td className="py-2 px-3 text-center whitespace-nowrap">
                         <TableActionButtons
-                          onView={() => onView(r.raw)}
                           onPrint={() => onPrint(r.raw)}
-                          viewTitle="View Return Voucher"
                           printTitle="Print Return Voucher"
                         />
                       </td>

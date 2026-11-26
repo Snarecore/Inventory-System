@@ -59,7 +59,6 @@ interface SaleTableProps {
   setSortBy?: (sort: string) => void;
   returnedInvoiceSet?: Set<string>;
   onEdit: (sale: SaleItem) => void;
-  onView: (sale: SaleItem) => void;
   onPrint: (sale: SaleItem) => void;
   onDelete?: (sale: SaleItem) => void;
   onExport?: () => void;
@@ -95,7 +94,6 @@ export const SaleTable: React.FC<SaleTableProps> = ({
   setSortBy,
   returnedInvoiceSet,
   onEdit,
-  onView,
   onPrint,
   onDelete: _onDelete,
   onExport,
@@ -390,9 +388,9 @@ export const SaleTable: React.FC<SaleTableProps> = ({
             className="w-[calc(50%-4px)] sm:w-28 shrink-0"
             options={[
               { value: "", label: "All Status" },
-              { value: "PAID", label: "Paid" },
+              { value: "COMPLETED", label: "Completed" },
               { value: "PARTIAL", label: "Partial" },
-              { value: "DUE", label: "Due / Credit" },
+              { value: "PENDING", label: "Pending" },
             ]}
           />
 
@@ -489,13 +487,13 @@ export const SaleTable: React.FC<SaleTableProps> = ({
                   sale.id || (sale as any).saleId
                 );
 
-                let statusBadge = "Paid";
+                let statusBadge = "COMPLETED";
                 let statusBg = "bg-[var(--ui-success-border)] text-[var(--ui-success-dark)] border-[var(--ui-success-border)] font-semibold";
                 if (dueAmount > 0 && paidAmount > 0) {
-                  statusBadge = "Partial";
+                  statusBadge = "PARTIAL";
                   statusBg = "bg-[var(--ui-warning-border)] text-[var(--ui-warning-dark)] border-[var(--ui-warning-border)] font-semibold";
                 } else if (dueAmount > 0 && paidAmount === 0) {
-                  statusBadge = "Due";
+                  statusBadge = "PENDING";
                   statusBg = "bg-[var(--ui-danger-border)] text-[var(--ui-danger-dark)] border-[var(--ui-danger-border)] font-semibold";
                 }
 
@@ -544,11 +542,7 @@ export const SaleTable: React.FC<SaleTableProps> = ({
                     {isColVisible("orderId") && (
                       <td className="py-2.5 px-3 text-[var(--ui-text)] text-xs font-normal whitespace-nowrap">
                         <div className="flex items-center gap-1.5 group/ord">
-                          <span
-                            onClick={() => onView(sale)}
-                            title="Click to view invoice"
-                            className="cursor-pointer hover:text-[var(--primary-color)] font-medium transition-colors"
-                          >
+                          <span className="font-medium">
                             {displayOrderId}
                           </span>
                           {displayOrderId && (
@@ -646,7 +640,6 @@ export const SaleTable: React.FC<SaleTableProps> = ({
                     {isColVisible("actions") && (
                       <td className="py-2 px-3 text-center whitespace-nowrap">
                         <TableActionButtons
-                          onView={() => onView(sale)}
                           onPrint={() => onPrint(sale)}
                           onEdit={canUpdate("sales") ? () => onEdit(sale) : undefined}
                           onDelete={canDelete("sales") && _onDelete ? () => _onDelete(sale) : undefined}

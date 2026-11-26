@@ -93,7 +93,6 @@ export const useInsertBankAccountMutation = (
       // 2. Invalidate and refetch all queries
       await queryClient.invalidateQueries({
         queryKey: [bankInfoListQueryKey],
-        refetchType: "all",
       });
 
       showSuccessToast(data?.msg || "Bank account created successfully!");
@@ -162,7 +161,6 @@ export const useUpdateBankAccountMutation = (
       // 2. Invalidate and refetch all queries
       await queryClient.invalidateQueries({
         queryKey: [bankInfoListQueryKey],
-        refetchType: "all",
       });
 
       showSuccessToast(data?.msg || "Bank account updated successfully!");

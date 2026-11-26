@@ -211,7 +211,6 @@ export const ProductTable = ({
             if (result?.success) {
                 await queryClient.invalidateQueries({
                     queryKey: [productListQueryKey],
-                    refetchType: "all",
                 });
                 onRefresh();
                 closeDeleteModal();
@@ -294,14 +293,12 @@ export const ProductTable = ({
             // Ensure full real-time server synchronization
             await queryClient.invalidateQueries({
                 queryKey: [productListQueryKey],
-                refetchType: "all",
             });
             onRefresh();
         } catch (error) {
             console.error("Failed to toggle status:", error);
             await queryClient.invalidateQueries({
                 queryKey: [productListQueryKey],
-                refetchType: "all",
             });
             onRefresh();
         } finally {

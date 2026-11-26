@@ -42,7 +42,6 @@ import {
 interface PurchaseReportTableProps extends ReportDateFilterProps {
   transactions: PurchaseItem[];
   isLoading?: boolean;
-  onView: (item: PurchaseItem) => void;
   onPrint: (item: PurchaseItem) => void;
 }
 
@@ -73,7 +72,6 @@ export const PurchaseReportTable: React.FC<PurchaseReportTableProps> = ({
   dateRange,
   onPresetChange,
   onDateChange,
-  onView,
   onPrint,
 }) => {
   const companyMeta = useReportCompanyMeta(startDate, endDate);
@@ -316,9 +314,9 @@ export const PurchaseReportTable: React.FC<PurchaseReportTableProps> = ({
             className="w-[calc(50%-4px)] sm:w-28 shrink-0"
             options={[
               { value: "all", label: "All Status" },
-              { value: "PAID", label: "Paid" },
+              { value: "COMPLETED", label: "Completed" },
               { value: "PARTIAL", label: "Partial" },
-              { value: "DUE", label: "Due / Credit" },
+              { value: "PENDING", label: "Pending" },
             ]}
           />
 
@@ -508,11 +506,7 @@ export const PurchaseReportTable: React.FC<PurchaseReportTableProps> = ({
                     {isColVisible("orderId") && (
                       <td className="py-2.5 px-3 text-[var(--ui-text)] text-xs font-normal whitespace-nowrap">
                         <div className="flex items-center gap-1.5 group/ord">
-                          <span
-                            onClick={() => onView(item)}
-                            title="Click to view invoice"
-                            className="cursor-pointer hover:text-[var(--primary-color)] font-medium transition-colors"
-                          >
+                          <span className="font-medium">
                             {orderDisplay}
                           </span>
                           {orderDisplay && (
@@ -666,7 +660,7 @@ export const PurchaseReportTable: React.FC<PurchaseReportTableProps> = ({
                               : "bg-[var(--ui-danger-border)] text-[var(--ui-danger-dark)] border-[var(--ui-danger-border)]"
                           }`}
                         >
-                          {isFullyPaid ? "Paid" : isPartial ? "Partial" : "Due"}
+                          {isFullyPaid ? "COMPLETED" : isPartial ? "PARTIAL" : "PENDING"}
                         </span>
                       </td>
                     )}
@@ -674,7 +668,6 @@ export const PurchaseReportTable: React.FC<PurchaseReportTableProps> = ({
                     {isColVisible("actions") && (
                       <td className="py-2 px-3 text-center w-24 whitespace-nowrap">
                         <TableActionButtons
-                          onView={() => onView(item)}
                           onPrint={() => onPrint(item)}
                           viewTitle="View Purchase Invoice"
                           printTitle="Print Purchase Receipt"

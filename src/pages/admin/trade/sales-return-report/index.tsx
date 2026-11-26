@@ -45,12 +45,6 @@ const SalesReturnReportPage: React.FC = () => {
     [returnRecords]
   );
 
-  const handleView = (item: SalesReturnItem) => {
-    setSelectedReturn(item);
-    setIsAutoPrint(false);
-    setIsVoucherModalOpen(true);
-  };
-
   const handlePrint = (item: SalesReturnItem) => {
     setSelectedReturn(item);
     setIsAutoPrint(true);
@@ -124,7 +118,6 @@ const SalesReturnReportPage: React.FC = () => {
             records={returnRecords}
             isLoading={isLoading}
             {...datePickerProps}
-            onView={handleView}
             onPrint={handlePrint}
           />
         )}
@@ -142,7 +135,6 @@ const SalesReturnReportPage: React.FC = () => {
             records={returnRecords}
             allUnifiedRecords={unifiedRecords}
             isLoading={isLoading}
-            onView={handleView}
             onPrint={handlePrint}
             {...datePickerProps}
           />
