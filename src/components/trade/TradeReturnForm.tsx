@@ -1185,7 +1185,11 @@ export const TradeReturnForm: React.FC<TradeReturnFormProps> = ({ mode }) => {
       showSuccessToast(`${isSale ? "Sales" : "Purchase"} Return #${generatedReturnNo} created successfully!`);
       setCreatedReturnItem(createdItem);
       setIsConfirmModalOpen(false);
-      setIsInvoiceModalOpen(true);
+      if (autoPrintInvoice) {
+        setIsInvoiceModalOpen(true);
+      } else {
+        navigate(isSale ? "/admin/sales?tab=returns" : "/admin/purchases?tab=returns");
+      }
     } catch (err: any) {
       showErrorToast(err?.message || `Failed to create ${mode} return.`);
     } finally {
