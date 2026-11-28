@@ -8,11 +8,8 @@ import type {
   NormalizedPinVerificationResult,
 } from "@/types";
 
-/**
- * Resolves the verify-pin endpoint from configuration.
- */
 export const getVerifyPinEndpoint = (): string => {
-  const rawUrl = (apiConfig as any).auth?.verifyPinUrl || "authorization-verify-pin";
+  const rawUrl = (apiConfig as any).auth?.verifyPinUrl;
   return rawUrl.replace(/^\/+/, "");
 };
 

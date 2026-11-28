@@ -27,10 +27,6 @@ import {
   allocateSettlementManual,
 } from "./settlement-allocation-service";
 
-/**
- * Enterprise standard FIFO chronological sorter for purchase invoices.
- * Ensures the oldest pending invoice is placed first (Row 1).
- */
 export const sortPurchaseInvoicesFIFO = (
   invoices: PurchaseInvoiceDueItem[]
 ): PurchaseInvoiceDueItem[] => {
@@ -243,10 +239,6 @@ export interface PostPaymentLedgerParams {
   mfsAmount?: number;
 }
 
-/**
- * Sequential Ledger posting.
- * Debits the paid amount from Cash, Bank, or MFS balance with tradeType: "EXPENSE", head: "Payment".
- */
 export const postPaymentLedger = async ({
   supplierPhone,
   supplierId,

@@ -2,22 +2,16 @@ import apiConfig from "@/config/api.json";
 import { getData, postData } from "./api-service";
 import type { NoticesResponse, MarkNoticeReadResponse } from "@/types";
 
-const CMS_PUBLIC_BASE =
-  import.meta.env.VITE_CMS_BASE_URL ||
-  "https://apps-cashboi.stepserp.com/cashboi-cms/cms/api/public";
+const CMS_PUBLIC_BASE = import.meta.env.VITE_CMS_BASE_URL;
 
 const EMPTY_NOTICES_RESPONSE: NoticesResponse = {
   totalElements: 0,
   totalPages: 0,
   page: 0,
-  size: 20,
+  size: 0,
   items: [],
 };
 
-/**
- * Fetch paginated notices for a user from CMS public endpoint
- * GET /notices?userId={userId}&page={page}&size={size}
- */
 export async function fetchNotices(
   userId?: string | number | null,
   page = 0,
@@ -51,10 +45,6 @@ export async function fetchNotices(
   };
 }
 
-/**
- * Mark a notice as read for a user
- * POST /notices/{id}/read?userId={userId}
- */
 export async function markNoticeAsRead(
   noticeId: number | string,
   userId?: string | number | null
