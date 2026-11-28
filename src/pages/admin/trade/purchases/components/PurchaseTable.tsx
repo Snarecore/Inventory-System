@@ -59,6 +59,7 @@ interface PurchaseTableProps {
   setCustomEndDate?: (date: string) => void;
   sortBy?: string;
   setSortBy?: (sort: string) => void;
+  onView?: (purchase: PurchaseItem) => void;
   onEdit: (purchase: PurchaseItem) => void;
   onPrint: (purchase: PurchaseItem) => void;
   onReturn?: (purchase: PurchaseItem) => void;
@@ -110,6 +111,7 @@ export const PurchaseTable: React.FC<PurchaseTableProps> = ({
   setCustomEndDate,
   sortBy = "latest",
   setSortBy,
+  onView,
   onEdit,
   onPrint,
   onReturn,
@@ -641,6 +643,7 @@ export const PurchaseTable: React.FC<PurchaseTableProps> = ({
                       {isColVisible("actions") && (
                         <td className="py-2 px-3 text-center">
                           <TableActionButtons
+                            onView={onView ? () => onView(purchase) : undefined}
                             onPrint={() => onPrint(purchase)}
                             onEdit={canUpdate("purchase") ? () => onEdit(purchase) : undefined}
                             onDelete={canDelete("purchase") && onDelete ? () => onDelete(purchase) : undefined}

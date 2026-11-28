@@ -6,10 +6,12 @@ import { TradeSettlementHistoryTable } from "@/components/settlement/TradeSettle
 
 interface CollectionHistoryTableProps {
   onPrintReceipt: (receipt: CollectionReceiptData) => void;
+  onViewReceipt?: (receipt: CollectionReceiptData) => void;
 }
 
 export const CollectionHistoryTable: React.FC<CollectionHistoryTableProps> = ({
   onPrintReceipt,
+  onViewReceipt,
 }) => {
   const [startDate, setStartDate] = useState<string>(
     moment().startOf("month").format("YYYY-MM-DD")
@@ -35,6 +37,7 @@ export const CollectionHistoryTable: React.FC<CollectionHistoryTableProps> = ({
       isLoading={isLoading}
       onDateRangeChange={handleDateRangeChange}
       onPrintReceipt={onPrintReceipt}
+      onViewReceipt={onViewReceipt}
       storageKey="collection_history_columns"
       excelFileName="Customer_Collections.xlsx"
     />

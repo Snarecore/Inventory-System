@@ -30,12 +30,21 @@ import {
 } from "@/pages/admin/trade/sales/hooks/useSalesQueries";
 import { useDebounce } from "@/hooks/useDebounce";
 import { usePermission } from "@/hooks/usePermission";
+import { useBusinessProfileQuery } from "@/hooks/useBusinessProfile";
+import { useInvoiceProfileSetupQuery } from "@/hooks/useInvoiceProfileSetup";
+import {
+  normalizePurchaseInvoice,
+  normalizePurchaseReturnInvoice,
+} from "@/components/invoice/trade-invoice-adapters";
+import { openTradeInvoicePdfPreview } from "@/utils/trade-invoice-pdf";
 import { showErrorToast } from "@/utils/toast-utils";
 
 const Purchases: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { canCreate } = usePermission();
+  const { data: businessProfile } = useBusinessProfileQuery();
+  const { data: invoiceSetup } = useInvoiceProfileSetupQuery();
 
   // Tab State: "purchases" | "returns"
   const searchParams = useMemo(() => new URLSearchParams(location.search), [location.search]);
@@ -850,6 +859,20 @@ const Purchases: React.FC = () => {
   };
 
   // Actions - Purchases
+  const handleViewPurchase = async (purchase: PurchaseItem) => {
+    try {
+      const invoiceData = normalizePurchaseInvoice(purchase);
+      await openTradeInvoicePdfPreview({
+        invoice: invoiceData,
+        businessProfile,
+        invoiceSetup,
+      });
+    } catch (err) {
+      console.error("Failed to generate purchase invoice PDF preview:", err);
+      showErrorToast("Could not generate purchase invoice PDF preview");
+    }
+  };
+
   const handlePrintPurchase = (purchase: PurchaseItem) => {
     setSelectedPurchaseForInvoice(purchase);
     setIsPurchaseInvoiceModalOpen(true);
@@ -897,6 +920,20 @@ const Purchases: React.FC = () => {
 
 
   // Actions - Returns
+  const handleViewReturn = async (item: PurchaseReturnItem) => {
+    try {
+      const invoiceData = normalizePurchaseReturnInvoice(item);
+      await openTradeInvoicePdfPreview({
+        invoice: invoiceData,
+        businessProfile,
+        invoiceSetup,
+      });
+    } catch (err) {
+      console.error("Failed to generate purchase return PDF preview:", err);
+      showErrorToast("Could not generate purchase return PDF preview");
+    }
+  };
+
   const handlePrintReturn = (item: PurchaseReturnItem) => {
     setSelectedReturnForInvoice(item);
     setAutoPrintReturnModal(true);
@@ -1047,6 +1084,7 @@ const Purchases: React.FC = () => {
           sortBy={sortBy}
           setSortBy={setSortBy}
           returnedInvoiceSet={returnedInvoiceSet}
+          onView={handleViewPurchase}
           onEdit={handleEditPurchase}
           onPrint={handlePrintPurchase}
           onDelete={handleDeletePurchase}
@@ -1079,6 +1117,7 @@ const Purchases: React.FC = () => {
           sortBy={sortBy}
           setSortBy={setSortBy}
           onResetFilters={handleResetFilters}
+          onView={handleViewReturn}
           onPrint={handlePrintReturn}
         />
       )}

@@ -14,6 +14,8 @@ import PaymentHistoryTable from "./components/PaymentHistoryTable";
 import AddPaymentModal from "./components/AddPaymentModal";
 import PaymentReceiptModal from "./components/PaymentReceiptModal";
 import type { SupplierDueItem, PaymentReceiptData } from "@/types/payment.types";
+import { openPaymentReceiptPdfPreview } from "@/utils/trade-invoice-pdf";
+import { showErrorToast } from "@/utils/toast-utils";
 
 export const SupplierPayment: React.FC = () => {
   // Navigation Tabs: "dues" | "history"
@@ -198,6 +200,15 @@ export const SupplierPayment: React.FC = () => {
     setIsReceiptModalOpen(true);
   };
 
+  const handleViewHistoricalReceipt = async (receipt: PaymentReceiptData) => {
+    try {
+      await openPaymentReceiptPdfPreview({ receiptData: receipt });
+    } catch (err) {
+      console.error("Failed to generate payment voucher PDF preview:", err);
+      showErrorToast("Could not generate payment voucher PDF preview");
+    }
+  };
+
   return (
     <div className="flex flex-col gap-2.5 px-3 py-2 sm:px-4 sm:py-2.5 max-w-[1600px] mx-auto w-full">
       {/* Top Header */}
@@ -259,7 +270,10 @@ export const SupplierPayment: React.FC = () => {
           onPay={handlePay}
         />
       ) : (
-        <PaymentHistoryTable onPrintReceipt={handlePrintHistoricalReceipt} />
+        <PaymentHistoryTable
+          onPrintReceipt={handlePrintHistoricalReceipt}
+          onViewReceipt={handleViewHistoricalReceipt}
+        />
       )}
 
       {/* Add Payment Modal */}

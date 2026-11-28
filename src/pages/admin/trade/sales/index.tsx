@@ -28,6 +28,13 @@ import {
 import { useTradeDeleteModal } from "@/hooks/useTradeDeleteModal";
 import { useDebounce } from "@/hooks/useDebounce";
 import { usePermission } from "@/hooks/usePermission";
+import { useBusinessProfileQuery } from "@/hooks/useBusinessProfile";
+import { useInvoiceProfileSetupQuery } from "@/hooks/useInvoiceProfileSetup";
+import {
+  normalizeSaleInvoice,
+  normalizeSalesReturnInvoice,
+} from "@/components/invoice/trade-invoice-adapters";
+import { openTradeInvoicePdfPreview } from "@/utils/trade-invoice-pdf";
 import { showErrorToast } from "@/utils/toast-utils";
 
 const Sales: React.FC = () => {
@@ -35,6 +42,8 @@ const Sales: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { canCreate } = usePermission();
+  const { data: businessProfile } = useBusinessProfileQuery();
+  const { data: invoiceSetup } = useInvoiceProfileSetupQuery();
 
   // Tab State: "sales" | "returns"
   const searchParams = useMemo(() => new URLSearchParams(location.search), [location.search]);
@@ -915,6 +924,20 @@ const Sales: React.FC = () => {
   };
 
   // Actions - Sales
+  const handleViewSale = async (sale: SaleItem) => {
+    try {
+      const invoiceData = normalizeSaleInvoice(sale);
+      await openTradeInvoicePdfPreview({
+        invoice: invoiceData,
+        businessProfile,
+        invoiceSetup,
+      });
+    } catch (err) {
+      console.error("Failed to generate invoice PDF preview:", err);
+      showErrorToast("Could not generate invoice PDF preview");
+    }
+  };
+
   const handlePrintSale = (sale: SaleItem) => {
     setSelectedSaleForInvoice(sale);
     setAutoPrintSaleModal(true);
@@ -962,6 +985,20 @@ const Sales: React.FC = () => {
 
 
   // Actions - Returns
+  const handleViewReturn = async (item: SalesReturnItem) => {
+    try {
+      const invoiceData = normalizeSalesReturnInvoice(item);
+      await openTradeInvoicePdfPreview({
+        invoice: invoiceData,
+        businessProfile,
+        invoiceSetup,
+      });
+    } catch (err) {
+      console.error("Failed to generate sales return PDF preview:", err);
+      showErrorToast("Could not generate sales return PDF preview");
+    }
+  };
+
   const handlePrintReturn = (item: SalesReturnItem) => {
     setSelectedReturnForInvoice(item);
     setAutoPrintReturnModal(true);
@@ -1099,6 +1136,7 @@ const Sales: React.FC = () => {
           sortBy={sortBy}
           setSortBy={setSortBy}
           returnedInvoiceSet={returnedInvoiceSet}
+          onView={handleViewSale}
           onEdit={handleEditSale}
           onPrint={handlePrintSale}
           onDelete={handleDeleteSale}
@@ -1132,6 +1170,7 @@ const Sales: React.FC = () => {
           sortBy={sortBy}
           setSortBy={setSortBy}
           onResetFilters={handleResetFilters}
+          onView={handleViewReturn}
           onPrint={handlePrintReturn}
         />
       )}

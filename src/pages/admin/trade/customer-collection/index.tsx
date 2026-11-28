@@ -15,6 +15,8 @@ import CollectionReceiptModal, {
   type CollectionReceiptData,
 } from "./components/CollectionReceiptModal";
 import type { CustomerDueItem } from "@/types/collection.types";
+import { openCollectionReceiptPdfPreview } from "@/utils/trade-invoice-pdf";
+import { showErrorToast } from "@/utils/toast-utils";
 
 export const CustomerCollection: React.FC = () => {
   // Navigation Tabs: "dues" | "history"
@@ -170,6 +172,15 @@ export const CustomerCollection: React.FC = () => {
     setIsReceiptModalOpen(true);
   };
 
+  const handleViewHistoricalReceipt = async (receipt: CollectionReceiptData) => {
+    try {
+      await openCollectionReceiptPdfPreview({ receiptData: receipt });
+    } catch (err) {
+      console.error("Failed to generate collection receipt PDF preview:", err);
+      showErrorToast("Could not generate collection receipt PDF preview");
+    }
+  };
+
   return (
     <div className="flex flex-col gap-2.5 px-3 py-2 sm:px-4 sm:py-2.5 max-w-[1600px] mx-auto w-full">
       {/* Top Header */}
@@ -223,7 +234,10 @@ export const CustomerCollection: React.FC = () => {
           onCollect={handleCollect}
         />
       ) : (
-        <CollectionHistoryTable onPrintReceipt={handlePrintHistoricalReceipt} />
+        <CollectionHistoryTable
+          onPrintReceipt={handlePrintHistoricalReceipt}
+          onViewReceipt={handleViewHistoricalReceipt}
+        />
       )}
 
       {/* Payment Collection Modal */}

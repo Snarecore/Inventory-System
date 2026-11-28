@@ -636,7 +636,7 @@ export const TradeInvoiceModal: React.FC<TradeInvoiceModalProps> = ({
               <thead>
                 <tr style={{ backgroundColor: "#f8fafc", color: "#000", fontWeight: 400 }}>
                 <th style={{ border: "1px solid #64748b", padding: "5px 6px", textAlign: "center", width: "42px", fontWeight: 400, whiteSpace: "nowrap" }}>
-                    SL No
+                    SL
                   </th>
                   <th style={{ border: "1px solid #64748b", padding: "5px 6px", textAlign: "center", width: "68px", fontWeight: 400 }}>
                     Code
@@ -1050,22 +1050,6 @@ export const TradeInvoiceModal: React.FC<TradeInvoiceModalProps> = ({
               </div>
             </div>
 
-            {/* Footer Policy Note */}
-            {showFooterMessage && (
-              <div
-                style={{
-                  borderTop: "1px solid #cbd5e1",
-                  width: "100%",
-                  marginTop: "14px",
-                  paddingTop: "6px",
-                  textAlign: "center",
-                  fontSize: "9.5px",
-                  color: "#475569",
-                }}
-              >
-                {businessProfile?.description || "Goods once sold are not returnable. Thank you, visit again!"}
-              </div>
-            )}
           </div>
         </div>
 

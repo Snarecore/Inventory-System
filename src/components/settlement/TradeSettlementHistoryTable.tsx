@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from "react";
-import { FiChevronDown, FiPrinter, FiChevronRight } from "react-icons/fi";
+import { FiChevronDown, FiPrinter, FiChevronRight, FiEye } from "react-icons/fi";
 import { FaFileExcel } from "react-icons/fa";
 import moment from "moment";
 import { buildAndDownloadExcel } from "@/utils/excel-export";
@@ -62,6 +62,7 @@ export interface TradeSettlementHistoryTableProps<T extends GenericSettlementHis
   isLoading?: boolean;
   onDateRangeChange: (startDate: string, endDate: string) => void;
   onPrintReceipt: (receiptData: any) => void;
+  onViewReceipt?: (receiptData: any) => void;
   storageKey: string;
   excelFileName?: string;
 }
@@ -77,6 +78,7 @@ export const TradeSettlementHistoryTable = <T extends GenericSettlementHistoryIt
   isLoading = false,
   onDateRangeChange,
   onPrintReceipt,
+  onViewReceipt,
   storageKey,
   excelFileName,
 }: TradeSettlementHistoryTableProps<T>) => {
@@ -282,9 +284,9 @@ export const TradeSettlementHistoryTable = <T extends GenericSettlementHistoryIt
     }
   };
 
-  const handlePrintHistoricalReceipt = (item: T, idx: number) => {
+  const buildHistoricalReceiptData = (item: T, idx: number) => {
     const details = getItemDetails(item);
-    const receiptData = {
+    return {
       receiptNo: getVoucherNo(item, idx),
       [isCustomer ? "collectionDate" : "paymentDate"]: getVoucherDate(item),
       [isCustomer ? "customerName" : "supplierName"]: getPartyName(item),
@@ -306,8 +308,16 @@ export const TradeSettlementHistoryTable = <T extends GenericSettlementHistoryIt
       bankDetails: item.bankDetails,
       mfsDetails: item.mfsDetails,
     };
+  };
 
-    onPrintReceipt(receiptData);
+  const handlePrintHistoricalReceipt = (item: T, idx: number) => {
+    onPrintReceipt(buildHistoricalReceiptData(item, idx));
+  };
+
+  const handleViewHistoricalReceipt = (item: T, idx: number) => {
+    if (onViewReceipt) {
+      onViewReceipt(buildHistoricalReceiptData(item, idx));
+    }
   };
 
   return (
@@ -518,17 +528,29 @@ export const TradeSettlementHistoryTable = <T extends GenericSettlementHistoryIt
                         </td>
                       )}
 
-                      {/* Print Receipt */}
+                      {/* Print / View Receipt */}
                       {isColVisible("receipt") && (
-                        <td className="py-2.5 px-3 text-center">
-                          <button
-                            type="button"
-                            onClick={() => handlePrintHistoricalReceipt(row, index)}
-                            className="inline-flex items-center justify-center p-1.5 text-[var(--ui-text)] hover:text-[var(--ui-text)] bg-[var(--ui-surface-sunken)] hover:bg-[var(--ui-border)] rounded-md transition-colors cursor-pointer"
-                            title="Print Money Receipt"
-                          >
-                            <FiPrinter size={13} />
-                          </button>
+                        <td className="py-2.5 px-3 text-center whitespace-nowrap">
+                          <div className="inline-flex items-center justify-center gap-1.5">
+                            {onViewReceipt && (
+                              <button
+                                type="button"
+                                onClick={() => handleViewHistoricalReceipt(row, index)}
+                                className="inline-flex items-center justify-center p-1.5 text-[var(--primary-color)] hover:bg-[var(--primary-color-muted)] rounded-md transition-colors cursor-pointer"
+                                title="View Receipt PDF"
+                              >
+                                <FiEye size={13.5} />
+                              </button>
+                            )}
+                            <button
+                              type="button"
+                              onClick={() => handlePrintHistoricalReceipt(row, index)}
+                              className="inline-flex items-center justify-center p-1.5 text-[var(--ui-text)] hover:text-[var(--ui-text)] bg-[var(--ui-surface-sunken)] hover:bg-[var(--ui-border)] rounded-md transition-colors cursor-pointer"
+                              title="Print Money Receipt"
+                            >
+                              <FiPrinter size={13} />
+                            </button>
+                          </div>
                         </td>
                       )}
                     </tr>

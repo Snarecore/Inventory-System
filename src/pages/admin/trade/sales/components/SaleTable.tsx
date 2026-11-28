@@ -58,6 +58,7 @@ interface SaleTableProps {
   sortBy?: string;
   setSortBy?: (sort: string) => void;
   returnedInvoiceSet?: Set<string>;
+  onView?: (sale: SaleItem) => void;
   onEdit: (sale: SaleItem) => void;
   onPrint: (sale: SaleItem) => void;
   onDelete?: (sale: SaleItem) => void;
@@ -93,6 +94,7 @@ export const SaleTable: React.FC<SaleTableProps> = ({
   sortBy = "latest",
   setSortBy,
   returnedInvoiceSet,
+  onView,
   onEdit,
   onPrint,
   onDelete: _onDelete,
@@ -640,6 +642,7 @@ export const SaleTable: React.FC<SaleTableProps> = ({
                     {isColVisible("actions") && (
                       <td className="py-2 px-3 text-center whitespace-nowrap">
                         <TableActionButtons
+                          onView={onView ? () => onView(sale) : undefined}
                           onPrint={() => onPrint(sale)}
                           onEdit={canUpdate("sales") ? () => onEdit(sale) : undefined}
                           onDelete={canDelete("sales") && _onDelete ? () => _onDelete(sale) : undefined}

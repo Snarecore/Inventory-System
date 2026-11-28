@@ -57,6 +57,7 @@ export interface TradeReturnTableProps<T = any> {
   sortBy?: string;
   setSortBy?: (sort: string) => void;
   onResetFilters?: () => void;
+  onView?: (item: T) => void;
   onPrint: (item: T) => void;
   onExportExcel?: (items: T[]) => void;
   getReasonLabel?: (code?: string | null) => string;
@@ -92,6 +93,7 @@ export function TradeReturnTable<T extends Record<string, any>>({
   sortBy = "latest",
   setSortBy,
   onResetFilters,
+  onView,
   onPrint,
   onExportExcel,
   getReasonLabel: customGetReasonLabel,
@@ -684,6 +686,7 @@ export function TradeReturnTable<T extends Record<string, any>>({
                       {isColVisible("actions") && (
                         <td className="py-2 px-3 text-center w-24 whitespace-nowrap">
                           <TableActionButtons
+                            onView={onView ? () => onView(item) : undefined}
                             onPrint={() => onPrint(item)}
                             printTitle="Print Return Slip"
                           />

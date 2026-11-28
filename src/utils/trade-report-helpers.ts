@@ -1087,12 +1087,13 @@ export async function buildCorporatePdfDoc(
     },
   });
 
-  // ── Signatures Block on Last Page ──
-  let sigY = ((doc as any).lastAutoTable?.finalY || 45) + 18;
-  if (sigY > pageHeight - 16) {
+  // ── Signatures Block on Last Page (anchored to bottom) ──
+  const finalTableY = (doc as any).lastAutoTable?.finalY || 45;
+  const bottomSigY = pageHeight - 16;
+  if (finalTableY + 14 > bottomSigY) {
     doc.addPage();
-    sigY = 26;
   }
+  const sigY = bottomSigY;
 
   doc.setDrawColor(148, 163, 184);
   doc.setLineWidth(0.3);
