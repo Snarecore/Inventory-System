@@ -1,9 +1,8 @@
 import { useQuery, type UseQueryOptions } from "@tanstack/react-query";
 import moment from "moment";
-import apiConfig from "@/config/api.json";
 import { customerLedgerQueryKey } from "@/config/query-key";
-import { postData } from "@/services/api-service";
 import { buildAccessUser } from "@/utils/access-user";
+import { fetchCustomerLedgerResponse } from "@/services/trade-finance-query-service";
 import type {
   CustomerLedgerEntry,
   CustomerLedgerFilterParams,
@@ -404,11 +403,7 @@ export const fetchCustomerLedger = async (
   };
 
   try {
-    const endpoint = (apiConfig.collection as any)?.customerLedgerUrl || "customer-ledger";
-    const res: any = await postData({
-      url: endpoint,
-      body: payload,
-    });
+    const res: any = await fetchCustomerLedgerResponse(payload);
 
     return normalizeCustomerLedger(res);
   } catch (err) {

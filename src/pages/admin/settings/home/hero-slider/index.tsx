@@ -2,23 +2,15 @@ import { useState, useEffect } from "react";
 import { IoMdAddCircleOutline } from "react-icons/io";
 import HeroSliderTable, { HeroSliderDataProps } from "./components/HeroSliderTable";
 import HeroSliderForm from "./components/HeroSliderForm";
-import { useAPI } from "@/hooks/useApi";
-import apiConfig from "@/config/api.json";
-import { heroSliderQueryKey } from "@/config/query-key";
+import { useHeroSliderListQuery } from "@/hooks/useHeroSliderQueries";
 import PageHeader from "@/components/page-header/PageHeader";
 import Button from "@/components/button/Button";
 
 const HeroSlider = () => {
     const dataLimit = 10;
     const [currentPageNumber, setCurrentPageNumber] = useState(1);
-    const { usePaginatedQuery } = useAPI();
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editData, setEditData] = useState<HeroSliderDataProps | null>(null);
-
-    const getHeroSliderListApiUrl = () => {
-        const apiUrl = `${apiConfig.setting.heroSliderUrl}?page=${currentPageNumber}&limit=${dataLimit}`;
-        return apiUrl;
-    };
 
     const handlePagination = (paginationData: { selected: number }) => {
         const selectedPage = paginationData.selected + 1;
@@ -31,10 +23,7 @@ const HeroSlider = () => {
         isFetching,
         pageCount,
         isLoading
-    } = usePaginatedQuery<HeroSliderDataProps>({
-        queryKey: [heroSliderQueryKey, String(currentPageNumber)],
-        url: getHeroSliderListApiUrl()
-    });
+    } = useHeroSliderListQuery<HeroSliderDataProps>(currentPageNumber, dataLimit);
 
     useEffect(() => {
         fetchData();

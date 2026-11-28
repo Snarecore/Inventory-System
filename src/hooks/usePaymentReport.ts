@@ -1,9 +1,8 @@
 import { useQuery, type UseQueryOptions } from "@tanstack/react-query";
-import apiConfig from "@/config/api.json";
 import { paymentReportQueryKey } from "@/config/query-key";
-import { postData } from "@/services/api-service";
 import { buildAccessUser } from "@/utils/access-user";
 import { getUserInfo } from "@/utils/auth-storage";
+import { fetchPaymentReportResponse } from "@/services/trade-finance-query-service";
 import type { PaymentReportItem } from "@/types/payment.types";
 
 export interface PaymentReportFilterParams {
@@ -97,11 +96,7 @@ export const fetchPaymentReport = async (
   }
 
   try {
-    const endpoint = apiConfig.payment.paymentReportUrl;
-    const res: any = await postData({
-      url: endpoint,
-      body: payload,
-    });
+    const res: any = await fetchPaymentReportResponse(payload);
 
     return normalizePaymentReport(res);
   } catch (err) {

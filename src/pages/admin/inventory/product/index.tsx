@@ -1,5 +1,4 @@
 import { useState, useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { FaPlus, FaMoneyBillWave } from "react-icons/fa";
 import { IoCubeOutline } from "react-icons/io5";
@@ -8,10 +7,7 @@ import { MotionDiv } from "@/utils/framer.motion";
 import PageHeader from "@/components/page-header/PageHeader";
 import RefreshButton from "@/components/table-components/RefreshButton";
 import ProductTable from "./components/ProductTable";
-import apiConfig from "@/config/api.json";
-import { productListQueryKey } from "@/config/query-key";
-import { buildAccessUser } from "@/utils/access-user";
-import { postData } from "@/services/api-service";
+import { useProductListQuery } from "@/hooks/useProductQueries";
 import type { ProductItem } from "@/types";
 import { useDebounce } from "@/hooks/useDebounce";
 import { usePermission } from "@/hooks/usePermission";
@@ -32,25 +28,14 @@ const Products = () => {
         setCurrentPageNumber(1);
     };
 
-    const productListUrl = apiConfig.productList.productListUrl;
-
     // 1. Fetch Product List
     const {
         data: rawProductData,
         isLoading,
         isFetching,
         refetch: refetchProducts,
-    } = useQuery({
-        queryKey: [productListQueryKey],
-        queryFn: async () => {
-            const response = await postData<any>({
-                url: productListUrl,
-                body: { accessUser: buildAccessUser() },
-            });
-            return response;
-        },
+    } = useProductListQuery({
         refetchOnMount: "always",
-        refetchOnWindowFocus: false,
     });
 
     // Normalize product list from response

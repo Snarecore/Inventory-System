@@ -1,13 +1,12 @@
 import Modal from "@/components/modal/Modal";
 import { useState, ChangeEvent, useEffect } from "react";
 import ImageUpload from "@/components/image/ImageUpload";
-import { useAPI } from "@/hooks/useApi";
-import apiConfig from "@/config/api.json";
-import { heroSliderQueryKey } from "@/config/query-key";
+import { useSaveHeroSliderMutation } from "@/hooks/useHeroSliderQueries";
 import Button from "@/components/button/Button";
 import ToggleInput from "@/components/form/ToggleInput";
 import InputField from "@/components/form/TextInput";
 import { HeroSliderDataProps } from "./HeroSliderTable";
+import { showErrorToast } from "@/utils/toast-utils";
 
 interface HeroSliderFormProps {
     isOpen: boolean;
@@ -22,16 +21,10 @@ const initialFieldValues = {
     status: false
 };
 
-const requiredFields = [
-    { key: "image", value: "image", label: "image" },
-    { key: "link", value: "link", label: "link" }
-];
-
 const HeroSliderForm = ({ isOpen, onClose, editData, fetchData }: HeroSliderFormProps) => {
-    const { postFormMutation, patchFormMutation, handleApiMutation } = useAPI();
+    const saveMutation = useSaveHeroSliderMutation();
     const [isLoading, setIsLoading] = useState(false);
     const [fieldValues, setFieldValues] = useState(initialFieldValues);
-    const apiUrl = apiConfig.setting.heroSliderUrl;
 
     useEffect(() => {
         if (editData) {
@@ -71,26 +64,27 @@ const HeroSliderForm = ({ isOpen, onClose, editData, fetchData }: HeroSliderForm
     };
 
     const handleSubmitForm = async () => {
-        setIsLoading(true);
-        const mutation = editData ? patchFormMutation : postFormMutation;
-        const url = editData ? `${apiUrl}/${editData.id}` : apiUrl;
-
-        const result = await handleApiMutation({
-            mutation: mutation as any,
-            url,
-            body: fieldValues as any,
-            invalidateQueryKey: [heroSliderQueryKey],
-            showSuccessMessage: true,
-            showErrorMessage: true,
-            requiredFields
-        });
-
-        if (result?.success) {
-            if (fetchData) fetchData();
-            onClose();
-            resetForm();
+        if (!fieldValues.image) {
+            showErrorToast("Please upload image.");
+            return;
         }
-        setIsLoading(false);
+        if (!fieldValues.link) {
+            showErrorToast("Please enter link.");
+            return;
+        }
+
+        setIsLoading(true);
+        saveMutation.mutate(
+            { payload: fieldValues, id: editData?.id },
+            {
+                onSuccess: () => {
+                    if (fetchData) fetchData();
+                    onClose();
+                    resetForm();
+                },
+                onSettled: () => setIsLoading(false),
+            }
+        );
     };
 
     return (

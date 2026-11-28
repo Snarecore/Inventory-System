@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
 import { useSearchParams } from "react-router-dom";
 import { FaPlus, FaUsers, FaUserTie, FaTruck, FaMoneyBillWave } from "react-icons/fa";
 import { MotionDiv } from "@/utils/framer.motion";
@@ -10,19 +10,19 @@ import PartyTable from "./components/PartyTable";
 import PartyModal from "./components/PartyModal";
 import PartyDetailsModal from "./components/PartyDetailsModal";
 import PartyMessageModal from "./components/PartyMessageModal";
-import apiConfig from "@/config/api.json";
 import { partyListQueryKey } from "@/config/query-key";
 import { buildAccessUser, withBranchScope } from "@/utils/access-user";
-import { postData } from "@/services/api-service";
 import { showErrorToast } from "@/utils/toast-utils";
 import type { PartyItem, PartyType } from "@/types";
 import { useDebounce } from "@/hooks/useDebounce";
 import { usePermission } from "@/hooks/usePermission";
+import { usePartyListQuery, useUpdatePartyMutation } from "@/hooks/usePartyQueries";
 
 const Parties: React.FC = () => {
   const { canCreate } = usePermission();
   const [searchParams, setSearchParams] = useSearchParams();
   const queryClient = useQueryClient();
+  const updatePartyMutation = useUpdatePartyMutation();
 
   const initialType = searchParams.get("type") || "";
   const [typeFilter, setTypeFilter] = useState<string>(initialType);
@@ -54,25 +54,13 @@ const Parties: React.FC = () => {
     setTypeFilter(urlType);
   }, [searchParams]);
 
-  const partyListUrl = apiConfig.party.partyListUrl;
-
   // Fetch party list
   const {
     data: rawPartyData,
     isLoading,
     isFetching,
     refetch: refetchParties,
-  } = useQuery({
-    queryKey: [partyListQueryKey],
-    queryFn: async () => {
-      const response = await postData<any>({
-        url: partyListUrl,
-        body: { accessUser: buildAccessUser() },
-      });
-      return response;
-    },
-    refetchOnWindowFocus: false,
-  });
+  } = usePartyListQuery();
 
   // Extract all parties from backend response
   const allParties: PartyItem[] = useMemo(() => {
@@ -368,16 +356,14 @@ const Parties: React.FC = () => {
         status: nextStatus,
       });
 
-      const res = await postData<any>({
-        url: apiConfig.party.updatePartyUrl,
-        body: { accessUser: buildAccessUser(), ...payload },
+      await updatePartyMutation.mutateAsync({
+        accessUser: buildAccessUser(),
+        ...payload,
       });
-
-      if (!res || res.error || String(res?.status).toLowerCase() === "error") {
-        showErrorToast(res?.msg || "Failed to update party status");
-        handleModalSuccess({ ...party, status: currentActive ? "Active" : "Inactive" });
-      }
-    } catch {
+    } catch (error) {
+      showErrorToast(
+        error instanceof Error ? error.message : "Failed to update party status"
+      );
       handleModalSuccess({ ...party, status: currentActive ? "Active" : "Inactive" });
     }
   };

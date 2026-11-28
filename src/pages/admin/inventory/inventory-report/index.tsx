@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
 import {
   FaBoxes,
   FaChartLine,
@@ -10,10 +9,7 @@ import {
 import PageHeader from "@/components/page-header/PageHeader";
 import RefreshButton from "@/components/table-components/RefreshButton";
 import StatsCards, { type StatCardItem } from "@/components/common/StatsCards";
-import apiConfig from "@/config/api.json";
-import { productListQueryKey } from "@/config/query-key";
-import { buildAccessUser } from "@/utils/access-user";
-import { postData } from "@/services/api-service";
+import { useProductListQuery } from "@/hooks/useProductQueries";
 import { formatMoney } from "@/utils/formatters";
 import { useReportDateRange } from "@/utils/trade-report-helpers";
 import type { ProductItem } from "@/types";
@@ -38,22 +34,12 @@ const InventoryReportPage: React.FC = () => {
   );
   const [isQuickModalOpen, setIsQuickModalOpen] = useState<boolean>(false);
 
-  const productListUrl = apiConfig.productList.productListUrl;
-
   const {
     data: rawProductResponse,
     isLoading: isQueryLoading,
     isFetching,
     refetch,
-  } = useQuery({
-    queryKey: [productListQueryKey],
-    queryFn: async () =>
-      postData<any>({
-        url: productListUrl,
-        body: { accessUser: buildAccessUser() },
-      }),
-    refetchOnWindowFocus: false,
-  });
+  } = useProductListQuery();
 
   const allProducts = normalizeInventoryProducts(rawProductResponse);
   const products = filterProductsByDateRange(allProducts, startDate, endDate);

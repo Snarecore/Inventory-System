@@ -1,9 +1,8 @@
 import { useQuery, type UseQueryOptions } from "@tanstack/react-query";
 import moment from "moment";
-import apiConfig from "@/config/api.json";
 import { purchaseLedgerQueryKey } from "@/config/query-key";
-import { postData } from "@/services/api-service";
 import { buildAccessUser } from "@/utils/access-user";
+import { fetchPurchaseLedgerResponse } from "@/services/trade-finance-query-service";
 import type {
   PurchaseLedgerEntry,
   PurchaseLedgerFilterParams,
@@ -496,11 +495,7 @@ export const fetchPurchaseLedger = async (
   };
 
   try {
-    const endpoint = (apiConfig.payment as any)?.purchaseLedgerUrl || "purchase-ledger";
-    const res: any = await postData({
-      url: endpoint,
-      body: payload,
-    });
+    const res: any = await fetchPurchaseLedgerResponse(payload);
 
     return normalizePurchaseLedger(res);
   } catch (err) {

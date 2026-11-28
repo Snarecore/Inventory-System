@@ -22,14 +22,12 @@ import {
   ColumnVisibilityDropdown,
   type ColumnItem,
 } from "@/components/common";
-import { showErrorToast } from "@/utils/toast-utils";
-import { useAPI } from "@/hooks/useApi";
-import apiConfig from "@/config/api.json";
-import { productListQueryKey, productQueryKey } from "@/config/query-key";
+import { productListQueryKey } from "@/config/query-key";
 import { buildAccessUser, withBranchScope } from "@/utils/access-user";
 import type { ProductItem } from "@/types";
 import { getProductStockDisplay } from "@/utils/product-unit";
 import { usePermission } from "@/hooks/usePermission";
+import { useSaveProductMutation } from "@/hooks/useProductQueries";
 
 interface ProductTableProps {
     products: ProductItem[];
@@ -94,8 +92,7 @@ export const ProductTable = ({
     const [togglingId, setTogglingId] = useState<string | null>(null);
 
     const queryClient = useQueryClient();
-    const { handleApiMutation, postMutation } = useAPI();
-    const insertProductUrl = apiConfig.inventory.insertProductUrl;
+    const saveProductMutation = useSaveProductMutation();
 
     const statusOptions = [
         { label: "All Status", value: "" },
@@ -196,28 +193,15 @@ export const ProductTable = ({
                 updated_at: new Date().toISOString()
             });
 
-            const result = await handleApiMutation({
-                mutation: postMutation as any,
-                url: insertProductUrl,
-                body: {
-                    accessUser: buildAccessUser(),
-                    product: deletePayload
-                },
-                invalidateQueryKey: [productListQueryKey, productQueryKey],
-                showSuccessMessage: true,
-                showErrorMessage: true
+            await saveProductMutation.mutateAsync({
+                accessUser: buildAccessUser(),
+                product: deletePayload,
             });
 
-            if (result?.success) {
-                await queryClient.invalidateQueries({
-                    queryKey: [productListQueryKey],
-                });
-                onRefresh();
-                closeDeleteModal();
-            }
+            onRefresh();
+            closeDeleteModal();
         } catch (error) {
             console.error("Failed to delete product:", error);
-            showErrorToast("Failed to delete product.");
         }
     };
 
@@ -278,22 +262,12 @@ export const ProductTable = ({
                 return oldData;
             });
 
-            const result = await handleApiMutation({
-                mutation: postMutation as any,
-                url: insertProductUrl,
-                body: {
-                    accessUser: buildAccessUser(),
-                    product: updatedProductPayload
-                },
-                invalidateQueryKey: [productListQueryKey, productQueryKey],
-                showSuccessMessage: true,
-                showErrorMessage: true
+            await saveProductMutation.mutateAsync({
+                accessUser: buildAccessUser(),
+                product: updatedProductPayload,
             });
 
             // Ensure full real-time server synchronization
-            await queryClient.invalidateQueries({
-                queryKey: [productListQueryKey],
-            });
             onRefresh();
         } catch (error) {
             console.error("Failed to toggle status:", error);

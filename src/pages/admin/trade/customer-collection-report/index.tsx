@@ -1,5 +1,4 @@
 import React, { useMemo, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
 import {
   FaHandHoldingUsd,
   FaMoneyBillWave,
@@ -23,10 +22,7 @@ import {
 import CollectionReceiptModal, {
   type CollectionReceiptData,
 } from "@/pages/admin/trade/customer-collection/components/CollectionReceiptModal";
-import { partyListQueryKey } from "@/config/query-key";
-import apiConfig from "@/config/api.json";
-import { postData } from "@/services/api-service";
-import { buildAccessUser } from "@/utils/access-user";
+import { usePartyListQuery } from "@/hooks/usePartyQueries";
 import { useReportDateRange } from "@/utils/trade-report-helpers";
 import CollectionHistoryReportTable from "./components/CollectionHistoryReportTable";
 import CustomerCollectionSummaryTable from "./components/CustomerCollectionSummaryTable";
@@ -66,15 +62,7 @@ const CustomerCollectionReportPage: React.FC = () => {
     refetch: refetchDue,
   } = useCustomersDueQuery();
 
-  const { data: rawPartyData } = useQuery({
-    queryKey: [partyListQueryKey],
-    queryFn: async () =>
-      postData({
-        url: apiConfig.party.partyListUrl,
-        body: { accessUser: buildAccessUser() },
-      }),
-    refetchOnWindowFocus: false,
-  });
+  const { data: rawPartyData } = usePartyListQuery();
 
   // 3. Live Sales & Sales Return Queries
   const { data: salesList = [], refetch: refetchSales } = useSalesQuery({

@@ -1,8 +1,6 @@
 import { useQuery, type UseQueryOptions } from "@tanstack/react-query";
-import apiConfig from "@/config/api.json";
 import { purchasesInvoicesDueQueryKey } from "@/config/query-key";
-import { postData } from "@/services/api-service";
-import { buildAccessUser } from "@/utils/access-user";
+import { fetchPurchasesInvoicesDueResponse } from "@/services/trade-finance-query-service";
 import type { PurchaseInvoiceDueItem } from "@/types/payment.types";
 
 /**
@@ -56,14 +54,7 @@ export const fetchPurchasesInvoicesDue = async (
   if (!supplierId) return [];
 
   try {
-    const endpoint = apiConfig.payment.purchasesInvoicesDueUrl;
-    const res: any = await postData({
-      url: endpoint,
-      body: {
-        accessUser: buildAccessUser(),
-        customerId: String(supplierId),
-      },
-    });
+    const res: any = await fetchPurchasesInvoicesDueResponse(supplierId);
 
     return normalizePurchasesInvoicesDue(res);
   } catch (err) {

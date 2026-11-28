@@ -7,14 +7,13 @@ import {
   purchasesDueQueryKey,
   purchasesInvoicesDueQueryKey,
 } from "@/config/query-key";
-import apiConfig from "@/config/api.json";
-import { postData } from "@/services/api-service";
-import { buildAccessUser } from "@/utils/access-user";
 import { invalidateFinancialBalances } from "@/utils/invalidate-balances";
 import {
   checkPurchaseDelete,
   deletePurchaseOrder,
   validateCheckPurchaseDeleteResult,
+  fetchPurchasesListResponse,
+  fetchPurchaseAndReturnSources,
 } from "@/services/purchase-service";
 import type {
   PurchaseItem,
@@ -169,12 +168,7 @@ export const isPurchaseReturnRecord = (item: any): boolean => {
  */
 export const fetchPurchasesList = async (): Promise<PurchaseItem[]> => {
   try {
-    const accessUser = buildAccessUser();
-    const endpoint = apiConfig.purchase.purchaseListUrl;
-    const res: any = await postData({
-      url: endpoint,
-      body: { accessUser },
-    });
+    const res: any = await fetchPurchasesListResponse();
 
     const list =
       (Array.isArray(res?.data) ? res.data : null) ||
@@ -197,19 +191,7 @@ export const fetchPurchasesList = async (): Promise<PurchaseItem[]> => {
  */
 export const fetchPurchaseAndReturnList = async (): Promise<UnifiedPurchaseRecord[]> => {
   try {
-    const accessUser = buildAccessUser();
-    const endpoint = apiConfig.purchaseReturn.getPurchaseAndReturnListUrl;
-
-    const [purchaseAndReturnRes, finTxRes] = await Promise.allSettled([
-      postData({
-        url: endpoint,
-        body: { accessUser },
-      }),
-      postData({
-        url: apiConfig.finance.getFinancialTransactionUrl,
-        body: { accessUser, startDate: "", endDate: "", type: "INCOME" },
-      }),
-    ]);
+    const [purchaseAndReturnRes, finTxRes] = await fetchPurchaseAndReturnSources();
 
     const res: any = purchaseAndReturnRes.status === "fulfilled" ? purchaseAndReturnRes.value : null;
     const finVal: any = finTxRes.status === "fulfilled" ? finTxRes.value : null;

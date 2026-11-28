@@ -3,13 +3,12 @@ import Modal from "@/components/modal/Modal";
 import TextInput from "@/components/form/TextInput";
 import Button from "@/components/button/Button";
 import { buildAccessUser, withBranchScope } from "@/utils/access-user";
-import { postData } from "@/services/api-service";
 import { showSuccessToast, showErrorToast } from "@/utils/toast-utils";
-import apiConfig from "@/config/api.json";
 import type { PartyItem, PartyType } from "@/types";
 import { FaUserTie, FaTruck, FaPhone, FaEnvelope, FaMapMarkerAlt, FaMoneyBillWave } from "react-icons/fa";
 import { RiArrowDropDownLine } from "react-icons/ri";
 import { usePermission } from "@/hooks/usePermission";
+import { useSavePartyMutation } from "@/hooks/usePartyQueries";
 
 interface PartyModalProps {
   isOpen: boolean;
@@ -30,6 +29,7 @@ const PartyModal: React.FC<PartyModalProps> = ({
   const isEdit = Boolean(partyData && partyId);
   const { canCreate, canUpdate } = usePermission();
   const hasPermission = isEdit ? canUpdate("parties") : canCreate("parties");
+  const savePartyMutation = useSavePartyMutation();
 
   const [partyType, setPartyType] = useState<PartyType>(defaultType);
   const [partyName, setPartyName] = useState("");
@@ -95,10 +95,6 @@ const PartyModal: React.FC<PartyModalProps> = ({
     setIsSubmitting(true);
     try {
       const accessUser = buildAccessUser();
-      const insertUrl = apiConfig.party.insertPartyUrl;
-      const updateUrl = apiConfig.party.updatePartyUrl;
-
-      const targetUrl = isEdit ? updateUrl : insertUrl;
       const numBalance = Number(openingBalance) || 0;
 
       const partyDetails = withBranchScope({
@@ -124,23 +120,31 @@ const PartyModal: React.FC<PartyModalProps> = ({
         ...partyDetails,
       };
 
-      const response = await postData<any>({
-        url: targetUrl,
-        body: payload,
+      const response = await savePartyMutation.mutateAsync({ payload, isEdit });
+      const result =
+        response && typeof response === "object"
+          ? (response as Record<string, unknown>)
+          : {};
+      const successMsg =
+        result.msg ||
+        result.message ||
+        (isEdit ? "Party updated successfully!" : "Party created successfully!");
+      showSuccessToast(String(successMsg));
+      const serverParty =
+        result.data || result.party || result.partyInfo || partyDetails;
+      onSuccess({
+        ...partyDetails,
+        ...(typeof serverParty === "object" && serverParty !== null
+          ? serverParty
+          : {}),
       });
-
-      if (response && !response.error && String(response.status).toLowerCase() !== "error") {
-        const successMsg = response.msg || response.message || (isEdit ? "Party updated successfully!" : "Party created successfully!");
-        showSuccessToast(successMsg);
-        const serverParty = (response as any)?.data || (response as any)?.party || (response as any)?.partyInfo || partyDetails;
-        onSuccess({ ...partyDetails, ...(typeof serverParty === 'object' ? serverParty : {}) });
-        onClose();
-      } else {
-        const errorMsg = response?.msg || response?.message || (response as any)?.error || "Failed to save party information.";
-        showErrorToast(errorMsg);
-      }
-    } catch (err: any) {
-      showErrorToast(err?.message || "An unexpected error occurred while saving.");
+      onClose();
+    } catch (err: unknown) {
+      showErrorToast(
+        err instanceof Error
+          ? err.message
+          : "An unexpected error occurred while saving."
+      );
     } finally {
       setIsSubmitting(false);
     }

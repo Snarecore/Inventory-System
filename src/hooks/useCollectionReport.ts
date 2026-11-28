@@ -1,9 +1,8 @@
 import { useQuery, type UseQueryOptions } from "@tanstack/react-query";
-import apiConfig from "@/config/api.json";
 import { collectionReportQueryKey } from "@/config/query-key";
-import { postData } from "@/services/api-service";
 import { buildAccessUser } from "@/utils/access-user";
 import { getUserInfo } from "@/utils/auth-storage";
+import { fetchCollectionReportResponse } from "@/services/trade-finance-query-service";
 import type { CollectionReportItem } from "@/types/collection.types";
 
 export interface CollectionReportFilterParams {
@@ -90,11 +89,7 @@ export const fetchCollectionReport = async (
   }
 
   try {
-    const endpoint = apiConfig.collection.collectionReportUrl;
-    const res: any = await postData({
-      url: endpoint,
-      body: payload,
-    });
+    const res: any = await fetchCollectionReportResponse(payload);
 
     return normalizeCollectionReport(res);
   } catch (err) {

@@ -2,23 +2,15 @@ import { useState, useEffect } from "react";
 import { IoMdAddCircleOutline } from "react-icons/io";
 import SocialTable from "./components/SocialTable";
 import SocialForm from "./components/SocialForm";
-import apiConfig from "@/config/api.json";
-import { useAPI } from "@/hooks/useApi";
-import { socialLinksQueryKey } from "@/config/query-key";
+import { useSocialLinksQuery } from "@/hooks/useSocialLinksQuery";
 import PageHeader from "@/components/page-header/PageHeader";
 import Button from "@/components/button/Button";
 
 const SocialLinks = () => {
     const dataLimit = 10;
     const [currentPageNumber, setCurrentPageNumber] = useState(1);
-    const { usePaginatedQuery } = useAPI();
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editData, setEditData] = useState<any | null>(null);
-
-    const getSocialLinksApiUrl = () => {
-        const apiUrl = `${apiConfig.setting.socialLinksUrl}?page=${currentPageNumber}&limit=${dataLimit}`;
-        return apiUrl;
-    };
 
     const handlePagination = (paginationData: { selected: number }) => {
         const selectedPage = paginationData.selected + 1;
@@ -31,10 +23,7 @@ const SocialLinks = () => {
         isFetching,
         pageCount,
         isLoading
-    } = usePaginatedQuery({
-        queryKey: [socialLinksQueryKey, String(currentPageNumber)],
-        url: getSocialLinksApiUrl()
-    });
+    } = useSocialLinksQuery(currentPageNumber, dataLimit);
 
     useEffect(() => {
         fetchData();

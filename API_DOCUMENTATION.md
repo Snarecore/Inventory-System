@@ -1,74 +1,57 @@
 # Cash Boi — API Documentation ---
 
-## 1. আর্কিটেকচার — দুইটা backend, দুইটা proxy
+> Frontend wiring and implementation guidance must follow the current source
+> (`src/config/api.json`, `src/services/`, and `src/hooks/`). Endpoint/backend notes
+> below are reference material and should be checked against the live contract before
+> being used for new code.
 
-### 1.1 দুইটা আলাদা backend
+## 1. Frontend API architecture and backend configuration
 
-| Backend | env var | কী থাকে |
-|---|---|---|
-| **itouch** | `VITE_API_BASE_URL` | মূল ব্যবসার সবকিছু — login, sales, purchase, product, party, collection, payment, report, dashboard, branch, employee |
-| **cashboi-cms** | `VITE_CASHBOI_CMS_BASE_URL` | OTP, pricing, subscription, payment gateway, notice, force-logout |
+### 1.1 Backend base URLs
 
-বর্তমান ভ্যালু (`.env.local` থেকে):
+The shared business API client uses `VITE_API_BASE_URL`. CMS, referral, and other
+specialized integrations may use their own base URL in the corresponding service.
+Keep deployment-specific values in environment configuration; endpoint paths for the
+shared API are registered in `src/config/api.json`.
 
-```
-VITE_API_BASE_URL          = https://itouch.stepserp.com/cash-boi-v4/api
-VITE_CASHBOI_CMS_BASE_URL  = https://apps-cashboi.stepserp.com/cashboi-cms
-VITE_PROD_PROXY_URL        = https://cash-boi-web.vercel.app/api
-```
+### 1.2 Frontend API architecture
 
-### 1.2 ব্রাউজার কোনোটাই সরাসরি কল করে না
-
-এটা না বুঝলে CORS error-এ আটকে যাবেন। **ব্রাউজার সবসময় proxy দিয়ে যায়:**
+The current frontend request path is:
 
 ```
-┌─────────────┐
-│   Browser   │
-└──────┬──────┘
-       │
-       ├── dev ──────► Vite dev proxy          ──► itouch / cms
-       │               /api-itouch, /api-cms        (vite.config.js)
-       │
-       └── prod ─────► Vercel serverless       ──► itouch / cms
-                       /proxy?endpoint=<name>      (api/proxy.js)
-                       /cms/<path>                 (api/cms/[...path].js)
+UI component → feature React Query hook → domain service → api-service.ts → fetch
 ```
 
-**কেন proxy লাগে:**
-
-* **cashboi-cms-এর CORS filter `Origin` header থাকলেই 403 "Invalid CORS request" দেয়** —
-  ব্রাউজার cross-origin-এ সবসময় `Origin` পাঠায় (GET-এও)। তাই proxy দিয়ে server-to-server
-  কল করা হয়, যেখানে `Origin` থাকে না।
-* itouch-এর URL bundle-এ ঢুকে যাক সেটা চাওয়া হয়নি।
+`api-service.ts` owns HTTP transport, authentication headers, session-expiry handling,
+and consistent HTTP/network errors. Feature services own endpoint selection and
+backend-specific payloads. React Query hooks own request state and cache behavior.
+Components should use feature hooks rather than call the transport or build endpoint
+requests themselves.
 
 ### 1.3 কোড-এ এটা কোথায়
 
 | কাজ | ফাইল |
 |---|---|
-| সব backend URL-এর একমাত্র জায়গা | `src/config.js` |
-| dev proxy prefix (`/api-itouch`, `/api-cms`) | `src/api-prefixes.js` |
-| dev proxy rule | `vite.config.js` → `proxyTo()` |
-| production proxy (itouch) | `api/proxy.js` |
-| production proxy (cms) | `api/cms/[...path].js` |
-| axios instance + interceptor | `src/api/api.js` |
-| itouch-এর সব function | `src/api/auth.js` |
-| cms-এর function | `src/api.js` |
+| Endpoint registry | `src/config/api.json` |
+| Shared HTTP transport | `src/services/api-service.ts` |
+| Feature/domain API requests | `src/services/*-service.ts` |
+| Query and mutation state/cache | `src/hooks/` and feature query hooks |
+| Org/branch-aware access payload | `src/utils/access-user.ts` |
 
-> **নিয়ম:** `src/`-এর কোনো ফাইলে backend URL **hardcode করা যাবে না**।
-> `src/config.js` থেকে import করুন। `config.js` ভ্যারিয়েবল না পেলে **throw করে** —
-> চুপচাপ ভুল backend-এ কথা বলার চেয়ে জোরে fail করা ভালো।
+Use the shared `api-service.ts` functions from a domain service; do not call `fetch`,
+`postData`, or other transport functions directly from a UI component. Check existing
+feature services and hooks before adding another request path.
 
-### 1.4 Production-এ path কীভাবে বদলায়
-
-`src/api/api.js`-এর request interceptor production-এ path rewrite করে:
+### 1.4 Runtime URL resolution
 
 ```js
-// dev:   POST /api-itouch/insert-sales   → proxy → .../cash-boi-v4/api/insert-sales
-// prod:  POST /proxy?endpoint=insert-sales → Vercel → .../cash-boi-v4/api/insert-sales
+// Relative endpoint: VITE_API_BASE_URL + endpoint path
+// Absolute endpoint: used as-is
 ```
 
-তাই কোডে সবসময় `api.post("/insert-sales", payload)` লিখবেন — environment অনুযায়ী
-path নিজে বদলে যাবে।
+`api-service.ts` normalizes the configured base URL and joins it with relative
+endpoint paths. When an endpoint requires another host, pass the service-specific
+`baseUrl` rather than rewriting the URL in a component.
 
 ---
 
@@ -101,12 +84,13 @@ GET  /public/* (cms)
 DELETE /employee-branch-permissions/{id}
 ```
 
-> এর একটা বাস্তব ফল: **HTTP method দেখে বোঝা যায় না কোনটা write।**
-> `src/api/api.js` তাই নাম দেখে ঠিক করে — `MUTATING_ENDPOINT = /(insert|update|delete|remove)/i`।
+> Backend-এ HTTP method দেখে operation বোঝা নাও যেতে পারে; endpoint contract যাচাই
+> করে request method নির্ধারণ করুন।
 
-### 2.2 ব্যর্থতা দুই রকম করে আসে ⚠️
+### 2.2 ব্যর্থতার ধরন ও frontend handling
 
-**বেশিরভাগ ব্যর্থতা HTTP status 200 নিয়েই আসে।** আসল ফল body-র `status` ফিল্ডে:
+Backend business failure HTTP 200 সহ আসতে পারে; response body-তে `status: "Error"`
+থাকলে সেটিও failure:
 
 ```json
 { "status": "Success", "msg": "Sale inserted successfully", "...": "..." }
@@ -115,52 +99,12 @@ DELETE /employee-branch-permissions/{id}
 { "status": "Error", "msg": "orgId and branchId are required" }
 ```
 
-তাই **সবসময় `data.status` চেক করুন**, শুধু `res.ok` / HTTP code না:
-
-```js
-const res = await api.post("/insert-sales", payload);
-if (String(res.data?.status).toLowerCase() === "error") {
-  throw new Error(res.data.msg);
-}
-```
-
-`src/api/api.js`-এর response interceptor এটাই করে — write সফল হলে তবেই
-`notifyDataChanged()` ডাকে, যাতে খোলা ড্যাশবোর্ড refresh হয়।
-
-#### কিন্তু কিছু endpoint HTTP 400 দেয় — একই envelope নিয়ে
-
-v4-এর কয়েকটা endpoint সাধারণ business refusal-ও **400** দিয়ে জানায়।
-`/insert-bank-account`-এ যাচাই করা (2026-09-01):
-
-```
-POST /insert-bank-account
-→ HTTP 400
-  { "status": "Error",
-    "msg": "Branch not found for the given branchId under this organization",
-    "accountNo": null }
-```
-
-**axios 400-কে reject করে**, তাই এটা `catch` ব্লকে চলে যায়। সেখানে শুধু
-"কিছু একটা ভুল হয়েছে" দেখালে ব্যাকএন্ডের আসল বাক্যটা হারিয়ে যায় — ইউজারও
-কিছু জানল না, লগও না। `apiErrorMessage()` rejected call-এর body থেকে `msg` টেনে আনে:
-
-```js
-import { apiErrorMessage } from "../api/errorMessage";
-
-try {
-  await insertBankAccount(payload);
-} catch (err) {
-  setBanner({ type: "error", msg: apiErrorMessage(err, "সেভ করা যায়নি") });
-}
-```
-
-**নিরাপদ নিয়ম:** `data.status` চেক করুন **এবং** `catch` ব্লকে
-`apiErrorMessage()` ব্যবহার করুন। দুইটাই লাগবে।
-
-> `errorMessage.js` কাঁচা Hibernate/JDBC বার্তাও মানুষের ভাষায় বদলে দেয়।
-> যেমন `NonUniqueResultException` — এটা `/insert-payment` ও `/insert-collection`-এ
-> আসে **যখন একই ফোন নম্বরে দুইটা party row থাকে** (একটা CUSTOMER, একটা SUPPLIER)।
-> ওই দুই endpoint party খোঁজে শুধু ফোন নম্বর দিয়ে, তাই duplicate থাকলে ভেঙে পড়ে।
+`src/services/api-service.ts` non-2xx HTTP response, network error, এবং session-expiry
+পরিস্থিতিতে `ApiServiceError` throw করে; HTTP response-এর `msg` / `message` অক্ষত রাখে।
+HTTP 2xx response-এর business-error envelope transport নিজে reject করে না। Mutation
+service-এ `assertApiSuccess(response, fallbackMessage)` ব্যবহার করে status/error
+envelope-গুলো reject করুন, আর feature hook-এ user feedback দিন. Query result normalize
+করার আগে endpoint response shape যাচাই করুন।
 
 ### 2.3 Response envelope
 
@@ -176,9 +120,9 @@ try {
 
 ### 2.4 Authorization header বাড়তি
 
-`src/api/api.js` প্রতিটা কলে `Authorization: Bearer <token>` বসায়, কিন্তু
-**ব্যাকএন্ড আসলে body-র `accessUser.token` দেখে।** header-টা থাকা ভালো, কিন্তু
-ওটাই auth না।
+`src/services/api-service.ts` stored token থাকলে `Authorization: Bearer <token>` header
+যোগ করে। Business endpoint-এ `accessUser` body-ও লাগতে পারে; endpoint contract অনুযায়ী
+`buildAccessUser()` ব্যবহার করুন।
 
 ---
 
@@ -1047,33 +991,31 @@ curl -s -X POST https://itouch.stepserp.com/cash-boi-v4/api/get-income-summary-d
 
 `status: "Error"` এলে `msg` পড়ুন — সাধারণত `orgId`/`branchId` বা তারিখের ফরম্যাট।
 
-### ধাপ ২ — `src/api/auth.js`-এ function যোগ করুন
+### ধাপ ২ — `src/config/api.json` ও domain service আপডেট করুন
 
 ```js
-export const getIncomeSummaryDetails = async (payload) => {
-  const res = await api.post("/get-income-summary-details", payload);
-  return res.data;
-};
+// Add the endpoint to the appropriate section in src/config/api.json.
+// In a feature service:
+export const getIncomeSummaryDetails = (payload) =>
+  postData({ url: apiConfig.finance.incomeSummaryDetailsUrl, body: payload });
 ```
 
-একই প্যাটার্ন মানুন: `api.post` → `res.data` ফেরত। interceptor বাকিটা দেখবে।
+Service functions own endpoint calls and backend payload/response contracts. Use
+`assertApiSuccess` for mutation responses where a business-error envelope must reject.
 
-### ধাপ ৩ — কম্পোনেন্টে কল করুন
+### ধাপ ৩ — React Query hook ও UI-তে ব্যবহার করুন
 
 ```js
-import { buildAccessUser } from "../api/accessUser";
-import { getIncomeSummaryDetails } from "../api/auth";
-
-const data = await getIncomeSummaryDetails({
-  accessUser: buildAccessUser(),
-  startDate: "2026-09-01",
-  endDate: "2026-09-15",
-});
-
-if (String(data?.status).toLowerCase() === "error") {
-  throw new Error(data.msg);
-}
+export const useIncomeSummaryDetailsQuery = (payload) =>
+  useQuery({
+    queryKey: [incomeSummaryDetailsQueryKey, payload],
+    queryFn: () => getIncomeSummaryDetails(payload),
+  });
 ```
+
+The component consumes the query or mutation hook. Keep request state, cache
+invalidation, and user feedback in the feature hook; keep UI markup and business
+payload construction in their existing owners unless the service contract requires it.
 
 ### ধাপ ৪ — Swagger-এ documented করুন ⚠️ বাদ দেবেন না
 

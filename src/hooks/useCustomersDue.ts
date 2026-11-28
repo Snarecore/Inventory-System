@@ -1,8 +1,6 @@
 import { useQuery, type UseQueryOptions } from "@tanstack/react-query";
-import apiConfig from "@/config/api.json";
 import { customersDueQueryKey } from "@/config/query-key";
-import { postData } from "@/services/api-service";
-import { buildAccessUser } from "@/utils/access-user";
+import { fetchCustomersDueResponse } from "@/services/trade-finance-query-service";
 import type { CustomerDueItem } from "@/types/collection.types";
 
 /**
@@ -46,11 +44,7 @@ export const normalizeCustomersDue = (raw: any): CustomerDueItem[] => {
  */
 export const fetchCustomersDue = async (): Promise<CustomerDueItem[]> => {
   try {
-    const endpoint = apiConfig.collection.customersDueUrl;
-    const res: any = await postData({
-      url: endpoint,
-      body: { accessUser: buildAccessUser() },
-    });
+    const res: any = await fetchCustomersDueResponse();
 
     return normalizeCustomersDue(res);
   } catch (err) {

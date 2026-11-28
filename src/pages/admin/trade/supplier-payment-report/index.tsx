@@ -1,5 +1,4 @@
 import React, { useMemo, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
 import {
   FaHandHoldingUsd,
   FaMoneyBillWave,
@@ -20,10 +19,7 @@ import {
   usePurchaseAndReturnsQuery,
 } from "@/pages/admin/trade/purchases/hooks/usePurchaseQueries";
 import PaymentReceiptModal from "@/pages/admin/trade/supplier-payment/components/PaymentReceiptModal";
-import { partyListQueryKey } from "@/config/query-key";
-import apiConfig from "@/config/api.json";
-import { postData } from "@/services/api-service";
-import { buildAccessUser } from "@/utils/access-user";
+import { usePartyListQuery } from "@/hooks/usePartyQueries";
 import { useReportDateRange } from "@/utils/trade-report-helpers";
 import type { PaymentReceiptData } from "@/types/payment.types";
 import PaymentHistoryReportTable from "./components/PaymentHistoryReportTable";
@@ -64,15 +60,7 @@ const SupplierPaymentReportPage: React.FC = () => {
   } = usePurchasesDueQuery();
 
   // 3. Party Master List Query for Addresses
-  const { data: rawPartyData } = useQuery({
-    queryKey: [partyListQueryKey],
-    queryFn: async () =>
-      postData({
-        url: apiConfig.party.partyListUrl,
-        body: { accessUser: buildAccessUser() },
-      }),
-    refetchOnWindowFocus: false,
-  });
+  const { data: rawPartyData } = usePartyListQuery();
 
   // 4. Purchases and Returns Queries for Ledger & Invoices
   const { data: purchasesList = [], refetch: refetchPurchases } = usePurchasesQuery({

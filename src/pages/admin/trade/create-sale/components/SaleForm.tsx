@@ -30,7 +30,7 @@ import {
 import { buildAccessUser } from "@/utils/access-user";
 import { getBusinessCode } from "@/utils/auth-storage";
 import { makeInvoiceNo } from "@/utils/invoiceNo";
-import { useAPI } from "@/hooks/useApi";
+import { useSaveSaleMutation } from "@/hooks/useTradeSaveMutations";
 import { formatMoney } from "@/utils/formatters";
 import { showErrorToast, showDeleteToast } from "@/utils/toast-utils";
 import { useFinancialAccounts } from "@/hooks/useFinancialAccounts";
@@ -80,7 +80,7 @@ export const CreateSaleForm: React.FC = () => {
   const { id: routeId } = useParams();
   const editId = routeId;
   const queryClient = useQueryClient();
-  const { postMutation, handleApiMutation } = useAPI();
+  const saveSaleMutation = useSaveSaleMutation();
 
   const stateEditData: SaleItem | undefined = (location.state as any)?.editData;
   const isEditMode = Boolean(routeId || stateEditData);
@@ -568,10 +568,6 @@ export const CreateSaleForm: React.FC = () => {
     setIsSubmitting(true);
     try {
       const accessUser = buildAccessUser();
-      const insertUrl = apiConfig.sales.insertSalesUrl;
-      const updateUrl = apiConfig.sales.updateSalesUrl;
-      const targetUrl = isEditMode ? updateUrl : insertUrl;
-
       const methodsUsed = [numCash > 0, numBank > 0, numMfs > 0].filter(Boolean).length;
       const invType = methodsUsed > 1 ? "MULTI" : "SINGLE";
       const paymentType = totalPaid <= 0 ? "CREDIT" : methodsUsed > 1 ? "MULTI" : numBank > 0 ? "BANK" : numMfs > 0 ? "MFS" : "CASH";
@@ -698,13 +694,7 @@ export const CreateSaleForm: React.FC = () => {
         payload.salesInvoiceNo = invoiceNo.trim();
       }
 
-      const result = await handleApiMutation({
-        mutation: postMutation,
-        url: targetUrl,
-        body: payload,
-        showSuccessMessage: true,
-        showErrorMessage: true,
-      });
+      const result = await saveSaleMutation.mutateAsync({ payload, isEditMode });
 
       if (result?.success) {
         const res: any = (result.data as any)?.data !== undefined ? (result.data as any).data : result.data;

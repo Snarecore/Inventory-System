@@ -1,38 +1,24 @@
 import { useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { productListQueryKey } from "@/config/query-key";
-import apiConfig from "@/config/api.json";
-import { buildAccessUser } from "@/utils/access-user";
-import { postData } from "@/services/api-service";
+import { useProductListQuery } from "@/hooks/useProductQueries";
 import type { ProductItem } from "@/types";
 
 /**
  * Shared hook to fetch, filter and normalize the product list for Trade forms (Sale, Purchase, Returns).
  */
 export const useTradeProducts = () => {
-  const productListUrl = apiConfig.productList.productListUrl;
-
-  const { data: rawProductData, isLoading, refetch } = useQuery({
-    queryKey: [productListQueryKey],
-    queryFn: async () => {
-      try {
-        const res = await postData<any>({
-          url: productListUrl,
-          body: { accessUser: buildAccessUser() },
-        });
-        return res;
-      } catch {
-        return null;
-      }
-    },
+  const { data: rawProductData, isLoading, refetch } = useProductListQuery({
     refetchOnMount: "always",
   });
 
   const allProducts: ProductItem[] = useMemo(() => {
     if (!rawProductData) return [];
+    const response =
+      typeof rawProductData === "object" && rawProductData !== null
+        ? (rawProductData as Record<string, unknown>)
+        : undefined;
     const list: any[] = Array.isArray(rawProductData)
       ? rawProductData
-      : rawProductData.productList || rawProductData.productsList || rawProductData.data || [];
+      : (response?.productList || response?.productsList || response?.data || []) as any[];
 
     return list
       .filter((p: any) => String(p.isDeleted || "").trim().toUpperCase() !== "Y")

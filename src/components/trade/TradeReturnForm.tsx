@@ -8,7 +8,6 @@ import Button from "@/components/button/Button";
 import ConfirmModal from "@/components/modal/ConfirmModal";
 import DatePicker from "@/components/common/DatePicker";
 import TextInput from "@/components/form/TextInput";
-import apiConfig from "@/config/api.json";
 import {
   salesAndReturnQueryKey,
   salesListQueryKey,
@@ -30,7 +29,6 @@ import {
 } from "@/config/query-key";
 import { useFinancialAccounts } from "@/hooks/useFinancialAccounts";
 import { buildAccessUser, withBranchScope } from "@/utils/access-user";
-import { postData } from "@/services/api-service";
 import { formatMoney } from "@/utils/formatters";
 import { showSuccessToast, showErrorToast } from "@/utils/toast-utils";
 import { RETURN_REASONS, PURCHASE_RETURN_REASONS } from "@/pages/admin/trade/constants/returnReasons";
@@ -42,6 +40,7 @@ import { usePermission } from "@/hooks/usePermission";
 import { useFinancialLedger } from "@/hooks/useFinancialLedger";
 import { cashLeg, bankLeg, mfsLeg, type TradeTender } from "@/services/financial-ledger-service";
 import { updateMfsUser } from "@/services/mfs-service";
+import { useTradeReturnMutation } from "@/hooks/useTradeReturnMutation";
 
 import { fetchSalesAndReturnList, getCleanOrderNo } from "@/pages/admin/trade/sales/hooks/useSalesQueries";
 import { fetchPurchaseAndReturnList } from "@/pages/admin/trade/purchases/hooks/usePurchaseQueries";
@@ -80,6 +79,7 @@ export const TradeReturnForm: React.FC<TradeReturnFormProps> = ({ mode }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const queryClient = useQueryClient();
+  const saveTradeReturnMutation = useTradeReturnMutation();
   const { allProducts = [] } = useTradeProducts();
   const { recordTradeLedger } = useFinancialLedger();
 
@@ -983,11 +983,10 @@ export const TradeReturnForm: React.FC<TradeReturnFormProps> = ({ mode }) => {
         payload.supplierAddress = partyAddress || selectedOrder?.supplierAddress || "";
       }
 
-      const endpoint = isSale
-        ? apiConfig.salesReturn.insertSalesReturnUrl
-        : apiConfig.purchaseReturn.insertPurchaseReturnUrl;
-
-      const response: any = await postData({ url: endpoint, body: payload });
+      const response: any = await saveTradeReturnMutation.mutateAsync({
+        mode,
+        payload,
+      });
 
       const isError =
         !response ||

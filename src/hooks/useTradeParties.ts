@@ -1,9 +1,5 @@
 import { useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { partyListQueryKey } from "@/config/query-key";
-import apiConfig from "@/config/api.json";
-import { buildAccessUser } from "@/utils/access-user";
-import { postData } from "@/services/api-service";
+import { usePartyListQuery } from "@/hooks/usePartyQueries";
 import { isPartyActive } from "@/utils/party-utils";
 import type { PartyItem } from "@/types";
 
@@ -13,23 +9,7 @@ export type TradePartyType = "CUSTOMER" | "SUPPLIER";
  * Shared hook to fetch, filter and normalize Customers or Suppliers for Trade forms.
  */
 export const useTradeParties = (partyType: TradePartyType) => {
-  const partyListUrl = apiConfig.party.partyListUrl;
-
-  const { data: rawPartyData, isLoading, refetch } = useQuery({
-    queryKey: [partyListQueryKey],
-    queryFn: async () => {
-      try {
-        const res: any = await postData({
-          url: partyListUrl,
-          body: { accessUser: buildAccessUser() },
-        });
-        return res;
-      } catch {
-        return null;
-      }
-    },
-    refetchOnWindowFocus: false,
-  });
+  const { data: rawPartyData, isLoading, refetch } = usePartyListQuery();
 
   const partyList: PartyItem[] = useMemo(() => {
     if (!rawPartyData) return [];

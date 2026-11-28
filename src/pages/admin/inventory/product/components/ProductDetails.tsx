@@ -1,12 +1,8 @@
 import { useParams, useNavigate, Link } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
 import { FiArrowLeft, FiPackage, FiCheckCircle, FiXCircle, FiAlertTriangle } from "react-icons/fi";
 import { FaPlus } from "react-icons/fa";
 import PageHeader from "@/components/page-header/PageHeader";
-import apiConfig from "@/config/api.json";
-import { productListQueryKey } from "@/config/query-key";
-import { buildAccessUser } from "@/utils/access-user";
-import { postData } from "@/services/api-service";
+import { useProductListQuery } from "@/hooks/useProductQueries";
 import TableSkeleton from "@/components/skeleton/TableSkeleton";
 import type { ProductItem } from "@/types";
 import { getProductStockDisplay } from "@/utils/product-unit";
@@ -15,19 +11,7 @@ const ProductDetails = () => {
     const { id } = useParams();
     const navigate = useNavigate();
 
-    const productListUrl = apiConfig.productList.productListUrl;
-
-    const { data: rawProductData, isLoading } = useQuery({
-        queryKey: [productListQueryKey],
-        queryFn: async () => {
-            const response = await postData<any>({
-                url: productListUrl,
-                body: { accessUser: buildAccessUser() },
-            });
-            return response;
-        },
-        refetchOnWindowFocus: false,
-    });
+    const { data: rawProductData, isLoading } = useProductListQuery();
 
     let rawList: ProductItem[] = [];
     if (rawProductData) {

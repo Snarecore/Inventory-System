@@ -1,13 +1,11 @@
 import React, { useState, useEffect } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import Modal from "@/components/modal/Modal";
 import Button from "@/components/button/Button";
 import ToggleInput from "@/components/form/ToggleInput";
-import { buildAccessUser } from "@/utils/access-user";
-import { postData } from "@/services/api-service";
-import { showSuccessToast, showErrorToast } from "@/utils/toast-utils";
-import apiConfig from "@/config/api.json";
-import { purchaseChallanSettingsQueryKey } from "@/config/query-key";
+import {
+  usePurchaseChallanSettingsQuery,
+  useSavePurchaseChallanSettingsMutation,
+} from "@/hooks/usePurchaseChallanSettings";
 import type { PurchaseChallanSettings } from "@/types";
 import {
   FaSlidersH,
@@ -45,29 +43,11 @@ const ChallanSettingsModal: React.FC<ChallanSettingsModalProps> = ({
   onClose,
   onSaved,
 }) => {
-  const queryClient = useQueryClient();
   const [settings, setSettings] = useState<PurchaseChallanSettings>(defaultSettings);
-
-  const getSettingsUrl = apiConfig.purchase.purchaseChallanSettingsUrl;
-  const saveSettingsUrl = apiConfig.purchase.insertOrUpdatePurchaseChallanSettingsUrl;
+  const saveMutation = useSavePurchaseChallanSettingsMutation();
 
   // Fetch current challan settings
-  const { data: rawSettingsData, isLoading } = useQuery({
-    queryKey: [purchaseChallanSettingsQueryKey],
-    queryFn: async () => {
-      try {
-        const res = await postData<any>({
-          url: getSettingsUrl,
-          body: { accessUser: buildAccessUser() },
-        });
-        return res;
-      } catch {
-        return null;
-      }
-    },
-    enabled: isOpen,
-    refetchOnWindowFocus: false,
-  });
+  const { data: rawSettingsData, isLoading } = usePurchaseChallanSettingsQuery(isOpen);
 
   useEffect(() => {
     if (rawSettingsData) {
@@ -98,64 +78,20 @@ const ChallanSettingsModal: React.FC<ChallanSettingsModalProps> = ({
     }
   }, [rawSettingsData]);
 
-  const saveMutation = useMutation({
-    mutationFn: async (updatedSettings: PurchaseChallanSettings) => {
-      const payload: any = {
-        accessUser: buildAccessUser(),
-        showChallanRefNo: Boolean(updatedSettings.showChallanRefNo),
-        showChallanDate: Boolean(updatedSettings.showChallanDate),
-        showVatChallan: Boolean(updatedSettings.showVatChallan),
-        showVatChallanDate: Boolean(updatedSettings.showVatChallanDate),
-        attachments: Boolean(updatedSettings.attachments),
-        remarks: Boolean(updatedSettings.remarks),
-        vehicleNumber: Boolean(updatedSettings.vehicleNumber),
-        capacityCft: Boolean(updatedSettings.capacityCft),
-        driverName: Boolean(updatedSettings.driverName),
-        driverPhone: Boolean(updatedSettings.driverPhone),
-        // Aliases for compatibility
-        showChallanNo: Boolean(updatedSettings.showChallanRefNo),
-        showDeliveryDate: Boolean(updatedSettings.showChallanDate),
-        showNotes: Boolean(updatedSettings.remarks),
-        showVehicleNo: Boolean(updatedSettings.vehicleNumber),
-        enableAttachments: Boolean(updatedSettings.attachments),
-        showAttachments: Boolean(updatedSettings.attachments),
-      };
-
-      if (updatedSettings.id) {
-        payload.id = updatedSettings.id;
-      }
-
-      const response = await postData<any>({
-        url: saveSettingsUrl,
-        body: payload,
-      });
-      return response;
-    },
-    onSuccess: (res) => {
-      if (res && (res.error || res.status === "Error")) {
-        showErrorToast(res.msg || res.message || "Failed to update challan settings");
-        return;
-      }
-      showSuccessToast("Purchase challan settings saved successfully");
-      queryClient.setQueryData([purchaseChallanSettingsQueryKey], { status: "Success", data: settings });
-      queryClient.invalidateQueries({ queryKey: [purchaseChallanSettingsQueryKey] });
-      if (onSaved) onSaved(settings);
-      onClose();
-    },
-    onError: (err: any) => {
-      showErrorToast(err?.message || "An error occurred while saving settings");
-    },
-  });
+  const handleSave = () => {
+    saveMutation.mutate(settings, {
+      onSuccess: () => {
+        if (onSaved) onSaved(settings);
+        onClose();
+      },
+    });
+  };
 
   const handleToggle = (key: keyof PurchaseChallanSettings) => {
     setSettings((prev) => ({
       ...prev,
       [key]: !prev[key],
     }));
-  };
-
-  const handleSave = () => {
-    saveMutation.mutate(settings);
   };
 
   const options = [

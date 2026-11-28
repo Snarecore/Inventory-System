@@ -6,17 +6,21 @@ import {
   productListQueryKey,
   customersDueQueryKey,
   customerInvoicesDueQueryKey,
+  salesTransactionReportQueryKey,
 } from "@/config/query-key";
-import apiConfig from "@/config/api.json";
-import { postData } from "@/services/api-service";
-import { buildAccessUser } from "@/utils/access-user";
 import { invalidateFinancialBalances } from "@/utils/invalidate-balances";
 
 import {
   checkSalesDelete,
   deleteSalesOrder,
   validateCheckSalesDeleteResult,
+  fetchSalesTransactionReport,
+  fetchSalesListResponse,
+  fetchSalesAndReturnSources,
 } from "@/services/sales-service";
+import {
+  filterAndNormalizeReportTransactions,
+} from "@/utils/trade-report-helpers";
 import type {
   SaleItem,
   CheckSalesDeletePayload,
@@ -287,13 +291,7 @@ export const isReturnRecord = (item: any): boolean => {
 
 export const fetchSalesList = async (): Promise<SaleItem[]> => {
   try {
-    const accessUser = buildAccessUser();
-    const endpoint = apiConfig.sales.salesListUrl;
-
-    const res: any = await postData({
-      url: endpoint,
-      body: { accessUser },
-    });
+    const res: any = await fetchSalesListResponse();
 
     const list =
       (Array.isArray(res?.data) ? res.data : null) ||
@@ -308,6 +306,47 @@ export const fetchSalesList = async (): Promise<SaleItem[]> => {
   }
 };
 
+export const useSalesTransactionReportQuery = (
+  startDate: string,
+  endDate: string
+) =>
+  useQuery<SaleItem[]>({
+    queryKey: [salesTransactionReportQueryKey, startDate, endDate],
+    queryFn: async () => {
+      let rawList: any[] = [];
+      try {
+        const response: any = await fetchSalesTransactionReport(startDate, endDate);
+        const list =
+          response?.saleTransactionReport ||
+          response?.transactionList ||
+          response?.saleList ||
+          response?.sales ||
+          response?.data;
+
+        if (Array.isArray(list) && list.length > 0) {
+          rawList = list;
+        }
+      } catch (error) {
+        console.warn(
+          "Failed fetching from get-sale-transaction-report, trying get-sale-list fallback:",
+          error
+        );
+      }
+
+      if (rawList.length === 0) {
+        rawList = await fetchSalesList();
+      }
+
+      const normalized = rawList.map(normalizeSaleRecord);
+      return filterAndNormalizeReportTransactions(normalized, {
+        startDate,
+        endDate,
+        domain: "sale",
+        orderPrefix: "SO",
+      });
+    },
+  });
+
 /**
  * Standardized fetcher for combined sales and return records.
  * Single source of truth for combined sales and return query.
@@ -315,19 +354,7 @@ export const fetchSalesList = async (): Promise<SaleItem[]> => {
  */
 export const fetchSalesAndReturnList = async (): Promise<UnifiedTradeRecord[]> => {
   try {
-    const accessUser = buildAccessUser();
-    const endpoint = apiConfig.salesReturn.getSalesAndReturnUrl;
-
-    const [salesAndReturnRes, finTxRes] = await Promise.allSettled([
-      postData({
-        url: endpoint,
-        body: { accessUser },
-      }),
-      postData({
-        url: apiConfig.finance.getFinancialTransactionUrl,
-        body: { accessUser, startDate: "", endDate: "", type: "EXPENSE" },
-      }),
-    ]);
+    const [salesAndReturnRes, finTxRes] = await fetchSalesAndReturnSources();
 
     const res: any = salesAndReturnRes.status === "fulfilled" ? salesAndReturnRes.value : null;
     const finVal: any = finTxRes.status === "fulfilled" ? finTxRes.value : null;

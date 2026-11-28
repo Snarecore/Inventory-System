@@ -2,9 +2,10 @@ import { useState } from "react";
 import { FaEdit } from "react-icons/fa";
 import { FiTrash2 } from "react-icons/fi";
 import DeleteModal from "@/components/modal/DeleteModal";
-import { useAPI } from "@/hooks/useApi";
-import apiConfig from "@/config/api.json";
-import { heroSliderQueryKey } from "@/config/query-key";
+import {
+	useDeleteHeroSliderMutation,
+	useUpdateHeroSliderStatusMutation,
+} from "@/hooks/useHeroSliderQueries";
 import TableSkeleton from "@/components/skeleton/TableSkeleton";
 import EmptyState from "@/components/empty-state/EmptyState";
 import Pagination from "@/components/pagination";
@@ -37,8 +38,8 @@ const HeroSliderTable = ({
 	handlePagination,
 	onEdit
 }: HeroSliderTableProps) => {
-	const { handleDeleteAPI, handleApiMutation, patchMutation } = useAPI();
-	const apiUrl = apiConfig.setting.heroSliderUrl;
+	const deleteMutation = useDeleteHeroSliderMutation();
+	const statusMutation = useUpdateHeroSliderStatusMutation();
 
 	const tableHeaders = [
 		{ key: "sl", label: "Sl" },
@@ -63,35 +64,19 @@ const HeroSliderTable = ({
 
 	const handleDelete = async () => {
 		if (!selectedHeroSlider) return;
-		const apiResponse = await handleDeleteAPI({
-			url: `${apiUrl}/${selectedHeroSlider.id}`,
-			invalidateQueryKey: [heroSliderQueryKey],
-			showSuccessMessage: true
+		deleteMutation.mutate(selectedHeroSlider.id, {
+			onSuccess: () => {
+				if (fetchData) fetchData();
+				closeDeleteModal();
+			},
 		});
-		if (apiResponse) {
-			if (fetchData) fetchData();
-			closeDeleteModal();
-		}
 	};
 
 	const handleToggleStatus = async (slider: HeroSliderDataProps) => {
-		try {
-			const newStatus = !Boolean(slider.status);
-			const result = await handleApiMutation({
-				mutation: patchMutation,
-				url: `${apiUrl}/${slider.id}`,
-				body: { status: newStatus },
-				invalidateQueryKey: [heroSliderQueryKey],
-				showSuccessMessage: true,
-				showErrorMessage: true
-			});
-
-			if (result?.success && fetchData) {
-				fetchData();
-			}
-		} catch (error) {
-			console.error("Failed to toggle status:", error);
-		}
+		statusMutation.mutate(
+			{ id: slider.id, status: !Boolean(slider.status) },
+			{ onSuccess: () => fetchData() }
+		);
 	};
 
 	if (isLoading && (!dataList || dataList.length === 0)) return <TableSkeleton />;

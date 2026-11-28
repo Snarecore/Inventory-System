@@ -1,5 +1,4 @@
 import React, { ChangeEvent, useState, useEffect, useMemo } from 'react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate, useParams, useSearchParams, useLocation } from "react-router-dom";
 import SelectInput from '@/components/form/SelectField';
 import InputField from '@/components/form/TextInput';
@@ -8,17 +7,14 @@ import { FormKeyboardNav } from '@/components/common/FormKeyboardNav';
 import { RiArrowDropDownLine } from 'react-icons/ri';
 import { FaLock, FaSpinner } from 'react-icons/fa';
 import { showErrorToast } from '@/utils/toast-utils';
-import { useAPI } from '@/hooks/useApi';
-import apiConfig from '@/config/api.json';
-import { 
-    productListQueryKey, 
-    productQueryKey, 
-    productCategoriesListQueryKey,
-    productUnitsListQueryKey
-} from '@/config/query-key';
 import { buildAccessUser, withBranchScope } from '@/utils/access-user';
-import { getData, postData } from '@/services/api-service';
 import { usePermission } from '@/hooks/usePermission';
+import {
+    useProductCategoriesQuery,
+    useProductListQuery,
+    useProductUnitsQuery,
+    useSaveProductMutation,
+} from '@/hooks/useProductQueries';
 import type { ProductItem } from '@/types';
 
 interface Option {
@@ -83,49 +79,16 @@ const CreateProductForm = () => {
     const [isLoading, setIsLoading] = useState(false);
     const [hasLoadedInitialData, setHasLoadedInitialData] = useState(false);
 
-    const queryClient = useQueryClient();
-    const { postMutation, handleApiMutation } = useAPI();
-    const insertProductUrl = apiConfig.inventory.insertProductUrl;
-    const categoriesUrl = apiConfig.inventory.productCategoriesListUrl;
-    const unitsUrl = apiConfig.inventory.productUnitsListUrl;
-    const productListUrl = apiConfig.productList.productListUrl;
+    const saveProductMutation = useSaveProductMutation();
 
     // 1. Fetch Categories
-    const { data: rawCategoryData, isLoading: isCategoriesLoading } = useQuery({
-        queryKey: [productCategoriesListQueryKey],
-        queryFn: async () => {
-            const res = await getData<any>({ url: categoriesUrl });
-            return res;
-        },
-        refetchOnWindowFocus: false,
-    });
+    const { data: rawCategoryData, isLoading: isCategoriesLoading } = useProductCategoriesQuery();
 
     // 2. Fetch Units
-    const { data: rawUnitData, isLoading: isUnitsLoading } = useQuery({
-        queryKey: [productUnitsListQueryKey],
-        queryFn: async () => {
-            const res = await getData<any>({ url: unitsUrl });
-            return res;
-        },
-        refetchOnWindowFocus: false,
-    });
+    const { data: rawUnitData, isLoading: isUnitsLoading } = useProductUnitsQuery();
 
     // 3. Fetch Product List to prefill edit form or auto-generate pcode/barcode/sku for new product
-    const { data: productListData, isLoading: isProductListLoading } = useQuery({
-        queryKey: [productListQueryKey],
-        queryFn: async () => {
-            try {
-                const res = await postData<any>({
-                    url: productListUrl,
-                    body: { accessUser: buildAccessUser() }
-                });
-                return res;
-            } catch {
-                return null;
-            }
-        },
-        refetchOnWindowFocus: false,
-    });
+    const { data: productListData, isLoading: isProductListLoading } = useProductListQuery();
 
     // Normalize product list
     const productList: ProductItem[] = useMemo(() => {
@@ -262,9 +225,10 @@ const CreateProductForm = () => {
         if (Array.isArray(rawCategoryData)) {
             list = rawCategoryData;
         } else if (rawCategoryData && typeof rawCategoryData === 'object') {
-            if (Array.isArray(rawCategoryData.data)) list = rawCategoryData.data;
-            else if (Array.isArray(rawCategoryData.categories)) list = rawCategoryData.categories;
-            else if (Array.isArray(rawCategoryData.categoryList)) list = rawCategoryData.categoryList;
+            const response = rawCategoryData as Record<string, unknown>;
+            if (Array.isArray(response.data)) list = response.data;
+            else if (Array.isArray(response.categories)) list = response.categories;
+            else if (Array.isArray(response.categoryList)) list = response.categoryList;
         }
 
         if (list.length > 0) {
@@ -284,9 +248,10 @@ const CreateProductForm = () => {
         if (Array.isArray(rawUnitData)) {
             list = rawUnitData;
         } else if (rawUnitData && typeof rawUnitData === 'object') {
-            if (Array.isArray(rawUnitData.data)) list = rawUnitData.data;
-            else if (Array.isArray(rawUnitData.units)) list = rawUnitData.units;
-            else if (Array.isArray(rawUnitData.unitList)) list = rawUnitData.unitList;
+            const response = rawUnitData as Record<string, unknown>;
+            if (Array.isArray(response.data)) list = response.data;
+            else if (Array.isArray(response.units)) list = response.units;
+            else if (Array.isArray(response.unitList)) list = response.unitList;
         }
 
         if (list.length > 0) {
@@ -507,21 +472,8 @@ const CreateProductForm = () => {
                 product: productPayload,
             };
 
-            const result = await handleApiMutation({
-                mutation: postMutation as any,
-                url: insertProductUrl,
-                body: payload as any,
-                invalidateQueryKey: [productListQueryKey, productQueryKey],
-                showSuccessMessage: true,
-                showErrorMessage: true
-            });
-
-            if (result?.success) {
-                await queryClient.invalidateQueries({
-                    queryKey: [productListQueryKey],
-                });
-                navigate("/admin/products");
-            }
+            await saveProductMutation.mutateAsync(payload);
+            navigate("/admin/products");
         } catch (error: any) {
             console.error("Product submit error:", error);
         } finally {

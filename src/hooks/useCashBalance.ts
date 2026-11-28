@@ -1,8 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
-import apiConfig from "@/config/api.json";
 import { cashBalanceQueryKey } from "@/config/query-key";
-import { postData } from "@/services/api-service";
-import { buildAccessUser } from "@/utils/access-user";
+import { fetchCashBalanceInfo } from "@/services/trade-finance-query-service";
 
 export interface CashBalanceRecord {
   id?: string | number;
@@ -12,11 +10,7 @@ export interface CashBalanceRecord {
 
 export const fetchCashBalance = async (): Promise<number> => {
   try {
-    const endpoint = apiConfig.finance.getCashBalanceInfoUrl;
-    const res: any = await postData({
-      url: endpoint,
-      body: { accessUser: buildAccessUser() },
-    });
+    const res: any = await fetchCashBalanceInfo();
 
     const rows =
       res?.status === "Success" || res?.success

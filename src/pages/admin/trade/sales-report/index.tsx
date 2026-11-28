@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
 import {
   FaShoppingCart,
   FaBoxes,
@@ -12,15 +11,10 @@ import SalesReportTable from "./components/SalesReportTable";
 import ProductSalesReportTable from "./components/ProductSalesReportTable";
 import CustomerSalesReportTable from "./components/CustomerSalesReportTable";
 import SaleInvoiceModal from "@/pages/admin/trade/sales/components/SaleInvoiceModal";
-import apiConfig from "@/config/api.json";
-import { salesTransactionReportQueryKey } from "@/config/query-key";
-import { buildAccessUser } from "@/utils/access-user";
-import { postData } from "@/services/api-service";
-import { fetchSalesList, normalizeSaleRecord } from "@/pages/admin/trade/sales/hooks/useSalesQueries";
+import { useSalesTransactionReportQuery } from "@/pages/admin/trade/sales/hooks/useSalesQueries";
 import {
   useReportDateRange,
   computeTradeKpiTotals,
-  filterAndNormalizeReportTransactions,
 } from "@/utils/trade-report-helpers";
 import type { ReportTab } from "./utils/sales-report-helpers";
 import type { SaleItem } from "@/types";
@@ -42,55 +36,7 @@ const SalesReportPage: React.FC = () => {
     isLoading: isLiveLoading,
     isFetching,
     refetch,
-  } = useQuery<SaleItem[]>({
-    queryKey: [salesTransactionReportQueryKey, startDate, endDate],
-    queryFn: async () => {
-      const accessUser = buildAccessUser();
-      const endpoint = apiConfig.sales.salesTransactionReportUrl;
-
-      let rawList: any[] = [];
-      try {
-        const res: any = await postData({
-          url: endpoint,
-          body: {
-            accessUser,
-            startDate,
-            endDate,
-            fromDate: startDate,
-            toDate: endDate,
-          },
-        });
-
-        const list =
-          res?.saleTransactionReport ||
-          res?.transactionList ||
-          res?.saleList ||
-          res?.sales ||
-          res?.data;
-
-        if (Array.isArray(list) && list.length > 0) {
-          rawList = list;
-        }
-      } catch (err) {
-        console.warn("Failed fetching from get-sale-transaction-report, trying get-sale-list fallback:", err);
-      }
-
-      // Fallback to fetchSalesList if report returned no data or failed
-      if (rawList.length === 0) {
-        const allSales = await fetchSalesList();
-        rawList = allSales;
-      }
-
-      const normalized = (Array.isArray(rawList) ? rawList : []).map(normalizeSaleRecord);
-
-      return filterAndNormalizeReportTransactions(normalized, {
-        startDate,
-        endDate,
-        domain: "sale",
-        orderPrefix: "SO",
-      });
-    },
-  });
+  } = useSalesTransactionReportQuery(startDate, endDate);
 
   // Effective transactions data (pure live API)
   const transactions: SaleItem[] = Array.isArray(liveReportData) ? liveReportData : [];

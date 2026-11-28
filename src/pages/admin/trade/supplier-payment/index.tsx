@@ -1,13 +1,9 @@
 import React, { useState, useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
 import PageHeader from "@/components/page-header/PageHeader";
 import RefreshButton from "@/components/table-components/RefreshButton";
 import { usePurchasesDueQuery } from "@/hooks/usePurchasesDue";
 import { usePurchasesQuery } from "@/pages/admin/trade/purchases/hooks/usePurchaseQueries";
-import { partyListQueryKey } from "@/config/query-key";
-import apiConfig from "@/config/api.json";
-import { postData } from "@/services/api-service";
-import { buildAccessUser } from "@/utils/access-user";
+import { usePartyListQuery } from "@/hooks/usePartyQueries";
 import PaymentStatsCards from "./components/PaymentStatsCards";
 import SupplierDueTable from "./components/SupplierDueTable";
 import PaymentHistoryTable from "./components/PaymentHistoryTable";
@@ -28,18 +24,7 @@ export const SupplierPayment: React.FC = () => {
   } = usePurchasesDueQuery();
 
   // Fetch party master list to enrich addresses if missing in purchases due data
-  const { data: rawPartyData } = useQuery({
-    queryKey: [partyListQueryKey],
-    queryFn: async () => {
-      const partyListUrl = apiConfig.party.partyListUrl;
-      const res: any = await postData({
-        url: partyListUrl,
-        body: { accessUser: buildAccessUser() },
-      });
-      return res;
-    },
-    refetchOnWindowFocus: false,
-  });
+  const { data: rawPartyData } = usePartyListQuery();
 
   const partyMap = useMemo(() => {
     const map = new Map<string, { address?: string; phone?: string; name?: string }>();

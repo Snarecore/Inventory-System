@@ -18,7 +18,6 @@ import {
   purchaseAndReturnQueryKey,
   productListQueryKey,
   partyListQueryKey,
-  purchaseChallanSettingsQueryKey,
   cashBalanceQueryKey,
   bankInfoListQueryKey,
   mfsUserListQueryKey,
@@ -33,8 +32,8 @@ import {
 import { buildAccessUser } from "@/utils/access-user";
 import { getBusinessCode } from "@/utils/auth-storage";
 import { makeInvoiceNo } from "@/utils/invoiceNo";
-import { postData } from "@/services/api-service";
-import { useAPI } from "@/hooks/useApi";
+import { useSavePurchaseMutation } from "@/hooks/useTradeSaveMutations";
+import { usePurchaseChallanSettingsQuery } from "@/hooks/usePurchaseChallanSettings";
 import { showErrorToast, showDeleteToast } from "@/utils/toast-utils";
 import { useFinancialAccounts } from "@/hooks/useFinancialAccounts";
 import { useTradePayment } from "@/hooks/useTradePayment";
@@ -89,7 +88,7 @@ const CreatePurchaseForm: React.FC = () => {
   const { id: routeId } = useParams();
   const editId = routeId;
   const queryClient = useQueryClient();
-  const { postMutation, handleApiMutation } = useAPI();
+  const savePurchaseMutation = useSavePurchaseMutation();
 
   const stateEditData: PurchaseItem | undefined = (location.state as any)?.editData;
   const isEditMode = Boolean(routeId || stateEditData);
@@ -191,22 +190,7 @@ const CreatePurchaseForm: React.FC = () => {
   const { registeredBankAccounts, registeredMfsAccounts } = useFinancialAccounts();
 
   // Fetch Challan Settings
-  const challanSettingsUrl = apiConfig.purchase.purchaseChallanSettingsUrl;
-  const { data: rawChallanSettings } = useQuery({
-    queryKey: [purchaseChallanSettingsQueryKey],
-    queryFn: async () => {
-      try {
-        const res = await postData<any>({
-          url: challanSettingsUrl,
-          body: { accessUser: buildAccessUser() },
-        });
-        return res;
-      } catch {
-        return null;
-      }
-    },
-    refetchOnWindowFocus: false,
-  });
+  const { data: rawChallanSettings } = usePurchaseChallanSettingsQuery();
 
   useEffect(() => {
     if (rawChallanSettings) {
@@ -608,10 +592,6 @@ const CreatePurchaseForm: React.FC = () => {
 
     try {
       const accessUser = buildAccessUser();
-      const insertUrl = apiConfig.purchase.insertPurchasesUrl;
-      const updateUrl = apiConfig.purchase.updatePurchasesUrl;
-      const targetUrl = isEditMode ? updateUrl : insertUrl;
-
       // Backend expects "CASH" (when any payment is made) or "CREDIT" (when 100% due)
       const paymentType = totalPaid > 0 ? "CASH" : "CREDIT";
       // Backend status is strictly "COMPLETED", "PARTIAL", or "PENDING" in ALL CAPS
@@ -727,14 +707,9 @@ const CreatePurchaseForm: React.FC = () => {
       }
 
       // Both insert and update operations in backend use JSON HTTP POST
-      const mutation = postMutation;
-
-      const result = await handleApiMutation({
-        mutation,
-        url: targetUrl,
-        body: purchasePayload,
-        showSuccessMessage: true,
-        showErrorMessage: true,
+      const result = await savePurchaseMutation.mutateAsync({
+        payload: purchasePayload,
+        isEditMode,
       });
 
       if (result?.success) {
