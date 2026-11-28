@@ -152,3 +152,50 @@ export const useFinancialAccounts = (options?: UseFinancialAccountsOptions) => {
     isLoading: bankQuery.isLoading || mfsQuery.isLoading,
   };
 };
+
+/**
+ * Resolve the selected MFS account from registered accounts, falling back to
+ * manual field values if no matching registered account is found.
+ */
+export function resolveSelectedMfsAccount(
+  accounts: MfsAccountItem[],
+  selectedMfsId: string | number | null | undefined,
+  fallback?: { method?: string; name?: string; phone?: string }
+): MfsAccountItem | null {
+  const key = String(selectedMfsId ?? "").trim();
+  const matched = key
+    ? accounts.find(
+        (m) =>
+          String(m.id ?? "").trim() === key ||
+          String((m as any).mfsId ?? "").trim() === key ||
+          String(m.phoneNumber ?? (m as any).phone ?? "").trim() === key
+      )
+    : undefined;
+
+  if (matched) return matched;
+
+  return {
+    id: selectedMfsId as any,
+    mfsId: selectedMfsId,
+    method: fallback?.method || "MFS",
+    name: fallback?.name || "",
+    phoneNumber: fallback?.phone || "",
+    phone: fallback?.phone || "",
+    currentBalance: 0,
+    status: "Active",
+  } as unknown as MfsAccountItem;
+}
+
+/**
+ * Resolve the selected Bank account from registered accounts by id or bankId.
+ */
+export function resolveSelectedBankAccount(
+  accounts: BankAccountItem[],
+  selectedBankId: string | number | null | undefined
+): BankAccountItem | null {
+  const key = String(selectedBankId ?? "").trim();
+  if (!key) return null;
+  return (
+    accounts.find((b) => String(b.bankId ?? b.id) === key) ?? null
+  );
+}

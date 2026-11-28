@@ -36,7 +36,7 @@ import { makeInvoiceNo } from "@/utils/invoiceNo";
 import { postData } from "@/services/api-service";
 import { useAPI } from "@/hooks/useApi";
 import { showErrorToast, showDeleteToast } from "@/utils/toast-utils";
-import { useFinancialAccounts } from "@/hooks/useFinancialAccounts";
+import { useFinancialAccounts, resolveSelectedMfsAccount, resolveSelectedBankAccount } from "@/hooks/useFinancialAccounts";
 import { useTradePayment } from "@/hooks/useTradePayment";
 import TradePaymentSection from "@/components/trade/TradePaymentSection";
 import { useTradeProductSearch } from "@/hooks/useTradeProductSearch";
@@ -643,6 +643,20 @@ const CreatePurchaseForm: React.FC = () => {
       });
 
       const supplierId = selectedSupplier.id ?? selectedSupplier.partyId ?? "";
+
+      const selectedMfsObj =
+        numMfs > 0
+          ? resolveSelectedMfsAccount(registeredMfsAccounts, selectedMfsId, {
+              method: mfsName,
+              name: mfsName,
+              phone: mfsPhone,
+            })
+          : null;
+
+      const selectedBankObj =
+        numBank > 0
+          ? resolveSelectedBankAccount(registeredBankAccounts, selectedBankId)
+          : null;
 
       const purchasePayload: any = {
         accessUser,

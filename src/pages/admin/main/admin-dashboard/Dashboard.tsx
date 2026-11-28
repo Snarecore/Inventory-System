@@ -587,7 +587,7 @@ const AdminDashboard: React.FC = () => {
           headerDescription="Overview of business performance and standing balances"
         />
         <div className="flex items-center gap-2 self-start sm:self-auto">
-          <div className="w-48 sm:w-52 shrink-0 z-40">
+          <div className="w-36 sm:w-40 shrink-0 z-40">
             <DateRangePicker
               startDate={startDate}
               endDate={endDate}

@@ -33,7 +33,7 @@ import { makeInvoiceNo } from "@/utils/invoiceNo";
 import { useAPI } from "@/hooks/useApi";
 import { formatMoney } from "@/utils/formatters";
 import { showErrorToast, showDeleteToast } from "@/utils/toast-utils";
-import { useFinancialAccounts } from "@/hooks/useFinancialAccounts";
+import { useFinancialAccounts, resolveSelectedMfsAccount, resolveSelectedBankAccount } from "@/hooks/useFinancialAccounts";
 import { useTradePayment } from "@/hooks/useTradePayment";
 import TradePaymentSection from "@/components/trade/TradePaymentSection";
 import { useTradeProductSearch } from "@/hooks/useTradeProductSearch";
@@ -611,27 +611,19 @@ export const CreateSaleForm: React.FC = () => {
         delivery_charge: 0,
       }));
 
-      const selectedMfsObj = numMfs > 0
-        ? (registeredMfsAccounts.find(
-            (m) =>
-              String(m.id ?? "").trim() === String(selectedMfsId).trim() ||
-              String(m.mfsId ?? "").trim() === String(selectedMfsId).trim() ||
-              String(m.phoneNumber ?? m.phone ?? "").trim() === String(selectedMfsId).trim()
-          ) || {
-            id: selectedMfsId,
-            mfsId: selectedMfsId,
-            method: mfsName || "MFS",
-            name: mfsName || "",
-            phoneNumber: mfsPhone || "",
-            phone: mfsPhone || "",
-            currentBalance: 0,
-            status: "Active",
-          })
-        : null;
+      const selectedMfsObj =
+        numMfs > 0
+          ? resolveSelectedMfsAccount(registeredMfsAccounts, selectedMfsId, {
+              method: mfsName,
+              name: mfsName,
+              phone: mfsPhone,
+            })
+          : null;
 
-      const selectedBankObj = numBank > 0
-        ? registeredBankAccounts.find((b) => String(b.bankId ?? b.id) === String(selectedBankId))
-        : null;
+      const selectedBankObj =
+        numBank > 0
+          ? resolveSelectedBankAccount(registeredBankAccounts, selectedBankId)
+          : null;
 
       const payload: any = {
         accessUser,

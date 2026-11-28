@@ -204,5 +204,9 @@
         "earningsUrl": "earnings",
         "walletTransactionsUrl": "wallet/transactions",
         "configUrl": "config"
+    },
+    "notices": {
+        "listUrl": "notices",
+        "markReadUrl": "notices"
     }
 }

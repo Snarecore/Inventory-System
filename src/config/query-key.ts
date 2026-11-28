@@ -82,3 +82,4 @@ export const referralPayoutAccountQueryKey = "referral-payout-account";
 export const referralWithdrawalsQueryKey = "referral-withdrawals";
 export const referralEarningsQueryKey = "referral-earnings";
 export const referralTransactionsQueryKey = "referral-transactions";
+export const noticesQueryKey = "notices";

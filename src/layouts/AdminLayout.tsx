@@ -61,7 +61,7 @@ export default function AdminLayout() {
 				onClick={handleSidebarClick}
 				aria-label={sidebarClick ? "Expand sidebar" : "Collapse sidebar"}
 				style={{ willChange: "left" }}
-				className={`hidden lg:block lg:fixed top-3 z-[51] bg-[#009fe3] hover:bg-[#0087c2] text-white rounded-full p-1 shadow hover:opacity-90 focus:outline-none -translate-x-1/2 transition-[left,transform] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] cursor-pointer motion-reduce:transition-none ${
+				className={`hidden lg:block lg:fixed top-3 z-[61] bg-[#009fe3] hover:bg-[#0087c2] text-white rounded-full p-1 shadow hover:opacity-90 focus:outline-none -translate-x-1/2 transition-[left,transform] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] cursor-pointer motion-reduce:transition-none ${
 					sidebarClick ? "lg:left-20" : "lg:left-52"
 				}`}
 			>

@@ -75,6 +75,7 @@ const ReferralDashboard = lazyWithRetry(() => import('@/pages/admin/settings/ref
 const BranchList = lazyWithRetry(() => import('@/pages/admin/branch/BranchList'))
 const AddBranch = lazyWithRetry(() => import('@/pages/admin/branch/AddBranch'))
 const FinancialBookPage = lazyWithRetry(() => import('@/pages/admin/finance/financial-book'))
+const NotificationsPage = lazyWithRetry(() => import('@/pages/admin/notifications'))
 
 const CashBookRoute: React.FC = () => <FinancialBookPage defaultType="cash" />
 const BankBookRoute: React.FC = () => <FinancialBookPage defaultType="bank" />
@@ -1030,6 +1031,10 @@ export const router = createBrowserRouter([
       {
         path: 'packages',
         element: withPermission(PackagesPage, 'subscription_packages'),
+      },
+      {
+        path: 'notifications',
+        element: withSuspense(NotificationsPage),
       },
       {
         path: 'referral',

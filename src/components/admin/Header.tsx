@@ -25,6 +25,7 @@ import { UserAvatar, Badge, LanguageSwitcher } from "@/components/common";
 import { useAppearance } from "@/theme";
 import logoImg from "@/assets/logo.jpeg";
 import BranchSwitcher from "@/components/admin/BranchSwitcher";
+import NoticeBell from "@/components/admin/NoticeBell";
 import { usePermission } from "@/hooks/usePermission";
 import { canAccessMenuItem } from "@/utils/permission-utils";
 import { useTranslation } from "react-i18next";
@@ -175,7 +176,7 @@ const Header = ({ sidebarClick }: { sidebarClick: boolean }) => {
     };
 
     return (
-        <div className={`fixed top-0 right-0 left-0 z-40 transition-[left] duration-300 ${sidebarClick
+        <div className={`fixed top-0 right-0 left-0 z-[60] transition-[left] duration-300 ${sidebarClick
             ? "lg:left-20"
             : "lg:left-52"
             }`}>
@@ -207,6 +208,7 @@ const Header = ({ sidebarClick }: { sidebarClick: boolean }) => {
                 <div className="flex items-center gap-2">
                     <LanguageSwitcher />
                     <BranchSwitcher />
+                    <NoticeBell compact />
                     {/* Mobile Dark Mode Toggle Button */}
                     <button
                         type="button"
@@ -410,6 +412,7 @@ const Header = ({ sidebarClick }: { sidebarClick: boolean }) => {
             <div className="hidden lg:flex justify-end items-center gap-2.5 px-4 h-12 bg-white dark:bg-[var(--ui-surface)] border-b border-gray-200 dark:border-[var(--ui-border)] transition-colors">
                 <LanguageSwitcher />
                 <BranchSwitcher />
+                <NoticeBell />
                 {/* Dark Mode / Light Mode Toggle Button */}
                 <button
                     type="button"
